@@ -79,7 +79,7 @@ async function breezewayFetch<T>(
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: init?.body === undefined ? undefined : JSON.stringify(init.body),
+    body: init?.body === undefined ? null : JSON.stringify(init.body),
   });
 
   if (!res.ok) {
