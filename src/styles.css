@@ -67,8 +67,12 @@
   --color-danger-foreground: var(--danger-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-ink: var(--brand-ink);
+  /* Calibri is the ARHA standard; Carlito is its metric-compatible web twin. */
+  --font-display: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
