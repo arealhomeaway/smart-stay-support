@@ -487,6 +487,10 @@ function TicketDetail() {
             </Card>
           )}
 
+          {ticket.record_type !== "completed_interaction" && (
+            <HandoffPanel ticket={ticket} closed={closed} onChanged={refresh} />
+          )}
+
           {!closed && ticket.status !== "waiting" && (
             <Card>
               <CardHeader className="pb-3">

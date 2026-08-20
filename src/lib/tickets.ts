@@ -1,6 +1,6 @@
-// Domain rules for ARHA "matters" (tickets).
-// Priorities are P1–P4 only. Response/action clocks come straight from the
-// Response Standards rubric; nothing here is a productivity score.
+// Domain rules for ARHA operational records.
+// Source of truth: "Property Coordinator Task Ownership, Coverage, and Handoff SOP".
+// Priorities are P1–P3 only. Nothing here is a productivity score.
 
 export const CATEGORIES = [
   { value: "maintenance", label: "Maintenance" },
@@ -24,67 +24,116 @@ export const BUCKETS = [
   { value: "administrative", label: "Administrative" },
 ] as const;
 
+export const TEAMS = [
+  { value: "guest_experience", label: "Guest Experience & Reservations", short: "Team A" },
+  { value: "property_operations", label: "Property Operations", short: "Team B" },
+  { value: "leadership", label: "Leadership", short: "Leadership" },
+] as const;
+
+// One ticket record type. One-touch resolutions are logged for history only.
 export const RECORD_TYPES = [
   {
-    value: "completed_interaction",
-    label: "Completed interaction",
-    hint: "Handled start to finish in one touch. Logged for history, never enters the queue.",
+    value: "one_touch",
+    label: "One-touch resolution",
+    hint: "Fully resolved in a single action. Logged and linked, never enters the active queue.",
   },
   {
-    value: "active_task",
-    label: "Active task",
-    hint: "Needs more work. Exactly one accountable owner.",
-  },
-  {
-    value: "collaborative_matter",
-    label: "Collaborative matter",
-    hint: "Multiple people involved. One accountable owner plus a current action owner.",
+    value: "ticket",
+    label: "Ticket",
+    hint: "Needs follow-up, cross-shift coverage or another touchpoint. Flag it cross-team when more than one role must act.",
   },
 ] as const;
 
 export const PRIORITIES = [
   {
     value: "p1",
-    label: "P1 — Emergency",
+    label: "P1 — Critical (immediate action)",
     short: "P1",
-    responseMinutes: 10,
-    actionMinutes: 0,
-    summary: "Guest safety, habitability or access at risk. Acknowledge in 10 minutes, act immediately.",
+    responseMinutes: 3,
+    actionMinutes: 5,
+    summary:
+      "Immediate impact on an active guest, safety, security, active damage, same-day revenue or an imminent arrival. Acknowledge in 3 minutes, begin meaningful action within 5.",
   },
   {
     value: "p2",
-    label: "P2 — Urgent",
+    label: "P2 — Time-sensitive",
     short: "P2",
     responseMinutes: 30,
     actionMinutes: 60,
-    summary: "Impacts the current or imminent stay. Acknowledge in 30 minutes, start within the hour.",
+    summary:
+      "Must move today or by a task-specific deadline to prevent operational disruption. Follow the work type's response standard.",
   },
   {
     value: "p3",
-    label: "P3 — Standard",
+    label: "P3 — Standard (planned work)",
     short: "P3",
     responseMinutes: 120,
-    actionMinutes: 1440,
-    summary: "Normal operations. Acknowledge in 2 hours, start within one business day.",
-  },
-  {
-    value: "p4",
-    label: "P4 — Planned",
-    short: "P4",
-    responseMinutes: 480,
-    actionMinutes: 2880,
-    summary: "Scheduled or non-urgent. Acknowledge by end of business.",
+    actionMinutes: 480,
+    summary:
+      "Routine, preventive, reporting or planned work. Complete in queue order after P1 and time-sensitive P2 work.",
   },
 ] as const;
 
 export type PriorityValue = (typeof PRIORITIES)[number]["value"];
 
-// P1 escalation ladder, measured from receipt.
+const PRIORITY_RANK: Record<string, number> = { p1: 3, p2: 2, p3: 1 };
+
+/** Returns the more urgent of two priorities. */
+export function mostUrgent(a: string, b: string) {
+  return (PRIORITY_RANK[a] ?? 0) >= (PRIORITY_RANK[b] ?? 0) ? a : b;
+}
+
+// P1 staffing escalation: unseen or unaddressed for more than 15 minutes
+// triggers staffing escalation and backup review. It does not replace the
+// normal 3-minute / 5-minute standard.
 export const P1_ESCALATION = [
-  { minutes: 10, level: "supervisor" as const, who: "Backup coordinator + supervisor" },
-  { minutes: 20, level: "director" as const, who: "Supervisor takes over directly" },
-  { minutes: 60, level: "executive" as const, who: "Management notified" },
+  { minutes: 3, level: "backup" as const, who: "Backup role notified — acknowledgment standard missed" },
+  { minutes: 5, level: "supervisor" as const, who: "Operations Supervisor notified — action has not started" },
+  { minutes: 15, level: "staffing" as const, who: "Staffing escalation and backup review" },
 ];
+
+// ---------------------------------------------------------------------------
+// Mechanical priority model
+// Work Type carries the suggested priority. Guest Impact and Occupancy Status
+// determine the final priority. They may raise a ticket above the work type's
+// suggestion; they must never lower it below that floor without a reason.
+// ---------------------------------------------------------------------------
+
+export const GUEST_IMPACT = [
+  { value: "none", label: "None", floor: "p3" },
+  { value: "minor", label: "Minor inconvenience", floor: "p3" },
+  { value: "active_guest_affected", label: "Active guest affected", floor: "p1" },
+  { value: "safety_security", label: "Safety or security", floor: "p1" },
+] as const;
+
+export const OCCUPANCY_STATUS = [
+  { value: "vacant", label: "Vacant", floor: "p3" },
+  { value: "occupied", label: "Occupied", floor: "p2" },
+  { value: "same_day_arrival", label: "Same-day arrival", floor: "p1" },
+  { value: "same_day_departure", label: "Same-day departure", floor: "p2" },
+] as const;
+
+/** The priority the rubric produces before any manual override. */
+export function mechanicalPriority(
+  suggested: string | null | undefined,
+  guestImpact: string,
+  occupancy: string,
+) {
+  const base = suggested ?? "p3";
+  const impactFloor = GUEST_IMPACT.find((g) => g.value === guestImpact)?.floor ?? "p3";
+  const occupancyFloor = OCCUPANCY_STATUS.find((o) => o.value === occupancy)?.floor ?? "p3";
+  // Occupancy alone never forces P1 unless the guest is actually affected.
+  const occupancyEffective =
+    occupancyFloor === "p1" && impactFloor === "p3" && guestImpact === "none" ? "p2" : occupancyFloor;
+  return mostUrgent(mostUrgent(base, impactFloor), occupancyEffective);
+}
+
+export function priorityDrivers(guestImpact: string, occupancy: string) {
+  return [
+    labelFor(GUEST_IMPACT, guestImpact),
+    labelFor(OCCUPANCY_STATUS, occupancy),
+  ];
+}
 
 export const STATUSES = [
   { value: "open", label: "Open" },
@@ -121,12 +170,14 @@ export const OUTCOME_TYPES = [
 
 export const SOURCE_CHANNELS = [
   { value: "guest_message", label: "Guest message" },
+  { value: "ownerrez", label: "OwnerRez message" },
   { value: "phone", label: "Phone call" },
   { value: "text", label: "Text / WhatsApp" },
   { value: "email", label: "Email" },
   { value: "owner", label: "Owner" },
   { value: "vendor", label: "Vendor" },
   { value: "internal", label: "Internal / noticed it ourselves" },
+  { value: "breezeway", label: "Breezeway" },
   { value: "inspection", label: "Inspection" },
 ] as const;
 
@@ -134,15 +185,34 @@ export const HANDOFF_TYPES = [
   {
     value: "action_request",
     label: "Action request",
-    hint: "You stay accountable. They do a specific step.",
+    hint: "You stay the Record Owner. They take the next action.",
   },
   {
     value: "ownership_transfer",
     label: "Ownership transfer",
-    hint: "They become accountable — only once they accept.",
+    hint: "They become the Current Assignee — only once they accept.",
   },
-  { value: "shift_coverage", label: "Shift coverage", hint: "Hand off at end of shift." },
-  { value: "supervisor_intervention", label: "Supervisor intervention", hint: "Escalating for help." },
+  { value: "shift_coverage", label: "Shift transition", hint: "Action is needed before your next shift." },
+  { value: "lunch_coverage", label: "Lunch coverage", hint: "New P1 or time-sensitive P2 while you step away." },
+  { value: "supervisor_intervention", label: "Escalation", hint: "Authority, approval or leadership judgment needed." },
+] as const;
+
+export const GUEST_COMM_STATUS = [
+  { value: "not_required", label: "No guest communication required" },
+  { value: "guest_waiting", label: "Guest is waiting on an update" },
+  { value: "guest_updated", label: "Guest updated — next update owed" },
+  { value: "guest_informed_closed", label: "Guest informed, nothing owed" },
+] as const;
+
+export const ESCALATION_REASONS = [
+  { value: "authority", label: "Beyond my authority to resolve" },
+  { value: "compensation", label: "Guest compensation may be required" },
+  { value: "relocation", label: "Guest may need relocation or transfer" },
+  { value: "booking_change", label: "A booking may need to be altered" },
+  { value: "owner_decision", label: "An owner decision is required" },
+  { value: "vendor_failure", label: "Vendor cannot meet the operational need" },
+  { value: "multi_department", label: "Affects multiple departments" },
+  { value: "significant_risk", label: "Significant financial, safety or reputational risk" },
 ] as const;
 
 export function labelFor(
@@ -156,12 +226,22 @@ export function priorityMeta(priority: string | null | undefined) {
   return PRIORITIES.find((p) => p.value === priority) ?? PRIORITIES[2];
 }
 
-/** Response + action deadlines from the moment the matter was received. */
-export function slaDueDates(priority: string, receivedAt: Date = new Date()) {
+type StandardSource = {
+  response_minutes?: number | null;
+  action_start_minutes?: number | null;
+} | null;
+
+/**
+ * Response + action deadlines. The work type's own standard wins when it is
+ * defined (the SOP sets these per work type); otherwise the priority default.
+ */
+export function slaDueDates(priority: string, receivedAt: Date = new Date(), workType?: StandardSource) {
   const meta = priorityMeta(priority);
+  const response = workType?.response_minutes ?? meta.responseMinutes;
+  const action = workType?.action_start_minutes ?? meta.actionMinutes;
   return {
-    response_due_at: new Date(receivedAt.getTime() + meta.responseMinutes * 60_000).toISOString(),
-    action_due_at: new Date(receivedAt.getTime() + meta.actionMinutes * 60_000).toISOString(),
+    response_due_at: new Date(receivedAt.getTime() + response * 60_000).toISOString(),
+    action_due_at: new Date(receivedAt.getTime() + action * 60_000).toISOString(),
   };
 }
 
@@ -188,7 +268,11 @@ export type ClockState = {
   met: boolean;
 };
 
-function clock(dueAt: string | null | undefined, satisfiedAt: string | null | undefined, name: string): ClockState | null {
+function clock(
+  dueAt: string | null | undefined,
+  satisfiedAt: string | null | undefined,
+  name: string,
+): ClockState | null {
   if (!dueAt) return null;
   const due = new Date(dueAt).getTime();
   if (satisfiedAt) {
@@ -202,14 +286,15 @@ function clock(dueAt: string | null | undefined, satisfiedAt: string | null | un
   }
   const minutes = Math.round((due - Date.now()) / 60_000);
   return {
-    label: minutes < 0 ? `${name} overdue by ${formatMinutes(-minutes)}` : `${name} due in ${formatMinutes(minutes)}`,
+    label:
+      minutes < 0 ? `${name} overdue by ${formatMinutes(-minutes)}` : `${name} due in ${formatMinutes(minutes)}`,
     minutes,
     breached: minutes < 0,
     met: false,
   };
 }
 
-/** The two live SLA clocks plus the current escalation step for a matter. */
+/** The two live clocks plus the current P1 escalation step for a record. */
 export function slaState(ticket: SlaTicket) {
   const closed = isClosed(ticket.status);
   const response = clock(ticket.response_due_at, ticket.acknowledged_at, "Acknowledge");
@@ -228,7 +313,6 @@ export function slaState(ticket: SlaTicket) {
     response,
     action,
     escalation,
-    // Anything that should surface in the supervisor exception queue.
     breached: !closed && Boolean(response?.breached || action?.breached),
   };
 }
@@ -265,8 +349,6 @@ export function priorityTone(priority: string) {
       return "bg-danger text-danger-foreground border-danger";
     case "p2":
       return "bg-warning text-warning-foreground border-warning";
-    case "p4":
-      return "bg-muted text-muted-foreground border-border";
     default:
       return "bg-secondary text-secondary-foreground border-border";
   }

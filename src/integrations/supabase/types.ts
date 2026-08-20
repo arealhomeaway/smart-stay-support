@@ -14,6 +14,128 @@ export type Database = {
   }
   public: {
     Tables: {
+      functional_roles: {
+        Row: {
+          active: boolean
+          backup_role_code: string | null
+          code: string
+          coverage_window: string | null
+          created_at: string
+          current_seat_holder: string | null
+          current_seat_name: string | null
+          id: string
+          lunch_coverage: string | null
+          lunch_window: string | null
+          name: string
+          sort_order: number
+          team: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          backup_role_code?: string | null
+          code: string
+          coverage_window?: string | null
+          created_at?: string
+          current_seat_holder?: string | null
+          current_seat_name?: string | null
+          id?: string
+          lunch_coverage?: string | null
+          lunch_window?: string | null
+          name: string
+          sort_order?: number
+          team?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          backup_role_code?: string | null
+          code?: string
+          coverage_window?: string | null
+          created_at?: string
+          current_seat_holder?: string | null
+          current_seat_name?: string | null
+          id?: string
+          lunch_coverage?: string | null
+          lunch_window?: string | null
+          name?: string
+          sort_order?: number
+          team?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      handoffs: {
+        Row: {
+          actions_completed: string
+          created_at: string
+          current_status: string
+          due_at: string | null
+          from_user: string | null
+          guest_comm_status: string
+          handoff_type: string
+          id: string
+          next_action: string
+          priority: string
+          responded_at: string | null
+          response_reason: string | null
+          risks: string | null
+          status: string
+          summary: string
+          ticket_id: string
+          to_role_code: string | null
+          to_user: string | null
+        }
+        Insert: {
+          actions_completed: string
+          created_at?: string
+          current_status: string
+          due_at?: string | null
+          from_user?: string | null
+          guest_comm_status?: string
+          handoff_type?: string
+          id?: string
+          next_action: string
+          priority?: string
+          responded_at?: string | null
+          response_reason?: string | null
+          risks?: string | null
+          status?: string
+          summary: string
+          ticket_id: string
+          to_role_code?: string | null
+          to_user?: string | null
+        }
+        Update: {
+          actions_completed?: string
+          created_at?: string
+          current_status?: string
+          due_at?: string | null
+          from_user?: string | null
+          guest_comm_status?: string
+          handoff_type?: string
+          id?: string
+          next_action?: string
+          priority?: string
+          responded_at?: string | null
+          response_reason?: string | null
+          risks?: string | null
+          status?: string
+          summary?: string
+          ticket_id?: string
+          to_role_code?: string | null
+          to_user?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoffs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_steps: {
         Row: {
           created_at: string
@@ -287,15 +409,18 @@ export type Database = {
           created_at: string
           created_by: string | null
           created_on_behalf_of: string | null
+          cross_team: boolean
           current_action_owner: string | null
           description: string | null
           due_at: string | null
           escalated_at: string | null
           escalation_level: string
           final_communication_sent: boolean
+          functional_role_code: string | null
           guest_comm_owner: string | null
           guest_confirmed: boolean
           guest_contact: string | null
+          guest_impact: string
           guest_in_residence: boolean
           guest_name: string | null
           handoff_note: string | null
@@ -308,6 +433,7 @@ export type Database = {
           next_action: string | null
           next_action_due_at: string | null
           next_review_at: string | null
+          occupancy_status: string
           outcome_type: string | null
           pending_handoff_to: string | null
           playbook_id: string | null
@@ -315,6 +441,8 @@ export type Database = {
           priority_override_reason: string | null
           promised_update_due_at: string | null
           property_id: string | null
+          reclassified_at: string | null
+          record_owner: string | null
           record_type: string
           ref: number
           reopen_count: number
@@ -325,6 +453,7 @@ export type Database = {
           source_channel: string
           source_reference: string | null
           status: string
+          suggested_priority: string | null
           supervisor_caught: boolean
           title: string
           updated_at: string
@@ -347,15 +476,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           created_on_behalf_of?: string | null
+          cross_team?: boolean
           current_action_owner?: string | null
           description?: string | null
           due_at?: string | null
           escalated_at?: string | null
           escalation_level?: string
           final_communication_sent?: boolean
+          functional_role_code?: string | null
           guest_comm_owner?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
+          guest_impact?: string
           guest_in_residence?: boolean
           guest_name?: string | null
           handoff_note?: string | null
@@ -368,6 +500,7 @@ export type Database = {
           next_action?: string | null
           next_action_due_at?: string | null
           next_review_at?: string | null
+          occupancy_status?: string
           outcome_type?: string | null
           pending_handoff_to?: string | null
           playbook_id?: string | null
@@ -375,6 +508,8 @@ export type Database = {
           priority_override_reason?: string | null
           promised_update_due_at?: string | null
           property_id?: string | null
+          reclassified_at?: string | null
+          record_owner?: string | null
           record_type?: string
           ref?: number
           reopen_count?: number
@@ -385,6 +520,7 @@ export type Database = {
           source_channel?: string
           source_reference?: string | null
           status?: string
+          suggested_priority?: string | null
           supervisor_caught?: boolean
           title: string
           updated_at?: string
@@ -407,15 +543,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           created_on_behalf_of?: string | null
+          cross_team?: boolean
           current_action_owner?: string | null
           description?: string | null
           due_at?: string | null
           escalated_at?: string | null
           escalation_level?: string
           final_communication_sent?: boolean
+          functional_role_code?: string | null
           guest_comm_owner?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
+          guest_impact?: string
           guest_in_residence?: boolean
           guest_name?: string | null
           handoff_note?: string | null
@@ -428,6 +567,7 @@ export type Database = {
           next_action?: string | null
           next_action_due_at?: string | null
           next_review_at?: string | null
+          occupancy_status?: string
           outcome_type?: string | null
           pending_handoff_to?: string | null
           playbook_id?: string | null
@@ -435,6 +575,8 @@ export type Database = {
           priority_override_reason?: string | null
           promised_update_due_at?: string | null
           property_id?: string | null
+          reclassified_at?: string | null
+          record_owner?: string | null
           record_type?: string
           ref?: number
           reopen_count?: number
@@ -445,6 +587,7 @@ export type Database = {
           source_channel?: string
           source_reference?: string | null
           status?: string
+          suggested_priority?: string | null
           supervisor_caught?: boolean
           title?: string
           updated_at?: string
@@ -499,55 +642,70 @@ export type Database = {
         Row: {
           action_start_minutes: number
           active: boolean
+          backup_coverage: string | null
           bucket: string
           category: string
           clock_type: string
           completion_target: string | null
           created_at: string
           default_priority: string
+          functional_role_code: string | null
           guest_communication_required: boolean
           id: string
           name: string
+          operating_standard: string | null
+          pending_approval: boolean
           playbook_id: string | null
           required_closure_evidence: string | null
           response_minutes: number
           sort_order: number
+          team: string
           updated_at: string
         }
         Insert: {
           action_start_minutes?: number
           active?: boolean
+          backup_coverage?: string | null
           bucket?: string
           category: string
           clock_type?: string
           completion_target?: string | null
           created_at?: string
           default_priority?: string
+          functional_role_code?: string | null
           guest_communication_required?: boolean
           id?: string
           name: string
+          operating_standard?: string | null
+          pending_approval?: boolean
           playbook_id?: string | null
           required_closure_evidence?: string | null
           response_minutes?: number
           sort_order?: number
+          team?: string
           updated_at?: string
         }
         Update: {
           action_start_minutes?: number
           active?: boolean
+          backup_coverage?: string | null
           bucket?: string
           category?: string
           clock_type?: string
           completion_target?: string | null
           created_at?: string
           default_priority?: string
+          functional_role_code?: string | null
           guest_communication_required?: boolean
           id?: string
           name?: string
+          operating_standard?: string | null
+          pending_approval?: boolean
           playbook_id?: string | null
           required_closure_evidence?: string | null
           response_minutes?: number
           sort_order?: number
+          team?: string
           updated_at?: string
         }
         Relationships: [
