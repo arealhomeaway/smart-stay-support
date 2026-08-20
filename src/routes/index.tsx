@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClipboardCheck, ListChecks, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/BrandLogo";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
