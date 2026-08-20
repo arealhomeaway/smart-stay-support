@@ -93,7 +93,7 @@ function useTargetRect(selector: string | null, tick: number) {
 export function OnboardingTour({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
-  const step = steps[index];
+  const step = steps[index] ?? steps[0]!;
   const rect = useTargetRect(open ? step.target : null, index);
 
   useEffect(() => {
