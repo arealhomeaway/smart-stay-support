@@ -22,6 +22,7 @@ import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
 import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
 import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authenticated/tickets.new'
+import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -89,6 +90,11 @@ const AuthenticatedTicketsNewRoute = AuthenticatedTicketsNewRouteImport.update({
   path: '/tickets/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicSyncInboundRoute = ApiPublicSyncInboundRouteImport.update({
+  id: '/api/public/sync/inbound',
+  path: '/api/public/sync/inbound',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
+  '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
+  '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
+  '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/tickets/'
+    | '/api/public/sync/inbound'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/tickets'
+    | '/api/public/sync/inbound'
   id:
     | '__root__'
     | '/'
@@ -178,12 +189,14 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/tickets/new'
     | '/_authenticated/tickets/'
+    | '/api/public/sync/inbound'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicSyncInboundRoute: typeof ApiPublicSyncInboundRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTicketsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/sync/inbound': {
+      id: '/api/public/sync/inbound'
+      path: '/api/public/sync/inbound'
+      fullPath: '/api/public/sync/inbound'
+      preLoaderRoute: typeof ApiPublicSyncInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -315,6 +335,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicSyncInboundRoute: ApiPublicSyncInboundRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
