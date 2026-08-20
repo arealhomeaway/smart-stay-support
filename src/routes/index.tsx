@@ -97,8 +97,13 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
-        A Real Home Away — internal operations tool
+      <footer className="border-t border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 py-10 text-center">
+          <BrandLogo className="h-12" />
+          <p className="text-xs uppercase tracking-[0.2em] text-sidebar-foreground/60">
+            Internal operations tool
+          </p>
+        </div>
       </footer>
     </div>
   );
