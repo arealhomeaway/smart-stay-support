@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 export { generateGuidance, answerFollowUp } from "./coach.server";
-export type { Guidance } from "./coach.server";
 
 type Client = SupabaseClient<Database>;
 

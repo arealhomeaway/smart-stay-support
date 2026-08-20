@@ -19,7 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { askCoach, askCoachFollowUp, linkCoachSession } from "@/lib/coach.functions";
 import { getPropertyStay } from "@/lib/ownerrez.functions";
-import type { Guidance } from "@/lib/coach.server";
+import type { Guidance } from "@/lib/coach-schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
