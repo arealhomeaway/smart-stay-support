@@ -1,9 +1,20 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Building2, CircleHelp, ClipboardList, Home, ListChecks, LogOut, Plus, ShieldAlert, Users } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  Building2,
+  CircleHelp,
+  ClipboardList,
+  Home,
+  ListChecks,
+  LogOut,
+  Plus,
+  ShieldAlert,
+  Users,
+} from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { OnboardingTour, useTourAutostart } from "@/components/OnboardingTour";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
@@ -12,16 +23,19 @@ const nav = [
   { to: "/team", label: "Seats", icon: Users, tour: "team" },
   { to: "/properties", label: "Properties", icon: Building2, tour: "properties" },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
+  { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { open: tourOpen, setOpen: setTourOpen } = useTourAutostart();
+  const [tourOpen, setTourOpen] = useState(false);
+  const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
 
   async function signOut() {
     await supabase.auth.signOut();
     router.navigate({ to: "/auth" });
   }
+
 
   return (
     <div className="min-h-screen bg-background">
