@@ -96,6 +96,15 @@ function NewMatter() {
     },
   });
 
+  // OwnerRez tells us who is actually in the home right now.
+  const fetchStay = useServerFn(getPropertyStay);
+  const { data: stay, isFetching: stayLoading } = useQuery({
+    queryKey: ["ownerrez-stay", form.property_id],
+    queryFn: () => fetchStay({ data: { propertyId: form.property_id } }),
+    enabled: Boolean(form.property_id),
+    retry: false,
+  });
+
   const { data: workTypes } = useQuery({
     queryKey: ["work-types"],
     queryFn: async () => {
