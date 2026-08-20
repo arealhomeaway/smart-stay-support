@@ -1,4 +1,4 @@
-import { generateText, Output, NoObjectGeneratedError } from "ai";
+import { generateText } from "ai";
 import { RawGuidanceSchema, normalizeGuidance, type Guidance } from "./coach-schema";
 import { COACH_MODEL, createLovableAiGatewayProvider } from "./ai-gateway.server";
 
