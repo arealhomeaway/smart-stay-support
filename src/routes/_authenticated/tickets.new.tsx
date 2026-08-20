@@ -305,6 +305,19 @@ function NewMatter() {
         </p>
       </div>
 
+      <Link
+        to="/coach"
+        className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
+      >
+        <span>
+          <span className="font-medium">Not sure how to handle it? </span>
+          Describe it to the Coach and it will set the priority, build the checklist and write the vendor brief.
+        </span>
+        <span className="ml-3 whitespace-nowrap font-medium text-primary">Ask the Coach →</span>
+      </Link>
+
+
+
       <div className="grid gap-3 sm:grid-cols-2">
         <ModeCard
           active={mode === "one_touch"}
