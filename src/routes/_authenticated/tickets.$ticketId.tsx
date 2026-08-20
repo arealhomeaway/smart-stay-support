@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HandoffPanel } from "@/components/HandoffPanel";
+import { BreezewayPanel } from "@/components/BreezewayPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -702,6 +703,10 @@ function TicketDetail() {
               )}
             </CardContent>
           </Card>
+
+          <BreezewayPanel ticketId={ticketId} />
+
+
 
           <Card>
             <CardHeader>
