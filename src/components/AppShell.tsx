@@ -1,20 +1,22 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Building2, ClipboardList, Home, ListChecks, LogOut, Plus, ShieldAlert, Users } from "lucide-react";
+import { Building2, CircleHelp, ClipboardList, Home, ListChecks, LogOut, Plus, ShieldAlert, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { OnboardingTour, useTourAutostart } from "@/components/OnboardingTour";
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: Home },
-  { to: "/tickets", label: "Matters", icon: ClipboardList },
-  { to: "/oversight", label: "Oversight", icon: ShieldAlert },
-  { to: "/team", label: "Seats", icon: Users },
-  { to: "/properties", label: "Properties", icon: Building2 },
-  { to: "/playbooks", label: "Playbooks", icon: ListChecks },
+  { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
+  { to: "/tickets", label: "Matters", icon: ClipboardList, tour: "tickets" },
+  { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight" },
+  { to: "/team", label: "Seats", icon: Users, tour: "team" },
+  { to: "/properties", label: "Properties", icon: Building2, tour: "properties" },
+  { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const { open: tourOpen, setOpen: setTourOpen } = useTourAutostart();
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -36,6 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
+                data-tour={item.tour}
                 className="flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&.active]:bg-sidebar-accent [&.active]:text-sidebar-accent-foreground"
               >
                 <item.icon className="size-4" />
@@ -44,7 +47,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <Button asChild size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setTourOpen(true)}
+              className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              aria-label="Replay walkthrough"
+            >
+              <CircleHelp className="size-4" />
+            </Button>
+            <Button asChild data-tour="log" size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
               <Link to="/tickets/new">
                 <Plus className="size-4" /> Log a matter
               </Link>
@@ -62,6 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }
