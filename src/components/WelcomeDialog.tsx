@@ -59,7 +59,14 @@ export function WelcomeDialog({
           to be finished before anything can be closed. Take two minutes and see how it works.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Button asChild onClick={onDismiss} className="h-auto justify-start gap-3 py-3 text-left">
+          <Button
+            asChild
+            onClick={() => {
+              markWalkthroughUsed();
+              onDismiss();
+            }}
+            className="h-auto justify-start gap-3 py-3 text-left"
+          >
             <Link to="/welcome">
               <PlayCircle className="size-5 shrink-0" />
               <span>
