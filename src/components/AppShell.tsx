@@ -101,7 +101,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="mx-auto min-h-[60vh] max-w-6xl px-4 py-8">{children}</main>
+      <footer className="mt-12 border-t border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <BrandLogo className="h-10" />
+            <p className="max-w-xs text-xs leading-relaxed text-sidebar-foreground/60">
+              Resolve is the internal operations system of A Real Home Away.
+            </p>
+          </div>
+          <p className="text-xs uppercase tracking-[0.18em] text-sidebar-foreground/50">
+            Every home. Every guest. Every time.
+          </p>
+        </div>
+      </footer>
+
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
       <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
 
