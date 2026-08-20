@@ -90,6 +90,30 @@ function Dashboard() {
         ))}
       </div>
 
+      {escalated.length > 0 && (
+        <Card className="border-danger/40 bg-danger/5">
+          <CardHeader>
+            <CardTitle className="text-danger">Escalated right now</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {escalated.map((t) => (
+              <Link
+                key={t.id}
+                to="/tickets/$ticketId"
+                params={{ ticketId: t.id }}
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-danger/30 bg-card p-3 transition-colors hover:bg-secondary"
+              >
+                <Badge variant="outline" className={priorityTone(t.priority)}>
+                  {priorityMeta(t.priority).short}
+                </Badge>
+                <span className="font-medium">{t.title}</span>
+                <span className="ml-auto text-sm text-danger">{slaState(t).escalation?.who}</span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Needs attention now</CardTitle>
@@ -97,14 +121,16 @@ function Dashboard() {
         <CardContent className="space-y-2">
           {open.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No open tickets. <Link to="/tickets/new" className="text-primary hover:underline">Log one</Link>.
+              Nothing open. <Link to="/tickets/new" className="text-primary hover:underline">Log a matter</Link>.
             </p>
           )}
           {open
-            .sort((a, b) => (a.due_at ?? "").localeCompare(b.due_at ?? ""))
+            .slice()
+            .sort((a, b) => (a.response_due_at ?? a.action_due_at ?? "").localeCompare(b.response_due_at ?? b.action_due_at ?? ""))
             .slice(0, 10)
             .map((t) => {
-              const due = dueLabel(t.due_at, t.status);
+              const sla = slaState(t);
+              const live = sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
               return (
                 <Link
                   key={t.id}
@@ -113,7 +139,7 @@ function Dashboard() {
                   className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-secondary"
                 >
                   <Badge variant="outline" className={priorityTone(t.priority)}>
-                    {t.priority}
+                    {priorityMeta(t.priority).short}
                   </Badge>
                   <span className="font-medium">{t.title}</span>
                   <span className="text-sm text-muted-foreground">
@@ -123,8 +149,8 @@ function Dashboard() {
                     {labelFor(STATUSES, t.status)}
                   </Badge>
                   <span className="ml-auto text-sm text-muted-foreground">
-                    {due ? (
-                      <span className={due.overdue ? "font-medium text-danger" : ""}>{due.text}</span>
+                    {live ? (
+                      <span className={live.breached ? "font-medium text-danger" : ""}>{live.label}</span>
                     ) : (
                       relativeTime(t.reported_at)
                     )}
@@ -134,6 +160,7 @@ function Dashboard() {
             })}
         </CardContent>
       </Card>
+
     </div>
   );
 }
