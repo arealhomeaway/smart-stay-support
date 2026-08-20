@@ -4,18 +4,32 @@ import { z } from "zod";
 // The raw schema is deliberately forgiving — models drop or null fields — and
 // normalizeGuidance() fills the gaps so the UI always renders a full plan.
 
-const str = z.string().nullish();
-const list = <T extends z.ZodTypeAny>(item: T) => z.array(item).nullish();
+// Models are inconsistent: they return "P1" for "p1", a string where a list
+// belongs, or drop a field entirely. Coerce first, never throw.
+const str = z.preprocess((v) => (typeof v === "string" ? v : v == null ? v : String(v)), z.string().nullish()).catch(null);
+
+const list = <T extends z.ZodTypeAny>(item: T) =>
+  z
+    .preprocess((v) => (v == null ? v : Array.isArray(v) ? v : [v]), z.array(item).nullish())
+    .catch(null);
+
+const enumOf = <T extends readonly [string, ...string[]]>(values: T) =>
+  z
+    .preprocess(
+      (v) => (typeof v === "string" ? v.toLowerCase().trim().replace(/[\s-]+/g, "_") : v),
+      z.enum(values).nullish(),
+    )
+    .catch(null);
 
 export const RawGuidanceSchema = z.object({
   read_back: str,
   situation_type: str,
   category: str,
   work_type_name: str,
-  priority: z.enum(["p1", "p2", "p3"]).nullish(),
+  priority: enumOf(["p1", "p2", "p3"] as const),
   priority_reason: str,
-  guest_impact: z.enum(["none", "minor", "active_guest_affected", "safety_security"]).nullish(),
-  occupancy_status: z.enum(["vacant", "occupied", "same_day_arrival", "same_day_departure"]).nullish(),
+  guest_impact: enumOf(["none", "minor", "active_guest_affected", "safety_security"] as const),
+  occupancy_status: enumOf(["vacant", "occupied", "same_day_arrival", "same_day_departure"] as const),
   suggested_title: str,
   risk_flags: list(z.object({ title: str, why: str })),
   clarifying_questions: list(z.string()),
@@ -24,8 +38,8 @@ export const RawGuidanceSchema = z.object({
     z.object({
       instruction: str,
       detail: str,
-      required: z.boolean().nullish(),
-      photo_required: z.boolean().nullish(),
+      required: z.boolean().nullish().catch(null),
+      photo_required: z.boolean().nullish().catch(null),
     }),
   ),
   vendor_brief: z
@@ -36,7 +50,8 @@ export const RawGuidanceSchema = z.object({
       evidence_required: list(z.string()),
       before_leaving: list(z.string()),
     })
-    .nullish(),
+    .nullish()
+    .catch(null),
   guest_message: str,
   owner_note: str,
   escalate_if: list(z.string()),
