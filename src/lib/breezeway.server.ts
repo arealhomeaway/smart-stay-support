@@ -161,3 +161,27 @@ export async function createBreezewayTask(input: DispatchInput): Promise<Breezew
 export async function getBreezewayTask(taskId: string): Promise<BreezewayTask> {
   return breezewayFetch<BreezewayTask>(`/task/${taskId}`);
 }
+
+export type BreezewayTaskDetail = BreezewayTask & {
+  description?: string | null;
+  priority?: number | string | null;
+  home_id?: number | string | null;
+  type_department?: string | null;
+};
+
+/**
+ * Lists tasks from Breezeway for inbound sync. Pages through the open and
+ * recently updated work so Resolve mirrors field activity.
+ */
+export async function listBreezewayTasks(): Promise<BreezewayTaskDetail[]> {
+  const out: BreezewayTaskDetail[] = [];
+  for (let page = 1; page <= 10; page++) {
+    const data = await breezewayFetch<{ results?: BreezewayTaskDetail[] }>("/task", {
+      params: { page: String(page), limit: "100" },
+    });
+    const items = data.results ?? [];
+    out.push(...items);
+    if (items.length < 100) break;
+  }
+  return out;
+}
