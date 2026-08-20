@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PlayCircle, Compass, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { STORAGE_KEY } from "@/components/OnboardingTour";
 
 const WELCOME_KEY = "resolve.welcome.seen.v1";
 
