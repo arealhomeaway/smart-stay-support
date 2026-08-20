@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
-import { listOwnerRezListings } from "@/lib/ownerrez.functions";
+import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -58,6 +58,7 @@ function PropertiesPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const fetchListings = useServerFn(listOwnerRezListings);
   const { data: ownerRez } = useQuery({
@@ -66,6 +67,31 @@ function PropertiesPage() {
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
+
+  const runImport = useServerFn(importOwnerRezProperties);
+
+  async function importAll() {
+    setImporting(true);
+    try {
+      const res = await runImport({ data: {} });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      const added = res.created + res.matched;
+      toast.success(
+        added === 0
+          ? "All OwnerRez listings are already linked."
+          : `${res.created} home${res.created === 1 ? "" : "s"} added, ${res.matched} linked to existing homes.`,
+      );
+      await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
+      await qc.invalidateQueries({ queryKey: ["properties"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  }
 
   async function linkListing(propertyId: string, listingId: string) {
     const { error } = await supabase
@@ -125,6 +151,10 @@ function PropertiesPage() {
           <h1 className="text-3xl font-semibold">Properties</h1>
           <p className="mt-1 text-muted-foreground">Every ticket links back to one of these homes.</p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" onClick={importAll} disabled={importing}>
+          {importing ? "Importing…" : "Import from OwnerRez"}
+        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>Add property</Button>
@@ -167,6 +197,7 @@ function PropertiesPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isLoading || !data ? (
