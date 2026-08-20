@@ -150,7 +150,9 @@ function AuthPage() {
             </Link>
           </p>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
+
   );
 }
