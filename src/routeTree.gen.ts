@@ -16,6 +16,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
+import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
 import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
 import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authenticated/tickets.new'
@@ -54,6 +55,11 @@ const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTicketsIndexRoute =
   AuthenticatedTicketsIndexRouteImport.update({
     id: '/tickets/',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/oversight': typeof AuthenticatedOversightRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
+  '/team': typeof AuthenticatedTeamRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/oversight': typeof AuthenticatedOversightRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
+  '/team': typeof AuthenticatedTeamRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
+  '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/oversight'
     | '/playbooks'
     | '/properties'
+    | '/team'
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/tickets/'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/oversight'
     | '/playbooks'
     | '/properties'
+    | '/team'
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/tickets'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/oversight'
     | '/_authenticated/playbooks'
     | '/_authenticated/properties'
+    | '/_authenticated/team'
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/tickets/new'
     | '/_authenticated/tickets/'
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/team': {
+      id: '/_authenticated/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof AuthenticatedTeamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tickets/': {
       id: '/_authenticated/tickets/'
       path: '/tickets'
@@ -230,6 +249,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
+  AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
   AuthenticatedTicketsIndexRoute: typeof AuthenticatedTicketsIndexRoute
@@ -240,6 +260,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
+  AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,
   AuthenticatedTicketsIndexRoute: AuthenticatedTicketsIndexRoute,
