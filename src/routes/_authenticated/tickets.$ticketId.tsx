@@ -62,12 +62,26 @@ function TicketDetail() {
         supabase.from("ticket_steps").select("*").eq("ticket_id", ticketId).order("position"),
         supabase
           .from("ticket_activity")
-          .select("*, profiles:author_id(full_name, email)")
+          .select("*")
           .eq("ticket_id", ticketId)
           .order("created_at", { ascending: false }),
       ]);
       if (ticket.error) throw ticket.error;
-      return { ticket: ticket.data, steps: steps.data ?? [], activity: activity.data ?? [] };
+      const authorIds = [
+        ...new Set((activity.data ?? []).map((a) => a.author_id).filter(Boolean)),
+      ] as string[];
+      const authors = authorIds.length
+        ? (await supabase.from("profiles").select("id, full_name, email").in("id", authorIds)).data ?? []
+        : [];
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      return {
+        ticket: ticket.data,
+        steps: steps.data ?? [],
+        activity: (activity.data ?? []).map((a) => ({
+          ...a,
+          author: a.author_id ? (authorMap.get(a.author_id) ?? null) : null,
+        })),
+      };
     },
   });
 
@@ -152,13 +166,16 @@ function TicketDetail() {
 
   async function resolveTicket() {
     if (requiredOpen.length > 0) {
-      return toast.error(`${requiredOpen.length} required step(s) still open.`);
+      toast.error(`${requiredOpen.length} required step(s) still open.`);
+      return;
     }
     if (!guestConfirmed) {
-      return toast.error("Confirm the guest verified the fix before resolving.");
+      toast.error("Confirm the guest verified the fix before resolving.");
+      return;
     }
     if (!resolution.trim()) {
-      return toast.error("Add a short resolution summary.");
+      toast.error("Add a short resolution summary.");
+      return;
     }
     const { error } = await supabase
       .from("tickets")
@@ -335,7 +352,7 @@ function TicketDetail() {
                   <div key={a.id} className="text-sm">
                     <p className="text-muted-foreground">
                       <span className="font-medium text-foreground">
-                        {a.profiles?.full_name ?? a.profiles?.email ?? "Team member"}
+                        {a.author?.full_name ?? a.author?.email ?? "Team member"}
                       </span>{" "}
                       · {relativeTime(a.created_at)}
                     </p>
