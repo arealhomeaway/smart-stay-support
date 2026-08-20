@@ -97,11 +97,12 @@ async function upsertTask(
     // Never reopen something a coordinator already closed in Resolve; only
     // mirror a close that happened in the source system.
     if (task.status === "closed" && existing.status !== "closed") {
-      patch["status"] = "closed";
-      patch["resolved_at"] = now;
-      patch["outcome_type"] = "vendor_completed";
+      patch.status = "closed";
+      patch.resolved_at = now;
+      patch.outcome_type = "vendor_completed";
     }
-    if (propertyId) patch["property_id"] = propertyId;
+    if (propertyId) patch.property_id = propertyId;
+
 
     await db.from("tickets").update(patch).eq("id", existing.id);
 
