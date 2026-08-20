@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
 import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
+import { listBreezewayHomes } from "@/lib/breezeway.functions";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
