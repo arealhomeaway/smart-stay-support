@@ -53,3 +53,64 @@ export const getPropertyStay = createServerFn({ method: "POST" })
       return { ok: false as const, error: message };
     }
   });
+
+/** Creates a home for every OwnerRez listing that isn't linked yet. */
+export const importOwnerRezProperties = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { listListings, OwnerRezError } = await import("./ownerrez.server");
+
+    let listings;
+    try {
+      listings = await listListings();
+    } catch (err) {
+      const message = err instanceof OwnerRezError ? err.message : "Could not reach OwnerRez.";
+      return { ok: false as const, error: message };
+    }
+
+    const { data: existing, error } = await context.supabase
+      .from("properties")
+      .select("id, name, ownerrez_property_id");
+    if (error) return { ok: false as const, error: error.message };
+
+    const linked = new Set(
+      (existing ?? []).map((p) => p.ownerrez_property_id).filter(Boolean) as string[],
+    );
+    const byName = new Map(
+      (existing ?? []).map((p) => [p.name.trim().toLowerCase(), p] as const),
+    );
+
+    const now = new Date().toISOString();
+    let created = 0;
+    let matched = 0;
+
+    for (const l of listings) {
+      const listingId = String(l.id);
+      if (linked.has(listingId)) continue;
+
+      const existingByName = byName.get(l.name.trim().toLowerCase());
+      if (existingByName && !existingByName.ownerrez_property_id) {
+        const { error: linkError } = await context.supabase
+          .from("properties")
+          .update({ ownerrez_property_id: listingId, ownerrez_synced_at: now })
+          .eq("id", existingByName.id);
+        if (!linkError) matched += 1;
+        continue;
+      }
+
+      const { error: insertError } = await context.supabase.from("properties").insert({
+        name: l.name,
+        address_line1: l.address?.street1 ?? null,
+        unit: l.address?.street2 ?? null,
+        city: l.address?.city ?? null,
+        state: l.address?.state ?? null,
+        postal_code: l.address?.postal_code ?? l.address?.zip ?? null,
+        ownerrez_property_id: listingId,
+        ownerrez_synced_at: now,
+        created_by: context.userId,
+      });
+      if (!insertError) created += 1;
+    }
+
+    return { ok: true as const, created, matched, total: listings.length };
+  });

@@ -52,7 +52,14 @@ export async function ownerRezGet<T>(path: string, params?: Record<string, strin
 export type OwnerRezListing = {
   id: number;
   name: string;
-  address?: { street1?: string; city?: string; state?: string } | null;
+  address?: {
+    street1?: string;
+    street2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    zip?: string;
+  } | null;
   active?: boolean;
 };
 
