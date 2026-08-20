@@ -74,14 +74,14 @@ export const dispatchToBreezeway = createServerFn({ method: "POST" })
 
     const { data: steps } = await context.supabase
       .from("ticket_steps")
-      .select("title, detail, position")
+      .select("instruction, detail, position")
       .eq("ticket_id", ticket.id)
       .order("position");
 
     const description = [
       ticket.description ?? "",
       steps?.length
-        ? `\nRequired steps:\n${steps.map((s, i) => `${i + 1}. ${s.title}${s.detail ? ` — ${s.detail}` : ""}`).join("\n")}`
+        ? `\nRequired steps:\n${steps.map((s, i) => `${i + 1}. ${s.instruction}${s.detail ? ` — ${s.detail}` : ""}`).join("\n")}`
         : "",
       "\nStanding safety rule: check every smoke and carbon monoxide alarm plus any security device in the home. If a device is removed, it must be replaced the same visit and any wall damage patched before leaving.",
       property.access_notes ? `\nAccess: ${property.access_notes}` : "",
