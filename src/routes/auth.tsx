@@ -2,6 +2,7 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,6 +65,20 @@ function AuthPage() {
     }
   }
 
+  async function signInWithGoogle() {
+    setLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      toast.error("Google sign-in failed. Try email instead.");
+      setLoading(false);
+      return;
+    }
+    if (result.redirected) return;
+    router.navigate({ to: "/dashboard" });
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary px-4 py-12">
       <Card className="w-full max-w-md">
@@ -76,6 +91,14 @@ function AuthPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Button variant="outline" className="w-full" onClick={signInWithGoogle} disabled={loading}>
+            Continue with Google
+          </Button>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            or
+            <span className="h-px flex-1 bg-border" />
+          </div>
           <form onSubmit={submit} className="space-y-4">
             {mode === "signup" && (
               <div className="space-y-2">
