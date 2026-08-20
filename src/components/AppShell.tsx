@@ -1,12 +1,13 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Building2, ClipboardList, Home, ListChecks, LogOut, Plus } from "lucide-react";
+import { Building2, ClipboardList, Home, ListChecks, LogOut, Plus, ShieldAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
-  { to: "/tickets", label: "Tickets", icon: ClipboardList },
+  { to: "/tickets", label: "Matters", icon: ClipboardList },
+  { to: "/oversight", label: "Oversight", icon: ShieldAlert },
   { to: "/properties", label: "Properties", icon: Building2 },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks },
 ];
@@ -44,7 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="ml-auto flex items-center gap-2">
             <Button asChild size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
               <Link to="/tickets/new">
-                <Plus className="size-4" /> New ticket
+                <Plus className="size-4" /> Log a matter
               </Link>
             </Button>
             <Button
