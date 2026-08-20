@@ -23,12 +23,12 @@ Coaching style: direct, calm, specific to this home and this guest. Short impera
 
 Output rules:
 - Choose work_type_name from the provided catalog exactly as written when one fits; otherwise use the closest catalog name.
-- steps: the checklist the coordinator works, in order. Start from the matching playbook's steps when one is provided, then add situation-specific steps. Mark required=true for anything that protects safety, the guest or ARHA's liability, and photo_required=true where proof matters.
+- checklist: the checklist the coordinator works, in order. Start from the matching playbook's steps when one is provided, then add situation-specific steps. Mark required=true for anything that protects safety, the guest or ARHA's liability, and photo_required=true where proof matters.
 - immediate_actions: only what must happen in the next few minutes.
 - vendor_brief: written to be pasted straight to the handyman or vendor. must_not_do always includes the failure modes for this kind of job.
 - guest_message: a ready-to-send message in ARHA's voice — warm, accountable, concrete, no excuses, includes what happens next and when.
 - Keep each list to the few items that matter. No more than about 8 per list.
-- Return EVERY key, always, with real content: read_back, situation_type, category, work_type_name, priority, priority_reason, guest_impact, occupancy_status, suggested_title, risk_flags, clarifying_questions, immediate_actions, steps, vendor_brief (scope, must_check, must_not_do, evidence_required, before_leaving), guest_message, owner_note, escalate_if. Never leave a list empty and never write "N/A". steps must always contain the full ordered checklist (at least 5 steps). When there is no guest in the home, guest_message is the message to send the owner-facing point of contact or the next arriving guest if the issue could affect them.`;
+- Return EVERY key, always, with real content: read_back, situation_type, category, work_type_name, priority, priority_reason, guest_impact, occupancy_status, suggested_title, risk_flags, clarifying_questions, immediate_actions, checklist, vendor_brief (scope, must_check, must_not_do, evidence_required, before_leaving), guest_message, owner_note, escalate_if. Never leave a list empty and never write "N/A". checklist must always contain the full ordered checklist (at least 5 steps). When there is no guest in the home, guest_message is the message to send the owner-facing point of contact or the next arriving guest if the issue could affect them.`;
 
 type Catalog = {
   workTypes: {

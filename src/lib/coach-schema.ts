@@ -34,7 +34,7 @@ export const RawGuidanceSchema = z.object({
   risk_flags: list(z.object({ title: str, why: str })),
   clarifying_questions: list(z.string()),
   immediate_actions: list(z.string()),
-  steps: list(
+  checklist: list(
     z.object({
       instruction: str,
       detail: str,
@@ -105,7 +105,7 @@ export function normalizeGuidance(raw: RawGuidance, question: string): Guidance 
       .filter((r) => r.title || r.why),
     clarifying_questions: cleanList(raw.clarifying_questions),
     immediate_actions: cleanList(raw.immediate_actions),
-    steps: (raw.steps ?? [])
+    steps: (raw.checklist ?? [])
       .map((s) => ({
         instruction: clean(s.instruction),
         detail: clean(s.detail),
