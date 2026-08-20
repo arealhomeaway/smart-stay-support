@@ -232,6 +232,7 @@ function NewMatter() {
           priority: form.priority,
           priority_override_reason: overridden ? form.priority_override_reason.trim() : null,
           source_channel: form.source_channel,
+          ownerrez_booking_id: stay?.ok ? stay.data.booking_id : null,
           guest_name: form.guest_name || null,
           guest_contact: form.guest_contact || null,
           guest_in_residence: form.guest_in_residence,
