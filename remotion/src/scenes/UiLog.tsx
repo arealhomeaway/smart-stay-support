@@ -138,7 +138,7 @@ export const UiLog: React.FC = () => {
           { f: 200, x: 1440, y: 350 },
         ]}
       />
-      <Caption kicker="Step 1" text="Intake takes about twenty seconds — and the app does the thinking." />
+      <Caption kicker="Intake" text="Intake takes about twenty seconds — and the app does the thinking." />
     </AbsoluteFill>
   );
 };

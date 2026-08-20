@@ -91,7 +91,7 @@ export const UiDashboard: React.FC = () => {
           { f: 170, x: 660, y: 552 },
         ]}
       />
-      <Caption kicker="Step 2" text="The dashboard is a triage board, not a report." />
+      <Caption kicker="Triage" text="The dashboard is a triage board, not a report." />
     </AbsoluteFill>
   );
 };
