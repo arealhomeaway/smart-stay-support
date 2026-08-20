@@ -8,6 +8,7 @@ import {
   LogOut,
   Plus,
   ShieldAlert,
+  Sparkles,
   Users,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -18,6 +19,7 @@ import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
+  { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach" },
   { to: "/tickets", label: "Matters", icon: ClipboardList, tour: "tickets" },
   { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight" },
   { to: "/team", label: "Seats", icon: Users, tour: "team" },

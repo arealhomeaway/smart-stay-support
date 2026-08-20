@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_sessions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          follow_ups: Json
+          guidance: Json
+          id: string
+          property_id: string | null
+          question: string
+          ticket_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          follow_ups?: Json
+          guidance?: Json
+          id?: string
+          property_id?: string | null
+          question: string
+          ticket_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          follow_ups?: Json
+          guidance?: Json
+          id?: string
+          property_id?: string | null
+          question?: string
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_sessions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       functional_roles: {
         Row: {
           active: boolean
