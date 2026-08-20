@@ -88,11 +88,12 @@ async function upsertTask(
 
   if (existing) {
     const statusChanged = (existing.external_status ?? "") !== (task.externalStatus ?? "");
-    const patch: Record<string, unknown> = {
+    const patch: Database["public"]["Tables"]["tickets"]["Update"] = {
       external_status: task.externalStatus,
       external_synced_at: now,
       external_url: task.externalUrl,
     };
+
     // Never reopen something a coordinator already closed in Resolve; only
     // mirror a close that happened in the source system.
     if (task.status === "closed" && existing.status !== "closed") {
