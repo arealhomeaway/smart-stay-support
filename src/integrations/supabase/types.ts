@@ -170,26 +170,44 @@ export type Database = {
         Row: {
           author_id: string | null
           body: string
+          channel: string | null
           created_at: string
+          event_at: string
+          event_type: string
+          evidence_url: string | null
+          from_owner: string | null
           id: string
           kind: string
           ticket_id: string
+          to_owner: string | null
         }
         Insert: {
           author_id?: string | null
           body: string
+          channel?: string | null
           created_at?: string
+          event_at?: string
+          event_type?: string
+          evidence_url?: string | null
+          from_owner?: string | null
           id?: string
           kind?: string
           ticket_id: string
+          to_owner?: string | null
         }
         Update: {
           author_id?: string | null
           body?: string
+          channel?: string | null
           created_at?: string
+          event_at?: string
+          event_type?: string
+          evidence_url?: string | null
+          from_owner?: string | null
           id?: string
           kind?: string
           ticket_id?: string
+          to_owner?: string | null
         }
         Relationships: [
           {
@@ -256,76 +274,184 @@ export type Database = {
       }
       tickets: {
         Row: {
+          accountable_owner: string | null
+          acknowledged_at: string | null
+          action_due_at: string | null
+          action_started_at: string | null
           assigned_to: string | null
+          avoidable_reopen: boolean
+          bucket: string | null
           category: string
+          closure_evidence: string | null
+          closure_qa_result: string
           created_at: string
           created_by: string | null
+          created_on_behalf_of: string | null
+          current_action_owner: string | null
           description: string | null
           due_at: string | null
+          escalated_at: string | null
+          escalation_level: string
+          final_communication_sent: boolean
+          guest_comm_owner: string | null
           guest_confirmed: boolean
           guest_contact: string | null
           guest_in_residence: boolean
           guest_name: string | null
+          handoff_note: string | null
+          handoff_status: string
+          handoff_type: string | null
           id: string
+          initiator_type: string
+          last_reopened_at: string | null
+          late_reason: string | null
+          next_action: string | null
+          next_action_due_at: string | null
+          next_review_at: string | null
+          outcome_type: string | null
+          pending_handoff_to: string | null
           playbook_id: string | null
           priority: string
+          priority_override_reason: string | null
+          promised_update_due_at: string | null
           property_id: string | null
+          record_type: string
           ref: number
+          reopen_count: number
           reported_at: string
           resolution_notes: string | null
           resolved_at: string | null
+          response_due_at: string | null
+          source_channel: string
+          source_reference: string | null
           status: string
+          supervisor_caught: boolean
           title: string
           updated_at: string
           vendor_name: string | null
+          waiting_on: string | null
+          waiting_reason: string | null
+          work_type_id: string | null
         }
         Insert: {
+          accountable_owner?: string | null
+          acknowledged_at?: string | null
+          action_due_at?: string | null
+          action_started_at?: string | null
           assigned_to?: string | null
+          avoidable_reopen?: boolean
+          bucket?: string | null
           category?: string
+          closure_evidence?: string | null
+          closure_qa_result?: string
           created_at?: string
           created_by?: string | null
+          created_on_behalf_of?: string | null
+          current_action_owner?: string | null
           description?: string | null
           due_at?: string | null
+          escalated_at?: string | null
+          escalation_level?: string
+          final_communication_sent?: boolean
+          guest_comm_owner?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
           guest_in_residence?: boolean
           guest_name?: string | null
+          handoff_note?: string | null
+          handoff_status?: string
+          handoff_type?: string | null
           id?: string
+          initiator_type?: string
+          last_reopened_at?: string | null
+          late_reason?: string | null
+          next_action?: string | null
+          next_action_due_at?: string | null
+          next_review_at?: string | null
+          outcome_type?: string | null
+          pending_handoff_to?: string | null
           playbook_id?: string | null
           priority?: string
+          priority_override_reason?: string | null
+          promised_update_due_at?: string | null
           property_id?: string | null
+          record_type?: string
           ref?: number
+          reopen_count?: number
           reported_at?: string
           resolution_notes?: string | null
           resolved_at?: string | null
+          response_due_at?: string | null
+          source_channel?: string
+          source_reference?: string | null
           status?: string
+          supervisor_caught?: boolean
           title: string
           updated_at?: string
           vendor_name?: string | null
+          waiting_on?: string | null
+          waiting_reason?: string | null
+          work_type_id?: string | null
         }
         Update: {
+          accountable_owner?: string | null
+          acknowledged_at?: string | null
+          action_due_at?: string | null
+          action_started_at?: string | null
           assigned_to?: string | null
+          avoidable_reopen?: boolean
+          bucket?: string | null
           category?: string
+          closure_evidence?: string | null
+          closure_qa_result?: string
           created_at?: string
           created_by?: string | null
+          created_on_behalf_of?: string | null
+          current_action_owner?: string | null
           description?: string | null
           due_at?: string | null
+          escalated_at?: string | null
+          escalation_level?: string
+          final_communication_sent?: boolean
+          guest_comm_owner?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
           guest_in_residence?: boolean
           guest_name?: string | null
+          handoff_note?: string | null
+          handoff_status?: string
+          handoff_type?: string | null
           id?: string
+          initiator_type?: string
+          last_reopened_at?: string | null
+          late_reason?: string | null
+          next_action?: string | null
+          next_action_due_at?: string | null
+          next_review_at?: string | null
+          outcome_type?: string | null
+          pending_handoff_to?: string | null
           playbook_id?: string | null
           priority?: string
+          priority_override_reason?: string | null
+          promised_update_due_at?: string | null
           property_id?: string | null
+          record_type?: string
           ref?: number
+          reopen_count?: number
           reported_at?: string
           resolution_notes?: string | null
           resolved_at?: string | null
+          response_due_at?: string | null
+          source_channel?: string
+          source_reference?: string | null
           status?: string
+          supervisor_caught?: boolean
           title?: string
           updated_at?: string
           vendor_name?: string | null
+          waiting_on?: string | null
+          waiting_reason?: string | null
+          work_type_id?: string | null
         }
         Relationships: [
           {
@@ -340,6 +466,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
             referencedColumns: ["id"]
           },
         ]
@@ -361,6 +494,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      work_types: {
+        Row: {
+          action_start_minutes: number
+          active: boolean
+          bucket: string
+          category: string
+          clock_type: string
+          completion_target: string | null
+          created_at: string
+          default_priority: string
+          guest_communication_required: boolean
+          id: string
+          name: string
+          playbook_id: string | null
+          required_closure_evidence: string | null
+          response_minutes: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          action_start_minutes?: number
+          active?: boolean
+          bucket?: string
+          category: string
+          clock_type?: string
+          completion_target?: string | null
+          created_at?: string
+          default_priority?: string
+          guest_communication_required?: boolean
+          id?: string
+          name: string
+          playbook_id?: string | null
+          required_closure_evidence?: string | null
+          response_minutes?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          action_start_minutes?: number
+          active?: boolean
+          bucket?: string
+          category?: string
+          clock_type?: string
+          completion_target?: string | null
+          created_at?: string
+          default_priority?: string
+          guest_communication_required?: boolean
+          id?: string
+          name?: string
+          playbook_id?: string | null
+          required_closure_evidence?: string | null
+          response_minutes?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_types_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
