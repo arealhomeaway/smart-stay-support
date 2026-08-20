@@ -239,6 +239,8 @@ export type Database = {
           access_notes: string | null
           active: boolean
           address_line1: string | null
+          breezeway_property_id: string | null
+          breezeway_synced_at: string | null
           city: string | null
           created_at: string
           created_by: string | null
@@ -258,6 +260,8 @@ export type Database = {
           access_notes?: string | null
           active?: boolean
           address_line1?: string | null
+          breezeway_property_id?: string | null
+          breezeway_synced_at?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
@@ -277,6 +281,8 @@ export type Database = {
           access_notes?: string | null
           active?: boolean
           address_line1?: string | null
+          breezeway_property_id?: string | null
+          breezeway_synced_at?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
@@ -408,6 +414,10 @@ export type Database = {
           action_started_at: string | null
           assigned_to: string | null
           avoidable_reopen: boolean
+          breezeway_synced_at: string | null
+          breezeway_task_id: string | null
+          breezeway_task_status: string | null
+          breezeway_task_url: string | null
           bucket: string | null
           category: string
           closure_evidence: string | null
@@ -476,6 +486,10 @@ export type Database = {
           action_started_at?: string | null
           assigned_to?: string | null
           avoidable_reopen?: boolean
+          breezeway_synced_at?: string | null
+          breezeway_task_id?: string | null
+          breezeway_task_status?: string | null
+          breezeway_task_url?: string | null
           bucket?: string | null
           category?: string
           closure_evidence?: string | null
@@ -544,6 +558,10 @@ export type Database = {
           action_started_at?: string | null
           assigned_to?: string | null
           avoidable_reopen?: boolean
+          breezeway_synced_at?: string | null
+          breezeway_task_id?: string | null
+          breezeway_task_status?: string | null
+          breezeway_task_url?: string | null
           bucket?: string | null
           category?: string
           closure_evidence?: string | null
