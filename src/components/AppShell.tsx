@@ -47,12 +47,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-md bg-sidebar-primary font-semibold text-sidebar-primary-foreground">
-              R
+          <Link to="/dashboard" className="flex items-center gap-3">
+            <BrandLogo className="h-9" />
+            <span className="h-8 w-px bg-sidebar-foreground/25" />
+            <span className="flex flex-col leading-none">
+              <span className="font-display text-lg font-semibold">Resolve</span>
+              <span className="text-[0.65rem] uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Operations
+              </span>
             </span>
-            <span className="font-display text-lg font-semibold">Resolve</span>
           </Link>
+
           <nav className="order-3 flex w-full gap-1 overflow-x-auto md:order-none md:w-auto">
             {nav.map((item) => (
               <Link
