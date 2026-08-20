@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Building2, ClipboardList, Home, ListChecks, LogOut, Plus, ShieldAlert } from "lucide-react";
+import { Building2, ClipboardList, Home, ListChecks, LogOut, Plus, ShieldAlert, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/tickets", label: "Matters", icon: ClipboardList },
   { to: "/oversight", label: "Oversight", icon: ShieldAlert },
+  { to: "/team", label: "Seats", icon: Users },
   { to: "/properties", label: "Properties", icon: Building2 },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks },
 ];
