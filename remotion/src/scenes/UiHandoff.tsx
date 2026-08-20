@@ -108,7 +108,7 @@ export const UiHandoff: React.FC = () => {
           { f: 180, x: 1270, y: 445 },
         ]}
       />
-      <Caption kicker="Step 4" text="Handoffs are accepted, not announced." />
+      <Caption kicker="Handoff" text="Handoffs are accepted, not announced." />
     </AbsoluteFill>
   );
 };

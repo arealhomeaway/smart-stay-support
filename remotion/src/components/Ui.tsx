@@ -2,7 +2,7 @@ import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } fr
 import type { CSSProperties, ReactNode } from "react";
 import { C } from "../theme";
 
-export const NAV = ["Dashboard", "Matters", "Oversight", "Seats", "Properties", "Playbooks"];
+export const NAV = ["Dashboard", "Ask the Coach", "Matters", "Oversight", "Seats", "Properties", "Playbooks", "Integrations"];
 
 const F = "var(--brand-font)";
 

@@ -82,7 +82,7 @@ export const UiOversight: React.FC = () => {
           { f: 160, x: 1265, y: 435 },
         ]}
       />
-      <Caption kicker="Step 5" text="Managers supervise the system, not each other's memory." />
+      <Caption kicker="Oversight" text="Managers supervise the system, not each other's memory." />
     </AbsoluteFill>
   );
 };

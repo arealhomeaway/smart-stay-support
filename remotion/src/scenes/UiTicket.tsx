@@ -144,7 +144,7 @@ export const UiTicket: React.FC = () => {
           { f: 296, x: 1440, y: 700 },
         ]}
       />
-      <Caption kicker="Step 3" text="The playbook is the instruction the handyman never got." />
+      <Caption kicker="Dispatch" text="The playbook is the instruction the handyman never got." />
     </AbsoluteFill>
   );
 };
