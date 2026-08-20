@@ -65,11 +65,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               size="sm"
               variant="ghost"
               onClick={() => setTourOpen(true)}
-              className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              aria-label="Replay walkthrough"
+              className="hidden text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:inline-flex"
             >
               <CircleHelp className="size-4" />
+              Take the tour
             </Button>
+
             <Button asChild data-tour="log" size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
               <Link to="/tickets/new">
                 <Plus className="size-4" /> Log a matter
