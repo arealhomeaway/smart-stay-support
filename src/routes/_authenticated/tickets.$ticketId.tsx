@@ -123,14 +123,20 @@ function TicketDetail() {
         completed_by: completed ? (userData.user?.id ?? null) : null,
       })
       .eq("id", stepId);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     await log("step", `${completed ? "Completed" : "Reopened"} step: ${instruction}`);
     await refresh();
   }
 
   async function changeStatus(status: string) {
     const { error } = await supabase.from("tickets").update({ status }).eq("id", ticketId);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     await log("status", `Status changed to ${labelFor(STATUSES, status)}.`);
     await refresh();
     toast.success("Status updated.");
@@ -163,7 +169,10 @@ function TicketDetail() {
         resolved_at: new Date().toISOString(),
       })
       .eq("id", ticketId);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     await log("resolved", `Resolved and confirmed with the guest. ${resolution.trim()}`);
     setResolution("");
     await refresh();

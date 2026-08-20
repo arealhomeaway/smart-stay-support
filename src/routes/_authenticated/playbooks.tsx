@@ -135,7 +135,10 @@ function AddStep({
       required,
       photo_required: photo,
     });
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setInstruction("");
     setDetail("");
     toast.success("Step added.");
@@ -175,7 +178,10 @@ function NewPlaybook({ onSaved }: { onSaved: () => void }) {
     const { error } = await supabase
       .from("playbooks")
       .insert({ title: title.trim(), category, summary: summary.trim() || null });
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setTitle("");
     setSummary("");
     toast.success("Playbook created.");
