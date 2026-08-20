@@ -1,5 +1,5 @@
 import { generateText, Output, NoObjectGeneratedError } from "ai";
-import { GuidanceSchema, type Guidance } from "./coach-schema";
+import { RawGuidanceSchema, normalizeGuidance, type Guidance } from "./coach-schema";
 import { COACH_MODEL, createLovableAiGatewayProvider } from "./ai-gateway.server";
 
 // The coach never invents policy. Everything it says has to trace back to the
@@ -109,14 +109,14 @@ export async function generateGuidance(question: string, catalog: Catalog): Prom
     const { output } = await generateText({
       model: provider(COACH_MODEL),
       system: SYSTEM,
-      output: Output.object({ schema: GuidanceSchema }),
+      output: Output.object({ schema: RawGuidanceSchema }),
       prompt: `${contextBlock(catalog)}\n\nTHE COORDINATOR TYPED:\n"""${question}"""\n\nCoach them through it.`,
     });
-    return output;
+    return normalizeGuidance(output, question);
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error) && error.text) {
       const match = error.text.match(/\{[\s\S]*\}/);
-      if (match) return GuidanceSchema.parse(JSON.parse(match[0]));
+      if (match) return normalizeGuidance(RawGuidanceSchema.parse(JSON.parse(match[0])), question);
     }
     throw error;
   }
