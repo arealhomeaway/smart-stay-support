@@ -7,6 +7,8 @@ import {
   ListChecks,
   LogOut,
   Plus,
+  PlugZap,
+
   ShieldAlert,
   Sparkles,
   Users,
@@ -25,7 +27,9 @@ const nav = [
   { to: "/team", label: "Seats", icon: Users, tour: "team" },
   { to: "/properties", label: "Properties", icon: Building2, tour: "properties" },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
+  { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations" },
   { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
+
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

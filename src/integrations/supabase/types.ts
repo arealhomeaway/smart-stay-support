@@ -479,6 +479,11 @@ export type Database = {
           due_at: string | null
           escalated_at: string | null
           escalation_level: string
+          external_id: string | null
+          external_source: string | null
+          external_status: string | null
+          external_synced_at: string | null
+          external_url: string | null
           final_communication_sent: boolean
           functional_role_code: string | null
           guest_comm_owner: string | null
@@ -551,6 +556,11 @@ export type Database = {
           due_at?: string | null
           escalated_at?: string | null
           escalation_level?: string
+          external_id?: string | null
+          external_source?: string | null
+          external_status?: string | null
+          external_synced_at?: string | null
+          external_url?: string | null
           final_communication_sent?: boolean
           functional_role_code?: string | null
           guest_comm_owner?: string | null
@@ -623,6 +633,11 @@ export type Database = {
           due_at?: string | null
           escalated_at?: string | null
           escalation_level?: string
+          external_id?: string | null
+          external_source?: string | null
+          external_status?: string | null
+          external_synced_at?: string | null
+          external_url?: string | null
           final_communication_sent?: boolean
           functional_role_code?: string | null
           guest_comm_owner?: string | null
