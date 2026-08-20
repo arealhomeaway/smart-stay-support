@@ -10,7 +10,7 @@ type TourStep = {
   body: string;
 };
 
-const STORAGE_KEY = "resolve.tour.completed.v1";
+export const STORAGE_KEY = "resolve.tour.completed.v1";
 
 const steps: TourStep[] = [
   {
