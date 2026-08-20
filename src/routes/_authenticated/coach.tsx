@@ -144,7 +144,7 @@ function CoachPage() {
       const { data: ticket, error } = await supabase
         .from("tickets")
         .insert({
-          record_type: "ticket",
+          record_type: "active_task",
           title: g.suggested_title.slice(0, 160),
           description: `${question.trim()}\n\nCoach read-back: ${g.read_back}`,
           property_id: propertyId || null,
