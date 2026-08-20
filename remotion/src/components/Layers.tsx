@@ -36,7 +36,7 @@ export const PersistentAccents: React.FC = () => {
           left: 0,
           top: 0,
           height: 6,
-          width: `${interpolate(frame, [0, 660], [0, 100], { extrapolateRight: "clamp" })}%`,
+          width: `${interpolate(frame, [0, 1400], [0, 100], { extrapolateRight: "clamp" })}%`,
           background: `linear-gradient(90deg, ${C.teal}, ${C.gold})`,
           opacity: 0.9,
         }}
