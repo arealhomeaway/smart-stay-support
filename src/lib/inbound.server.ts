@@ -121,7 +121,7 @@ async function upsertTask(
   const { data: inserted, error } = await db
     .from("tickets")
     .insert({
-      record_type: "ticket",
+      record_type: "active_task",
       title: task.title,
       description: task.description,
       property_id: propertyId,
