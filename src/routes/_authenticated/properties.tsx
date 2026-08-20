@@ -71,6 +71,31 @@ function PropertiesPage() {
 
   const runImport = useServerFn(importOwnerRezProperties);
 
+  const fetchBreezeway = useServerFn(listBreezewayHomes);
+  const { data: breezeway } = useQuery({
+    queryKey: ["breezeway-homes"],
+    queryFn: () => fetchBreezeway(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  async function linkBreezeway(propertyId: string, homeId: string) {
+    const { error } = await supabase
+      .from("properties")
+      .update({
+        breezeway_property_id: homeId === "none" ? null : homeId,
+        breezeway_synced_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(homeId === "none" ? "Unlinked from Breezeway." : "Linked to Breezeway.");
+    await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
+  }
+
+
   async function importAll() {
     setImporting(true);
     try {
