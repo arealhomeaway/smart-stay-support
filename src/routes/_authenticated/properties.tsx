@@ -196,6 +196,34 @@ function PropertiesPage() {
                     <span className="text-muted-foreground">· {all.length} total tickets</span>
                   </p>
                   {p.access_notes && <p className="text-muted-foreground">{p.access_notes}</p>}
+                  <div className="space-y-1 border-t border-border pt-3">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                      OwnerRez listing
+                    </Label>
+                    {ownerRez?.ok ? (
+                      <Select
+                        value={p.ownerrez_property_id ?? "none"}
+                        onValueChange={(v) => linkListing(p.id, v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Not linked" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not linked</SelectItem>
+                          {ownerRez.data.map((l) => (
+                            <SelectItem key={l.id} value={l.id}>
+                              {l.name}
+                              {l.location ? ` — ${l.location}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {ownerRez?.error ?? "Checking OwnerRez…"}
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
