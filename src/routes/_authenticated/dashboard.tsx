@@ -55,18 +55,20 @@ function Dashboard() {
   }
 
   const open = data.tickets.filter((t) => OPEN_STATUSES.includes(t.status));
-  const overdue = open.filter((t) => t.due_at && new Date(t.due_at).getTime() < Date.now());
-  const awaiting = open.filter((t) => t.status === "awaiting_guest");
+  const breached = open.filter((t) => slaState(t).breached);
+  const escalated = open.filter((t) => slaState(t).escalation);
+  const unacked = open.filter((t) => !t.acknowledged_at);
   const resolvedWeek = data.tickets.filter(
     (t) => t.resolved_at && Date.now() - new Date(t.resolved_at).getTime() < 7 * 864e5,
   );
 
   const stats = [
-    { label: "Open tickets", value: open.length, tone: "text-foreground" },
-    { label: "Overdue", value: overdue.length, tone: "text-danger" },
-    { label: "Awaiting guest confirmation", value: awaiting.length, tone: "text-warning-foreground" },
-    { label: "Resolved this week", value: resolvedWeek.length, tone: "text-success" },
+    { label: "Open matters", value: open.length, tone: "text-foreground" },
+    { label: "SLA breached", value: breached.length, tone: "text-danger" },
+    { label: "Not yet acknowledged", value: unacked.length, tone: "text-warning-foreground" },
+    { label: "Closed this week", value: resolvedWeek.length, tone: "text-success" },
   ];
+
 
   return (
     <div className="space-y-8">
