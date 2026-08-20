@@ -281,6 +281,35 @@ function PropertiesPage() {
                       </p>
                     )}
                   </div>
+                  <div className="space-y-1 border-t border-border pt-3">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Breezeway property
+                    </Label>
+                    {breezeway?.ok ? (
+                      <Select
+                        value={p.breezeway_property_id ?? "none"}
+                        onValueChange={(v) => linkBreezeway(p.id, v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Not linked" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not linked</SelectItem>
+                          {breezeway.data.map((h) => (
+                            <SelectItem key={h.id} value={h.id}>
+                              {h.name}
+                              {h.location ? ` — ${h.location}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {breezeway?.error ?? "Checking Breezeway…"}
+                      </p>
+                    )}
+                  </div>
+
                 </CardContent>
               </Card>
             );
