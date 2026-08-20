@@ -73,7 +73,7 @@ function PropertiesPage() {
   async function importAll() {
     setImporting(true);
     try {
-      const res = await runImport({ data: {} });
+      const res = await runImport();
       if (!res.ok) {
         toast.error(res.error);
         return;
