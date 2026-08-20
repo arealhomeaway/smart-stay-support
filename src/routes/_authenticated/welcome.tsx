@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, ClipboardList, ListChecks, ShieldAlert, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import walkthrough from "@/assets/resolve-walkthrough.mp4.asset.json";
+import walkthrough from "@/assets/resolve-executive-walkthrough.mp4.asset.json";
 
 export const Route = createFileRoute("/_authenticated/welcome")({
   component: WelcomePage,
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/welcome")({
       { property: "og:title", content: "How Resolve Works | ARHA Coordinator Training" },
       {
         property: "og:description",
-        content: "A 47-second walkthrough of intake, triage, playbook enforcement, handoffs and oversight in Resolve.",
+        content: "A 65-second executive walkthrough of intake, inbound sync, triage, playbook enforcement, handoffs and oversight in Resolve.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -87,9 +87,9 @@ function WelcomePage() {
         </video>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
           <div>
-            <p className="font-medium">Resolve walkthrough — 47 seconds</p>
+            <p className="font-medium">Resolve executive walkthrough — 1:05</p>
             <p className="text-sm text-muted-foreground">
-              Intake and priority, the triage board, playbook enforcement, handoff acceptance and oversight.
+              Intake, inbound sync, triage, playbook enforcement, handoff acceptance and oversight.
             </p>
           </div>
           <Button asChild variant="outline" size="sm">

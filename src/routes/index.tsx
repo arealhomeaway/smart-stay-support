@@ -72,9 +72,10 @@ function Landing() {
             Solve guest issues completely, the first time.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            Resolve turns every guest message and maintenance request into a tracked ticket with a
-            step-by-step playbook, so the handyman never leaves a leak half-fixed or a detector
-            hanging off the wall.
+            Resolve gives our team one clear place to turn every guest need and property issue into
+            organized action. With immediate guidance, clear next steps, and ticket tracking from the
+            first message through final follow-up, we can respond faster, care for every home more
+            consistently, and deliver the thoughtful, dependable experience ARHA is known for.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
