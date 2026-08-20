@@ -217,7 +217,11 @@ function NewMatter() {
       const { data: ticket, error } = await supabase
         .from("tickets")
         .insert({
-          record_type: mode,
+          record_type: oneTouch
+            ? "completed_interaction"
+            : form.cross_team
+              ? "collaborative_matter"
+              : "active_task",
           title: form.title,
           description: form.description || null,
           property_id: form.property_id || null,
