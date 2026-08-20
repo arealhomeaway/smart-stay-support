@@ -703,6 +703,10 @@ function TicketDetail() {
             </CardContent>
           </Card>
 
+          <BreezewayPanel ticketId={ticketId} />
+
+
+
           <Card>
             <CardHeader>
               <CardTitle>History at this property</CardTitle>
