@@ -90,6 +90,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
+
     </div>
   );
 }
