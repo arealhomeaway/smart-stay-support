@@ -104,25 +104,46 @@ function gateway() {
   return createLovableAiGatewayProvider(key);
 }
 
+const JSON_SHAPE = `Reply with ONLY a JSON object, no prose and no code fence, in exactly this shape:
+{
+  "read_back": string,
+  "situation_type": string,
+  "category": string,
+  "work_type_name": string,
+  "priority": "p1" | "p2" | "p3",
+  "priority_reason": string,
+  "guest_impact": "none" | "minor" | "active_guest_affected" | "safety_security",
+  "occupancy_status": "vacant" | "occupied" | "same_day_arrival" | "same_day_departure",
+  "suggested_title": string,
+  "risk_flags": [{ "title": string, "why": string }],
+  "clarifying_questions": [string],
+  "immediate_actions": [string],
+  "checklist": [{ "instruction": string, "detail": string, "required": boolean, "photo_required": boolean }],
+  "vendor_brief": { "scope": string, "must_check": [string], "must_not_do": [string], "evidence_required": [string], "before_leaving": [string] },
+  "guest_message": string,
+  "owner_note": string,
+  "escalate_if": [string]
+}`;
+
+function parseGuidanceText(text: string, question: string): Guidance {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("The coach returned an unreadable answer. Try again.");
+  const raw = RawGuidanceSchema.parse(JSON.parse(text.slice(start, end + 1)));
+  return normalizeGuidance(raw, question);
+}
+
 export async function generateGuidance(question: string, catalog: Catalog): Promise<Guidance> {
   const provider = gateway();
-  try {
-    const { output } = await generateText({
-      model: provider(COACH_MODEL),
-      system: SYSTEM,
-      output: Output.object({ schema: RawGuidanceSchema }),
-      maxOutputTokens: 4000,
-      prompt: `${contextBlock(catalog)}\n\nTHE COORDINATOR TYPED:\n"""${question}"""\n\nCoach them through it.`,
-    });
-    return normalizeGuidance(output, question);
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error) && error.text) {
-      const match = error.text.match(/\{[\s\S]*\}/);
-      if (match) return normalizeGuidance(RawGuidanceSchema.parse(JSON.parse(match[0])), question);
-    }
-    throw error;
-  }
+  const { text } = await generateText({
+    model: provider(COACH_MODEL),
+    system: SYSTEM,
+    maxOutputTokens: 5000,
+    prompt: `${contextBlock(catalog)}\n\nTHE COORDINATOR TYPED:\n"""${question}"""\n\nCoach them through it.\n\n${JSON_SHAPE}`,
+  });
+  return parseGuidanceText(text, question);
 }
+
 
 export async function answerFollowUp(input: {
   question: string;
