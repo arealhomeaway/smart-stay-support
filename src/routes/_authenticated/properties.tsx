@@ -59,6 +59,30 @@ function PropertiesPage() {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
 
+  const fetchListings = useServerFn(listOwnerRezListings);
+  const { data: ownerRez } = useQuery({
+    queryKey: ["ownerrez-listings"],
+    queryFn: () => fetchListings(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  async function linkListing(propertyId: string, listingId: string) {
+    const { error } = await supabase
+      .from("properties")
+      .update({
+        ownerrez_property_id: listingId === "none" ? null : listingId,
+        ownerrez_synced_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(listingId === "none" ? "Unlinked from OwnerRez." : "Linked to OwnerRez.");
+    await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
+  }
+
   const { data, isLoading } = useQuery({
     queryKey: ["properties-with-counts"],
     queryFn: async () => {
