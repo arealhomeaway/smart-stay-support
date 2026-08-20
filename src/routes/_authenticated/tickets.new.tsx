@@ -470,6 +470,17 @@ function NewMatter() {
                     ))}
                   </SelectContent>
                 </Select>
+                {form.property_id && (
+                  <p className="text-xs text-muted-foreground">
+                    {stayLoading
+                      ? "Checking OwnerRez for the current reservation…"
+                      : stay?.ok
+                        ? stay.data.occupancy_status === "vacant"
+                          ? `OwnerRez: vacant${stay.data.next_arrival ? ` · next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
+                          : `OwnerRez: ${stay.data.guest_name ?? "guest"} · ${stay.data.arrival?.slice(0, 10)} → ${stay.data.departure?.slice(0, 10)}`
+                        : (stay?.error ?? "")}
+                  </p>
+                )}
               </div>
             </div>
 
