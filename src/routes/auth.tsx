@@ -82,15 +82,23 @@ function AuthPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">
-            {mode === "signin" ? "Team sign in" : "Create your team account"}
-          </CardTitle>
-          <CardDescription>
-            Resolve is the internal operations app for A Real Home Away.
-          </CardDescription>
-        </CardHeader>
+      <div className="w-full max-w-md space-y-6">
+        <div className="rounded-xl bg-sidebar px-6 py-8 text-center text-sidebar-foreground">
+          <BrandLogo className="mx-auto h-16" />
+          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-sidebar-foreground/60">
+            Resolve · Operations
+          </p>
+        </div>
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              {mode === "signin" ? "Team sign in" : "Create your team account"}
+            </CardTitle>
+            <CardDescription>
+              Resolve is the internal operations app for A Real Home Away.
+            </CardDescription>
+          </CardHeader>
+
         <CardContent className="space-y-4">
           <Button variant="outline" className="w-full" onClick={signInWithGoogle} disabled={loading}>
             Continue with Google
