@@ -72,8 +72,8 @@ type Catalog = {
     default_priority: string | null;
     response_minutes: number | null;
     action_start_minutes: number | null;
-    closure_requirements: string | null;
-    playbook_title?: string | null;
+    required_closure_evidence?: string | null;
+    operating_standard?: string | null;
   }[];
   playbooks: { title: string; category: string; summary: string | null; steps: string[] }[];
   property?: {
@@ -98,7 +98,9 @@ function contextBlock(catalog: Catalog) {
     lines.push(
       `- ${w.name} — ${w.category} — ${w.default_priority ?? "p3"} — ${w.response_minutes ?? "?"}m / ${
         w.action_start_minutes ?? "?"
-      }m${w.closure_requirements ? ` — closure: ${w.closure_requirements}` : ""}`,
+      }m${w.required_closure_evidence ? ` — closure evidence: ${w.required_closure_evidence}` : ""}${
+        w.operating_standard ? ` — standard: ${w.operating_standard}` : ""
+      }`,
     );
   }
   lines.push("", "PLAYBOOK LIBRARY:");
