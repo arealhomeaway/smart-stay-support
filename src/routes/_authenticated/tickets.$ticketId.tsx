@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { HandoffPanel } from "@/components/HandoffPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -485,6 +486,10 @@ function TicketDetail() {
                 ))}
               </CardContent>
             </Card>
+          )}
+
+          {ticket.record_type !== "completed_interaction" && (
+            <HandoffPanel ticket={ticket} closed={closed} onChanged={refresh} />
           )}
 
           {!closed && ticket.status !== "waiting" && (

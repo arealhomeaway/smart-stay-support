@@ -2,7 +2,7 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Clock, Zap } from "lucide-react";
+import { Clock, Users, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  GUEST_IMPACT,
+  OCCUPANCY_STATUS,
   OUTCOME_TYPES,
   PRIORITIES,
   SOURCE_CHANNELS,
   labelFor,
+  mechanicalPriority,
   priorityMeta,
   priorityTone,
   slaDueDates,
@@ -31,16 +34,16 @@ import {
 export const Route = createFileRoute("/_authenticated/tickets/new")({
   head: () => ({
     meta: [
-      { title: "Log a matter — Resolve Operations" },
+      { title: "Log work — Resolve Operations" },
       {
         name: "description",
         content:
-          "Log a completed interaction in seconds or open an active task with its response standard and playbook attached.",
+          "Log a one-touch resolution in seconds or open a ticket with its owning role, response standard and playbook attached.",
       },
-      { property: "og:title", content: "Log a matter — Resolve Operations" },
+      { property: "og:title", content: "Log work — Resolve Operations" },
       {
         property: "og:description",
-        content: "Log a completed interaction or open an active task with its response standard attached.",
+        content: "Log a one-touch resolution or open a ticket with its response standard attached.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -49,11 +52,11 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
   component: NewMatter,
 });
 
-type Mode = "completed_interaction" | "active_task";
+type Mode = "one_touch" | "ticket";
 
 function NewMatter() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("active_task");
+  const [mode, setMode] = useState<Mode>("ticket");
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
 
@@ -62,14 +65,18 @@ function NewMatter() {
     description: "",
     property_id: "",
     work_type_id: "",
+    guest_impact: "none",
+    occupancy_status: "vacant",
     priority: "p3",
     priority_override_reason: "",
+    functional_role_code: "",
+    cross_team: false,
     source_channel: "guest_message",
     guest_name: "",
     guest_contact: "",
-    guest_in_residence: true,
+    guest_in_residence: false,
     playbook_id: "auto",
-    // completed-interaction only
+    // one-touch only
     outcome_type: "resolved",
     resolution_notes: "",
   });
@@ -100,6 +107,19 @@ function NewMatter() {
     },
   });
 
+  const { data: roles } = useQuery({
+    queryKey: ["functional-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("functional_roles")
+        .select("*")
+        .eq("active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: playbooks } = useQuery({
     queryKey: ["playbooks"],
     queryFn: async () => {
@@ -118,15 +138,29 @@ function NewMatter() {
     [workTypes, form.work_type_id],
   );
 
-  // The work type sets the default priority — the coordinator can override,
-  // but then they owe a reason.
-  useEffect(() => {
-    if (workType && !priorityTouched) {
-      setForm((f) => ({ ...f, priority: workType.default_priority }));
-    }
-  }, [workType, priorityTouched]);
+  const role = useMemo(
+    () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
+    [roles, form.functional_role_code],
+  );
 
-  const overridden = Boolean(workType && form.priority !== workType.default_priority);
+  // Mechanical priority model: work type suggests, guest impact and occupancy decide.
+  const mechanical = useMemo(
+    () => mechanicalPriority(workType?.default_priority, form.guest_impact, form.occupancy_status),
+    [workType, form.guest_impact, form.occupancy_status],
+  );
+
+  useEffect(() => {
+    if (!priorityTouched) setForm((f) => ({ ...f, priority: mechanical }));
+  }, [mechanical, priorityTouched]);
+
+  // The work type also carries its owning seat from the ownership matrix.
+  useEffect(() => {
+    if (workType?.functional_role_code) {
+      setForm((f) => ({ ...f, functional_role_code: workType.functional_role_code as string }));
+    }
+  }, [workType]);
+
+  const overridden = Boolean(workType && form.priority !== mechanical);
   const meta = priorityMeta(form.priority);
 
   const resolvedPlaybookId = useMemo(() => {
@@ -137,14 +171,14 @@ function NewMatter() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.work_type_id) {
-      toast.error("Pick a work type — it sets the response standard.");
+      toast.error("Pick a work type — it sets the owning role and the response standard.");
       return;
     }
     if (overridden && !form.priority_override_reason.trim()) {
-      toast.error("You changed the priority. Say why in one line.");
+      toast.error(`The rubric says ${mechanical.toUpperCase()}. Document why you changed it.`);
       return;
     }
-    if (mode === "completed_interaction" && !form.resolution_notes.trim()) {
+    if (mode === "one_touch" && !form.resolution_notes.trim()) {
       toast.error("Write what you did — that is the whole record.");
       return;
     }
@@ -154,8 +188,8 @@ function NewMatter() {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id ?? null;
       const now = new Date();
-      const { response_due_at, action_due_at } = slaDueDates(form.priority, now);
-      const completed = mode === "completed_interaction";
+      const { response_due_at, action_due_at } = slaDueDates(form.priority, now, workType);
+      const oneTouch = mode === "one_touch";
 
       const { data: ticket, error } = await supabase
         .from("tickets")
@@ -165,34 +199,40 @@ function NewMatter() {
           description: form.description || null,
           property_id: form.property_id || null,
           work_type_id: form.work_type_id,
+          functional_role_code: form.functional_role_code || null,
+          cross_team: oneTouch ? false : form.cross_team,
           category: workType?.category ?? "other",
           bucket: workType?.bucket ?? null,
+          guest_impact: form.guest_impact,
+          occupancy_status: form.occupancy_status,
+          suggested_priority: mechanical,
           priority: form.priority,
           priority_override_reason: overridden ? form.priority_override_reason.trim() : null,
           source_channel: form.source_channel,
           guest_name: form.guest_name || null,
           guest_contact: form.guest_contact || null,
           guest_in_residence: form.guest_in_residence,
-          playbook_id: completed ? null : resolvedPlaybookId,
+          playbook_id: oneTouch ? null : resolvedPlaybookId,
           reported_at: now.toISOString(),
-          response_due_at: completed ? null : response_due_at,
-          action_due_at: completed ? null : action_due_at,
+          response_due_at: oneTouch ? null : response_due_at,
+          action_due_at: oneTouch ? null : action_due_at,
           acknowledged_at: now.toISOString(),
-          action_started_at: completed ? now.toISOString() : null,
-          due_at: completed ? null : action_due_at,
+          action_started_at: oneTouch ? now.toISOString() : null,
+          due_at: oneTouch ? null : action_due_at,
           created_by: userId,
+          record_owner: userId,
           accountable_owner: userId,
-          current_action_owner: completed ? null : userId,
-          status: completed ? "closed" : "open",
-          outcome_type: completed ? form.outcome_type : null,
-          resolution_notes: completed ? form.resolution_notes.trim() : null,
-          resolved_at: completed ? now.toISOString() : null,
+          current_action_owner: oneTouch ? null : userId,
+          status: oneTouch ? "closed" : "open",
+          outcome_type: oneTouch ? form.outcome_type : null,
+          resolution_notes: oneTouch ? form.resolution_notes.trim() : null,
+          resolved_at: oneTouch ? now.toISOString() : null,
         })
         .select("id")
         .single();
       if (error) throw error;
 
-      if (!completed && resolvedPlaybookId) {
+      if (!oneTouch && resolvedPlaybookId) {
         const { data: steps, error: stepsError } = await supabase
           .from("playbook_steps")
           .select("position, instruction, detail, required, photo_required")
@@ -211,19 +251,22 @@ function NewMatter() {
         await supabase.from("ticket_activity").insert({
           ticket_id: ticket.id,
           author_id: userId,
-          kind: completed ? "completed" : "created",
-          event_type: completed ? "logged_completed" : "created",
+          kind: oneTouch ? "completed" : "created",
+          event_type: oneTouch ? "logged_completed" : "created",
           channel: form.source_channel,
-          body: completed
-            ? `Logged as a completed interaction. ${form.resolution_notes.trim()}`
-            : `Matter opened at ${meta.short}. Acknowledge within ${meta.responseMinutes}m.`,
+          body: oneTouch
+            ? `Logged as a one-touch resolution. ${form.resolution_notes.trim()}`
+            : `Ticket opened at ${meta.short} (${labelFor(GUEST_IMPACT, form.guest_impact)} · ${labelFor(
+                OCCUPANCY_STATUS,
+                form.occupancy_status,
+              )}). Acknowledge within ${workType?.response_minutes ?? meta.responseMinutes}m.`,
         });
       }
 
-      toast.success(completed ? "Interaction logged." : "Matter opened with its playbook and clocks running.");
+      toast.success(oneTouch ? "One-touch resolution logged." : "Ticket opened with its clocks running.");
       router.navigate({ to: "/tickets/$ticketId", params: { ticketId: ticket.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save this matter");
+      toast.error(err instanceof Error ? err.message : "Could not save this record");
     } finally {
       setSaving(false);
     }
@@ -232,32 +275,32 @@ function NewMatter() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Log a matter</h1>
+        <h1 className="text-3xl font-semibold">Log work</h1>
         <p className="mt-1 text-muted-foreground">
-          One record for everything. Already handled it? Log it and move on.
+          Every meaningful operational interaction gets recorded. Already handled it? Log it and move on.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ModeCard
-          active={mode === "completed_interaction"}
-          onClick={() => setMode("completed_interaction")}
+          active={mode === "one_touch"}
+          onClick={() => setMode("one_touch")}
           icon={<Zap className="size-4" />}
-          title="Completed interaction"
-          hint="Done in one touch. Logged for history, never hits the queue."
+          title="One-touch resolution"
+          hint="Resolved in a single action. Kept in history, never hits the queue."
         />
         <ModeCard
-          active={mode === "active_task"}
-          onClick={() => setMode("active_task")}
+          active={mode === "ticket"}
+          onClick={() => setMode("ticket")}
           icon={<Clock className="size-4" />}
-          title="Active task"
-          hint="Needs follow-through. Clocks start and you own it."
+          title="Ticket"
+          hint="Needs follow-up or another touchpoint. Clocks start and you own it."
         />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{mode === "completed_interaction" ? "What happened?" : "What needs to happen?"}</CardTitle>
+          <CardTitle>{mode === "one_touch" ? "What happened?" : "What needs to happen?"}</CardTitle>
           <CardDescription>Write it the way it was reported to you.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -332,19 +375,25 @@ function NewMatter() {
                 <SelectContent>
                   {(workTypes ?? []).map((w) => (
                     <SelectItem key={w.id} value={w.id}>
-                      {w.name} · {w.default_priority.toUpperCase()}
+                      {w.name} · suggests {w.default_priority.toUpperCase()}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {workType && mode === "active_task" && (
+              {workType && mode === "ticket" && (
                 <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
-                  <p className="font-medium">Response standard</p>
+                  <p className="font-medium">Operating standard</p>
+                  <p className="mt-1 text-muted-foreground">{workType.operating_standard}</p>
                   <p className="mt-1 text-muted-foreground">
                     Acknowledge within {workType.response_minutes}m · start within{" "}
                     {workType.action_start_minutes === 0 ? "immediately" : `${workType.action_start_minutes}m`}
-                    {workType.completion_target ? ` · complete ${workType.completion_target.toLowerCase()}` : ""}
+                    {workType.completion_target ? ` · target ${workType.completion_target.toLowerCase()}` : ""}
                   </p>
+                  {workType.backup_coverage && (
+                    <p className="mt-1 text-muted-foreground">
+                      <span className="font-medium text-foreground">Backup:</span> {workType.backup_coverage}
+                    </p>
+                  )}
                   {workType.required_closure_evidence && (
                     <p className="mt-1 text-muted-foreground">
                       <span className="font-medium text-foreground">To close:</span>{" "}
@@ -355,7 +404,53 @@ function NewMatter() {
               )}
             </div>
 
-            {mode === "active_task" && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Guest impact</Label>
+                <Select
+                  value={form.guest_impact}
+                  onValueChange={(v) =>
+                    setForm({
+                      ...form,
+                      guest_impact: v,
+                      guest_in_residence:
+                        v === "active_guest_affected" || v === "safety_security" ? true : form.guest_in_residence,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GUEST_IMPACT.map((g) => (
+                      <SelectItem key={g.value} value={g.value}>
+                        {g.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Occupancy status</Label>
+                <Select
+                  value={form.occupancy_status}
+                  onValueChange={(v) => setForm({ ...form, occupancy_status: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OCCUPANCY_STATUS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {mode === "ticket" && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Priority</Label>
@@ -377,7 +472,10 @@ function NewMatter() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">{meta.summary}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Rubric says <span className="font-medium">{mechanical.toUpperCase()}</span> ·{" "}
+                    {meta.summary}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -403,10 +501,36 @@ function NewMatter() {
               </div>
             )}
 
-            {mode === "active_task" && overridden && (
+            {mode === "ticket" && (
+              <div className="space-y-2">
+                <Label>Owning functional role</Label>
+                <Select
+                  value={form.functional_role_code}
+                  onValueChange={(v) => setForm({ ...form, functional_role_code: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Which seat owns this process?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(roles ?? []).map((r) => (
+                      <SelectItem key={r.code} value={r.code}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {role && (
+                  <p className="text-xs text-muted-foreground">
+                    Currently held by {role.current_seat_name ?? "an unassigned seat"} · {role.coverage_window}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {mode === "ticket" && overridden && (
               <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
                 <Label htmlFor="override">
-                  Why {form.priority.toUpperCase()} instead of {workType?.default_priority.toUpperCase()}?
+                  Why {form.priority.toUpperCase()} instead of {mechanical.toUpperCase()}?
                 </Label>
                 <Input
                   id="override"
@@ -422,13 +546,13 @@ function NewMatter() {
               <Textarea
                 id="description"
                 rows={3}
-                placeholder="What the guest said, what they've tried, anything the tech should know."
+                placeholder="What the guest said, what they've tried, anything the vendor should know."
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </div>
 
-            {mode === "completed_interaction" && (
+            {mode === "one_touch" && (
               <>
                 <div className="space-y-2">
                   <Label>Outcome</Label>
@@ -485,7 +609,7 @@ function NewMatter() {
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
                 <p className="text-sm font-medium">Guest currently in the home</p>
-                <p className="text-xs text-muted-foreground">Drives urgency and required guest communication.</p>
+                <p className="text-xs text-muted-foreground">Drives required guest communication before closure.</p>
               </div>
               <Switch
                 checked={form.guest_in_residence}
@@ -493,16 +617,33 @@ function NewMatter() {
               />
             </div>
 
-            {mode === "active_task" && (
+            {mode === "ticket" && (
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div>
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <Users className="size-4" /> Cross-team
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    More than one role, department or vendor has to act on this.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.cross_team}
+                  onCheckedChange={(v) => setForm({ ...form, cross_team: v })}
+                />
+              </div>
+            )}
+
+            {mode === "ticket" && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
                 <Badge variant="outline" className={priorityTone(form.priority)}>
                   {meta.short}
                 </Badge>
                 <span className="text-muted-foreground">
-                  Acknowledge by {new Date(Date.now() + meta.responseMinutes * 60_000).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+                  Acknowledge by{" "}
+                  {new Date(
+                    Date.now() + (workType?.response_minutes ?? meta.responseMinutes) * 60_000,
+                  ).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                   {" · "}
                   {labelFor(SOURCE_CHANNELS, form.source_channel)}
                 </span>
@@ -510,11 +651,7 @@ function NewMatter() {
             )}
 
             <Button type="submit" className="w-full" disabled={saving}>
-              {saving
-                ? "Saving…"
-                : mode === "completed_interaction"
-                  ? "Log interaction"
-                  : "Open active task"}
+              {saving ? "Saving…" : mode === "one_touch" ? "Log resolution" : "Open ticket"}
             </Button>
           </form>
         </CardContent>
