@@ -7,6 +7,8 @@ import {
   ListChecks,
   LogOut,
   Plus,
+  PlugZap,
+
   ShieldAlert,
   Sparkles,
   Users,
