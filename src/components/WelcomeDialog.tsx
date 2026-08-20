@@ -4,29 +4,30 @@ import { PlayCircle, Compass, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { STORAGE_KEY } from "@/components/OnboardingTour";
 
-const WELCOME_KEY = "resolve.welcome.seen.v1";
-
 export function useWelcomeGate() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(WELCOME_KEY)) setOpen(true);
+      if (!localStorage.getItem(STORAGE_KEY)) setOpen(true);
     } catch {
       /* ignore */
     }
   }, []);
 
   function dismiss() {
-    try {
-      localStorage.setItem(WELCOME_KEY, "1");
-    } catch {
-      /* ignore */
-    }
     setOpen(false);
   }
 
   return { open, dismiss, setOpen };
+}
+
+function markWalkthroughUsed() {
+  try {
+    localStorage.setItem(STORAGE_KEY, "1");
+  } catch {
+    /* ignore */
+  }
 }
 
 export function WelcomeDialog({
