@@ -47,19 +47,19 @@ const features = [
 function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
+      <header className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-md bg-primary font-semibold text-primary-foreground">
-              R
-            </span>
+          <div className="flex items-center gap-3">
+            <BrandLogo className="h-9" />
+            <span className="h-8 w-px bg-sidebar-foreground/25" />
             <span className="font-display text-lg font-semibold">Resolve</span>
           </div>
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
             <Link to="/auth">Team sign in</Link>
           </Button>
         </div>
       </header>
+
 
       <main className="mx-auto max-w-5xl px-4">
         <section className="py-16 md:py-24">
