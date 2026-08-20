@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
+import { listOwnerRezListings } from "@/lib/ownerrez.functions";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -49,6 +58,30 @@ function PropertiesPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+
+  const fetchListings = useServerFn(listOwnerRezListings);
+  const { data: ownerRez } = useQuery({
+    queryKey: ["ownerrez-listings"],
+    queryFn: () => fetchListings(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  async function linkListing(propertyId: string, listingId: string) {
+    const { error } = await supabase
+      .from("properties")
+      .update({
+        ownerrez_property_id: listingId === "none" ? null : listingId,
+        ownerrez_synced_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(listingId === "none" ? "Unlinked from OwnerRez." : "Linked to OwnerRez.");
+    await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["properties-with-counts"],
@@ -163,6 +196,34 @@ function PropertiesPage() {
                     <span className="text-muted-foreground">· {all.length} total tickets</span>
                   </p>
                   {p.access_notes && <p className="text-muted-foreground">{p.access_notes}</p>}
+                  <div className="space-y-1 border-t border-border pt-3">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                      OwnerRez listing
+                    </Label>
+                    {ownerRez?.ok ? (
+                      <Select
+                        value={p.ownerrez_property_id ?? "none"}
+                        onValueChange={(v) => linkListing(p.id, v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Not linked" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not linked</SelectItem>
+                          {ownerRez.data.map((l) => (
+                            <SelectItem key={l.id} value={l.id}>
+                              {l.name}
+                              {l.location ? ` — ${l.location}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {ownerRez?.error ?? "Checking OwnerRez…"}
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

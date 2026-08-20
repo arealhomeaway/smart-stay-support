@@ -246,6 +246,8 @@ export type Database = {
           name: string
           nickname: string | null
           notes: string | null
+          ownerrez_property_id: string | null
+          ownerrez_synced_at: string | null
           postal_code: string | null
           state: string | null
           unit: string | null
@@ -263,6 +265,8 @@ export type Database = {
           name: string
           nickname?: string | null
           notes?: string | null
+          ownerrez_property_id?: string | null
+          ownerrez_synced_at?: string | null
           postal_code?: string | null
           state?: string | null
           unit?: string | null
@@ -280,6 +284,8 @@ export type Database = {
           name?: string
           nickname?: string | null
           notes?: string | null
+          ownerrez_property_id?: string | null
+          ownerrez_synced_at?: string | null
           postal_code?: string | null
           state?: string | null
           unit?: string | null
@@ -435,6 +441,7 @@ export type Database = {
           next_review_at: string | null
           occupancy_status: string
           outcome_type: string | null
+          ownerrez_booking_id: string | null
           pending_handoff_to: string | null
           playbook_id: string | null
           priority: string
@@ -502,6 +509,7 @@ export type Database = {
           next_review_at?: string | null
           occupancy_status?: string
           outcome_type?: string | null
+          ownerrez_booking_id?: string | null
           pending_handoff_to?: string | null
           playbook_id?: string | null
           priority?: string
@@ -569,6 +577,7 @@ export type Database = {
           next_review_at?: string | null
           occupancy_status?: string
           outcome_type?: string | null
+          ownerrez_booking_id?: string | null
           pending_handoff_to?: string | null
           playbook_id?: string | null
           priority?: string

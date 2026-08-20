@@ -1,5 +1,7 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getPropertyStay } from "@/lib/ownerrez.functions";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Clock, Users, Zap } from "lucide-react";
@@ -94,6 +96,15 @@ function NewMatter() {
     },
   });
 
+  // OwnerRez tells us who is actually in the home right now.
+  const fetchStay = useServerFn(getPropertyStay);
+  const { data: stay, isFetching: stayLoading } = useQuery({
+    queryKey: ["ownerrez-stay", form.property_id],
+    queryFn: () => fetchStay({ data: { propertyId: form.property_id } }),
+    enabled: Boolean(form.property_id),
+    retry: false,
+  });
+
   const { data: workTypes } = useQuery({
     queryKey: ["work-types"],
     queryFn: async () => {
@@ -153,6 +164,18 @@ function NewMatter() {
     if (!priorityTouched) setForm((f) => ({ ...f, priority: mechanical }));
   }, [mechanical, priorityTouched]);
 
+  // Prefill occupancy and guest from the live reservation instead of guessing.
+  useEffect(() => {
+    if (!stay?.ok) return;
+    const s = stay.data;
+    setForm((f) => ({
+      ...f,
+      occupancy_status: s.occupancy_status,
+      guest_name: s.guest_name ?? f.guest_name,
+      guest_in_residence: s.occupancy_status !== "vacant" ? true : f.guest_in_residence,
+    }));
+  }, [stay]);
+
   // The work type also carries its owning seat from the ownership matrix.
   useEffect(() => {
     if (workType?.functional_role_code) {
@@ -209,6 +232,7 @@ function NewMatter() {
           priority: form.priority,
           priority_override_reason: overridden ? form.priority_override_reason.trim() : null,
           source_channel: form.source_channel,
+          ownerrez_booking_id: stay?.ok ? stay.data.booking_id : null,
           guest_name: form.guest_name || null,
           guest_contact: form.guest_contact || null,
           guest_in_residence: form.guest_in_residence,
@@ -447,6 +471,17 @@ function NewMatter() {
                     ))}
                   </SelectContent>
                 </Select>
+                {form.property_id && (
+                  <p className="text-xs text-muted-foreground">
+                    {stayLoading
+                      ? "Checking OwnerRez for the current reservation…"
+                      : stay?.ok
+                        ? stay.data.occupancy_status === "vacant"
+                          ? `OwnerRez: vacant${stay.data.next_arrival ? ` · next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
+                          : `OwnerRez: ${stay.data.guest_name ?? "guest"} · ${stay.data.arrival?.slice(0, 10)} → ${stay.data.departure?.slice(0, 10)}`
+                        : (stay?.error ?? "")}
+                  </p>
+                )}
               </div>
             </div>
 
