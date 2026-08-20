@@ -1,9 +1,20 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Building2, CircleHelp, ClipboardList, Home, ListChecks, LogOut, Plus, ShieldAlert, Users } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  Building2,
+  CircleHelp,
+  ClipboardList,
+  Home,
+  ListChecks,
+  LogOut,
+  Plus,
+  ShieldAlert,
+  Users,
+} from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { OnboardingTour, useTourAutostart } from "@/components/OnboardingTour";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
@@ -12,16 +23,19 @@ const nav = [
   { to: "/team", label: "Seats", icon: Users, tour: "team" },
   { to: "/properties", label: "Properties", icon: Building2, tour: "properties" },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
+  { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { open: tourOpen, setOpen: setTourOpen } = useTourAutostart();
+  const [tourOpen, setTourOpen] = useState(false);
+  const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
 
   async function signOut() {
     await supabase.auth.signOut();
     router.navigate({ to: "/auth" });
   }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -51,11 +65,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               size="sm"
               variant="ghost"
               onClick={() => setTourOpen(true)}
-              className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              aria-label="Replay walkthrough"
+              className="hidden text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:inline-flex"
             >
               <CircleHelp className="size-4" />
+              Take the tour
             </Button>
+
             <Button asChild data-tour="log" size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
               <Link to="/tickets/new">
                 <Plus className="size-4" /> Log a matter
@@ -75,6 +90,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
       <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
+
     </div>
   );
 }
