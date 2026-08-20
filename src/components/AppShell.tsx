@@ -17,7 +17,9 @@ import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { BrandLogo } from "@/components/BrandLogo";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
+
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
