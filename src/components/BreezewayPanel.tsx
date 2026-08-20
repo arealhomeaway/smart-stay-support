@@ -55,7 +55,7 @@ export function BreezewayPanel({ ticketId }: { ticketId: string }) {
   async function runDispatch() {
     setBusy(true);
     try {
-      const res = await dispatch({ data: { ticketId, extraInstructions: instructions || undefined } });
+      const res = await dispatch({ data: { ticketId, ...(instructions ? { extraInstructions: instructions } : {}) } });
       if (!res.ok) {
         toast.error(res.error);
         return;
