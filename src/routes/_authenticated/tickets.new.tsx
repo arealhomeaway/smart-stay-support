@@ -164,6 +164,18 @@ function NewMatter() {
     if (!priorityTouched) setForm((f) => ({ ...f, priority: mechanical }));
   }, [mechanical, priorityTouched]);
 
+  // Prefill occupancy and guest from the live reservation instead of guessing.
+  useEffect(() => {
+    if (!stay?.ok) return;
+    const s = stay.data;
+    setForm((f) => ({
+      ...f,
+      occupancy_status: s.occupancy_status,
+      guest_name: s.guest_name ?? f.guest_name,
+      guest_in_residence: s.occupancy_status !== "vacant" ? true : f.guest_in_residence,
+    }));
+  }, [stay]);
+
   // The work type also carries its owning seat from the ownership matrix.
   useEffect(() => {
     if (workType?.functional_role_code) {
