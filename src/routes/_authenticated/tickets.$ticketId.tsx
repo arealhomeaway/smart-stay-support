@@ -737,8 +737,8 @@ function ClockChip({
 }: {
   state: ReturnType<typeof slaState>["response"];
   actionLabel: string;
-  onAction?: () => void;
-  icon?: React.ReactNode;
+  onAction?: (() => void) | undefined;
+  icon?: React.ReactNode | undefined;
 }) {
   if (!state) return null;
   const tone = state.breached
