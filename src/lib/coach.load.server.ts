@@ -14,7 +14,10 @@ export async function loadCatalog(
   const [workTypesRes, playbooksRes] = await Promise.all([
     supabase
       .from("work_types")
-      .select("name, category, bucket, default_priority, response_minutes, action_start_minutes, closure_requirements")
+      .select(
+        "name, category, bucket, default_priority, response_minutes, action_start_minutes, required_closure_evidence, operating_standard",
+      )
+
       .eq("active", true)
       .order("sort_order"),
     supabase.from("playbooks").select("title, category, summary, playbook_steps(instruction, position)").eq("active", true),
