@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TEAMS, labelFor } from "@/lib/tickets";
+import { TEAMS } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({
@@ -270,5 +270,3 @@ function Row({ icon, label, value }: { icon: React.ReactNode; label: string; val
     </div>
   );
 }
-
-export const _teamLabel = (v: string) => labelFor(TEAMS, v);
