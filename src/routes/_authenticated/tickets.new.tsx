@@ -1,5 +1,7 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getPropertyStay } from "@/lib/ownerrez.functions";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Clock, Users, Zap } from "lucide-react";
