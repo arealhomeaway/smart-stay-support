@@ -62,11 +62,18 @@ const steps: TourStep[] = [
     body: "Import homes straight from OwnerRez, link them to Breezeway, and keep access notes and Wi-Fi where the coordinator actually needs them.",
   },
   {
+    target: '[data-tour="help"]',
+    route: "/dashboard",
+    title: "Help is always here",
+    body: "The Help page holds the walkthrough video and a quick refresher on how matters, playbooks, seats and handoffs work. Send new coordinators here first.",
+  },
+  {
     target: null,
     route: "/dashboard",
     title: "You're set",
-    body: "Log a real matter to try it end to end. You can replay this tour any time from the ? button in the header.",
+    body: "Log a real matter to try it end to end. You can replay this tour any time from “Take the tour” in the header.",
   },
+
 ];
 
 function useTargetRect(selector: string | null, tick: number) {
