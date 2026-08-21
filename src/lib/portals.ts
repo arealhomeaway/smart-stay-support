@@ -170,3 +170,14 @@ export function recentPortalId(): string | null {
     return null;
   }
 }
+
+/**
+ * Where a person lands after signing in when they did not ask for a specific
+ * portal. One portal → straight in; more than one → the personalised hub.
+ */
+export function entryPathFor(roles: AppRole[]): string {
+  const mine = portalsFor(roles);
+  if (mine.length === 0) return "/hub";
+  if (mine.length === 1) return mine[0]!.route;
+  return "/hub";
+}
