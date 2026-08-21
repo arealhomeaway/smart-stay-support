@@ -159,12 +159,15 @@ export function VendorOrgSheet({
             </SheetHeader>
 
             <Tabs defaultValue="screening" className="mt-4">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
                 <TabsTrigger value="screening">Screening</TabsTrigger>
                 <TabsTrigger value="coverage">Coverage</TabsTrigger>
+                <TabsTrigger value="territory">Territory</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="team">Team</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
+
 
               <TabsContent value="screening" className="space-y-4 pt-4">
                 <div className="rounded-lg border p-3 text-sm">
