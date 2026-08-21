@@ -28,6 +28,10 @@ Department Dashboards         (Onboarding, Operations, Vendors, Finance,
 Workspaces & Portals          (staff daily work, vendor portal, owner portal)
 ```
 
+**Asana replacement:** the matter/ticket engine already carries assignee, due date, status, dependencies, evidence and audit history. Rather than a separate task app, department work items become matters with a `department` and an optional project grouping (`work_projects`), so onboarding launches, finance follow-ups and internal projects all live in Resolve. No Asana integration is built.
+
+
+
 Shared spine: properties, owners, guests/stays, vendors, users, matters, approvals, documents, communications, financial refs, pricing refs, audit events.
 
 New generic primitives so future departments need no restructuring:
@@ -46,7 +50,15 @@ The Resolve `properties.id` UUID is immutable and permanent from onboarding thro
 
 ## 4. Notion integration (Phase 1)
 
-Method: server-only Notion REST API (v1) using the stored key, called from `notion.server.ts` behind `createServerFn`; never touched from the browser. A `/api/public/sync/notion` route handles scheduled pulls with the cron secret.
+Method: server-only Notion REST API (v1) through the Lovable connector gateway using the existing "Emily's Notion" connection, called from `notion.server.ts` behind `createServerFn`; never touched from the browser. A `/api/public/sync/notion` route handles scheduled pulls with the cron secret.
+
+Sources you provided (to be mapped in this order):
+- Properties Onboarding Center (`2c84658d…e895`) — property onboarding records
+- Onboarding Management Home Base (`2d94658d…d68e`) — stage/owner management view
+- ARHA Onboarding Plan Types (`3a04658d…305f`) — plan type definitions driving which checklist applies
+- The two additional databases (`1d84658d…220f`, `1e84658d…58c9`)
+
+**Access blocker found:** I checked the connection and none of these pages are shared with the Lovable Notion integration yet (Notion returns "object_not_found"). In Notion, open each page → **⋯ → Connections → add "Lovable"** (sharing the top-level parents is enough; children inherit). Once shared I will read the real property fields, stages, plan types and checklist requirements and confirm the mapping with you before building forms.
 
 - **Pull**: page the property database, map properties by `external_links`, upsert the Resolve mirror, record `integration_events`.
 - **Push (Phase 1b)**: authorized Resolve edits enqueue a write event; a worker applies it with a payload hash for idempotency, exponential backoff on 429/5xx, and a max attempt count before it lands in the retry queue.
@@ -118,7 +130,7 @@ Testing each phase: server-function unit checks, RLS probes per role, sync idemp
 
 ## 11. What I still need from ARHA
 
-- The Notion property/onboarding database link (and confirmation the integration has access to it).
+- **Share the five onboarding Notion pages with the Lovable integration** — nothing else in Phase 1 can start until this is done.
 - Which Notion fields authorized staff may edit from Resolve.
 - QuickBooks Online admin to authorize the connection when we reach Finance.
 - Approval authority limits (who approves what spend, and at what amount).
