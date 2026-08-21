@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { RawGuidanceSchema, normalizeGuidance, type Guidance } from "./coach-schema";
 import { COACH_MODEL, createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { FIELD_NOTES } from "./coach-field-notes";
 
 // The coach never invents policy. Everything it says has to trace back to the
 // ARHA SOP: the mechanical priority rubric, the work type catalog and the
