@@ -288,7 +288,12 @@ export async function createImportBatch(
 
   const { data: batch, error: batchError } = await db
     .from("vendor_import_batches")
-    .insert({ source_system: input.sourceSystem, label: input.label, created_by: userId })
+    .insert({
+      source_system: notionExport ? "notion" : input.sourceSystem,
+      label: input.label,
+      created_by: userId,
+    })
+
     .select("id")
     .single();
   if (batchError) throw new Error(batchError.message);
