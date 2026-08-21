@@ -99,7 +99,7 @@ async function markRead(scope: string, id: string) {
 const NOISE_SENDER =
   /(no-?reply|do-?not-?reply|newsletter|notifications?@|marketing|mailer-daemon|postmaster|billing@|invoice@|calendar-notification|@(members|email|mail|e|news|info|updates|shared\d*)\.|ccsend\.com|mailchimp|sendgrid\.net|hubspot|constantcontact|salesforce|substack|linkedin\.com|indeed\.com|zillow|stocktwits)/i;
 const NOISE_SUBJECT =
-  /^(re: )?(declined|accepted|tentative|canceled|cancelled):|unsubscribe|your (daily|weekly) |newsletter|webinar|invitation:|out of office|automatic reply|market digest|% off|sale ends|just for you/i;
+  /^(re: )?(declined|accepted|tentative|canceled|cancelled):|unsubscribe|your (daily|weekly) |newsletter|webinar|invitation:|out of office|automatic reply|market digest|% off|sale ends|just for you|availability|price list|rate sheet|weekly (update|round-?up|list)/i;
 const CALENDAR_TYPE = /eventMessage/i;
 
 /** Words that mean a coordinator actually has to do something at a home. */
@@ -248,6 +248,18 @@ export async function syncMailbox(
   }
 
   const known = await knownSenders(db);
+  // A broadcast that lands 13 times is still one thing. Never open the same
+  // subject from the same sender twice, in this run or within the last week.
+  const seen = new Set<string>();
+  const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const { data: recentTickets } = await db
+    .from("tickets")
+    .select("title, source_reference")
+    .eq("external_source", "email")
+    .gte("created_at", since);
+  for (const row of recentTickets ?? []) {
+    seen.add(`${(row.title ?? "").toLowerCase()}|${(row.source_reference ?? "").toLowerCase()}`);
+  }
   base.scanned = messages.length;
   base.mailbox = scope === "/me" ? "connected mailbox" : SHARED_MAILBOX;
 
@@ -271,6 +283,18 @@ export async function syncMailbox(
       base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
       continue;
     }
+
+    const dupeKey = `${subject.toLowerCase()}|${from.toLowerCase()}`;
+    if (seen.has(dupeKey)) {
+      base.skipped++;
+      base.items.push({ subject, from, outcome: "skipped", reason: "duplicate of an existing matter" });
+      if (!dryRun) {
+        await recordEvent(db, msg.id, "skipped", "duplicate", null);
+        await markRead(scope, msg.id);
+      }
+      continue;
+    }
+    seen.add(dupeKey);
 
     if (dryRun) {
       base.created++;
