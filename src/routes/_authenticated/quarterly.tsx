@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CleaningRegionsPanel } from "@/components/CleaningRegionsPanel";
 
 export const Route = createFileRoute("/_authenticated/quarterly")({
   head: () => ({
@@ -110,6 +111,8 @@ function QuarterlyPage() {
         <StatCard label="Homes on the cycle" value={rows.length} />
       </div>
 
+      <CleaningRegionsPanel />
+
       <Card>
         <CardHeader>
           <CardTitle>The cycle</CardTitle>
@@ -137,6 +140,8 @@ function QuarterlyPage() {
                   <div className="min-w-0 space-y-1">
                     <p className="truncate font-medium">{row.name}</p>
                     <p className="text-xs text-muted-foreground">
+                      {row.market ? `${row.market} · ` : ""}
+                      {row.inspector ?? "No regional manager set"} ·{" "}
                       {row.location || "No address on file"} ·{" "}
                       {row.lastReviewedAt
                         ? `Last reviewed ${new Date(row.lastReviewedAt).toLocaleDateString()}`
