@@ -537,6 +537,60 @@ export type Database = {
         }
         Relationships: []
       }
+      gatekeeper_requirements: {
+        Row: {
+          active: boolean
+          applies_to_category: string | null
+          applies_to_class: string
+          applies_to_market: string | null
+          approver_role: string
+          code: string
+          created_at: string
+          detail: string | null
+          expires_after_days: number | null
+          id: string
+          label: string
+          requirement_level: string
+          sort_order: number
+          updated_at: string
+          verification_method: string | null
+        }
+        Insert: {
+          active?: boolean
+          applies_to_category?: string | null
+          applies_to_class?: string
+          applies_to_market?: string | null
+          approver_role?: string
+          code: string
+          created_at?: string
+          detail?: string | null
+          expires_after_days?: number | null
+          id?: string
+          label: string
+          requirement_level?: string
+          sort_order?: number
+          updated_at?: string
+          verification_method?: string | null
+        }
+        Update: {
+          active?: boolean
+          applies_to_category?: string | null
+          applies_to_class?: string
+          applies_to_market?: string | null
+          approver_role?: string
+          code?: string
+          created_at?: string
+          detail?: string | null
+          expires_after_days?: number | null
+          id?: string
+          label?: string
+          requirement_level?: string
+          sort_order?: number
+          updated_at?: string
+          verification_method?: string | null
+        }
+        Relationships: []
+      }
       handoffs: {
         Row: {
           actions_completed: string
@@ -1980,6 +2034,82 @@ export type Database = {
           },
         ]
       }
+      property_vendor_coverage: {
+        Row: {
+          access_requirements: string | null
+          approval_limit: number | null
+          coverage_priority: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          last_verified_at: string | null
+          org_id: string
+          playbook_id: string | null
+          property_id: string
+          rate_note: string | null
+          service_category: string
+          updated_at: string
+        }
+        Insert: {
+          access_requirements?: string | null
+          approval_limit?: number | null
+          coverage_priority?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          last_verified_at?: string | null
+          org_id: string
+          playbook_id?: string | null
+          property_id: string
+          rate_note?: string | null
+          service_category: string
+          updated_at?: string
+        }
+        Update: {
+          access_requirements?: string | null
+          approval_limit?: number | null
+          coverage_priority?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          last_verified_at?: string | null
+          org_id?: string
+          playbook_id?: string | null
+          property_id?: string
+          rate_note?: string | null
+          service_category?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_vendor_coverage_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_vendor_coverage_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_vendor_coverage_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_invites: {
         Row: {
           code: string
@@ -2520,6 +2650,347 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_attestations: {
+        Row: {
+          accepted_at: string
+          id: string
+          org_id: string
+          statement: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          org_id: string
+          statement: string
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          org_id?: string
+          statement?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_attestations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          legacy_account_state: string | null
+          legacy_departments: string[]
+          legacy_groups: string[]
+          match_status: string
+          org_id: string | null
+          phone: string | null
+          role_note: string | null
+          source_system: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          legacy_account_state?: string | null
+          legacy_departments?: string[]
+          legacy_groups?: string[]
+          match_status?: string
+          org_id?: string | null
+          phone?: string | null
+          role_note?: string | null
+          source_system?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          legacy_account_state?: string | null
+          legacy_departments?: string[]
+          legacy_groups?: string[]
+          match_status?: string
+          org_id?: string | null
+          phone?: string | null
+          role_note?: string | null
+          source_system?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          expires_on: string | null
+          external_url: string | null
+          id: string
+          note: string | null
+          org_id: string
+          restricted: boolean
+          storage_path: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          expires_on?: string | null
+          external_url?: string | null
+          id?: string
+          note?: string | null
+          org_id: string
+          restricted?: boolean
+          storage_path?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          expires_on?: string | null
+          external_url?: string | null
+          id?: string
+          note?: string | null
+          org_id?: string
+          restricted?: boolean
+          storage_path?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_gatekeeper_results: {
+        Row: {
+          created_at: string
+          expires_on: string | null
+          id: string
+          note: string | null
+          org_id: string
+          requirement_id: string
+          result: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          note?: string | null
+          org_id: string
+          requirement_id: string
+          result?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          note?: string | null
+          org_id?: string
+          requirement_id?: string
+          result?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_gatekeeper_results_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_gatekeeper_results_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "gatekeeper_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_import_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          note: string | null
+          source_system: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label: string
+          note?: string | null
+          source_system: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          note?: string | null
+          source_system?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vendor_import_rows: {
+        Row: {
+          batch_id: string
+          created_at: string
+          created_contact_id: string | null
+          created_org_id: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision: string
+          decision_note: string | null
+          departments: string[]
+          display_name: string
+          email: string | null
+          groups: string[]
+          id: string
+          match_confidence: number | null
+          match_org_id: string | null
+          match_reasons: string[]
+          phone: string | null
+          proposed_action: string
+          raw: Json
+          source_role: string
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          created_contact_id?: string | null
+          created_org_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          decision_note?: string | null
+          departments?: string[]
+          display_name: string
+          email?: string | null
+          groups?: string[]
+          id?: string
+          match_confidence?: number | null
+          match_org_id?: string | null
+          match_reasons?: string[]
+          phone?: string | null
+          proposed_action?: string
+          raw?: Json
+          source_role?: string
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          created_contact_id?: string | null
+          created_org_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          decision_note?: string | null
+          departments?: string[]
+          display_name?: string
+          email?: string | null
+          groups?: string[]
+          id?: string
+          match_confidence?: number | null
+          match_org_id?: string | null
+          match_reasons?: string[]
+          phone?: string | null
+          proposed_action?: string
+          raw?: Json
+          source_role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_import_rows_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_import_rows_created_contact_id_fkey"
+            columns: ["created_contact_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_import_rows_created_org_id_fkey"
+            columns: ["created_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_import_rows_match_org_id_fkey"
+            columns: ["match_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_job_ratings: {
         Row: {
           communication: number
@@ -2575,6 +3046,211 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: true
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_org_members: {
+        Row: {
+          active: boolean
+          attestation_version: string | null
+          attested_at: string | null
+          created_at: string
+          id: string
+          masked_code: string
+          org_id: string
+          updated_at: string
+          user_id: string
+          vendor_role: string
+        }
+        Insert: {
+          active?: boolean
+          attestation_version?: string | null
+          attested_at?: string | null
+          created_at?: string
+          id?: string
+          masked_code: string
+          org_id: string
+          updated_at?: string
+          user_id: string
+          vendor_role?: string
+        }
+        Update: {
+          active?: boolean
+          attestation_version?: string | null
+          attested_at?: string | null
+          created_at?: string
+          id?: string
+          masked_code?: string
+          org_id?: string
+          updated_at?: string
+          user_id?: string
+          vendor_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_orgs: {
+        Row: {
+          approval_limit: number | null
+          capacity_note: string | null
+          created_at: string
+          created_by: string | null
+          display_name: string
+          emergency_available: boolean
+          google_place_id: string | null
+          google_rating: number | null
+          google_refreshed_at: string | null
+          google_review_count: number | null
+          id: string
+          insurance_expires_on: string | null
+          insurance_status: string
+          last_verified_at: string | null
+          legacy_all_groups: boolean
+          legacy_market_hints: string[]
+          legal_name: string
+          license_expires_on: string | null
+          license_status: string
+          markets: string[]
+          notes: string | null
+          payment_terms: string | null
+          pricing_note: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          response_time_note: string | null
+          service_categories: string[]
+          status: string
+          tier: string | null
+          trial_jobs_required: number
+          trial_score: number | null
+          updated_at: string
+          vendor_class: string
+          w9_status: string
+          website: string | null
+        }
+        Insert: {
+          approval_limit?: number | null
+          capacity_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name: string
+          emergency_available?: boolean
+          google_place_id?: string | null
+          google_rating?: number | null
+          google_refreshed_at?: string | null
+          google_review_count?: number | null
+          id?: string
+          insurance_expires_on?: string | null
+          insurance_status?: string
+          last_verified_at?: string | null
+          legacy_all_groups?: boolean
+          legacy_market_hints?: string[]
+          legal_name: string
+          license_expires_on?: string | null
+          license_status?: string
+          markets?: string[]
+          notes?: string | null
+          payment_terms?: string | null
+          pricing_note?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          response_time_note?: string | null
+          service_categories?: string[]
+          status?: string
+          tier?: string | null
+          trial_jobs_required?: number
+          trial_score?: number | null
+          updated_at?: string
+          vendor_class?: string
+          w9_status?: string
+          website?: string | null
+        }
+        Update: {
+          approval_limit?: number | null
+          capacity_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          emergency_available?: boolean
+          google_place_id?: string | null
+          google_rating?: number | null
+          google_refreshed_at?: string | null
+          google_review_count?: number | null
+          id?: string
+          insurance_expires_on?: string | null
+          insurance_status?: string
+          last_verified_at?: string | null
+          legacy_all_groups?: boolean
+          legacy_market_hints?: string[]
+          legal_name?: string
+          license_expires_on?: string | null
+          license_status?: string
+          markets?: string[]
+          notes?: string | null
+          payment_terms?: string | null
+          pricing_note?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          response_time_note?: string | null
+          service_categories?: string[]
+          status?: string
+          tier?: string | null
+          trial_jobs_required?: number
+          trial_score?: number | null
+          updated_at?: string
+          vendor_class?: string
+          w9_status?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      vendor_status_events: {
+        Row: {
+          actor_id: string | null
+          actor_label: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          org_id: string
+          reason: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          org_id: string
+          reason: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          org_id?: string
+          reason?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_status_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -2746,6 +3422,14 @@ export type Database = {
       is_platform_owner: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      is_vendor_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_vendor_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       owner_sees_property: {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
