@@ -373,26 +373,49 @@ export async function decideImportRow(
 
   const groupsAreMeaningful = (row.groups ?? []).filter((g) => !/all groups/i.test(g));
   const allGroups = (row.groups ?? []).some((g) => /all groups/i.test(g));
+  const profile = (row.raw as { profile?: LegacyProfile | null } | null)?.profile ?? null;
 
   if (input.action === "create") {
+    // Everything the old record claimed is written down as a claim, never as a
+    // verified gate. A supervisor still has to check insurance, licence and W-9.
+    const notes = [
+      profile?.comments,
+      profile?.restrictions ? `Restrictions: ${profile.restrictions}` : null,
+      profile?.preference ? `Historic preference: ${profile.preference}` : null,
+      profile?.coverageHours ? `Coverage hours: ${profile.coverageHours}` : null,
+      profile?.serviceArea ? `Service area on record: ${profile.serviceArea}` : null,
+      profile?.claims.length ? `Recorded in Notion (unverified) — ${profile.claims.join("; ")}.` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const { data, error: insertError } = await db
       .from("vendor_orgs")
       .insert({
         display_name: row.display_name,
         legal_name: row.display_name,
         status: "legacy",
-        service_categories: row.departments ?? [],
-        markets: [],
+        service_categories: profile?.specialties?.length ? profile.specialties : (row.departments ?? []),
+        markets: profile?.markets ?? [],
         legacy_market_hints: groupsAreMeaningful,
         legacy_all_groups: allGroups,
+        primary_contact_name: profile?.contactPerson ?? null,
         primary_contact_email: row.email,
         primary_contact_phone: row.phone,
+        website: profile?.website ?? null,
+        pricing_note: profile?.pricing ?? null,
+        payment_terms: profile?.paymentType ?? null,
+        emergency_available: Boolean(profile?.emergencyAvailability && /yes|24|always/i.test(profile.emergencyAvailability)),
+        insurance_expires_on: profile?.insuranceExpiresOn ?? null,
+        license_expires_on: profile?.licenseExpiresOn ?? null,
+        notes: notes || null,
         created_by: userId,
       })
       .select("id")
       .single();
     if (insertError) throw new Error(insertError.message);
     createdOrgId = data.id;
+
 
     await db.from("vendor_status_events").insert({
       org_id: data.id,
