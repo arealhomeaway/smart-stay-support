@@ -11,6 +11,7 @@ import { getInboundStatus, listImportedMatters, runInboundSync } from "@/lib/inb
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
 import { NotionSyncPanel } from "@/components/NotionSyncPanel";
+import { MailboxIntakePanel } from "@/components/MailboxIntakePanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -120,6 +121,8 @@ function IntegrationsPage() {
 
 
       </div>
+
+      <MailboxIntakePanel />
 
       <NotionSyncPanel />
 
