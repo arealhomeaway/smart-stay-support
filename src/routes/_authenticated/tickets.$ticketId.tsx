@@ -493,6 +493,17 @@ function TicketDetail() {
             <HandoffPanel ticket={ticket} closed={closed} onChanged={refresh} />
           )}
 
+          {!closed && (
+            <VendorDispatchPanel
+              ticketId={ticket.id}
+              vendorUserId={ticket.vendor_user_id ?? null}
+              vendorBrief={ticket.vendor_brief ?? null}
+              vendorStatus={ticket.vendor_status ?? null}
+              onChanged={refresh}
+            />
+          )}
+
+
           {!closed && ticket.status !== "waiting" && (
             <Card>
               <CardHeader className="pb-3">
