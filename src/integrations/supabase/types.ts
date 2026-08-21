@@ -184,6 +184,339 @@ export type Database = {
           },
         ]
       }
+      owner_invites: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          owner_email: string | null
+          program_id: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          owner_email?: string | null
+          program_id: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          owner_email?: string | null
+          program_id?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_invites_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_programs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          id: string
+          notes: string | null
+          onboarding_target_hours: number
+          ongoing_target_hours: number
+          owner_email: string | null
+          owner_name: string | null
+          owner_user_id: string | null
+          property_id: string
+          started_on: string | null
+          status: string
+          target_hours: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          onboarding_target_hours?: number
+          ongoing_target_hours?: number
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_user_id?: string | null
+          property_id: string
+          started_on?: string | null
+          status?: string
+          target_hours?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          onboarding_target_hours?: number
+          ongoing_target_hours?: number
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_user_id?: string | null
+          property_id?: string
+          started_on?: string | null
+          status?: string
+          target_hours?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_programs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_reviews: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          decision_path: string
+          evidence: string | null
+          id: string
+          impact: string | null
+          notified_at: string | null
+          outcome: string | null
+          owner_decision: string | null
+          owner_response: string | null
+          phase: string
+          program_id: string
+          recommendation: string | null
+          respond_by: string | null
+          responded_at: string | null
+          sort_order: number
+          stage: string
+          status: string
+          template_id: string | null
+          ticket_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_path?: string
+          evidence?: string | null
+          id?: string
+          impact?: string | null
+          notified_at?: string | null
+          outcome?: string | null
+          owner_decision?: string | null
+          owner_response?: string | null
+          phase: string
+          program_id: string
+          recommendation?: string | null
+          respond_by?: string | null
+          responded_at?: string | null
+          sort_order?: number
+          stage: string
+          status?: string
+          template_id?: string | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_path?: string
+          evidence?: string | null
+          id?: string
+          impact?: string | null
+          notified_at?: string | null
+          outcome?: string | null
+          owner_decision?: string | null
+          owner_response?: string | null
+          phase?: string
+          program_id?: string
+          recommendation?: string | null
+          respond_by?: string | null
+          responded_at?: string | null
+          sort_order?: number
+          stage?: string
+          status?: string
+          template_id?: string | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_reviews_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_reviews_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "owner_task_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_reviews_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_task_templates: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          decision_path: string
+          id: string
+          owner_action: string
+          phase: string
+          planning_hours_high: number
+          planning_hours_low: number
+          recurring: boolean
+          respond_within_days: number
+          sort_order: number
+          stage: string
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          decision_path?: string
+          id?: string
+          owner_action: string
+          phase: string
+          planning_hours_high?: number
+          planning_hours_low?: number
+          recurring?: boolean
+          respond_within_days?: number
+          sort_order?: number
+          stage: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          decision_path?: string
+          id?: string
+          owner_action?: string
+          phase?: string
+          planning_hours_high?: number
+          planning_hours_low?: number
+          recurring?: boolean
+          respond_within_days?: number
+          sort_order?: number
+          stage?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      owner_time_entries: {
+        Row: {
+          activity: string
+          amends_entry_id: string | null
+          attested: boolean
+          created_at: string
+          entry_date: string
+          id: string
+          materials_reviewed: string | null
+          minutes: number
+          output: string | null
+          owner_user_id: string
+          phase: string
+          program_id: string
+          review_id: string | null
+        }
+        Insert: {
+          activity: string
+          amends_entry_id?: string | null
+          attested?: boolean
+          created_at?: string
+          entry_date?: string
+          id?: string
+          materials_reviewed?: string | null
+          minutes: number
+          output?: string | null
+          owner_user_id: string
+          phase: string
+          program_id: string
+          review_id?: string | null
+        }
+        Update: {
+          activity?: string
+          amends_entry_id?: string | null
+          attested?: boolean
+          created_at?: string
+          entry_date?: string
+          id?: string
+          materials_reviewed?: string | null
+          minutes?: number
+          output?: string | null
+          owner_user_id?: string
+          phase?: string
+          program_id?: string
+          review_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_time_entries_amends_entry_id_fkey"
+            columns: ["amends_entry_id"]
+            isOneToOne: false
+            referencedRelation: "owner_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_time_entries_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_time_entries_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_steps: {
         Row: {
           created_at: string
@@ -1007,6 +1340,10 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      owns_program: {
+        Args: { _program_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner"
