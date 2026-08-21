@@ -15,12 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const ROLE_LABEL: Record<string, string> = {
-  admin: "Admin — full access",
-  manager: "Supervisor — oversight & analytics",
-  tech: "Coordinator — day-to-day only",
-  vendor: "Vendor — only their dispatched jobs",
-};
+import { ROLE_BLURBS, ROLE_LABELS, ASSIGNABLE_ROLES, primaryRole } from "@/lib/permissions";
+
+const ROLE_LABEL: Record<string, string> = Object.fromEntries(
+  ASSIGNABLE_ROLES.map((r) => [r, `${ROLE_LABELS[r]} — ${ROLE_BLURBS[r]}`]),
+);
 
 /** Admin-only: promote or demote teammates. Every change is enforced server side. */
 export function TeamAccessPanel() {
@@ -36,7 +35,7 @@ export function TeamAccessPanel() {
   });
 
   const update = useMutation({
-    mutationFn: (vars: { userId: string; role: "admin" | "manager" | "tech" | "vendor" }) =>
+    mutationFn: (vars: { userId: string; role: "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner" }) =>
       setFn({ data: vars }),
     onSuccess: () => {
       toast.success("Access updated.");
@@ -55,8 +54,8 @@ export function TeamAccessPanel() {
           <ShieldCheck className="size-4" /> Team access
         </CardTitle>
         <CardDescription>
-          Supervisors and admins see Oversight, Analytics, Seats, Properties and Integrations. Coordinators see
-          the dashboard, Coach, Matters and Playbooks. Vendors only see the jobs dispatched to them.
+          Permission role decides what a person may do. Their seat and team, set on the Seats board below,
+          decide what work they own. Changing a role here takes effect everywhere, including the database.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -64,13 +63,7 @@ export function TeamAccessPanel() {
           <Skeleton className="h-24 w-full" />
         ) : (
           (access.data?.people ?? []).map((p) => {
-            const current = p.roles.includes("admin")
-              ? "admin"
-              : p.roles.includes("manager")
-                ? "manager"
-                : p.roles.includes("vendor")
-                  ? "vendor"
-                  : "tech";
+            const current = primaryRole(p.roles as never);
             return (
               <div
                 key={p.id}
@@ -88,7 +81,7 @@ export function TeamAccessPanel() {
                     value={current}
                     disabled={update.isPending}
                     onValueChange={(role) =>
-                      update.mutate({ userId: p.id, role: role as "admin" | "manager" | "tech" | "vendor" })
+                      update.mutate({ userId: p.id, role: role as "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner" })
                     }
                   >
                     <SelectTrigger>

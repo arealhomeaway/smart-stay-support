@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { landingFor, type AppRole } from "@/lib/permissions";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,14 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+/** Send each person to the landing page their role owns. */
+async function landingPath() {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return "/dashboard";
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", auth.user.id);
+  return landingFor((data ?? []).map((r) => r.role as AppRole));
+}
+
 function AuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -36,7 +45,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.navigate({ to: "/dashboard" });
+      if (data.session) void landingPath().then((to) => router.navigate({ to }));
     });
   }, [router]);
 
@@ -59,7 +68,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.navigate({ to: "/dashboard" });
+        router.navigate({ to: await landingPath() });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -79,7 +88,7 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    router.navigate({ to: "/dashboard" });
+    router.navigate({ to: await landingPath() });
   }
 
   return (

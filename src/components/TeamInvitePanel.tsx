@@ -23,13 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type InviteRole = "admin" | "manager" | "tech" | "vendor";
+type InviteRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
 
 const ROLE_LABEL: Record<InviteRole, string> = {
-  admin: "Admin — full access",
-  manager: "Supervisor — oversight & analytics",
-  tech: "Coordinator — day-to-day",
+  admin: "Platform Owner — everything, including roles and settings",
+  manager: "Supervisor — oversight, analytics and handoff review",
+  onboarding: "Onboarding staff — pre-handoff work and readiness",
+  tech: "Staff — their own assigned work",
   vendor: "Vendor — only their dispatched jobs",
+  owner: "Homeowner — their own enrolled home",
 };
 
 /** Admin-only: issue single-use codes that grant a role when the new teammate signs up. */
