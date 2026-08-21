@@ -1252,6 +1252,51 @@ export type Database = {
         }
         Relationships: []
       }
+      team_invites: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          invitee_email: string | null
+          invitee_name: string | null
+          note: string | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          invitee_email?: string | null
+          invitee_name?: string | null
+          note?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          invitee_email?: string | null
+          invitee_name?: string | null
+          note?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       ticket_activity: {
         Row: {
           author_id: string | null
