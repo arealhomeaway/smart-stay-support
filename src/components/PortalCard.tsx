@@ -18,8 +18,8 @@ export function PortalCard({
   portal: PortalDefinition;
   authenticated: boolean;
   /** Short "needs you" line, only when the portal can truthfully report one. */
-  attention?: string;
-  recent?: boolean;
+  attention?: string | undefined;
+  recent?: boolean | undefined;
 }) {
   const Icon = portal.icon;
 
