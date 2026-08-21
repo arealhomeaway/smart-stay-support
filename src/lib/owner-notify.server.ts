@@ -21,13 +21,8 @@ function emailConfig() {
   return { key, from };
 }
 
-function smsConfig() {
-  const sid = process.env["TWILIO_ACCOUNT_SID"];
-  const token = process.env["TWILIO_AUTH_TOKEN"];
-  const from = process.env["TWILIO_FROM_NUMBER"];
-  if (!sid || !token || !from) return null;
-  return { sid, token, from };
-}
+// Texting is handled by people, not an SMS provider. When an alert asks for a
+// text we raise an internal "reach this homeowner" task instead.
 
 async function sendEmail(to: string, subject: string, body: string) {
   const cfg = emailConfig();
@@ -53,33 +48,13 @@ async function sendEmail(to: string, subject: string, body: string) {
   }
 }
 
-async function sendSms(to: string, body: string) {
-  const cfg = smsConfig();
-  if (!cfg) return { status: "skipped" as const, error: "Text messaging is not configured yet." };
-
-  try {
-    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${cfg.sid}/Messages.json`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${btoa(`${cfg.sid}:${cfg.token}`)}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({ To: to, From: cfg.from, Body: body.slice(0, 320) }),
-    });
-    if (!res.ok) return { status: "failed" as const, error: `Text provider: ${res.status}` };
-    return { status: "sent" as const, error: null };
-  } catch (err) {
-    return { status: "failed" as const, error: err instanceof Error ? err.message : "Text failed" };
-  }
-}
-
 function escapeHtml(value: string) {
   return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 }
 
-/** True when the channel has credentials in place. Surfaced to supervisors. */
+/** True when the channel is live. Texting is a human task, never automated. */
 export function channelStatus() {
-  return { email: Boolean(emailConfig()), sms: Boolean(smsConfig()) };
+  return { email: Boolean(emailConfig()), sms: false as const };
 }
 
 /** Sends every alert still waiting on a channel. Safe to run on a schedule. */
@@ -87,7 +62,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   const { data, error } = await supabase
     .from("owner_notifications")
     .select(
-      "id, title, body, priority, sms_status, email_status, program_id, owner_programs(owner_email, owner_phone, owner_name)",
+      "id, title, body, priority, ticket_id, sms_status, email_status, program_id, owner_programs(owner_email, owner_phone, owner_name)",
     )
     .or("email_status.eq.pending,sms_status.eq.pending")
     .order("created_at")
@@ -95,7 +70,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   if (error) throw error;
 
   let emailed = 0;
-  let texted = 0;
+  let escalated = 0;
   const notes: string[] = [];
 
   for (const row of data ?? []) {
@@ -120,15 +95,28 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
       }
     }
 
+    // A text request becomes an internal task: a teammate calls or texts the
+    // homeowner personally. We never auto-send an SMS.
     if (row.sms_status === "pending") {
-      if (!program?.owner_phone) {
-        patch.sms_status = "skipped";
+      const { error: alertError } = await supabase.from("owner_contact_alerts").insert({
+        program_id: row.program_id,
+        notification_id: row.id,
+        ticket_id: row.ticket_id ?? null,
+        priority: row.priority,
+        owner_name: program?.owner_name ?? null,
+        owner_phone: program?.owner_phone ?? null,
+        owner_email: program?.owner_email ?? null,
+        title: row.title,
+        body: row.body,
+        reason: program?.owner_phone
+          ? "Urgent matter at this owner's home — text or call them now."
+          : "Urgent matter at this owner's home, and we have no phone number on file — reach them by email and collect a number.",
+      });
+      if (alertError) {
+        notes.push(alertError.message);
       } else {
-        const result = await sendSms(program.owner_phone, `${row.title}\n\n${row.body}\n\n${APP_URL}`);
-        patch.sms_status = result.status;
-        if (result.error) patch.delivery_error = result.error;
-        if (result.status === "sent") texted++;
-        else if (result.error) notes.push(result.error);
+        patch.sms_status = "escalated";
+        escalated++;
       }
     }
 
@@ -144,7 +132,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
     ok: true as const,
     considered: (data ?? []).length,
     emailed,
-    texted,
+    escalated,
     notes: Array.from(new Set(notes)).slice(0, 5),
   };
 }

@@ -28,6 +28,7 @@ import {
   type TaskTemplate,
 } from "@/lib/owner-program";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,6 +121,8 @@ function ProgramsBoard() {
           <span className="font-medium text-foreground">40+ through ongoing operations</span>.
         </p>
       </header>
+
+      <OwnerContactAlerts />
 
       <ProgramSummary rows={rows} />
 

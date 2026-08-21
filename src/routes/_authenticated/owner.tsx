@@ -205,7 +205,7 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
                 {a.body && <p className="mt-1 text-sm text-muted-foreground">{a.body}</p>}
                 <p className="mt-1 text-xs text-muted-foreground">
                   {a.email_status === "sent" ? "Emailed" : "In-app"}
-                  {a.sms_status === "sent" ? " · texted" : ""}
+                  {a.sms_status === "escalated" ? " · your ARHA contact is reaching out personally" : ""}
                 </p>
               </div>
             );
