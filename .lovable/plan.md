@@ -126,7 +126,7 @@ Testing each phase: server-function unit checks, RLS probes per role, sync idemp
 
 ## 11. What I still need from ARHA
 
-- The Notion property/onboarding database link (and confirmation the integration has access to it).
+- **Share the five onboarding Notion pages with the Lovable integration** — nothing else in Phase 1 can start until this is done.
 - Which Notion fields authorized staff may edit from Resolve.
 - QuickBooks Online admin to authorize the connection when we reach Finance.
 - Approval authority limits (who approves what spend, and at what amount).
