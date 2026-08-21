@@ -16,11 +16,11 @@ type Db = SupabaseClient<Database>;
 export type IntakePayload = {
   subject: string;
   body: string;
-  from?: string | null;
-  property?: string | null;
-  source?: string | null;
-  externalId?: string | null;
-  externalUrl?: string | null;
+  from?: string | null | undefined;
+  property?: string | null | undefined;
+  source?: string | null | undefined;
+  externalId?: string | null | undefined;
+  externalUrl?: string | null | undefined;
 };
 
 export type IntakeResult = {
