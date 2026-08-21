@@ -12,6 +12,7 @@ import {
   History,
   Home,
   KeyRound,
+  LayoutGrid,
   ListChecks,
   MapPinned,
   LogOut,
@@ -74,6 +75,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/command-center", label: "Executive Administration", icon: Gauge, tour: "command-center", capability: "command_center" },
       { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
+      { to: "/hub", label: "All my portals", icon: LayoutGrid, tour: "hub" },
     ],
   },
   {

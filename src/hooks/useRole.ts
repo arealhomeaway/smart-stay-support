@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { entryPathFor } from "@/lib/portals";
 import {
   can,
   capabilitiesFor,
-  landingFor,
   primaryRole,
   type AppRole,
   type Capability,
@@ -55,7 +55,7 @@ export function useRole() {
     primary: primaryRole(roles),
     capabilities: capabilitiesFor(roles),
     can: (capability: Capability) => can(roles, capability),
-    landing: landingFor(roles),
+    landing: entryPathFor(roles),
     isPlatformOwner: roles.includes("admin"),
     isAdmin: roles.includes("admin"),
     isSupervisor: roles.includes("admin") || roles.includes("manager"),
