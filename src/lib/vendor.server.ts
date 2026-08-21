@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import type { VendorCandidate } from "./dispatch";
 
 type Client = SupabaseClient<Database>;
 
@@ -105,7 +106,7 @@ export async function dispatchVendor(input: {
 export async function rankVendorsForTicket(ticketId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { distanceMeters } = await import("./visits");
-  const { candidateReasons, candidateScore, type VendorCandidate } = await import("./dispatch");
+  const { candidateReasons, candidateScore } = await import("./dispatch");
   const { loadVendorScoreboard } = await import("./scorecard.server");
 
   const { data: ticket } = await supabaseAdmin
