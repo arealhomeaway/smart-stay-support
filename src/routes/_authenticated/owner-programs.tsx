@@ -27,6 +27,7 @@ import {
   ownerTaskRoadmap,
   removeOwnerProgramProperty,
   seedOwnerRoadmap,
+  startOwnerProgram,
   updateOwnerProgram,
 } from "@/lib/owner-program.functions";
 import { DECISION_PATHS, PHASE_LABELS, type TaskTemplate } from "@/lib/owner-program";
@@ -144,7 +145,7 @@ function ProgramsBoard() {
   const qc = useQueryClient();
   const load = useServerFn(ownerPrograms);
   const loadRoadmap = useServerFn(ownerTaskRoadmap);
-  const enroll = useServerFn(startOwnerProgramFn());
+  const enroll = useServerFn(startOwnerProgram);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [propertyId, setPropertyId] = useState("");
@@ -304,12 +305,6 @@ function ProgramsBoard() {
     </div>
   );
 }
-
-// Kept as a function so the import stays a value reference at module scope.
-function startOwnerProgramFn() {
-  return startOwnerProgramImpl;
-}
-import { startOwnerProgram as startOwnerProgramImpl } from "@/lib/owner-program.functions";
 
 function ProgramSummary({ rows }: { rows: ProgramRow[] }) {
   const stats = useMemo(() => {
@@ -834,9 +829,15 @@ function ProgramDetail({
                     const raw = window.prompt("Corrected minutes for this entry", String(e.minutes));
                     if (!raw) return;
                     const minutes = Number(raw);
-                    if (!Number.isFinite(minutes) || minutes < 1) return toast.error("Enter a valid number of minutes.");
+                    if (!Number.isFinite(minutes) || minutes < 1) {
+                      toast.error("Enter a valid number of minutes.");
+                      return;
+                    }
                     const reason = window.prompt("Reason for the correction");
-                    if (!reason) return toast.error("A correction needs a reason.");
+                    if (!reason) {
+                      toast.error("A correction needs a reason.");
+                      return;
+                    }
                     void run(() => correct({ data: { entryId: e.id, minutes, reason } }), "Correction recorded.");
                   }}
                 >
