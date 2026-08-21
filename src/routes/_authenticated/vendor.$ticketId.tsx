@@ -235,6 +235,8 @@ function VendorJob() {
         </CardContent>
       </Card>
 
+      {!finished && <VisitCheckInCard ticketId={ticketId} homeName={property?.name ?? "the home"} />}
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">What we need done</CardTitle>
