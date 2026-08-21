@@ -108,7 +108,13 @@ async function sendInviteEmail(input: {
   const result = await sendEmail({
     to: input.email,
     subject: "Your invite to Resolve — A Real Home Away",
-    html: emailShell("You're invited to Resolve", body, { label: "Create your account", url: `${appUrl}/auth` }),
+    html: emailShell(
+      "You're invited to Resolve",
+      body,
+      { label: "Create your account", url: `${appUrl}/auth` },
+      input.role === "vendor" ? "vendor" : input.role === "owner" ? "owner" : "staff",
+    ),
+    purpose: "team_invite",
   });
   return { status: result.status, error: result.error };
 }

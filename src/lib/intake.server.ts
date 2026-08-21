@@ -29,7 +29,16 @@ export type IntakeResult = {
   ref: number;
   propertyMatched: boolean;
   priority: "p1" | "p2" | "p3" | "p4";
+  /** True when the message was filed as a reply on an existing matter. */
+  threaded?: boolean;
 };
+
+/** Every outbound matter email carries [ARHA-123] so replies come back here. */
+export const REF_TAG = /\[ARHA-(\d+)\]/i;
+export function refTag(ref: number) {
+  return `[ARHA-${ref}]`;
+}
+
 
 const P1 = /(fire|smoke|carbon monoxide|co alarm|gas|flood|flooding|active leak|no heat|no ac|no a\/c|no power|lockout|locked out|break-?in|injur|emergenc|urgent)/i;
 const P2 = /(leak|water|hvac|heat|air condition|no hot water|toilet|clog|backed up|pest|roach|bed bug|broken|not working|guest complain)/i;
@@ -76,6 +85,37 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
   const body = payload.body.trim();
   const source = (payload.source ?? "email").trim().toLowerCase().slice(0, 40);
   const combined = `${subject}\n${body}\n${payload.property ?? ""}`;
+
+  // A reply to one of our own emails keeps the [ARHA-123] tag: file it on that
+  // matter's timeline instead of opening a duplicate.
+  const tagged = subject.match(REF_TAG) ?? body.match(REF_TAG);
+  if (tagged) {
+    const { data: parent } = await db
+      .from("tickets")
+      .select("id, ref, property_id, priority")
+      .eq("ref", Number(tagged[1]))
+      .maybeSingle();
+    if (parent) {
+      await db.from("ticket_activity").insert({
+        ticket_id: parent.id,
+        kind: "note",
+        event_type: "note",
+        channel: source,
+        body: [payload.from ? `Reply from ${payload.from}:` : "Emailed reply:", body || subject]
+          .filter(Boolean)
+          .join("\n\n"),
+      });
+      return {
+        ok: true,
+        ticketId: parent.id,
+        ref: parent.ref,
+        propertyMatched: Boolean(parent.property_id),
+        priority: (parent.priority as IntakeResult["priority"]) ?? "p3",
+        threaded: true,
+      };
+    }
+  }
+
 
   // Don't create the same matter twice when a webhook retries.
   if (payload.externalId) {

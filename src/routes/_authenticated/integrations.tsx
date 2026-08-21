@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInboundStatus, listImportedMatters, runInboundSync } from "@/lib/inbound.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
 import { NotionSyncPanel } from "@/components/NotionSyncPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
@@ -121,6 +122,9 @@ function IntegrationsPage() {
       </div>
 
       <NotionSyncPanel />
+
+      <EmailDeliveryPanel />
+
 
       <Card>
         <CardHeader>

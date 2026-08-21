@@ -1,11 +1,25 @@
 /**
  * Outbound email (server-only).
  *
- * Mail is sent from the connected ARHA Microsoft 365 mailbox through the
- * Lovable connector gateway, so no mail credentials ever live in the app.
+ * Mail is sent from the shared ARHA mailbox through the Lovable connector
+ * gateway, so no mail credentials ever live in the app. Every attempt is
+ * written to `email_log` so a failed owner alert is visible instead of silent,
+ * and throttles/outages are retried with backoff before we give up.
  */
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/microsoft_outlook";
+
+/** The shared mailbox everything sends from. Replies land in the team inbox. */
+export const SHARED_MAILBOX = "info@arealhomeaway.com";
+
+const BRAND = {
+  ink: "#20282B",
+  teal: "#13747A",
+  accent: "#03A7B2",
+  ivory: "#F7F5F0",
+  muted: "#6B7280",
+  logo: "https://smart-stay-support.lovable.app/__l5e/assets-v1/09a79f51-224c-49e2-ae62-9d57991f85b3/arha-logo-white.png",
+};
 
 function mailConfig() {
   const lovableKey = process.env["LOVABLE_API_KEY"];
@@ -23,68 +37,231 @@ export function escapeHtml(value: string) {
   return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+export function isEmailAddress(value: string | null | undefined): value is string {
+  return typeof value === "string" && EMAIL_RE.test(value.trim());
+}
+
+export type Audience = "staff" | "owner" | "vendor";
+
+const FOOTER: Record<Audience, string> = {
+  staff: "You're receiving this because you're on the A Real Home Away operations team in Resolve.",
+  owner: "You're receiving this as a homeowner working with A Real Home Away. Reply to this email and a coordinator will pick it up.",
+  vendor: "You're receiving this as an A Real Home Away service partner. Reply to this email to reach the coordinator on duty.",
+};
+
 /** Wraps plain text in the ARHA email shell. */
-export function emailShell(heading: string, body: string, action?: { label: string; url: string }) {
-  return `<div style="font-family:Helvetica,Arial,sans-serif;line-height:1.55;color:#1f2933">
-    <h2 style="margin:0 0 12px">${escapeHtml(heading)}</h2>
-    <div style="white-space:pre-wrap;margin:0 0 20px">${escapeHtml(body)}</div>
-    ${
-      action
-        ? `<p><a href="${action.url}" style="background:#0f766e;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">${escapeHtml(
-            action.label,
-          )}</a></p>`
-        : ""
-    }
-    <p style="color:#6b7280;font-size:12px;margin-top:24px">A Real Home Away</p>
-  </div>`;
+export function emailShell(
+  heading: string,
+  body: string,
+  action?: { label: string; url: string },
+  audience: Audience = "staff",
+) {
+  return `<!doctype html><html><body style="margin:0;padding:0;background:${BRAND.ivory}">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.ivory};padding:24px 12px">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid rgba(32,40,43,0.08)">
+        <tr><td style="background:${BRAND.ink};padding:18px 24px">
+          <img src="${BRAND.logo}" alt="A Real Home Away" height="28" style="height:28px;display:block;border:0" />
+        </td></tr>
+        <tr><td style="padding:24px;font-family:Calibri,Carlito,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:${BRAND.ink}">
+          <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3;color:${BRAND.teal}">${escapeHtml(heading)}</h1>
+          <div style="white-space:pre-wrap;margin:0 0 20px">${escapeHtml(body)}</div>
+          ${
+            action
+              ? `<p style="margin:0 0 8px"><a href="${action.url}" style="background:${BRAND.teal};color:#ffffff;padding:11px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">${escapeHtml(
+                  action.label,
+                )}</a></p>`
+              : ""
+          }
+        </td></tr>
+        <tr><td style="padding:16px 24px;border-top:1px solid rgba(32,40,43,0.08);font-family:Calibri,Carlito,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted}">
+          <strong style="color:${BRAND.ink}">A Real Home Away</strong><br/>
+          ${escapeHtml(FOOTER[audience])}
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+/** Plain-text alternative built from the same content. Improves inbox placement. */
+export function emailText(heading: string, body: string, action?: { label: string; url: string }) {
+  return [heading, "", body, action ? `\n${action.label}: ${action.url}` : "", "", "— A Real Home Away"]
+    .filter((line) => line !== null)
+    .join("\n");
 }
 
 export type SendEmailResult =
   | { status: "sent"; error: null }
   | { status: "skipped" | "failed"; error: string };
 
-/** Sends one message from the connected mailbox. Never throws. */
-export async function sendEmail(input: {
+type SendInput = {
   to: string;
   subject: string;
   html: string;
   cc?: string[];
   replyTo?: string;
-}): Promise<SendEmailResult> {
-  const cfg = mailConfig();
-  if (!cfg) return { status: "skipped", error: "The Microsoft mailbox is not connected yet." };
+  /** What this message is for — shows in the delivery log. */
+  purpose?: string;
+  ticketId?: string | null;
+};
 
+const MAX_ATTEMPTS = 3;
+const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function logDelivery(entry: {
+  recipient: string;
+  subject: string;
+  purpose: string;
+  replyTo: string | null;
+  ticketId: string | null;
+  status: string;
+  attempts: number;
+  error: string | null;
+}) {
   try {
-    const res = await fetch(`${GATEWAY_URL}/me/sendMail`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${cfg.lovableKey}`,
-        "X-Connection-Api-Key": cfg.connectionKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: {
-          subject: input.subject,
-          body: { contentType: "HTML", content: input.html },
-          toRecipients: [{ emailAddress: { address: input.to } }],
-          ...(input.cc?.length
-            ? { ccRecipients: input.cc.map((address) => ({ emailAddress: { address } })) }
-            : {}),
-          ...(input.replyTo
-            ? { replyTo: [{ emailAddress: { address: input.replyTo } }] }
-            : {}),
-        },
-        saveToSentItems: true,
-      }),
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("email_log").insert({
+      recipient: entry.recipient,
+      subject: entry.subject.slice(0, 300),
+      purpose: entry.purpose,
+      sender: SHARED_MAILBOX,
+      reply_to: entry.replyTo,
+      ticket_id: entry.ticketId,
+      status: entry.status,
+      attempts: entry.attempts,
+      error_message: entry.error ? entry.error.slice(0, 500) : null,
+      sent_at: entry.status === "sent" ? new Date().toISOString() : null,
     });
+  } catch (err) {
+    console.error("Could not write to email_log:", err);
+  }
+}
 
-    if (!res.ok) {
+/**
+ * Sends one message from the shared mailbox. Never throws.
+ * Retries throttles and provider outages with backoff, then records the outcome.
+ */
+export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
+  const purpose = input.purpose ?? "general";
+  const to = input.to?.trim() ?? "";
+
+  if (!isEmailAddress(to)) {
+    const error = "That is not a valid email address.";
+    await logDelivery({
+      recipient: to || "(missing)",
+      subject: input.subject,
+      purpose,
+      replyTo: input.replyTo ?? null,
+      ticketId: input.ticketId ?? null,
+      status: "skipped",
+      attempts: 0,
+      error,
+    });
+    return { status: "skipped", error };
+  }
+
+  const cfg = mailConfig();
+  if (!cfg) {
+    const error = "The Microsoft mailbox is not connected yet.";
+    await logDelivery({
+      recipient: to,
+      subject: input.subject,
+      purpose,
+      replyTo: input.replyTo ?? null,
+      ticketId: input.ticketId ?? null,
+      status: "skipped",
+      attempts: 0,
+      error,
+    });
+    return { status: "skipped", error };
+  }
+
+  const replyTo = isEmailAddress(input.replyTo) ? input.replyTo.trim() : SHARED_MAILBOX;
+  const message = {
+    subject: input.subject,
+    body: { contentType: "HTML", content: input.html },
+    toRecipients: [{ emailAddress: { address: to } }],
+    ...(input.cc?.filter(isEmailAddress).length
+      ? { ccRecipients: input.cc.filter(isEmailAddress).map((address) => ({ emailAddress: { address } })) }
+      : {}),
+    replyTo: [{ emailAddress: { address: replyTo } }],
+  };
+
+  let attempts = 0;
+  let lastError = "Email failed";
+  // Send As on the shared mailbox is the goal; if the mailbox permission is
+  // missing we fall back to the connected user's own mailbox so alerts still land.
+  let path = `/users/${encodeURIComponent(SHARED_MAILBOX)}/sendMail`;
+  let usedFallback = false;
+
+  while (attempts < MAX_ATTEMPTS) {
+    attempts++;
+    try {
+      const res = await fetch(`${GATEWAY_URL}${path}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${cfg.lovableKey}`,
+          "X-Connection-Api-Key": cfg.connectionKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message, saveToSentItems: true }),
+      });
+
+
+      if (res.ok) {
+        await logDelivery({
+          recipient: to,
+          subject: input.subject,
+          purpose,
+          replyTo,
+          ticketId: input.ticketId ?? null,
+          status: "sent",
+          attempts,
+          error: usedFallback
+            ? `Sent from the connected user's mailbox — ${SHARED_MAILBOX} has not granted Send As yet.`
+            : null,
+        });
+        return { status: "sent", error: null };
+      }
+
       const detail = await res.text();
       console.error(`Outlook sendMail failed [${res.status}]: ${detail}`);
-      return { status: "failed", error: `Mail provider [${res.status}]: ${detail.slice(0, 300)}` };
+      lastError = `Mail provider [${res.status}]: ${detail.slice(0, 300)}`;
+
+      // No Send As permission on the shared mailbox — try the connected mailbox once.
+      if (!usedFallback && (res.status === 403 || res.status === 404)) {
+        usedFallback = true;
+        path = "/me/sendMail";
+        attempts--;
+        continue;
+      }
+
+      if (!RETRYABLE.has(res.status) || attempts >= MAX_ATTEMPTS) break;
+      const retryAfter = Number(res.headers.get("retry-after"));
+      await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 500 * 2 ** (attempts - 1));
+
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : "Email failed";
+      if (attempts >= MAX_ATTEMPTS) break;
+      await sleep(500 * 2 ** (attempts - 1));
     }
-    return { status: "sent", error: null };
-  } catch (err) {
-    return { status: "failed", error: err instanceof Error ? err.message : "Email failed" };
   }
+
+  await logDelivery({
+    recipient: to,
+    subject: input.subject,
+    purpose,
+    replyTo,
+    ticketId: input.ticketId ?? null,
+    status: "failed",
+    attempts,
+    error: lastError,
+  });
+  return { status: "failed", error: lastError };
 }

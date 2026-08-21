@@ -17,14 +17,20 @@ const APP_URL = "https://smart-stay-support.lovable.app/owner";
 // Texting is handled by people, not an SMS provider. When an alert asks for a
 // text we raise an internal "reach this homeowner" task instead.
 
-async function sendEmail(to: string, subject: string, body: string) {
+async function sendEmail(to: string, subject: string, body: string, ticketRef?: number | null, ticketId?: string | null) {
   const { sendEmail: send, emailShell } = await import("./email.server");
+  const { refTag } = await import("./intake.server");
+  // The tag lets an owner's reply land back on the matter instead of an inbox.
+  const taggedSubject = ticketRef ? `${subject} ${refTag(ticketRef)}` : subject;
   return send({
     to,
-    subject,
-    html: emailShell(subject, body, { label: "Open your owner portal", url: APP_URL }),
+    subject: taggedSubject,
+    html: emailShell(subject, body, { label: "Open your owner portal", url: APP_URL }, "owner"),
+    purpose: "owner_alert",
+    ticketId: ticketId ?? null,
   });
 }
+
 
 /** True when the channel is live. Texting is a human task, never automated. */
 export function channelStatus() {
@@ -64,7 +70,12 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
         patch.email_status = "skipped";
         patch.delivery_error = "No owner email on file.";
       } else {
-        const result = await sendEmail(program.owner_email, row.title, row.body);
+        let ticketRef: number | null = null;
+        if (row.ticket_id) {
+          const { data: t } = await supabase.from("tickets").select("ref").eq("id", row.ticket_id).maybeSingle();
+          ticketRef = t?.ref ?? null;
+        }
+        const result = await sendEmail(program.owner_email, row.title, row.body, ticketRef, row.ticket_id);
         patch.email_status = result.status;
         if (result.error) patch.delivery_error = result.error;
         if (result.status === "sent") emailed++;
