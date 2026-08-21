@@ -2,6 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
   Building2,
+  CalendarCheck,
   CircleHelp,
   ClipboardList,
   HardHat,
