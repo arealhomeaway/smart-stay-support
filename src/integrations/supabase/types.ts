@@ -2043,6 +2043,8 @@ export type Database = {
           created_by: string | null
           effective_from: string
           effective_to: string | null
+          excluded: boolean
+          exclusion_reason: string | null
           id: string
           last_verified_at: string | null
           org_id: string
@@ -2060,6 +2062,8 @@ export type Database = {
           created_by?: string | null
           effective_from?: string
           effective_to?: string | null
+          excluded?: boolean
+          exclusion_reason?: string | null
           id?: string
           last_verified_at?: string | null
           org_id: string
@@ -2077,6 +2081,8 @@ export type Database = {
           created_by?: string | null
           effective_from?: string
           effective_to?: string | null
+          excluded?: boolean
+          exclusion_reason?: string | null
           id?: string
           last_verified_at?: string | null
           org_id?: string
@@ -2813,6 +2819,7 @@ export type Database = {
           requirement_id: string
           result: string
           updated_at: string
+          verification_method: string | null
           verified_at: string | null
           verified_by: string | null
         }
@@ -2825,6 +2832,7 @@ export type Database = {
           requirement_id: string
           result?: string
           updated_at?: string
+          verification_method?: string | null
           verified_at?: string | null
           verified_by?: string | null
         }
@@ -2837,6 +2845,7 @@ export type Database = {
           requirement_id?: string
           result?: string
           updated_at?: string
+          verification_method?: string | null
           verified_at?: string | null
           verified_by?: string | null
         }
@@ -3213,6 +3222,59 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      vendor_service_areas: {
+        Row: {
+          coverage_priority: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          org_id: string
+          postal_code: string
+          service_category: string
+          territory_label: string | null
+          travel_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          coverage_priority?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          org_id: string
+          postal_code: string
+          service_category: string
+          territory_label?: string | null
+          travel_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          coverage_priority?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          org_id?: string
+          postal_code?: string
+          service_category?: string
+          territory_label?: string | null
+          travel_note?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_service_areas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendor_status_events: {
         Row: {
