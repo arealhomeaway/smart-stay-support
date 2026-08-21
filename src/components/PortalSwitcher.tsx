@@ -11,14 +11,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRole } from "@/hooks/useRole";
 import { useViewAs } from "@/hooks/useViewAs";
-import { PORTALS, ROLE_BLURBS, ROLE_LABELS, type AppRole } from "@/lib/permissions";
+import { ROLE_BLURBS, ROLE_LABELS, type AppRole } from "@/lib/permissions";
+import { portalsFor, rememberPortal } from "@/lib/portals";
 
 const PREVIEW_ROLES: AppRole[] = ["manager", "onboarding", "tech", "vendor", "owner"];
 
 /** Header control for Platform Owners: jump portals, or preview a role read-only. */
 export function PortalSwitcher() {
   const router = useRouter();
-  const { isPlatformOwner, previewing, actualRoles } = useRole();
+  const { previewing, actualRoles, roles } = useRole();
+  const portals = portalsFor(roles);
   const { viewAs, setViewAs, clearViewAs } = useViewAs();
 
   if (!actualRoles.includes("admin")) return null;
@@ -42,16 +44,18 @@ export function PortalSwitcher() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuLabel>Go to portal</DropdownMenuLabel>
-          {PORTALS.map((portal) => (
-            <DropdownMenuItem key={portal.value} onSelect={() => go(portal.landing)}>
-              {portal.label}
+          {portals.map((portal) => (
+            <DropdownMenuItem
+              key={portal.id}
+              onSelect={() => {
+                rememberPortal(portal.id);
+                go(portal.route);
+              }}
+            >
+              {portal.name}
             </DropdownMenuItem>
           ))}
-          {isPlatformOwner && (
-            <DropdownMenuItem onSelect={() => go("/command-center")}>
-              Executive Command Center
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onSelect={() => go("/hub")}>All my portals</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="flex items-center gap-2">
             <Eye className="size-3.5" /> View as (read-only)

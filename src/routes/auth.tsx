@@ -1,7 +1,8 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { landingFor, type AppRole } from "@/lib/permissions";
+import { type AppRole } from "@/lib/permissions";
+import { entryPathFor, isKnownPortalRoute, portalByRoute, portalsFor } from "@/lib/portals";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
@@ -13,41 +14,95 @@ import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  /** `next` carries the portal the visitor picked on the overview page. */
+  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+    const next = typeof search['next'] === "string" ? (search['next'] as string) : undefined;
+    return isKnownPortalRoute(next) ? { next } : {};
+  },
   head: () => ({
     meta: [
-      { title: "Team sign in — Resolve Operations" },
+      { title: "Sign in — Resolve" },
       {
         name: "description",
-        content: "Sign in to the A Real Home Away operations app to manage guest and maintenance tickets.",
+        content:
+          "One secure sign-in for every A Real Home Away portal: operations, vendors, onboarding, homeowners and oversight.",
       },
-      { property: "og:title", content: "Team sign in — Resolve Operations" },
-      { property: "og:description", content: "Internal access for the A Real Home Away operations team." },
+      { property: "og:title", content: "Sign in — Resolve" },
+      {
+        property: "og:description",
+        content: "Secure access to the ARHA portals your role is authorised for.",
+      },
     ],
   }),
   component: AuthPage,
 });
 
-/** Send each person to the landing page their role owns. */
-async function landingPath() {
+/**
+ * Resolve the destination after sign-in: honour the portal the person asked
+ * for when their roles allow it, otherwise send them somewhere they can
+ * actually use and say why.
+ */
+async function destination(next?: string) {
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return "/dashboard";
+  if (!auth.user) return { to: "/hub" };
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", auth.user.id);
-  return landingFor((data ?? []).map((r) => r.role as AppRole));
+  const roles = (data ?? []).map((r) => r.role as AppRole);
+  const mine = portalsFor(roles);
+
+  if (next && isKnownPortalRoute(next)) {
+    if (mine.some((p) => p.route === next)) return { to: next };
+    const wanted = portalByRoute(next);
+    return {
+      to: "/hub",
+      denied: wanted?.name ?? "that portal",
+    };
+  }
+  return { to: entryPathFor(roles) };
 }
+
+/** Survives the round trip to Google, which cannot carry our search params. */
+const NEXT_KEY = "resolve:next";
 
 function AuthPage() {
   const router = useRouter();
+  const { next } = Route.useSearch();
+  const requested = next ? portalByRoute(next) : undefined;
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
+  async function go() {
+    let intended = next;
+    if (!intended) {
+      try {
+        intended = window.sessionStorage.getItem(NEXT_KEY) ?? undefined;
+      } catch {
+        intended = undefined;
+      }
+    }
+    try {
+      window.sessionStorage.removeItem(NEXT_KEY);
+    } catch {
+      /* nothing to clean up */
+    }
+    const result = await destination(intended);
+    if (result.denied) {
+      toast.error(
+        `Your account isn't authorised for ${result.denied}. Here are the portals you can open.`,
+      );
+    }
+    router.navigate({ to: result.to });
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void landingPath().then((to) => router.navigate({ to }));
+      if (data.session) void go();
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,7 +123,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.navigate({ to: await landingPath() });
+        await go();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -79,8 +134,15 @@ function AuthPage() {
 
   async function signInWithGoogle() {
     setLoading(true);
+    if (next) {
+      try {
+        window.sessionStorage.setItem(NEXT_KEY, next);
+      } catch {
+        /* the hub is a safe fallback */
+      }
+    }
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/auth`,
     });
     if (result.error) {
       toast.error("Google sign-in failed. Try email instead.");
@@ -88,16 +150,16 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    router.navigate({ to: await landingPath() });
+    await go();
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary px-4 py-12">
+    <div className="flex min-h-dvh items-center justify-center bg-secondary px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="rounded-xl bg-sidebar px-6 py-8 text-center text-sidebar-foreground">
           <BrandLogo className="mx-auto h-16" />
           <p className="mt-4 text-xs uppercase tracking-[0.22em] text-sidebar-foreground/60">
-            Resolve · Operations
+            Resolve · A Real Home Away
           </p>
         </div>
         <Card className="w-full">
@@ -105,8 +167,13 @@ function AuthPage() {
             <CardTitle className="text-2xl">
               {mode === "signin" ? "Team sign in" : "Create your team account"}
             </CardTitle>
+            {requested && (
+              <p className="text-sm font-medium text-primary">
+                Signing in to {requested.name}
+              </p>
+            )}
             <CardDescription>
-              Resolve is the internal operations app for A Real Home Away.
+              One account for every ARHA portal. Sign in and Resolve takes you to the workspaces you are authorised for.
             </CardDescription>
           </CardHeader>
 
