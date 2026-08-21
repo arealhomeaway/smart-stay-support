@@ -105,16 +105,16 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
       owner_name: string | null;
     } | null;
 
-    const patch: Record<string, unknown> = {};
+    const patch: Database["public"]["Tables"]["owner_notifications"]["Update"] = {};
 
     if (row.email_status === "pending") {
       if (!program?.owner_email) {
-        patch["email_status"] = "skipped";
-        patch["delivery_error"] = "No owner email on file.";
+        patch.email_status = "skipped";
+        patch.delivery_error = "No owner email on file.";
       } else {
         const result = await sendEmail(program.owner_email, row.title, row.body);
-        patch["email_status"] = result.status;
-        if (result.error) patch["delivery_error"] = result.error;
+        patch.email_status = result.status;
+        if (result.error) patch.delivery_error = result.error;
         if (result.status === "sent") emailed++;
         else if (result.error) notes.push(result.error);
       }
@@ -122,17 +122,17 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
 
     if (row.sms_status === "pending") {
       if (!program?.owner_phone) {
-        patch["sms_status"] = "skipped";
+        patch.sms_status = "skipped";
       } else {
         const result = await sendSms(program.owner_phone, `${row.title}\n\n${row.body}\n\n${APP_URL}`);
-        patch["sms_status"] = result.status;
-        if (result.error) patch["delivery_error"] = result.error;
+        patch.sms_status = result.status;
+        if (result.error) patch.delivery_error = result.error;
         if (result.status === "sent") texted++;
         else if (result.error) notes.push(result.error);
       }
     }
 
-    patch["delivered_at"] = new Date().toISOString();
+    patch.delivered_at = new Date().toISOString();
     const { error: updateError } = await supabase
       .from("owner_notifications")
       .update(patch)
