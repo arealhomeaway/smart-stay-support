@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CleaningRegionsPanel } from "@/components/CleaningRegionsPanel";
 
 export const Route = createFileRoute("/_authenticated/quarterly")({
   head: () => ({
@@ -83,10 +84,11 @@ function QuarterlyPage() {
             <CalendarCheck className="size-6" /> Quarterly reviews
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Every managed home gets a full review from a cleaning supervisor every three months. Opening a review
-            creates a ticket with the review checklist attached, and finishing it rolls the home forward another
-            quarter.
+            The first inspection is scheduled 30 days after a home is handed off to operations, and every one after
+            that lands 90 days later. Inspections open on their own as the date arrives, assigned to the regional
+            cleaning manager for that market.
           </p>
+
         </div>
         <div className="flex gap-2">
           {playbookId ? (
@@ -108,6 +110,8 @@ function QuarterlyPage() {
         <StatCard label="Reviews in progress" value={inFlight.length} />
         <StatCard label="Homes on the cycle" value={rows.length} />
       </div>
+
+      <CleaningRegionsPanel />
 
       <Card>
         <CardHeader>
@@ -136,6 +140,8 @@ function QuarterlyPage() {
                   <div className="min-w-0 space-y-1">
                     <p className="truncate font-medium">{row.name}</p>
                     <p className="text-xs text-muted-foreground">
+                      {row.market ? `${row.market} · ` : ""}
+                      {row.inspector ?? "No regional manager set"} ·{" "}
                       {row.location || "No address on file"} ·{" "}
                       {row.lastReviewedAt
                         ? `Last reviewed ${new Date(row.lastReviewedAt).toLocaleDateString()}`

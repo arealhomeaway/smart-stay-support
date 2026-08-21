@@ -12,12 +12,29 @@ export type QuarterlyRow = {
   propertyId: string;
   name: string;
   location: string;
+  /** Cleaning region the home belongs to (Tulsa, OKC, Indy…). */
+  market: string | null;
+  /** Regional cleaning manager who inspects this market, when one is set. */
+  inspector: string | null;
   lastReviewedAt: string | null;
   dueOn: string;
   openTicketId: string | null;
   openTicketRef: number | null;
   status: QuarterlyState;
 };
+
+export type CleaningRegion = {
+  market: string;
+  managerId: string | null;
+  managerName: string | null;
+  propertyCount: number;
+};
+
+/** Days between the handoff acceptance and the first inspection. */
+export const FIRST_INSPECTION_DAYS = 30;
+/** Days between inspections after the first one. */
+export const INSPECTION_INTERVAL_DAYS = 90;
+
 
 /** Whole days from today until the due date (negative when overdue). */
 export function daysUntil(dueOn: string) {

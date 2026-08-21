@@ -143,6 +143,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaning_regions: {
+        Row: {
+          created_at: string
+          manager_id: string | null
+          manager_name: string | null
+          market: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          manager_id?: string | null
+          manager_name?: string | null
+          market: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          manager_id?: string | null
+          manager_name?: string | null
+          market?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coach_sessions: {
         Row: {
           created_at: string
@@ -1885,6 +1909,7 @@ export type Database = {
           latitude: number | null
           lifecycle_status: string
           longitude: number | null
+          market: string | null
           name: string
           nickname: string | null
           notes: string | null
@@ -1920,6 +1945,7 @@ export type Database = {
           latitude?: number | null
           lifecycle_status?: string
           longitude?: number | null
+          market?: string | null
           name: string
           nickname?: string | null
           notes?: string | null
@@ -1955,6 +1981,7 @@ export type Database = {
           latitude?: number | null
           lifecycle_status?: string
           longitude?: number | null
+          market?: string | null
           name?: string
           nickname?: string | null
           notes?: string | null

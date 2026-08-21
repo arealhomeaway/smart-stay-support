@@ -26,14 +26,55 @@ async function quarterlyWorkType(db: Client) {
   return data;
 }
 
+/** Market → regional cleaning manager, with the manager's name resolved. */
+export async function loadCleaningRegions(db: Client) {
+  const [{ data: regions, error }, { data: props }] = await Promise.all([
+    db.from("cleaning_regions").select("market, manager_id, manager_name").order("market"),
+    db.from("properties").select("market").eq("active", true),
+  ]);
+  if (error) throw new Error(error.message);
+
+  const counts = new Map<string, number>();
+  for (const p of props ?? []) if (p.market) counts.set(p.market, (counts.get(p.market) ?? 0) + 1);
+
+  const known = new Set((regions ?? []).map((r) => r.market));
+  const rows = [
+    ...(regions ?? []).map((r) => ({
+      market: r.market,
+      managerId: r.manager_id,
+      managerName: r.manager_name,
+      propertyCount: counts.get(r.market) ?? 0,
+    })),
+    ...[...counts.keys()]
+      .filter((m) => !known.has(m))
+      .map((m) => ({ market: m, managerId: null, managerName: null, propertyCount: counts.get(m) ?? 0 })),
+  ].sort((a, b) => a.market.localeCompare(b.market));
+
+  return rows;
+}
+
+/** Supervisor action: point a market at the regional cleaning manager who inspects it. */
+export async function setCleaningRegionManager(db: Client, market: string, managerId: string | null) {
+  let managerName: string | null = null;
+  if (managerId) {
+    const { data } = await db.from("profiles").select("full_name, email").eq("id", managerId).maybeSingle();
+    managerName = data?.full_name ?? data?.email ?? null;
+  }
+  const { error } = await db
+    .from("cleaning_regions")
+    .upsert({ market, manager_id: managerId, manager_name: managerName }, { onConflict: "market" });
+  if (error) throw new Error(error.message);
+  return { market, managerId, managerName };
+}
+
 /** Every active home with its review status and any review already in flight. */
 export async function loadQuarterlyReviews(db: Client) {
   const wt = await quarterlyWorkType(db);
 
-  const [{ data: props, error: propsError }, { data: tickets, error: ticketsError }] = await Promise.all([
+  const [{ data: props, error: propsError }, { data: tickets, error: ticketsError }, regions] = await Promise.all([
     db
       .from("properties")
-      .select("id, name, nickname, city, state, last_quarterly_review_at, quarterly_review_due_on")
+      .select("id, name, nickname, city, state, market, last_quarterly_review_at, quarterly_review_due_on")
       .eq("active", true)
       .order("quarterly_review_due_on"),
     db
@@ -41,12 +82,14 @@ export async function loadQuarterlyReviews(db: Client) {
       .select("id, ref, property_id, status, due_at, assigned_to, current_action_owner, created_at")
       .eq("work_type_id", wt.id)
       .in("status", OPEN_STATUSES),
+    loadCleaningRegions(db),
   ]);
   if (propsError) throw new Error(propsError.message);
   if (ticketsError) throw new Error(ticketsError.message);
 
   const openByProperty = new Map<string, (typeof tickets)[number]>();
   for (const t of tickets ?? []) if (t.property_id) openByProperty.set(t.property_id, t);
+  const managerByMarket = new Map(regions.map((r) => [r.market, r.managerName]));
 
   const rows: QuarterlyRow[] = (props ?? []).map((p) => {
     const open = openByProperty.get(p.id) ?? null;
@@ -54,6 +97,8 @@ export async function loadQuarterlyReviews(db: Client) {
       propertyId: p.id,
       name: p.nickname ? `${p.name} (${p.nickname})` : p.name,
       location: [p.city, p.state].filter(Boolean).join(", "),
+      market: p.market,
+      inspector: (p.market ? managerByMarket.get(p.market) : null) ?? null,
       lastReviewedAt: p.last_quarterly_review_at,
       dueOn: p.quarterly_review_due_on,
       openTicketId: open?.id ?? null,
@@ -62,11 +107,12 @@ export async function loadQuarterlyReviews(db: Client) {
     };
   });
 
-  return { rows, checklistPlaybookId: wt.playbook_id };
+  return { rows, regions, checklistPlaybookId: wt.playbook_id };
 }
 
+
 /** Opens the quarterly review ticket for one home, checklist attached. */
-export async function openQuarterlyReview(db: Client, userId: string, propertyId: string) {
+export async function openQuarterlyReview(db: Client, userId: string | null, propertyId: string) {
   const wt = await quarterlyWorkType(db);
 
   const { data: existing } = await db
@@ -80,10 +126,25 @@ export async function openQuarterlyReview(db: Client, userId: string, propertyId
 
   const { data: property, error: propError } = await db
     .from("properties")
-    .select("name, nickname")
+    .select("name, nickname, market")
     .eq("id", propertyId)
     .single();
   if (propError) throw new Error(propError.message);
+
+  // The regional cleaning manager for the home's market conducts the inspection.
+  let inspectorId: string | null = null;
+  let inspectorName: string | null = null;
+  if (property.market) {
+    const { data: region } = await db
+      .from("cleaning_regions")
+      .select("manager_id, manager_name")
+      .eq("market", property.market)
+      .maybeSingle();
+    inspectorId = region?.manager_id ?? null;
+    inspectorName = region?.manager_name ?? null;
+  }
+  const owner = inspectorId ?? userId;
+
 
   const now = new Date();
   const responseDue = new Date(now.getTime() + (wt.response_minutes ?? 120) * 60_000);
@@ -113,11 +174,15 @@ export async function openQuarterlyReview(db: Client, userId: string, propertyId
       response_due_at: responseDue.toISOString(),
       action_due_at: actionDue.toISOString(),
       due_at: actionDue.toISOString(),
-      next_action: "Schedule the on-site review with the cleaning supervisor",
+      next_action: inspectorName
+        ? `Schedule the on-site inspection with ${inspectorName}`
+        : "Assign a regional cleaning manager and schedule the on-site inspection",
       created_by: userId,
-      record_owner: userId,
-      accountable_owner: userId,
-      current_action_owner: userId,
+      record_owner: owner,
+      accountable_owner: owner,
+      current_action_owner: owner,
+      assigned_to: inspectorId,
+
     })
     .select("id")
     .single();
@@ -143,8 +208,11 @@ export async function openQuarterlyReview(db: Client, userId: string, propertyId
     kind: "created",
     event_type: "created",
     channel: "inspection",
-    body: "Quarterly property review opened with the cleaning review checklist attached.",
+    body: inspectorName
+      ? `Quarterly inspection opened with the cleaning review checklist attached and assigned to ${inspectorName}, regional cleaning manager for ${property.market}.`
+      : "Quarterly inspection opened with the cleaning review checklist attached. No regional cleaning manager is set for this market yet.",
   });
+
 
   return { ticketId: ticket.id, alreadyOpen: false };
 }
@@ -159,4 +227,26 @@ export async function openDueQuarterlyReviews(db: Client, userId: string) {
     created += 1;
   }
   return { created, skipped: rows.length - due.length };
+}
+
+/**
+ * Unattended pass used by the nightly schedule: opens the inspection for every
+ * home whose date has arrived, assigned to that market's regional cleaning
+ * manager. Runs with the service client, so there is no signed-in user — the
+ * manager is recorded as the opener when one is set.
+ */
+export async function autoScheduleDueReviews(db: Client) {
+  const { rows, regions } = await loadQuarterlyReviews(db);
+  const managerByMarket = new Map(regions.map((r) => [r.market, r.managerId]));
+  const due = rows.filter((r) => !r.openTicketId && (r.status === "due" || r.status === "overdue"));
+
+  let created = 0;
+  const unassignedMarkets = new Set<string>();
+  for (const row of due) {
+    const managerId = row.market ? (managerByMarket.get(row.market) ?? null) : null;
+    if (!managerId && row.market) unassignedMarkets.add(row.market);
+    await openQuarterlyReview(db, managerId, row.propertyId);
+    created += 1;
+  }
+  return { created, checked: rows.length, unassignedMarkets: [...unassignedMarkets] };
 }
