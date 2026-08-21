@@ -20,6 +20,7 @@ import {
 import { TEAMS } from "@/lib/tickets";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { TeamAccessPanel } from "@/components/TeamAccessPanel";
+import { TeamInvitePanel } from "@/components/TeamInvitePanel";
 import { VendorScoreboardPanel } from "@/components/VendorScoreboardPanel";
 
 export const Route = createFileRoute("/_authenticated/team")({
