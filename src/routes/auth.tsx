@@ -107,7 +107,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.navigate({ to: await landingPath() });
+        await go();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -127,7 +127,7 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    router.navigate({ to: await landingPath() });
+    await go();
   }
 
   return (
@@ -145,7 +145,7 @@ function AuthPage() {
               {mode === "signin" ? "Team sign in" : "Create your team account"}
             </CardTitle>
             <CardDescription>
-              Resolve is the internal operations app for A Real Home Away.
+              One account for every ARHA portal. Sign in and Resolve takes you to the workspaces you are authorised for.
             </CardDescription>
           </CardHeader>
 
