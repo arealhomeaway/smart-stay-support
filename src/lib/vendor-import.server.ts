@@ -426,10 +426,11 @@ export async function decideImportRow(
     await db.from("external_links").insert({
       entity_type: "vendor_org",
       entity_id: data.id,
-      system: "breezeway",
-      external_id: row.display_name,
+      system: profile?.notionVendorId ? "notion" : "breezeway",
+      external_id: profile?.notionVendorId ?? row.display_name,
       last_sync_status: "imported",
     });
+
   }
 
   if (input.action === "match" || (input.action === "create" && row.source_role === "representative")) {
