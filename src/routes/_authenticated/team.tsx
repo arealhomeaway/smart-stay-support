@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TEAMS } from "@/lib/tickets";
+import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({
@@ -37,7 +38,11 @@ export const Route = createFileRoute("/_authenticated/team")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: TeamPage,
+  component: () => (
+    <SupervisorOnly>
+      <TeamPage />
+    </SupervisorOnly>
+  ),
   errorComponent: () => <p className="text-muted-foreground">Seats could not be loaded.</p>,
 });
 

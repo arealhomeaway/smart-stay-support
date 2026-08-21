@@ -14,6 +14,7 @@ import {
   slaState,
   statusTone,
 } from "@/lib/tickets";
+import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -30,7 +31,11 @@ export const Route = createFileRoute("/_authenticated/oversight")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Oversight,
+  component: () => (
+    <SupervisorOnly>
+      <Oversight />
+    </SupervisorOnly>
+  ),
 });
 
 type Row = {

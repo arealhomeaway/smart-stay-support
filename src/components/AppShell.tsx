@@ -1,5 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import {
+  BarChart3,
   Building2,
   CircleHelp,
   ClipboardList,
@@ -19,17 +20,27 @@ import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { BrandLogo } from "@/components/BrandLogo";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
+import { useRole } from "@/hooks/useRole";
 
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof Home;
+  tour: string;
+  supervisor?: boolean;
+};
+
+const nav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
   { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach" },
   { to: "/tickets", label: "Matters", icon: ClipboardList, tour: "tickets" },
-  { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight" },
-  { to: "/team", label: "Seats", icon: Users, tour: "team" },
-  { to: "/properties", label: "Properties", icon: Building2, tour: "properties" },
+  { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", supervisor: true },
+  { to: "/analytics", label: "Analytics", icon: BarChart3, tour: "analytics", supervisor: true },
+  { to: "/team", label: "Seats", icon: Users, tour: "team", supervisor: true },
+  { to: "/properties", label: "Properties", icon: Building2, tour: "properties", supervisor: true },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
-  { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations" },
+  { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", supervisor: true },
   { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
 
 ];
@@ -38,6 +49,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
+  const { isSupervisor } = useRole();
+  const visibleNav = nav.filter((item) => !item.supervisor || isSupervisor);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -61,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="order-3 flex w-full gap-1 overflow-x-auto md:order-none md:w-auto">
-            {nav.map((item) => (
+            {visibleNav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}

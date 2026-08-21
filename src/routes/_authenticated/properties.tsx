@@ -28,6 +28,7 @@ import {
 import { OPEN_STATUSES } from "@/lib/tickets";
 import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
 import { listBreezewayHomes } from "@/lib/breezeway.functions";
+import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -38,7 +39,11 @@ export const Route = createFileRoute("/_authenticated/properties")({
       { property: "og:description", content: "Managed homes with access notes and live issue counts." },
     ],
   }),
-  component: PropertiesPage,
+  component: () => (
+    <SupervisorOnly>
+      <PropertiesPage />
+    </SupervisorOnly>
+  ),
 });
 
 const empty = {
