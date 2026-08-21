@@ -3472,34 +3472,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      in_department: {
-        Args: { _code: string; _user_id: string }
-        Returns: boolean
-      }
-      is_assigned_vendor: {
-        Args: { _ticket_id: string; _user_id: string }
-        Returns: boolean
-      }
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
-      is_platform_owner: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
-      is_vendor_admin: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_vendor_member: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: boolean
-      }
-      owner_sees_property: {
-        Args: { _property_id: string; _user_id: string }
-        Returns: boolean
-      }
-      owns_program: {
-        Args: { _program_id: string; _user_id: string }
-        Returns: boolean
-      }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
