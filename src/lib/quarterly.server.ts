@@ -228,3 +228,25 @@ export async function openDueQuarterlyReviews(db: Client, userId: string) {
   }
   return { created, skipped: rows.length - due.length };
 }
+
+/**
+ * Unattended pass used by the nightly schedule: opens the inspection for every
+ * home whose date has arrived, assigned to that market's regional cleaning
+ * manager. Runs with the service client, so there is no signed-in user — the
+ * manager is recorded as the opener when one is set.
+ */
+export async function autoScheduleDueReviews(db: Client) {
+  const { rows, regions } = await loadQuarterlyReviews(db);
+  const managerByMarket = new Map(regions.map((r) => [r.market, r.managerId]));
+  const due = rows.filter((r) => !r.openTicketId && (r.status === "due" || r.status === "overdue"));
+
+  let created = 0;
+  const unassignedMarkets = new Set<string>();
+  for (const row of due) {
+    const managerId = row.market ? (managerByMarket.get(row.market) ?? null) : null;
+    if (!managerId && row.market) unassignedMarkets.add(row.market);
+    await openQuarterlyReview(db, managerId as unknown as string, row.propertyId);
+    created += 1;
+  }
+  return { created, checked: rows.length, unassignedMarkets: [...unassignedMarkets] };
+}
