@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const roleSchema = z.enum(["admin", "manager", "tech", "vendor"]);
+const roleSchema = z.enum(["admin", "manager", "onboarding", "tech", "vendor", "owner"]);
 
 /** Admin: every invite code issued for staff and vendors. */
 export const listTeamInvites = createServerFn({ method: "GET" })

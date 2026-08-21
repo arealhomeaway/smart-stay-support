@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-export type AppRole = "admin" | "manager" | "tech" | "vendor";
-export const APP_ROLES: AppRole[] = ["admin", "manager", "tech", "vendor"];
+export type AppRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
+export const APP_ROLES: AppRole[] = ["admin", "manager", "onboarding", "tech", "vendor", "owner"];
 
 type Client = SupabaseClient<Database>;
 
