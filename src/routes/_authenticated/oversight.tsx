@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-import { SupervisorOnly } from "@/components/SupervisorOnly";
   OPEN_STATUSES,
   STATUSES,
   labelFor,
@@ -15,6 +14,7 @@ import { SupervisorOnly } from "@/components/SupervisorOnly";
   slaState,
   statusTone,
 } from "@/lib/tickets";
+import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
