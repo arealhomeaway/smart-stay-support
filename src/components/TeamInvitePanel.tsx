@@ -160,8 +160,8 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
                   <button
                     type="button"
                     onClick={() => {
-                      void navigator.clipboard?.writeText(i.code);
-                      toast.success("Code copied.");
+                      void navigator.clipboard?.writeText(inviteMessage(i.code));
+                      toast.success("Invite message copied — paste it to them.");
                     }}
                     className="flex items-center gap-2 font-mono font-medium hover:underline"
                   >
@@ -171,6 +171,7 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
                   <Badge variant="outline" className="uppercase">
                     {i.role}
                   </Badge>
+
                   {i.invitee_name && <span>{i.invitee_name}</span>}
                   {i.invitee_email && (
                     <span className="flex items-center gap-1 text-muted-foreground">
