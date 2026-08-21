@@ -112,7 +112,7 @@ export async function loadQuarterlyReviews(db: Client) {
 
 
 /** Opens the quarterly review ticket for one home, checklist attached. */
-export async function openQuarterlyReview(db: Client, userId: string, propertyId: string) {
+export async function openQuarterlyReview(db: Client, userId: string | null, propertyId: string) {
   const wt = await quarterlyWorkType(db);
 
   const { data: existing } = await db
@@ -245,7 +245,7 @@ export async function autoScheduleDueReviews(db: Client) {
   for (const row of due) {
     const managerId = row.market ? (managerByMarket.get(row.market) ?? null) : null;
     if (!managerId && row.market) unassignedMarkets.add(row.market);
-    await openQuarterlyReview(db, managerId as unknown as string, row.propertyId);
+    await openQuarterlyReview(db, managerId, row.propertyId);
     created += 1;
   }
   return { created, checked: rows.length, unassignedMarkets: [...unassignedMarkets] };

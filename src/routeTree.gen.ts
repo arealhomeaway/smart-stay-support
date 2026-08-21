@@ -38,6 +38,7 @@ import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
+import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
 
@@ -194,6 +195,12 @@ const ApiPublicHooksOwnerNotifyRoute =
     path: '/api/public/hooks/owner-notify',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksQuarterlySchedulerRoute =
+  ApiPublicHooksQuarterlySchedulerRouteImport.update({
+    id: '/api/public/hooks/quarterly-scheduler',
+    path: '/api/public/hooks/quarterly-scheduler',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntakeEmailRoute = ApiPublicIntakeEmailRouteImport.update({
   id: '/api/public/intake/email',
   path: '/api/public/intake/email',
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
+  '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -266,6 +274,7 @@ export interface FileRoutesByTo {
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
+  '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -300,6 +309,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
+  '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/tickets/'
     | '/vendor/'
     | '/api/public/hooks/owner-notify'
+    | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesByTo: FileRoutesByTo
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/tickets'
     | '/vendor'
     | '/api/public/hooks/owner-notify'
+    | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   id:
@@ -399,6 +411,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
     | '/api/public/hooks/owner-notify'
+    | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesById: FileRoutesById
@@ -408,6 +421,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
+  ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
   ApiPublicSyncInboundRoute: typeof ApiPublicSyncInboundRoute
 }
@@ -617,6 +631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOwnerNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/quarterly-scheduler': {
+      id: '/api/public/hooks/quarterly-scheduler'
+      path: '/api/public/hooks/quarterly-scheduler'
+      fullPath: '/api/public/hooks/quarterly-scheduler'
+      preLoaderRoute: typeof ApiPublicHooksQuarterlySchedulerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/intake/email': {
       id: '/api/public/intake/email'
       path: '/api/public/intake/email'
@@ -698,6 +719,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
+  ApiPublicHooksQuarterlySchedulerRoute: ApiPublicHooksQuarterlySchedulerRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
   ApiPublicSyncInboundRoute: ApiPublicSyncInboundRoute,
 }
