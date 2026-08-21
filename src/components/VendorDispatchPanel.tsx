@@ -3,7 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { HardHat } from "lucide-react";
 import { toast } from "sonner";
-import { assignVendor, listVendors } from "@/lib/vendor.functions";
+import { assignVendor, rankVendors } from "@/lib/vendor.functions";
+import { formatKm } from "@/lib/dispatch";
+import { TIER_LABEL } from "@/lib/scorecard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,12 +36,15 @@ const STATUS_LABEL: Record<string, string> = {
 /** Staff-side dispatch: hand a matter to a vendor and it appears in their portal. */
 export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendorStatus, onChanged }: Props) {
   const qc = useQueryClient();
-  const listFn = useServerFn(listVendors);
+  const rankFn = useServerFn(rankVendors);
   const assignFn = useServerFn(assignVendor);
   const [selected, setSelected] = useState(vendorUserId ?? "");
   const [brief, setBrief] = useState(vendorBrief ?? "");
 
-  const vendors = useQuery({ queryKey: ["vendors"], queryFn: () => listFn() });
+  const vendors = useQuery({
+    queryKey: ["vendors", "ranked", ticketId],
+    queryFn: () => rankFn({ data: { ticketId } }),
+  });
 
   const save = useMutation({
     mutationFn: (vars: { vendorUserId: string | null }) =>
@@ -52,7 +57,9 @@ export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendo
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update the vendor"),
   });
 
-  const list = vendors.data?.vendors ?? [];
+  const list = vendors.data?.candidates ?? [];
+  const hasHomePin = vendors.data?.hasHomePin ?? false;
+  const best = list[0];
 
   return (
     <Card>
@@ -75,18 +82,55 @@ export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendo
           </p>
         ) : (
           <>
-            <Select value={selected} onValueChange={setSelected}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a vendor" />
-              </SelectTrigger>
-              <SelectContent>
-                {list.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.full_name ?? v.email ?? "Vendor"}
-                  </SelectItem>
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Best fit first — distance, scorecard and current load
+              </p>
+              {!hasHomePin && (
+                <p className="text-xs text-muted-foreground">
+                  This home has no map pin yet, so ranking is on scorecard and workload only.
+                </p>
+              )}
+              <div className="space-y-2">
+                {list.slice(0, 4).map((v, i) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setSelected(v.id)}
+                    className={`w-full rounded-lg border p-3 text-left transition ${
+                      selected === v.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">{v.name}</span>
+                      <span className="flex items-center gap-1">
+                        {i === 0 && v.id === best?.id && <Badge>Recommended</Badge>}
+                        {v.tier === "gold" && <Badge variant="secondary">Gold Standard</Badge>}
+                        {v.tier === "trusted" && <Badge variant="outline">{TIER_LABEL.trusted}</Badge>}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {v.distanceM != null ? `${formatKm(v.distanceM)} away · ` : ""}
+                      {v.reasons.slice(1).join(" · ")}
+                    </p>
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+              {list.length > 4 && (
+                <Select value={selected} onValueChange={setSelected}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Or pick another vendor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {list.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
             <Textarea
               value={brief}
               onChange={(e) => setBrief(e.target.value)}
