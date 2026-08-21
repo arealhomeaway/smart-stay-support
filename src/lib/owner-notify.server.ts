@@ -95,15 +95,28 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
       }
     }
 
+    // A text request becomes an internal task: a teammate calls or texts the
+    // homeowner personally. We never auto-send an SMS.
     if (row.sms_status === "pending") {
-      if (!program?.owner_phone) {
-        patch.sms_status = "skipped";
+      const { error: alertError } = await supabase.from("owner_contact_alerts").insert({
+        program_id: row.program_id,
+        notification_id: row.id,
+        ticket_id: row.ticket_id ?? null,
+        priority: row.priority,
+        owner_name: program?.owner_name ?? null,
+        owner_phone: program?.owner_phone ?? null,
+        owner_email: program?.owner_email ?? null,
+        title: row.title,
+        body: row.body,
+        reason: program?.owner_phone
+          ? "Urgent matter at this owner's home — text or call them now."
+          : "Urgent matter at this owner's home, and we have no phone number on file — reach them by email and collect a number.",
+      });
+      if (alertError) {
+        notes.push(alertError.message);
       } else {
-        const result = await sendSms(program.owner_phone, `${row.title}\n\n${row.body}\n\n${APP_URL}`);
-        patch.sms_status = result.status;
-        if (result.error) patch.delivery_error = result.error;
-        if (result.status === "sent") texted++;
-        else if (result.error) notes.push(result.error);
+        patch.sms_status = "escalated";
+        escalated++;
       }
     }
 
