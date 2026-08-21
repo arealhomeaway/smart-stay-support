@@ -10,7 +10,14 @@ export const Route = createFileRoute("/api/public/sync/mailbox")({
       POST: async ({ request }) => {
         const secret = process.env["LOVABLE_CRON_SECRET"];
         const provided = request.headers.get("x-cron-secret") ?? "";
-        if (!secret || provided !== secret) {
+        // The scheduler inside our own database identifies itself with the
+        // project key, the same way the other scheduled jobs do.
+        const apikey = request.headers.get("apikey") ?? "";
+        const projectKey =
+          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "";
+        const authorised =
+          (!!secret && provided === secret) || (!!projectKey && apikey === projectKey);
+        if (!authorised) {
           return new Response("Unauthorized", { status: 401 });
         }
 
