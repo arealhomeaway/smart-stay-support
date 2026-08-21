@@ -48,33 +48,13 @@ async function sendEmail(to: string, subject: string, body: string) {
   }
 }
 
-async function sendSms(to: string, body: string) {
-  const cfg = smsConfig();
-  if (!cfg) return { status: "skipped" as const, error: "Text messaging is not configured yet." };
-
-  try {
-    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${cfg.sid}/Messages.json`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${btoa(`${cfg.sid}:${cfg.token}`)}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({ To: to, From: cfg.from, Body: body.slice(0, 320) }),
-    });
-    if (!res.ok) return { status: "failed" as const, error: `Text provider: ${res.status}` };
-    return { status: "sent" as const, error: null };
-  } catch (err) {
-    return { status: "failed" as const, error: err instanceof Error ? err.message : "Text failed" };
-  }
-}
-
 function escapeHtml(value: string) {
   return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 }
 
-/** True when the channel has credentials in place. Surfaced to supervisors. */
+/** True when the channel is live. Texting is a human task, never automated. */
 export function channelStatus() {
-  return { email: Boolean(emailConfig()), sms: Boolean(smsConfig()) };
+  return { email: Boolean(emailConfig()), sms: false as const };
 }
 
 /** Sends every alert still waiting on a channel. Safe to run on a schedule. */
