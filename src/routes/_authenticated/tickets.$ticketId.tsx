@@ -504,6 +504,12 @@ function TicketDetail() {
             />
           )}
 
+          {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
+            <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
+          )}
+
+
+
 
           {!closed && ticket.status !== "waiting" && (
             <Card>
