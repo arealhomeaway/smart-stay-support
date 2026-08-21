@@ -19,6 +19,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
@@ -86,6 +87,11 @@ const AuthenticatedJoinRoute = AuthenticatedJoinRouteImport.update({
 const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
   id: '/map',
   path: '/map',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOversightRoute = AuthenticatedOversightRouteImport.update({
@@ -191,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/join': typeof AuthenticatedJoinRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/join'
     | '/map'
+    | '/onboarding'
     | '/oversight'
     | '/owner'
     | '/owner-programs'
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/join'
     | '/map'
+    | '/onboarding'
     | '/oversight'
     | '/owner'
     | '/owner-programs'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/join'
     | '/_authenticated/map'
+    | '/_authenticated/onboarding'
     | '/_authenticated/oversight'
     | '/_authenticated/owner'
     | '/_authenticated/owner-programs'
@@ -434,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/map'
       fullPath: '/map'
       preLoaderRoute: typeof AuthenticatedMapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/oversight': {
@@ -566,6 +585,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
@@ -590,6 +610,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
