@@ -44,6 +44,7 @@ const nav: NavItem[] = [
   { to: "/properties", label: "Properties", icon: Building2, tour: "properties", supervisor: true },
   { to: "/map", label: "Job map", icon: MapPinned, tour: "map", supervisor: true },
   { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly" },
+  { to: "/owner-programs", label: "Owner programs", icon: KeyRound, tour: "owner-programs", supervisor: true },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
   { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", supervisor: true },
   { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
