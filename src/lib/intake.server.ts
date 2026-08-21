@@ -86,6 +86,37 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
   const source = (payload.source ?? "email").trim().toLowerCase().slice(0, 40);
   const combined = `${subject}\n${body}\n${payload.property ?? ""}`;
 
+  // A reply to one of our own emails keeps the [ARHA-123] tag: file it on that
+  // matter's timeline instead of opening a duplicate.
+  const tagged = subject.match(REF_TAG) ?? body.match(REF_TAG);
+  if (tagged) {
+    const { data: parent } = await db
+      .from("tickets")
+      .select("id, ref, property_id, priority")
+      .eq("ref", Number(tagged[1]))
+      .maybeSingle();
+    if (parent) {
+      await db.from("ticket_activity").insert({
+        ticket_id: parent.id,
+        kind: "note",
+        event_type: "note",
+        channel: source,
+        body: [payload.from ? `Reply from ${payload.from}:` : "Emailed reply:", body || subject]
+          .filter(Boolean)
+          .join("\n\n"),
+      });
+      return {
+        ok: true,
+        ticketId: parent.id,
+        ref: parent.ref,
+        propertyMatched: Boolean(parent.property_id),
+        priority: (parent.priority as IntakeResult["priority"]) ?? "p3",
+        threaded: true,
+      };
+    }
+  }
+
+
   // Don't create the same matter twice when a webhook retries.
   if (payload.externalId) {
     const { data: existing } = await db
