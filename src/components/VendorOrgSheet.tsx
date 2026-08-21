@@ -427,20 +427,6 @@ export function VendorOrgSheet({
               </TabsContent>
 
               <TabsContent value="history" className="space-y-3 pt-4">
-                {data.documents.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documents</p>
-                    {data.documents.map((d) => (
-                      <div key={d.id} className="rounded-lg border p-3 text-sm">
-                        <p className="font-medium">{d.title}</p>
-                        <p className="text-muted-foreground">
-                          {d.docType} · {d.verificationStatus}
-                          {d.expiresOn && ` · expires ${d.expiresOn}`}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status history</p>
                 {data.statusHistory.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
