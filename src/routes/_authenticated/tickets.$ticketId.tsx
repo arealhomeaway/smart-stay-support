@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
+import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { BreezewayPanel } from "@/components/BreezewayPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -508,6 +509,8 @@ function TicketDetail() {
           {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
             <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
           )}
+
+          {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
 
 
 
