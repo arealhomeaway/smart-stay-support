@@ -64,8 +64,10 @@ export function VendorImportPanel() {
           <CardTitle>Import a legacy vendor list</CardTitle>
           <CardDescription>
             One vendor per line: name, role, email, phone, departments, groups — tab or comma separated. A CSV export
-            from the old system pastes straight in. The Notion Vendor Database export is recognised on its own and
-            brings across specialty, market, pricing, contact and compliance notes. Nothing imports as approved.
+            from the old system pastes straight in. The Breezeway people directory export and the Notion Vendor Database
+            export are each recognised on their own and read by column name — Breezeway brings across departments,
+            groups and export notes; Notion brings across specialty, market, pricing, contact and compliance notes.
+            Nothing imports as approved.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

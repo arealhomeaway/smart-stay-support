@@ -347,7 +347,12 @@ export async function createImportBatch(
 ) {
   await assertSupervisor(db, userId);
   const notionExport = looksLikeVendorDatabaseCsv(input.text);
-  const parsed = notionExport ? parseVendorDatabaseCsv(input.text) : parseLegacyRows(input.text);
+  const breezewayExport = !notionExport && looksLikeBreezewayCsv(input.text);
+  const parsed = notionExport
+    ? parseVendorDatabaseCsv(input.text)
+    : breezewayExport
+      ? parseBreezewayCsv(input.text)
+      : parseLegacyRows(input.text);
   if (parsed.length === 0) throw new Error("No rows found. Paste one vendor per line.");
 
 
@@ -359,7 +364,7 @@ export async function createImportBatch(
   const { data: batch, error: batchError } = await db
     .from("vendor_import_batches")
     .insert({
-      source_system: notionExport ? "notion" : input.sourceSystem,
+      source_system: notionExport ? "notion" : breezewayExport ? "breezeway" : input.sourceSystem,
       label: input.label,
       created_by: userId,
     })
