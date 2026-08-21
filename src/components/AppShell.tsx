@@ -23,7 +23,15 @@ import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
 
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof Home;
+  tour: string;
+  supervisor?: boolean;
+};
+
+const nav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
   { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach" },
   { to: "/tickets", label: "Matters", icon: ClipboardList, tour: "tickets" },
