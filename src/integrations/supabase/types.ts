@@ -333,6 +333,51 @@ export type Database = {
           },
         ]
       }
+      email_log: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          id: string
+          purpose: string
+          recipient: string
+          reply_to: string | null
+          sender: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          ticket_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          purpose?: string
+          recipient: string
+          reply_to?: string | null
+          sender?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          ticket_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          purpose?: string
+          recipient?: string
+          reply_to?: string | null
+          sender?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          ticket_id?: string | null
+        }
+        Relationships: []
+      }
       external_links: {
         Row: {
           created_at: string
