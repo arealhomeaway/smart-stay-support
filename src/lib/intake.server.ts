@@ -29,7 +29,16 @@ export type IntakeResult = {
   ref: number;
   propertyMatched: boolean;
   priority: "p1" | "p2" | "p3" | "p4";
+  /** True when the message was filed as a reply on an existing matter. */
+  threaded?: boolean;
 };
+
+/** Every outbound matter email carries [ARHA-123] so replies come back here. */
+export const REF_TAG = /\[ARHA-(\d+)\]/i;
+export function refTag(ref: number) {
+  return `[ARHA-${ref}]`;
+}
+
 
 const P1 = /(fire|smoke|carbon monoxide|co alarm|gas|flood|flooding|active leak|no heat|no ac|no a\/c|no power|lockout|locked out|break-?in|injur|emergenc|urgent)/i;
 const P2 = /(leak|water|hvac|heat|air condition|no hot water|toilet|clog|backed up|pest|roach|bed bug|broken|not working|guest complain)/i;
