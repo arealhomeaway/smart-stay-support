@@ -11,9 +11,15 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { DOC_TYPE_BY_CODE } from "./vendor-documents";
 import {
   gatekeeperReadiness,
   maskedCodeFor,
+  normalizeZip,
+  parseZipList,
+  resolveCoverage,
+  type CoverageSource,
+  type ServiceAreaRow,
   type GatekeeperLine,
   type GatekeeperResult,
   type RequirementLevel,
@@ -433,5 +439,271 @@ export async function addVendorMember(
     masked_code: maskedCodeFor(org.display_name, (count ?? 0) + 1),
   });
   if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+/* ------------------------------------------------------------------ */
+/* Territories                                                         */
+/* ------------------------------------------------------------------ */
+
+/** ZIP -> how many ARHA homes sit in it, so a territory shows its real weight. */
+export async function zipPropertyCounts(db: Client) {
+  const { data, error } = await db.from("properties").select("postal_code").eq("active", true);
+  if (error) throw new Error(error.message);
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const zip = normalizeZip(row.postal_code ?? "");
+    if (zip) counts.set(zip, (counts.get(zip) ?? 0) + 1);
+  }
+  return counts;
+}
+
+export async function loadServiceAreas(db: Client, orgId: string): Promise<ServiceAreaRow[]> {
+  const [{ data, error }, counts] = await Promise.all([
+    db.from("vendor_service_areas").select("*").eq("org_id", orgId).order("service_category").order("postal_code"),
+    zipPropertyCounts(db),
+  ]);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((a) => ({
+    id: a.id,
+    serviceCategory: a.service_category,
+    postalCode: a.postal_code,
+    territoryLabel: a.territory_label,
+    coveragePriority: a.coverage_priority,
+    travelNote: a.travel_note,
+    propertyCount: counts.get(a.postal_code) ?? 0,
+  }));
+}
+
+/**
+ * Add a pasted block of ZIPs as one territory for one trade.
+ *
+ * ZIPs that aren't five digits are reported back rather than guessed at, and
+ * re-pasting a list is safe: existing rows are left alone, not duplicated.
+ */
+export async function addServiceArea(
+  db: Client,
+  userId: string,
+  input: {
+    orgId: string;
+    serviceCategory: string;
+    zipText: string;
+    territoryLabel?: string | null | undefined;
+    coveragePriority: string;
+    travelNote?: string | null | undefined;
+  },
+) {
+  await assertSupervisor(db, userId);
+  const { zips, rejected } = parseZipList(input.zipText);
+  if (zips.length === 0) {
+    throw new Error("No usable five-digit ZIP codes in that list.");
+  }
+  const { data: org } = await db.from("vendor_orgs").select("status").eq("id", input.orgId).maybeSingle();
+  if (org && ["removed", "potential", "screening"].includes(org.status)) {
+    throw new Error("Only a trial, approved, restricted or paused vendor can hold a territory.");
+  }
+
+  const { error } = await db.from("vendor_service_areas").upsert(
+    zips.map((zip) => ({
+      org_id: input.orgId,
+      service_category: input.serviceCategory,
+      postal_code: zip,
+      territory_label: input.territoryLabel || null,
+      coverage_priority: input.coveragePriority,
+      travel_note: input.travelNote || null,
+      created_by: userId,
+    })),
+    { onConflict: "org_id,service_category,postal_code", ignoreDuplicates: true },
+  );
+  if (error) throw new Error(error.message);
+
+  const counts = await zipPropertyCounts(db);
+  const homes = zips.reduce((sum, z) => sum + (counts.get(z) ?? 0), 0);
+  return { ok: true, added: zips.length, rejected, homes };
+}
+
+export async function removeServiceArea(db: Client, userId: string, areaId: string) {
+  await assertSupervisor(db, userId);
+  const { error } = await db.from("vendor_service_areas").delete().eq("id", areaId);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+/**
+ * Every home this company reaches for a trade, and why: a directly assigned
+ * home, a home inside their territory, or a home they're excluded from.
+ */
+export async function coverageForOrg(db: Client, orgId: string) {
+  const [propsRes, coverageRes, areasRes] = await Promise.all([
+    db.from("properties").select("id, name, nickname, city, state, postal_code").eq("active", true),
+    db.from("property_vendor_coverage").select("*").eq("org_id", orgId),
+    db.from("vendor_service_areas").select("*").eq("org_id", orgId),
+  ]);
+  for (const res of [propsRes, coverageRes, areasRes]) if (res.error) throw new Error(res.error.message);
+
+  const rows: {
+    propertyId: string;
+    propertyName: string;
+    city: string | null;
+    postalCode: string | null;
+    serviceCategory: string;
+    covered: boolean;
+    source: CoverageSource;
+    priority: string | null;
+    reason: string;
+  }[] = [];
+
+  const categories = new Set<string>([
+    ...(coverageRes.data ?? []).map((c) => c.service_category),
+    ...(areasRes.data ?? []).map((a) => a.service_category),
+  ]);
+
+  for (const property of propsRes.data ?? []) {
+    const zip = normalizeZip(property.postal_code ?? "");
+    for (const category of categories) {
+      const propertyRow = (coverageRes.data ?? []).find(
+        (c) => c.property_id === property.id && c.service_category === category,
+      );
+      const territoryRow = zip
+        ? (areasRes.data ?? []).find((a) => a.postal_code === zip && a.service_category === category)
+        : undefined;
+      if (!propertyRow && !territoryRow) continue;
+      const resolved = resolveCoverage({
+        propertyRow: propertyRow
+          ? { coveragePriority: propertyRow.coverage_priority, excluded: propertyRow.excluded }
+          : undefined,
+        territoryRow: territoryRow ? { coveragePriority: territoryRow.coverage_priority } : undefined,
+      });
+      rows.push({
+        propertyId: property.id,
+        propertyName: property.nickname || property.name,
+        city: property.city,
+        postalCode: property.postal_code,
+        serviceCategory: category,
+        ...resolved,
+      });
+    }
+  }
+
+  return rows.sort((a, b) => a.propertyName.localeCompare(b.propertyName));
+}
+
+/* ------------------------------------------------------------------ */
+/* Documents & identity                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * File a document against a company.
+ *
+ * Identity documents are the exception: Resolve records that a supervisor
+ * checked a government photo ID and when it expires, and keeps no image. The
+ * database enforces this too, so a future code path can't quietly start
+ * storing licences.
+ */
+export async function recordVendorDocument(
+  db: Client,
+  userId: string,
+  input: {
+    orgId: string;
+    docType: string;
+    title: string;
+    externalUrl?: string | null | undefined;
+    expiresOn?: string | null | undefined;
+    note?: string | null | undefined;
+    verified: boolean;
+  },
+) {
+  await assertSupervisor(db, userId);
+  const spec = DOC_TYPE_BY_CODE.get(input.docType);
+  if (!spec) throw new Error("Unknown document type.");
+  if (spec.retention === "verify_only" && input.externalUrl) {
+    throw new Error("Identity documents are verified and discarded — Resolve does not keep a copy.");
+  }
+
+  const { error } = await db.from("vendor_documents").insert({
+    org_id: input.orgId,
+    doc_type: input.docType,
+    title: input.title,
+    external_url: spec.retention === "verify_only" ? null : input.externalUrl || null,
+    restricted: spec.restrictedByDefault,
+    verification_status: input.verified ? "verified" : "not_verified",
+    verified_by: input.verified ? userId : null,
+    verified_at: input.verified ? new Date().toISOString() : null,
+    expires_on: input.expiresOn || null,
+    note: input.note || null,
+    uploaded_by: userId,
+  });
+  if (error) throw new Error(error.message);
+
+  // Filing verified evidence should move the matching screening line, not
+  // leave a supervisor to remember to tick it twice.
+  if (input.verified && spec.requirementCode) {
+    const { data: req } = await db
+      .from("gatekeeper_requirements")
+      .select("id")
+      .eq("code", spec.requirementCode)
+      .maybeSingle();
+    if (req) {
+      await db.from("vendor_gatekeeper_results").upsert(
+        {
+          org_id: input.orgId,
+          requirement_id: req.id,
+          result: "verified_meets",
+          expires_on: input.expiresOn || null,
+          note: input.note || null,
+          verified_by: userId,
+          verified_at: new Date().toISOString(),
+        },
+        { onConflict: "org_id,requirement_id" },
+      );
+    }
+  }
+
+  return { ok: true };
+}
+
+/** The identity flow: confirm the check happened, keep nothing but the record. */
+export async function recordIdentityCheck(
+  db: Client,
+  userId: string,
+  input: { orgId: string; subject: string; method: string; expiresOn?: string | null | undefined },
+) {
+  await assertSupervisor(db, userId);
+  const { data: req } = await db
+    .from("gatekeeper_requirements")
+    .select("id")
+    .eq("code", "identity")
+    .maybeSingle();
+  if (!req) throw new Error("The identity requirement is missing from the screening list.");
+
+  const note = `${input.subject} — ${input.method}. Document viewed and not retained.`;
+  const { error } = await db.from("vendor_gatekeeper_results").upsert(
+    {
+      org_id: input.orgId,
+      requirement_id: req.id,
+      result: "verified_meets",
+      note,
+      verification_method: input.method,
+      expires_on: input.expiresOn || null,
+      verified_by: userId,
+      verified_at: new Date().toISOString(),
+    },
+    { onConflict: "org_id,requirement_id" },
+  );
+  if (error) throw new Error(error.message);
+
+  await db.from("vendor_documents").insert({
+    org_id: input.orgId,
+    doc_type: "identity",
+    title: `Identity verified — ${input.subject}`,
+    restricted: true,
+    verification_status: "verified",
+    verified_by: userId,
+    verified_at: new Date().toISOString(),
+    expires_on: input.expiresOn || null,
+    note,
+    uploaded_by: userId,
+  });
+
   return { ok: true };
 }
