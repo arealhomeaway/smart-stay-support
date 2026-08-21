@@ -436,20 +436,28 @@ function LogTimeDialog({
               <Input id="time-date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="time-min">Minutes</Label>
+              <Label htmlFor="time-min">Minutes you personally spent</Label>
               <Input
                 id="time-min"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={1440}
+                placeholder="Enter minutes"
                 value={minutes}
-                onChange={(e) => setMinutes(Number(e.target.value))}
+                onChange={(e) => setMinutes(e.target.value)}
               />
             </div>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="time-activity">What you did</Label>
-            <Input id="time-activity" value={activity} onChange={(e) => setActivity(e.target.value)} />
+            <Label htmlFor="time-activity">What you personally did</Label>
+            <Input
+              id="time-activity"
+              value={activity}
+              placeholder="Describe the review, research, meeting or decision"
+              onChange={(e) => setActivity(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Related to: {target.label}</p>
           </div>
           <div className="space-y-1">
             <Label htmlFor="time-output">Decision or outcome (optional)</Label>
