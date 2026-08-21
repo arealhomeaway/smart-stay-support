@@ -30,6 +30,7 @@ import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenticated/vendor.index'
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
+import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
 
@@ -144,6 +145,12 @@ const AuthenticatedVendorScorecardRoute =
     path: '/vendor/scorecard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksOwnerNotifyRoute =
+  ApiPublicHooksOwnerNotifyRouteImport.update({
+    id: '/api/public/hooks/owner-notify',
+    path: '/api/public/hooks/owner-notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntakeEmailRoute = ApiPublicIntakeEmailRouteImport.update({
   id: '/api/public/intake/email',
   path: '/api/public/intake/email',
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -200,6 +208,7 @@ export interface FileRoutesByTo {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -226,6 +235,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/tickets/'
     | '/vendor/'
+    | '/api/public/hooks/owner-notify'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesByTo: FileRoutesByTo
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/tickets'
     | '/vendor'
+    | '/api/public/hooks/owner-notify'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   id:
@@ -301,6 +313,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/scorecard'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
+    | '/api/public/hooks/owner-notify'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesById: FileRoutesById
@@ -309,6 +322,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
   ApiPublicSyncInboundRoute: typeof ApiPublicSyncInboundRoute
 }
@@ -462,6 +476,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/owner-notify': {
+      id: '/api/public/hooks/owner-notify'
+      path: '/api/public/hooks/owner-notify'
+      fullPath: '/api/public/hooks/owner-notify'
+      preLoaderRoute: typeof ApiPublicHooksOwnerNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/intake/email': {
       id: '/api/public/intake/email'
       path: '/api/public/intake/email'
@@ -528,6 +549,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
   ApiPublicSyncInboundRoute: ApiPublicSyncInboundRoute,
 }
