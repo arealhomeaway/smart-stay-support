@@ -64,13 +64,29 @@ export function VendorImportPanel() {
           <CardTitle>Import a legacy vendor list</CardTitle>
           <CardDescription>
             One vendor per line: name, role, email, phone, departments, groups — tab or comma separated. A CSV export
-            from the old system pastes straight in. Nothing imports as approved.
+            from the old system pastes straight in. The Notion Vendor Database export is recognised on its own and
+            brings across specialty, market, pricing, contact and compliance notes. Nothing imports as approved.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1">
             <Label htmlFor="import-label">Batch name</Label>
             <Input id="import-label" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={120} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="import-file">Or pick a CSV file</Label>
+            <Input
+              id="import-file"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setText(await file.text());
+                setLabel(file.name.replace(/\.csv$/i, "").slice(0, 120));
+                toast.success("File loaded — review the row count, then stage it.");
+              }}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="import-text">Rows</Label>
@@ -116,6 +132,26 @@ export function VendorImportPanel() {
                   {r.departments.length > 0 && ` · legacy services: ${r.departments.join(", ")}`}
                   {r.groups.length > 0 && ` · legacy groups: ${r.groups.join(", ")}`}
                 </p>
+                {r.profile && (
+                  <div className="mt-1 space-y-1 text-xs text-muted-foreground">
+                    <p>
+                      {[
+                        r.profile.contactPerson,
+                        r.profile.specialties.join(", ") || null,
+                        r.profile.markets.join(", ") || null,
+                        r.profile.pricing,
+                        r.profile.paymentType,
+                        r.profile.legacyStatus ? `Notion status: ${r.profile.legacyStatus}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    {r.profile.claims.length > 0 && (
+                      <p>Recorded, still unverified — {r.profile.claims.join("; ")}.</p>
+                    )}
+                    {r.profile.comments && <p>{r.profile.comments}</p>}
+                  </div>
+                )}
                 {r.matchReasons.length > 0 && (
                   <p className="mt-1 text-xs text-muted-foreground">
                     {r.matchOrgName ? `Possible match: ${r.matchOrgName}. ` : ""}

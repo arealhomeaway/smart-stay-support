@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { parseCsvRecords } from "./csv";
 import { assertSupervisor } from "./vendors.server";
 
 type Client = SupabaseClient<Database>;
@@ -26,6 +27,27 @@ const PERSONAL_DOMAINS = new Set([
   "comcast.net",
 ]);
 
+/** What the Notion vendor database knows about a company, carried through review. */
+export type LegacyProfile = {
+  contactPerson: string | null;
+  specialties: string[];
+  markets: string[];
+  serviceArea: string | null;
+  pricing: string | null;
+  paymentType: string | null;
+  coverageHours: string | null;
+  emergencyAvailability: string | null;
+  website: string | null;
+  restrictions: string | null;
+  comments: string | null;
+  preference: string | null;
+  legacyStatus: string | null;
+  claims: string[];
+  insuranceExpiresOn: string | null;
+  licenseExpiresOn: string | null;
+  notionVendorId: string | null;
+};
+
 export type ParsedRow = {
   sourceRole: "service_provider" | "representative";
   displayName: string;
@@ -33,7 +55,9 @@ export type ParsedRow = {
   phone: string | null;
   departments: string[];
   groups: string[];
+  profile?: LegacyProfile | null;
 };
+
 
 function splitList(value: string) {
   return value
@@ -67,6 +91,107 @@ export function parseLegacyRows(text: string): ParsedRow[] {
   }
   return rows;
 }
+
+/* ------------------------------------------------------------------ */
+/* Notion vendor database export                                       */
+/* ------------------------------------------------------------------ */
+
+/** True when the pasted text is the ARHA Notion "Vendor Database" CSV export. */
+export function looksLikeVendorDatabaseCsv(text: string) {
+  const header = text.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "";
+  return /(^|,)"?Company"?,/i.test(header) && /Vendor Status|Specialty|Vendor ID/i.test(header);
+}
+
+function firstValue(record: Record<string, string>, ...keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]?.trim();
+    if (value) return value;
+  }
+  return null;
+}
+
+/** "August 12, 2026" or "2026-08-12" → an ISO date, or null when it isn't a date. */
+function toIsoDate(value: string | null) {
+  if (!value) return null;
+  const iso = /^\d{4}-\d{2}-\d{2}/.exec(value);
+  if (iso) return iso[0];
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+/** Yes/No columns become a sentence we can show, never a verification. */
+function claim(record: Record<string, string>, column: string, label: string, claims: string[]) {
+  const value = record[column]?.trim();
+  if (!value) return;
+  claims.push(`${label}: ${value}`);
+}
+
+/**
+ * Reads the Notion vendor database export.
+ *
+ * Everything here is what Notion *recorded*, not what ARHA has verified. Yes/No
+ * compliance columns come across as claims on the record so a supervisor can
+ * check them — they never tick a screening gate on their own.
+ */
+export function parseVendorDatabaseCsv(text: string): ParsedRow[] {
+  const rows: ParsedRow[] = [];
+  for (const record of parseCsvRecords(text)) {
+    const company = firstValue(record, "Company", "Name");
+    if (!company) continue;
+
+    const claims: string[] = [];
+    claim(record, "Insurance Current", "Insurance current", claims);
+    claim(record, "License Current", "License current", claims);
+    claim(record, "License Required", "License required", claims);
+    claim(record, "License Number", "License number", claims);
+    claim(record, "W-9 Received", "W-9 received", claims);
+    claim(record, "Vendor Agreement Signed", "Agreement signed", claims);
+    claim(record, "Rate Sheet Received", "Rate sheet received", claims);
+    claim(record, "References Verified", "References verified", claims);
+    claim(record, "Pilot Completed", "Pilot completed", claims);
+    claim(record, "Critical Failure", "Critical failure", claims);
+    claim(record, "Open Corrective Action", "Open corrective action", claims);
+    claim(record, "Compliance Status", "Compliance status", claims);
+    claim(record, "Qualification Gate Status", "Qualification gate", claims);
+    claim(record, "Gold Standard Status", "Gold standard", claims);
+
+    const email = firstValue(record, "Email Address", "Email");
+    const specialties = splitList(
+      [record["Specialty"] ?? "", record["Specialty (Backend)"] ?? ""].filter(Boolean).join(","),
+    );
+
+    rows.push({
+      sourceRole: "service_provider",
+      displayName: company,
+      email: email && email.includes("@") ? email.toLowerCase() : null,
+      phone: firstValue(record, "Phone Number", "Phone"),
+      departments: [...new Set(specialties)],
+      groups: splitList(record["Market"] ?? ""),
+      profile: {
+        contactPerson: firstValue(record, "Contact Person"),
+        specialties: [...new Set(specialties)],
+        markets: splitList(record["Market"] ?? ""),
+        serviceArea: firstValue(record, "Service Area"),
+        pricing: firstValue(record, "Pricing"),
+        paymentType: firstValue(record, "Payment Type"),
+        coverageHours: firstValue(record, "Coverage Hours"),
+        emergencyAvailability: firstValue(record, "Emergency Availability"),
+        website: firstValue(record, "Website"),
+        restrictions: firstValue(record, "Restrictions"),
+        comments: firstValue(record, "Comments", "Compliance Notes"),
+        preference: firstValue(record, "Preference"),
+        legacyStatus: firstValue(record, "Vendor Status"),
+        claims,
+        insuranceExpiresOn: toIsoDate(firstValue(record, "Insurance Expiration")),
+        licenseExpiresOn: toIsoDate(firstValue(record, "License Expiration")),
+        notionVendorId: firstValue(record, "Vendor ID"),
+      },
+    });
+  }
+  return rows;
+}
+
 
 function domainOf(email: string | null) {
   if (!email) return null;
@@ -151,8 +276,10 @@ export async function createImportBatch(
   input: { sourceSystem: string; label: string; text: string },
 ) {
   await assertSupervisor(db, userId);
-  const parsed = parseLegacyRows(input.text);
+  const notionExport = looksLikeVendorDatabaseCsv(input.text);
+  const parsed = notionExport ? parseVendorDatabaseCsv(input.text) : parseLegacyRows(input.text);
   if (parsed.length === 0) throw new Error("No rows found. Paste one vendor per line.");
+
 
   const { data: existing, error: existingError } = await db
     .from("vendor_orgs")
@@ -161,7 +288,12 @@ export async function createImportBatch(
 
   const { data: batch, error: batchError } = await db
     .from("vendor_import_batches")
-    .insert({ source_system: input.sourceSystem, label: input.label, created_by: userId })
+    .insert({
+      source_system: notionExport ? "notion" : input.sourceSystem,
+      label: input.label,
+      created_by: userId,
+    })
+
     .select("id")
     .single();
   if (batchError) throw new Error(batchError.message);
@@ -218,7 +350,9 @@ export async function loadImportQueue(db: Client) {
       matchOrgName: (r.vendor_orgs as { display_name?: string } | null)?.display_name ?? null,
       matchConfidence: r.match_confidence,
       matchReasons: r.match_reasons ?? [],
+      profile: ((r.raw as { profile?: LegacyProfile | null } | null)?.profile ?? null) as LegacyProfile | null,
     })),
+
   };
 }
 
@@ -239,26 +373,49 @@ export async function decideImportRow(
 
   const groupsAreMeaningful = (row.groups ?? []).filter((g) => !/all groups/i.test(g));
   const allGroups = (row.groups ?? []).some((g) => /all groups/i.test(g));
+  const profile = (row.raw as { profile?: LegacyProfile | null } | null)?.profile ?? null;
 
   if (input.action === "create") {
+    // Everything the old record claimed is written down as a claim, never as a
+    // verified gate. A supervisor still has to check insurance, licence and W-9.
+    const notes = [
+      profile?.comments,
+      profile?.restrictions ? `Restrictions: ${profile.restrictions}` : null,
+      profile?.preference ? `Historic preference: ${profile.preference}` : null,
+      profile?.coverageHours ? `Coverage hours: ${profile.coverageHours}` : null,
+      profile?.serviceArea ? `Service area on record: ${profile.serviceArea}` : null,
+      profile?.claims.length ? `Recorded in Notion (unverified) — ${profile.claims.join("; ")}.` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const { data, error: insertError } = await db
       .from("vendor_orgs")
       .insert({
         display_name: row.display_name,
         legal_name: row.display_name,
         status: "legacy",
-        service_categories: row.departments ?? [],
-        markets: [],
+        service_categories: profile?.specialties?.length ? profile.specialties : (row.departments ?? []),
+        markets: profile?.markets ?? [],
         legacy_market_hints: groupsAreMeaningful,
         legacy_all_groups: allGroups,
+        primary_contact_name: profile?.contactPerson ?? null,
         primary_contact_email: row.email,
         primary_contact_phone: row.phone,
+        website: profile?.website ?? null,
+        pricing_note: profile?.pricing ?? null,
+        payment_terms: profile?.paymentType ?? null,
+        emergency_available: Boolean(profile?.emergencyAvailability && /yes|24|always/i.test(profile.emergencyAvailability)),
+        insurance_expires_on: profile?.insuranceExpiresOn ?? null,
+        license_expires_on: profile?.licenseExpiresOn ?? null,
+        notes: notes || null,
         created_by: userId,
       })
       .select("id")
       .single();
     if (insertError) throw new Error(insertError.message);
     createdOrgId = data.id;
+
 
     await db.from("vendor_status_events").insert({
       org_id: data.id,
@@ -269,10 +426,11 @@ export async function decideImportRow(
     await db.from("external_links").insert({
       entity_type: "vendor_org",
       entity_id: data.id,
-      system: "breezeway",
-      external_id: row.display_name,
+      system: profile?.notionVendorId ? "notion" : "breezeway",
+      external_id: profile?.notionVendorId ?? row.display_name,
       last_sync_status: "imported",
     });
+
   }
 
   if (input.action === "match" || (input.action === "create" && row.source_role === "representative")) {
