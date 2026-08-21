@@ -17,6 +17,7 @@ import {
 import { RequireCapability } from "@/components/RequireCapability";
 import { getCommandCenter } from "@/lib/command-center.functions";
 import { STATUS_TONE, type Kpi } from "@/lib/command-center";
+import { CompanyHealthPanel } from "@/components/CompanyHealthPanel";
 
 export const Route = createFileRoute("/_authenticated/command-center")({
   head: () => ({
@@ -88,6 +89,8 @@ function CommandCenter() {
           estimated. Where a source does not exist yet the metric says so and names the missing feed.
         </p>
       </header>
+
+      <CompanyHealthPanel data={data} />
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
