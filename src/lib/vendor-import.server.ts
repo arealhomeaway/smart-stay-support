@@ -263,8 +263,7 @@ export function parseBreezewayCsv(text: string): ParsedRow[] {
   }
   return rows;
 }
-
-
+function domainOf(email: string | null) {
   if (!email) return null;
   const domain = email.split("@")[1]?.toLowerCase() ?? null;
   if (!domain || PERSONAL_DOMAINS.has(domain)) return null;
