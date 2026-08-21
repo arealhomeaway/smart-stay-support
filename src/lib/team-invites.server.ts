@@ -46,11 +46,73 @@ export async function createTeamInvite(
       })
       .select("code, expires_at")
       .maybeSingle();
-    if (!error && data) return { code: data.code, expiresAt: data.expires_at };
+    if (!error && data) {
+      const emailed = await sendInviteEmail({
+        email: input.email,
+        name: input.name,
+        role: input.role,
+        code: data.code,
+        note: input.note,
+        expiresAt: data.expires_at,
+      });
+      return { code: data.code, expiresAt: data.expires_at, emailed };
+    }
     if (error && error.code !== "23505") throw error;
   }
   throw new Error("Could not generate an invite code. Please try again.");
 }
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Platform Owner",
+  manager: "Supervisor",
+  tech: "Staff",
+  onboarding: "Onboarding",
+  vendor: "Vendor",
+  owner: "Homeowner",
+};
+
+/** Emails the invite code. Returns how the send went so the UI can say so. */
+async function sendInviteEmail(input: {
+  email: string;
+  name: string;
+  role: string;
+  code: string;
+  note: string;
+  expiresAt: string | null;
+}) {
+  if (!input.email) return { status: "skipped" as const, error: "No email address was provided." };
+
+  const { sendEmail, emailShell } = await import("./email.server");
+  const appUrl = "https://smart-stay-support.lovable.app";
+  const expires = input.expiresAt ? new Date(input.expiresAt).toLocaleDateString() : null;
+
+  const body = [
+    `Hi${input.name ? ` ${input.name}` : ""},`,
+    "",
+    `You've been invited to join Resolve, the A Real Home Away operations platform, as ${ROLE_LABEL[input.role] ?? input.role}.`,
+    "",
+    `Your invite code: ${input.code}`,
+    "",
+    "How to get in:",
+    `1. Go to ${appUrl}/auth and create your account with this email address.`,
+    `2. Once you're signed in, open ${appUrl}/join and enter the code above.`,
+    "",
+    input.note ? `Note from your team: ${input.note}` : "",
+    expires ? `This code expires on ${expires} and can only be used once.` : "",
+    "",
+    "Welcome aboard.",
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+
+  const result = await sendEmail({
+    to: input.email,
+    subject: "Your invite to Resolve — A Real Home Away",
+    html: emailShell("You're invited to Resolve", body, { label: "Create your account", url: `${appUrl}/auth` }),
+  });
+  return { status: result.status, error: result.error };
+}
+
 
 export async function revokeTeamInvite(supabase: Client, userId: string, inviteId: string) {
   await assertAdmin(supabase, userId);

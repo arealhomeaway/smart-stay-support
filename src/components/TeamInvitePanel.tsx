@@ -67,11 +67,18 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
       createFn({ data: { role, email: email.trim(), name: name.trim(), note: "", expiresInDays: 30 } }),
     onSuccess: (res) => {
       void navigator.clipboard?.writeText(inviteMessage(res.code));
-      toast.success(`Code ${res.code} created — invite message copied, paste it to them.`);
+      if (res.emailed?.status === "sent") {
+        toast.success(`Code ${res.code} emailed to them — a copy is on your clipboard too.`);
+      } else if (res.emailed?.status === "failed") {
+        toast.warning(`Code ${res.code} created, but the email didn't send: ${res.emailed.error}`);
+      } else {
+        toast.success(`Code ${res.code} created — invite message copied, paste it to them.`);
+      }
       setEmail("");
       setName("");
       refresh();
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
