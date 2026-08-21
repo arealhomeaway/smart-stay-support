@@ -276,8 +276,10 @@ export async function createImportBatch(
   input: { sourceSystem: string; label: string; text: string },
 ) {
   await assertSupervisor(db, userId);
-  const parsed = parseLegacyRows(input.text);
+  const notionExport = looksLikeVendorDatabaseCsv(input.text);
+  const parsed = notionExport ? parseVendorDatabaseCsv(input.text) : parseLegacyRows(input.text);
   if (parsed.length === 0) throw new Error("No rows found. Paste one vendor per line.");
+
 
   const { data: existing, error: existingError } = await db
     .from("vendor_orgs")
