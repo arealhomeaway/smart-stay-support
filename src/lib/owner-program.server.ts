@@ -1,11 +1,11 @@
 /**
- * Active Owner Participation Program (server-only).
+ * Active Owner Participation Program — staff side (server-only).
  *
- * Each participating home gets one 90-day program. ARHA seeds the roadmap of
- * owner reviews from the task template catalog, the homeowner works through
- * them and self-reports the time they actually spent. The template catalog
- * carries internal planning ranges so we can staff the roadmap; those never
- * leave the staff surface.
+ * One homeowner has one program. A program can carry one home or several;
+ * either way there is a single 90-day clock, a single combined commitment of
+ * more than 100 hours and a single pace benchmark. Individual homes are
+ * measured by the tasks and decisions they need, never by their own hour
+ * target.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -17,9 +17,18 @@ import {
   PROGRAM_DAYS,
   type DecisionPath,
   type ProgramPhase,
-  type ProgramRow,
   type TaskTemplate,
 } from "./owner-program";
+import {
+  ACTIVATABLE_STATUSES,
+  hoursFromMinutes,
+  OPERATING_TARGET_HOURS,
+  progressSnapshot,
+  type ProgramStatus,
+  type TaskType,
+} from "./owner-participation";
+import { combinedMinutes, loadProgramAggregate, recordEvent } from "./owner-participation.server";
+import { syncBadges } from "./owner-badges.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -64,91 +73,177 @@ export async function loadTaskTemplates(supabase: Client): Promise<TaskTemplate[
   }));
 }
 
-/**
- * Every active home with its program state. Homes without a program appear
- * too, so a supervisor can start one without hunting for the property first.
- */
+export type AdminProgramRow = {
+  id: string;
+  ownerName: string | null;
+  ownerEmail: string | null;
+  ownerLinked: boolean;
+  status: ProgramStatus;
+  startedOn: string | null;
+  endsOn: string | null;
+  properties: { id: string; name: string; coverage: string; openTasks: number; overdue: number }[];
+  day: number;
+  daysLeft: number;
+  reportedHours: number;
+  benchmark: number;
+  variance: number;
+  progressState: string;
+  lastOwnerActivityAt: string | null;
+  openTasks: number;
+  coverageConcerns: number;
+  nextMilestone: { day: number; hours: number };
+  badgeCount: number;
+  onboardingLead: string | null;
+  operationsLead: string | null;
+  lastNotificationAt: string | null;
+  dfyConfirmed: boolean;
+};
+
+/** One row per participation program, plus the homes still free to enroll. */
 export async function loadPrograms(supabase: Client) {
-  const [properties, programs, reviews, entries] = await Promise.all([
-    supabase.from("properties").select("id, name, nickname, city, state").eq("active", true).order("name"),
-    supabase
-      .from("owner_programs")
-      .select(
-        "id, property_id, owner_user_id, owner_name, owner_email, status, started_on, ends_on, target_hours, onboarding_target_hours, ongoing_target_hours",
-      ),
-    supabase.from("owner_reviews").select("id, program_id, status"),
-    supabase.from("owner_time_entries").select("program_id, phase, minutes"),
-  ]);
-  if (properties.error) throw properties.error;
-  if (programs.error) throw programs.error;
-  if (reviews.error) throw reviews.error;
-  if (entries.error) throw entries.error;
-
-  const rows: ProgramRow[] = [];
-  for (const property of properties.data ?? []) {
-    const program = (programs.data ?? []).find((p) => p.property_id === property.id);
-    if (!program) continue;
-    const mine = (reviews.data ?? []).filter((r) => r.program_id === program.id);
-    const time = (entries.data ?? []).filter((e) => e.program_id === program.id);
-    const sum = (phase?: ProgramPhase) =>
-      time.filter((e) => !phase || e.phase === phase).reduce((n, e) => n + e.minutes, 0);
-
-    rows.push({
-      id: program.id,
-      propertyId: property.id,
-      propertyName: property.nickname || property.name,
-      location: locationOf(property),
-      ownerName: program.owner_name,
-      ownerEmail: program.owner_email,
-      ownerLinked: Boolean(program.owner_user_id),
-      status: program.status as ProgramRow["status"],
-      startedOn: program.started_on,
-      endsOn: program.ends_on,
-      targetHours: Number(program.target_hours),
-      onboardingTargetHours: Number(program.onboarding_target_hours),
-      ongoingTargetHours: Number(program.ongoing_target_hours),
-      reviewCount: mine.length,
-      openReviewCount: mine.filter((r) => r.status !== "closed").length,
-      reportedMinutes: sum(),
-      onboardingMinutes: sum("onboarding"),
-      ongoingMinutes: sum("ongoing"),
-    });
+  const [properties, programs, links, reviews, entries, entryProps, badges, notifications] =
+    await Promise.all([
+      supabase.from("properties").select("id, name, nickname, city, state").eq("active", true).order("name"),
+      supabase
+        .from("owner_programs")
+        .select(
+          "id, owner_user_id, owner_name, owner_email, status, started_on, ends_on, onboarding_lead, operations_lead, dfy_confirmed, last_owner_activity_at",
+        ),
+      supabase
+        .from("owner_program_properties")
+        .select(
+          "id, program_id, property_id, inclusion_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname)",
+        ),
+      supabase.from("owner_reviews").select("id, program_id, property_id, status, respond_by"),
+      supabase.from("owner_time_entries").select("id, program_id, minutes"),
+      supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
+      supabase.from("owner_badges").select("program_id, code"),
+      supabase
+        .from("owner_notifications")
+        .select("program_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(500),
+    ]);
+  for (const r of [properties, programs, links, reviews, entries, entryProps, badges, notifications]) {
+    if (r.error) throw r.error;
   }
 
-  const enrolledIds = new Set(rows.map((r) => r.propertyId));
+  const today = new Date().toISOString().slice(0, 10);
+  const reviewProperty = new Map((reviews.data ?? []).map((r) => [r.id, r.property_id]));
+
+  const rows: AdminProgramRow[] = (programs.data ?? []).map((p) => {
+    const myLinks = (links.data ?? []).filter(
+      (l) => l.program_id === p.id && l.inclusion_status === "included",
+    );
+    const myReviews = (reviews.data ?? []).filter((r) => r.program_id === p.id);
+    const myEntries = (entries.data ?? []).filter((e) => e.program_id === p.id);
+    const reported = combinedMinutes(myEntries);
+    const snapshot = progressSnapshot({
+      status: p.status as ProgramStatus,
+      startedOn: p.started_on,
+      reportedMinutes: reported,
+    });
+    const openTasks = myReviews.filter((r) => !["answered", "closed"].includes(r.status));
+
+    const propertyRows = myLinks.map((l) => {
+      const prop = l.properties as unknown as { name: string; nickname: string | null } | null;
+      const mine = myReviews.filter((r) => reviewProperty.get(r.id) === l.property_id);
+      const open = mine.filter((r) => !["answered", "closed"].includes(r.status));
+      const overdue = open.filter((r) => r.respond_by && r.respond_by < today);
+      const hasActivity = (entryProps.data ?? []).some(
+        (ep) => ep.property_id === l.property_id && myEntries.some((e) => e.id === ep.entry_id),
+      );
+      return {
+        id: l.property_id,
+        name: prop ? prop.nickname || prop.name : "Property",
+        coverage: hasActivity ? (overdue.length ? "needs_attention" : "in_progress") : "no_activity",
+        openTasks: open.length,
+        overdue: overdue.length,
+      };
+    });
+
+    return {
+      id: p.id,
+      ownerName: p.owner_name,
+      ownerEmail: p.owner_email,
+      ownerLinked: Boolean(p.owner_user_id),
+      status: p.status as ProgramStatus,
+      startedOn: p.started_on,
+      endsOn: p.ends_on,
+      properties: propertyRows,
+      day: snapshot.day,
+      daysLeft: snapshot.daysLeft,
+      reportedHours: hoursFromMinutes(reported),
+      benchmark: snapshot.benchmark,
+      variance: snapshot.variance,
+      progressState: snapshot.state,
+      lastOwnerActivityAt: p.last_owner_activity_at,
+      openTasks: openTasks.length,
+      coverageConcerns: propertyRows.filter((x) => x.coverage !== "in_progress" || x.overdue > 0).length,
+      nextMilestone: snapshot.next,
+      badgeCount: (badges.data ?? []).filter((b) => b.program_id === p.id).length,
+      onboardingLead: p.onboarding_lead,
+      operationsLead: p.operations_lead,
+      lastNotificationAt:
+        (notifications.data ?? []).find((n) => n.program_id === p.id)?.created_at ?? null,
+      dfyConfirmed: p.dfy_confirmed,
+    };
+  });
+
+  const enrolled = new Set(
+    (links.data ?? []).filter((l) => l.inclusion_status === "included").map((l) => l.property_id),
+  );
   const available = (properties.data ?? [])
-    .filter((p) => !enrolledIds.has(p.id))
+    .filter((p) => !enrolled.has(p.id))
     .map((p) => ({ id: p.id, name: p.nickname || p.name, location: locationOf(p) }));
 
   return { rows, available };
 }
 
-/** Starts (or re-reads) the 90-day program for one home. */
+/** Priority order for the "Owners needing attention" queue. */
+export function attentionRank(row: AdminProgramRow) {
+  const quietDays = row.lastOwnerActivityAt
+    ? Math.floor((Date.now() - new Date(row.lastOwnerActivityAt).getTime()) / 86_400_000)
+    : Infinity;
+  const behind = -row.variance;
+  if (row.status !== "active" && row.status !== "target_reached") return null;
+  if (behind >= 10) return { rank: 1, reason: "10+ hours behind pace" };
+  if (behind >= 5) return { rank: 2, reason: "5+ hours behind pace" };
+  if (quietDays >= 7 && row.openTasks > 0) return { rank: 3, reason: "No activity for 7 days with open tasks" };
+  if (row.daysLeft < 10 && row.reportedHours <= 100) return { rank: 4, reason: "Under 10 days without 100+ hours" };
+  if (row.properties.some((p) => p.overdue > 0)) return { rank: 5, reason: "Overdue property decisions" };
+  if (row.properties.some((p) => p.coverage === "no_activity"))
+    return { rank: 6, reason: "A property has no owner activity" };
+  if (behind >= 1) return { rank: 7, reason: "Slightly behind pace" };
+  return null;
+}
+
+/** Creates a draft program. The 90-day clock is never started here. */
 export async function createProgram(
   supabase: Client,
   userId: string,
-  input: { propertyId: string; ownerName: string; ownerEmail: string; startedOn: string | null },
+  input: { propertyId: string; ownerName: string; ownerEmail: string },
 ) {
   const existing = await supabase
-    .from("owner_programs")
-    .select("id")
+    .from("owner_program_properties")
+    .select("program_id")
     .eq("property_id", input.propertyId)
+    .eq("inclusion_status", "included")
     .maybeSingle();
   if (existing.error) throw existing.error;
-  if (existing.data) return { programId: existing.data.id, alreadyExists: true as const };
+  if (existing.data) return { programId: existing.data.program_id, alreadyExists: true as const };
 
-  const startedOn = input.startedOn;
   const { data, error } = await supabase
     .from("owner_programs")
     .insert({
       property_id: input.propertyId,
       owner_name: input.ownerName || null,
       owner_email: input.ownerEmail || null,
-      status: startedOn ? "active" : "pending",
-      started_on: startedOn,
-      // The 90th day inclusive of day one.
-      ends_on: startedOn ? addDays(startedOn, PROGRAM_DAYS - 1) : null,
+      status: "draft",
+      started_on: null,
+      ends_on: null,
       target_hours: DEFAULT_TARGET_HOURS,
+      operating_target_hours: OPERATING_TARGET_HOURS,
       onboarding_target_hours: DEFAULT_ONBOARDING_HOURS,
       ongoing_target_hours: DEFAULT_ONGOING_HOURS,
       created_by: userId,
@@ -156,23 +251,305 @@ export async function createProgram(
     .select("id")
     .single();
   if (error) throw error;
+
+  const link = await supabase.from("owner_program_properties").insert({
+    program_id: data.id,
+    property_id: input.propertyId,
+    added_by: userId,
+  });
+  if (link.error) throw link.error;
+
+  await recordEvent(supabase, {
+    programId: data.id,
+    kind: "program_created",
+    summary: "Program created as a draft.",
+    actorId: userId,
+    propertyId: input.propertyId,
+  });
   return { programId: data.id, alreadyExists: false as const };
 }
 
-/** Sets or moves the 90-day clock. */
-export async function setProgramStart(supabase: Client, programId: string, startedOn: string) {
+/**
+ * Adds another home to an existing program. After activation this needs an
+ * administrator, the property must have closed, and the 90-day clock and the
+ * combined hour commitment both stay exactly as they are.
+ */
+export async function addProgramProperty(
+  supabase: Client,
+  userId: string,
+  input: { programId: string; propertyId: string; closingDate: string | null },
+) {
+  const program = await supabase
+    .from("owner_programs")
+    .select("id, status, started_on")
+    .eq("id", input.programId)
+    .single();
+  if (program.error) throw program.error;
+
+  const alreadyElsewhere = await supabase
+    .from("owner_program_properties")
+    .select("program_id")
+    .eq("property_id", input.propertyId)
+    .eq("inclusion_status", "included")
+    .maybeSingle();
+  if (alreadyElsewhere.error) throw alreadyElsewhere.error;
+  if (alreadyElsewhere.data) throw new Error("That property is already part of a participation program.");
+
+  const started = Boolean(program.data.started_on);
+  if (started) {
+    const admin = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (admin.error || !admin.data) {
+      throw new Error("Adding a property to a program already underway needs administrator approval.");
+    }
+    if (!input.closingDate) {
+      throw new Error("Confirm the property's closing date before adding it to an active program.");
+    }
+  }
+
+  const { error } = await supabase.from("owner_program_properties").insert({
+    program_id: input.programId,
+    property_id: input.propertyId,
+    closing_date: input.closingDate,
+    closing_confirmed: Boolean(input.closingDate),
+    added_by: userId,
+    added_on: new Date().toISOString().slice(0, 10),
+  });
+  if (error) throw error;
+
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "property_added",
+    summary: started
+      ? "Property added after activation. The 90-day timeline and combined target are unchanged."
+      : "Property added to the program.",
+    actorId: userId,
+    propertyId: input.propertyId,
+    detail: { closingDate: input.closingDate },
+  });
+  return { ok: true as const };
+}
+
+export async function removeProgramProperty(
+  supabase: Client,
+  userId: string,
+  input: { programId: string; propertyId: string; reason: string },
+) {
+  const { error } = await supabase
+    .from("owner_program_properties")
+    .update({ inclusion_status: "removed" })
+    .eq("program_id", input.programId)
+    .eq("property_id", input.propertyId);
+  if (error) throw error;
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "property_removed",
+    summary: "Property removed from the program. Its history is preserved.",
+    actorId: userId,
+    propertyId: input.propertyId,
+    reason: input.reason || null,
+  });
+  return { ok: true as const };
+}
+
+/** Records the closing confirmation that gates activation. */
+export async function confirmPropertyClosing(
+  supabase: Client,
+  userId: string,
+  input: { programId: string; propertyId: string; closingDate: string },
+) {
+  const { error } = await supabase
+    .from("owner_program_properties")
+    .update({ closing_date: input.closingDate, closing_confirmed: true })
+    .eq("program_id", input.programId)
+    .eq("property_id", input.propertyId);
+  if (error) throw error;
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "closing_confirmed",
+    summary: `Closing confirmed for ${input.closingDate}.`,
+    actorId: userId,
+    propertyId: input.propertyId,
+    newValue: input.closingDate,
+  });
+  return { ok: true as const };
+}
+
+/** Program settings that carry no participation time of their own. */
+export async function updateProgramSettings(
+  supabase: Client,
+  userId: string,
+  input: {
+    programId: string;
+    ownerName: string;
+    ownerEmail: string;
+    onboardingLead: string | null;
+    operationsLead: string | null;
+    dfyConfirmed: boolean;
+    internalNotes: string;
+  },
+) {
   const { error } = await supabase
     .from("owner_programs")
-    .update({ started_on: startedOn, ends_on: addDays(startedOn, PROGRAM_DAYS - 1), status: "active" })
-    .eq("id", programId);
+    .update({
+      owner_name: input.ownerName || null,
+      owner_email: input.ownerEmail || null,
+      onboarding_lead: input.onboardingLead,
+      operations_lead: input.operationsLead,
+      dfy_confirmed: input.dfyConfirmed,
+      dfy_confirmed_at: input.dfyConfirmed ? new Date().toISOString() : null,
+      internal_notes: input.internalNotes || null,
+    })
+    .eq("id", input.programId);
   if (error) throw error;
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "program_updated",
+    summary: "Program details updated.",
+    actorId: userId,
+  });
   return { ok: true as const };
 }
 
 /**
- * Seeds owner reviews from the roadmap catalog. Templates already on the
- * program are skipped, so this is safe to run again when the catalog grows
- * or when a home moves from onboarding into ongoing operations.
+ * Manual activation. A closing date never starts a program on its own: an
+ * authorized team member confirms every home has closed and DFY has agreed
+ * the homes run as one combined program, then sets the single start date.
+ */
+export async function activateProgram(
+  supabase: Client,
+  userId: string,
+  input: { programId: string; startedOn: string },
+) {
+  const program = await supabase
+    .from("owner_programs")
+    .select("id, status, started_on, dfy_confirmed")
+    .eq("id", input.programId)
+    .single();
+  if (program.error) throw program.error;
+  if (!ACTIVATABLE_STATUSES.includes(program.data.status as ProgramStatus)) {
+    throw new Error("This program has already been activated.");
+  }
+  if (!program.data.dfy_confirmed) {
+    throw new Error("Confirm with DFY that these properties run as one combined program first.");
+  }
+
+  const links = await supabase
+    .from("owner_program_properties")
+    .select("property_id, closing_confirmed")
+    .eq("program_id", input.programId)
+    .eq("inclusion_status", "included");
+  if (links.error) throw links.error;
+  if ((links.data ?? []).length === 0) throw new Error("Add at least one property before activating.");
+  if ((links.data ?? []).some((l) => !l.closing_confirmed)) {
+    throw new Error("Every property must have a confirmed closing date before activation.");
+  }
+
+  const { error } = await supabase
+    .from("owner_programs")
+    .update({
+      started_on: input.startedOn,
+      ends_on: addDays(input.startedOn, PROGRAM_DAYS - 1),
+      status: "active",
+      activated_at: new Date().toISOString(),
+      activated_by: userId,
+    })
+    .eq("id", input.programId);
+  if (error) throw error;
+
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "program_activated",
+    summary: `90-day program activated starting ${input.startedOn}.`,
+    actorId: userId,
+    newValue: input.startedOn,
+  });
+  return { ok: true as const };
+}
+
+/** Moves a program between the non-activation lifecycle states. */
+export async function setProgramStatus(
+  supabase: Client,
+  userId: string,
+  input: { programId: string; status: ProgramStatus },
+) {
+  const current = await supabase
+    .from("owner_programs")
+    .select("status")
+    .eq("id", input.programId)
+    .single();
+  if (current.error) throw current.error;
+
+  const { error } = await supabase
+    .from("owner_programs")
+    .update({ status: input.status })
+    .eq("id", input.programId);
+  if (error) throw error;
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "status_changed",
+    summary: `Program status changed to ${input.status.replace(/_/g, " ")}.`,
+    actorId: userId,
+    previousValue: current.data.status,
+    newValue: input.status,
+  });
+  return { ok: true as const };
+}
+
+/**
+ * Corrections never overwrite what the homeowner reported. The original entry
+ * stays; an amending entry carries the revised value, the reason and who made
+ * the change.
+ */
+export async function recordTimeCorrection(
+  supabase: Client,
+  userId: string,
+  input: { entryId: string; minutes: number; reason: string },
+) {
+  const original = await supabase
+    .from("owner_time_entries")
+    .select("id, program_id, owner_user_id, phase, entry_date, minutes, activity, review_id, ticket_id")
+    .eq("id", input.entryId)
+    .single();
+  if (original.error) throw original.error;
+
+  const insert = await supabase
+    .from("owner_time_entries")
+    .insert({
+      program_id: original.data.program_id,
+      owner_user_id: original.data.owner_user_id,
+      phase: original.data.phase,
+      entry_date: original.data.entry_date,
+      minutes: input.minutes,
+      activity: `Correction: ${original.data.activity}`,
+      review_id: original.data.review_id,
+      ticket_id: original.data.ticket_id,
+      amends_entry_id: original.data.id,
+      correction_reason: input.reason,
+      attested: true,
+    })
+    .select("id")
+    .single();
+  if (insert.error) throw insert.error;
+
+  await recordEvent(supabase, {
+    programId: original.data.program_id,
+    kind: "time_corrected",
+    summary: `Participation entry corrected from ${original.data.minutes} to ${input.minutes} minutes.`,
+    actorId: userId,
+    entryId: insert.data.id,
+    previousValue: String(original.data.minutes),
+    newValue: String(input.minutes),
+    reason: input.reason,
+  });
+
+  const agg = await loadProgramAggregate(supabase, original.data.program_id);
+  await syncBadges(supabase, agg);
+  return { ok: true as const };
+}
+
+/**
+ * Seeds owner tasks from the roadmap catalog. Program-wide tasks are created
+ * once; property tasks are created per included home.
  */
 export async function seedRoadmap(
   supabase: Client,
@@ -191,81 +568,187 @@ export async function seedRoadmap(
 
   const existing = await supabase
     .from("owner_reviews")
-    .select("template_id")
+    .select("template_id, property_id")
     .eq("program_id", input.programId);
   if (existing.error) throw existing.error;
-  const seeded = new Set((existing.data ?? []).map((r) => r.template_id).filter(Boolean));
+  const seeded = new Set(
+    (existing.data ?? []).map((r) => `${r.template_id ?? ""}:${r.property_id ?? ""}`),
+  );
+
+  const links = await supabase
+    .from("owner_program_properties")
+    .select("property_id")
+    .eq("program_id", input.programId)
+    .eq("inclusion_status", "included");
+  if (links.error) throw links.error;
+  const propertyIds = (links.data ?? []).map((l) => l.property_id);
 
   const anchor = program.data.started_on ?? new Date().toISOString().slice(0, 10);
-  const toInsert = wanted
-    .filter((t) => !seeded.has(t.id))
-    .map((t) => ({
-      program_id: input.programId,
-      template_id: t.id,
-      phase: t.phase,
-      stage: t.stage,
-      title: t.title,
-      recommendation: t.summary,
-      impact: t.owner_action,
-      decision_path: t.decision_path,
-      respond_by: addDays(anchor, t.respond_within_days),
-      status: "prepared",
-      sort_order: t.sort_order,
-      created_by: userId,
-    }));
+  const toInsert: Record<string, unknown>[] = [];
+  for (const t of wanted) {
+    // Onboarding work is per home; ongoing operating rhythm is program-wide.
+    const perProperty = t.phase === "onboarding" && propertyIds.length > 0;
+    const targets: (string | null)[] = perProperty ? propertyIds : [null];
+    for (const propertyId of targets) {
+      if (seeded.has(`${t.id}:${propertyId ?? ""}`)) continue;
+      toInsert.push({
+        program_id: input.programId,
+        template_id: t.id,
+        property_id: propertyId,
+        task_type: (propertyId ? "property_specific" : "program_wide") satisfies TaskType,
+        phase: t.phase,
+        stage: t.stage,
+        title: t.title,
+        business_question: t.summary,
+        recommendation: t.summary,
+        impact: t.owner_action,
+        decision_path: t.decision_path,
+        respond_by: addDays(anchor, t.respond_within_days),
+        status: "prepared",
+        sort_order: t.sort_order,
+        created_by: userId,
+      });
+    }
+  }
 
   if (toInsert.length === 0) return { added: 0 };
-  const { error } = await supabase.from("owner_reviews").insert(toInsert);
+  const { error } = await supabase.from("owner_reviews").insert(toInsert as never);
   if (error) throw error;
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "roadmap_seeded",
+    summary: `${toInsert.length} owner activities released.`,
+    actorId: userId,
+  });
   return { added: toInsert.length };
 }
 
-/** The roadmap as it stands for one program, grouped for display. */
+/** Everything the staff detail view shows for one program. */
 export async function loadProgramDetail(supabase: Client, programId: string) {
-  const [program, reviews, entries] = await Promise.all([
-    supabase
-      .from("owner_programs")
-      .select(
-        "id, property_id, owner_user_id, owner_name, owner_email, status, started_on, ends_on, target_hours, onboarding_target_hours, ongoing_target_hours, properties(name, nickname, city, state)",
-      )
-      .eq("id", programId)
-      .single(),
-    supabase
-      .from("owner_reviews")
-      .select("id, phase, stage, title, recommendation, impact, decision_path, respond_by, status, owner_decision, ticket_id, sort_order")
-      .eq("program_id", programId)
-      .order("sort_order"),
-    supabase
-      .from("owner_time_entries")
-      .select("id, phase, entry_date, minutes, activity, attested, review_id")
-      .eq("program_id", programId)
-      .order("entry_date", { ascending: false }),
-  ]);
-  if (program.error) throw program.error;
-  if (reviews.error) throw reviews.error;
-  if (entries.error) throw entries.error;
-
-  const p = program.data;
-  const prop = p.properties as unknown as { name: string; nickname: string | null; city: string | null; state: string | null } | null;
+  const agg = await loadProgramAggregate(supabase, programId);
+  const history = await supabase
+    .from("owner_program_events")
+    .select("id, kind, summary, previous_value, new_value, reason, created_at")
+    .eq("program_id", programId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (history.error) throw history.error;
 
   return {
-    program: {
-      id: p.id,
-      propertyId: p.property_id,
-      propertyName: prop ? prop.nickname || prop.name : "Property",
-      location: prop ? locationOf(prop) : "",
-      ownerName: p.owner_name,
-      ownerEmail: p.owner_email,
-      ownerLinked: Boolean(p.owner_user_id),
-      status: p.status as ProgramRow["status"],
-      startedOn: p.started_on,
-      endsOn: p.ends_on,
-      targetHours: Number(p.target_hours),
-      onboardingTargetHours: Number(p.onboarding_target_hours),
-      ongoingTargetHours: Number(p.ongoing_target_hours),
+    program: agg.program,
+    properties: agg.properties,
+    reviews: agg.reviews,
+    entries: agg.entries,
+    badges: agg.badges,
+    snapshot: agg.snapshot,
+    reportedMinutes: agg.reportedMinutes,
+    onboardingMinutes: agg.onboardingMinutes,
+    operationalMinutes: agg.operationalMinutes,
+    history: history.data ?? [],
+    readyToComplete: completionChecklist(agg),
+  };
+}
+
+/** The gates that must all pass before ARHA can close a program out. */
+export function completionChecklist(agg: Awaited<ReturnType<typeof loadProgramAggregate>>) {
+  const included = agg.includedProperties;
+  const openTasks = agg.reviews.filter((r) => !["answered", "closed"].includes(r.status));
+  return {
+    hoursExceeded: agg.goalMet,
+    propertyTasksComplete: included.length > 0 && included.every((p) => p.openTasks === 0),
+    decisionsReceived: openTasks.filter((r) => r.status === "awaiting_owner").length === 0,
+    entriesAttributed: agg.entries.every((e) => e.activity.trim().length > 0),
+    allClear:
+      agg.goalMet &&
+      included.length > 0 &&
+      included.every((p) => p.openTasks === 0) &&
+      openTasks.filter((r) => r.status === "awaiting_owner").length === 0,
+  };
+}
+
+/** Formal closeout. Hours alone never close a program with open property work. */
+export async function completeProgram(supabase: Client, userId: string, programId: string) {
+  const agg = await loadProgramAggregate(supabase, programId);
+  const check = completionChecklist(agg);
+  if (!check.hoursExceeded) throw new Error("The homeowner has not yet reported more than 100 hours.");
+  if (!check.propertyTasksComplete) {
+    throw new Error("Required owner tasks are still open on one or more properties.");
+  }
+  if (!check.decisionsReceived) throw new Error("Owner decisions are still outstanding.");
+
+  const { error } = await supabase
+    .from("owner_programs")
+    .update({ status: "completed", completed_at: new Date().toISOString(), completed_by: userId })
+    .eq("id", programId);
+  if (error) throw error;
+  await recordEvent(supabase, {
+    programId,
+    kind: "program_completed",
+    summary: "ARHA completed the formal program closeout.",
+    actorId: userId,
+  });
+  const refreshed = await loadProgramAggregate(supabase, programId);
+  await syncBadges(supabase, refreshed);
+  return { ok: true as const };
+}
+
+/** The single combined participation report for the whole program. */
+export async function buildProgramReport(supabase: Client, programId: string) {
+  const agg = await loadProgramAggregate(supabase, programId);
+  const nameOf = (id: string) => agg.properties.find((p) => p.propertyId === id)?.name ?? "Property";
+  const reviewTitle = new Map(agg.reviews.map((r) => [r.id, r.title]));
+
+  const log = [...agg.entries]
+    .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+    .map((e) => ({
+      date: e.entry_date,
+      category: e.activity_category,
+      activity: e.activity,
+      minutes: e.minutes,
+      hours: hoursFromMinutes(e.minutes),
+      phase: e.phase,
+      properties: e.propertyIds.map(nameOf),
+      task: e.review_id ? (reviewTitle.get(e.review_id) ?? null) : null,
+      decision: e.decision_outcome ?? e.output,
+      comments: e.comments,
+      correctionOf: e.amends_entry_id,
+      correctionReason: e.correction_reason,
+      attested: true,
+    }));
+
+  const decisions = agg.reviews
+    .filter((r) => r.owner_decision)
+    .map((r) => ({
+      title: r.title,
+      taskType: r.task_type,
+      properties: r.propertyIds.map(nameOf),
+      decision: r.owner_decision,
+      response: r.owner_response,
+      respondedAt: r.responded_at,
+      outcome: r.outcome,
+    }));
+
+  return {
+    owner: { name: agg.program.ownerName, email: agg.program.ownerEmail },
+    programDates: { startedOn: agg.program.startedOn, endsOn: agg.program.endsOn },
+    properties: agg.includedProperties.map((p) => ({
+      name: p.name,
+      address: p.address,
+      closingDate: p.closingDate,
+      addedOn: p.addedOn,
+      completedTasks: p.completedTasks,
+      openTasks: p.openTasks,
+    })),
+    totals: {
+      combinedHours: hoursFromMinutes(agg.reportedMinutes),
+      onboardingHours: hoursFromMinutes(agg.onboardingMinutes),
+      operationalHours: hoursFromMinutes(agg.operationalMinutes),
+      entryCount: agg.entries.length,
     },
-    reviews: reviews.data ?? [],
-    entries: entries.data ?? [],
+    log,
+    decisions,
+    badges: agg.badges,
+    generatedAt: new Date().toISOString(),
   };
 }
 
