@@ -5,15 +5,17 @@ import {
   CalendarCheck,
   CircleHelp,
   ClipboardList,
+  Gauge,
   HardHat,
+  History,
   Home,
   KeyRound,
   ListChecks,
   MapPinned,
   LogOut,
+  PackageCheck,
   Plus,
   PlugZap,
-
   ShieldAlert,
   Sparkles,
   Users,
@@ -23,48 +25,48 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { BrandLogo } from "@/components/BrandLogo";
+import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
-
+import type { Capability } from "@/lib/permissions";
 
 type NavItem = {
   to: string;
   label: string;
   icon: typeof Home;
   tour: string;
-  supervisor?: boolean;
+  /** Omit for items every internal person may open. */
+  capability?: Capability;
 };
 
+// One list. Visibility is driven by capability, never by hand-maintained copies.
 const nav: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: Home, tour: "dashboard" },
-  { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach" },
+  { to: "/command-center", label: "Command center", icon: Gauge, tour: "command-center", capability: "command_center" },
+  { to: "/dashboard", label: "My work", icon: Home, tour: "dashboard" },
+  { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach", capability: "coaching" },
   { to: "/tickets", label: "Matters", icon: ClipboardList, tour: "tickets" },
-  { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", supervisor: true },
-  { to: "/analytics", label: "Analytics", icon: BarChart3, tour: "analytics", supervisor: true },
-  { to: "/team", label: "Seats", icon: Users, tour: "team", supervisor: true },
-  { to: "/properties", label: "Properties", icon: Building2, tour: "properties", supervisor: true },
-  { to: "/map", label: "Job map", icon: MapPinned, tour: "map", supervisor: true },
+  { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", capability: "oversight" },
+  { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
+  { to: "/analytics", label: "Analytics", icon: BarChart3, tour: "analytics", capability: "analytics" },
+  { to: "/team", label: "Seats", icon: Users, tour: "team", capability: "user_management" },
+  { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties" },
+  { to: "/map", label: "Job map", icon: MapPinned, tour: "map", capability: "matters_all" },
   { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly" },
-  { to: "/owner-programs", label: "Owner programs", icon: KeyRound, tour: "owner-programs", supervisor: true },
+  { to: "/owner-programs", label: "Owner programs", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
-  { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", supervisor: true },
+  { to: "/audit", label: "Audit history", icon: History, tour: "audit", capability: "audit_history" },
+  { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", capability: "integrations" },
   { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
-
 ];
 
-const vendorNav: NavItem[] = [
-  { to: "/vendor", label: "My jobs", icon: HardHat, tour: "vendor" },
-];
-
-const ownerNav: NavItem[] = [
-  { to: "/owner", label: "My home", icon: KeyRound, tour: "owner" },
-];
+const vendorNav: NavItem[] = [{ to: "/vendor", label: "My jobs", icon: HardHat, tour: "vendor" }];
+const ownerNav: NavItem[] = [{ to: "/owner", label: "My home", icon: KeyRound, tour: "owner" }];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
-  const { isSupervisor, isVendor, isOwner, isLoading: rolesLoading } = useRole();
+  const { can, isVendor, isOwner, readOnly, isLoading: rolesLoading } = useRole();
   const pathname = router.state.location.pathname;
   const vendorMode = !rolesLoading && isVendor;
   const ownerMode = !rolesLoading && isOwner;
@@ -72,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? vendorNav
     : ownerMode
       ? ownerNav
-      : nav.filter((item) => !item.supervisor || isSupervisor);
+      : nav.filter((item) => !item.capability || can(item.capability));
 
   // Vendors and homeowners are outside partners: keep them on their own surface.
   useEffect(() => {
@@ -83,24 +85,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [vendorMode, ownerMode, pathname, router]);
 
-
   async function signOut() {
     await supabase.auth.signOut();
     router.navigate({ to: "/auth" });
   }
 
-
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link to={vendorMode ? "/vendor" : "/dashboard"} className="flex items-center gap-3">
+          <Link to={vendorMode ? "/vendor" : ownerMode ? "/owner" : "/dashboard"} className="flex items-center gap-3">
             <BrandLogo className="h-9" />
             <span className="h-8 w-px bg-sidebar-foreground/25" />
             <span className="flex flex-col leading-none">
               <span className="font-display text-lg font-semibold">Resolve</span>
               <span className="text-[0.65rem] uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                {vendorMode ? "Vendor portal" : "Operations"}
+                {vendorMode ? "Vendor portal" : ownerMode ? "Homeowner portal" : "Operations"}
               </span>
             </span>
           </Link>
@@ -119,17 +119,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            {!vendorMode && <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setTourOpen(true)}
-              className="hidden text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:inline-flex"
-            >
-              <CircleHelp className="size-4" />
-              Take the tour
-            </Button>}
+            <PortalSwitcher />
+            {!vendorMode && !ownerMode && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setTourOpen(true)}
+                className="hidden text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:inline-flex"
+              >
+                <CircleHelp className="size-4" />
+                Take the tour
+              </Button>
+            )}
 
-            {!vendorMode && (
+            {!vendorMode && !ownerMode && !readOnly && (
               <Button asChild data-tour="log" size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
                 <Link to="/tickets/new">
                   <Plus className="size-4" /> Log a matter
@@ -147,6 +150,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </div>
+        <ViewAsBanner />
       </header>
       <main className="mx-auto min-h-[60vh] max-w-6xl px-4 py-8">{children}</main>
       <footer className="mt-12 border-t border-sidebar-border bg-sidebar text-sidebar-foreground">
@@ -163,13 +167,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-      {!vendorMode && (
+      {!vendorMode && !ownerMode && (
         <>
           <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
           <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
         </>
       )}
-
     </div>
   );
 }

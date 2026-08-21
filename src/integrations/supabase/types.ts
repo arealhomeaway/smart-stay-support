@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       coach_sessions: {
         Row: {
           created_at: string
@@ -180,6 +222,93 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_tasks: {
+        Row: {
+          assigned_to: string | null
+          blocker: string | null
+          blocks_handoff: boolean
+          carryover_of: string | null
+          carryover_reason: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          due_on: string | null
+          evidence_note: string | null
+          evidence_required: boolean
+          id: string
+          owner_approval_status: string
+          property_id: string
+          requires_owner_approval: boolean
+          stage: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          blocker?: string | null
+          blocks_handoff?: boolean
+          carryover_of?: string | null
+          carryover_reason?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          due_on?: string | null
+          evidence_note?: string | null
+          evidence_required?: boolean
+          id?: string
+          owner_approval_status?: string
+          property_id: string
+          requires_owner_approval?: boolean
+          stage?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          blocker?: string | null
+          blocks_handoff?: boolean
+          carryover_of?: string | null
+          carryover_reason?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          due_on?: string | null
+          evidence_note?: string | null
+          evidence_required?: boolean
+          id?: string
+          owner_approval_status?: string
+          property_id?: string
+          requires_owner_approval?: boolean
+          stage?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_tasks_carryover_of_fkey"
+            columns: ["carryover_of"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -1170,6 +1299,8 @@ export type Database = {
           access_notes: string | null
           active: boolean
           address_line1: string | null
+          archive_reason: string | null
+          archived_at: string | null
           breezeway_property_id: string | null
           breezeway_synced_at: string | null
           city: string | null
@@ -1178,13 +1309,18 @@ export type Database = {
           formatted_address: string | null
           geocode_status: string | null
           geocoded_at: string | null
+          handoff_accepted_at: string | null
           id: string
           last_quarterly_review_at: string | null
           latitude: number | null
+          lifecycle_status: string
           longitude: number | null
           name: string
           nickname: string | null
           notes: string | null
+          onboarding_owner: string | null
+          onboarding_stage: string | null
+          onboarding_started_at: string | null
           ownerrez_property_id: string | null
           ownerrez_synced_at: string | null
           postal_code: string | null
@@ -1198,6 +1334,8 @@ export type Database = {
           access_notes?: string | null
           active?: boolean
           address_line1?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
           breezeway_property_id?: string | null
           breezeway_synced_at?: string | null
           city?: string | null
@@ -1206,13 +1344,18 @@ export type Database = {
           formatted_address?: string | null
           geocode_status?: string | null
           geocoded_at?: string | null
+          handoff_accepted_at?: string | null
           id?: string
           last_quarterly_review_at?: string | null
           latitude?: number | null
+          lifecycle_status?: string
           longitude?: number | null
           name: string
           nickname?: string | null
           notes?: string | null
+          onboarding_owner?: string | null
+          onboarding_stage?: string | null
+          onboarding_started_at?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
           postal_code?: string | null
@@ -1226,6 +1369,8 @@ export type Database = {
           access_notes?: string | null
           active?: boolean
           address_line1?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
           breezeway_property_id?: string | null
           breezeway_synced_at?: string | null
           city?: string | null
@@ -1234,13 +1379,18 @@ export type Database = {
           formatted_address?: string | null
           geocode_status?: string | null
           geocoded_at?: string | null
+          handoff_accepted_at?: string | null
           id?: string
           last_quarterly_review_at?: string | null
           latitude?: number | null
+          lifecycle_status?: string
           longitude?: number | null
           name?: string
           nickname?: string | null
           notes?: string | null
+          onboarding_owner?: string | null
+          onboarding_stage?: string | null
+          onboarding_started_at?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
           postal_code?: string | null
@@ -1251,6 +1401,68 @@ export type Database = {
           wifi_notes?: string | null
         }
         Relationships: []
+      }
+      property_handoffs: {
+        Row: {
+          carryover_accepted: boolean
+          checklist: Json
+          corrections: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          open_task_ids: string[]
+          property_id: string
+          requested_at: string
+          requested_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          validation: Json
+        }
+        Insert: {
+          carryover_accepted?: boolean
+          checklist?: Json
+          corrections?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          open_task_ids?: string[]
+          property_id: string
+          requested_at?: string
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          validation?: Json
+        }
+        Update: {
+          carryover_accepted?: boolean
+          checklist?: Json
+          corrections?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          open_task_ids?: string[]
+          property_id?: string
+          requested_at?: string
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          validation?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_handoffs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_invites: {
         Row: {
@@ -1934,7 +2146,10 @@ export type Database = {
         Args: { _ticket_id: string; _user_id: string }
         Returns: boolean
       }
+      is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_platform_owner: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_supervisor: { Args: { _user_id: string }; Returns: boolean }
       owner_sees_property: {
         Args: { _property_id: string; _user_id: string }
         Returns: boolean
@@ -1945,7 +2160,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "tech" | "vendor" | "owner"
+      app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2073,7 +2288,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "tech", "vendor", "owner"],
+      app_role: ["admin", "manager", "tech", "vendor", "owner", "onboarding"],
     },
   },
 } as const

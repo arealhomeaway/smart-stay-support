@@ -1,0 +1,142 @@
+/**
+ * Resolve access model (browser-safe).
+ *
+ * Two dimensions, deliberately kept apart:
+ *   1. Permission role  — what a person may DO (this file).
+ *   2. Seat / team      — what work they OWN (functional_roles, unchanged).
+ *
+ * Database roles map onto business language:
+ *   admin      -> Platform Owner   (internal system-wide administrator)
+ *   manager    -> Supervisor       (escalation + interdepartmental routing)
+ *   onboarding -> Onboarding staff (pre-handoff lifecycle work)
+ *   tech       -> Staff            (assigned work only)
+ *   vendor     -> Vendor           (external service provider)
+ *   owner      -> Homeowner        (external property owner)
+ */
+
+export type AppRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
+
+export const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Platform Owner",
+  manager: "Supervisor",
+  onboarding: "Onboarding staff",
+  tech: "Staff",
+  vendor: "Vendor",
+  owner: "Homeowner",
+};
+
+export const ROLE_BLURBS: Record<AppRole, string> = {
+  admin: "Everything in Resolve, including roles, seats, portals, settings and audit history.",
+  manager: "Escalations, routing, oversight, analytics, coaching and playbook publishing.",
+  onboarding: "Onboarding workspace, readiness checklists and handoff requests.",
+  tech: "Their own work: assigned matters, tickets and coaching.",
+  vendor: "Assigned jobs, evidence, scheduling and their private scorecard.",
+  owner: "Their own enrolled homes, approvals, communications and self-reported hours.",
+};
+
+export const ASSIGNABLE_ROLES: AppRole[] = [
+  "admin",
+  "manager",
+  "onboarding",
+  "tech",
+  "vendor",
+  "owner",
+];
+
+export type Portal = "operations" | "onboarding" | "homeowner" | "vendor" | "administration";
+
+export const PORTALS: { value: Portal; label: string; landing: string }[] = [
+  { value: "operations", label: "Operations", landing: "/dashboard" },
+  { value: "onboarding", label: "Onboarding", landing: "/onboarding" },
+  { value: "homeowner", label: "Homeowner", landing: "/owner-programs" },
+  { value: "vendor", label: "Vendor", landing: "/vendor" },
+  { value: "administration", label: "Administration", landing: "/team" },
+];
+
+/** Capability keys. Enforced server-side too — the UI only mirrors them. */
+export type Capability =
+  | "command_center"
+  | "oversight"
+  | "analytics"
+  | "playbooks_edit"
+  | "playbooks_view"
+  | "coaching"
+  | "coaching_manage"
+  | "matters_all"
+  | "matters_assigned"
+  | "properties"
+  | "onboarding_workspace"
+  | "handoff_request"
+  | "handoff_review"
+  | "records_archive"
+  | "user_management"
+  | "role_management"
+  | "settings"
+  | "integrations"
+  | "audit_history"
+  | "owner_programs"
+  | "vendor_admin"
+  | "view_as";
+
+const STAFF_BASE: Capability[] = ["matters_assigned", "playbooks_view", "coaching"];
+
+const SUPERVISOR_CAPS: Capability[] = [
+  ...STAFF_BASE,
+  "matters_all",
+  "oversight",
+  "analytics",
+  "properties",
+  "playbooks_edit",
+  "coaching_manage",
+  "records_archive",
+  "handoff_review",
+  "onboarding_workspace",
+  "owner_programs",
+  "vendor_admin",
+  "audit_history",
+  "user_management",
+];
+
+export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
+  admin: [
+    ...SUPERVISOR_CAPS,
+    "command_center",
+    "role_management",
+    "settings",
+    "integrations",
+    "handoff_request",
+    "view_as",
+  ],
+  manager: SUPERVISOR_CAPS,
+  onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request", "properties"],
+  tech: STAFF_BASE,
+  vendor: [],
+  owner: [],
+};
+
+export function capabilitiesFor(roles: AppRole[]): Set<Capability> {
+  const set = new Set<Capability>();
+  for (const role of roles) for (const cap of ROLE_CAPABILITIES[role] ?? []) set.add(cap);
+  return set;
+}
+
+export function can(roles: AppRole[], capability: Capability) {
+  return capabilitiesFor(roles).has(capability);
+}
+
+/** Where a person lands after sign-in. Exception-first for leadership. */
+export function landingFor(roles: AppRole[]): string {
+  if (roles.includes("admin")) return "/command-center";
+  if (roles.includes("manager")) return "/oversight";
+  if (roles.includes("vendor") && roles.length === 1) return "/vendor";
+  if (roles.includes("owner") && !roles.some((r) => r === "admin" || r === "manager")) {
+    return "/owner";
+  }
+  if (roles.includes("onboarding") && !roles.includes("tech")) return "/onboarding";
+  return "/dashboard";
+}
+
+export function primaryRole(roles: AppRole[]): AppRole {
+  const order: AppRole[] = ["admin", "manager", "onboarding", "tech", "vendor", "owner"];
+  return order.find((r) => roles.includes(r)) ?? "tech";
+}
