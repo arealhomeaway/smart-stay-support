@@ -21,13 +21,8 @@ function emailConfig() {
   return { key, from };
 }
 
-function smsConfig() {
-  const sid = process.env["TWILIO_ACCOUNT_SID"];
-  const token = process.env["TWILIO_AUTH_TOKEN"];
-  const from = process.env["TWILIO_FROM_NUMBER"];
-  if (!sid || !token || !from) return null;
-  return { sid, token, from };
-}
+// Texting is handled by people, not an SMS provider. When an alert asks for a
+// text we raise an internal "reach this homeowner" task instead.
 
 async function sendEmail(to: string, subject: string, body: string) {
   const cfg = emailConfig();
