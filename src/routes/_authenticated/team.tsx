@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { TEAMS } from "@/lib/tickets";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { TeamAccessPanel } from "@/components/TeamAccessPanel";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({
@@ -79,6 +80,8 @@ function TeamPage() {
           here — the routing rules, queues and playbooks stay exactly as they are.
         </p>
       </div>
+
+      <TeamAccessPanel />
 
       {TEAMS.map((team) => {
         const roles = data.roles.filter((r) => r.team === team.value);
