@@ -195,11 +195,15 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
 
   let attempts = 0;
   let lastError = "Email failed";
+  // Send As on the shared mailbox is the goal; if the mailbox permission is
+  // missing we fall back to the connected user's own mailbox so alerts still land.
+  let path = `/users/${encodeURIComponent(SHARED_MAILBOX)}/sendMail`;
+  let usedFallback = false;
 
   while (attempts < MAX_ATTEMPTS) {
     attempts++;
     try {
-      const res = await fetch(`${GATEWAY_URL}/users/${encodeURIComponent(SHARED_MAILBOX)}/sendMail`, {
+      const res = await fetch(`${GATEWAY_URL}${path}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${cfg.lovableKey}`,
@@ -208,6 +212,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
         },
         body: JSON.stringify({ message, saveToSentItems: true }),
       });
+
 
       if (res.ok) {
         await logDelivery({
