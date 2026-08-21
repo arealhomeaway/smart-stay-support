@@ -17,15 +17,20 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { drainOwnerAlerts } = await import("@/lib/owner-notify.server");
+        const { evaluateAllPrograms } = await import("@/lib/owner-progress-alerts.server");
 
         try {
-          return Response.json(await drainOwnerAlerts(supabaseAdmin));
+          // Pace is evaluated first so anything new is delivered in the same pass.
+          const progress = await evaluateAllPrograms(supabaseAdmin);
+          const delivery = await drainOwnerAlerts(supabaseAdmin);
+          return Response.json({ ...delivery, progress });
         } catch (err) {
           return Response.json(
             { ok: false, error: err instanceof Error ? err.message : "Delivery failed" },
             { status: 500 },
           );
         }
+
       },
     },
   },
