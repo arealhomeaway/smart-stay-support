@@ -226,7 +226,7 @@ export async function loadImportQueue(db: Client) {
 export async function decideImportRow(
   db: Client,
   userId: string,
-  input: { rowId: string; action: "create" | "match" | "skip"; orgId?: string | null; note?: string | null },
+  input: { rowId: string; action: "create" | "match" | "skip"; orgId?: string | null | undefined; note?: string | null },
 ) {
   await assertSupervisor(db, userId);
   const { data: row, error } = await db.from("vendor_import_rows").select("*").eq("id", input.rowId).maybeSingle();

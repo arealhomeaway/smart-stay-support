@@ -182,7 +182,7 @@ export async function loadVendorOrg(db: Client, orgId: string, viewerIsSuperviso
       id: c.id,
       propertyId: c.property_id,
       propertyName:
-        (c.properties as { name?: string; nickname?: string | null } | null)?.nickname ||
+        (c.properties as { name?: string | undefined; nickname?: string | null } | null)?.nickname ||
         (c.properties as { name?: string } | null)?.name ||
         "Unknown home",
       serviceCategory: c.service_category,
@@ -209,16 +209,16 @@ export async function createVendorOrg(
   userId: string,
   input: {
     displayName: string;
-    legalName?: string | null;
+    legalName?: string | null | undefined;
     vendorClass: string;
     serviceCategories: string[];
     markets: string[];
-    primaryContactName?: string | null;
-    primaryContactEmail?: string | null;
-    primaryContactPhone?: string | null;
-    website?: string | null;
+    primaryContactName?: string | null | undefined;
+    primaryContactEmail?: string | null | undefined;
+    primaryContactPhone?: string | null | undefined;
+    website?: string | null | undefined;
     emergencyAvailable: boolean;
-    notes?: string | null;
+    notes?: string | null | undefined;
   },
 ) {
   await assertSupervisor(db, userId);
@@ -353,8 +353,8 @@ export async function setGatekeeperResult(
     orgId: string;
     requirementId: string;
     result: GatekeeperResult;
-    note?: string | null;
-    expiresOn?: string | null;
+    note?: string | null | undefined;
+    expiresOn?: string | null | undefined;
   },
 ) {
   await assertSupervisor(db, userId);
@@ -383,8 +383,8 @@ export async function addCoverage(
     propertyId: string;
     serviceCategory: string;
     coveragePriority: string;
-    approvalLimit?: number | null;
-    accessRequirements?: string | null;
+    approvalLimit?: number | null | undefined;
+    accessRequirements?: string | null | undefined;
   },
 ) {
   await assertSupervisor(db, userId);
