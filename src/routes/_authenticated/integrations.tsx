@@ -8,9 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInboundStatus, listImportedMatters, runInboundSync } from "@/lib/inbound.functions";
+import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
-  component: IntegrationsPage,
+  component: () => (
+    <SupervisorOnly>
+      <IntegrationsPage />
+    </SupervisorOnly>
+  ),
   head: () => ({
     meta: [
       { title: "Integrations & inbound sync | Resolve" },

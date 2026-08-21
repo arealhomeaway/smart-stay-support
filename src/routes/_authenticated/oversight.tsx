@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+import { SupervisorOnly } from "@/components/SupervisorOnly";
   OPEN_STATUSES,
   STATUSES,
   labelFor,
@@ -30,7 +31,11 @@ export const Route = createFileRoute("/_authenticated/oversight")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Oversight,
+  component: () => (
+    <SupervisorOnly>
+      <Oversight />
+    </SupervisorOnly>
+  ),
 });
 
 type Row = {
