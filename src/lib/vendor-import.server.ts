@@ -192,8 +192,79 @@ export function parseVendorDatabaseCsv(text: string): ParsedRow[] {
   return rows;
 }
 
+/* ------------------------------------------------------------------ */
+/* Breezeway service provider / representative directory export        */
+/* ------------------------------------------------------------------ */
 
-function domainOf(email: string | null) {
+/**
+ * True when the text is the Breezeway people directory export
+ * (`Name, Email, Role, Employee ID, Mobile Phone Number, Departments, Groups, ...`).
+ */
+export function looksLikeBreezewayCsv(text: string) {
+  const header = text.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "";
+  return /(^|,)"?Name"?,/i.test(header) && /Role/i.test(header) && /Departments/i.test(header);
+}
+
+/**
+ * Reads the Breezeway directory by column name rather than position.
+ *
+ * Breezeway quotes multi-value cells ("McCordsville, IN | Indianapolis, IN"),
+ * so this goes through the real CSV reader. Departments and groups are
+ * pipe-separated. Role decides whether the row is a company (Service Provider)
+ * or a person attached to one (Representative) — the person is never assumed to
+ * belong to a company on the strength of a personal email address.
+ */
+export function parseBreezewayCsv(text: string): ParsedRow[] {
+  const rows: ParsedRow[] = [];
+  for (const record of parseCsvRecords(text)) {
+    const name = firstValue(record, "Name", "Full Name");
+    if (!name) continue;
+
+    const roleText = (firstValue(record, "Role") ?? "").toLowerCase();
+    const email = firstValue(record, "Email", "Email Address");
+    const notes = firstValue(record, "Extraction Notes", "Notes");
+    const twoFactor = firstValue(record, "Two-Factor Authentication");
+    const employeeId = firstValue(record, "Employee ID");
+    const departments = splitList((record["Departments"] ?? "").replace(/\|/g, ","));
+    const groups = splitList((record["Groups"] ?? "").replace(/\|/g, ","));
+
+    const claims: string[] = [];
+    if (twoFactor && twoFactor.toUpperCase() !== "N/A") claims.push(`Two-factor in Breezeway: ${twoFactor}`);
+    if (employeeId) claims.push(`Breezeway employee ID: ${employeeId}`);
+    if (notes) claims.push(`Export note: ${notes}`);
+
+    rows.push({
+      sourceRole: roleText.includes("service") || roleText.includes("provider") ? "service_provider" : "representative",
+      displayName: name,
+      email: email && email.includes("@") ? email.toLowerCase() : null,
+      phone: firstValue(record, "Mobile Phone Number", "Phone Number", "Phone"),
+      departments,
+      groups,
+      profile: {
+        contactPerson: null,
+        specialties: departments,
+        markets: groups.filter((g) => !/^all groups$/i.test(g)),
+        serviceArea: groups.filter((g) => !/^all groups$/i.test(g)).join(", ") || null,
+        pricing: null,
+        paymentType: null,
+        coverageHours: null,
+        emergencyAvailability: null,
+        website: null,
+        restrictions: null,
+        comments: notes,
+        preference: null,
+        legacyStatus: firstValue(record, "Role"),
+        claims,
+        insuranceExpiresOn: null,
+        licenseExpiresOn: null,
+        notionVendorId: null,
+      },
+    });
+  }
+  return rows;
+}
+
+
   if (!email) return null;
   const domain = email.split("@")[1]?.toLowerCase() ?? null;
   if (!domain || PERSONAL_DOMAINS.has(domain)) return null;
