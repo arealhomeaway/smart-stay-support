@@ -108,7 +108,7 @@ const OPERATIONAL =
 
 const HOUSE_DOMAIN = /@arealhomeaway\.com$/i;
 
-export type SkipReason = "automated" | "calendar" | "bulk" | "not operational" | "empty";
+export type SkipReason = "automated" | "calendar" | "bulk" | "not operational" | "unknown sender" | "empty";
 
 function isBulk(msg: GraphMessage) {
   for (const h of msg.internetMessageHeaders ?? []) {
@@ -129,7 +129,7 @@ function isBulk(msg: GraphMessage) {
  * the inbox for a human — Resolve would rather miss a matter than fill the
  * queue with marketing.
  */
-function classify(msg: GraphMessage): SkipReason | null {
+function classify(msg: GraphMessage, knownSender: boolean): SkipReason | null {
   if (CALENDAR_TYPE.test(msg["@odata.type"] ?? "")) return "calendar";
   const from = msg.from?.emailAddress?.address ?? "";
   const subject = msg.subject ?? "";
@@ -140,7 +140,11 @@ function classify(msg: GraphMessage): SkipReason | null {
 
   const text = `${subject}\n${preview}`;
   if (REF_TAG.test(text)) return null;
-  if (HOUSE_DOMAIN.test(from)) return null;
+  // Until the shared inbox is delegated we may be reading a personal mailbox,
+  // which carries plenty of business mail that is not coordinator work. So a
+  // message only becomes a matter when we know the sender (teammate, vendor
+  // contact or programme homeowner) AND it reads like work at a home.
+  if (!knownSender && !HOUSE_DOMAIN.test(from)) return "unknown sender";
   if (!OPERATIONAL.test(text)) return "not operational";
   return null;
 }
@@ -165,6 +169,28 @@ function plainText(msg: GraphMessage) {
     .replace(/\n{3,}/g, "\n\n")
     .trim()
     .slice(0, 4000);
+}
+
+/** Every email address Resolve already knows: staff, vendor contacts, programme owners. */
+async function knownSenders(db: Db) {
+  const addresses = new Set<string>();
+  const add = (value: string | null | undefined) => {
+    if (value && value.includes("@")) addresses.add(value.trim().toLowerCase());
+  };
+  const [staff, contacts, orgs, owners] = await Promise.all([
+    db.from("profiles").select("email"),
+    db.from("vendor_contacts").select("email"),
+    db.from("vendor_orgs").select("primary_contact_email"),
+    db.from("owner_programs").select("owner_email, notify_email"),
+  ]);
+  (staff.data ?? []).forEach((r) => add(r.email));
+  (contacts.data ?? []).forEach((r) => add(r.email));
+  (orgs.data ?? []).forEach((r) => add(r.primary_contact_email));
+  (owners.data ?? []).forEach((r) => {
+    add(r.owner_email);
+    add(r.notify_email);
+  });
+  return addresses;
 }
 
 export type MailboxSyncResult = {
@@ -224,13 +250,14 @@ export async function syncMailbox(
     return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the inbox." };
   }
 
+  const known = await knownSenders(db);
   base.scanned = messages.length;
   base.mailbox = scope === "/me" ? "connected mailbox" : SHARED_MAILBOX;
 
   for (const msg of messages) {
     const subject = (msg.subject ?? "").trim() || "(no subject)";
     const from = msg.from?.emailAddress?.address ?? "unknown sender";
-    const skip = classify(msg);
+    const skip = classify(msg, known.has(from.toLowerCase()));
 
     if (skip) {
       base.skipped++;
