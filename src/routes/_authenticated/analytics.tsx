@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
-import { CATEGORIES, OPEN_STATUSES, labelFor, priorityMeta } from "@/lib/tickets";
+import { CATEGORIES, OPEN_STATUSES, priorityMeta } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
