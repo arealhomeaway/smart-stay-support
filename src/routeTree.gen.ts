@@ -41,6 +41,7 @@ import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
+import { Route as ApiPublicSyncMailboxRouteImport } from './routes/api/public/sync/mailbox'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -211,6 +212,11 @@ const ApiPublicSyncInboundRoute = ApiPublicSyncInboundRouteImport.update({
   path: '/api/public/sync/inbound',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSyncMailboxRoute = ApiPublicSyncMailboxRouteImport.update({
+  id: '/api/public/sync/mailbox',
+  path: '/api/public/sync/mailbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
+  '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
+  '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -312,6 +320,7 @@ export interface FileRoutesById {
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
+  '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
+    | '/api/public/sync/mailbox'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
+    | '/api/public/sync/mailbox'
   id:
     | '__root__'
     | '/'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
+    | '/api/public/sync/mailbox'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -424,6 +436,7 @@ export interface RootRouteChildren {
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
   ApiPublicSyncInboundRoute: typeof ApiPublicSyncInboundRoute
+  ApiPublicSyncMailboxRoute: typeof ApiPublicSyncMailboxRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -652,6 +665,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSyncInboundRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sync/mailbox': {
+      id: '/api/public/sync/mailbox'
+      path: '/api/public/sync/mailbox'
+      fullPath: '/api/public/sync/mailbox'
+      preLoaderRoute: typeof ApiPublicSyncMailboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -722,6 +742,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksQuarterlySchedulerRoute: ApiPublicHooksQuarterlySchedulerRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
   ApiPublicSyncInboundRoute: ApiPublicSyncInboundRoute,
+  ApiPublicSyncMailboxRoute: ApiPublicSyncMailboxRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
