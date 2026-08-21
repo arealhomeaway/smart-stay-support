@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
 import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
-import { listBreezewayHomes } from "@/lib/breezeway.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/properties")({
@@ -75,31 +74,6 @@ function PropertiesPage() {
   });
 
   const runImport = useServerFn(importOwnerRezProperties);
-
-  const fetchBreezeway = useServerFn(listBreezewayHomes);
-  const { data: breezeway } = useQuery({
-    queryKey: ["breezeway-homes"],
-    queryFn: () => fetchBreezeway(),
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
-  async function linkBreezeway(propertyId: string, homeId: string) {
-    const { error } = await supabase
-      .from("properties")
-      .update({
-        breezeway_property_id: homeId === "none" ? null : homeId,
-        breezeway_synced_at: new Date().toISOString(),
-      })
-      .eq("id", propertyId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success(homeId === "none" ? "Unlinked from Breezeway." : "Linked to Breezeway.");
-    await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
-  }
-
 
   async function importAll() {
     setImporting(true);
@@ -286,35 +260,6 @@ function PropertiesPage() {
                       </p>
                     )}
                   </div>
-                  <div className="space-y-1 border-t border-border pt-3">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Breezeway property
-                    </Label>
-                    {breezeway?.ok ? (
-                      <Select
-                        value={p.breezeway_property_id ?? "none"}
-                        onValueChange={(v) => linkBreezeway(p.id, v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Not linked" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Not linked</SelectItem>
-                          {breezeway.data.map((h) => (
-                            <SelectItem key={h.id} value={h.id}>
-                              {h.name}
-                              {h.location ? ` — ${h.location}` : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {breezeway?.error ?? "Checking Breezeway…"}
-                      </p>
-                    )}
-                  </div>
-
                 </CardContent>
               </Card>
             );
