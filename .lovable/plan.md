@@ -28,6 +28,10 @@ Department Dashboards         (Onboarding, Operations, Vendors, Finance,
 Workspaces & Portals          (staff daily work, vendor portal, owner portal)
 ```
 
+**Asana replacement:** the matter/ticket engine already carries assignee, due date, status, dependencies, evidence and audit history. Rather than a separate task app, department work items become matters with a `department` and an optional project grouping (`work_projects`), so onboarding launches, finance follow-ups and internal projects all live in Resolve. No Asana integration is built.
+
+
+
 Shared spine: properties, owners, guests/stays, vendors, users, matters, approvals, documents, communications, financial refs, pricing refs, audit events.
 
 New generic primitives so future departments need no restructuring:
