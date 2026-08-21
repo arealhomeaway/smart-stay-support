@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldCheck } from "lucide-react";
+import { KeyRound, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { listTeamAccess, setTeamRole } from "@/lib/access.functions";
+import { listTeamAccess, setTeamPassword, setTeamRole } from "@/lib/access.functions";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,6 +28,7 @@ export function TeamAccessPanel() {
   const qc = useQueryClient();
   const listFn = useServerFn(listTeamAccess);
   const setFn = useServerFn(setTeamRole);
+  const pwFn = useServerFn(setTeamPassword);
 
   const access = useQuery({
     queryKey: ["team-access"],
@@ -43,6 +45,20 @@ export function TeamAccessPanel() {
       void qc.invalidateQueries({ queryKey: ["my-roles"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update access"),
+  });
+
+  const resetPassword = useMutation({
+    mutationFn: (userId: string) => pwFn({ data: { userId } }),
+    onSuccess: async (res) => {
+      const line = `Sign in at ${window.location.origin}/auth with ${res.email ?? "your email"} and this temporary password: ${res.password}`;
+      try {
+        await navigator.clipboard.writeText(line);
+        toast.success("Temporary password copied — paste it to them.", { description: res.password });
+      } catch {
+        toast.success(`Temporary password: ${res.password}`);
+      }
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not reset the password"),
   });
 
   if (roleLoading || !isAdmin) return null;
@@ -76,7 +92,17 @@ export function TeamAccessPanel() {
                     {current === "admin" ? "Admin" : current === "vendor" ? "Vendor" : "Supervisor"}
                   </Badge>
                 )}
-                <div className="ml-auto w-56">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="ml-auto"
+                  disabled={resetPassword.isPending}
+                  onClick={() => resetPassword.mutate(p.id)}
+                >
+                  <KeyRound className="size-3.5" /> Temporary password
+                </Button>
+                <div className="w-56">
                   <Select
                     value={current}
                     disabled={update.isPending}
