@@ -27,6 +27,7 @@ type Props = {
 const STATUS_LABEL: Record<string, string> = {
   dispatched: "Sent — waiting on the vendor",
   accepted: "Vendor accepted",
+  on_site: "Vendor is on site now",
   completed: "Vendor marked complete",
 };
 
