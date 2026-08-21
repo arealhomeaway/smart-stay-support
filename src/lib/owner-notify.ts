@@ -13,7 +13,7 @@ export type OwnerAlertKind =
   | "review_ready"
   | "reminder";
 
-export type DeliveryStatus = "pending" | "sent" | "skipped" | "failed";
+export type DeliveryStatus = "pending" | "sent" | "skipped" | "failed" | "escalated";
 
 export type OwnerAlert = {
   id: string;
