@@ -91,6 +91,107 @@ export function parseLegacyRows(text: string): ParsedRow[] {
   return rows;
 }
 
+/* ------------------------------------------------------------------ */
+/* Notion vendor database export                                       */
+/* ------------------------------------------------------------------ */
+
+/** True when the pasted text is the ARHA Notion "Vendor Database" CSV export. */
+export function looksLikeVendorDatabaseCsv(text: string) {
+  const header = text.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "";
+  return /(^|,)"?Company"?,/i.test(header) && /Vendor Status|Specialty|Vendor ID/i.test(header);
+}
+
+function firstValue(record: Record<string, string>, ...keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]?.trim();
+    if (value) return value;
+  }
+  return null;
+}
+
+/** "August 12, 2026" or "2026-08-12" → an ISO date, or null when it isn't a date. */
+function toIsoDate(value: string | null) {
+  if (!value) return null;
+  const iso = /^\d{4}-\d{2}-\d{2}/.exec(value);
+  if (iso) return iso[0];
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+/** Yes/No columns become a sentence we can show, never a verification. */
+function claim(record: Record<string, string>, column: string, label: string, claims: string[]) {
+  const value = record[column]?.trim();
+  if (!value) return;
+  claims.push(`${label}: ${value}`);
+}
+
+/**
+ * Reads the Notion vendor database export.
+ *
+ * Everything here is what Notion *recorded*, not what ARHA has verified. Yes/No
+ * compliance columns come across as claims on the record so a supervisor can
+ * check them — they never tick a screening gate on their own.
+ */
+export function parseVendorDatabaseCsv(text: string): ParsedRow[] {
+  const rows: ParsedRow[] = [];
+  for (const record of parseCsvRecords(text)) {
+    const company = firstValue(record, "Company", "Name");
+    if (!company) continue;
+
+    const claims: string[] = [];
+    claim(record, "Insurance Current", "Insurance current", claims);
+    claim(record, "License Current", "License current", claims);
+    claim(record, "License Required", "License required", claims);
+    claim(record, "License Number", "License number", claims);
+    claim(record, "W-9 Received", "W-9 received", claims);
+    claim(record, "Vendor Agreement Signed", "Agreement signed", claims);
+    claim(record, "Rate Sheet Received", "Rate sheet received", claims);
+    claim(record, "References Verified", "References verified", claims);
+    claim(record, "Pilot Completed", "Pilot completed", claims);
+    claim(record, "Critical Failure", "Critical failure", claims);
+    claim(record, "Open Corrective Action", "Open corrective action", claims);
+    claim(record, "Compliance Status", "Compliance status", claims);
+    claim(record, "Qualification Gate Status", "Qualification gate", claims);
+    claim(record, "Gold Standard Status", "Gold standard", claims);
+
+    const email = firstValue(record, "Email Address", "Email");
+    const specialties = splitList(
+      [record["Specialty"] ?? "", record["Specialty (Backend)"] ?? ""].filter(Boolean).join(","),
+    );
+
+    rows.push({
+      sourceRole: "service_provider",
+      displayName: company,
+      email: email && email.includes("@") ? email.toLowerCase() : null,
+      phone: firstValue(record, "Phone Number", "Phone"),
+      departments: [...new Set(specialties)],
+      groups: splitList(record["Market"] ?? ""),
+      profile: {
+        contactPerson: firstValue(record, "Contact Person"),
+        specialties: [...new Set(specialties)],
+        markets: splitList(record["Market"] ?? ""),
+        serviceArea: firstValue(record, "Service Area"),
+        pricing: firstValue(record, "Pricing"),
+        paymentType: firstValue(record, "Payment Type"),
+        coverageHours: firstValue(record, "Coverage Hours"),
+        emergencyAvailability: firstValue(record, "Emergency Availability"),
+        website: firstValue(record, "Website"),
+        restrictions: firstValue(record, "Restrictions"),
+        comments: firstValue(record, "Comments", "Compliance Notes"),
+        preference: firstValue(record, "Preference"),
+        legacyStatus: firstValue(record, "Vendor Status"),
+        claims,
+        insuranceExpiresOn: toIsoDate(firstValue(record, "Insurance Expiration")),
+        licenseExpiresOn: toIsoDate(firstValue(record, "License Expiration")),
+        notionVendorId: firstValue(record, "Vendor ID"),
+      },
+    });
+  }
+  return rows;
+}
+
+
 function domainOf(email: string | null) {
   if (!email) return null;
   const domain = email.split("@")[1]?.toLowerCase() ?? null;
