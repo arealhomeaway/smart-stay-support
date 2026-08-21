@@ -107,15 +107,17 @@ function IntegrationsPage() {
               </Badge>
             </CardTitle>
             <CardDescription>
-              Homes, live occupancy and maintenance tasks. Occupancy still sets the priority floor when a matter is
-              opened.
+              Homes and live occupancy sync both ways into Resolve. Occupancy still sets the priority floor when a
+              matter is opened.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Inbound sync imports OwnerRez maintenance tasks as matters. If your OwnerRez plan does not expose tasks
-            through the API, the sync will say so and property and stay sync keep working.
+            OwnerRez does not publish maintenance tasks through its API, so there is nothing for Resolve to import
+            from it — a task sync will always come back empty. Homes, stays and occupancy keep syncing normally.
+            Field work should be logged in Resolve or come in from Breezeway.
           </CardContent>
         </Card>
+
 
         <Card>
           <CardHeader>
