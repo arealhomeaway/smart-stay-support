@@ -26,10 +26,8 @@ export const runMailboxSync = createServerFn({ method: "POST" })
     limit: Math.min(Math.max(Number(input?.limit ?? 25), 1), 50),
   }))
   .handler(async ({ context, data }) => {
-    const { isSupervisor } = await import("./access.server");
-    if (!(await isSupervisor(context.supabase, context.userId))) {
-      throw new Error("Only supervisors can run the inbox sync.");
-    }
+    const { data: supervisor } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    if (!supervisor) throw new Error("Only supervisors can run the inbox sync.");
     const { syncMailbox } = await import("./mailbox.server");
     return syncMailbox(context.supabase, data);
   });
