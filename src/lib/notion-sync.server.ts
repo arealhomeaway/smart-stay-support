@@ -123,12 +123,12 @@ export async function syncNotionProperties(sourceKey: string, actorId: string): 
             .from("properties")
             .insert({
               name,
-              address_line1: incoming["address_line1"],
-              city: incoming["city"],
-              state: incoming["state"],
-              postal_code: incoming["postal_code"],
-              onboarding_stage: incoming["onboarding_stage"],
-              onboarding_owner: incoming["onboarding_owner"],
+              address_line1: incoming["address_line1"] ?? null,
+              city: incoming["city"] ?? null,
+              state: incoming["state"] ?? null,
+              postal_code: incoming["postal_code"] ?? null,
+              onboarding_stage: incoming["onboarding_stage"] ?? null,
+              onboarding_owner: incoming["onboarding_owner"] ?? null,
               lifecycle_status: "onboarding",
             })
             .select("id")
@@ -188,7 +188,10 @@ export async function syncNotionProperties(sourceKey: string, actorId: string): 
           patch["onboarding_owner"] = incoming["onboarding_owner"];
         }
         if (Object.keys(patch).length > 0) {
-          await supabaseAdmin.from("properties").update(patch).eq("id", propertyId);
+          await supabaseAdmin
+            .from("properties")
+            .update(patch as never)
+            .eq("id", propertyId);
           result.updated += 1;
         }
         await supabaseAdmin
