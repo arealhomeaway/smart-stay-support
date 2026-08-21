@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "manager" | "tech";
+export type AppRole = "admin" | "manager" | "tech" | "vendor";
 
-/** Roles for the signed-in user. Supervisors = admin or manager. */
+/** Roles for the signed-in user. Supervisors = admin or manager. Vendors are outside partners. */
 export function useRole() {
   const query = useQuery({
     queryKey: ["my-roles"],
@@ -21,10 +21,13 @@ export function useRole() {
   });
 
   const roles = query.data ?? [];
+  const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");
   return {
     roles,
     isLoading: query.isLoading,
     isAdmin: roles.includes("admin"),
     isSupervisor: roles.includes("admin") || roles.includes("manager"),
+    isVendor,
+    isStaff: !isVendor,
   };
 }

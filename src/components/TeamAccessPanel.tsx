@@ -19,6 +19,7 @@ const ROLE_LABEL: Record<string, string> = {
   admin: "Admin — full access",
   manager: "Supervisor — oversight & analytics",
   tech: "Coordinator — day-to-day only",
+  vendor: "Vendor — only their dispatched jobs",
 };
 
 /** Admin-only: promote or demote teammates. Every change is enforced server side. */
@@ -35,7 +36,7 @@ export function TeamAccessPanel() {
   });
 
   const update = useMutation({
-    mutationFn: (vars: { userId: string; role: "admin" | "manager" | "tech" }) =>
+    mutationFn: (vars: { userId: string; role: "admin" | "manager" | "tech" | "vendor" }) =>
       setFn({ data: vars }),
     onSuccess: () => {
       toast.success("Access updated.");
@@ -55,7 +56,7 @@ export function TeamAccessPanel() {
         </CardTitle>
         <CardDescription>
           Supervisors and admins see Oversight, Analytics, Seats, Properties and Integrations. Coordinators see
-          the dashboard, Coach, Matters and Playbooks.
+          the dashboard, Coach, Matters and Playbooks. Vendors only see the jobs dispatched to them.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -67,7 +68,9 @@ export function TeamAccessPanel() {
               ? "admin"
               : p.roles.includes("manager")
                 ? "manager"
-                : "tech";
+                : p.roles.includes("vendor")
+                  ? "vendor"
+                  : "tech";
             return (
               <div
                 key={p.id}
@@ -77,7 +80,7 @@ export function TeamAccessPanel() {
                 <span className="text-muted-foreground">{p.email}</span>
                 {current !== "tech" && (
                   <Badge variant="outline" className="uppercase">
-                    {current === "admin" ? "Admin" : "Supervisor"}
+                    {current === "admin" ? "Admin" : current === "vendor" ? "Vendor" : "Supervisor"}
                   </Badge>
                 )}
                 <div className="ml-auto w-56">
@@ -85,7 +88,7 @@ export function TeamAccessPanel() {
                     value={current}
                     disabled={update.isPending}
                     onValueChange={(role) =>
-                      update.mutate({ userId: p.id, role: role as "admin" | "manager" | "tech" })
+                      update.mutate({ userId: p.id, role: role as "admin" | "manager" | "tech" | "vendor" })
                     }
                   >
                     <SelectTrigger>

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HandoffPanel } from "@/components/HandoffPanel";
+import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
 import { BreezewayPanel } from "@/components/BreezewayPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -492,6 +493,17 @@ function TicketDetail() {
           {ticket.record_type !== "completed_interaction" && (
             <HandoffPanel ticket={ticket} closed={closed} onChanged={refresh} />
           )}
+
+          {!closed && (
+            <VendorDispatchPanel
+              ticketId={ticket.id}
+              vendorUserId={ticket.vendor_user_id ?? null}
+              vendorBrief={ticket.vendor_brief ?? null}
+              vendorStatus={ticket.vendor_status ?? null}
+              onChanged={refresh}
+            />
+          )}
+
 
           {!closed && ticket.status !== "waiting" && (
             <Card>

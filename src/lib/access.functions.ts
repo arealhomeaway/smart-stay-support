@@ -16,7 +16,7 @@ export const setTeamRole = createServerFn({ method: "POST" })
     z
       .object({
         userId: z.string().uuid(),
-        role: z.enum(["admin", "manager", "tech"]),
+        role: z.enum(["admin", "manager", "tech", "vendor"]),
       })
       .parse(data),
   )

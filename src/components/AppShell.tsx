@@ -4,6 +4,7 @@ import {
   Building2,
   CircleHelp,
   ClipboardList,
+  HardHat,
   Home,
   ListChecks,
   LogOut,
@@ -14,7 +15,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/OnboardingTour";
@@ -45,12 +46,25 @@ const nav: NavItem[] = [
 
 ];
 
+const vendorNav: NavItem[] = [
+  { to: "/vendor", label: "My jobs", icon: HardHat, tour: "vendor" },
+];
+
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
-  const { isSupervisor } = useRole();
-  const visibleNav = nav.filter((item) => !item.supervisor || isSupervisor);
+  const { isSupervisor, isVendor, isLoading: rolesLoading } = useRole();
+  const pathname = router.state.location.pathname;
+  const vendorMode = !rolesLoading && isVendor;
+  const visibleNav = vendorMode ? vendorNav : nav.filter((item) => !item.supervisor || isSupervisor);
+
+  // Vendors are outside partners: keep them on their own surface.
+  useEffect(() => {
+    if (vendorMode && !pathname.startsWith("/vendor")) {
+      void router.navigate({ to: "/vendor", replace: true });
+    }
+  }, [vendorMode, pathname, router]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -62,13 +76,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link to="/dashboard" className="flex items-center gap-3">
+          <Link to={vendorMode ? "/vendor" : "/dashboard"} className="flex items-center gap-3">
             <BrandLogo className="h-9" />
             <span className="h-8 w-px bg-sidebar-foreground/25" />
             <span className="flex flex-col leading-none">
               <span className="font-display text-lg font-semibold">Resolve</span>
               <span className="text-[0.65rem] uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                Operations
+                {vendorMode ? "Vendor portal" : "Operations"}
               </span>
             </span>
           </Link>
@@ -87,7 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <Button
+            {!vendorMode && <Button
               size="sm"
               variant="ghost"
               onClick={() => setTourOpen(true)}
@@ -95,13 +109,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <CircleHelp className="size-4" />
               Take the tour
-            </Button>
+            </Button>}
 
-            <Button asChild data-tour="log" size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
-              <Link to="/tickets/new">
-                <Plus className="size-4" /> Log a matter
-              </Link>
-            </Button>
+            {!vendorMode && (
+              <Button asChild data-tour="log" size="sm" className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90">
+                <Link to="/tickets/new">
+                  <Plus className="size-4" /> Log a matter
+                </Link>
+              </Button>
+            )}
             <Button
               size="sm"
               variant="ghost"
@@ -129,8 +145,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
-      <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
+      {!vendorMode && (
+        <>
+          <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
+          <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
+        </>
+      )}
 
     </div>
   );
