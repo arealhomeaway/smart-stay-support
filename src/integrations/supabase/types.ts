@@ -228,6 +228,85 @@ export type Database = {
           },
         ]
       }
+      owner_notifications: {
+        Row: {
+          action_path: string | null
+          body: string
+          created_at: string
+          delivered_at: string | null
+          delivery_error: string | null
+          email_status: string
+          id: string
+          kind: string
+          owner_user_id: string | null
+          priority: string
+          program_id: string
+          read_at: string | null
+          review_id: string | null
+          sms_status: string
+          ticket_id: string | null
+          title: string
+        }
+        Insert: {
+          action_path?: string | null
+          body?: string
+          created_at?: string
+          delivered_at?: string | null
+          delivery_error?: string | null
+          email_status?: string
+          id?: string
+          kind: string
+          owner_user_id?: string | null
+          priority?: string
+          program_id: string
+          read_at?: string | null
+          review_id?: string | null
+          sms_status?: string
+          ticket_id?: string | null
+          title: string
+        }
+        Update: {
+          action_path?: string | null
+          body?: string
+          created_at?: string
+          delivered_at?: string | null
+          delivery_error?: string | null
+          email_status?: string
+          id?: string
+          kind?: string
+          owner_user_id?: string | null
+          priority?: string
+          program_id?: string
+          read_at?: string | null
+          review_id?: string | null
+          sms_status?: string
+          ticket_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_notifications_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_programs: {
         Row: {
           created_at: string
@@ -235,10 +314,14 @@ export type Database = {
           ends_on: string | null
           id: string
           notes: string | null
+          notify_email: boolean
+          notify_push: boolean
+          notify_sms_p1: boolean
           onboarding_target_hours: number
           ongoing_target_hours: number
           owner_email: string | null
           owner_name: string | null
+          owner_phone: string | null
           owner_user_id: string | null
           property_id: string
           started_on: string | null
@@ -252,10 +335,14 @@ export type Database = {
           ends_on?: string | null
           id?: string
           notes?: string | null
+          notify_email?: boolean
+          notify_push?: boolean
+          notify_sms_p1?: boolean
           onboarding_target_hours?: number
           ongoing_target_hours?: number
           owner_email?: string | null
           owner_name?: string | null
+          owner_phone?: string | null
           owner_user_id?: string | null
           property_id: string
           started_on?: string | null
@@ -269,10 +356,14 @@ export type Database = {
           ends_on?: string | null
           id?: string
           notes?: string | null
+          notify_email?: boolean
+          notify_push?: boolean
+          notify_sms_p1?: boolean
           onboarding_target_hours?: number
           ongoing_target_hours?: number
           owner_email?: string | null
           owner_name?: string | null
+          owner_phone?: string | null
           owner_user_id?: string | null
           property_id?: string
           started_on?: string | null
@@ -462,6 +553,7 @@ export type Database = {
           phase: string
           program_id: string
           review_id: string | null
+          ticket_id: string | null
         }
         Insert: {
           activity: string
@@ -477,6 +569,7 @@ export type Database = {
           phase: string
           program_id: string
           review_id?: string | null
+          ticket_id?: string | null
         }
         Update: {
           activity?: string
@@ -492,6 +585,7 @@ export type Database = {
           phase?: string
           program_id?: string
           review_id?: string | null
+          ticket_id?: string | null
         }
         Relationships: [
           {
@@ -513,6 +607,13 @@ export type Database = {
             columns: ["review_id"]
             isOneToOne: false
             referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_time_entries_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -1340,6 +1441,10 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      owner_sees_property: {
+        Args: { _property_id: string; _user_id: string }
+        Returns: boolean
+      }
       owns_program: {
         Args: { _program_id: string; _user_id: string }
         Returns: boolean
