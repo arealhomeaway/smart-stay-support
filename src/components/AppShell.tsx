@@ -56,21 +56,33 @@ const vendorNav: NavItem[] = [
   { to: "/vendor", label: "My jobs", icon: HardHat, tour: "vendor" },
 ];
 
+const ownerNav: NavItem[] = [
+  { to: "/owner", label: "My home", icon: KeyRound, tour: "owner" },
+];
+
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
-  const { isSupervisor, isVendor, isLoading: rolesLoading } = useRole();
+  const { isSupervisor, isVendor, isOwner, isLoading: rolesLoading } = useRole();
   const pathname = router.state.location.pathname;
   const vendorMode = !rolesLoading && isVendor;
-  const visibleNav = vendorMode ? vendorNav : nav.filter((item) => !item.supervisor || isSupervisor);
+  const ownerMode = !rolesLoading && isOwner;
+  const visibleNav = vendorMode
+    ? vendorNav
+    : ownerMode
+      ? ownerNav
+      : nav.filter((item) => !item.supervisor || isSupervisor);
 
-  // Vendors are outside partners: keep them on their own surface.
+  // Vendors and homeowners are outside partners: keep them on their own surface.
   useEffect(() => {
     if (vendorMode && !pathname.startsWith("/vendor")) {
       void router.navigate({ to: "/vendor", replace: true });
+    } else if (ownerMode && !pathname.startsWith("/owner")) {
+      void router.navigate({ to: "/owner", replace: true });
     }
-  }, [vendorMode, pathname, router]);
+  }, [vendorMode, ownerMode, pathname, router]);
+
 
   async function signOut() {
     await supabase.auth.signOut();
