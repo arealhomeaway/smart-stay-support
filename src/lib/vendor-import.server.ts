@@ -171,7 +171,7 @@ export async function createImportBatch(
     return {
       batch_id: batch.id,
       source_role: row.sourceRole,
-      raw: row as unknown as Database["public"]["Tables"]["vendor_import_rows"]["Insert"]["raw"],
+      raw: JSON.parse(JSON.stringify(row)) as Database["public"]["Tables"]["vendor_import_rows"]["Row"]["raw"],
       display_name: row.displayName,
       email: row.email,
       phone: row.phone,
