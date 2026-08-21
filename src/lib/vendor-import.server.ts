@@ -1,0 +1,312 @@
+/**
+ * Legacy vendor migration staging (server-only).
+ *
+ * Nothing from Breezeway (or any other legacy list) becomes a live vendor on
+ * its own. Rows land here with a PROPOSED action and the evidence behind it,
+ * and a supervisor decides. Never guess: a personal email address is never
+ * treated as proof that a person belongs to a company.
+ */
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import { assertSupervisor } from "./vendors.server";
+
+type Client = SupabaseClient<Database>;
+
+const PERSONAL_DOMAINS = new Set([
+  "gmail.com",
+  "yahoo.com",
+  "hotmail.com",
+  "outlook.com",
+  "aol.com",
+  "icloud.com",
+  "me.com",
+  "msn.com",
+  "live.com",
+  "comcast.net",
+]);
+
+export type ParsedRow = {
+  sourceRole: "service_provider" | "representative";
+  displayName: string;
+  email: string | null;
+  phone: string | null;
+  departments: string[];
+  groups: string[];
+};
+
+function splitList(value: string) {
+  return value
+    .split(/[,;/]+/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Accepts pasted rows in the shape the legacy list exports:
+ * `Name | Role | Email | Phone | Departments | Groups` (tab or comma separated).
+ */
+export function parseLegacyRows(text: string): ParsedRow[] {
+  const rows: ParsedRow[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const cells = (line.includes("\t") ? line.split("\t") : line.split(",")).map((c) => c.trim());
+    const [name, role, email, phone, departments, groups] = cells;
+    if (!name) continue;
+    if (/^name$/i.test(name)) continue; // header row
+    const roleText = (role ?? "").toLowerCase();
+    rows.push({
+      sourceRole: roleText.includes("service") || roleText.includes("provider") ? "service_provider" : "representative",
+      displayName: name,
+      email: email && email.includes("@") ? email.toLowerCase() : null,
+      phone: phone || null,
+      departments: departments ? splitList(departments) : [],
+      groups: groups ? splitList(groups) : [],
+    });
+  }
+  return rows;
+}
+
+function domainOf(email: string | null) {
+  if (!email) return null;
+  const domain = email.split("@")[1]?.toLowerCase() ?? null;
+  if (!domain || PERSONAL_DOMAINS.has(domain)) return null;
+  return domain;
+}
+
+function normalizeName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\b(llc|inc|co|company|services?|service|the|of|and)\b/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+type Existing = { id: string; display_name: string; website: string | null; primary_contact_email: string | null };
+
+/** Proposes what to do with one legacy row. Confidence never auto-approves. */
+export function proposeAction(row: ParsedRow, existing: Existing[]) {
+  const reasons: string[] = [];
+  let match: Existing | null = null;
+  let confidence = 0;
+
+  const rowDomain = domainOf(row.email);
+  const rowKey = normalizeName(row.displayName);
+
+  for (const org of existing) {
+    let score = 0;
+    const why: string[] = [];
+    if (normalizeName(org.display_name) === rowKey && rowKey.length > 2) {
+      score += 0.6;
+      why.push("company name matches");
+    }
+    const orgDomain = domainOf(org.primary_contact_email) ?? (org.website ? org.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]! : null);
+    if (rowDomain && orgDomain && rowDomain === orgDomain) {
+      score += 0.35;
+      why.push(`email domain ${rowDomain} matches`);
+    }
+    if (score > confidence) {
+      confidence = score;
+      match = org;
+      reasons.length = 0;
+      reasons.push(...why);
+    }
+  }
+
+  if (row.sourceRole === "service_provider") {
+    if (match && confidence >= 0.6) {
+      return { action: "merge" as const, match, confidence, reasons };
+    }
+    return {
+      action: "create" as const,
+      match: null,
+      confidence: 0,
+      reasons: ["New company from the legacy list. Imports as Potential, never Approved."],
+    };
+  }
+
+  // A representative is a person. Only defensible evidence links them.
+  if (match && confidence >= 0.6) {
+    return { action: "match" as const, match, confidence, reasons };
+  }
+  if (rowDomain) {
+    return {
+      action: "needs_review" as const,
+      match: null,
+      confidence: 0.3,
+      reasons: [`Work email domain ${rowDomain} suggests a company, but no company matches it yet.`],
+    };
+  }
+  return {
+    action: "needs_review" as const,
+    match: null,
+    confidence: 0,
+    reasons: ["Personal or missing email — no defensible link to a company. Unmatched legacy representative."],
+  };
+}
+
+export async function createImportBatch(
+  db: Client,
+  userId: string,
+  input: { sourceSystem: string; label: string; text: string },
+) {
+  await assertSupervisor(db, userId);
+  const parsed = parseLegacyRows(input.text);
+  if (parsed.length === 0) throw new Error("No rows found. Paste one vendor per line.");
+
+  const { data: existing, error: existingError } = await db
+    .from("vendor_orgs")
+    .select("id, display_name, website, primary_contact_email");
+  if (existingError) throw new Error(existingError.message);
+
+  const { data: batch, error: batchError } = await db
+    .from("vendor_import_batches")
+    .insert({ source_system: input.sourceSystem, label: input.label, created_by: userId })
+    .select("id")
+    .single();
+  if (batchError) throw new Error(batchError.message);
+
+  const rows = parsed.map((row) => {
+    const proposal = proposeAction(row, existing ?? []);
+    return {
+      batch_id: batch.id,
+      source_role: row.sourceRole,
+      raw: row as unknown as Database["public"]["Tables"]["vendor_import_rows"]["Insert"]["raw"],
+      display_name: row.displayName,
+      email: row.email,
+      phone: row.phone,
+      departments: row.departments,
+      groups: row.groups,
+      proposed_action: proposal.action,
+      match_org_id: proposal.match?.id ?? null,
+      match_confidence: proposal.confidence,
+      match_reasons: proposal.reasons,
+    };
+  });
+
+  const { error: rowsError } = await db.from("vendor_import_rows").insert(rows);
+  if (rowsError) throw new Error(rowsError.message);
+
+  return { batchId: batch.id, rowCount: rows.length };
+}
+
+export async function loadImportQueue(db: Client) {
+  const [batchesRes, rowsRes] = await Promise.all([
+    db.from("vendor_import_batches").select("*").order("created_at", { ascending: false }).limit(20),
+    db
+      .from("vendor_import_rows")
+      .select("*, vendor_orgs:match_org_id(display_name)")
+      .eq("decision", "pending")
+      .order("created_at")
+      .limit(300),
+  ]);
+  if (batchesRes.error) throw new Error(batchesRes.error.message);
+  if (rowsRes.error) throw new Error(rowsRes.error.message);
+  return {
+    batches: batchesRes.data ?? [],
+    rows: (rowsRes.data ?? []).map((r) => ({
+      id: r.id,
+      batchId: r.batch_id,
+      sourceRole: r.source_role,
+      displayName: r.display_name,
+      email: r.email,
+      phone: r.phone,
+      departments: r.departments ?? [],
+      groups: r.groups ?? [],
+      proposedAction: r.proposed_action,
+      matchOrgId: r.match_org_id,
+      matchOrgName: (r.vendor_orgs as { display_name?: string } | null)?.display_name ?? null,
+      matchConfidence: r.match_confidence,
+      matchReasons: r.match_reasons ?? [],
+    })),
+  };
+}
+
+/** A human decides. This is the only path from staging into the live directory. */
+export async function decideImportRow(
+  db: Client,
+  userId: string,
+  input: { rowId: string; action: "create" | "match" | "skip"; orgId?: string | null; note?: string | null },
+) {
+  await assertSupervisor(db, userId);
+  const { data: row, error } = await db.from("vendor_import_rows").select("*").eq("id", input.rowId).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) throw new Error("That import row no longer exists.");
+  if (row.decision !== "pending") throw new Error("That row was already decided.");
+
+  let createdOrgId: string | null = null;
+  let createdContactId: string | null = null;
+
+  const groupsAreMeaningful = (row.groups ?? []).filter((g) => !/all groups/i.test(g));
+  const allGroups = (row.groups ?? []).some((g) => /all groups/i.test(g));
+
+  if (input.action === "create") {
+    const { data, error: insertError } = await db
+      .from("vendor_orgs")
+      .insert({
+        display_name: row.display_name,
+        legal_name: row.display_name,
+        status: "legacy",
+        service_categories: row.departments ?? [],
+        markets: [],
+        legacy_market_hints: groupsAreMeaningful,
+        legacy_all_groups: allGroups,
+        primary_contact_email: row.email,
+        primary_contact_phone: row.phone,
+        created_by: userId,
+      })
+      .select("id")
+      .single();
+    if (insertError) throw new Error(insertError.message);
+    createdOrgId = data.id;
+
+    await db.from("vendor_status_events").insert({
+      org_id: data.id,
+      to_status: "legacy",
+      reason: `Imported from ${row.source_role === "service_provider" ? "legacy service provider list" : "legacy list"}. Not verified.`,
+      actor_id: userId,
+    });
+    await db.from("external_links").insert({
+      entity_type: "vendor_org",
+      entity_id: data.id,
+      system: "breezeway",
+      external_id: row.display_name,
+      last_sync_status: "imported",
+    });
+  }
+
+  if (input.action === "match" || (input.action === "create" && row.source_role === "representative")) {
+    const orgId = input.orgId ?? row.match_org_id ?? createdOrgId;
+    const { data, error: contactError } = await db
+      .from("vendor_contacts")
+      .insert({
+        org_id: orgId,
+        full_name: row.display_name,
+        email: row.email,
+        phone: row.phone,
+        legacy_departments: row.departments ?? [],
+        legacy_groups: row.groups ?? [],
+        source_system: "breezeway",
+        match_status: orgId ? "matched" : "unmatched",
+      })
+      .select("id")
+      .single();
+    if (contactError) throw new Error(contactError.message);
+    createdContactId = data.id;
+  }
+
+  const { error: updateError } = await db
+    .from("vendor_import_rows")
+    .update({
+      decision: input.action === "skip" ? "skipped" : input.action,
+      decided_by: userId,
+      decided_at: new Date().toISOString(),
+      decision_note: input.note || null,
+      created_org_id: createdOrgId,
+      created_contact_id: createdContactId,
+    })
+    .eq("id", input.rowId);
+  if (updateError) throw new Error(updateError.message);
+
+  return { ok: true, orgId: createdOrgId, contactId: createdContactId };
+}
