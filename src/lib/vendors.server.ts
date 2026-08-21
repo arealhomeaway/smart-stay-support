@@ -174,8 +174,11 @@ export async function loadVendorOrg(db: Client, orgId: string, viewerIsSuperviso
     note: d.restricted && !viewerIsSupervisor ? null : d.note,
   }));
 
+  const serviceAreas = await loadServiceAreas(db, orgId);
+
   return {
     org: orgRes.data,
+    serviceAreas,
     members: (membersRes.data ?? []).map((m) => ({
       id: m.id,
       maskedCode: m.masked_code,
@@ -193,6 +196,8 @@ export async function loadVendorOrg(db: Client, orgId: string, viewerIsSuperviso
         "Unknown home",
       serviceCategory: c.service_category,
       coveragePriority: c.coverage_priority,
+      excluded: c.excluded,
+      exclusionReason: c.exclusion_reason,
       approvalLimit: c.approval_limit,
       accessRequirements: c.access_requirements,
       effectiveFrom: c.effective_from,
