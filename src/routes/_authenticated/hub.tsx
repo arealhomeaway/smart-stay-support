@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ShieldAlert } from "lucide-react";
@@ -111,8 +111,12 @@ function Hub() {
               ))}
             </div>
             <p className="mt-8 text-sm text-muted-foreground">
-              You can come back here any time from the Resolve overview to switch workspaces — one
-              account covers every portal you are authorised for.
+              One account covers every portal you are authorised for. Return here any time to switch
+              workspaces, or read the{" "}
+              <Link to="/" className="font-medium text-primary underline-offset-4 hover:underline">
+                Resolve overview
+              </Link>
+              .
             </p>
           </>
         )}
