@@ -57,7 +57,7 @@ const basics = [
   {
     icon: Building2,
     title: "Homes stay in sync",
-    body: "Import properties from OwnerRez, keep access notes and safety history in one place, and dispatch field work when Breezeway is connected.",
+    body: "Import properties from OwnerRez, keep access notes and safety history in one place, and dispatch field work to vendors from the vendor portal.",
     to: "/properties" as const,
     cta: "View properties",
   },

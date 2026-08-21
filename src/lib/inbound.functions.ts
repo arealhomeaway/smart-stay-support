@@ -5,31 +5,23 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getInboundStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const { breezewayConfigured } = await import("./breezeway.server");
     return {
-      breezeway: breezewayConfigured(),
       ownerrez: Boolean(process.env["OWNERREZ_USERNAME"] && process.env["OWNERREZ_ACCESS_TOKEN"]),
     };
   });
 
 /**
- * Pulls tasks that were created in OwnerRez or Breezeway into the matters
+ * Pulls tasks that were created in OwnerRez into the matters
  * queue, and refreshes the status of ones already imported.
  */
 export const runInboundSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { source?: "breezeway" | "ownerrez" | "all" }) => ({
+  .inputValidator((input: { source?: "ownerrez" | "all" }) => ({
     source: input?.source ?? "all",
   }))
-  .handler(async ({ data, context }) => {
-    const { syncBreezewayInbound, syncOwnerRezInbound } = await import("./inbound.server");
-    const results = [];
-    if (data.source === "all" || data.source === "ownerrez") {
-      results.push(await syncOwnerRezInbound(context.supabase, context.userId));
-    }
-    if (data.source === "all" || data.source === "breezeway") {
-      results.push(await syncBreezewayInbound(context.supabase, context.userId));
-    }
+  .handler(async ({ context }) => {
+    const { syncOwnerRezInbound } = await import("./inbound.server");
+    const results = [await syncOwnerRezInbound(context.supabase, context.userId)];
     return { results };
   });
 

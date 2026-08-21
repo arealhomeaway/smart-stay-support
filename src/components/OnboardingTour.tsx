@@ -59,7 +59,7 @@ const steps: TourStep[] = [
     target: '[data-tour="properties"]',
     route: "/properties",
     title: "Properties",
-    body: "Import homes straight from OwnerRez, link them to Breezeway, and keep access notes and Wi-Fi where the coordinator actually needs them.",
+    body: "Import homes straight from OwnerRez, and keep access notes and Wi-Fi where the coordinator actually needs them.",
   },
   {
     target: '[data-tour="help"]',

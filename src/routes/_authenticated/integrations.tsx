@@ -22,12 +22,12 @@ export const Route = createFileRoute("/_authenticated/integrations")({
       {
         name: "description",
         content:
-          "Pull OwnerRez and Breezeway tasks into Resolve so every matter is tracked, documented and closed in one place.",
+          "Pull OwnerRez tasks and inbound messages into Resolve so every matter is tracked, documented and closed in one place.",
       },
       { property: "og:title", content: "Integrations & inbound sync | Resolve" },
       {
         property: "og:description",
-        content: "Keep OwnerRez and Breezeway work in sync with the Resolve matters queue.",
+        content: "Keep OwnerRez work in sync with the Resolve matters queue.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -55,10 +55,10 @@ function IntegrationsPage() {
   const imported = useQuery({ queryKey: ["imported-matters"], queryFn: () => importedFn() });
 
   const sync = useMutation({
-    mutationFn: (source: "all" | "breezeway" | "ownerrez") => syncFn({ data: { source } }),
+    mutationFn: (source: "all" | "ownerrez") => syncFn({ data: { source } }),
     onSuccess: (res) => {
       for (const r of res.results) {
-        const name = r.source === "breezeway" ? "Breezeway" : "OwnerRez";
+        const name = "OwnerRez";
         if (!r.ok) {
           toast.error(`${name}: ${r.error}`);
           continue;
@@ -79,7 +79,7 @@ function IntegrationsPage() {
       <header className="space-y-1">
         <h1 className="font-display text-2xl font-semibold">Integrations & inbound sync</h1>
         <p className="text-sm text-muted-foreground">
-          Resolve is the primary platform. Anything created in OwnerRez or Breezeway is pulled in here so it gets
+          Resolve is the primary platform. Anything created in OwnerRez or sent in by message is pulled in here so it gets
           the same ownership, clocks and closure standards as work logged by the team.
         </p>
       </header>
@@ -91,9 +91,6 @@ function IntegrationsPage() {
         </Button>
         <Button variant="outline" onClick={() => sync.mutate("ownerrez")} disabled={sync.isPending}>
           <Download className="size-4" /> OwnerRez only
-        </Button>
-        <Button variant="outline" onClick={() => sync.mutate("breezeway")} disabled={sync.isPending}>
-          <Download className="size-4" /> Breezeway only
         </Button>
       </div>
 
@@ -120,24 +117,6 @@ function IntegrationsPage() {
 
 
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <PlugZap className="size-4" /> Breezeway
-              <Badge variant={status.data?.breezeway ? "default" : "secondary"}>
-                {status.data?.breezeway ? "Connected" : "Awaiting API access"}
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Field tasks in both directions: Resolve dispatches with full instructions, and Breezeway tasks and
-              status changes flow back here.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Once the Breezeway Client ID and Secret are added, every task created in Breezeway appears in the matters
-            queue and status changes are logged on the timeline.
-          </CardContent>
-        </Card>
       </div>
 
       <Card>

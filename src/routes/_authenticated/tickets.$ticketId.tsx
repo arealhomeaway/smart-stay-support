@@ -8,7 +8,6 @@ import { HandoffPanel } from "@/components/HandoffPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
-import { BreezewayPanel } from "@/components/BreezewayPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -726,7 +725,6 @@ function TicketDetail() {
             </CardContent>
           </Card>
 
-          <BreezewayPanel ticketId={ticketId} />
 
 
 

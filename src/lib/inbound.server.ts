@@ -1,8 +1,8 @@
 /**
  * Inbound task sync (server-only).
  *
- * Pulls work that was created *outside* Resolve — Breezeway tasks and OwnerRez
- * maintenance tasks — into the matters queue so Resolve stays the single place
+ * Pulls work that was created *outside* Resolve — OwnerRez maintenance tasks
+ * and message intake — into the matters queue so Resolve stays the single place
  * the team works from. Every imported record keeps a stable link back to the
  * source system (external_source + external_id) so repeated syncs update the
  * same matter instead of creating duplicates.
@@ -14,7 +14,7 @@ import type { Database } from "@/integrations/supabase/types";
 export type Db = SupabaseClient<Database>;
 
 export type SyncResult = {
-  source: "breezeway" | "ownerrez";
+  source: "ownerrez";
   ok: boolean;
   created: number;
   updated: number;
@@ -66,7 +66,7 @@ function mapPriorityNumber(n: unknown): "p1" | "p2" | "p3" {
 /** Writes one normalized task into the matters table, insert-or-update by external id. */
 async function upsertTask(
   db: Db,
-  source: "breezeway" | "ownerrez",
+  source: "ownerrez",
   task: NormalizedTask,
   propertyIdByExternal: Map<string, string>,
   createdBy: string | null,
@@ -111,7 +111,7 @@ async function upsertTask(
         ticket_id: existing.id,
         kind: "note",
         event_type: "note",
-        body: `${source === "breezeway" ? "Breezeway" : "OwnerRez"} status updated to "${task.externalStatus ?? "unknown"}".`,
+        body: `OwnerRez status updated to "${task.externalStatus ?? "unknown"}".`,
       });
       result.updated += 1;
     }
@@ -146,9 +146,6 @@ async function upsertTask(
       created_by: createdBy,
       record_owner: createdBy,
       accountable_owner: createdBy,
-      ...(source === "breezeway"
-        ? { breezeway_task_id: task.externalId, breezeway_task_status: task.externalStatus, breezeway_synced_at: now }
-        : {}),
     })
     .select("id")
     .single();
@@ -160,14 +157,14 @@ async function upsertTask(
     kind: "created",
     event_type: "created",
     channel: source,
-    body: `Imported from ${source === "breezeway" ? "Breezeway" : "OwnerRez"} (task ${task.externalId}).${
+    body: `Imported from OwnerRez (task ${task.externalId}).${
       propertyId ? "" : " No matching home is linked yet — link the property to complete the record."
     }`,
   });
   result.created += 1;
 }
 
-async function propertyMap(db: Db, column: "breezeway_property_id" | "ownerrez_property_id") {
+async function propertyMap(db: Db, column: "ownerrez_property_id") {
   const { data } = await db.from("properties").select(`id, ${column}`);
   const map = new Map<string, string>();
   for (const row of (data ?? []) as Array<Record<string, string | null>>) {
@@ -175,44 +172,6 @@ async function propertyMap(db: Db, column: "breezeway_property_id" | "ownerrez_p
     if (key && row["id"]) map.set(String(key), String(row["id"]));
   }
   return map;
-}
-
-export async function syncBreezewayInbound(db: Db, createdBy: string | null): Promise<SyncResult> {
-  const result: SyncResult = { source: "breezeway", ok: true, created: 0, updated: 0, unlinked: 0, total: 0 };
-  const { listBreezewayTasks, breezewayConfigured, BreezewayError } = await import("./breezeway.server");
-
-  if (!breezewayConfigured()) {
-    return { ...result, ok: false, error: "Breezeway is not connected yet." };
-  }
-
-  try {
-    const tasks = await listBreezewayTasks();
-    result.total = tasks.length;
-    const props = await propertyMap(db, "breezeway_property_id");
-
-    for (const t of tasks) {
-      const title = (t.name ?? "Breezeway task").toString().trim() || "Breezeway task";
-      const normalized: NormalizedTask = {
-        externalId: String(t.id),
-        title,
-        description: [t.description, t.type_department ? `Department: ${t.type_department}` : null]
-          .filter(Boolean)
-          .join("\n\n") || null,
-        priority: mapPriorityNumber(t.priority),
-        category: guessCategory(`${title} ${t.type_department ?? ""}`),
-        status: mapStatus(t.status),
-        externalStatus: t.status ?? null,
-        externalUrl: `https://app.breezeway.io/tasks/${t.id}`,
-        externalPropertyId: t.home_id != null ? String(t.home_id) : null,
-        dueAt: t.scheduled_date ? new Date(t.scheduled_date).toISOString() : null,
-      };
-      await upsertTask(db, "breezeway", normalized, props, createdBy, result);
-    }
-    return result;
-  } catch (err) {
-    const message = err instanceof BreezewayError ? err.message : (err as Error).message;
-    return { ...result, ok: false, error: message || "Could not reach Breezeway." };
-  }
 }
 
 export async function syncOwnerRezInbound(db: Db, createdBy: string | null): Promise<SyncResult> {

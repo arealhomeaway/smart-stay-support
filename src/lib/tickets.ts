@@ -177,7 +177,6 @@ export const SOURCE_CHANNELS = [
   { value: "owner", label: "Owner" },
   { value: "vendor", label: "Vendor" },
   { value: "internal", label: "Internal / noticed it ourselves" },
-  { value: "breezeway", label: "Breezeway" },
   { value: "inspection", label: "Inspection" },
 ] as const;
 

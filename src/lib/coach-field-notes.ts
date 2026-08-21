@@ -16,7 +16,7 @@ MONEY AND APPROVALS
 - Any vendor spend needs the diagnostic/service fee AND the likely repair range in writing before dispatch. Typical pattern: "$X service call, estimated $Y–$Z if it's the part we think it is."
 - Repairs above a routine service call, anything touching an owner's system (HVAC, water heater, roof, sewer), and anything that would block the calendar require Micah/leadership approval before proceeding. Ask for approval in the ticket, not verbally.
 - Never approve overlapping scopes (e.g. a new water heater AND a pressure reducing valve AND a service call) without confirming they are separate, necessary jobs.
-- Owner-preferred vendors exist for some homes. Check the property record and Breezeway before choosing a vendor, and note it when we deviate.
+- Owner-preferred vendors exist for some homes. Check the property record before choosing a vendor, and note it when we deviate.
 - Get the invoice and note the payment method. Some vendors only take Venmo/card on site; capture that before dispatch so a tech is not left unpaid at the door.
 
 VENDORS AND HANDYMEN
