@@ -387,8 +387,9 @@ function LogTimeDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [minutes, setMinutes] = useState(30);
-  const [activity, setActivity] = useState(target.label);
+  // Nothing here is ever prefilled or suggested: the owner reports the time they actually spent.
+  const [minutes, setMinutes] = useState("");
+  const [activity, setActivity] = useState("");
   const [output, setOutput] = useState("");
   const [phase, setPhase] = useState<"onboarding" | "ongoing">("onboarding");
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
