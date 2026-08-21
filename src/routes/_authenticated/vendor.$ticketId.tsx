@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { VisitCheckInCard } from "@/components/VisitCheckInCard";
 
 export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
   component: VendorJob,
