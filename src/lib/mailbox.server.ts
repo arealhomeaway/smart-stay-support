@@ -181,15 +181,12 @@ async function knownSenders(db: Db) {
     db.from("profiles").select("email"),
     db.from("vendor_contacts").select("email"),
     db.from("vendor_orgs").select("primary_contact_email"),
-    db.from("owner_programs").select("owner_email, notify_email"),
+    db.from("owner_programs").select("owner_email"),
   ]);
   (staff.data ?? []).forEach((r) => add(r.email));
   (contacts.data ?? []).forEach((r) => add(r.email));
   (orgs.data ?? []).forEach((r) => add(r.primary_contact_email));
-  (owners.data ?? []).forEach((r) => {
-    add(r.owner_email);
-    add(r.notify_email);
-  });
+  (owners.data ?? []).forEach((r) => add(r.owner_email));
   return addresses;
 }
 
