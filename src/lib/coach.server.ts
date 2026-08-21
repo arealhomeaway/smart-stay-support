@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { RawGuidanceSchema, normalizeGuidance, type Guidance } from "./coach-schema";
 import { COACH_MODEL, createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { FIELD_NOTES } from "./coach-field-notes";
 
 // The coach never invents policy. Everything it says has to trace back to the
 // ARHA SOP: the mechanical priority rubric, the work type catalog and the
@@ -18,6 +19,8 @@ Non-negotiable house rules, taken from the ARHA Property Coordinator SOP:
 - Any alarm complaint means checking every smoke alarm, every CO alarm and the security system in the home, not just the one the guest points at. A repeating chirp or alarm with no obvious source is treated as a possible CO event: get people to fresh air and call 911 / the fire department before troubleshooting.
 - Water: shut off the local supply first, then the main if needed. Photograph before and after. Look for damage below and behind the leak, and check for a water heater, appliance or slab source before calling it fixed.
 - Close nothing until the guest has confirmed the fix and required evidence is attached.
+
+${FIELD_NOTES}
 
 Coaching style: direct, calm, specific to this home and this guest. Short imperative sentences a coordinator can read aloud. Never generic filler. If information is missing that would change the priority or the dispatch, ask for it in clarifying_questions instead of assuming.
 
