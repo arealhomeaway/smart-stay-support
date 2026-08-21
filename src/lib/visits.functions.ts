@@ -30,7 +30,7 @@ export const endVisit = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(({ context, data }) =>
-    checkOut(context.supabase, context.userId, { ticketId: data.ticketId, fix: data.fix, notes: data.notes }),
+    checkOut(context.supabase, context.userId, { ticketId: data.ticketId, fix: data.fix, notes: data.notes ?? "" }),
   );
 
 export const getVisits = createServerFn({ method: "GET" })

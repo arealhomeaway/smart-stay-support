@@ -84,6 +84,8 @@ export async function checkIn(supabase: Client, userId: string, ticketId: string
     .single();
   if (error) throw error;
 
+  // Arriving implies accepting, so a vendor who drove straight out doesn't
+  // leave the coordinator looking at an unacknowledged dispatch.
   await supabaseAdmin
     .from("tickets")
     .update({ vendor_status: "on_site", vendor_accepted_at: new Date().toISOString() })
