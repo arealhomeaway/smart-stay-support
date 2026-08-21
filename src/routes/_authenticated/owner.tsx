@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, CheckCircle2, Clock, KeyRound, Mail, MessageSquare } from "lucide-react";
+import { Bell, CheckCircle2, Clock, Home, KeyRound, Mail, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   answerOwnerReview,
@@ -13,10 +13,27 @@ import {
   saveOwnerAlertPreferences,
 } from "@/lib/owner-portal.functions";
 import { alertLabel, relativeTime } from "@/lib/owner-notify";
-import { DECISION_PATHS, formatHours, hoursFromMinutes, paceState, PACE_LABELS } from "@/lib/owner-program";
+import { DECISION_PATHS } from "@/lib/owner-program";
+import {
+  ACTIVITY_CATEGORIES,
+  COMBINED_TOTAL_NOTICE,
+  COVERAGE_META,
+  formatHours,
+  hoursFromMinutes,
+  MANUAL_ENTRY_CONFIRMATION,
+  MANUAL_ENTRY_NOTICE,
+  OPERATING_TARGET_HOURS,
+  OWNER_GOAL_LABEL,
+  PROGRAM_TOTAL_DAYS,
+  PROGRESS_META,
+  TASK_TYPE_META,
+  type TaskType,
+} from "@/lib/owner-participation";
+import { OwnerBadges } from "@/components/OwnerBadges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -35,16 +52,16 @@ import {
 export const Route = createFileRoute("/_authenticated/owner")({
   head: () => ({
     meta: [
-      { title: "Owner hub — Active Owner Participation" },
+      { title: "Owner hub — 90-day participation program" },
       {
         name: "description",
         content:
-          "Your home's live activity, the decisions waiting on you, and the participation hours you have logged toward the 90-day program.",
+          "Your 90-day participation progress, the decisions waiting on you, and the hours you have reported across every home in your program.",
       },
-      { property: "og:title", content: "Owner hub — Active Owner Participation" },
+      { property: "og:title", content: "Owner hub — 90-day participation program" },
       {
         property: "og:description",
-        content: "Track your home, answer reviews and log participation time in one place.",
+        content: "Track your homes, answer decisions and report participation time in one place.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -53,7 +70,13 @@ export const Route = createFileRoute("/_authenticated/owner")({
   component: OwnerHubPage,
 });
 
-type TimeTarget = { reviewId: string | null; ticketId: string | null; label: string };
+type HomeData = Extract<Awaited<ReturnType<typeof ownerHome>>, { linked: true }>;
+type TimeTarget = {
+  reviewId: string | null;
+  ticketId: string | null;
+  label: string;
+  propertyIds: string[];
+};
 
 function OwnerHubPage() {
   const qc = useQueryClient();
@@ -67,14 +90,14 @@ function OwnerHubPage() {
   return <OwnerHub data={home.data} onChange={invalidate} />;
 }
 
-/** First run: the owner types the code ARHA gave them to attach their home. */
+/** First run: the owner types the code ARHA gave them to attach their program. */
 function LinkInvite({ onLinked }: { onLinked: () => void }) {
   const [code, setCode] = useState("");
   const redeem = useServerFn(redeemInvite);
   const link = useMutation({
     mutationFn: () => redeem({ data: { code } }),
     onSuccess: () => {
-      toast.success("Your home is connected.");
+      toast.success("Your program is connected.");
       onLinked();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -84,7 +107,7 @@ function LinkInvite({ onLinked }: { onLinked: () => void }) {
     <Card className="mx-auto max-w-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <KeyRound className="size-5 text-primary" /> Connect your home
+          <KeyRound className="size-5 text-primary" /> Connect your program
         </CardTitle>
         <CardDescription>
           Enter the invite code from your ARHA contact to open your participation program.
@@ -105,10 +128,30 @@ function LinkInvite({ onLinked }: { onLinked: () => void }) {
   );
 }
 
-type HomeData = Extract<Awaited<ReturnType<typeof ownerHome>>, { linked: true }>;
+function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-lg font-semibold">{value}</p>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
 
 function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) {
-  const { program, alerts, reviews, tickets, entries, reportedMinutes } = data;
+  const {
+    program,
+    properties,
+    alerts,
+    reviews,
+    tickets,
+    entries,
+    badges,
+    reportedMinutes,
+    onboardingMinutes,
+    operationalMinutes,
+    snapshot,
+  } = data;
   const [timeTarget, setTimeTarget] = useState<TimeTarget | null>(null);
   const [answering, setAnswering] = useState<(typeof reviews)[number] | null>(null);
 
@@ -126,39 +169,55 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unread.length]);
 
-  const pace = paceState(program.startedOn, reportedMinutes, program.targetHours);
-  const paceInfo = PACE_LABELS[pace.state];
-  const pct = Math.min(100, Math.round((hoursFromMinutes(reportedMinutes) / program.targetHours) * 100));
+  const included = properties.filter((p) => p.inclusionStatus === "included");
+  const progress = PROGRESS_META[snapshot.state];
   const waiting = reviews.filter((r) => r.status === "awaiting_owner" || r.status === "prepared");
   const openTickets = tickets.filter((t) => !["resolved", "closed"].includes(t.status));
-  const onboardingMinutes = entries
-    .filter((e) => e.phase === "onboarding")
-    .reduce((n, e) => n + e.minutes, 0);
-  const ongoingMinutes = reportedMinutes - onboardingMinutes;
+  const varianceLabel =
+    snapshot.variance >= 0
+      ? `${snapshot.variance.toFixed(1)} hrs ahead of pace`
+      : `${Math.abs(snapshot.variance).toFixed(1)} hrs below pace`;
+  const propertyName = (id: string) => included.find((p) => p.propertyId === id)?.name ?? "";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="space-y-1">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Active owner participation</p>
-        <h1 className="font-display text-2xl font-semibold">{program.propertyName}</h1>
-        <p className="text-sm text-muted-foreground">{program.location}</p>
+        <h1 className="font-display text-2xl font-semibold">Your 90-day participation progress</h1>
+        <p className="text-sm text-muted-foreground">
+          {included.length} {included.length === 1 ? "property" : "properties"} in one program ·{" "}
+          {OWNER_GOAL_LABEL} combined
+        </p>
       </header>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="text-base">Your participation</CardTitle>
-            <Badge variant="outline" className={paceInfo.tone}>
-              {paceInfo.label}
+            <CardTitle className="text-base">
+              {program.startedOn ? `Day ${snapshot.day} of ${PROGRAM_TOTAL_DAYS}` : "Not started yet"}
+            </CardTitle>
+            <Badge variant="outline" className={progress.tone}>
+              {progress.label}
             </Badge>
           </div>
+          <CardDescription>{COMBINED_TOTAL_NOTICE}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Progress value={pct} />
-          <p className="text-sm text-muted-foreground">
-            {formatHours(reportedMinutes)} logged of {program.targetHours}+ hours
-            {program.endsOn ? ` · program ends ${program.endsOn}` : ""}
-          </p>
+        <CardContent className="space-y-4">
+          <Progress value={snapshot.percentOfTarget} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat label="Reported" value={formatHours(reportedMinutes)} hint={`${snapshot.percentOfTarget}% of ${OPERATING_TARGET_HOURS} hrs`} />
+            <Stat label="Pace benchmark" value={`${Math.round(snapshot.benchmark)} hrs`} hint={varianceLabel} />
+            <Stat
+              label="Days remaining"
+              value={String(snapshot.daysLeft)}
+              hint={program.endsOn ? `Ends ${program.endsOn}` : "Start date pending"}
+            />
+            <Stat
+              label="To exceed 100"
+              value={snapshot.hoursToGoal > 0 ? `${snapshot.hoursToGoal} hrs` : "Reached"}
+              hint={`Next milestone: day ${snapshot.next.day} · ${snapshot.next.hours} hrs`}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-md border border-border p-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Onboarding</p>
@@ -166,17 +225,131 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
             </div>
             <div className="rounded-md border border-border p-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Operations</p>
-              <p className="font-medium">{formatHours(ongoingMinutes)}</p>
+              <p className="font-medium">{formatHours(operationalMinutes)}</p>
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
             All hours are self-reported. ARHA never estimates, prefills or auto-calculates your time.
           </p>
-          <Button size="sm" onClick={() => setTimeTarget({ reviewId: null, ticketId: null, label: "General participation" })}>
-            <Clock className="size-4" /> Log time
+          <Button
+            size="sm"
+            onClick={() =>
+              setTimeTarget({ reviewId: null, ticketId: null, label: "General participation", propertyIds: [] })
+            }
+          >
+            <Clock className="size-4" /> Log my participation
           </Button>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Home className="size-4 text-primary" /> Your properties
+          </CardTitle>
+          <CardDescription>
+            Each home is measured by the activities and decisions it needs — not by separate hour targets.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          {included.length === 0 && (
+            <p className="text-sm text-muted-foreground">No properties are attached to your program yet.</p>
+          )}
+          {included.map((p) => {
+            const coverage = COVERAGE_META[p.coverage];
+            return (
+              <div key={p.id} className="space-y-2 rounded-lg border border-border p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium">{p.name}</span>
+                  <Badge variant="outline" className={coverage.tone}>
+                    {coverage.label}
+                  </Badge>
+                </div>
+                {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                  <span>Onboarding: {p.onboardingStatus.replace(/_/g, " ")}</span>
+                  <span>Launch: {p.launchStatus.replace(/_/g, " ")}</span>
+                  <span>
+                    {p.completedTasks} complete · {p.openTasks} open
+                  </span>
+                  <span>{p.outstandingDecisions} decisions waiting</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Last activity: {p.lastOwnerActivityAt ? relativeTime(p.lastOwnerActivityAt) : "none yet"}
+                </p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    setTimeTarget({
+                      reviewId: null,
+                      ticketId: null,
+                      label: p.name,
+                      propertyIds: [p.propertyId],
+                    })
+                  }
+                >
+                  <Clock className="size-4" /> Log my participation
+                </Button>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Waiting on you</CardTitle>
+          <CardDescription>Activities and decisions ARHA has prepared for you.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {waiting.length === 0 && <p className="text-sm text-muted-foreground">Nothing needs you right now.</p>}
+          {waiting.map((r) => (
+            <div key={r.id} className="rounded-md border border-border p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                  {TASK_TYPE_META[(r.task_type ?? "program_wide") as TaskType].label}
+                </Badge>
+                <Badge variant="outline" className={DECISION_PATHS[r.decision_path as keyof typeof DECISION_PATHS]?.tone}>
+                  {DECISION_PATHS[r.decision_path as keyof typeof DECISION_PATHS]?.label ?? r.decision_path}
+                </Badge>
+                <span className="text-sm font-medium">{r.title}</span>
+                {r.respond_by && <span className="ml-auto text-xs text-muted-foreground">By {r.respond_by}</span>}
+              </div>
+              {r.propertyIds.length > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {r.propertyIds.map(propertyName).filter(Boolean).join(" · ")}
+                </p>
+              )}
+              {(r.business_question || r.recommendation) && (
+                <p className="mt-1 text-sm text-muted-foreground">{r.business_question ?? r.recommendation}</p>
+              )}
+              {r.impact && <p className="mt-1 text-xs text-muted-foreground">Potential impact: {r.impact}</p>}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setAnswering(r)}>
+                  Respond
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    setTimeTarget({
+                      reviewId: r.id,
+                      ticketId: r.ticket_id,
+                      label: r.title,
+                      propertyIds: r.propertyIds,
+                    })
+                  }
+                >
+                  <Clock className="size-4" /> Log my participation
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <OwnerBadges earned={badges} reportedHours={hoursFromMinutes(reportedMinutes)} />
 
       <Card>
         <CardHeader className="pb-3">
@@ -215,43 +388,9 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Waiting on you</CardTitle>
-          <CardDescription>Reviews ARHA has prepared for your decision.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {waiting.length === 0 && <p className="text-sm text-muted-foreground">Nothing needs you right now.</p>}
-          {waiting.map((r) => (
-            <div key={r.id} className="rounded-md border border-border p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className={DECISION_PATHS[r.decision_path as keyof typeof DECISION_PATHS]?.tone}>
-                  {DECISION_PATHS[r.decision_path as keyof typeof DECISION_PATHS]?.label ?? r.decision_path}
-                </Badge>
-                <span className="text-sm font-medium">{r.title}</span>
-                {r.respond_by && <span className="ml-auto text-xs text-muted-foreground">By {r.respond_by}</span>}
-              </div>
-              {r.recommendation && <p className="mt-1 text-sm text-muted-foreground">{r.recommendation}</p>}
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setAnswering(r)}>
-                  Respond
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setTimeTarget({ reviewId: r.id, ticketId: r.ticket_id, label: r.title })}
-                >
-                  <Clock className="size-4" /> Log time
-                </Button>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Activity at your home</CardTitle>
+          <CardTitle className="text-base">Activity at your homes</CardTitle>
           <CardDescription>
-            Every matter our team opens on this home appears here automatically — {openTickets.length} open now.
+            Every matter our team opens appears here automatically — {openTickets.length} open now.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -276,6 +415,9 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
                   {t.status.replace(/_/g, " ")}
                 </span>
               </div>
+              {t.property_id && (
+                <p className="mt-0.5 text-xs text-muted-foreground">{propertyName(t.property_id)}</p>
+              )}
               {t.description && <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>}
               {t.resolution_notes && (
                 <p className="mt-1 flex gap-2 text-sm text-emerald-700">
@@ -286,9 +428,16 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
                 size="sm"
                 variant="ghost"
                 className="mt-2"
-                onClick={() => setTimeTarget({ reviewId: null, ticketId: t.id, label: `#${t.ref} ${t.title}` })}
+                onClick={() =>
+                  setTimeTarget({
+                    reviewId: null,
+                    ticketId: t.id,
+                    label: `#${t.ref} ${t.title}`,
+                    propertyIds: t.property_id ? [t.property_id] : [],
+                  })
+                }
               >
-                <Clock className="size-4" /> Log my review time
+                <Clock className="size-4" /> Log my participation
               </Button>
             </div>
           ))}
@@ -299,14 +448,22 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Your time log</CardTitle>
-          <CardDescription>{entries.length} entries recorded. Entries cannot be edited once saved.</CardDescription>
+          <CardTitle className="text-base">Your participation log</CardTitle>
+          <CardDescription>
+            {entries.length} entries recorded. Entries cannot be edited once saved — ask your ARHA contact to
+            record a correction.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-1">
-          {entries.slice(0, 12).map((e) => (
+          {entries.slice(0, 15).map((e) => (
             <div key={e.id} className="flex flex-wrap gap-2 border-b border-border/60 py-1.5 text-sm last:border-0">
               <span className="text-muted-foreground">{e.entry_date}</span>
               <span>{e.activity}</span>
+              {e.propertyIds.length > 1 && (
+                <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                  Shared · {e.propertyIds.length} homes
+                </Badge>
+              )}
               <span className="ml-auto font-medium">{e.minutes} min</span>
             </div>
           ))}
@@ -316,6 +473,7 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
       {timeTarget && (
         <LogTimeDialog
           programId={program.id}
+          properties={included.map((p) => ({ id: p.propertyId, name: p.name, closingDate: p.closingDate }))}
           target={timeTarget}
           onClose={() => setTimeTarget(null)}
           onSaved={onChange}
@@ -355,7 +513,7 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">How we reach you</CardTitle>
-        <CardDescription>Urgent matters can text you; everything else comes by email and in-app.</CardDescription>
+        <CardDescription>Urgent matters reach you personally; everything else comes by email and in-app.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between gap-4">
@@ -372,12 +530,12 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
         </div>
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="pref-sms" className="flex items-center gap-2 font-normal">
-            <MessageSquare className="size-4 text-muted-foreground" /> Text me for urgent (P1) matters only
+            <MessageSquare className="size-4 text-muted-foreground" /> Call or text me for urgent (P1) matters
           </Label>
           <Switch id="pref-sms" checked={smsP1} onCheckedChange={setSmsP1} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="pref-phone">Mobile number for urgent texts</Label>
+          <Label htmlFor="pref-phone">Mobile number for urgent contact</Label>
           <Input
             id="pref-phone"
             value={phone}
@@ -395,25 +553,32 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
 
 function LogTimeDialog({
   programId,
+  properties,
   target,
   onClose,
   onSaved,
 }: {
   programId: string;
+  properties: { id: string; name: string; closingDate: string | null }[];
   target: TimeTarget;
   onClose: () => void;
   onSaved: () => void;
 }) {
   // Nothing here is ever prefilled or suggested: the owner reports the time they actually spent.
+  const [hours, setHours] = useState("");
   const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState("");
+  const [category, setCategory] = useState("");
   const [output, setOutput] = useState("");
+  const [comments, setComments] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
   const [phase, setPhase] = useState<"onboarding" | "ongoing">("onboarding");
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selected, setSelected] = useState<string[]>(target.propertyIds);
   const log = useServerFn(logOwnerParticipation);
 
-  const parsedMinutes = Number.parseInt(minutes, 10);
-  const minutesValid = Number.isFinite(parsedMinutes) && parsedMinutes >= 1 && parsedMinutes <= 1440;
+  const totalMinutes = (Number.parseInt(hours || "0", 10) || 0) * 60 + (Number.parseInt(minutes || "0", 10) || 0);
+  const minutesValid = totalMinutes >= 1 && totalMinutes <= 1440;
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -422,52 +587,91 @@ function LogTimeDialog({
           programId,
           phase,
           entryDate,
-          minutes: parsedMinutes,
+          minutes: totalMinutes,
           activity,
+          activityCategory: category,
           output,
+          comments,
+          attachmentPath: null,
           reviewId: target.reviewId,
           ticketId: target.ticketId,
+          propertyIds: selected,
+          confirmed: true as const,
         },
       }),
-    onSuccess: () => {
-      toast.success("Time recorded.");
+    onSuccess: (res) => {
+      toast.success(
+        res.awarded.length > 0 ? "Participation recorded — a new achievement is unlocked." : "Participation recorded.",
+      );
       onSaved();
       onClose();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const toggle = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Log participation time</DialogTitle>
-          <DialogDescription>
-            Record only the time you actually spent. This entry is permanent and appears in your report.
-          </DialogDescription>
+          <DialogTitle>Log my participation</DialogTitle>
+          <DialogDescription>{MANUAL_ENTRY_NOTICE}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label htmlFor="time-date">Date</Label>
               <Input id="time-date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="time-min">Minutes you personally spent</Label>
+              <Label htmlFor="time-hr">Hours</Label>
+              <Input
+                id="time-hr"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={24}
+                placeholder="0"
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="time-min">Minutes</Label>
               <Input
                 id="time-min"
                 type="number"
                 inputMode="numeric"
-                min={1}
-                max={1440}
-                placeholder="Enter minutes"
+                min={0}
+                max={59}
+                placeholder="0"
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
               />
             </div>
           </div>
+
           <div className="space-y-1">
-            <Label htmlFor="time-activity">What you personally did</Label>
+            <Label htmlFor="time-category">Activity category</Label>
+            <select
+              id="time-category"
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">Select a category</option>
+              {ACTIVITY_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="time-activity">What you personally completed</Label>
             <Input
               id="time-activity"
               value={activity}
@@ -476,24 +680,53 @@ function LogTimeDialog({
             />
             <p className="text-xs text-muted-foreground">Related to: {target.label}</p>
           </div>
+
+          {properties.length > 0 && (
+            <div className="space-y-2">
+              <Label>Properties involved</Label>
+              <div className="space-y-1.5 rounded-md border border-border p-3">
+                {properties.map((p) => (
+                  <label key={p.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={selected.includes(p.id)} onCheckedChange={() => toggle(p.id)} />
+                    <span>{p.name}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                If one activity covered several homes, select each of them and enter the total time once. It is
+                counted once toward your combined program total.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-1">
-            <Label htmlFor="time-output">Decision or outcome (optional)</Label>
-            <Textarea id="time-output" value={output} onChange={(e) => setOutput(e.target.value)} rows={3} />
+            <Label htmlFor="time-output">Decision or outcome</Label>
+            <Textarea id="time-output" value={output} onChange={(e) => setOutput(e.target.value)} rows={2} />
           </div>
+          <div className="space-y-1">
+            <Label htmlFor="time-comments">Comments (optional)</Label>
+            <Textarea id="time-comments" value={comments} onChange={(e) => setComments(e.target.value)} rows={2} />
+          </div>
+
           <div className="flex gap-2">
             {(["onboarding", "ongoing"] as const).map((p) => (
               <Button key={p} size="sm" variant={phase === p ? "default" : "outline"} onClick={() => setPhase(p)}>
-                {p === "onboarding" ? "Onboarding" : "Ongoing"}
+                {p === "onboarding" ? "Onboarding" : "Operations"}
               </Button>
             ))}
           </div>
+
+          <label className="flex items-start gap-2 rounded-md border border-border p-3 text-sm">
+            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
+            <span>{MANUAL_ENTRY_CONFIRMATION}</span>
+          </label>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            disabled={mutation.isPending || !minutesValid || activity.trim().length < 3}
+            disabled={mutation.isPending || !minutesValid || !confirmed || activity.trim().length < 3}
             onClick={() => mutation.mutate()}
           >
             Save entry
@@ -532,7 +765,7 @@ function RespondDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{review.title}</DialogTitle>
-          <DialogDescription>Your decision goes straight to the team handling this home.</DialogDescription>
+          <DialogDescription>Your decision goes straight to the team handling your program.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">

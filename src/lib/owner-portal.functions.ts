@@ -47,11 +47,19 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
         programId: z.string().uuid(),
         phase: z.enum(["onboarding", "ongoing"]),
         entryDate: isoDate,
+        // Always typed in by the homeowner — never prefilled or suggested.
         minutes: z.number().int().min(1).max(1440),
         activity: z.string().trim().min(3).max(500),
+        activityCategory: z.string().trim().max(80).default(""),
         output: z.string().trim().max(1000).default(""),
+        comments: z.string().trim().max(1000).default(""),
+        attachmentPath: z.string().trim().max(400).nullable().default(null),
         reviewId: z.string().uuid().nullable().default(null),
         ticketId: z.string().uuid().nullable().default(null),
+        propertyIds: z.array(z.string().uuid()).max(25).default([]),
+        confirmed: z.literal(true, {
+          message: "Please confirm the entry reflects the time you personally spent.",
+        }),
       })
       .parse(data),
   )
@@ -73,8 +81,9 @@ export const answerOwnerReview = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { respondToReview } = await import("./owner-portal.server");
-    return respondToReview(context.supabase, data);
+    return respondToReview(context.supabase, context.userId, data);
   });
+
 
 /** Links a brand-new account to the program its invite code belongs to. */
 export const redeemInvite = createServerFn({ method: "POST" })

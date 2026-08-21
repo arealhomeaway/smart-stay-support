@@ -11,7 +11,12 @@ export type OwnerAlertKind =
   | "ticket_p1"
   | "ticket_resolved"
   | "review_ready"
-  | "reminder";
+  | "reminder"
+  | "progress_pace"
+  | "progress_quiet"
+  | "progress_milestone"
+  | "progress_deadline"
+  | "progress_celebration";
 
 export type DeliveryStatus = "pending" | "sent" | "skipped" | "failed" | "escalated";
 
@@ -38,7 +43,22 @@ export const ALERT_LABELS: Record<OwnerAlertKind, { label: string; tone: string 
   },
   review_ready: { label: "Ready for you", tone: "bg-amber-500/10 text-amber-700 border-amber-500/20" },
   reminder: { label: "Reminder", tone: "bg-muted text-muted-foreground border-border" },
+  progress_pace: { label: "Your pace", tone: "bg-amber-500/10 text-amber-700 border-amber-500/20" },
+  progress_quiet: { label: "Check in", tone: "bg-muted text-muted-foreground border-border" },
+  progress_milestone: {
+    label: "Milestone ahead",
+    tone: "bg-primary/10 text-primary border-primary/20",
+  },
+  progress_deadline: {
+    label: "Time remaining",
+    tone: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+  },
+  progress_celebration: {
+    label: "Congratulations",
+    tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+  },
 };
+
 
 export function alertLabel(kind: string) {
   return ALERT_LABELS[(kind as OwnerAlertKind) ?? "reminder"] ?? ALERT_LABELS.reminder;

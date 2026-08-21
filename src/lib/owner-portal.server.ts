@@ -1,21 +1,27 @@
 /**
- * The homeowner's own view of their program (server-only).
+ * The homeowner's own view of their participation program (server-only).
  *
- * An owner sees exactly one home: the one their program is attached to. Ticket
- * visibility is automatic — enrolling a property in the program is what turns
- * on the feed, so staff never tag tickets by hand. Internal staff chatter is
- * never included: owners get the matter, its clocks and its outcome.
+ * One homeowner, one program, one 90-day clock, one combined hour
+ * commitment — across every home attached to the program. Ticket visibility
+ * is automatic: enrolling a property is what turns on the feed. Internal
+ * staff chatter is never included.
+ *
+ * Time is only ever what the homeowner typed in. Nothing here prefills,
+ * estimates, multiplies by property count or duplicates an entry.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { PROGRAM_DAYS } from "./owner-program";
+import { loadProgramAggregate, recordEvent } from "./owner-participation.server";
+import { syncBadges } from "./owner-badges.server";
 
 type Client = SupabaseClient<Database>;
 
 export type OwnerTicket = {
   id: string;
   ref: number;
+  property_id: string | null;
   title: string;
   description: string | null;
   category: string;
@@ -32,88 +38,63 @@ function addDays(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-/** Everything the owner hub renders in one round trip. */
+/** Everything the owner hub renders, in one round trip. */
 export async function loadOwnerHome(supabase: Client, userId: string) {
   const program = await supabase
     .from("owner_programs")
-    .select(
-      "id, property_id, owner_name, owner_email, owner_phone, status, started_on, ends_on, target_hours, onboarding_target_hours, ongoing_target_hours, notify_email, notify_sms_p1, notify_push, properties(name, nickname, city, state)",
-    )
+    .select("id")
     .eq("owner_user_id", userId)
     .maybeSingle();
   if (program.error) throw program.error;
   if (!program.data) return { linked: false as const };
 
-  const p = program.data;
-  const prop = p.properties as unknown as {
-    name: string;
-    nickname: string | null;
-    city: string | null;
-    state: string | null;
-  } | null;
+  const agg = await loadProgramAggregate(supabase, program.data.id);
+  const propertyIds = agg.properties.map((p) => p.propertyId);
 
-  const [reviews, entries, alerts, tickets] = await Promise.all([
-    supabase
-      .from("owner_reviews")
-      .select(
-        "id, phase, stage, title, recommendation, impact, decision_path, respond_by, status, owner_decision, owner_response, ticket_id, sort_order",
-      )
-      .eq("program_id", p.id)
-      .order("sort_order"),
-    supabase
-      .from("owner_time_entries")
-      .select("id, phase, entry_date, minutes, activity, output, review_id, ticket_id")
-      .eq("program_id", p.id)
-      .order("entry_date", { ascending: false }),
+  const [alerts, tickets] = await Promise.all([
     supabase
       .from("owner_notifications")
       .select(
         "id, kind, priority, title, body, ticket_id, review_id, read_at, email_status, sms_status, created_at",
       )
-      .eq("program_id", p.id)
+      .eq("program_id", agg.program.id)
       .order("created_at", { ascending: false })
       .limit(60),
-    supabase
-      .from("tickets")
-      .select(
-        "id, ref, title, description, category, priority, status, reported_at, resolved_at, resolution_notes",
-      )
-      .eq("property_id", p.property_id)
-      .order("reported_at", { ascending: false })
-      .limit(60),
+    propertyIds.length
+      ? supabase
+          .from("tickets")
+          .select(
+            "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes",
+          )
+          .in("property_id", propertyIds)
+          .order("reported_at", { ascending: false })
+          .limit(120)
+      : Promise.resolve({ data: [], error: null } as const),
   ]);
-  if (reviews.error) throw reviews.error;
-  if (entries.error) throw entries.error;
   if (alerts.error) throw alerts.error;
   if (tickets.error) throw tickets.error;
 
-  const minutes = (entries.data ?? []).reduce((n, e) => n + e.minutes, 0);
+  // Keep achievements current whenever the owner opens the hub.
+  await syncBadges(supabase, agg);
+  const badges = await supabase
+    .from("owner_badges")
+    .select("code, awarded_at, trigger_rule, needs_review")
+    .eq("program_id", agg.program.id)
+    .order("awarded_at");
 
   return {
     linked: true as const,
-    program: {
-      id: p.id,
-      propertyId: p.property_id,
-      propertyName: prop ? prop.nickname || prop.name : "Your home",
-      location: prop ? [prop.city, prop.state].filter(Boolean).join(", ") : "",
-      ownerName: p.owner_name,
-      ownerEmail: p.owner_email,
-      ownerPhone: p.owner_phone,
-      status: p.status,
-      startedOn: p.started_on,
-      endsOn: p.ends_on,
-      targetHours: Number(p.target_hours),
-      onboardingTargetHours: Number(p.onboarding_target_hours),
-      ongoingTargetHours: Number(p.ongoing_target_hours),
-      notifyEmail: p.notify_email,
-      notifySmsP1: p.notify_sms_p1,
-      notifyPush: p.notify_push,
-    },
-    reviews: reviews.data ?? [],
-    entries: entries.data ?? [],
+    program: agg.program,
+    properties: agg.properties,
+    reviews: agg.reviews,
+    entries: agg.entries,
+    badges: badges.data ?? agg.badges,
     alerts: alerts.data ?? [],
     tickets: (tickets.data ?? []) as OwnerTicket[],
-    reportedMinutes: minutes,
+    reportedMinutes: agg.reportedMinutes,
+    onboardingMinutes: agg.onboardingMinutes,
+    operationalMinutes: agg.operationalMinutes,
+    snapshot: agg.snapshot,
   };
 }
 
@@ -147,42 +128,113 @@ export async function saveAlertPreferences(
   return { ok: true as const };
 }
 
-/** Owner logs the time they actually spent, optionally against a real matter. */
-export async function logOwnerTime(
-  supabase: Client,
-  userId: string,
-  input: {
-    programId: string;
-    phase: "onboarding" | "ongoing";
-    entryDate: string;
-    minutes: number;
-    activity: string;
-    output: string;
-    reviewId: string | null;
-    ticketId: string | null;
-  },
-) {
-  const { error } = await supabase.from("owner_time_entries").insert({
-    program_id: input.programId,
-    owner_user_id: userId,
-    phase: input.phase,
-    entry_date: input.entryDate,
-    minutes: input.minutes,
-    activity: input.activity,
-    output: input.output || null,
-    review_id: input.reviewId,
-    ticket_id: input.ticketId,
-    attested: true,
-  });
+export type LogTimeInput = {
+  programId: string;
+  phase: "onboarding" | "ongoing";
+  entryDate: string;
+  minutes: number;
+  activity: string;
+  activityCategory: string;
+  output: string;
+  comments: string;
+  attachmentPath: string | null;
+  reviewId: string | null;
+  ticketId: string | null;
+  propertyIds: string[];
+};
+
+/**
+ * One activity, one entry, one canonical minutes value. A shared activity is
+ * linked to several homes but its minutes are stored exactly once, so the
+ * combined total can never double count.
+ */
+export async function logOwnerTime(supabase: Client, userId: string, input: LogTimeInput) {
+  const links = await supabase
+    .from("owner_program_properties")
+    .select("property_id, closing_date, inclusion_status")
+    .eq("program_id", input.programId);
+  if (links.error) throw links.error;
+
+  const allowed = new Map((links.data ?? []).map((l) => [l.property_id, l]));
+  const chosen = [...new Set(input.propertyIds)].filter((id) => allowed.has(id));
+  for (const id of chosen) {
+    const link = allowed.get(id)!;
+    // A home cannot carry participation from before it closed.
+    if (link.closing_date && input.entryDate < link.closing_date) {
+      throw new Error(
+        "That date is before this property's closing date. Please choose a date on or after closing.",
+      );
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("owner_time_entries")
+    .insert({
+      program_id: input.programId,
+      owner_user_id: userId,
+      phase: input.phase,
+      entry_date: input.entryDate,
+      minutes: input.minutes,
+      activity: input.activity,
+      activity_category: input.activityCategory || null,
+      decision_outcome: input.output || null,
+      output: input.output || null,
+      comments: input.comments || null,
+      attachment_path: input.attachmentPath,
+      review_id: input.reviewId,
+      ticket_id: input.ticketId,
+      attested: true,
+    })
+    .select("id")
+    .single();
   if (error) throw error;
-  return { ok: true as const };
+
+  if (chosen.length > 0) {
+    const link = await supabase
+      .from("owner_time_entry_properties")
+      .insert(chosen.map((property_id) => ({ entry_id: data.id, property_id })));
+    if (link.error) throw link.error;
+    await supabase
+      .from("owner_program_properties")
+      .update({ last_owner_activity_at: new Date().toISOString() })
+      .eq("program_id", input.programId)
+      .in("property_id", chosen);
+  }
+
+  await supabase
+    .from("owner_programs")
+    .update({ last_owner_activity_at: new Date().toISOString() })
+    .eq("id", input.programId);
+
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "time_entry",
+    summary: `${input.minutes} minutes reported: ${input.activity}`,
+    actorId: userId,
+    entryId: data.id,
+    reviewId: input.reviewId,
+    newValue: String(input.minutes),
+    detail: { propertyIds: chosen, phase: input.phase, category: input.activityCategory },
+  });
+
+  const agg = await loadProgramAggregate(supabase, input.programId);
+  const badges = await syncBadges(supabase, agg);
+  return { ok: true as const, entryId: data.id, awarded: badges.awarded };
 }
 
-/** Owner answers a review that was waiting on them. */
+/** Owner answers a task that was waiting on them. */
 export async function respondToReview(
   supabase: Client,
+  userId: string,
   input: { reviewId: string; decision: string; response: string },
 ) {
+  const review = await supabase
+    .from("owner_reviews")
+    .select("id, program_id, title")
+    .eq("id", input.reviewId)
+    .single();
+  if (review.error) throw review.error;
+
   const { error } = await supabase
     .from("owner_reviews")
     .update({
@@ -193,6 +245,18 @@ export async function respondToReview(
     })
     .eq("id", input.reviewId);
   if (error) throw error;
+
+  await recordEvent(supabase, {
+    programId: review.data.program_id,
+    kind: "owner_decision",
+    summary: `Decision on “${review.data.title}”: ${input.decision}`,
+    actorId: userId,
+    reviewId: input.reviewId,
+    newValue: input.decision,
+  });
+
+  const agg = await loadProgramAggregate(supabase, review.data.program_id);
+  await syncBadges(supabase, agg);
   return { ok: true as const };
 }
 
@@ -229,15 +293,14 @@ export async function redeemOwnerInvite(
     throw new Error("This program is already linked to another owner account.");
   }
 
-  const startedOn = program.data.started_on ?? new Date().toISOString().slice(0, 10);
+  // Redeeming a code links the account. It does not start the 90-day clock:
+  // only an authorized ARHA team member activates a program.
   const updates = await admin
     .from("owner_programs")
     .update({
       owner_user_id: userId,
       owner_email: invite.data.owner_email ?? userEmail,
-      started_on: startedOn,
-      ends_on: addDays(startedOn, PROGRAM_DAYS - 1),
-      status: program.data.status === "pending" ? "active" : program.data.status,
+      ends_on: program.data.started_on ? addDays(program.data.started_on, PROGRAM_DAYS - 1) : null,
     })
     .eq("id", program.data.id);
   if (updates.error) throw updates.error;
@@ -250,13 +313,19 @@ export async function redeemOwnerInvite(
   // New signups get the default staff role; a homeowner is not internal staff.
   await admin.from("user_roles").delete().eq("user_id", userId).eq("role", "tech");
 
-
   const redeem = await admin
     .from("owner_invites")
     .update({ redeemed_by: userId, redeemed_at: new Date().toISOString() })
     .eq("id", invite.data.id)
     .is("redeemed_by", null);
   if (redeem.error) throw redeem.error;
+
+  await recordEvent(admin, {
+    programId: program.data.id,
+    kind: "owner_linked",
+    summary: "Homeowner connected their account with an invite code.",
+    actorId: userId,
+  });
 
   return { ok: true as const, programId: program.data.id };
 }

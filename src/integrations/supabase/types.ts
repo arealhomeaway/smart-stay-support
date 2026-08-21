@@ -184,6 +184,82 @@ export type Database = {
           },
         ]
       }
+      owner_alert_log: {
+        Row: {
+          alert_kind: string
+          id: string
+          program_id: string
+          sent_at: string
+          severity: number
+          status_at_send: string | null
+        }
+        Insert: {
+          alert_kind: string
+          id?: string
+          program_id: string
+          sent_at?: string
+          severity?: number
+          status_at_send?: string | null
+        }
+        Update: {
+          alert_kind?: string
+          id?: string
+          program_id?: string
+          sent_at?: string
+          severity?: number
+          status_at_send?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_alert_log_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_badges: {
+        Row: {
+          awarded_at: string
+          code: string
+          id: string
+          needs_review: boolean
+          program_id: string
+          review_note: string | null
+          supporting: Json
+          trigger_rule: string
+        }
+        Insert: {
+          awarded_at?: string
+          code: string
+          id?: string
+          needs_review?: boolean
+          program_id: string
+          review_note?: string | null
+          supporting?: Json
+          trigger_rule: string
+        }
+        Update: {
+          awarded_at?: string
+          code?: string
+          id?: string
+          needs_review?: boolean
+          program_id?: string
+          review_note?: string | null
+          supporting?: Json
+          trigger_rule?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_badges_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_contact_alerts: {
         Row: {
           body: string
@@ -386,65 +462,253 @@ export type Database = {
           },
         ]
       }
+      owner_program_events: {
+        Row: {
+          actor_id: string | null
+          actor_label: string | null
+          created_at: string
+          detail: Json
+          entry_id: string | null
+          id: string
+          kind: string
+          new_value: string | null
+          previous_value: string | null
+          program_id: string
+          property_id: string | null
+          reason: string | null
+          review_id: string | null
+          summary: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          detail?: Json
+          entry_id?: string | null
+          id?: string
+          kind: string
+          new_value?: string | null
+          previous_value?: string | null
+          program_id: string
+          property_id?: string | null
+          reason?: string | null
+          review_id?: string | null
+          summary: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          detail?: Json
+          entry_id?: string | null
+          id?: string
+          kind?: string
+          new_value?: string | null
+          previous_value?: string | null
+          program_id?: string
+          property_id?: string | null
+          reason?: string | null
+          review_id?: string | null
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_program_events_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "owner_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_program_events_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_program_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_program_events_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_program_properties: {
+        Row: {
+          added_by: string | null
+          added_on: string
+          closing_confirmed: boolean
+          closing_date: string | null
+          coverage_status: string
+          created_at: string
+          id: string
+          inclusion_status: string
+          last_owner_activity_at: string | null
+          launch_status: string
+          notes: string | null
+          onboarding_status: string
+          program_id: string
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          added_on?: string
+          closing_confirmed?: boolean
+          closing_date?: string | null
+          coverage_status?: string
+          created_at?: string
+          id?: string
+          inclusion_status?: string
+          last_owner_activity_at?: string | null
+          launch_status?: string
+          notes?: string | null
+          onboarding_status?: string
+          program_id: string
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          added_on?: string
+          closing_confirmed?: boolean
+          closing_date?: string | null
+          coverage_status?: string
+          created_at?: string
+          id?: string
+          inclusion_status?: string
+          last_owner_activity_at?: string | null
+          launch_status?: string
+          notes?: string | null
+          onboarding_status?: string
+          program_id?: string
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_program_properties_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_program_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_programs: {
         Row: {
+          activated_at: string | null
+          activated_by: string | null
+          completed_at: string | null
+          completed_by: string | null
           created_at: string
           created_by: string | null
+          dfy_confirmed: boolean
+          dfy_confirmed_at: string | null
           ends_on: string | null
           id: string
+          internal_notes: string | null
+          last_owner_activity_at: string | null
           notes: string | null
           notify_email: boolean
           notify_push: boolean
           notify_sms_p1: boolean
+          onboarding_lead: string | null
+          onboarding_milestone_day: number
+          onboarding_milestone_hours: number
           onboarding_target_hours: number
           ongoing_target_hours: number
+          operating_target_hours: number
+          operations_lead: string | null
           owner_email: string | null
           owner_name: string | null
           owner_phone: string | null
           owner_user_id: string | null
-          property_id: string
+          property_id: string | null
           started_on: string | null
           status: string
           target_hours: number
           updated_at: string
         }
         Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           created_by?: string | null
+          dfy_confirmed?: boolean
+          dfy_confirmed_at?: string | null
           ends_on?: string | null
           id?: string
+          internal_notes?: string | null
+          last_owner_activity_at?: string | null
           notes?: string | null
           notify_email?: boolean
           notify_push?: boolean
           notify_sms_p1?: boolean
+          onboarding_lead?: string | null
+          onboarding_milestone_day?: number
+          onboarding_milestone_hours?: number
           onboarding_target_hours?: number
           ongoing_target_hours?: number
+          operating_target_hours?: number
+          operations_lead?: string | null
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           owner_user_id?: string | null
-          property_id: string
+          property_id?: string | null
           started_on?: string | null
           status?: string
           target_hours?: number
           updated_at?: string
         }
         Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           created_by?: string | null
+          dfy_confirmed?: boolean
+          dfy_confirmed_at?: string | null
           ends_on?: string | null
           id?: string
+          internal_notes?: string | null
+          last_owner_activity_at?: string | null
           notes?: string | null
           notify_email?: boolean
           notify_push?: boolean
           notify_sms_p1?: boolean
+          onboarding_lead?: string | null
+          onboarding_milestone_day?: number
+          onboarding_milestone_hours?: number
           onboarding_target_hours?: number
           ongoing_target_hours?: number
+          operating_target_hours?: number
+          operations_lead?: string | null
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           owner_user_id?: string | null
-          property_id?: string
+          property_id?: string | null
           started_on?: string | null
           status?: string
           target_hours?: number
@@ -460,8 +724,46 @@ export type Database = {
           },
         ]
       }
+      owner_review_properties: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          review_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          review_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_review_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_review_properties_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "owner_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_reviews: {
         Row: {
+          attachment_path: string | null
+          business_question: string | null
           closed_at: string | null
           created_at: string
           created_by: string | null
@@ -475,18 +777,22 @@ export type Database = {
           owner_response: string | null
           phase: string
           program_id: string
+          property_id: string | null
           recommendation: string | null
           respond_by: string | null
           responded_at: string | null
           sort_order: number
           stage: string
           status: string
+          task_type: string
           template_id: string | null
           ticket_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          attachment_path?: string | null
+          business_question?: string | null
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -500,18 +806,22 @@ export type Database = {
           owner_response?: string | null
           phase: string
           program_id: string
+          property_id?: string | null
           recommendation?: string | null
           respond_by?: string | null
           responded_at?: string | null
           sort_order?: number
           stage: string
           status?: string
+          task_type?: string
           template_id?: string | null
           ticket_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          attachment_path?: string | null
+          business_question?: string | null
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -525,12 +835,14 @@ export type Database = {
           owner_response?: string | null
           phase?: string
           program_id?: string
+          property_id?: string | null
           recommendation?: string | null
           respond_by?: string | null
           responded_at?: string | null
           sort_order?: number
           stage?: string
           status?: string
+          task_type?: string
           template_id?: string | null
           ticket_id?: string | null
           title?: string
@@ -542,6 +854,13 @@ export type Database = {
             columns: ["program_id"]
             isOneToOne: false
             referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
@@ -620,9 +939,14 @@ export type Database = {
       owner_time_entries: {
         Row: {
           activity: string
+          activity_category: string | null
           amends_entry_id: string | null
+          attachment_path: string | null
           attested: boolean
+          comments: string | null
+          correction_reason: string | null
           created_at: string
+          decision_outcome: string | null
           entry_date: string
           id: string
           materials_reviewed: string | null
@@ -636,9 +960,14 @@ export type Database = {
         }
         Insert: {
           activity: string
+          activity_category?: string | null
           amends_entry_id?: string | null
+          attachment_path?: string | null
           attested?: boolean
+          comments?: string | null
+          correction_reason?: string | null
           created_at?: string
+          decision_outcome?: string | null
           entry_date?: string
           id?: string
           materials_reviewed?: string | null
@@ -652,9 +981,14 @@ export type Database = {
         }
         Update: {
           activity?: string
+          activity_category?: string | null
           amends_entry_id?: string | null
+          attachment_path?: string | null
           attested?: boolean
+          comments?: string | null
+          correction_reason?: string | null
           created_at?: string
+          decision_outcome?: string | null
           entry_date?: string
           id?: string
           materials_reviewed?: string | null
@@ -693,6 +1027,42 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_time_entry_properties: {
+        Row: {
+          created_at: string
+          entry_id: string
+          id: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          id?: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          id?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_time_entry_properties_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "owner_time_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_time_entry_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
