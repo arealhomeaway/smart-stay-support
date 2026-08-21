@@ -70,7 +70,12 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
         patch.email_status = "skipped";
         patch.delivery_error = "No owner email on file.";
       } else {
-        const result = await sendEmail(program.owner_email, row.title, row.body);
+        let ticketRef: number | null = null;
+        if (row.ticket_id) {
+          const { data: t } = await supabase.from("tickets").select("ref").eq("id", row.ticket_id).maybeSingle();
+          ticketRef = t?.ref ?? null;
+        }
+        const result = await sendEmail(program.owner_email, row.title, row.body, ticketRef, row.ticket_id);
         patch.email_status = result.status;
         if (result.error) patch.delivery_error = result.error;
         if (result.status === "sent") emailed++;
