@@ -296,6 +296,7 @@ export type Database = {
           geocode_status: string | null
           geocoded_at: string | null
           id: string
+          last_quarterly_review_at: string | null
           latitude: number | null
           longitude: number | null
           name: string
@@ -304,6 +305,7 @@ export type Database = {
           ownerrez_property_id: string | null
           ownerrez_synced_at: string | null
           postal_code: string | null
+          quarterly_review_due_on: string
           state: string | null
           unit: string | null
           updated_at: string
@@ -322,6 +324,7 @@ export type Database = {
           geocode_status?: string | null
           geocoded_at?: string | null
           id?: string
+          last_quarterly_review_at?: string | null
           latitude?: number | null
           longitude?: number | null
           name: string
@@ -330,6 +333,7 @@ export type Database = {
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
           postal_code?: string | null
+          quarterly_review_due_on?: string
           state?: string | null
           unit?: string | null
           updated_at?: string
@@ -348,6 +352,7 @@ export type Database = {
           geocode_status?: string | null
           geocoded_at?: string | null
           id?: string
+          last_quarterly_review_at?: string | null
           latitude?: number | null
           longitude?: number | null
           name?: string
@@ -356,6 +361,7 @@ export type Database = {
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
           postal_code?: string | null
+          quarterly_review_due_on?: string
           state?: string | null
           unit?: string | null
           updated_at?: string

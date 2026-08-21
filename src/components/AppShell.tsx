@@ -2,6 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
   Building2,
+  CalendarCheck,
   CircleHelp,
   ClipboardList,
   HardHat,
@@ -42,6 +43,7 @@ const nav: NavItem[] = [
   { to: "/team", label: "Seats", icon: Users, tour: "team", supervisor: true },
   { to: "/properties", label: "Properties", icon: Building2, tour: "properties", supervisor: true },
   { to: "/map", label: "Job map", icon: MapPinned, tour: "map", supervisor: true },
+  { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly" },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
   { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", supervisor: true },
   { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
