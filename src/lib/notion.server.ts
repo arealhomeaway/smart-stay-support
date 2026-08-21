@@ -41,7 +41,7 @@ export async function notionFetch<T>(
       "X-Connection-Api-Key": notion,
       "Content-Type": "application/json",
     },
-    body: init?.body ? JSON.stringify(init.body) : undefined,
+    body: init?.body ? JSON.stringify(init.body) : null,
   });
   const text = await res.text();
   if (!res.ok) {
