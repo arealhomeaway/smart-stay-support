@@ -487,10 +487,12 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
 
   const planned = templates.reduce(
     (acc, t) => {
-      acc[t.phase] += (t.planning_hours_low + t.planning_hours_high) / 2;
+      const mid = (t.planning_hours_low + t.planning_hours_high) / 2;
+      if (t.phase === "ongoing") acc.ongoing += mid;
+      else acc.onboarding += mid;
       return acc;
     },
-    { onboarding: 0, ongoing: 0 } as Record<string, number>,
+    { onboarding: 0, ongoing: 0 },
   );
 
   return (
