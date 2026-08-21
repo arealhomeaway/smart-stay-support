@@ -223,7 +223,9 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           ticketId: input.ticketId ?? null,
           status: "sent",
           attempts,
-          error: null,
+          error: usedFallback
+            ? `Sent from the connected user's mailbox — ${SHARED_MAILBOX} has not granted Send As yet.`
+            : null,
         });
         return { status: "sent", error: null };
       }
@@ -232,9 +234,18 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       console.error(`Outlook sendMail failed [${res.status}]: ${detail}`);
       lastError = `Mail provider [${res.status}]: ${detail.slice(0, 300)}`;
 
+      // No Send As permission on the shared mailbox — try the connected mailbox once.
+      if (!usedFallback && (res.status === 403 || res.status === 404)) {
+        usedFallback = true;
+        path = "/me/sendMail";
+        attempts--;
+        continue;
+      }
+
       if (!RETRYABLE.has(res.status) || attempts >= MAX_ATTEMPTS) break;
       const retryAfter = Number(res.headers.get("retry-after"));
       await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 500 * 2 ** (attempts - 1));
+
     } catch (err) {
       lastError = err instanceof Error ? err.message : "Email failed";
       if (attempts >= MAX_ATTEMPTS) break;
