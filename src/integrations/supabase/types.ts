@@ -475,6 +475,90 @@ export type Database = {
           },
         ]
       }
+      ticket_visits: {
+        Row: {
+          check_in_accuracy_m: number | null
+          check_in_distance_m: number | null
+          check_in_lat: number | null
+          check_in_lng: number | null
+          check_in_verified: boolean
+          check_out_accuracy_m: number | null
+          check_out_distance_m: number | null
+          check_out_lat: number | null
+          check_out_lng: number | null
+          check_out_verified: boolean
+          checked_in_at: string
+          checked_out_at: string | null
+          created_at: string
+          id: string
+          minutes_on_site: number | null
+          notes: string | null
+          property_id: string | null
+          ticket_id: string
+          updated_at: string
+          vendor_user_id: string
+        }
+        Insert: {
+          check_in_accuracy_m?: number | null
+          check_in_distance_m?: number | null
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_in_verified?: boolean
+          check_out_accuracy_m?: number | null
+          check_out_distance_m?: number | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          check_out_verified?: boolean
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          id?: string
+          minutes_on_site?: number | null
+          notes?: string | null
+          property_id?: string | null
+          ticket_id: string
+          updated_at?: string
+          vendor_user_id: string
+        }
+        Update: {
+          check_in_accuracy_m?: number | null
+          check_in_distance_m?: number | null
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_in_verified?: boolean
+          check_out_accuracy_m?: number | null
+          check_out_distance_m?: number | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          check_out_verified?: boolean
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          id?: string
+          minutes_on_site?: number | null
+          notes?: string | null
+          property_id?: string | null
+          ticket_id?: string
+          updated_at?: string
+          vendor_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_visits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_visits_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           accountable_owner: string | null

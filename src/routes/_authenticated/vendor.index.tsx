@@ -96,7 +96,11 @@ function VendorQueue() {
                   #{job.ref} {job.title}
                 </span>
                 <Badge variant="outline" className="ml-auto capitalize">
-                  {job.vendor_status === "accepted" ? "In progress" : "New"}
+                  {job.vendor_status === "on_site"
+                    ? "On site"
+                    : job.vendor_status === "accepted"
+                      ? "In progress"
+                      : "New"}
                 </Badge>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
