@@ -527,7 +527,13 @@ export type Database = {
           supervisor_caught: boolean
           title: string
           updated_at: string
+          vendor_accepted_at: string | null
+          vendor_brief: string | null
+          vendor_completed_at: string | null
+          vendor_dispatched_at: string | null
           vendor_name: string | null
+          vendor_status: string
+          vendor_user_id: string | null
           waiting_on: string | null
           waiting_reason: string | null
           work_type_id: string | null
@@ -604,7 +610,13 @@ export type Database = {
           supervisor_caught?: boolean
           title: string
           updated_at?: string
+          vendor_accepted_at?: string | null
+          vendor_brief?: string | null
+          vendor_completed_at?: string | null
+          vendor_dispatched_at?: string | null
           vendor_name?: string | null
+          vendor_status?: string
+          vendor_user_id?: string | null
           waiting_on?: string | null
           waiting_reason?: string | null
           work_type_id?: string | null
@@ -681,7 +693,13 @@ export type Database = {
           supervisor_caught?: boolean
           title?: string
           updated_at?: string
+          vendor_accepted_at?: string | null
+          vendor_brief?: string | null
+          vendor_completed_at?: string | null
+          vendor_dispatched_at?: string | null
           vendor_name?: string | null
+          vendor_status?: string
+          vendor_user_id?: string | null
           waiting_on?: string | null
           waiting_reason?: string | null
           work_type_id?: string | null
@@ -820,6 +838,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_assigned_vendor: {
+        Args: { _ticket_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor"
