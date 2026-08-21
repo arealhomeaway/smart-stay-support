@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { OPEN_STATUSES } from "@/lib/tickets";
+import type { MapPin } from "@/lib/geo";
 
 type Client = SupabaseClient<Database>;
 
@@ -145,24 +146,6 @@ export async function geocodeProperties(supabase: Client, opts: { force?: boolea
 
   return { attempted: rows.length, located, skipped, failed, capped: rows.length === GEOCODE_BATCH_LIMIT };
 }
-
-export type MapPin = {
-  propertyId: string;
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-  openJobs: Array<{
-    id: string;
-    ref: number;
-    title: string;
-    priority: string;
-    status: string;
-    dueAt: string | null;
-    vendorName: string | null;
-    vendorStatus: string | null;
-  }>;
-};
 
 /** Every pinned home plus its open work, for the dispatch map. */
 export async function loadJobMap(supabase: Client) {

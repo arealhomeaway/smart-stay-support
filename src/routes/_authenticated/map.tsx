@@ -5,7 +5,7 @@ import { useState } from "react";
 import { MapPinned, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { jobMap, geocodeProperties } from "@/lib/geo.functions";
-import type { MapPin } from "@/lib/geo.server";
+import type { MapPin } from "@/lib/geo";
 import { priorityMeta, priorityTone, relativeTime } from "@/lib/tickets";
 import { JobMap } from "@/components/JobMap";
 import { SupervisorOnly } from "@/components/SupervisorOnly";

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { MapPin } from "@/lib/geo.server";
+import type { MapPin } from "@/lib/geo";
 
 declare global {
   interface Window {
