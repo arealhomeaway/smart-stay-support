@@ -292,7 +292,12 @@ export type Database = {
           city: string | null
           created_at: string
           created_by: string | null
+          formatted_address: string | null
+          geocode_status: string | null
+          geocoded_at: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           name: string
           nickname: string | null
           notes: string | null
@@ -313,7 +318,12 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          formatted_address?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name: string
           nickname?: string | null
           notes?: string | null
@@ -334,7 +344,12 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          formatted_address?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           nickname?: string | null
           notes?: string | null
