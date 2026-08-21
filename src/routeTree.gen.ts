@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
+import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
@@ -30,6 +31,7 @@ import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenticated/vendor.index'
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
+import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
 
@@ -76,6 +78,11 @@ const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
 const AuthenticatedOversightRoute = AuthenticatedOversightRouteImport.update({
   id: '/oversight',
   path: '/oversight',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOwnerRoute = AuthenticatedOwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOwnerProgramsRoute =
@@ -144,6 +151,12 @@ const AuthenticatedVendorScorecardRoute =
     path: '/vendor/scorecard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksOwnerNotifyRoute =
+  ApiPublicHooksOwnerNotifyRouteImport.update({
+    id: '/api/public/hooks/owner-notify',
+    path: '/api/public/hooks/owner-notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntakeEmailRoute = ApiPublicIntakeEmailRouteImport.update({
   id: '/api/public/intake/email',
   path: '/api/public/intake/email',
@@ -164,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/map': typeof AuthenticatedMapRoute
   '/oversight': typeof AuthenticatedOversightRoute
+  '/owner': typeof AuthenticatedOwnerRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -176,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -188,6 +203,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/map': typeof AuthenticatedMapRoute
   '/oversight': typeof AuthenticatedOversightRoute
+  '/owner': typeof AuthenticatedOwnerRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -200,6 +216,7 @@ export interface FileRoutesByTo {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -214,6 +231,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
+  '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
@@ -226,6 +244,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
@@ -240,6 +259,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/map'
     | '/oversight'
+    | '/owner'
     | '/owner-programs'
     | '/playbooks'
     | '/properties'
@@ -252,6 +272,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/tickets/'
     | '/vendor/'
+    | '/api/public/hooks/owner-notify'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesByTo: FileRoutesByTo
@@ -264,6 +285,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/map'
     | '/oversight'
+    | '/owner'
     | '/owner-programs'
     | '/playbooks'
     | '/properties'
@@ -276,6 +298,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/tickets'
     | '/vendor'
+    | '/api/public/hooks/owner-notify'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   id:
@@ -289,6 +312,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/map'
     | '/_authenticated/oversight'
+    | '/_authenticated/owner'
     | '/_authenticated/owner-programs'
     | '/_authenticated/playbooks'
     | '/_authenticated/properties'
@@ -301,6 +325,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/scorecard'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
+    | '/api/public/hooks/owner-notify'
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesById: FileRoutesById
@@ -309,6 +334,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
   ApiPublicSyncInboundRoute: typeof ApiPublicSyncInboundRoute
 }
@@ -376,6 +402,13 @@ declare module '@tanstack/react-router' {
       path: '/oversight'
       fullPath: '/oversight'
       preLoaderRoute: typeof AuthenticatedOversightRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner': {
+      id: '/_authenticated/owner'
+      path: '/owner'
+      fullPath: '/owner'
+      preLoaderRoute: typeof AuthenticatedOwnerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner-programs': {
@@ -462,6 +495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/owner-notify': {
+      id: '/api/public/hooks/owner-notify'
+      path: '/api/public/hooks/owner-notify'
+      fullPath: '/api/public/hooks/owner-notify'
+      preLoaderRoute: typeof ApiPublicHooksOwnerNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/intake/email': {
       id: '/api/public/intake/email'
       path: '/api/public/intake/email'
@@ -486,6 +526,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
+  AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
@@ -507,6 +548,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
+  AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
@@ -528,6 +570,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
   ApiPublicSyncInboundRoute: ApiPublicSyncInboundRoute,
 }
