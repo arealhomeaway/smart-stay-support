@@ -113,10 +113,11 @@ function IntegrationsPage() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             OwnerRez does not publish maintenance tasks through its API, so there is nothing for Resolve to import
-            from it — a task sync will always come back empty. Homes, stays and occupancy keep syncing normally.
-            Field work should be logged in Resolve or come in from Breezeway.
+            from it — a task sync will always come back empty. Homes, stays and occupancy keep syncing normally. Use
+            the message intake below to get OwnerRez notifications and guest or owner emails into the queue.
           </CardContent>
         </Card>
+
 
 
         <Card>
