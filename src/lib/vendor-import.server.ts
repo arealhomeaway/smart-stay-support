@@ -350,7 +350,9 @@ export async function loadImportQueue(db: Client) {
       matchOrgName: (r.vendor_orgs as { display_name?: string } | null)?.display_name ?? null,
       matchConfidence: r.match_confidence,
       matchReasons: r.match_reasons ?? [],
+      profile: ((r.raw as { profile?: LegacyProfile | null } | null)?.profile ?? null) as LegacyProfile | null,
     })),
+
   };
 }
 
