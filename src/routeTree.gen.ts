@@ -24,6 +24,7 @@ import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
 import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
 import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authenticated/tickets.new'
+import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
 
 const IndexRoute = IndexRouteImport.update({
@@ -103,6 +104,11 @@ const AuthenticatedTicketsNewRoute = AuthenticatedTicketsNewRouteImport.update({
   path: '/tickets/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicIntakeEmailRoute = ApiPublicIntakeEmailRouteImport.update({
+  id: '/api/public/intake/email',
+  path: '/api/public/intake/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSyncInboundRoute = ApiPublicSyncInboundRouteImport.update({
   id: '/api/public/sync/inbound',
   path: '/api/public/sync/inbound',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
+  '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
 export interface FileRoutesByTo {
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
+  '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
 export interface FileRoutesById {
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
+  '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
 }
 export interface FileRouteTypes {
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/tickets/'
+    | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/tickets'
+    | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   id:
     | '__root__'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/tickets/new'
     | '/_authenticated/tickets/'
+    | '/api/public/intake/email'
     | '/api/public/sync/inbound'
   fileRoutesById: FileRoutesById
 }
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
   ApiPublicSyncInboundRoute: typeof ApiPublicSyncInboundRoute
 }
 
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTicketsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/intake/email': {
+      id: '/api/public/intake/email'
+      path: '/api/public/intake/email'
+      fullPath: '/api/public/intake/email'
+      preLoaderRoute: typeof ApiPublicIntakeEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/sync/inbound': {
       id: '/api/public/sync/inbound'
       path: '/api/public/sync/inbound'
@@ -378,6 +398,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
   ApiPublicSyncInboundRoute: ApiPublicSyncInboundRoute,
 }
 export const routeTree = rootRouteImport

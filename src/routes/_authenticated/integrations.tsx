@@ -113,10 +113,11 @@ function IntegrationsPage() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             OwnerRez does not publish maintenance tasks through its API, so there is nothing for Resolve to import
-            from it — a task sync will always come back empty. Homes, stays and occupancy keep syncing normally.
-            Field work should be logged in Resolve or come in from Breezeway.
+            from it — a task sync will always come back empty. Homes, stays and occupancy keep syncing normally. Use
+            the message intake below to get OwnerRez notifications and guest or owner emails into the queue.
           </CardContent>
         </Card>
+
 
 
         <Card>
@@ -140,6 +141,37 @@ function IntegrationsPage() {
       </div>
 
       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <PlugZap className="size-4" /> Message intake
+            <Badge>Live</Badge>
+          </CardTitle>
+          <CardDescription>
+            The workaround for OwnerRez: anything that arrives as a message can become a matter automatically.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Point an email forwarding rule or webhook at the intake endpoint below. Resolve reads the subject and
+            body, matches the home by name, sets a starting priority (safety and “urgent” language lands as P1) and
+            drops it in the queue with a full timeline entry.
+          </p>
+          <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs text-foreground">
+            POST https://smart-stay-support.lovable.app/api/public/intake/email
+            <br />
+            header: x-intake-secret
+            <br />
+            body: {"{ subject, body, from, property }"}
+          </code>
+          <p>
+            Duplicate deliveries are ignored when the sender includes an <code>externalId</code>, so retries never
+            create a second matter.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+
         <CardHeader>
           <CardTitle className="text-base">Imported matters</CardTitle>
           <CardDescription>The most recent work pulled in from an outside system.</CardDescription>
