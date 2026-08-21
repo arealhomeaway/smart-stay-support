@@ -62,7 +62,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   const { data, error } = await supabase
     .from("owner_notifications")
     .select(
-      "id, title, body, priority, sms_status, email_status, program_id, owner_programs(owner_email, owner_phone, owner_name)",
+      "id, title, body, priority, ticket_id, sms_status, email_status, program_id, owner_programs(owner_email, owner_phone, owner_name)",
     )
     .or("email_status.eq.pending,sms_status.eq.pending")
     .order("created_at")
@@ -132,7 +132,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
     ok: true as const,
     considered: (data ?? []).length,
     emailed,
-    texted,
+    escalated,
     notes: Array.from(new Set(notes)).slice(0, 5),
   };
 }
