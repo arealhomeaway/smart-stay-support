@@ -7,6 +7,7 @@ import {
   HardHat,
   Home,
   ListChecks,
+  MapPinned,
   LogOut,
   Plus,
   PlugZap,
