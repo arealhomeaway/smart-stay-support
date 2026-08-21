@@ -156,8 +156,21 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
         <CardContent className="space-y-3">
           <Progress value={pct} />
           <p className="text-sm text-muted-foreground">
-            {formatHours(reportedMinutes)} logged of {program.targetHours} hours
+            {formatHours(reportedMinutes)} logged of {program.targetHours}+ hours
             {program.endsOn ? ` · program ends ${program.endsOn}` : ""}
+          </p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Onboarding</p>
+              <p className="font-medium">{formatHours(onboardingMinutes)}</p>
+            </div>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Operations</p>
+              <p className="font-medium">{formatHours(ongoingMinutes)}</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            All hours are self-reported. ARHA never estimates, prefills or auto-calculates your time.
           </p>
           <Button size="sm" onClick={() => setTimeTarget({ reviewId: null, ticketId: null, label: "General participation" })}>
             <Clock className="size-4" /> Log time
