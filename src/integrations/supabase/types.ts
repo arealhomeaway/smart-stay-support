@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      approvals: {
+        Row: {
+          amount: number | null
+          approver_id: string | null
+          approver_role: string | null
+          created_at: string
+          currency: string
+          decided_at: string | null
+          decision_note: string | null
+          department_id: string | null
+          detail: string | null
+          due_on: string | null
+          entity_id: string | null
+          entity_type: string
+          evidence_url: string | null
+          external_reference: string | null
+          id: string
+          kind: string
+          property_id: string | null
+          requested_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          approver_id?: string | null
+          approver_role?: string | null
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          department_id?: string | null
+          detail?: string | null
+          due_on?: string | null
+          entity_id?: string | null
+          entity_type: string
+          evidence_url?: string | null
+          external_reference?: string | null
+          id?: string
+          kind: string
+          property_id?: string | null
+          requested_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          approver_id?: string | null
+          approver_role?: string | null
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          department_id?: string | null
+          detail?: string | null
+          due_on?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          evidence_url?: string | null
+          external_reference?: string | null
+          id?: string
+          kind?: string
+          property_id?: string | null
+          requested_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approvals_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approvals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -103,6 +190,256 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      department_members: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          department_id: string
+          id: string
+          level: string
+          market_scope: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          department_id: string
+          id?: string
+          level?: string
+          market_scope?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          department_id?: string
+          id?: string
+          level?: string
+          market_scope?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          active: boolean
+          blurb: string | null
+          code: string
+          created_at: string
+          id: string
+          label: string
+          landing_path: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          blurb?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          label: string
+          landing_path?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          blurb?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          label?: string
+          landing_path?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          department_id: string | null
+          entity_id: string
+          entity_type: string
+          external_url: string | null
+          id: string
+          kind: string
+          note: string | null
+          required: boolean
+          storage_path: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          visibility: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          department_id?: string | null
+          entity_id: string
+          entity_type: string
+          external_url?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          required?: boolean
+          storage_path?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          visibility?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          department_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          external_url?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          required?: boolean
+          storage_path?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_links: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          external_id: string
+          external_parent_id: string | null
+          external_url: string | null
+          id: string
+          last_error: string | null
+          last_sync_status: string
+          last_synced_at: string | null
+          payload_hash: string | null
+          system: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          external_id: string
+          external_parent_id?: string | null
+          external_url?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_status?: string
+          last_synced_at?: string | null
+          payload_hash?: string | null
+          system: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          external_id?: string
+          external_parent_id?: string | null
+          external_url?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_status?: string
+          last_synced_at?: string | null
+          payload_hash?: string | null
+          system?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      field_conflicts: {
+        Row: {
+          chosen_source: string | null
+          created_at: string
+          detected_at: string
+          entity_id: string
+          entity_type: string
+          external_value: string | null
+          field_key: string
+          field_label: string
+          final_value: string | null
+          id: string
+          note: string | null
+          resolve_value: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          system: string
+          updated_at: string
+        }
+        Insert: {
+          chosen_source?: string | null
+          created_at?: string
+          detected_at?: string
+          entity_id: string
+          entity_type: string
+          external_value?: string | null
+          field_key: string
+          field_label: string
+          final_value?: string | null
+          id?: string
+          note?: string | null
+          resolve_value?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          system: string
+          updated_at?: string
+        }
+        Update: {
+          chosen_source?: string | null
+          created_at?: string
+          detected_at?: string
+          entity_id?: string
+          entity_type?: string
+          external_value?: string | null
+          field_key?: string
+          field_label?: string
+          final_value?: string | null
+          id?: string
+          note?: string | null
+          resolve_value?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          system?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       functional_roles: {
         Row: {
@@ -222,6 +559,140 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          direction: string
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          external_id: string | null
+          id: string
+          next_attempt_at: string | null
+          operation: string
+          payload_hash: string | null
+          previous_value: Json | null
+          request_payload: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          system: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          direction: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          next_attempt_at?: string | null
+          operation: string
+          payload_hash?: string | null
+          previous_value?: Json | null
+          request_payload?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          system: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          direction?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          next_attempt_at?: string | null
+          operation?: string
+          payload_hash?: string | null
+          previous_value?: Json | null
+          request_payload?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          system?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      metric_definitions: {
+        Row: {
+          business_definition: string
+          connected: boolean
+          created_at: string
+          department_id: string | null
+          drill_path: string | null
+          higher_is_better: boolean
+          id: string
+          key: string
+          label: string
+          section: string
+          sort_order: number
+          source_system: string
+          target_high: number | null
+          target_low: number | null
+          target_text: string | null
+          unavailable_reason: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          business_definition: string
+          connected?: boolean
+          created_at?: string
+          department_id?: string | null
+          drill_path?: string | null
+          higher_is_better?: boolean
+          id?: string
+          key: string
+          label: string
+          section: string
+          sort_order?: number
+          source_system: string
+          target_high?: number | null
+          target_low?: number | null
+          target_text?: string | null
+          unavailable_reason?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          business_definition?: string
+          connected?: boolean
+          created_at?: string
+          department_id?: string | null
+          drill_path?: string | null
+          higher_is_better?: boolean
+          id?: string
+          key?: string
+          label?: string
+          section?: string
+          sort_order?: number
+          source_system?: string
+          target_high?: number | null
+          target_low?: number | null
+          target_text?: string | null
+          unavailable_reason?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_definitions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -1720,6 +2191,7 @@ export type Database = {
           created_on_behalf_of: string | null
           cross_team: boolean
           current_action_owner: string | null
+          department_code: string | null
           description: string | null
           due_at: string | null
           escalated_at: string | null
@@ -1754,6 +2226,7 @@ export type Database = {
           playbook_id: string | null
           priority: string
           priority_override_reason: string | null
+          project_id: string | null
           promised_update_due_at: string | null
           property_id: string | null
           reclassified_at: string | null
@@ -1803,6 +2276,7 @@ export type Database = {
           created_on_behalf_of?: string | null
           cross_team?: boolean
           current_action_owner?: string | null
+          department_code?: string | null
           description?: string | null
           due_at?: string | null
           escalated_at?: string | null
@@ -1837,6 +2311,7 @@ export type Database = {
           playbook_id?: string | null
           priority?: string
           priority_override_reason?: string | null
+          project_id?: string | null
           promised_update_due_at?: string | null
           property_id?: string | null
           reclassified_at?: string | null
@@ -1886,6 +2361,7 @@ export type Database = {
           created_on_behalf_of?: string | null
           cross_team?: boolean
           current_action_owner?: string | null
+          department_code?: string | null
           description?: string | null
           due_at?: string | null
           escalated_at?: string | null
@@ -1920,6 +2396,7 @@ export type Database = {
           playbook_id?: string | null
           priority?: string
           priority_override_reason?: string | null
+          project_id?: string | null
           promised_update_due_at?: string | null
           property_id?: string | null
           reclassified_at?: string | null
@@ -1955,6 +2432,13 @@ export type Database = {
             columns: ["playbook_id"]
             isOneToOne: false
             referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "work_projects"
             referencedColumns: ["id"]
           },
           {
@@ -2050,6 +2534,69 @@ export type Database = {
           },
         ]
       }
+      work_projects: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          id: string
+          name: string
+          owner_id: string | null
+          property_id: string | null
+          starts_on: string | null
+          status: string
+          summary: string | null
+          target_on: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          property_id?: string | null
+          starts_on?: string | null
+          status?: string
+          summary?: string | null
+          target_on?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          property_id?: string | null
+          starts_on?: string | null
+          status?: string
+          summary?: string | null
+          target_on?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_projects_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_projects_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_types: {
         Row: {
           action_start_minutes: number
@@ -2140,6 +2687,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      in_department: {
+        Args: { _code: string; _user_id: string }
         Returns: boolean
       }
       is_assigned_vendor: {
