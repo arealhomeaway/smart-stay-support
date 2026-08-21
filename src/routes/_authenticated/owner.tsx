@@ -475,7 +475,10 @@ function LogTimeDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={mutation.isPending || activity.trim().length < 3} onClick={() => mutation.mutate()}>
+          <Button
+            disabled={mutation.isPending || !minutesValid || activity.trim().length < 3}
+            onClick={() => mutation.mutate()}
+          >
             Save entry
           </Button>
         </DialogFooter>
