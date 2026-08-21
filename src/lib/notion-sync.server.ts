@@ -13,13 +13,14 @@ import { NOTION_SOURCES } from "@/lib/notion";
 import { NotionError, plainProperties, queryDatabase } from "@/lib/notion.server";
 
 const FIELD_MAP: Record<string, string[]> = {
-  name: ["property", "property name", "name", "listing", "home", "title"],
+  name: ["property", "property name", "name", "project name", "listing", "home", "title"],
   address_line1: ["address", "street address", "address line 1", "street"],
   city: ["city"],
   state: ["state", "region"],
   postal_code: ["zip", "zip code", "postal code"],
   onboarding_stage: ["stage", "onboarding stage", "status", "phase"],
-  onboarding_owner: ["owner", "responsible", "assignee", "onboarding owner", "point person"],
+  onboarding_owner: ["owner", "responsible", "assignee", "onboarding owner", "point person", "project manager"],
+
 };
 
 /** Fields Resolve people may edit locally — a difference here becomes a conflict. */
