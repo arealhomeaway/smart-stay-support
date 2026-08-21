@@ -131,6 +131,10 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
   const pct = Math.min(100, Math.round((hoursFromMinutes(reportedMinutes) / program.targetHours) * 100));
   const waiting = reviews.filter((r) => r.status === "awaiting_owner" || r.status === "prepared");
   const openTickets = tickets.filter((t) => !["resolved", "closed"].includes(t.status));
+  const onboardingMinutes = entries
+    .filter((e) => e.phase === "onboarding")
+    .reduce((n, e) => n + e.minutes, 0);
+  const ongoingMinutes = reportedMinutes - onboardingMinutes;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
