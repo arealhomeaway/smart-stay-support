@@ -368,6 +368,26 @@ export function VendorOrgSheet({
                 )}
               </TabsContent>
 
+              <TabsContent value="territory">
+                <VendorTerritoryPanel
+                  orgId={org.id}
+                  areas={data.serviceAreas}
+                  canManage={canManage}
+                  onChanged={refresh}
+                />
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <VendorDocumentsPanel
+                  orgId={org.id}
+                  documents={data.documents}
+                  canManage={canManage}
+                  onChanged={refresh}
+                />
+              </TabsContent>
+
+
+
               <TabsContent value="team" className="space-y-3 pt-4">
                 <p className="text-xs text-muted-foreground">
                   ARHA schedules the masked code, never a worker's personal name. Vendor admins manage their own team.
