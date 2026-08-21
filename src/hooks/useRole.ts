@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "manager" | "tech" | "vendor";
+export type AppRole = "admin" | "manager" | "tech" | "vendor" | "owner";
 
 /** Roles for the signed-in user. Supervisors = admin or manager. Vendors are outside partners. */
 export function useRole() {
