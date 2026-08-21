@@ -135,7 +135,7 @@ export const setOwnerProgramStatus = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
-        status: z.enum(["draft", "pending_closing", "ready_to_activate", "paused", "active"]),
+        status: z.enum(["draft", "waiting_for_closing", "ready_for_onboarding", "paused", "active"]),
       })
       .parse(data),
   )
