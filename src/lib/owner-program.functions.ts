@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
 
-/** Staff: every enrolled home plus the homes still available to enroll. */
+/** Staff: every participation program plus the homes still free to enroll. */
 export const ownerPrograms = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -24,7 +24,7 @@ export const ownerTaskRoadmap = createServerFn({ method: "GET" })
     return { templates: await loadTaskTemplates(context.supabase) };
   });
 
-/** Supervisor: enroll a home in the 90-day program. */
+/** Supervisor: create a draft program. Activation is a separate, manual step. */
 export const startOwnerProgram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -33,7 +33,6 @@ export const startOwnerProgram = createServerFn({ method: "POST" })
         propertyId: z.string().uuid(),
         ownerName: z.string().trim().max(120).default(""),
         ownerEmail: z.string().trim().email().max(255).or(z.literal("")).default(""),
-        startedOn: isoDate.nullable().default(null),
       })
       .parse(data),
   )
@@ -43,19 +42,138 @@ export const startOwnerProgram = createServerFn({ method: "POST" })
     return createProgram(context.supabase, context.userId, data);
   });
 
-/** Supervisor: set or move the 90-day clock. */
-export const setOwnerProgramStart = createServerFn({ method: "POST" })
+/** Supervisor: add another home to a program. */
+export const addOwnerProgramProperty = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        programId: z.string().uuid(),
+        propertyId: z.string().uuid(),
+        closingDate: isoDate.nullable().default(null),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor, addProgramProperty } = await import("./owner-program.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return addProgramProperty(context.supabase, context.userId, data);
+  });
+
+export const removeOwnerProgramProperty = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        programId: z.string().uuid(),
+        propertyId: z.string().uuid(),
+        reason: z.string().trim().max(500).default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor, removeProgramProperty } = await import("./owner-program.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return removeProgramProperty(context.supabase, context.userId, data);
+  });
+
+/** Supervisor: confirm a property's closing, a prerequisite for activation. */
+export const confirmOwnerPropertyClosing = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        programId: z.string().uuid(),
+        propertyId: z.string().uuid(),
+        closingDate: isoDate,
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor, confirmPropertyClosing } = await import("./owner-program.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return confirmPropertyClosing(context.supabase, context.userId, data);
+  });
+
+/** Supervisor: owner details, ARHA leads, DFY confirmation and internal notes. */
+export const updateOwnerProgram = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        programId: z.string().uuid(),
+        ownerName: z.string().trim().max(120).default(""),
+        ownerEmail: z.string().trim().email().max(255).or(z.literal("")).default(""),
+        onboardingLead: z.string().trim().max(120).nullable().default(null),
+        operationsLead: z.string().trim().max(120).nullable().default(null),
+        dfyConfirmed: z.boolean().default(false),
+        internalNotes: z.string().trim().max(4000).default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor, updateProgramSettings } = await import("./owner-program.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return updateProgramSettings(context.supabase, context.userId, data);
+  });
+
+/** Supervisor: manually activate the single 90-day clock. */
+export const activateOwnerProgram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z.object({ programId: z.string().uuid(), startedOn: isoDate }).parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, setProgramStart } = await import("./owner-program.server");
+    const { assertSupervisor, activateProgram } = await import("./owner-program.server");
     await assertSupervisor(context.supabase, context.userId);
-    return setProgramStart(context.supabase, data.programId, data.startedOn);
+    return activateProgram(context.supabase, context.userId, data);
   });
 
-/** Supervisor: seed owner reviews from the roadmap catalog. */
+export const setOwnerProgramStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        programId: z.string().uuid(),
+        status: z.enum(["draft", "waiting_for_closing", "ready_for_onboarding", "paused", "active"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor, setProgramStatus } = await import("./owner-program.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return setProgramStatus(context.supabase, context.userId, data);
+  });
+
+/** Supervisor: formal closeout, gated on hours and completed property work. */
+export const completeOwnerProgram = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ programId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor, completeProgram } = await import("./owner-program.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return completeProgram(context.supabase, context.userId, data.programId);
+  });
+
+/** Supervisor: record a correction without overwriting what the owner entered. */
+export const correctOwnerTimeEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        entryId: z.string().uuid(),
+        minutes: z.number().int().min(1).max(1440),
+        reason: z.string().trim().min(3).max(500),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor, recordTimeCorrection } = await import("./owner-program.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return recordTimeCorrection(context.supabase, context.userId, data);
+  });
+
+/** Supervisor: release owner activities from the roadmap catalog. */
 export const seedOwnerRoadmap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -72,7 +190,7 @@ export const seedOwnerRoadmap = createServerFn({ method: "POST" })
     return seedRoadmap(context.supabase, context.userId, data);
   });
 
-/** Staff: one program with its roadmap and reported time. */
+/** Staff: one program with its homes, roadmap, participation log and history. */
 export const ownerProgramDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ programId: z.string().uuid() }).parse(data))
@@ -82,6 +200,17 @@ export const ownerProgramDetail = createServerFn({ method: "GET" })
     await assertStaff(context.supabase, context.userId);
     const detail = await loadProgramDetail(context.supabase, data.programId);
     return { ...detail, invites: await loadInvites(context.supabase, data.programId) };
+  });
+
+/** Staff: the single combined participation report for the program. */
+export const ownerProgramReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ programId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { assertStaff } = await import("./vendor.server");
+    const { buildProgramReport } = await import("./owner-program.server");
+    await assertStaff(context.supabase, context.userId);
+    return buildProgramReport(context.supabase, data.programId);
   });
 
 /** Supervisor: issue a single-use self-signup code for the homeowner. */
