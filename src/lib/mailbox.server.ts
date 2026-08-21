@@ -15,7 +15,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { createIntakeMatter, type IntakeResult } from "./intake.server";
+import { createIntakeMatter, REF_TAG, type IntakeResult } from "./intake.server";
 import { SHARED_MAILBOX } from "./email.server";
 
 type Db = SupabaseClient<Database>;
@@ -44,6 +44,7 @@ type GraphMessage = {
   webLink?: string | null;
   from?: { emailAddress?: { name?: string | null; address?: string | null } | null } | null;
   body?: { content?: string | null; contentType?: string | null } | null;
+  internetMessageHeaders?: { name?: string | null; value?: string | null }[] | null;
   "@odata.type"?: string;
 };
 
@@ -75,7 +76,7 @@ async function graph(path: string, init?: RequestInit) {
 async function fetchUnread(limit: number) {
   const query =
     `?$filter=isRead eq false&$top=${limit}&$orderby=receivedDateTime desc` +
-    `&$select=id,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body`;
+    `&$select=id,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders`;
   const shared = `/users/${encodeURIComponent(SHARED_MAILBOX)}/mailFolders/inbox/messages${query}`;
   try {
     const res = await graph(shared);
@@ -96,19 +97,51 @@ async function markRead(scope: string, id: string) {
 
 /** Senders and subjects that are never operational work. */
 const NOISE_SENDER =
-  /(no-?reply|do-?not-?reply|newsletter|notifications?@|marketing|mailer-daemon|postmaster|billing@|invoice@|calendar-notification)/i;
+  /(no-?reply|do-?not-?reply|newsletter|notifications?@|marketing|mailer-daemon|postmaster|billing@|invoice@|calendar-notification|@(members|email|mail|e|news|info|updates|shared\d*)\.|ccsend\.com|mailchimp|sendgrid\.net|hubspot|constantcontact|salesforce|substack|linkedin\.com|indeed\.com|zillow|stocktwits)/i;
 const NOISE_SUBJECT =
-  /^(re: )?(declined|accepted|tentative|canceled|cancelled):|unsubscribe|your (daily|weekly) |newsletter|webinar|invitation:|out of office|automatic reply/i;
+  /^(re: )?(declined|accepted|tentative|canceled|cancelled):|unsubscribe|your (daily|weekly) |newsletter|webinar|invitation:|out of office|automatic reply|market digest|% off|sale ends|just for you/i;
 const CALENDAR_TYPE = /eventMessage/i;
 
-export type SkipReason = "automated" | "calendar" | "self" | "empty";
+/** Words that mean a coordinator actually has to do something at a home. */
+const OPERATIONAL =
+  /(guest|owner|homeowner|tenant|property|unit|house|home at|listing|address|check-?in|check-?out|clean|turnover|linen|maintenance|repair|leak|water|hvac|heat|furnace|a\/?c|air condition|plumb|electric|appliance|water heater|lock|lockbox|code|key|access|alarm|smoke|carbon|detector|pest|inspection|walkthrough|vendor|handyman|technician|work order|invoice for|damage|broken|not working|complaint|refund|reservation|booking)/i;
 
+const HOUSE_DOMAIN = /@arealhomeaway\.com$/i;
+
+export type SkipReason = "automated" | "calendar" | "bulk" | "not operational" | "empty";
+
+function isBulk(msg: GraphMessage) {
+  for (const h of msg.internetMessageHeaders ?? []) {
+    const name = (h.name ?? "").toLowerCase();
+    const value = (h.value ?? "").toLowerCase();
+    if (name === "list-unsubscribe" || name === "list-id" || name === "x-campaign-id") return true;
+    if (name === "precedence" && /bulk|list|junk/.test(value)) return true;
+    if (name === "auto-submitted" && value !== "no") return true;
+  }
+  return false;
+}
+
+/**
+ * Decides whether a message is coordinator work.
+ *
+ * Anything from an ARHA address, a reply on one of our matters, or a message
+ * that clearly describes work at a home is kept. Everything else is left in
+ * the inbox for a human — Resolve would rather miss a matter than fill the
+ * queue with marketing.
+ */
 function classify(msg: GraphMessage): SkipReason | null {
   if (CALENDAR_TYPE.test(msg["@odata.type"] ?? "")) return "calendar";
   const from = msg.from?.emailAddress?.address ?? "";
   const subject = msg.subject ?? "";
+  const preview = msg.bodyPreview ?? "";
+  if (!subject.trim() && !preview.trim()) return "empty";
+  if (isBulk(msg)) return "bulk";
   if (NOISE_SENDER.test(from) || NOISE_SUBJECT.test(subject)) return "automated";
-  if (!subject.trim() && !(msg.bodyPreview ?? "").trim()) return "empty";
+
+  const text = `${subject}\n${preview}`;
+  if (REF_TAG.test(text)) return null;
+  if (HOUSE_DOMAIN.test(from)) return null;
+  if (!OPERATIONAL.test(text)) return "not operational";
   return null;
 }
 
