@@ -82,6 +82,8 @@ function TeamPage() {
         </p>
       </div>
 
+      <TeamInvitePanel />
+
       <TeamAccessPanel />
 
       <VendorScoreboardPanel />
