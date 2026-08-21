@@ -20,6 +20,7 @@ import {
 import { TEAMS } from "@/lib/tickets";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { TeamAccessPanel } from "@/components/TeamAccessPanel";
+import { VendorScoreboardPanel } from "@/components/VendorScoreboardPanel";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({
@@ -82,6 +83,8 @@ function TeamPage() {
       </div>
 
       <TeamAccessPanel />
+
+      <VendorScoreboardPanel />
 
       {TEAMS.map((team) => {
         const roles = data.roles.filter((r) => r.team === team.value);

@@ -6,6 +6,7 @@ import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle 
 import { supabase } from "@/integrations/supabase/client";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
+import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { BreezewayPanel } from "@/components/BreezewayPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -503,6 +504,12 @@ function TicketDetail() {
               onChanged={refresh}
             />
           )}
+
+          {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
+            <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
+          )}
+
+
 
 
           {!closed && ticket.status !== "waiting" && (

@@ -26,6 +26,7 @@ import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authenticated/tickets.new'
 import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenticated/vendor.index'
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
+import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
 
@@ -118,6 +119,12 @@ const AuthenticatedVendorTicketIdRoute =
     path: '/vendor/$ticketId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorScorecardRoute =
+  AuthenticatedVendorScorecardRouteImport.update({
+    id: '/vendor/scorecard',
+    path: '/vendor/scorecard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicIntakeEmailRoute = ApiPublicIntakeEmailRouteImport.update({
   id: '/api/public/intake/email',
   path: '/api/public/intake/email',
@@ -144,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
+  '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
@@ -164,6 +172,7 @@ export interface FileRoutesByTo {
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
+  '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
@@ -186,6 +195,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
+  '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/vendor/$ticketId'
+    | '/vendor/scorecard'
     | '/tickets/'
     | '/vendor/'
     | '/api/public/intake/email'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/vendor/$ticketId'
+    | '/vendor/scorecard'
     | '/tickets'
     | '/vendor'
     | '/api/public/intake/email'
@@ -249,6 +261,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/tickets/new'
     | '/_authenticated/vendor/$ticketId'
+    | '/_authenticated/vendor/scorecard'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
     | '/api/public/intake/email'
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorTicketIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendor/scorecard': {
+      id: '/_authenticated/vendor/scorecard'
+      path: '/vendor/scorecard'
+      fullPath: '/vendor/scorecard'
+      preLoaderRoute: typeof AuthenticatedVendorScorecardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/intake/email': {
       id: '/api/public/intake/email'
       path: '/api/public/intake/email'
@@ -414,6 +434,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
   AuthenticatedVendorTicketIdRoute: typeof AuthenticatedVendorTicketIdRoute
+  AuthenticatedVendorScorecardRoute: typeof AuthenticatedVendorScorecardRoute
   AuthenticatedTicketsIndexRoute: typeof AuthenticatedTicketsIndexRoute
   AuthenticatedVendorIndexRoute: typeof AuthenticatedVendorIndexRoute
 }
@@ -431,6 +452,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,
   AuthenticatedVendorTicketIdRoute: AuthenticatedVendorTicketIdRoute,
+  AuthenticatedVendorScorecardRoute: AuthenticatedVendorScorecardRoute,
   AuthenticatedTicketsIndexRoute: AuthenticatedTicketsIndexRoute,
   AuthenticatedVendorIndexRoute: AuthenticatedVendorIndexRoute,
 }
