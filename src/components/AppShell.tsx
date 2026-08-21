@@ -7,6 +7,7 @@ import {
   ClipboardList,
   HardHat,
   Home,
+  KeyRound,
   ListChecks,
   MapPinned,
   LogOut,
