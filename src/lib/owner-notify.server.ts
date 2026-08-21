@@ -70,7 +70,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   if (error) throw error;
 
   let emailed = 0;
-  let texted = 0;
+  let escalated = 0;
   const notes: string[] = [];
 
   for (const row of data ?? []) {
