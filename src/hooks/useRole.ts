@@ -22,12 +22,16 @@ export function useRole() {
 
   const roles = query.data ?? [];
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");
+  // Homeowners are program participants, never internal staff.
+  const isOwner = roles.includes("owner") && !roles.some((r) => r === "admin" || r === "manager");
   return {
     roles,
     isLoading: query.isLoading,
     isAdmin: roles.includes("admin"),
     isSupervisor: roles.includes("admin") || roles.includes("manager"),
     isVendor,
-    isStaff: !isVendor,
+    isOwner,
+    isStaff: !isVendor && !isOwner,
   };
 }
+
