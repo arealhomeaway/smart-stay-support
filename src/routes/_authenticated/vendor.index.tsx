@@ -51,8 +51,16 @@ function VendorQueue() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-2xl font-semibold">My jobs</h1>
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="font-display text-2xl font-semibold">My jobs</h1>
+          <Link
+            to="/vendor/scorecard"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-accent/40"
+          >
+            <Award className="size-4" /> My scorecard
+          </Link>
+        </div>
         <p className="text-sm text-muted-foreground">
           Everything A Real Home Away has sent your way. Open a job for the address, access details and the steps
           we need finished before it can be closed.
