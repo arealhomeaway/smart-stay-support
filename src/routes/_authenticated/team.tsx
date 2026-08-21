@@ -83,6 +83,8 @@ function TeamPage() {
 
       <TeamAccessPanel />
 
+      <VendorScoreboardPanel />
+
       {TEAMS.map((team) => {
         const roles = data.roles.filter((r) => r.team === team.value);
         if (roles.length === 0) return null;
