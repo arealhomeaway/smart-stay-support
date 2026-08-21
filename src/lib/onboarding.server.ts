@@ -10,7 +10,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import type { HandoffCheck } from "./onboarding";
+import { validateHandoff } from "./onboarding";
+export { validateHandoff };
 import { writeAudit } from "./audit.server";
 
 type Client = SupabaseClient<Database>;
@@ -50,101 +51,6 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     handoffs: handoffs.data ?? [],
     people: people.data ?? [],
   };
-}
-
-/** Deterministic readiness gate. Every rule reads real records only. */
-export function validateHandoff(
-  property: {
-    address_line1: string | null;
-    city: string | null;
-    state: string | null;
-    postal_code: string | null;
-    latitude: number | null;
-    longitude: number | null;
-    access_notes: string | null;
-    quarterly_review_due_on: string | null;
-  },
-  tasks: {
-    id: string;
-    status: string;
-    blocks_handoff: boolean;
-    requires_owner_approval: boolean;
-    owner_approval_status: string;
-    evidence_required: boolean;
-    evidence_note: string | null;
-    blocker: string | null;
-  }[],
-): { checks: HandoffCheck[]; openBlocking: string[]; ready: boolean } {
-  const open = tasks.filter((t) => t.status !== "complete" && t.status !== "carryover");
-  const openBlocking = open.filter((t) => t.blocks_handoff).map((t) => t.id);
-  const missingApproval = tasks.filter(
-    (t) => t.requires_owner_approval && t.owner_approval_status !== "approved",
-  );
-  const missingEvidence = tasks.filter(
-    (t) => t.evidence_required && !(t.evidence_note ?? "").trim() && t.status === "complete",
-  );
-  const blockers = tasks.filter((t) => (t.blocker ?? "").trim() && t.status !== "complete");
-
-  const checks: HandoffCheck[] = [
-    {
-      key: "address",
-      label: "Property address is complete",
-      passed: Boolean(property.address_line1 && property.city && property.state && property.postal_code),
-      blocking: true,
-      detail: "Street, city, state and postal code are required for dispatch and mapping.",
-    },
-    {
-      key: "geocode",
-      label: "Property is geocoded",
-      passed: property.latitude != null && property.longitude != null,
-      blocking: true,
-      detail: "Needed for nearest-vendor dispatch, the job map and verified check-ins.",
-    },
-    {
-      key: "access",
-      label: "Access instructions recorded",
-      passed: Boolean((property.access_notes ?? "").trim()),
-      blocking: true,
-      detail: "Operations cannot dispatch a vendor to a home with no access path.",
-    },
-    {
-      key: "review_due",
-      label: "Quarterly review date set",
-      passed: Boolean(property.quarterly_review_due_on),
-      blocking: false,
-      detail: "The first cleaning-supervisor review must be scheduled.",
-    },
-    {
-      key: "tasks",
-      label: "Blocking onboarding tasks complete",
-      passed: openBlocking.length === 0,
-      blocking: true,
-      detail: `${openBlocking.length} blocking task(s) still open.`,
-    },
-    {
-      key: "approvals",
-      label: "Owner approvals obtained",
-      passed: missingApproval.length === 0,
-      blocking: true,
-      detail: `${missingApproval.length} task(s) awaiting a homeowner decision.`,
-    },
-    {
-      key: "evidence",
-      label: "Required evidence captured",
-      passed: missingEvidence.length === 0,
-      blocking: true,
-      detail: `${missingEvidence.length} completed task(s) missing required evidence.`,
-    },
-    {
-      key: "blockers",
-      label: "No unresolved blockers",
-      passed: blockers.length === 0,
-      blocking: true,
-      detail: `${blockers.length} task(s) carry an unresolved blocker note.`,
-    },
-  ];
-
-  return { checks, openBlocking, ready: checks.every((c) => !c.blocking || c.passed) };
 }
 
 export async function saveOnboardingTask(
