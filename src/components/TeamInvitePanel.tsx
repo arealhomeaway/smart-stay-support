@@ -54,18 +54,27 @@ export function TeamInvitePanel() {
 
   const refresh = () => void qc.invalidateQueries({ queryKey: ["team-invites"] });
 
+  const inviteMessage = (code: string) =>
+    `You've been invited to Resolve, the A Real Home Away operations app.
+
+1. Go to ${typeof window !== "undefined" ? window.location.origin : ""}/auth and choose "Create an account".
+2. Sign in, then open /join and enter this code: ${code}
+
+Your access is set the moment the code is redeemed. Codes are single-use and expire in 30 days.`;
+
   const issue = useMutation({
     mutationFn: () =>
       createFn({ data: { role, email: email.trim(), name: name.trim(), note: "", expiresInDays: 30 } }),
     onSuccess: (res) => {
-      void navigator.clipboard?.writeText(res.code);
-      toast.success(`Code ${res.code} created and copied.`);
+      void navigator.clipboard?.writeText(inviteMessage(res.code));
+      toast.success(`Code ${res.code} created — invite message copied, paste it to them.`);
       setEmail("");
       setName("");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const revoke = useMutation({
     mutationFn: (inviteId: string) => revokeFn({ data: { inviteId } }),
