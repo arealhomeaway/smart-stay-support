@@ -22,9 +22,7 @@ export function PortalCard({
   recent?: boolean;
 }) {
   const Icon = portal.icon;
-  const target = authenticated
-    ? { to: portal.route }
-    : { to: "/auth", search: { next: portal.route } };
+
 
   return (
     <article className="flex h-full flex-col rounded-xl border border-border bg-card p-6 transition-shadow focus-within:shadow-md hover:shadow-md">
