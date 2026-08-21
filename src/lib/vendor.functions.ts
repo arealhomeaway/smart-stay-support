@@ -30,3 +30,12 @@ export const assignVendor = createServerFn({ method: "POST" })
       dispatchedBy: context.userId,
     });
   });
+
+export const rankVendors = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ ticketId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { rankVendorsForTicket } = await import("./vendor.server");
+    return rankVendorsForTicket(data.ticketId);
+  });
