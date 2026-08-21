@@ -33,7 +33,10 @@ import {
   type GatekeeperResult,
   type VendorStatus,
 } from "@/lib/vendors";
+import { VendorDocumentsPanel } from "@/components/VendorDocumentsPanel";
+import { VendorTerritoryPanel } from "@/components/VendorTerritoryPanel";
 import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -159,12 +162,15 @@ export function VendorOrgSheet({
             </SheetHeader>
 
             <Tabs defaultValue="screening" className="mt-4">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
                 <TabsTrigger value="screening">Screening</TabsTrigger>
                 <TabsTrigger value="coverage">Coverage</TabsTrigger>
+                <TabsTrigger value="territory">Territory</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="team">Team</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
+
 
               <TabsContent value="screening" className="space-y-4 pt-4">
                 <div className="rounded-lg border p-3 text-sm">
@@ -365,6 +371,26 @@ export function VendorOrgSheet({
                 )}
               </TabsContent>
 
+              <TabsContent value="territory">
+                <VendorTerritoryPanel
+                  orgId={org.id}
+                  areas={data.serviceAreas}
+                  canManage={canManage}
+                  onChanged={refresh}
+                />
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <VendorDocumentsPanel
+                  orgId={org.id}
+                  documents={data.documents}
+                  canManage={canManage}
+                  onChanged={refresh}
+                />
+              </TabsContent>
+
+
+
               <TabsContent value="team" className="space-y-3 pt-4">
                 <p className="text-xs text-muted-foreground">
                   ARHA schedules the masked code, never a worker's personal name. Vendor admins manage their own team.
@@ -401,20 +427,6 @@ export function VendorOrgSheet({
               </TabsContent>
 
               <TabsContent value="history" className="space-y-3 pt-4">
-                {data.documents.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documents</p>
-                    {data.documents.map((d) => (
-                      <div key={d.id} className="rounded-lg border p-3 text-sm">
-                        <p className="font-medium">{d.title}</p>
-                        <p className="text-muted-foreground">
-                          {d.docType} · {d.verificationStatus}
-                          {d.expiresOn && ` · expires ${d.expiresOn}`}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status history</p>
                 {data.statusHistory.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>

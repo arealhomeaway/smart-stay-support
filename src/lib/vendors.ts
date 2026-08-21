@@ -235,3 +235,76 @@ export type VendorOrgRow = {
   gatekeeperClear: boolean;
   lastVerifiedAt: string | null;
 };
+
+/* ------------------------------------------------------------------ */
+/* Territory coverage                                                  */
+/* ------------------------------------------------------------------ */
+
+/** US 5-digit ZIP. ZIP+4 is trimmed; anything else is rejected by the caller. */
+export function normalizeZip(raw: string): string | null {
+  const digits = raw.trim().replace(/[^0-9]/g, "");
+  if (digits.length < 5) return null;
+  return digits.slice(0, 5);
+}
+
+/** Pull every ZIP out of a pasted territory list, map export or spreadsheet column. */
+export function parseZipList(raw: string): { zips: string[]; rejected: string[] } {
+  const seen = new Set<string>();
+  const rejected: string[] = [];
+  for (const token of raw.split(/[\s,;|]+/).filter(Boolean)) {
+    const zip = normalizeZip(token);
+    if (zip) seen.add(zip);
+    else rejected.push(token);
+  }
+  return { zips: [...seen].sort(), rejected };
+}
+
+export type CoverageSource = "property" | "territory" | "none";
+
+/**
+ * Who covers this home for this trade?
+ *
+ * The territory sets the default; the home has the final word. An explicit
+ * property row wins over any ZIP match — including a row that excludes the
+ * vendor from that one home while their territory still covers the rest.
+ */
+export function resolveCoverage(input: {
+  propertyRow?: { coveragePriority: string; excluded: boolean } | undefined;
+  territoryRow?: { coveragePriority: string } | undefined;
+}): { covered: boolean; source: CoverageSource; priority: string | null; reason: string } {
+  if (input.propertyRow) {
+    if (input.propertyRow.excluded) {
+      return {
+        covered: false,
+        source: "property",
+        priority: null,
+        reason: "Excluded at this home, overriding their territory.",
+      };
+    }
+    return {
+      covered: true,
+      source: "property",
+      priority: input.propertyRow.coveragePriority,
+      reason: "Assigned to this home directly.",
+    };
+  }
+  if (input.territoryRow) {
+    return {
+      covered: true,
+      source: "territory",
+      priority: input.territoryRow.coveragePriority,
+      reason: "Covered by their service territory.",
+    };
+  }
+  return { covered: false, source: "none", priority: null, reason: "Outside their coverage." };
+}
+
+export type ServiceAreaRow = {
+  id: string;
+  serviceCategory: string;
+  postalCode: string;
+  territoryLabel: string | null;
+  coveragePriority: string;
+  travelNote: string | null;
+  propertyCount: number;
+};

@@ -153,3 +153,82 @@ export const decideVendorImportRow = createServerFn({ method: "POST" })
     const { decideImportRow } = await import("./vendor-import.server");
     return decideImportRow(context.supabase, context.userId, data);
   });
+
+/* --------------------------- territories --------------------------- */
+
+export const addVendorServiceArea = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        orgId: z.string().uuid(),
+        serviceCategory: z.string().trim().min(2).max(60),
+        zipText: z.string().trim().min(5).max(20000),
+        territoryLabel: z.string().trim().max(80).optional().nullable(),
+        coveragePriority: z.enum(["primary", "backup", "emergency", "recurring"]),
+        travelNote: z.string().trim().max(600).optional().nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { addServiceArea } = await import("./vendors.server");
+    return addServiceArea(context.supabase, context.userId, data);
+  });
+
+export const dropVendorServiceArea = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ areaId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { removeServiceArea } = await import("./vendors.server");
+    return removeServiceArea(context.supabase, context.userId, data.areaId);
+  });
+
+/** Which homes this company actually reaches, and whether by home or territory. */
+export const vendorCoverageMap = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ orgId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { assertStaff } = await import("./vendor.server");
+    const { coverageForOrg } = await import("./vendors.server");
+    await assertStaff(context.supabase, context.userId);
+    return coverageForOrg(context.supabase, data.orgId);
+  });
+
+/* --------------------------- documents --------------------------- */
+
+export const fileVendorDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        orgId: z.string().uuid(),
+        docType: z.string().trim().min(2).max(40),
+        title: z.string().trim().min(2).max(160),
+        externalUrl: z.string().trim().url().max(600).optional().nullable().or(z.literal("")),
+        expiresOn: z.string().trim().max(10).optional().nullable(),
+        note: z.string().trim().max(1000).optional().nullable(),
+        verified: z.boolean(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { recordVendorDocument } = await import("./vendors.server");
+    return recordVendorDocument(context.supabase, context.userId, data);
+  });
+
+export const verifyVendorIdentity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        orgId: z.string().uuid(),
+        subject: z.string().trim().min(2).max(120),
+        method: z.string().trim().min(4).max(160),
+        expiresOn: z.string().trim().max(10).optional().nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { recordIdentityCheck } = await import("./vendors.server");
+    return recordIdentityCheck(context.supabase, context.userId, data);
+  });
