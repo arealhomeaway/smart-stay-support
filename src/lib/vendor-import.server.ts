@@ -26,6 +26,27 @@ const PERSONAL_DOMAINS = new Set([
   "comcast.net",
 ]);
 
+/** What the Notion vendor database knows about a company, carried through review. */
+export type LegacyProfile = {
+  contactPerson: string | null;
+  specialties: string[];
+  markets: string[];
+  serviceArea: string | null;
+  pricing: string | null;
+  paymentType: string | null;
+  coverageHours: string | null;
+  emergencyAvailability: string | null;
+  website: string | null;
+  restrictions: string | null;
+  comments: string | null;
+  preference: string | null;
+  legacyStatus: string | null;
+  claims: string[];
+  insuranceExpiresOn: string | null;
+  licenseExpiresOn: string | null;
+  notionVendorId: string | null;
+};
+
 export type ParsedRow = {
   sourceRole: "service_provider" | "representative";
   displayName: string;
@@ -33,7 +54,9 @@ export type ParsedRow = {
   phone: string | null;
   departments: string[];
   groups: string[];
+  profile?: LegacyProfile | null;
 };
+
 
 function splitList(value: string) {
   return value
