@@ -26,14 +26,55 @@ async function quarterlyWorkType(db: Client) {
   return data;
 }
 
+/** Market → regional cleaning manager, with the manager's name resolved. */
+export async function loadCleaningRegions(db: Client) {
+  const [{ data: regions, error }, { data: props }] = await Promise.all([
+    db.from("cleaning_regions").select("market, manager_id, manager_name").order("market"),
+    db.from("properties").select("market").eq("active", true),
+  ]);
+  if (error) throw new Error(error.message);
+
+  const counts = new Map<string, number>();
+  for (const p of props ?? []) if (p.market) counts.set(p.market, (counts.get(p.market) ?? 0) + 1);
+
+  const known = new Set((regions ?? []).map((r) => r.market));
+  const rows = [
+    ...(regions ?? []).map((r) => ({
+      market: r.market,
+      managerId: r.manager_id,
+      managerName: r.manager_name,
+      propertyCount: counts.get(r.market) ?? 0,
+    })),
+    ...[...counts.keys()]
+      .filter((m) => !known.has(m))
+      .map((m) => ({ market: m, managerId: null, managerName: null, propertyCount: counts.get(m) ?? 0 })),
+  ].sort((a, b) => a.market.localeCompare(b.market));
+
+  return rows;
+}
+
+/** Supervisor action: point a market at the regional cleaning manager who inspects it. */
+export async function setCleaningRegionManager(db: Client, market: string, managerId: string | null) {
+  let managerName: string | null = null;
+  if (managerId) {
+    const { data } = await db.from("profiles").select("full_name, email").eq("id", managerId).maybeSingle();
+    managerName = data?.full_name ?? data?.email ?? null;
+  }
+  const { error } = await db
+    .from("cleaning_regions")
+    .upsert({ market, manager_id: managerId, manager_name: managerName }, { onConflict: "market" });
+  if (error) throw new Error(error.message);
+  return { market, managerId, managerName };
+}
+
 /** Every active home with its review status and any review already in flight. */
 export async function loadQuarterlyReviews(db: Client) {
   const wt = await quarterlyWorkType(db);
 
-  const [{ data: props, error: propsError }, { data: tickets, error: ticketsError }] = await Promise.all([
+  const [{ data: props, error: propsError }, { data: tickets, error: ticketsError }, regions] = await Promise.all([
     db
       .from("properties")
-      .select("id, name, nickname, city, state, last_quarterly_review_at, quarterly_review_due_on")
+      .select("id, name, nickname, city, state, market, last_quarterly_review_at, quarterly_review_due_on")
       .eq("active", true)
       .order("quarterly_review_due_on"),
     db
@@ -41,12 +82,14 @@ export async function loadQuarterlyReviews(db: Client) {
       .select("id, ref, property_id, status, due_at, assigned_to, current_action_owner, created_at")
       .eq("work_type_id", wt.id)
       .in("status", OPEN_STATUSES),
+    loadCleaningRegions(db),
   ]);
   if (propsError) throw new Error(propsError.message);
   if (ticketsError) throw new Error(ticketsError.message);
 
   const openByProperty = new Map<string, (typeof tickets)[number]>();
   for (const t of tickets ?? []) if (t.property_id) openByProperty.set(t.property_id, t);
+  const managerByMarket = new Map(regions.map((r) => [r.market, r.managerName]));
 
   const rows: QuarterlyRow[] = (props ?? []).map((p) => {
     const open = openByProperty.get(p.id) ?? null;
@@ -54,6 +97,8 @@ export async function loadQuarterlyReviews(db: Client) {
       propertyId: p.id,
       name: p.nickname ? `${p.name} (${p.nickname})` : p.name,
       location: [p.city, p.state].filter(Boolean).join(", "),
+      market: p.market,
+      inspector: (p.market ? managerByMarket.get(p.market) : null) ?? null,
       lastReviewedAt: p.last_quarterly_review_at,
       dueOn: p.quarterly_review_due_on,
       openTicketId: open?.id ?? null,
@@ -62,8 +107,9 @@ export async function loadQuarterlyReviews(db: Client) {
     };
   });
 
-  return { rows, checklistPlaybookId: wt.playbook_id };
+  return { rows, regions, checklistPlaybookId: wt.playbook_id };
 }
+
 
 /** Opens the quarterly review ticket for one home, checklist attached. */
 export async function openQuarterlyReview(db: Client, userId: string, propertyId: string) {
