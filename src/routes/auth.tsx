@@ -60,6 +60,9 @@ async function destination(next?: string) {
   return { to: entryPathFor(roles) };
 }
 
+/** Survives the round trip to Google, which cannot carry our search params. */
+const NEXT_KEY = "resolve:next";
+
 function AuthPage() {
   const router = useRouter();
   const { next } = Route.useSearch();
@@ -71,7 +74,20 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   async function go() {
-    const result = await destination(next);
+    let intended = next;
+    if (!intended) {
+      try {
+        intended = window.sessionStorage.getItem(NEXT_KEY) ?? undefined;
+      } catch {
+        intended = undefined;
+      }
+    }
+    try {
+      window.sessionStorage.removeItem(NEXT_KEY);
+    } catch {
+      /* nothing to clean up */
+    }
+    const result = await destination(intended);
     if (result.denied) {
       toast.error(
         `Your account isn't authorised for ${result.denied}. Here are the portals you can open.`,
@@ -118,8 +134,15 @@ function AuthPage() {
 
   async function signInWithGoogle() {
     setLoading(true);
+    if (next) {
+      try {
+        window.sessionStorage.setItem(NEXT_KEY, next);
+      } catch {
+        /* the hub is a safe fallback */
+      }
+    }
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/auth`,
     });
     if (result.error) {
       toast.error("Google sign-in failed. Try email instead.");
@@ -131,12 +154,12 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary px-4 py-12">
+    <div className="flex min-h-dvh items-center justify-center bg-secondary px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="rounded-xl bg-sidebar px-6 py-8 text-center text-sidebar-foreground">
           <BrandLogo className="mx-auto h-16" />
           <p className="mt-4 text-xs uppercase tracking-[0.22em] text-sidebar-foreground/60">
-            Resolve · Operations
+            Resolve · A Real Home Away
           </p>
         </div>
         <Card className="w-full">
@@ -144,6 +167,11 @@ function AuthPage() {
             <CardTitle className="text-2xl">
               {mode === "signin" ? "Team sign in" : "Create your team account"}
             </CardTitle>
+            {requested && (
+              <p className="text-sm font-medium text-primary">
+                Signing in to {requested.name}
+              </p>
+            )}
             <CardDescription>
               One account for every ARHA portal. Sign in and Resolve takes you to the workspaces you are authorised for.
             </CardDescription>
