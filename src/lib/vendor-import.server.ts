@@ -225,8 +225,15 @@ export function parseBreezewayCsv(text: string): ParsedRow[] {
     const notes = firstValue(record, "Extraction Notes", "Notes");
     const twoFactor = firstValue(record, "Two-Factor Authentication");
     const employeeId = firstValue(record, "Employee ID");
-    const departments = splitList((record["Departments"] ?? "").replace(/\|/g, ","));
-    const groups = splitList((record["Groups"] ?? "").replace(/\|/g, ","));
+    // Breezeway separates multi-values with a pipe; a market keeps its own
+    // comma ("McCordsville, IN"), so never split these on commas.
+    const splitPiped = (value: string) =>
+      value
+        .split("|")
+        .map((v) => v.trim())
+        .filter(Boolean);
+    const departments = splitPiped(record["Departments"] ?? "");
+    const groups = splitPiped(record["Groups"] ?? "");
 
     const claims: string[] = [];
     if (twoFactor && twoFactor.toUpperCase() !== "N/A") claims.push(`Two-factor in Breezeway: ${twoFactor}`);
