@@ -54,18 +54,27 @@ export function TeamInvitePanel() {
 
   const refresh = () => void qc.invalidateQueries({ queryKey: ["team-invites"] });
 
+  const inviteMessage = (code: string) =>
+    `You've been invited to Resolve, the A Real Home Away operations app.
+
+1. Go to ${typeof window !== "undefined" ? window.location.origin : ""}/auth and choose "Create an account".
+2. Sign in, then open /join and enter this code: ${code}
+
+Your access is set the moment the code is redeemed. Codes are single-use and expire in 30 days.`;
+
   const issue = useMutation({
     mutationFn: () =>
       createFn({ data: { role, email: email.trim(), name: name.trim(), note: "", expiresInDays: 30 } }),
     onSuccess: (res) => {
-      void navigator.clipboard?.writeText(res.code);
-      toast.success(`Code ${res.code} created and copied.`);
+      void navigator.clipboard?.writeText(inviteMessage(res.code));
+      toast.success(`Code ${res.code} created — invite message copied, paste it to them.`);
       setEmail("");
       setName("");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const revoke = useMutation({
     mutationFn: (inviteId: string) => revokeFn({ data: { inviteId } }),
@@ -87,10 +96,12 @@ export function TeamInvitePanel() {
           <Ticket className="size-4" /> Invite codes
         </CardTitle>
         <CardDescription>
-          Issue a single-use code for a new coordinator, supervisor or vendor. They sign up on the normal login
-          screen, then enter the code at <span className="font-mono">/join</span> — redeeming it sets their
-          access straight away. Codes expire after 30 days.
+          Issue a single-use code for a new coordinator, supervisor or vendor. Codes are not emailed yet — copy
+          the invite message and send it to them yourself. They create an account on the normal login screen,
+          then enter the code at <span className="font-mono">/join</span> to set their access. Codes expire
+          after 30 days.
         </CardDescription>
+
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-4">
@@ -149,8 +160,8 @@ export function TeamInvitePanel() {
                   <button
                     type="button"
                     onClick={() => {
-                      void navigator.clipboard?.writeText(i.code);
-                      toast.success("Code copied.");
+                      void navigator.clipboard?.writeText(inviteMessage(i.code));
+                      toast.success("Invite message copied — paste it to them.");
                     }}
                     className="flex items-center gap-2 font-mono font-medium hover:underline"
                   >
@@ -160,6 +171,7 @@ export function TeamInvitePanel() {
                   <Badge variant="outline" className="uppercase">
                     {i.role}
                   </Badge>
+
                   {i.invitee_name && <span>{i.invitee_name}</span>}
                   {i.invitee_email && (
                     <span className="flex items-center gap-1 text-muted-foreground">
