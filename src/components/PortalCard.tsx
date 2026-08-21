@@ -43,11 +43,23 @@ export function PortalCard({
         <p className="mt-3 text-sm font-medium text-foreground">{attention}</p>
       )}
       <Button asChild className="mt-5 min-h-11 w-full justify-between">
-        <Link {...(target as { to: string })} onClick={() => rememberPortal(portal.id)}>
-          {portal.action}
-          <ArrowRight className="size-4" aria-hidden="true" />
-        </Link>
+        {authenticated ? (
+          <Link to={portal.route} onClick={() => rememberPortal(portal.id)}>
+            {portal.action}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        ) : (
+          <Link
+            to="/auth"
+            search={{ next: portal.route }}
+            onClick={() => rememberPortal(portal.id)}
+          >
+            {portal.action}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        )}
       </Button>
+
     </article>
   );
 }
