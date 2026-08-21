@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
+import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authenticated/quarterly'
@@ -77,6 +78,12 @@ const AuthenticatedOversightRoute = AuthenticatedOversightRouteImport.update({
   path: '/oversight',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOwnerProgramsRoute =
+  AuthenticatedOwnerProgramsRouteImport.update({
+    id: '/owner-programs',
+    path: '/owner-programs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlaybooksRoute = AuthenticatedPlaybooksRouteImport.update({
   id: '/playbooks',
   path: '/playbooks',
@@ -157,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/map': typeof AuthenticatedMapRoute
   '/oversight': typeof AuthenticatedOversightRoute
+  '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
@@ -180,6 +188,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/map': typeof AuthenticatedMapRoute
   '/oversight': typeof AuthenticatedOversightRoute
+  '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
@@ -205,6 +214,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
+  '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
   '/_authenticated/quarterly': typeof AuthenticatedQuarterlyRoute
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/map'
     | '/oversight'
+    | '/owner-programs'
     | '/playbooks'
     | '/properties'
     | '/quarterly'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/map'
     | '/oversight'
+    | '/owner-programs'
     | '/playbooks'
     | '/properties'
     | '/quarterly'
@@ -277,6 +289,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/map'
     | '/_authenticated/oversight'
+    | '/_authenticated/owner-programs'
     | '/_authenticated/playbooks'
     | '/_authenticated/properties'
     | '/_authenticated/quarterly'
@@ -363,6 +376,13 @@ declare module '@tanstack/react-router' {
       path: '/oversight'
       fullPath: '/oversight'
       preLoaderRoute: typeof AuthenticatedOversightRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner-programs': {
+      id: '/_authenticated/owner-programs'
+      path: '/owner-programs'
+      fullPath: '/owner-programs'
+      preLoaderRoute: typeof AuthenticatedOwnerProgramsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/playbooks': {
@@ -466,6 +486,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
+  AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
   AuthenticatedQuarterlyRoute: typeof AuthenticatedQuarterlyRoute
@@ -486,6 +507,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
+  AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
   AuthenticatedQuarterlyRoute: AuthenticatedQuarterlyRoute,
