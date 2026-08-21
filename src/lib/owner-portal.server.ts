@@ -247,6 +247,10 @@ export async function redeemOwnerInvite(
     .upsert({ user_id: userId, role: "owner" }, { onConflict: "user_id,role" });
   if (roleInsert.error) throw roleInsert.error;
 
+  // New signups get the default staff role; a homeowner is not internal staff.
+  await admin.from("user_roles").delete().eq("user_id", userId).eq("role", "tech");
+
+
   const redeem = await admin
     .from("owner_invites")
     .update({ redeemed_by: userId, redeemed_at: new Date().toISOString() })
