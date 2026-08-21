@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { parseCsvRecords } from "./csv";
 import { assertSupervisor } from "./vendors.server";
 
 type Client = SupabaseClient<Database>;
