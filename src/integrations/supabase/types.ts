@@ -184,6 +184,85 @@ export type Database = {
           },
         ]
       }
+      owner_contact_alerts: {
+        Row: {
+          body: string
+          created_at: string
+          handled_at: string | null
+          handled_by: string | null
+          handled_note: string | null
+          id: string
+          notification_id: string | null
+          owner_email: string | null
+          owner_name: string | null
+          owner_phone: string | null
+          priority: string
+          program_id: string
+          reason: string
+          status: string
+          ticket_id: string | null
+          title: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          handled_note?: string | null
+          id?: string
+          notification_id?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          priority?: string
+          program_id: string
+          reason?: string
+          status?: string
+          ticket_id?: string | null
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          handled_note?: string | null
+          id?: string
+          notification_id?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          priority?: string
+          program_id?: string
+          reason?: string
+          status?: string
+          ticket_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_contact_alerts_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "owner_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_contact_alerts_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_contact_alerts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_invites: {
         Row: {
           code: string
