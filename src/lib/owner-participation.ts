@@ -153,8 +153,10 @@ export const BENCHMARK_MILESTONES = [7, 14, 21, 28, 35, 45, 60, 75, 85, 90].map(
   hours: Math.round(benchmarkHours(day)),
 }));
 
-export function nextMilestone(day: number) {
-  return BENCHMARK_MILESTONES.find((m) => m.day > day) ?? BENCHMARK_MILESTONES[BENCHMARK_MILESTONES.length - 1];
+const FINAL_MILESTONE = { day: PROGRAM_TOTAL_DAYS, hours: OPERATING_TARGET_HOURS };
+
+export function nextMilestone(day: number): { day: number; hours: number } {
+  return BENCHMARK_MILESTONES.find((m) => m.day > day) ?? FINAL_MILESTONE;
 }
 
 /* ------------------------------------------------------------------ */
