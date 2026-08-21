@@ -174,11 +174,15 @@ export async function openQuarterlyReview(db: Client, userId: string, propertyId
       response_due_at: responseDue.toISOString(),
       action_due_at: actionDue.toISOString(),
       due_at: actionDue.toISOString(),
-      next_action: "Schedule the on-site review with the cleaning supervisor",
+      next_action: inspectorName
+        ? `Schedule the on-site inspection with ${inspectorName}`
+        : "Assign a regional cleaning manager and schedule the on-site inspection",
       created_by: userId,
-      record_owner: userId,
-      accountable_owner: userId,
-      current_action_owner: userId,
+      record_owner: owner,
+      accountable_owner: owner,
+      current_action_owner: owner,
+      assigned_to: inspectorId,
+
     })
     .select("id")
     .single();
@@ -204,8 +208,11 @@ export async function openQuarterlyReview(db: Client, userId: string, propertyId
     kind: "created",
     event_type: "created",
     channel: "inspection",
-    body: "Quarterly property review opened with the cleaning review checklist attached.",
+    body: inspectorName
+      ? `Quarterly inspection opened with the cleaning review checklist attached and assigned to ${inspectorName}, regional cleaning manager for ${property.market}.`
+      : "Quarterly inspection opened with the cleaning review checklist attached. No regional cleaning manager is set for this market yet.",
   });
+
 
   return { ticketId: ticket.id, alreadyOpen: false };
 }
