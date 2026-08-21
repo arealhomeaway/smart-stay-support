@@ -40,6 +40,7 @@ const nav: NavItem[] = [
   { to: "/analytics", label: "Analytics", icon: BarChart3, tour: "analytics", supervisor: true },
   { to: "/team", label: "Seats", icon: Users, tour: "team", supervisor: true },
   { to: "/properties", label: "Properties", icon: Building2, tour: "properties", supervisor: true },
+  { to: "/map", label: "Job map", icon: MapPinned, tour: "map", supervisor: true },
   { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
   { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", supervisor: true },
   { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
