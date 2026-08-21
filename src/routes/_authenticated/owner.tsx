@@ -395,6 +395,9 @@ function LogTimeDialog({
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
   const log = useServerFn(logOwnerParticipation);
 
+  const parsedMinutes = Number.parseInt(minutes, 10);
+  const minutesValid = Number.isFinite(parsedMinutes) && parsedMinutes >= 1 && parsedMinutes <= 1440;
+
   const mutation = useMutation({
     mutationFn: () =>
       log({
@@ -402,7 +405,7 @@ function LogTimeDialog({
           programId,
           phase,
           entryDate,
-          minutes,
+          minutes: parsedMinutes,
           activity,
           output,
           reviewId: target.reviewId,
