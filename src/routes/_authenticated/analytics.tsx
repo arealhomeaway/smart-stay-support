@@ -69,11 +69,11 @@ function fmtDuration(mins: number | null) {
   return `${(mins / 1440).toFixed(1)}d`;
 }
 
-function median(values: number[]) {
+function median(values: number[]): number | null {
   if (values.length === 0) return null;
   const s = [...values].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  return s.length % 2 ? (s[mid] as number) : ((s[mid - 1] as number) + (s[mid] as number)) / 2;
 }
 
 function pct(part: number, total: number) {
@@ -309,12 +309,7 @@ function Analytics() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Showing matters reported in the last {days} days. Open right now: {open.length}
-        {open.length > 0 ? ` (${labelFor(
-          [{ value: open[0].status, label: open[0].status }],
-          open[0].status,
-        )} is the most recent)` : ""}
-        .
+        Showing matters reported in the last {days} days. {open.length} are still open right now.
       </p>
     </div>
   );
