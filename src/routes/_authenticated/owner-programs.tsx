@@ -69,10 +69,11 @@ export const Route = createFileRoute("/_authenticated/owner-programs")({
 const today = () => new Date().toISOString().slice(0, 10);
 
 function OwnerProgramsPage() {
-  const { isSupervisor, isLoading } = useRole();
-  if (isLoading) return <Skeleton className="h-64 w-full" />;
-  if (!isSupervisor) return <SupervisorOnly />;
-  return <ProgramsBoard />;
+  return (
+    <SupervisorOnly>
+      <ProgramsBoard />
+    </SupervisorOnly>
+  );
 }
 
 function ProgramsBoard() {
