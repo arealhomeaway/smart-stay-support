@@ -1,7 +1,8 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { landingFor, type AppRole } from "@/lib/permissions";
+import { type AppRole } from "@/lib/permissions";
+import { entryPathFor, isKnownPortalRoute, portalByRoute, portalsFor } from "@/lib/portals";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
@@ -13,41 +14,79 @@ import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  /** `next` carries the portal the visitor picked on the overview page. */
+  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+    const next = typeof search['next'] === "string" ? (search['next'] as string) : undefined;
+    return isKnownPortalRoute(next) ? { next } : {};
+  },
   head: () => ({
     meta: [
-      { title: "Team sign in — Resolve Operations" },
+      { title: "Sign in — Resolve" },
       {
         name: "description",
-        content: "Sign in to the A Real Home Away operations app to manage guest and maintenance tickets.",
+        content:
+          "One secure sign-in for every A Real Home Away portal: operations, vendors, onboarding, homeowners and oversight.",
       },
-      { property: "og:title", content: "Team sign in — Resolve Operations" },
-      { property: "og:description", content: "Internal access for the A Real Home Away operations team." },
+      { property: "og:title", content: "Sign in — Resolve" },
+      {
+        property: "og:description",
+        content: "Secure access to the ARHA portals your role is authorised for.",
+      },
     ],
   }),
   component: AuthPage,
 });
 
-/** Send each person to the landing page their role owns. */
-async function landingPath() {
+/**
+ * Resolve the destination after sign-in: honour the portal the person asked
+ * for when their roles allow it, otherwise send them somewhere they can
+ * actually use and say why.
+ */
+async function destination(next?: string) {
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return "/dashboard";
+  if (!auth.user) return { to: "/hub" };
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", auth.user.id);
-  return landingFor((data ?? []).map((r) => r.role as AppRole));
+  const roles = (data ?? []).map((r) => r.role as AppRole);
+  const mine = portalsFor(roles);
+
+  if (next && isKnownPortalRoute(next)) {
+    if (mine.some((p) => p.route === next)) return { to: next };
+    const wanted = portalByRoute(next);
+    return {
+      to: "/hub",
+      denied: wanted?.name ?? "that portal",
+    };
+  }
+  return { to: entryPathFor(roles) };
 }
 
 function AuthPage() {
   const router = useRouter();
+  const { next } = Route.useSearch();
+  const requested = next ? portalByRoute(next) : undefined;
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
+  async function go() {
+    const result = await destination(next);
+    if (result.denied) {
+      toast.error(
+        `Your account isn't authorised for ${result.denied}. Here are the portals you can open.`,
+      );
+    }
+    router.navigate({ to: result.to });
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) void landingPath().then((to) => router.navigate({ to }));
+      if (data.session) void go();
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
