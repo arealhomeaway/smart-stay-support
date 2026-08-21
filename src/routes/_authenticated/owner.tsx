@@ -131,6 +131,10 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
   const pct = Math.min(100, Math.round((hoursFromMinutes(reportedMinutes) / program.targetHours) * 100));
   const waiting = reviews.filter((r) => r.status === "awaiting_owner" || r.status === "prepared");
   const openTickets = tickets.filter((t) => !["resolved", "closed"].includes(t.status));
+  const onboardingMinutes = entries
+    .filter((e) => e.phase === "onboarding")
+    .reduce((n, e) => n + e.minutes, 0);
+  const ongoingMinutes = reportedMinutes - onboardingMinutes;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -152,8 +156,21 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
         <CardContent className="space-y-3">
           <Progress value={pct} />
           <p className="text-sm text-muted-foreground">
-            {formatHours(reportedMinutes)} logged of {program.targetHours} hours
+            {formatHours(reportedMinutes)} logged of {program.targetHours}+ hours
             {program.endsOn ? ` · program ends ${program.endsOn}` : ""}
+          </p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Onboarding</p>
+              <p className="font-medium">{formatHours(onboardingMinutes)}</p>
+            </div>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Operations</p>
+              <p className="font-medium">{formatHours(ongoingMinutes)}</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            All hours are self-reported. ARHA never estimates, prefills or auto-calculates your time.
           </p>
           <Button size="sm" onClick={() => setTimeTarget({ reviewId: null, ticketId: null, label: "General participation" })}>
             <Clock className="size-4" /> Log time
@@ -387,12 +404,16 @@ function LogTimeDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [minutes, setMinutes] = useState(30);
-  const [activity, setActivity] = useState(target.label);
+  // Nothing here is ever prefilled or suggested: the owner reports the time they actually spent.
+  const [minutes, setMinutes] = useState("");
+  const [activity, setActivity] = useState("");
   const [output, setOutput] = useState("");
   const [phase, setPhase] = useState<"onboarding" | "ongoing">("onboarding");
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
   const log = useServerFn(logOwnerParticipation);
+
+  const parsedMinutes = Number.parseInt(minutes, 10);
+  const minutesValid = Number.isFinite(parsedMinutes) && parsedMinutes >= 1 && parsedMinutes <= 1440;
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -401,7 +422,7 @@ function LogTimeDialog({
           programId,
           phase,
           entryDate,
-          minutes,
+          minutes: parsedMinutes,
           activity,
           output,
           reviewId: target.reviewId,
@@ -432,20 +453,28 @@ function LogTimeDialog({
               <Input id="time-date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="time-min">Minutes</Label>
+              <Label htmlFor="time-min">Minutes you personally spent</Label>
               <Input
                 id="time-min"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={1440}
+                placeholder="Enter minutes"
                 value={minutes}
-                onChange={(e) => setMinutes(Number(e.target.value))}
+                onChange={(e) => setMinutes(e.target.value)}
               />
             </div>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="time-activity">What you did</Label>
-            <Input id="time-activity" value={activity} onChange={(e) => setActivity(e.target.value)} />
+            <Label htmlFor="time-activity">What you personally did</Label>
+            <Input
+              id="time-activity"
+              value={activity}
+              placeholder="Describe the review, research, meeting or decision"
+              onChange={(e) => setActivity(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Related to: {target.label}</p>
           </div>
           <div className="space-y-1">
             <Label htmlFor="time-output">Decision or outcome (optional)</Label>
@@ -463,7 +492,10 @@ function LogTimeDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={mutation.isPending || activity.trim().length < 3} onClick={() => mutation.mutate()}>
+          <Button
+            disabled={mutation.isPending || !minutesValid || activity.trim().length < 3}
+            onClick={() => mutation.mutate()}
+          >
             Save entry
           </Button>
         </DialogFooter>
