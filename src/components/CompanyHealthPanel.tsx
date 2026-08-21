@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -244,8 +244,8 @@ function ContributionTable({ departments }: { departments: DepartmentHealth[] })
       </TableHeader>
       <TableBody>
         {departments.map((dept) => (
-          <>
-            <TableRow key={dept.key} className="bg-muted/50">
+          <Fragment key={dept.key}>
+            <TableRow className="bg-muted/50">
               <TableCell className="font-medium">{dept.label}</TableCell>
               <TableCell className="tabular-nums">{dept.score ?? "—"}</TableCell>
               <TableCell className="text-muted-foreground">
@@ -265,7 +265,7 @@ function ContributionTable({ departments }: { departments: DepartmentHealth[] })
                 </TableCell>
               </TableRow>
             ))}
-          </>
+          </Fragment>
         ))}
       </TableBody>
     </Table>
