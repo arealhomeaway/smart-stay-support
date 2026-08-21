@@ -96,10 +96,12 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
           <Ticket className="size-4" /> Invite codes
         </CardTitle>
         <CardDescription>
-          Issue a single-use code for a new coordinator, supervisor or vendor. They sign up on the normal login
-          screen, then enter the code at <span className="font-mono">/join</span> — redeeming it sets their
-          access straight away. Codes expire after 30 days.
+          Issue a single-use code for a new coordinator, supervisor or vendor. Codes are not emailed yet — copy
+          the invite message and send it to them yourself. They create an account on the normal login screen,
+          then enter the code at <span className="font-mono">/join</span> to set their access. Codes expire
+          after 30 days.
         </CardDescription>
+
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-4">
