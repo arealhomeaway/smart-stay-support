@@ -126,10 +126,25 @@ export async function openQuarterlyReview(db: Client, userId: string, propertyId
 
   const { data: property, error: propError } = await db
     .from("properties")
-    .select("name, nickname")
+    .select("name, nickname, market")
     .eq("id", propertyId)
     .single();
   if (propError) throw new Error(propError.message);
+
+  // The regional cleaning manager for the home's market conducts the inspection.
+  let inspectorId: string | null = null;
+  let inspectorName: string | null = null;
+  if (property.market) {
+    const { data: region } = await db
+      .from("cleaning_regions")
+      .select("manager_id, manager_name")
+      .eq("market", property.market)
+      .maybeSingle();
+    inspectorId = region?.manager_id ?? null;
+    inspectorName = region?.manager_name ?? null;
+  }
+  const owner = inspectorId ?? userId;
+
 
   const now = new Date();
   const responseDue = new Date(now.getTime() + (wt.response_minutes ?? 120) * 60_000);
