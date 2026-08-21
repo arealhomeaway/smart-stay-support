@@ -746,6 +746,65 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_job_ratings: {
+        Row: {
+          communication: number
+          created_at: string
+          id: string
+          note: string | null
+          on_time: boolean
+          overall: number
+          photos_complete: boolean
+          points: number
+          rated_by: string | null
+          reopened: boolean
+          thoroughness: number
+          ticket_id: string
+          timeliness: number
+          vendor_user_id: string
+        }
+        Insert: {
+          communication: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          on_time?: boolean
+          overall?: number
+          photos_complete?: boolean
+          points?: number
+          rated_by?: string | null
+          reopened?: boolean
+          thoroughness: number
+          ticket_id: string
+          timeliness: number
+          vendor_user_id: string
+        }
+        Update: {
+          communication?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          on_time?: boolean
+          overall?: number
+          photos_complete?: boolean
+          points?: number
+          rated_by?: string | null
+          reopened?: boolean
+          thoroughness?: number
+          ticket_id?: string
+          timeliness?: number
+          vendor_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_job_ratings_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_types: {
         Row: {
           action_start_minutes: number
