@@ -88,7 +88,6 @@ function OwnerHubPage() {
   const home = useQuery({
     queryKey: ["owner-home"],
     queryFn: () => (readOnly ? loadPreview() : load()),
-    staleTime: readOnly ? 5 * 60 * 1000 : undefined,
   });
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-home"] });
 
