@@ -476,7 +476,9 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         </CardContent>
       </Card>
 
-      <AlertPreferences program={program} onSaved={onChange} />
+      {!readOnly && <AlertPreferences program={program} onSaved={onChange} />}
+
+
 
       <Card>
         <CardHeader className="pb-3">
