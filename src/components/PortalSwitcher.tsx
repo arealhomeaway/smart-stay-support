@@ -12,14 +12,14 @@ import {
 import { useRole } from "@/hooks/useRole";
 import { useViewAs } from "@/hooks/useViewAs";
 import { ROLE_BLURBS, ROLE_LABELS, type AppRole } from "@/lib/permissions";
-import { portalsFor, rememberPortal } from "@/lib/portals";
+import { entryPathFor, portalsFor, rememberPortal } from "@/lib/portals";
 
 const PREVIEW_ROLES: AppRole[] = ["manager", "onboarding", "tech", "vendor", "owner"];
 
 /** Header control for Platform Owners: jump portals, or preview a role read-only. */
 export function PortalSwitcher() {
   const router = useRouter();
-  const { previewing, actualRoles, roles } = useRole();
+  const { previewing, previewRole, actualRoles, roles } = useRole();
   const portals = portalsFor(roles);
   const { viewAs, setViewAs, clearViewAs } = useViewAs();
 
@@ -69,7 +69,7 @@ export function PortalSwitcher() {
             <DropdownMenuItem
               key={role}
               onSelect={() => {
-                setViewAs(role);
+                preview(role);
               }}
               className="flex flex-col items-start gap-0.5"
             >
@@ -82,7 +82,12 @@ export function PortalSwitcher() {
           {previewing && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => clearViewAs()}>
+              <DropdownMenuItem
+                onSelect={() => {
+                  clearViewAs();
+                  go("/hub");
+                }}
+              >
                 <EyeOff className="size-4" /> Exit preview
               </DropdownMenuItem>
             </>
