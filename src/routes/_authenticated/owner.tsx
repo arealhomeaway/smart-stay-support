@@ -100,7 +100,7 @@ function OwnerHubPage() {
     );
   }
 
-  return <OwnerHub data={home.data} onChange={invalidate} />;
+  return <OwnerHub data={home.data} onChange={invalidate} readOnly={readOnly} />;
 }
 
 /** Platform Owner previewing the portal with no sample program to show. */
