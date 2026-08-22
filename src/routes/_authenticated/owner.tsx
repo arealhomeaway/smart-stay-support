@@ -82,14 +82,44 @@ type TimeTarget = {
 
 function OwnerHubPage() {
   const qc = useQueryClient();
+  const { readOnly } = useRole();
   const load = useServerFn(ownerHome);
-  const home = useQuery({ queryKey: ["owner-home"], queryFn: () => load() });
+  const loadPreview = useServerFn(ownerHomePreview);
+  const home = useQuery({
+    queryKey: ["owner-home"],
+    queryFn: () => (readOnly ? loadPreview() : load()),
+    staleTime: readOnly ? 5 * 60 * 1000 : undefined,
+  });
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-home"] });
 
   if (home.isLoading) return <Skeleton className="h-64 w-full" />;
-  if (!home.data?.linked) return <LinkInvite onLinked={invalidate} />;
+  if (!home.data?.linked) {
+    return readOnly ? (
+      <UnlinkedPreview />
+    ) : (
+      <LinkInvite onLinked={invalidate} />
+    );
+  }
 
   return <OwnerHub data={home.data} onChange={invalidate} />;
+}
+
+/** Platform Owner previewing the portal with no sample program to show. */
+function UnlinkedPreview() {
+  return (
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Eye className="size-5 text-primary" /> Homeowner preview
+        </CardTitle>
+        <CardDescription>
+          This account isn't linked to a 90-day participation program, so there's
+          no owner dashboard to preview. Pick a homeowner invite code to see the
+          real portal, or open the program you want to review from the Seats page.
+        </CardDescription>
+      </CardHeader>
+    </Card>
+  );
 }
 
 /** First run: the owner types the code ARHA gave them to attach their program. */
