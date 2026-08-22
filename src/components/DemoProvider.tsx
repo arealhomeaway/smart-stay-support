@@ -144,16 +144,9 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }
 
-/** Convenience filter: apply to any query builder to honour demo mode. */
-export function useDemoFilter() {
-  const { demoMode } = useDemo();
-  return useMemo(() => {
-    return { demoMode, eq: (b: { eq: (col: string, val: boolean) => unknown }) => (demoMode ? b.eq("is_demo", true) : b.eq("is_demo", false)) };
-  }, [demoMode]);
-}
-
 export function useDemo(): DemoContextValue {
   const ctx = useContext(DemoContext);
   if (!ctx) throw new Error("useDemo must be used within a DemoProvider");
   return ctx;
 }
+
