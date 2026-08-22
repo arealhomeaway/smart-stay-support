@@ -12,14 +12,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 
 async function assertAdmin(userId: string) {
-  const { supabase } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabase.rpc("has_role", {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.rpc("has_role", {
     _user_id: userId,
     _role: "admin",
   });
   if (error) throw new Error("Could not verify your access level.");
   if (!data) throw new Error("Only a Platform Admin can manage the demo environment.");
 }
+
 
 export const getDemoStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
