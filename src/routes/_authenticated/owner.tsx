@@ -504,7 +504,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         </CardContent>
       </Card>
 
-      {timeTarget && (
+      {!readOnly && timeTarget && (
         <LogTimeDialog
           programId={program.id}
           properties={included.map((p) => ({ id: p.propertyId, name: p.name, closingDate: p.closingDate }))}
@@ -513,7 +513,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
           onSaved={onChange}
         />
       )}
-      {answering && (
+      {!readOnly && answering && (
         <RespondDialog review={answering} onClose={() => setAnswering(null)} onSaved={onChange} />
       )}
     </div>
