@@ -18,6 +18,9 @@ export const ownerHomePreview = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { loadOwnerHomePreview } = await import("./owner-portal.server");
     return loadOwnerHomePreview(context.supabase, context.userId);
+  });
+
+
 
 
 export const markOwnerAlertsRead = createServerFn({ method: "POST" })
