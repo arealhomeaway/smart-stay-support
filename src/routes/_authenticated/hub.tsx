@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PortalCard } from "@/components/PortalCard";
+import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { portalsFor, recentPortalId } from "@/lib/portals";
