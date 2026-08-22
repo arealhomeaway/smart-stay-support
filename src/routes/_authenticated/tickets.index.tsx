@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/components/DemoProvider";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,14 +40,17 @@ function TicketsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"open" | "all" | "closed">("open");
   const [priority, setPriority] = useState<string>("all");
+  const { demoMode } = useDemo();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["tickets"],
+    queryKey: ["tickets", demoMode],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("tickets")
         .select("*, properties(name, nickname), work_types(name)")
         .order("reported_at", { ascending: false });
+      query = demoMode ? query.eq("is_demo", true) : query.eq("is_demo", false);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },

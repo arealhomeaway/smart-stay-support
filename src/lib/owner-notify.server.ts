@@ -45,7 +45,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   const { data, error } = await supabase
     .from("owner_notifications")
     .select(
-      "id, title, body, priority, ticket_id, sms_status, email_status, program_id, owner_programs(owner_email, owner_phone, owner_name)",
+      "id, title, body, priority, ticket_id, sms_status, email_status, program_id, is_demo, owner_programs(owner_email, owner_phone, owner_name)",
     )
     .or("email_status.eq.pending,sms_status.eq.pending")
     .order("created_at")
@@ -57,6 +57,15 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   const notes: string[] = [];
 
   for (const row of data ?? []) {
+    // Hard safety guard: demo notifications must never reach a real channel.
+    if (row.is_demo) {
+      await supabase
+        .from("owner_notifications")
+        .update({ email_status: "skipped", sms_status: "skipped", delivery_error: "Demo notification — external delivery blocked." })
+        .eq("id", row.id);
+      continue;
+    }
+
     const program = row.owner_programs as unknown as {
       owner_email: string | null;
       owner_phone: string | null;

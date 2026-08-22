@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/components/DemoProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,16 +30,21 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
+  const { demoMode } = useDemo();
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", demoMode],
     queryFn: async () => {
       const [tickets, properties] = await Promise.all([
         supabase
           .from("tickets")
           .select("*, properties(name, nickname)")
+          .eq("is_demo", demoMode)
           .order("reported_at", { ascending: false })
           .limit(200),
-        supabase.from("properties").select("id", { count: "exact", head: true }),
+        supabase
+          .from("properties")
+          .select("id", { count: "exact", head: true })
+          .eq("is_demo", demoMode),
       ]);
       if (tickets.error) throw tickets.error;
       return { tickets: tickets.data ?? [], propertyCount: properties.count ?? 0 };

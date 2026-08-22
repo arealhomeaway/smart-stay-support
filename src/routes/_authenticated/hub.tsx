@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PortalCard } from "@/components/PortalCard";
+import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { portalsFor, recentPortalId } from "@/lib/portals";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/hub")({
 
 function Hub() {
   const { roles, primary, can, isLoading } = useRole();
+  const { demoMode } = useDemo();
   const [recent, setRecent] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
 
@@ -44,13 +46,14 @@ function Hub() {
 
   // Attention counts are only shown where Resolve can truthfully derive them.
   const { data: attention } = useQuery({
-    queryKey: ["hub-attention"],
+    queryKey: ["hub-attention", demoMode],
     enabled: can("matters_assigned") || can("matters_all"),
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
         .select("status, priority")
+        .eq("is_demo", demoMode)
         .in("status", OPEN_STATUSES);
       if (error) throw error;
       const open = data?.length ?? 0;
