@@ -31,6 +31,7 @@ export type Database = {
           evidence_url: string | null
           external_reference: string | null
           id: string
+          is_demo: boolean
           kind: string
           property_id: string | null
           requested_by: string | null
@@ -54,6 +55,7 @@ export type Database = {
           evidence_url?: string | null
           external_reference?: string | null
           id?: string
+          is_demo?: boolean
           kind: string
           property_id?: string | null
           requested_by?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           evidence_url?: string | null
           external_reference?: string | null
           id?: string
+          is_demo?: boolean
           kind?: string
           property_id?: string | null
           requested_by?: string | null
@@ -214,6 +217,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      demo_environment: {
+        Row: {
+          active: boolean
+          id: string
+          scenario_count: number
+          seeded_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          id: string
+          scenario_count?: number
+          seeded_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          scenario_count?: number
+          seeded_at?: string | null
+        }
+        Relationships: []
       }
       department_members: {
         Row: {
@@ -625,6 +649,7 @@ export type Database = {
           guest_comm_status: string
           handoff_type: string
           id: string
+          is_demo: boolean
           next_action: string
           priority: string
           responded_at: string | null
@@ -645,6 +670,7 @@ export type Database = {
           guest_comm_status?: string
           handoff_type?: string
           id?: string
+          is_demo?: boolean
           next_action: string
           priority?: string
           responded_at?: string | null
@@ -665,6 +691,7 @@ export type Database = {
           guest_comm_status?: string
           handoff_type?: string
           id?: string
+          is_demo?: boolean
           next_action?: string
           priority?: string
           responded_at?: string | null
@@ -1115,6 +1142,7 @@ export type Database = {
           delivery_error: string | null
           email_status: string
           id: string
+          is_demo: boolean
           kind: string
           owner_user_id: string | null
           priority: string
@@ -1133,6 +1161,7 @@ export type Database = {
           delivery_error?: string | null
           email_status?: string
           id?: string
+          is_demo?: boolean
           kind: string
           owner_user_id?: string | null
           priority?: string
@@ -1151,6 +1180,7 @@ export type Database = {
           delivery_error?: string | null
           email_status?: string
           id?: string
+          is_demo?: boolean
           kind?: string
           owner_user_id?: string | null
           priority?: string
@@ -1347,6 +1377,7 @@ export type Database = {
           ends_on: string | null
           id: string
           internal_notes: string | null
+          is_demo: boolean
           last_owner_activity_at: string | null
           notes: string | null
           notify_email: boolean
@@ -1381,6 +1412,7 @@ export type Database = {
           ends_on?: string | null
           id?: string
           internal_notes?: string | null
+          is_demo?: boolean
           last_owner_activity_at?: string | null
           notes?: string | null
           notify_email?: boolean
@@ -1415,6 +1447,7 @@ export type Database = {
           ends_on?: string | null
           id?: string
           internal_notes?: string | null
+          is_demo?: boolean
           last_owner_activity_at?: string | null
           notes?: string | null
           notify_email?: boolean
@@ -1905,6 +1938,7 @@ export type Database = {
           geocoded_at: string | null
           handoff_accepted_at: string | null
           id: string
+          is_demo: boolean
           last_quarterly_review_at: string | null
           latitude: number | null
           lifecycle_status: string
@@ -1941,6 +1975,7 @@ export type Database = {
           geocoded_at?: string | null
           handoff_accepted_at?: string | null
           id?: string
+          is_demo?: boolean
           last_quarterly_review_at?: string | null
           latitude?: number | null
           lifecycle_status?: string
@@ -1977,6 +2012,7 @@ export type Database = {
           geocoded_at?: string | null
           handoff_accepted_at?: string | null
           id?: string
+          is_demo?: boolean
           last_quarterly_review_at?: string | null
           latitude?: number | null
           lifecycle_status?: string
@@ -2199,6 +2235,7 @@ export type Database = {
           evidence_url: string | null
           from_owner: string | null
           id: string
+          is_demo: boolean
           kind: string
           ticket_id: string
           to_owner: string | null
@@ -2213,6 +2250,7 @@ export type Database = {
           evidence_url?: string | null
           from_owner?: string | null
           id?: string
+          is_demo?: boolean
           kind?: string
           ticket_id: string
           to_owner?: string | null
@@ -2227,6 +2265,7 @@ export type Database = {
           evidence_url?: string | null
           from_owner?: string | null
           id?: string
+          is_demo?: boolean
           kind?: string
           ticket_id?: string
           to_owner?: string | null
@@ -2310,6 +2349,7 @@ export type Database = {
           checked_out_at: string | null
           created_at: string
           id: string
+          is_demo: boolean
           minutes_on_site: number | null
           notes: string | null
           property_id: string | null
@@ -2332,6 +2372,7 @@ export type Database = {
           checked_out_at?: string | null
           created_at?: string
           id?: string
+          is_demo?: boolean
           minutes_on_site?: number | null
           notes?: string | null
           property_id?: string | null
@@ -2354,6 +2395,7 @@ export type Database = {
           checked_out_at?: string | null
           created_at?: string
           id?: string
+          is_demo?: boolean
           minutes_on_site?: number | null
           notes?: string | null
           property_id?: string | null
@@ -2422,6 +2464,7 @@ export type Database = {
           handoff_type: string | null
           id: string
           initiator_type: string
+          is_demo: boolean
           last_reopened_at: string | null
           late_reason: string | null
           next_action: string | null
@@ -2507,6 +2550,7 @@ export type Database = {
           handoff_type?: string | null
           id?: string
           initiator_type?: string
+          is_demo?: boolean
           last_reopened_at?: string | null
           late_reason?: string | null
           next_action?: string | null
@@ -2592,6 +2636,7 @@ export type Database = {
           handoff_type?: string | null
           id?: string
           initiator_type?: string
+          is_demo?: boolean
           last_reopened_at?: string | null
           late_reason?: string | null
           next_action?: string | null
@@ -3148,6 +3193,7 @@ export type Database = {
           id: string
           insurance_expires_on: string | null
           insurance_status: string
+          is_demo: boolean
           last_verified_at: string | null
           legacy_all_groups: boolean
           legacy_market_hints: string[]
@@ -3186,6 +3232,7 @@ export type Database = {
           id?: string
           insurance_expires_on?: string | null
           insurance_status?: string
+          is_demo?: boolean
           last_verified_at?: string | null
           legacy_all_groups?: boolean
           legacy_market_hints?: string[]
@@ -3224,6 +3271,7 @@ export type Database = {
           id?: string
           insurance_expires_on?: string | null
           insurance_status?: string
+          is_demo?: boolean
           last_verified_at?: string | null
           legacy_all_groups?: boolean
           legacy_market_hints?: string[]
@@ -3502,6 +3550,8 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      reset_demo_environment: { Args: never; Returns: undefined }
+      seed_demo_environment: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
