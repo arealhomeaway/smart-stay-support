@@ -190,15 +190,16 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
   const unread = useMemo(() => alerts.filter((a) => !a.read_at), [alerts]);
 
   // Opening the hub is the acknowledgement — clear the badge once seen.
+  // (Preview mode is read-only: never touch a real homeowner's alert state.)
   useEffect(() => {
-    if (unread.length === 0) return;
+    if (readOnly || unread.length === 0) return;
     const ids = unread.map((a) => a.id);
     const timer = setTimeout(() => {
       void markRead({ data: { ids } }).then(onChange);
     }, 2500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unread.length]);
+  }, [unread.length, readOnly]);
 
   const included = properties.filter((p) => p.inclusionStatus === "included");
   const progress = PROGRESS_META[snapshot.state];
