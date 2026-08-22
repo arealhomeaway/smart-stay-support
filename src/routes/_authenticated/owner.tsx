@@ -9,9 +9,11 @@ import {
   logOwnerParticipation,
   markOwnerAlertsRead,
   ownerHome,
+  ownerHomePreview,
   redeemInvite,
   saveOwnerAlertPreferences,
 } from "@/lib/owner-portal.functions";
+import { useRole } from "@/hooks/useRole";
 import { alertLabel, relativeTime } from "@/lib/owner-notify";
 import { DECISION_PATHS } from "@/lib/owner-program";
 import {
