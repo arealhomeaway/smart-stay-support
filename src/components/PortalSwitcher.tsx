@@ -12,14 +12,14 @@ import {
 import { useRole } from "@/hooks/useRole";
 import { useViewAs } from "@/hooks/useViewAs";
 import { ROLE_BLURBS, ROLE_LABELS, type AppRole } from "@/lib/permissions";
-import { portalsFor, rememberPortal } from "@/lib/portals";
+import { entryPathFor, portalsFor, rememberPortal } from "@/lib/portals";
 
 const PREVIEW_ROLES: AppRole[] = ["manager", "onboarding", "tech", "vendor", "owner"];
 
 /** Header control for Platform Owners: jump portals, or preview a role read-only. */
 export function PortalSwitcher() {
   const router = useRouter();
-  const { previewing, actualRoles, roles } = useRole();
+  const { previewing, previewRole, actualRoles, roles } = useRole();
   const portals = portalsFor(roles);
   const { viewAs, setViewAs, clearViewAs } = useViewAs();
 
@@ -29,17 +29,21 @@ export function PortalSwitcher() {
     void router.navigate({ to });
   }
 
+  /** Previewing a role should land you where that role actually starts. */
+  function preview(role: AppRole) {
+    setViewAs(role);
+    go(entryPathFor([role]));
+  }
+
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <LayoutGrid className="size-4" />
-            Portals
+          <Button size="sm" variant={previewing ? "default" : "outline"} className="min-h-11 md:min-h-9">
+            {previewing ? <Eye className="size-4" /> : <LayoutGrid className="size-4" />}
+            <span className="hidden sm:inline">
+              {previewing && previewRole ? `Viewing as ${ROLE_LABELS[previewRole]}` : "Portals"}
+            </span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -60,11 +64,12 @@ export function PortalSwitcher() {
           <DropdownMenuLabel className="flex items-center gap-2">
             <Eye className="size-3.5" /> View as (read-only)
           </DropdownMenuLabel>
+
           {PREVIEW_ROLES.map((role) => (
             <DropdownMenuItem
               key={role}
               onSelect={() => {
-                setViewAs(role);
+                preview(role);
               }}
               className="flex flex-col items-start gap-0.5"
             >
@@ -77,7 +82,12 @@ export function PortalSwitcher() {
           {previewing && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => clearViewAs()}>
+              <DropdownMenuItem
+                onSelect={() => {
+                  clearViewAs();
+                  go("/hub");
+                }}
+              >
                 <EyeOff className="size-4" /> Exit preview
               </DropdownMenuItem>
             </>
