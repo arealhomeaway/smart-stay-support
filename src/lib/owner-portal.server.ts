@@ -55,9 +55,9 @@ export async function loadOwnerHome(supabase: Client, userId: string) {
  * portal. It never links anything to the admin's own account — it just opens
  * the most recently created program so the admin can see the real interface.
  */
-export async function loadOwnerHomePreview(supabase: Client) {
-  const admin = await supabase.rpc("has_role", { _user_id: undefined as never, _role: "admin" });
-  void admin;
+export async function loadOwnerHomePreview(supabase: Client, userId: string) {
+  const { assertAdmin } = await import("./access.server");
+  await assertAdmin(supabase, userId);
   const program = await supabase
     .from("owner_programs")
     .select("id")
