@@ -46,13 +46,14 @@ function Hub() {
 
   // Attention counts are only shown where Resolve can truthfully derive them.
   const { data: attention } = useQuery({
-    queryKey: ["hub-attention"],
+    queryKey: ["hub-attention", demoMode],
     enabled: can("matters_assigned") || can("matters_all"),
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
         .select("status, priority")
+        .eq("is_demo", demoMode)
         .in("status", OPEN_STATUSES);
       if (error) throw error;
       const open = data?.length ?? 0;
