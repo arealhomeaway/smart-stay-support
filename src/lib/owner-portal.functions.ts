@@ -12,6 +12,17 @@ export const ownerHome = createServerFn({ method: "GET" })
     return loadOwnerHome(context.supabase, context.userId);
   });
 
+/** Read-only sample program so a Platform Owner can preview the homeowner hub. */
+export const ownerHomePreview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { loadOwnerHomePreview } = await import("./owner-portal.server");
+    return loadOwnerHomePreview(context.supabase, context.userId);
+  });
+
+
+
+
 export const markOwnerAlertsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

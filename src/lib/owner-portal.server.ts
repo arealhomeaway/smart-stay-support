@@ -47,8 +47,31 @@ export async function loadOwnerHome(supabase: Client, userId: string) {
     .maybeSingle();
   if (program.error) throw program.error;
   if (!program.data) return { linked: false as const };
+  return loadOwnerHomeByProgram(supabase, program.data.id);
+}
 
-  const agg = await loadProgramAggregate(supabase, program.data.id);
+/**
+ * Read-only sample of the homeowner hub for a Platform Owner previewing the
+ * portal. It never links anything to the admin's own account — it just opens
+ * the most recently created program so the admin can see the real interface.
+ */
+export async function loadOwnerHomePreview(supabase: Client, userId: string) {
+  const { assertAdmin } = await import("./access.server");
+  await assertAdmin(supabase, userId);
+  const program = await supabase
+    .from("owner_programs")
+    .select("id")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (program.error) throw program.error;
+  if (!program.data) return { linked: false as const, preview: true as const };
+  return { ...(await loadOwnerHomeByProgram(supabase, program.data.id)), preview: true as const };
+}
+
+async function loadOwnerHomeByProgram(supabase: Client, programId: string) {
+  const agg = await loadProgramAggregate(supabase, programId);
+
   const propertyIds = agg.properties.map((p) => p.propertyId);
 
   const [alerts, tickets] = await Promise.all([

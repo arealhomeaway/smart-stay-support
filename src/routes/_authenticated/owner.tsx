@@ -2,16 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, CheckCircle2, Clock, Home, KeyRound, Mail, MessageSquare } from "lucide-react";
+import { Bell, CheckCircle2, Clock, Eye, Home, KeyRound, Mail, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   answerOwnerReview,
   logOwnerParticipation,
   markOwnerAlertsRead,
   ownerHome,
+  ownerHomePreview,
   redeemInvite,
   saveOwnerAlertPreferences,
 } from "@/lib/owner-portal.functions";
+import { useRole } from "@/hooks/useRole";
 import { alertLabel, relativeTime } from "@/lib/owner-notify";
 import { DECISION_PATHS } from "@/lib/owner-program";
 import {
@@ -80,14 +82,43 @@ type TimeTarget = {
 
 function OwnerHubPage() {
   const qc = useQueryClient();
+  const { readOnly } = useRole();
   const load = useServerFn(ownerHome);
-  const home = useQuery({ queryKey: ["owner-home"], queryFn: () => load() });
+  const loadPreview = useServerFn(ownerHomePreview);
+  const home = useQuery({
+    queryKey: ["owner-home"],
+    queryFn: () => (readOnly ? loadPreview() : load()),
+  });
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-home"] });
 
   if (home.isLoading) return <Skeleton className="h-64 w-full" />;
-  if (!home.data?.linked) return <LinkInvite onLinked={invalidate} />;
+  if (!home.data?.linked) {
+    return readOnly ? (
+      <UnlinkedPreview />
+    ) : (
+      <LinkInvite onLinked={invalidate} />
+    );
+  }
 
-  return <OwnerHub data={home.data} onChange={invalidate} />;
+  return <OwnerHub data={home.data} onChange={invalidate} readOnly={readOnly} />;
+}
+
+/** Platform Owner previewing the portal with no sample program to show. */
+function UnlinkedPreview() {
+  return (
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Eye className="size-5 text-primary" /> Homeowner preview
+        </CardTitle>
+        <CardDescription>
+          This account isn't linked to a 90-day participation program, so there's
+          no owner dashboard to preview. Pick a homeowner invite code to see the
+          real portal, or open the program you want to review from the Seats page.
+        </CardDescription>
+      </CardHeader>
+    </Card>
+  );
 }
 
 /** First run: the owner types the code ARHA gave them to attach their program. */
@@ -138,7 +169,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) {
+function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () => void; readOnly: boolean }) {
   const {
     program,
     properties,
@@ -159,15 +190,16 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
   const unread = useMemo(() => alerts.filter((a) => !a.read_at), [alerts]);
 
   // Opening the hub is the acknowledgement — clear the badge once seen.
+  // (Preview mode is read-only: never touch a real homeowner's alert state.)
   useEffect(() => {
-    if (unread.length === 0) return;
+    if (readOnly || unread.length === 0) return;
     const ids = unread.map((a) => a.id);
     const timer = setTimeout(() => {
       void markRead({ data: { ids } }).then(onChange);
     }, 2500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unread.length]);
+  }, [unread.length, readOnly]);
 
   const included = properties.filter((p) => p.inclusionStatus === "included");
   const progress = PROGRESS_META[snapshot.state];
@@ -444,7 +476,9 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
         </CardContent>
       </Card>
 
-      <AlertPreferences program={program} onSaved={onChange} />
+      {!readOnly && <AlertPreferences program={program} onSaved={onChange} />}
+
+
 
       <Card>
         <CardHeader className="pb-3">
@@ -470,7 +504,7 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
         </CardContent>
       </Card>
 
-      {timeTarget && (
+      {!readOnly && timeTarget && (
         <LogTimeDialog
           programId={program.id}
           properties={included.map((p) => ({ id: p.propertyId, name: p.name, closingDate: p.closingDate }))}
@@ -479,7 +513,7 @@ function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) 
           onSaved={onChange}
         />
       )}
-      {answering && (
+      {!readOnly && answering && (
         <RespondDialog review={answering} onClose={() => setAnswering(null)} onSaved={onChange} />
       )}
     </div>
