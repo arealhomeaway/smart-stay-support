@@ -30,16 +30,21 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
+  const { demoMode } = useDemo();
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", demoMode],
     queryFn: async () => {
       const [tickets, properties] = await Promise.all([
         supabase
           .from("tickets")
           .select("*, properties(name, nickname)")
+          .eq("is_demo", demoMode)
           .order("reported_at", { ascending: false })
           .limit(200),
-        supabase.from("properties").select("id", { count: "exact", head: true }),
+        supabase
+          .from("properties")
+          .select("id", { count: "exact", head: true })
+          .eq("is_demo", demoMode),
       ]);
       if (tickets.error) throw tickets.error;
       return { tickets: tickets.data ?? [], propertyCount: properties.count ?? 0 };
