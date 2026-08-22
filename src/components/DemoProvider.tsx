@@ -8,17 +8,17 @@ import {
   seedDemoEnvironment,
 } from "@/lib/demo.functions";
 import { useServerFn } from "@tanstack/react-start";
-import { useRole } from "@/hooks/useRole";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Demo Mode.
  *
- * A Platform Owner can open the safe demo environment, which is fully isolated
- * from live work (every demo row is tagged is_demo and blocked from real
- * emails/texts/integrations). Demo mode is a client-side lens layered on top of
- * the existing read-only "View As" preview: turning it on also enters a persona
- * preview so the admin sees a realistic role surface, and every workflow query
- * filters to demo records only.
+ * A Platform Owner can open the safe demo environment, fully isolated from
+ * live work (every demo row is tagged is_demo and blocked from real
+ * emails/texts/integrations). Demo mode is a client-side lens layered on top
+ * of the existing read-only "View As" preview: turning it on also enters a
+ * persona preview so the admin sees a realistic role surface, and every
+ * workflow query filters to demo records only.
  */
 
 export type DemoStatus = {
@@ -32,7 +32,7 @@ type DemoContextValue = {
   demoMode: boolean;
   /** Raw environment state (seeded, scenario count). */
   status: DemoStatus | undefined;
-  /** Only Platform Owners may enter demo mode. */
+  /** Whether the current user may operate the demo environment. */
   canDemo: boolean;
   enterDemo: (role: AppRole) => void;
   exitDemo: () => void;
@@ -61,11 +61,11 @@ function writeDemoFlag(on: boolean) {
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
   const { viewAs, setViewAs, clearViewAs } = useViewAs();
-  const { actualRoles } = useRole();
   const queryClient = useQueryClient();
-  const isAdmin = actualRoles.includes("admin");
 
   const [flag, setFlag] = useState<boolean>(() => readDemoFlag());
+  const [canDemo, setCanDemo] = useState(false);
+
   useEffect(() => {
     const sync = () => setFlag(readDemoFlag());
     window.addEventListener(EVENT, sync);
@@ -76,15 +76,32 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Resolve admin status once on mount so the provider stays light.
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (cancelled || !data.user) return;
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+      if (cancelled) return;
+      setCanDemo((roles ?? []).some((r) => r.role === "admin"));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const statusQuery = useQuery({
     queryKey: ["demo-status"],
     staleTime: 30 * 1000,
-    enabled: isAdmin,
+    enabled: canDemo,
     queryFn: () => getDemoStatus(),
   });
 
   // Demo mode is real only when an admin is previewing a persona.
-  const demoMode = isAdmin && flag && Boolean(viewAs);
+  const demoMode = canDemo && flag && Boolean(viewAs);
 
   const seedFn = useServerFn(seedDemoEnvironment);
   const resetFn = useServerFn(resetDemoEnvironment);
@@ -130,7 +147,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     () => ({
       demoMode,
       status: statusQuery.data,
-      canDemo: isAdmin,
+      canDemo,
       enterDemo,
       exitDemo,
       seed,
@@ -138,7 +155,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
       seeding,
       resetting,
     }),
-    [demoMode, statusQuery.data, isAdmin, enterDemo, exitDemo, seed, reset, seeding, resetting],
+    [demoMode, statusQuery.data, canDemo, enterDemo, exitDemo, seed, reset, seeding, resetting],
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
@@ -149,4 +166,3 @@ export function useDemo(): DemoContextValue {
   if (!ctx) throw new Error("useDemo must be used within a DemoProvider");
   return ctx;
 }
-
