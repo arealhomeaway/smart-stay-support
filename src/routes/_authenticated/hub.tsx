@@ -30,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/hub")({
 
 function Hub() {
   const { roles, primary, can, isLoading } = useRole();
+  const { demoMode } = useDemo();
   const [recent, setRecent] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
 
