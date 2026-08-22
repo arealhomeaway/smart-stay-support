@@ -169,7 +169,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-function OwnerHub({ data, onChange }: { data: HomeData; onChange: () => void }) {
+function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () => void; readOnly: boolean }) {
   const {
     program,
     properties,
