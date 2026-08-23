@@ -72,7 +72,7 @@ export function PortalSwitcher() {
             <FlaskConical className="size-3.5" /> Demo environment
           </DropdownMenuLabel>
           <DropdownMenuItem
-            disabled={!status?.seeded}
+            disabled={seeding || resetting}
             onSelect={() => void seed()}
             className="flex flex-col items-start gap-0.5"
           >
@@ -84,7 +84,7 @@ export function PortalSwitcher() {
             </span>
           </DropdownMenuItem>
           <DropdownMenuItem
-            disabled={!status?.seeded}
+            disabled={!status?.seeded || seeding || resetting}
             onSelect={() => void reset()}
             className="flex flex-col items-start gap-0.5"
           >
