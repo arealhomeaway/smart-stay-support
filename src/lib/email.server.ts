@@ -1,16 +1,24 @@
 /**
  * Outbound email (server-only).
  *
- * Mail is sent from the shared ARHA mailbox through the Lovable connector
- * gateway, so no mail credentials ever live in the app. Every attempt is
- * written to `email_log` so a failed owner alert is visible instead of silent,
- * and throttles/outages are retried with backoff before we give up.
+ * Every message is sent from the one authorised mailbox
+ * (EMAIL_SOURCE_MAILBOX) through the Lovable connector gateway, so no mail
+ * credentials ever live in the app. The sending mailbox and the From/Sender
+ * address are fixed server-side: they can never be supplied by the browser, a
+ * ticket, a profile row or an API request, and no individual employee mailbox
+ * is ever used. There is no /me/sendMail path and no fallback mailbox.
+ *
+ * Every attempt is written to `email_log` so a failed owner alert is visible
+ * instead of silent, and throttles/outages are retried with backoff.
  */
+
+import { authorizedMailbox, sendMailPath } from "./mailbox-allowlist.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/microsoft_outlook";
 
-/** The shared mailbox everything sends from. Replies land in the team inbox. */
-export const SHARED_MAILBOX = "info@arealhomeaway.com";
+/** The single authorised mailbox everything sends from. Replies land in the team inbox. */
+export const SHARED_MAILBOX = authorizedMailbox();
+
 
 const BRAND = {
   ink: "#20282B",
