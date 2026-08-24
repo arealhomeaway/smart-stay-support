@@ -263,7 +263,7 @@ export async function syncMailbox(
     threaded: 0,
     skipped: 0,
     failed: 0,
-    mailbox: SHARED_MAILBOX,
+    mailbox: authorizedMailbox(),
     items: [],
   };
 
@@ -271,12 +271,23 @@ export async function syncMailbox(
     return { ...base, ok: false, error: "The Microsoft mailbox is not connected." };
   }
 
-  let scope = "/me";
+  // First run ever: stamp the checkpoint and stop. Nothing historical is imported.
+  let checkpoint = await readCheckpoint(db);
+  if (!checkpoint) {
+    const now = new Date().toISOString();
+    if (!dryRun) await writeCheckpoint(db, now);
+    return {
+      ...base,
+      ok: true,
+      error: dryRun
+        ? "No checkpoint set yet — the first live run will start from that moment."
+        : `Checkpoint set to ${now}. Only mail received after this point will be processed.`,
+    };
+  }
+
   let messages: GraphMessage[] = [];
   try {
-    const read = await fetchUnread(limit);
-    scope = read.scope;
-    messages = read.messages;
+    messages = await fetchInbox(limit, checkpoint);
   } catch (err) {
     return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the inbox." };
   }
@@ -295,26 +306,30 @@ export async function syncMailbox(
     seen.add(`${(row.title ?? "").toLowerCase()}|${(row.source_reference ?? "").toLowerCase()}`);
   }
   base.scanned = messages.length;
-  base.mailbox = scope === "/me" ? "connected mailbox" : SHARED_MAILBOX;
+
+  let highWater = checkpoint;
 
   for (const msg of messages) {
     const subject = (msg.subject ?? "").trim() || "(no subject)";
     const from = msg.from?.emailAddress?.address ?? "unknown sender";
-    const skip = classify(msg, known.has(from.toLowerCase()));
+    const messageIds = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
+    if (msg.receivedDateTime && new Date(msg.receivedDateTime) > new Date(highWater)) {
+      highWater = msg.receivedDateTime;
+    }
 
-    if (skip) {
+    // Same message seen twice — a re-run, a redelivery, or a Graph id we've
+    // already handled under its internet id. Never open a second matter.
+    if (await alreadyProcessed(db, messageIds)) {
       base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: skip });
-      if (!dryRun) {
-        await recordEvent(db, msg.id, "skipped", skip, null);
-        await markRead(scope, msg.id);
-      }
+      base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
       continue;
     }
 
-    if (!dryRun && (await alreadyProcessed(db, msg.id))) {
+    const skip = classify(msg, known.has(from.toLowerCase()));
+    if (skip) {
       base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
+      base.items.push({ subject, from, outcome: "skipped", reason: skip });
+      if (!dryRun) await recordEvent(db, msg, "skipped", skip, null);
       continue;
     }
 
@@ -322,10 +337,7 @@ export async function syncMailbox(
     if (seen.has(dupeKey)) {
       base.skipped++;
       base.items.push({ subject, from, outcome: "skipped", reason: "duplicate of an existing matter" });
-      if (!dryRun) {
-        await recordEvent(db, msg.id, "skipped", "duplicate", null);
-        await markRead(scope, msg.id);
-      }
+      if (!dryRun) await recordEvent(db, msg, "skipped", "duplicate", null);
       continue;
     }
     seen.add(dupeKey);
@@ -352,18 +364,22 @@ export async function syncMailbox(
         base.created++;
         base.items.push({ subject, from, outcome: "created", ref: result.ref, priority: result.priority });
       }
-      await recordEvent(db, msg.id, result.threaded ? "threaded" : "created", null, result.ticketId);
-      await markRead(scope, msg.id);
+      await recordEvent(db, msg, result.threaded ? "threaded" : "created", null, result.ticketId);
     } catch (err) {
       base.failed++;
       const message = err instanceof Error ? err.message : "Intake failed";
       base.items.push({ subject, from, outcome: "failed", reason: message });
-      await recordEvent(db, msg.id, "failed", message, null);
+      await recordEvent(db, msg, "failed", message, null);
     }
   }
 
+  // Advance the checkpoint only for mail we actually looked at, so a failure
+  // never silently skips the next run past unread work.
+  if (!dryRun && highWater !== checkpoint) await writeCheckpoint(db, highWater);
+
   return base;
 }
+
 
 async function alreadyProcessed(db: Db, messageId: string) {
   const { data } = await db
