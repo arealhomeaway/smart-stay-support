@@ -268,9 +268,6 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 500 * 2 ** (attempts - 1));
 
 
-      if (!RETRYABLE.has(res.status) || attempts >= MAX_ATTEMPTS) break;
-      const retryAfter = Number(res.headers.get("retry-after"));
-      await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 500 * 2 ** (attempts - 1));
 
     } catch (err) {
       lastError = err instanceof Error ? err.message : "Email failed";
