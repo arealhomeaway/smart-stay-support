@@ -1,27 +1,35 @@
 /**
  * Inbox reader (server-only).
  *
- * Reads the shared ARHA mailbox through the Microsoft connector gateway and
- * turns real work emails into matters in the operations queue. Two hard rules
- * shape this file:
+ * Reads exactly one mailbox — the address in EMAIL_SOURCE_MAILBOX, verified
+ * against the server-side allowlist before every request — and turns real work
+ * emails into matters in the operations queue.
  *
- *  1. Only mail a coordinator would actually action becomes a matter. Anything
+ * Hard rules:
+ *
+ *  1. Only `/users/<authorised mailbox>/mailFolders/Inbox/messages` is read.
+ *     No user enumeration, no /me/*, no dynamic mailbox selection, and no sent
+ *     items, drafts, deleted items or archive folders.
+ *  2. No historical import. A checkpoint is stamped the first time the reader
+ *     runs, and only mail received after that point is ever processed.
+ *  3. Nothing is created twice. Both the Graph message id and the
+ *     internetMessageId are recorded in `integration_events`, so a re-run or a
+ *     redelivery can't duplicate a matter.
+ *  4. Only mail a coordinator would actually action becomes a matter. Anything
  *     that looks like a newsletter, a calendar response or an automated
- *     no-reply notice is skipped and recorded as skipped, never opened.
- *  2. Nothing is ever created twice. Replies carrying [ARHA-123] land on the
- *     existing matter's timeline, and every message id is written to
- *     `integration_events` so a re-run can't duplicate it.
+ *     no-reply notice is skipped and recorded as skipped.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { createIntakeMatter, REF_TAG, type IntakeResult } from "./intake.server";
-import { SHARED_MAILBOX } from "./email.server";
+import { authorizedMailbox, inboxMessagesPath } from "./mailbox-allowlist.server";
 
 type Db = SupabaseClient<Database>;
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/microsoft_outlook";
 const SYSTEM = "outlook_inbox";
+const CHECKPOINT_KEY = "processing_checkpoint";
 
 function mailConfig() {
   const lovableKey = process.env["LOVABLE_API_KEY"];
@@ -37,6 +45,7 @@ export function mailboxReadEnabled() {
 
 type GraphMessage = {
   id: string;
+  internetMessageId?: string | null;
   subject?: string | null;
   bodyPreview?: string | null;
   receivedDateTime?: string | null;
@@ -69,31 +78,56 @@ async function graph(path: string, init?: RequestInit) {
 }
 
 /**
- * Reads unread inbox mail. Mailbox-level access is preferred; if Send/Read As
- * on the shared mailbox has not been granted we read the connected user's own
- * inbox, which is where forwarded coordinator mail lands today.
+ * The point in time after which mail is processed.
+ *
+ * The first run stamps "now" and processes nothing, so reactivating the
+ * automation never sweeps in the mailbox's history.
  */
-async function fetchUnread(limit: number) {
-  const query =
-    `?$filter=isRead eq false&$top=${limit}&$orderby=receivedDateTime desc` +
-    `&$select=id,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders`;
-  const shared = `/users/${encodeURIComponent(SHARED_MAILBOX)}/mailFolders/inbox/messages${query}`;
-  try {
-    const res = await graph(shared);
-    return { scope: shared.split("/mailFolders")[0]!, messages: ((await res.json()).value ?? []) as GraphMessage[] };
-  } catch {
-    const res = await graph(`/me/mailFolders/inbox/messages${query}`);
-    return { scope: "/me", messages: ((await res.json()).value ?? []) as GraphMessage[] };
-  }
+export async function readCheckpoint(db: Db): Promise<string | null> {
+  const { data } = await db
+    .from("integration_events")
+    .select("external_id")
+    .eq("system", SYSTEM)
+    .eq("operation", CHECKPOINT_KEY)
+    .maybeSingle();
+  return (data?.external_id as string | undefined) ?? null;
 }
 
-async function markRead(scope: string, id: string) {
-  try {
-    await graph(`${scope}/messages/${id}`, { method: "PATCH", body: JSON.stringify({ isRead: true }) });
-  } catch (err) {
-    console.error("Could not mark mail read:", err);
+async function writeCheckpoint(db: Db, iso: string) {
+  const existing = await readCheckpoint(db);
+  if (existing === null) {
+    await db.from("integration_events").insert({
+      system: SYSTEM,
+      direction: "inbound",
+      operation: CHECKPOINT_KEY,
+      external_id: iso,
+      status: "checkpoint",
+      resolved_at: new Date().toISOString(),
+    });
+    return;
   }
+  if (new Date(iso) <= new Date(existing)) return;
+  await db
+    .from("integration_events")
+    .update({ external_id: iso, resolved_at: new Date().toISOString() })
+    .eq("system", SYSTEM)
+    .eq("operation", CHECKPOINT_KEY);
 }
+
+/**
+ * Reads new Inbox mail from the one authorised mailbox.
+ * The path is built by the allowlist, so an unauthorised mailbox throws before
+ * any network call is made.
+ */
+async function fetchInbox(limit: number, since: string) {
+  const query =
+    `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc` +
+    `&$select=id,internetMessageId,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders`;
+  const path = inboxMessagesPath(query);
+  const res = await graph(path);
+  return ((await res.json()).value ?? []) as GraphMessage[];
+}
+
 
 /** Senders and subjects that are never operational work. */
 const NOISE_SENDER =
