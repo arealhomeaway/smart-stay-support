@@ -381,36 +381,44 @@ export async function syncMailbox(
 }
 
 
-async function alreadyProcessed(db: Db, messageId: string) {
+/** True when any of this message's ids has already been recorded. */
+async function alreadyProcessed(db: Db, messageIds: string[]) {
+  if (!messageIds.length) return false;
   const { data } = await db
     .from("integration_events")
     .select("id")
     .eq("system", SYSTEM)
-    .eq("external_id", messageId)
-    .maybeSingle();
-  return Boolean(data);
+    .eq("operation", "mailbox_message")
+    .in("external_id", messageIds)
+    .limit(1);
+  return Boolean(data?.length);
 }
 
 async function recordEvent(
   db: Db,
-  messageId: string,
+  msg: GraphMessage,
   status: string,
   error: string | null,
   ticketId: string | null,
 ) {
-  const { error: insertError } = await db.from("integration_events").insert({
+  // Both ids are recorded so neither a Graph id change nor a redelivery under
+  // the same internet id can produce a second matter.
+  const ids = Array.from(new Set([msg.id, msg.internetMessageId ?? ""].filter(Boolean)));
+  const rows = ids.map((external_id) => ({
     system: SYSTEM,
     direction: "inbound",
     operation: "mailbox_message",
-    external_id: messageId,
+    external_id,
     entity_type: ticketId ? "ticket" : null,
     entity_id: ticketId,
     status,
     error_message: error,
     resolved_at: status === "failed" ? null : new Date().toISOString(),
-  });
+  }));
+  const { error: insertError } = await db.from("integration_events").insert(rows);
   if (insertError) console.error("Could not record mailbox event:", insertError.message);
 }
+
 
 /** The last few inbox messages Resolve acted on, newest first. */
 export async function recentMailboxEvents(db: Db, limit = 20) {
