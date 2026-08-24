@@ -190,7 +190,13 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     return { status: "skipped", error };
   }
 
-  const replyTo = isEmailAddress(input.replyTo) ? input.replyTo.trim() : SHARED_MAILBOX;
+  // Replies always come back to the shared inbox, even when a matter is owned
+  // by an individual coordinator. Their name may appear in the signature; the
+  // address never changes.
+  if (isEmailAddress(input.replyTo) && input.replyTo.trim().toLowerCase() !== SHARED_MAILBOX) {
+    console.warn(`Ignoring requested reply-to ${input.replyTo.trim()} — replies are pinned to ${SHARED_MAILBOX}.`);
+  }
+  const replyTo = SHARED_MAILBOX;
   const message = {
     subject: input.subject,
     body: { contentType: "HTML", content: input.html },
@@ -198,15 +204,32 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     ...(input.cc?.filter(isEmailAddress).length
       ? { ccRecipients: input.cc.filter(isEmailAddress).map((address) => ({ emailAddress: { address } })) }
       : {}),
+    // From and Sender are fixed server-side and are not caller-supplied.
+    from: { emailAddress: { address: SHARED_MAILBOX } },
+    sender: { emailAddress: { address: SHARED_MAILBOX } },
     replyTo: [{ emailAddress: { address: replyTo } }],
   };
 
   let attempts = 0;
   let lastError = "Email failed";
-  // Send As on the shared mailbox is the goal; if the mailbox permission is
-  // missing we fall back to the connected user's own mailbox so alerts still land.
-  let path = `/users/${encodeURIComponent(SHARED_MAILBOX)}/sendMail`;
-  let usedFallback = false;
+  // The allowlist builds this path. There is no fallback mailbox and no /me.
+  let path: string;
+  try {
+    path = sendMailPath();
+  } catch (err) {
+    const error = err instanceof Error ? err.message : "unauthorized mailbox request";
+    await logDelivery({
+      recipient: to,
+      subject: input.subject,
+      purpose,
+      replyTo: SHARED_MAILBOX,
+      ticketId: input.ticketId ?? null,
+      status: "blocked",
+      attempts: 0,
+      error,
+    });
+    return { status: "failed", error };
+  }
 
   while (attempts < MAX_ATTEMPTS) {
     attempts++;
@@ -231,24 +254,19 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           ticketId: input.ticketId ?? null,
           status: "sent",
           attempts,
-          error: usedFallback
-            ? `Sent from the connected user's mailbox — ${SHARED_MAILBOX} has not granted Send As yet.`
-            : null,
+          error: null,
         });
         return { status: "sent", error: null };
       }
 
       const detail = await res.text();
-      console.error(`Outlook sendMail failed [${res.status}]: ${detail}`);
+      console.error(`Outlook sendMail failed [${res.status}] ${path}: ${detail}`);
       lastError = `Mail provider [${res.status}]: ${detail.slice(0, 300)}`;
 
-      // No Send As permission on the shared mailbox — try the connected mailbox once.
-      if (!usedFallback && (res.status === 403 || res.status === 404)) {
-        usedFallback = true;
-        path = "/me/sendMail";
-        attempts--;
-        continue;
-      }
+      if (!RETRYABLE.has(res.status) || attempts >= MAX_ATTEMPTS) break;
+      const retryAfter = Number(res.headers.get("retry-after"));
+      await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 500 * 2 ** (attempts - 1));
+
 
       if (!RETRYABLE.has(res.status) || attempts >= MAX_ATTEMPTS) break;
       const retryAfter = Number(res.headers.get("retry-after"));
