@@ -424,9 +424,9 @@ async function recordEvent(
 export async function recentMailboxEvents(db: Db, limit = 20) {
   const { data, error } = await db
     .from("integration_events")
-    .eq("operation", "mailbox_message")
     .select("id, status, error_message, created_at, entity_id, external_id")
     .eq("system", SYSTEM)
+    .eq("operation", "mailbox_message")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) return [];
