@@ -12,6 +12,7 @@ import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
 import { NotionSyncPanel } from "@/components/NotionSyncPanel";
 import { MailboxIntakePanel } from "@/components/MailboxIntakePanel";
+import { FeatureFlagsPanel } from "@/components/FeatureFlagsPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -121,6 +122,8 @@ function IntegrationsPage() {
 
 
       </div>
+
+      <FeatureFlagsPanel />
 
       <MailboxIntakePanel />
 
