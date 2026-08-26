@@ -3595,7 +3595,7 @@ export type Database = {
     }
     Functions: {
       archive_demo_environment: {
-        Args: { _reason?: string }
+        Args: { _actor?: string; _reason?: string }
         Returns: undefined
       }
       has_role: {
@@ -3608,8 +3608,12 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
-      reset_demo_environment: { Args: never; Returns: undefined }
-      seed_demo_environment: { Args: never; Returns: undefined }
+      reset_demo_environment:
+        | { Args: never; Returns: undefined }
+        | { Args: { _actor?: string }; Returns: undefined }
+      seed_demo_environment:
+        | { Args: never; Returns: undefined }
+        | { Args: { _actor?: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
