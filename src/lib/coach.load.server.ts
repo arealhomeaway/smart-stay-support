@@ -36,6 +36,8 @@ export async function loadCatalog(
         .from("tickets")
         .select("title, category, priority, resolution_notes")
         .eq("property_id", opts.propertyId)
+        // The Coach never learns from demo records.
+        .eq("is_demo", false)
         .order("created_at", { ascending: false })
         .limit(8),
     ]);

@@ -55,6 +55,8 @@ function Oversight() {
       const { data, error } = await supabase
         .from("tickets")
         .select("*, properties(name, nickname)")
+        // Demo records never appear in oversight.
+        .eq("is_demo", false)
         .order("reported_at", { ascending: false })
         .limit(500);
       if (error) throw error;

@@ -206,3 +206,110 @@ export async function listOwnerRezTasks(): Promise<OwnerRezTask[]> {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ *
+ * Current guest / tenant contact (read-only).
+ *
+ * Strictly a GET against OwnerRez. Nothing here creates, updates or sends
+ * anything through OwnerRez, and no guest contact detail is written back to
+ * our database — it is fetched for display and then dropped.
+ * ------------------------------------------------------------------ */
+
+export type GuestContact = {
+  status: "match" | "no_stay" | "ambiguous" | "unavailable";
+  guest_name: string | null;
+  phone: string | null;
+  email: string | null;
+  arrival: string | null;
+  departure: string | null;
+  reservation_id: string | null;
+  booking_channel: string | null;
+  stay_kind: "short_term" | "mid_term" | null;
+  note?: string;
+};
+
+type OwnerRezGuest = {
+  first_name?: string;
+  last_name?: string;
+  phones?: Array<{ number?: string; type?: string }>;
+  email_addresses?: Array<{ address?: string }>;
+};
+
+/**
+ * Resolves the guest or mid-term tenant currently in residence for one
+ * OwnerRez listing id. Matching is by OwnerRez property id and the active
+ * stay date range only — never by property name. Anything other than exactly
+ * one active stay is reported as unavailable rather than guessed at.
+ */
+export async function currentGuestForListing(ownerRezPropertyId: string): Promise<GuestContact> {
+  const empty: GuestContact = {
+    status: "no_stay",
+    guest_name: null,
+    phone: null,
+    email: null,
+    arrival: null,
+    departure: null,
+    reservation_id: null,
+    booking_channel: null,
+    stay_kind: null,
+  };
+
+  const today = new Date();
+  const data = await ownerRezGet<{ items?: (OwnerRezBooking & { listing_site?: string })[] }>(
+    "/bookings",
+    {
+      property_ids: ownerRezPropertyId,
+      from: ymd(new Date(today.getTime() - 2 * 86400000)),
+      to: ymd(new Date(today.getTime() + 2 * 86400000)),
+      limit: "50",
+      include_guest: "true",
+    },
+  );
+
+  const todayKey = ymd(today);
+  const active = (data.items ?? []).filter(
+    (b) =>
+      !b.is_block &&
+      (b.status ?? "Active").toLowerCase() !== "cancelled" &&
+      (b.arrival?.slice(0, 10) ?? "9999") <= todayKey &&
+      (b.departure?.slice(0, 10) ?? "0000") >= todayKey,
+  );
+
+  if (active.length === 0) return empty;
+  if (active.length > 1) return { ...empty, status: "ambiguous" };
+
+  const stay = active[0]!;
+  let name = stay.guest_name ?? null;
+  let phone: string | null = null;
+  let email: string | null = null;
+
+  if (stay.guest_id) {
+    try {
+      const guest = await ownerRezGet<OwnerRezGuest>(`/guests/${stay.guest_id}`);
+      name = name ?? [guest.first_name, guest.last_name].filter(Boolean).join(" ") ?? null;
+      phone = guest.phones?.find((p) => p.number)?.number ?? null;
+      email = guest.email_addresses?.find((e) => e.address)?.address ?? null;
+    } catch {
+      // Leave the contact fields blank rather than guessing.
+    }
+  }
+
+  const nights =
+    stay.arrival && stay.departure
+      ? Math.round(
+          (new Date(stay.departure).getTime() - new Date(stay.arrival).getTime()) / 86400000,
+        )
+      : 0;
+
+  return {
+    status: "match",
+    guest_name: name || null,
+    phone,
+    email,
+    arrival: stay.arrival ?? null,
+    departure: stay.departure ?? null,
+    reservation_id: String(stay.id),
+    booking_channel: stay.listing_site ?? stay.type ?? null,
+    stay_kind: nights >= 28 ? "mid_term" : "short_term",
+  };
+}
