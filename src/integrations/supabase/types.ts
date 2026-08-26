@@ -3594,6 +3594,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_demo_environment: {
+        Args: { _reason?: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
