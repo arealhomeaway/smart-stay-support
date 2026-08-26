@@ -275,6 +275,8 @@ function Analytics() {
       const { data, error } = await supabase
         .from("tickets")
         .select(SELECT)
+        // Demo records are excluded from every KPI.
+        .eq("is_demo", false)
         .gte("reported_at", since)
         .order("reported_at", { ascending: false })
         .limit(4000);
