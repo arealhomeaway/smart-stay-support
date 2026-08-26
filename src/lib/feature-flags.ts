@@ -24,6 +24,9 @@ export const FLAG_KEYS = [
   "breezeway_bridge",
   "notion_sync",
   "operations_queue_v2",
+  "onboarding_portal_v2",
+  "onboarding_sharepoint_docs",
+  "onboarding_external_sync",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

@@ -20,7 +20,6 @@ export type GuestContextResult =
       status: "match" | "unavailable";
       guest_name: string | null;
       phone: string | null;
-      email: string | null;
       arrival: string | null;
       departure: string | null;
       reservation_id: string | null;
@@ -33,7 +32,6 @@ const UNAVAILABLE = {
   status: "unavailable" as const,
   guest_name: null,
   phone: null,
-  email: null,
   arrival: null,
   departure: null,
   reservation_id: null,
@@ -82,7 +80,6 @@ export const getGuestContext = createServerFn({ method: "POST" })
         status: "match",
         guest_name: stay.guest_name,
         phone: stay.phone,
-        email: stay.email,
         arrival: stay.arrival,
         departure: stay.departure,
         reservation_id: stay.reservation_id,

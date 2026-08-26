@@ -48,6 +48,11 @@ export const seedDemoEnvironment = createServerFn({ method: "POST" })
       _actor: context.userId,
     });
     if (error) throw error;
+    // Stage 2: the onboarding scenario is part of the same admin-triggered seed.
+    const { error: onboardingError } = await supabaseAdmin.rpc("seed_demo_onboarding", {
+      _actor: context.userId,
+    });
+    if (onboardingError) throw onboardingError;
     return { ok: true as const };
   });
 
@@ -65,5 +70,9 @@ export const resetDemoEnvironment = createServerFn({ method: "POST" })
       _actor: context.userId,
     });
     if (error) throw error;
+    const { error: onboardingError } = await supabaseAdmin.rpc("archive_demo_onboarding", {
+      _actor: context.userId,
+    });
+    if (onboardingError) throw onboardingError;
     return { ok: true as const };
   });

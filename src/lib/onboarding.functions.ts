@@ -28,6 +28,10 @@ export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
         evidenceNote: z.string().trim().max(1000).default(""),
         status: z.enum(["open", "blocked", "complete", "carryover"]).default("open"),
         blocksHandoff: z.boolean().default(true),
+        parentTaskId: z.string().uuid().nullable().optional(),
+        dependsOn: z.array(z.string().uuid()).max(20).optional(),
+        sortOrder: z.number().int().min(0).max(999).optional(),
+        linkedTicketId: z.string().uuid().nullable().optional(),
       })
       .parse(data),
   )
@@ -84,6 +88,7 @@ export const reviewHandoffFn = createServerFn({ method: "POST" })
         handoffId: z.string().uuid(),
         decision: z.enum(["accepted", "returned"]),
         corrections: z.string().trim().max(2000).default(""),
+        exceptionReason: z.string().trim().max(1000).optional(),
       })
       .parse(data),
   )
@@ -101,4 +106,62 @@ export const getAuditLog = createServerFn({ method: "GET" })
     if (error || !allowed) throw new Error("Audit history is limited to supervisors.");
     const { loadAuditLog } = await import("./audit.server");
     return { entries: await loadAuditLog() };
+  });
+
+/* Stage 2 — onboarding portal server functions. All of them are internal-only:
+ * every handler re-checks onboarding-staff or supervisor access server-side. */
+
+export const addOnboardingNoteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        taskId: z.string().uuid().nullable().default(null),
+        body: z.string().trim().min(1).max(4000),
+        mentions: z.array(z.string().uuid()).max(20).default([]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { addOnboardingNote } = await import("./onboarding.server");
+    return addOnboardingNote(context.supabase, context.userId, data);
+  });
+
+export const recordTaskExceptionFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ taskId: z.string().uuid(), reason: z.string().trim().min(3).max(1000) }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { recordTaskException } = await import("./onboarding.server");
+    return recordTaskException(context.supabase, context.userId, data);
+  });
+
+export const archiveOnboardingTaskFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ taskId: z.string().uuid(), reason: z.string().trim().min(3).max(500) }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { archiveOnboardingTask } = await import("./onboarding.server");
+    return archiveOnboardingTask(context.supabase, context.userId, data);
+  });
+
+export const resolveExternalRecordFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        recordId: z.string().uuid(),
+        propertyId: z.string().uuid().nullable().default(null),
+        ownerrezPropertyId: z.string().trim().max(60).nullable().default(null),
+        decision: z.enum(["match", "review", "archive"]),
+        note: z.string().trim().max(1000).default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { resolveExternalRecord } = await import("./onboarding.server");
+    return resolveExternalRecord(context.supabase, context.userId, data);
   });

@@ -71,7 +71,6 @@ export function GuestContextPanel({ ticketId }: { ticketId: string }) {
           <>
             <Row label="Name" value={result.guest_name ?? "—"} />
             <Row label="Phone" value={result.phone ?? "—"} />
-            <Row label="Email" value={result.email ?? "—"} />
             <Row label="Stay" value={dateRange(result.arrival, result.departure)} />
             <Row label="Reservation" value={result.reservation_id ?? "—"} />
             <Row label="Channel" value={result.booking_channel ?? "—"} />
