@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HandoffPanel } from "@/components/HandoffPanel";
+import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
