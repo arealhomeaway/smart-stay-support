@@ -64,6 +64,7 @@ export type Capability =
   | "coaching_manage"
   | "matters_all"
   | "matters_assigned"
+  | "guest_contact"
   | "properties"
   | "onboarding_workspace"
   | "handoff_request"
@@ -83,6 +84,7 @@ const STAFF_BASE: Capability[] = ["matters_assigned", "playbooks_view", "coachin
 const SUPERVISOR_CAPS: Capability[] = [
   ...STAFF_BASE,
   "matters_all",
+  "guest_contact",
   "oversight",
   "analytics",
   "properties",
@@ -109,7 +111,8 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   ],
   manager: SUPERVISOR_CAPS,
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request", "properties"],
-  tech: STAFF_BASE,
+  // Operations coordinators can see current guest/tenant contact details.
+  tech: [...STAFF_BASE, "guest_contact"],
   vendor: [],
   owner: [],
 };
