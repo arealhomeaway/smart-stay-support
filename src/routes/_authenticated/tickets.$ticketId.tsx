@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { HandoffPanel } from "@/components/HandoffPanel";
+import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
@@ -272,7 +273,9 @@ function TicketDetail() {
   }
 
   async function resolveTicket() {
-    if (requiredOpen.length > 0) {
+    // A supervisor exception is the only way past a closure gate, and it is recorded.
+    const waived = Boolean(ticket.closure_exception_reason);
+    if (requiredOpen.length > 0 && !waived) {
       toast.error(`${requiredOpen.length} required step(s) still open.`);
       return;
     }
@@ -280,18 +283,19 @@ function TicketDetail() {
       toast.error("Add a resolution summary — what was wrong and what was done.");
       return;
     }
-    if (workType?.required_closure_evidence && !evidence.trim()) {
+    if (workType?.required_closure_evidence && !evidence.trim() && !waived) {
       toast.error("This work type requires closure evidence before you can close.");
       return;
     }
-    if (guestCommsRequired && !finalComms) {
+    if (guestCommsRequired && !finalComms && !waived) {
       toast.error("Confirm the final message went to the guest.");
       return;
     }
-    if (ticket.guest_in_residence && !guestConfirmed) {
+    if (ticket.guest_in_residence && !guestConfirmed && !waived) {
       toast.error("Confirm the guest verified the fix before resolving.");
       return;
     }
+
     const { error } = await supabase
       .from("tickets")
       .update({
@@ -491,9 +495,12 @@ function TicketDetail() {
             </Card>
           )}
 
+          <MatterOwnershipPanel ticket={ticket} closed={closed} onChanged={refresh} />
+
           {ticket.record_type !== "completed_interaction" && (
             <HandoffPanel ticket={ticket} closed={closed} onChanged={refresh} />
           )}
+
 
           {!closed && (
             <VendorDispatchPanel

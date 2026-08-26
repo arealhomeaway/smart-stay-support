@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.audit_ticket_change() FROM PUBLIC, anon, authenticated;
