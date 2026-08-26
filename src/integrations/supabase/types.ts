@@ -426,6 +426,51 @@ export type Database = {
         }
         Relationships: []
       }
+      external_databases: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          external_database_id: string | null
+          id: string
+          key: string
+          label: string
+          read_only: boolean
+          source: string
+          sync_enabled: boolean
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          external_database_id?: string | null
+          id?: string
+          key: string
+          label: string
+          read_only?: boolean
+          source?: string
+          sync_enabled?: boolean
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          external_database_id?: string | null
+          id?: string
+          key?: string
+          label?: string
+          read_only?: boolean
+          source?: string
+          sync_enabled?: boolean
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       external_links: {
         Row: {
           created_at: string
@@ -473,6 +518,78 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      external_records: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          database_key: string
+          external_id: string
+          id: string
+          is_demo: boolean
+          match_note: string | null
+          match_status: string
+          matched_at: string | null
+          matched_by: string | null
+          ownerrez_property_id: string | null
+          payload: Json
+          property_id: string | null
+          source: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          database_key: string
+          external_id: string
+          id?: string
+          is_demo?: boolean
+          match_note?: string | null
+          match_status?: string
+          matched_at?: string | null
+          matched_by?: string | null
+          ownerrez_property_id?: string | null
+          payload?: Json
+          property_id?: string | null
+          source?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          database_key?: string
+          external_id?: string
+          id?: string
+          is_demo?: boolean
+          match_note?: string | null
+          match_status?: string
+          matched_at?: string | null
+          matched_by?: string | null
+          ownerrez_property_id?: string | null
+          payload?: Json
+          property_id?: string | null
+          source?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_records_database_key_fkey"
+            columns: ["database_key"]
+            isOneToOne: false
+            referencedRelation: "external_databases"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "external_records_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feature_flags: {
         Row: {
@@ -668,6 +785,60 @@ export type Database = {
           verification_method?: string | null
         }
         Relationships: []
+      }
+      handoff_reviews: {
+        Row: {
+          created_at: string
+          decision: string
+          exception_reason: string | null
+          handoff_id: string
+          id: string
+          is_demo: boolean
+          note: string | null
+          property_id: string
+          reviewer_id: string | null
+          step: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          exception_reason?: string | null
+          handoff_id: string
+          id?: string
+          is_demo?: boolean
+          note?: string | null
+          property_id: string
+          reviewer_id?: string | null
+          step: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          exception_reason?: string | null
+          handoff_id?: string
+          id?: string
+          is_demo?: boolean
+          note?: string | null
+          property_id?: string
+          reviewer_id?: string | null
+          step?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoff_reviews_handoff_id_fkey"
+            columns: ["handoff_id"]
+            isOneToOne: false
+            referencedRelation: "property_handoffs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       handoffs: {
         Row: {
@@ -877,8 +1048,67 @@ export type Database = {
           },
         ]
       }
+      onboarding_notes: {
+        Row: {
+          archived_at: string | null
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          internal: boolean
+          is_demo: boolean
+          mentions: string[]
+          property_id: string
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          internal?: boolean
+          is_demo?: boolean
+          mentions?: string[]
+          property_id: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          internal?: boolean
+          is_demo?: boolean
+          mentions?: string[]
+          property_id?: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_notes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_notes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_tasks: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           assigned_to: string | null
           blocker: string | null
           blocks_handoff: boolean
@@ -888,20 +1118,30 @@ export type Database = {
           completed_by: string | null
           created_at: string
           created_by: string | null
+          depends_on: string[]
           detail: string | null
           due_on: string | null
           evidence_note: string | null
           evidence_required: boolean
+          exception_at: string | null
+          exception_by: string | null
+          exception_reason: string | null
           id: string
+          is_demo: boolean
+          linked_ticket_id: string | null
           owner_approval_status: string
+          parent_task_id: string | null
           property_id: string
           requires_owner_approval: boolean
+          sort_order: number
           stage: string
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           assigned_to?: string | null
           blocker?: string | null
           blocks_handoff?: boolean
@@ -911,20 +1151,30 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           created_by?: string | null
+          depends_on?: string[]
           detail?: string | null
           due_on?: string | null
           evidence_note?: string | null
           evidence_required?: boolean
+          exception_at?: string | null
+          exception_by?: string | null
+          exception_reason?: string | null
           id?: string
+          is_demo?: boolean
+          linked_ticket_id?: string | null
           owner_approval_status?: string
+          parent_task_id?: string | null
           property_id: string
           requires_owner_approval?: boolean
+          sort_order?: number
           stage?: string
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           assigned_to?: string | null
           blocker?: string | null
           blocks_handoff?: boolean
@@ -934,14 +1184,22 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           created_by?: string | null
+          depends_on?: string[]
           detail?: string | null
           due_on?: string | null
           evidence_note?: string | null
           evidence_required?: boolean
+          exception_at?: string | null
+          exception_by?: string | null
+          exception_reason?: string | null
           id?: string
+          is_demo?: boolean
+          linked_ticket_id?: string | null
           owner_approval_status?: string
+          parent_task_id?: string | null
           property_id?: string
           requires_owner_approval?: boolean
+          sort_order?: number
           stage?: string
           status?: string
           title?: string
@@ -951,6 +1209,20 @@ export type Database = {
           {
             foreignKeyName: "onboarding_tasks_carryover_of_fkey"
             columns: ["carryover_of"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_linked_ticket_id_fkey"
+            columns: ["linked_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
             isOneToOne: false
             referencedRelation: "onboarding_tasks"
             referencedColumns: ["id"]
@@ -2067,11 +2339,27 @@ export type Database = {
       }
       property_handoffs: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          archived_at: string | null
           carryover_accepted: boolean
           checklist: Json
           corrections: string | null
           created_at: string
+          exceptions: Json
+          gate_step: string
           id: string
+          is_demo: boolean
+          kati_at: string | null
+          kati_decision: string | null
+          kati_note: string | null
+          kati_reviewer: string | null
+          live_confirmed_at: string | null
+          live_confirmed_by: string | null
+          micah_at: string | null
+          micah_decision: string | null
+          micah_note: string | null
+          micah_reviewer: string | null
           notes: string | null
           open_task_ids: string[]
           property_id: string
@@ -2084,11 +2372,27 @@ export type Database = {
           validation: Json
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          archived_at?: string | null
           carryover_accepted?: boolean
           checklist?: Json
           corrections?: string | null
           created_at?: string
+          exceptions?: Json
+          gate_step?: string
           id?: string
+          is_demo?: boolean
+          kati_at?: string | null
+          kati_decision?: string | null
+          kati_note?: string | null
+          kati_reviewer?: string | null
+          live_confirmed_at?: string | null
+          live_confirmed_by?: string | null
+          micah_at?: string | null
+          micah_decision?: string | null
+          micah_note?: string | null
+          micah_reviewer?: string | null
           notes?: string | null
           open_task_ids?: string[]
           property_id: string
@@ -2101,11 +2405,27 @@ export type Database = {
           validation?: Json
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          archived_at?: string | null
           carryover_accepted?: boolean
           checklist?: Json
           corrections?: string | null
           created_at?: string
+          exceptions?: Json
+          gate_step?: string
           id?: string
+          is_demo?: boolean
+          kati_at?: string | null
+          kati_decision?: string | null
+          kati_note?: string | null
+          kati_reviewer?: string | null
+          live_confirmed_at?: string | null
+          live_confirmed_by?: string | null
+          micah_at?: string | null
+          micah_decision?: string | null
+          micah_note?: string | null
+          micah_reviewer?: string | null
           notes?: string | null
           open_task_ids?: string[]
           property_id?: string
@@ -3598,6 +3918,7 @@ export type Database = {
         Args: { _actor?: string; _reason?: string }
         Returns: undefined
       }
+      archive_demo_onboarding: { Args: { _actor: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3614,6 +3935,7 @@ export type Database = {
       seed_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
+      seed_demo_onboarding: { Args: { _actor: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"

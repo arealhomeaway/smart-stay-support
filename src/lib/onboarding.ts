@@ -196,3 +196,51 @@ export function validateHandoff(
   return { checks, openBlocking, ready: checks.every((c) => !c.blocking || c.passed) };
 }
 
+
+/* ---------------------------------------------------------------------------
+ * Stage 2 — formal handoff gate
+ *
+ * A property is only "ready for Operations" after two documented reviews and
+ * an explicit Operations acceptance, followed by live confirmation. Every step
+ * is recorded in handoff_reviews with reviewer, date, decision and exception.
+ * ------------------------------------------------------------------------ */
+
+export const GATE_STEPS = [
+  { value: "kati_review", label: "Kati review", blurb: "Onboarding lead verifies the readiness record." },
+  { value: "micah_review", label: "Micah review", blurb: "Second review of exceptions and carryover work." },
+  {
+    value: "operations_acceptance",
+    label: "Operations acceptance",
+    blurb: "An Operations supervisor accepts ownership of the home.",
+  },
+  { value: "live_confirmation", label: "Live confirmation", blurb: "Operations confirms the home is live." },
+  { value: "complete", label: "Complete", blurb: "Handoff finished and archived to history." },
+] as const;
+
+export type GateStep = (typeof GATE_STEPS)[number]["value"];
+
+export function gateLabel(value: string | null | undefined) {
+  return GATE_STEPS.find((s) => s.value === value)?.label ?? "Kati review";
+}
+
+export function nextGateStep(step: string | null | undefined): GateStep {
+  const order = GATE_STEPS.map((s) => s.value);
+  const i = order.indexOf((step ?? "kati_review") as GateStep);
+  return (order[Math.min(i + 1, order.length - 1)] ?? "complete") as GateStep;
+}
+
+/** A task is dependency-blocked while any prerequisite is not complete. */
+export function dependencyBlocked(
+  task: { depends_on?: string[] | null },
+  all: { id: string; status: string }[],
+): string[] {
+  const ids = task.depends_on ?? [];
+  return ids.filter((id) => {
+    const dep = all.find((t) => t.id === id);
+    return !dep || (dep.status !== "complete" && dep.status !== "carryover");
+  });
+}
+
+export function isActiveTask(t: { archived_at?: string | null }) {
+  return !t.archived_at;
+}

@@ -26,14 +26,28 @@ async function assertCap(supabase: Client, userId: string, fn: "is_supervisor" |
 }
 
 export async function loadOnboardingWorkspace(supabase: Client) {
-  const [props, tasks, handoffs, people] = await Promise.all([
+  const [props, tasks, handoffs, people, notes, reviews, extDbs, extRecords, docs] = await Promise.all([
     supabase.from("properties").select(PROPERTY_FIELDS).order("name"),
-    supabase.from("onboarding_tasks").select("*").order("due_on", { nullsFirst: false }),
+    supabase.from("onboarding_tasks").select("*").is("archived_at", null).order("sort_order"),
     supabase
       .from("property_handoffs")
       .select("*")
+      .is("archived_at", null)
       .order("requested_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, email").order("full_name"),
+    supabase
+      .from("onboarding_notes")
+      .select("*")
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
+    supabase.from("handoff_reviews").select("*").order("created_at", { ascending: false }),
+    supabase.from("external_databases").select("*").is("archived_at", null).order("label"),
+    supabase.from("external_records").select("*").is("archived_at", null).order("created_at", { ascending: false }),
+    supabase
+      .from("documents")
+      .select("id, entity_type, entity_id, title, kind, external_url, required, note, created_at")
+      .eq("entity_type", "property")
+      .is("archived_at", null),
   ]);
   if (props.error) throw props.error;
   if (tasks.error) throw tasks.error;
@@ -50,8 +64,14 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     tasks: tasks.data ?? [],
     handoffs: handoffs.data ?? [],
     people: people.data ?? [],
+    notes: notes.data ?? [],
+    reviews: reviews.data ?? [],
+    externalDatabases: extDbs.data ?? [],
+    externalRecords: extRecords.data ?? [],
+    documents: docs.data ?? [],
   };
 }
+
 
 export async function saveOnboardingTask(
   supabase: Client,
@@ -71,6 +91,10 @@ export async function saveOnboardingTask(
     evidenceNote: string;
     status: string;
     blocksHandoff: boolean;
+    parentTaskId?: string | null | undefined;
+    dependsOn?: string[] | undefined;
+    sortOrder?: number | undefined;
+    linkedTicketId?: string | null | undefined;
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
@@ -90,6 +114,10 @@ export async function saveOnboardingTask(
     blocks_handoff: input.blocksHandoff,
     completed_at: input.status === "complete" ? new Date().toISOString() : null,
     completed_by: input.status === "complete" ? userId : null,
+    parent_task_id: input.parentTaskId ?? null,
+    depends_on: input.dependsOn ?? [],
+    sort_order: input.sortOrder ?? 0,
+    linked_ticket_id: input.linkedTicketId ?? null,
   };
 
   if (input.id) {
@@ -205,6 +233,7 @@ export async function requestHandoff(
       validation: { ready, openBlocking } as never,
       open_task_ids: openBlocking,
       carryover_accepted: input.carryoverAccepted && !ready,
+      gate_step: "kati_review",
       notes: input.notes || null,
     })
     .select("id")
@@ -231,8 +260,14 @@ export async function requestHandoff(
 export async function reviewHandoff(
   supabase: Client,
   userId: string,
-  input: { handoffId: string; decision: "accepted" | "returned"; corrections: string },
+  input: {
+    handoffId: string;
+    decision: "accepted" | "returned";
+    corrections: string;
+    exceptionReason?: string | undefined;
+  },
 ) {
+  const { nextGateStep } = await import("./onboarding");
   await assertCap(supabase, userId, "is_supervisor");
   if (input.decision === "returned" && !input.corrections.trim()) {
     throw new Error("Returning a handoff requires the corrections that are needed.");
@@ -240,37 +275,99 @@ export async function reviewHandoff(
 
   const handoff = await supabase
     .from("property_handoffs")
-    .select("id, property_id, status")
+    .select("id, property_id, status, gate_step, exceptions, is_demo")
     .eq("id", input.handoffId)
     .single();
   if (handoff.error) throw handoff.error;
-  if (handoff.data.status !== "requested") throw new Error("This handoff was already reviewed.");
+  if (handoff.data.status !== "requested") throw new Error("This handoff was already closed.");
 
+  const step = (handoff.data.gate_step ?? "kati_review") as string;
   const now = new Date().toISOString();
+
+  // Immutable history entry for every decision at every gate.
+  const hist = await supabase.from("handoff_reviews").insert({
+    handoff_id: input.handoffId,
+    property_id: handoff.data.property_id,
+    step,
+    decision: input.decision,
+    reviewer_id: userId,
+    note: input.corrections || null,
+    exception_reason: input.exceptionReason || null,
+    is_demo: handoff.data.is_demo ?? false,
+  });
+  if (hist.error) throw hist.error;
+
+  if (input.decision === "returned") {
+    const upd = await supabase
+      .from("property_handoffs")
+      .update({
+        status: "returned",
+        reviewed_by: userId,
+        reviewed_at: now,
+        corrections: input.corrections || null,
+      })
+      .eq("id", input.handoffId)
+      .eq("status", "requested");
+    if (upd.error) throw upd.error;
+    await supabase
+      .from("properties")
+      .update({ lifecycle_status: "handoff_corrections" })
+      .eq("id", handoff.data.property_id);
+    await writeAudit({
+      actorId: userId,
+      action: "handoff_returned",
+      entityType: "property",
+      entityId: handoff.data.property_id,
+      reason: input.corrections || null,
+      after: { handoffId: input.handoffId, step },
+    });
+    return { ok: true as const, step, status: "returned" as const };
+  }
+
+  const next = nextGateStep(step);
+  const patch: Record<string, unknown> = { gate_step: next };
+  if (input.exceptionReason) {
+    const existing = Array.isArray(handoff.data.exceptions) ? (handoff.data.exceptions as unknown[]) : [];
+    patch['exceptions'] = [...existing, { step, reason: input.exceptionReason, by: userId, at: now }];
+  }
+  if (step === "kati_review") {
+    patch['kati_reviewer'] = userId;
+    patch['kati_decision'] = "approved";
+    patch['kati_note'] = input.corrections || null;
+    patch['kati_at'] = now;
+  }
+  if (step === "micah_review") {
+    patch['micah_reviewer'] = userId;
+    patch['micah_decision'] = "approved";
+    patch['micah_note'] = input.corrections || null;
+    patch['micah_at'] = now;
+  }
+  if (step === "operations_acceptance") {
+    patch['accepted_by'] = userId;
+    patch['accepted_at'] = now;
+    patch['reviewed_by'] = userId;
+    patch['reviewed_at'] = now;
+  }
+  if (step === "live_confirmation") {
+    patch['live_confirmed_by'] = userId;
+    patch['live_confirmed_at'] = now;
+    patch['status'] = "accepted";
+  }
+
   const upd = await supabase
     .from("property_handoffs")
-    .update({
-      status: input.decision,
-      reviewed_by: userId,
-      reviewed_at: now,
-      corrections: input.corrections || null,
-    })
+    .update(patch as never)
     .eq("id", input.handoffId)
     .eq("status", "requested");
   if (upd.error) throw upd.error;
 
-  // Only an accepted handoff turns a home into an operational property.
-  await supabase
-    .from("properties")
-    .update(
-      input.decision === "accepted"
-        ? { lifecycle_status: "active_operations", handoff_accepted_at: now }
-        : { lifecycle_status: "handoff_corrections" },
-    )
-    .eq("id", handoff.data.property_id);
-
-  // Unfinished work is preserved as carryover — never closed or reset.
-  if (input.decision === "accepted") {
+  // Only Operations acceptance turns a home into an operational property.
+  if (step === "operations_acceptance") {
+    await supabase
+      .from("properties")
+      .update({ lifecycle_status: "active_operations", handoff_accepted_at: now })
+      .eq("id", handoff.data.property_id);
+    // Unfinished work is preserved as carryover — never closed or reset.
     await supabase
       .from("onboarding_tasks")
       .update({ status: "carryover" })
@@ -280,12 +377,166 @@ export async function reviewHandoff(
 
   await writeAudit({
     actorId: userId,
-    action: input.decision === "accepted" ? "handoff_accepted" : "handoff_returned",
+    action: "handoff_step_approved",
     entityType: "property",
     entityId: handoff.data.property_id,
-    reason: input.corrections || null,
-    after: { handoffId: input.handoffId },
+    reason: input.exceptionReason || input.corrections || null,
+    after: { handoffId: input.handoffId, step, next },
   });
 
+  return { ok: true as const, step, status: "requested" as const };
+}
+
+/* ------------------------------------------------------------------ *
+ * Stage 2 additions: internal notes, exceptions, matter links,
+ * archiving and the standard external-record review queue.
+ * ------------------------------------------------------------------ */
+
+export async function addOnboardingNote(
+  supabase: Client,
+  userId: string,
+  input: { propertyId: string; taskId?: string | null | undefined; body: string; mentions: string[] },
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  const { data, error } = await supabase
+    .from("onboarding_notes")
+    .insert({
+      property_id: input.propertyId,
+      task_id: input.taskId ?? null,
+      body: input.body,
+      mentions: input.mentions,
+      internal: true,
+      author_id: userId,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  await writeAudit({
+    actorId: userId,
+    action: "onboarding_note_added",
+    entityType: "property",
+    entityId: input.propertyId,
+    after: { noteId: data.id, mentions: input.mentions },
+  });
+  return { id: data.id };
+}
+
+export async function recordTaskException(
+  supabase: Client,
+  userId: string,
+  input: { taskId: string; reason: string },
+) {
+  await assertCap(supabase, userId, "is_supervisor");
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("onboarding_tasks")
+    .update({ exception_reason: input.reason, exception_by: userId, exception_at: now })
+    .eq("id", input.taskId);
+  if (error) throw error;
+  await writeAudit({
+    actorId: userId,
+    action: "onboarding_exception_recorded",
+    entityType: "onboarding_task",
+    entityId: input.taskId,
+    reason: input.reason,
+  });
+  return { ok: true as const };
+}
+
+export async function archiveOnboardingTask(
+  supabase: Client,
+  userId: string,
+  input: { taskId: string; reason: string },
+) {
+  await assertCap(supabase, userId, "is_supervisor");
+  const { error } = await supabase
+    .from("onboarding_tasks")
+    .update({ archived_at: new Date().toISOString(), archived_by: userId })
+    .eq("id", input.taskId);
+  if (error) throw error;
+  await writeAudit({
+    actorId: userId,
+    action: "onboarding_task_archived",
+    entityType: "onboarding_task",
+    entityId: input.taskId,
+    reason: input.reason,
+  });
+  return { ok: true as const };
+}
+
+/**
+ * Canonical property matching for any external database (Notion, Fillout
+ * replacements, the Property Utility Matrix — all identical). Matching is by
+ * Resolve property UUID or OwnerRez Property ID only. Never by name, and a
+ * record never creates a property.
+ */
+export async function resolveExternalRecord(
+  supabase: Client,
+  userId: string,
+  input: {
+    recordId: string;
+    propertyId?: string | null | undefined;
+    ownerrezPropertyId?: string | null | undefined;
+    decision: "match" | "review" | "archive";
+    note: string;
+  },
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  const now = new Date().toISOString();
+
+  if (input.decision === "archive") {
+    const { error } = await supabase
+      .from("external_records")
+      .update({ archived_at: now, match_status: "archived", match_note: input.note || null })
+      .eq("id", input.recordId);
+    if (error) throw error;
+    return { ok: true as const };
+  }
+
+  if (input.decision === "review") {
+    const { error } = await supabase
+      .from("external_records")
+      .update({ match_status: "review", match_note: input.note || null })
+      .eq("id", input.recordId);
+    if (error) throw error;
+    return { ok: true as const };
+  }
+
+  let propertyId = input.propertyId ?? null;
+  if (!propertyId && input.ownerrezPropertyId) {
+    const { data } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("ownerrez_property_id", input.ownerrezPropertyId)
+      .maybeSingle();
+    propertyId = data?.id ?? null;
+  }
+  if (!propertyId) {
+    throw new Error(
+      "A record can only be matched with a Resolve property ID or an OwnerRez Property ID. Names are never used.",
+    );
+  }
+
+  const { error } = await supabase
+    .from("external_records")
+    .update({
+      property_id: propertyId,
+      ownerrez_property_id: input.ownerrezPropertyId ?? null,
+      match_status: "matched",
+      match_note: input.note || null,
+      matched_by: userId,
+      matched_at: now,
+    })
+    .eq("id", input.recordId);
+  if (error) throw error;
+
+  await writeAudit({
+    actorId: userId,
+    action: "external_record_matched",
+    entityType: "property",
+    entityId: propertyId,
+    reason: input.note || null,
+    after: { recordId: input.recordId },
+  });
   return { ok: true as const };
 }

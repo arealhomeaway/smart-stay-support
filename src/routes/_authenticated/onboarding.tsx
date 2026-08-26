@@ -16,8 +16,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useRole } from "@/hooks/useRole";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
+import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
+import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
+import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import {
+  addOnboardingNoteFn,
   getOnboardingWorkspace,
+  recordTaskExceptionFn,
+  resolveExternalRecordFn,
   requestHandoffFn,
   reviewHandoffFn,
   saveOnboardingTaskFn,
@@ -26,6 +35,8 @@ import {
 import {
   LIFECYCLE,
   ONBOARDING_STAGES,
+  dependencyBlocked,
+  gateLabel,
   isOverdue,
   lifecycleMeta,
   stageLabel,
@@ -62,6 +73,7 @@ function OnboardingWorkspace() {
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
   const { can, readOnly } = useRole();
+  const { enabled } = useFeatureFlags();
   const [selected, setSelected] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -83,12 +95,27 @@ function OnboardingWorkspace() {
   });
   const requestHandoff = useMutation({
     mutationFn: useServerFn(requestHandoffFn),
-    onSuccess: () => { toast.success("Handoff requested. A supervisor will review it."); void refresh(); },
+    onSuccess: () => { toast.success("Handoff requested. The review gate starts with Kati."); void refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
   const reviewHandoff = useMutation({
     mutationFn: useServerFn(reviewHandoffFn),
-    onSuccess: () => { toast.success("Review recorded."); void refresh(); },
+    onSuccess: () => { toast.success("Decision recorded."); void refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const addNote = useMutation({
+    mutationFn: useServerFn(addOnboardingNoteFn),
+    onSuccess: () => { toast.success("Note added."); void refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const recordException = useMutation({
+    mutationFn: useServerFn(recordTaskExceptionFn),
+    onSuccess: () => { toast.success("Exception recorded."); void refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const resolveRecord = useMutation({
+    mutationFn: useServerFn(resolveExternalRecordFn),
+    onSuccess: () => { toast.success("Record updated."); void refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -111,6 +138,8 @@ function OnboardingWorkspace() {
     ? data.handoffs.find((h) => h.property_id === current.id && h.status === "requested")
     : undefined;
   const pendingReviews = data.handoffs.filter((h) => h.status === "requested");
+  const notes = current ? data.notes.filter((n) => n.property_id === current.id) : [];
+  const docsEnabled = enabled("onboarding_sharepoint_docs");
 
   return (
     <div className="space-y-8">
@@ -119,246 +148,325 @@ function OnboardingWorkspace() {
         <h1 className="font-display text-3xl font-semibold">Onboarding workspace</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Homes stay on their existing Property ID from day one. Pre-handoff work lives here and never
-          mixes with operational matters. A home only becomes an active operation when a supervisor
-          accepts the handoff.
+          mixes with operational matters. A home only becomes an active operation after the two documented
+          reviews and an Operations acceptance.
         </p>
       </header>
 
-      {can("handoff_review") && pendingReviews.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/60">
-          <CardHeader>
-            <CardTitle className="text-base">Handoffs waiting on your review</CardTitle>
-            <CardDescription>{pendingReviews.length} request(s) pending.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {pendingReviews.map((h) => {
-              const prop = data.properties.find((p) => p.id === h.property_id);
-              return (
-                <div key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background p-3">
-                  <div>
-                    <p className="font-medium">{prop?.name ?? "Property"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Requested {new Date(h.requested_at as string).toLocaleString()}
-                      {h.carryover_accepted ? " · carryover accepted" : ""}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" disabled={readOnly}
-                      onClick={() => reviewHandoff.mutate({ data: { handoffId: h.id, decision: "accepted", corrections: "" } })}>
-                      Accept
-                    </Button>
-                    <ReturnHandoffDialog
-                      disabled={readOnly}
-                      onReturn={(corrections) =>
-                        reviewHandoff.mutate({ data: { handoffId: h.id, decision: "returned", corrections } })
-                      }
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
+      <Tabs defaultValue="pipeline" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="reviews">Handoff gate ({pendingReviews.length})</TabsTrigger>
+          <TabsTrigger value="records">Source records</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="text-base">Pipeline</CardTitle>
-            <CardDescription>{pipeline.length} home(s) pre-handoff</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {data.properties.map((p) => {
-              const meta = lifecycleMeta(p.lifecycle_status);
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelected(p.id)}
-                  className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${current?.id === p.id ? "bg-muted" : ""}`}
-                >
-                  <span className="block font-medium">{p.name}</span>
-                  <Badge variant="outline" className={`mt-1 ${meta.tone}`}>{meta.label}</Badge>
-                </button>
-              );
-            })}
-          </CardContent>
-        </Card>
+        <TabsContent value="reviews" className="space-y-4">
+          {pendingReviews.length === 0 && (
+            <p className="text-sm text-muted-foreground">No handoff is waiting at a review gate.</p>
+          )}
+          {pendingReviews.map((h) => (
+            <HandoffGatePanel
+              key={h.id}
+              handoff={h as never}
+              reviews={data.reviews as never}
+              people={data.people}
+              propertyName={data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"}
+              canReview={can("handoff_review")}
+              disabled={readOnly}
+              onDecision={(input) => reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })}
+            />
+          ))}
+        </TabsContent>
 
-        {current && (
-          <div className="space-y-6">
-            <Card>
+        <TabsContent value="records">
+          <ExternalRecordsPanel
+            databases={data.externalDatabases as never}
+            records={data.externalRecords as never}
+            properties={data.properties}
+            syncConfigured={enabled("onboarding_external_sync")}
+            disabled={readOnly || !can("handoff_request")}
+            onResolve={(input) => resolveRecord.mutate({ data: input })}
+          />
+        </TabsContent>
+
+        <TabsContent value="pipeline">
+          <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+            <Card className="h-fit">
               <CardHeader>
-                <CardTitle className="font-display text-xl">{current.name}</CardTitle>
-                <CardDescription>
-                  Property ID {current.id.slice(0, 8)} · stage {stageLabel(current.onboarding_stage)}
-                </CardDescription>
+                <CardTitle className="text-base">Pipeline</CardTitle>
+                <CardDescription>{pipeline.length} home(s) pre-handoff</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-wrap items-end gap-3">
-                <div className="flex flex-col gap-1">
-                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Lifecycle</Label>
-                  <Select
-                    value={current.lifecycle_status ?? "active_operations"}
-                    onValueChange={(v) =>
-                      setLifecycle.mutate({
-                        data: { propertyId: current.id, status: v as never, reason: "Changed from the onboarding workspace" },
-                      })
-                    }
-                    disabled={readOnly}
-                  >
-                    <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {LIFECYCLE.map((l) => (
-                        <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Stage</Label>
-                  <Select
-                    value={current.onboarding_stage ?? "intake"}
-                    onValueChange={(v) =>
-                      setLifecycle.mutate({
-                        data: {
-                          propertyId: current.id,
-                          status: (current.lifecycle_status ?? "onboarding") as never,
-                          stage: v,
-                          reason: "Stage advanced in the onboarding workspace",
-                        },
-                      })
-                    }
-                    disabled={readOnly}
-                  >
-                    <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ONBOARDING_STAGES.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <TaskDialog
-                  propertyId={current.id}
-                  people={data.people}
-                  disabled={readOnly || !can("handoff_request")}
-                  onSave={(values) => saveTask.mutate({ data: values })}
-                />
+              <CardContent className="space-y-1">
+                {data.properties.map((p) => {
+                  const meta = lifecycleMeta(p.lifecycle_status);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelected(p.id)}
+                      className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${current?.id === p.id ? "bg-muted" : ""}`}
+                    >
+                      <span className="block font-medium">{p.name}</span>
+                      <Badge variant="outline" className={`mt-1 ${meta.tone}`}>{meta.label}</Badge>
+                    </button>
+                  );
+                })}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Readiness checklist</CardTitle>
-                <CardDescription>
-                  Blocking items must pass before a handoff can be requested.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {readiness?.checks.map((c) => (
-                  <div key={c.key} className="flex items-start gap-3 rounded-md border p-3 text-sm">
-                    {c.passed ? (
-                      <CheckCircle2 className="mt-0.5 size-4 text-emerald-600" />
-                    ) : c.blocking ? (
-                      <XCircle className="mt-0.5 size-4 text-destructive" />
-                    ) : (
-                      <CircleAlert className="mt-0.5 size-4 text-amber-600" />
-                    )}
-                    <div>
-                      <p className="font-medium">{c.label}</p>
-                      <p className="text-xs text-muted-foreground">{c.detail}</p>
+            {current && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-display text-xl">{current.name}</CardTitle>
+                    <CardDescription>
+                      Property ID {current.id.slice(0, 8)} · stage {stageLabel(current.onboarding_stage)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap items-end gap-3">
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs uppercase tracking-wide text-muted-foreground">Lifecycle</Label>
+                      <Select
+                        value={current.lifecycle_status ?? "active_operations"}
+                        onValueChange={(v) =>
+                          setLifecycle.mutate({
+                            data: { propertyId: current.id, status: v as never, reason: "Changed from the onboarding workspace" },
+                          })
+                        }
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {LIFECYCLE.map((l) => (
+                            <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-                ))}
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  {openHandoff ? (
-                    <Badge variant="outline" className="bg-amber-100 text-amber-900">
-                      Handoff requested — awaiting supervisor review
-                    </Badge>
-                  ) : (
-                    <RequestHandoffDialog
-                      ready={Boolean(readiness?.ready)}
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs uppercase tracking-wide text-muted-foreground">Stage</Label>
+                      <Select
+                        value={current.onboarding_stage ?? "intake"}
+                        onValueChange={(v) =>
+                          setLifecycle.mutate({
+                            data: {
+                              propertyId: current.id,
+                              status: (current.lifecycle_status ?? "onboarding") as never,
+                              stage: v,
+                              reason: "Stage advanced in the onboarding workspace",
+                            },
+                          })
+                        }
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ONBOARDING_STAGES.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <TaskDialog
+                      propertyId={current.id}
+                      people={data.people}
+                      tasks={tasks}
                       disabled={readOnly || !can("handoff_request")}
-                      onRequest={(notes, carryoverAccepted) =>
-                        requestHandoff.mutate({ data: { propertyId: current.id, notes, carryoverAccepted } })
-                      }
+                      onSave={(values) => saveTask.mutate({ data: values })}
                     />
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Onboarding tasks</CardTitle>
-                <CardDescription>Pre-handoff work only — separate from operational matters.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {tasks.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No onboarding tasks yet for this home.</p>
+                {openHandoff && (
+                  <HandoffGatePanel
+                    handoff={openHandoff as never}
+                    reviews={data.reviews as never}
+                    people={data.people}
+                    propertyName={current.name}
+                    canReview={can("handoff_review")}
+                    disabled={readOnly}
+                    onDecision={(input) =>
+                      reviewHandoff.mutate({ data: { handoffId: openHandoff.id, ...input } })
+                    }
+                  />
                 )}
-                {tasks.map((t) => (
-                  <div key={t.id} className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{t.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {stageLabel(t.stage)}
-                        {t.due_on ? ` · due ${t.due_on}` : ""}
-                        {t.blocks_handoff ? " · blocks handoff" : ""}
-                      </p>
-                      {t.blocker && <p className="text-xs text-destructive">Blocker: {t.blocker}</p>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isOverdue(t) && <Badge variant="outline" className="bg-destructive/10 text-destructive">Overdue</Badge>}
-                      <Badge variant="outline">{t.status}</Badge>
-                      {t.status !== "complete" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={readOnly}
-                          onClick={() =>
-                            saveTask.mutate({
-                              data: {
-                                id: t.id,
-                                propertyId: t.property_id,
-                                stage: t.stage,
-                                title: t.title,
-                                detail: t.detail ?? "",
-                                assignedTo: t.assigned_to,
-                                dueOn: t.due_on,
-                                blocker: "",
-                                requiresOwnerApproval: t.requires_owner_approval,
-                                ownerApprovalStatus: (t.owner_approval_status ?? "pending") as never,
-                                evidenceRequired: t.evidence_required,
-                                evidenceNote: t.evidence_note ?? "",
-                                status: "complete",
-                                blocksHandoff: t.blocks_handoff,
-                              },
-                            })
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Readiness checklist</CardTitle>
+                    <CardDescription>
+                      Blocking items must pass, or an authorised exception must be recorded, before handoff.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {readiness?.checks.map((c) => (
+                      <div key={c.key} className="flex items-start gap-3 rounded-md border p-3 text-sm">
+                        {c.passed ? (
+                          <CheckCircle2 className="mt-0.5 size-4 text-emerald-600" />
+                        ) : c.blocking ? (
+                          <XCircle className="mt-0.5 size-4 text-destructive" />
+                        ) : (
+                          <CircleAlert className="mt-0.5 size-4 text-amber-600" />
+                        )}
+                        <div>
+                          <p className="font-medium">{c.label}</p>
+                          <p className="text-xs text-muted-foreground">{c.detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                      {openHandoff ? (
+                        <Badge variant="outline" className="bg-amber-100 text-amber-900">
+                          Handoff in review — {gateLabel(openHandoff.gate_step)}
+                        </Badge>
+                      ) : (
+                        <RequestHandoffDialog
+                          ready={Boolean(readiness?.ready)}
+                          disabled={readOnly || !can("handoff_request")}
+                          onRequest={(notes2, carryoverAccepted) =>
+                            requestHandoff.mutate({ data: { propertyId: current.id, notes: notes2, carryoverAccepted } })
                           }
-                        >
-                          Mark complete
-                        </Button>
+                        />
                       )}
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Onboarding tasks</CardTitle>
+                    <CardDescription>Pre-handoff work only — separate from operational matters.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {tasks.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No onboarding tasks yet for this home.</p>
+                    )}
+                    {tasks.map((t) => {
+                      const waiting = dependencyBlocked(t as never, tasks);
+                      return (
+                        <div key={t.id} className={`flex flex-wrap items-start justify-between gap-3 rounded-md border p-3 ${t.parent_task_id ? "ml-6" : ""}`}>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">{t.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {stageLabel(t.stage)}
+                              {t.due_on ? ` · due ${t.due_on}` : ""}
+                              {t.blocks_handoff ? " · blocks handoff" : ""}
+                              {t.parent_task_id ? " · subtask" : ""}
+                            </p>
+                            {t.blocker && <p className="text-xs text-destructive">Blocker: {t.blocker}</p>}
+                            {waiting.length > 0 && (
+                              <p className="text-xs text-amber-700">
+                                Waiting on {waiting.length} prerequisite task(s) — owner{" "}
+                                {data.people.find((p) => p.id === t.assigned_to)?.full_name ?? "unassigned"}.
+                              </p>
+                            )}
+                            {t.exception_reason && (
+                              <p className="text-xs text-amber-700">Exception: {t.exception_reason}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isOverdue(t) && <Badge variant="outline" className="bg-destructive/10 text-destructive">Overdue</Badge>}
+                            <Badge variant="outline">{t.status}</Badge>
+                            {can("handoff_review") && !t.exception_reason && (
+                              <ExceptionDialog
+                                disabled={readOnly}
+                                onRecord={(reason) => recordException.mutate({ data: { taskId: t.id, reason } })}
+                              />
+                            )}
+                            {t.status !== "complete" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={readOnly || waiting.length > 0}
+                                onClick={() =>
+                                  saveTask.mutate({
+                                    data: {
+                                      id: t.id,
+                                      propertyId: t.property_id,
+                                      stage: t.stage,
+                                      title: t.title,
+                                      detail: t.detail ?? "",
+                                      assignedTo: t.assigned_to,
+                                      dueOn: t.due_on,
+                                      blocker: "",
+                                      requiresOwnerApproval: t.requires_owner_approval,
+                                      ownerApprovalStatus: (t.owner_approval_status ?? "pending") as never,
+                                      evidenceRequired: t.evidence_required,
+                                      evidenceNote: t.evidence_note ?? "",
+                                      status: "complete",
+                                      blocksHandoff: t.blocks_handoff,
+                                      parentTaskId: t.parent_task_id,
+                                      dependsOn: t.depends_on ?? [],
+                                      linkedTicketId: t.linked_ticket_id,
+                                    },
+                                  })
+                                }
+                              >
+                                Mark complete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+
+                <OperationsContextPanel
+                  property={current as never}
+                  tasks={tasks as never}
+                  records={data.externalRecords as never}
+                  documents={data.documents as never}
+                  documentsEnabled={docsEnabled}
+                />
+
+                <OnboardingNotes
+                  notes={notes as never}
+                  people={data.people}
+                  disabled={readOnly || !can("handoff_request")}
+                  onAdd={(body, mentions) =>
+                    addNote.mutate({ data: { propertyId: current.id, taskId: null, body, mentions } })
+                  }
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+function ExceptionDialog({ disabled, onRecord }: { disabled: boolean; onRecord: (reason: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" disabled={disabled}>Record exception</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Authorised exception</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why is this requirement being waived, and who approved it?" />
+          <Button className="w-full" disabled={reason.trim().length < 3} onClick={() => { onRecord(reason.trim()); setOpen(false); setReason(""); }}>
+            Record exception
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function TaskDialog({
   propertyId,
   people,
+  tasks,
   disabled,
   onSave,
 }: {
   propertyId: string;
   people: { id: string; full_name: string | null; email: string | null }[];
+  tasks: { id: string; title: string }[];
   disabled: boolean;
   onSave: (values: {
     propertyId: string;
@@ -374,6 +482,8 @@ function TaskDialog({
     evidenceNote: string;
     status: "open" | "blocked" | "complete" | "carryover";
     blocksHandoff: boolean;
+    parentTaskId?: string | null;
+    dependsOn?: string[];
   }) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -385,6 +495,8 @@ function TaskDialog({
   const [requiresOwnerApproval, setRequiresOwnerApproval] = useState(false);
   const [evidenceRequired, setEvidenceRequired] = useState(false);
   const [blocksHandoff, setBlocksHandoff] = useState(true);
+  const [parentTaskId, setParentTaskId] = useState("none");
+  const [dependsOn, setDependsOn] = useState("none");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -429,6 +541,28 @@ function TaskDialog({
               <Input type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
             </div>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label>Parent task (optional)</Label>
+              <Select value={parentTaskId} onValueChange={setParentTaskId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Top-level task</SelectItem>
+                  {tasks.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Depends on (optional)</Label>
+              <Select value={dependsOn} onValueChange={setDependsOn}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No dependency</SelectItem>
+                  {tasks.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={requiresOwnerApproval} onCheckedChange={(v) => setRequiresOwnerApproval(Boolean(v))} />
             Requires a homeowner approval
@@ -459,6 +593,8 @@ function TaskDialog({
                 evidenceNote: "",
                 status: "open",
                 blocksHandoff,
+                parentTaskId: parentTaskId === "none" ? null : parentTaskId,
+                dependsOn: dependsOn === "none" ? [] : [dependsOn],
               });
               setOpen(false);
               setTitle("");
