@@ -229,3 +229,50 @@ export const createOwnerInvite = createServerFn({ method: "POST" })
     await assertSupervisor(context.supabase, context.userId);
     return createInvite(context.supabase, context.userId, data);
   });
+
+/** Staff: owner-reported entries waiting on an internal decision. */
+export const ownerTimeReviewQueue = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertStaff } = await import("./vendor.server");
+    const { loadTimeReviewQueue, loadProgramRules } = await import("./owner-review.server");
+    await assertStaff(context.supabase, context.userId);
+    return {
+      entries: await loadTimeReviewQueue(context.supabase),
+      rules: await loadProgramRules(context.supabase),
+    };
+  });
+
+/** Supervisor: approve, return or flag an owner-reported entry. */
+export const reviewOwnerTimeEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        entryId: z.string().uuid(),
+        decision: z.enum(["approved", "returned", "flagged"]),
+        note: z.string().trim().max(1000).default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor } = await import("./owner-program.server");
+    const { reviewTimeEntry } = await import("./owner-review.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return reviewTimeEntry(context.supabase, context.userId, data);
+  });
+
+/** Supervisor: change a program rule. Every change is audited. */
+export const saveOwnerProgramRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ key: z.string().trim().min(2).max(60), value: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])) })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertSupervisor } = await import("./owner-program.server");
+    const { updateProgramRule } = await import("./owner-review.server");
+    await assertSupervisor(context.supabase, context.userId);
+    return updateProgramRule(context.supabase, context.userId, data);
+  });

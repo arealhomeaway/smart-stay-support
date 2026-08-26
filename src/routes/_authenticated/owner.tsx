@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, CheckCircle2, Clock, Eye, Home, KeyRound, Mail, MessageSquare } from "lucide-react";
+import { Bell, CheckCircle2, Clock, Eye, Home, KeyRound, Mail, MessageSquare, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   answerOwnerReview,
+  createOwnerMatterFn,
   logOwnerParticipation,
   markOwnerAlertsRead,
   ownerHome,
@@ -185,6 +186,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
   } = data;
   const [timeTarget, setTimeTarget] = useState<TimeTarget | null>(null);
   const [answering, setAnswering] = useState<(typeof reviews)[number] | null>(null);
+  const [openingMatter, setOpeningMatter] = useState(false);
 
   const markRead = useServerFn(markOwnerAlertsRead);
   const unread = useMemo(() => alerts.filter((a) => !a.read_at), [alerts]);
@@ -420,10 +422,19 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Activity at your homes</CardTitle>
-          <CardDescription>
-            Every matter our team opens appears here automatically — {openTickets.length} open now.
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Activity at your homes</CardTitle>
+              <CardDescription>
+                Every matter our team opens appears here automatically — {openTickets.length} open now.
+              </CardDescription>
+            </div>
+            {!readOnly && included.length > 0 && (
+              <Button size="sm" variant="outline" onClick={() => setOpeningMatter(true)}>
+                <Plus className="size-4" /> Open a matter
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {tickets.length === 0 && <p className="text-sm text-muted-foreground">No matters logged yet.</p>}
@@ -443,6 +454,12 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                 <span className="text-sm font-medium">
                   #{t.ref} {t.title}
                 </span>
+                {t.owner_submitted && (
+                  <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+                    You opened this
+                    {t.owner_participation_path ? ` · ${t.owner_participation_path}` : ""}
+                  </Badge>
+                )}
                 <span className="ml-auto text-xs capitalize text-muted-foreground">
                   {t.status.replace(/_/g, " ")}
                 </span>
@@ -498,6 +515,19 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                   Shared · {e.propertyIds.length} homes
                 </Badge>
               )}
+              {e.review_status && e.review_status !== "submitted" && (
+                <Badge
+                  variant="outline"
+                  className={
+                    e.review_status === "approved"
+                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+                      : "border-amber-500/20 bg-amber-500/10 text-amber-700"
+                  }
+                  title={e.review_note ?? undefined}
+                >
+                  {e.review_status}
+                </Badge>
+              )}
               <span className="ml-auto font-medium">{e.minutes} min</span>
             </div>
           ))}
@@ -510,6 +540,14 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
           properties={included.map((p) => ({ id: p.propertyId, name: p.name, closingDate: p.closingDate }))}
           target={timeTarget}
           onClose={() => setTimeTarget(null)}
+          onSaved={onChange}
+        />
+      )}
+      {!readOnly && openingMatter && (
+        <OpenMatterDialog
+          programId={program.id}
+          properties={included.map((p) => ({ id: p.propertyId, name: p.name }))}
+          onClose={() => setOpeningMatter(false)}
           onSaved={onChange}
         />
       )}
@@ -820,6 +858,123 @@ function RespondDialog({
           </Button>
           <Button disabled={mutation.isPending} onClick={() => mutation.mutate()}>
             Send response
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+/**
+ * A homeowner opens a matter at their own enrolled home. ARHA keeps
+ * operational control: the owner chooses how they want to participate, not
+ * the priority, the assignee or the closure.
+ */
+const OWNER_PATHS = [
+  { id: "inform", label: "Just so you know", blurb: "Share it — ARHA handles it and reports back." },
+  { id: "consult", label: "I'd like to weigh in", blurb: "ARHA asks for your input before deciding." },
+  { id: "approve", label: "I want to approve this", blurb: "ARHA waits for your authorisation." },
+  { id: "emergency", label: "Urgent", blurb: "Something needs attention right now." },
+] as const;
+
+function OpenMatterDialog({
+  programId,
+  properties,
+  onClose,
+  onSaved,
+}: {
+  programId: string;
+  properties: { id: string; name: string }[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const create = useServerFn(createOwnerMatterFn);
+  const [propertyId, setPropertyId] = useState(properties[0]?.id ?? "");
+  const [path, setPath] = useState<(typeof OWNER_PATHS)[number]["id"]>("inform");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+
+  const save = useMutation({
+    mutationFn: () =>
+      create({
+        data: { programId, propertyId, path, title: title.trim(), description: description.trim(), category: "maintenance" },
+      }),
+    onSuccess: (r) => {
+      toast.success(`Matter #${r.ref} is with the ARHA team.`);
+      onSaved();
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Open a matter</DialogTitle>
+          <DialogDescription>
+            Tell us what is going on at your home. Our team takes it from here and keeps you posted.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Home</Label>
+            <select
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={propertyId}
+              onChange={(e) => setPropertyId(e.target.value)}
+            >
+              {properties.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>How would you like to be involved?</Label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {OWNER_PATHS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPath(p.id)}
+                  className={`rounded-md border p-2 text-left text-sm transition-colors ${
+                    path === p.id ? "border-primary bg-primary/5" : "border-border hover:bg-accent"
+                  }`}
+                >
+                  <span className="font-medium">{p.label}</span>
+                  <span className="block text-xs text-muted-foreground">{p.blurb}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="owner-matter-title">What is happening?</Label>
+            <Input
+              id="owner-matter-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Kitchen faucet is dripping"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="owner-matter-detail">Any detail that helps</Label>
+            <Textarea
+              id="owner-matter-detail"
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button disabled={title.trim().length < 4 || !propertyId || save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? "Sending…" : "Send to ARHA"}
           </Button>
         </DialogFooter>
       </DialogContent>

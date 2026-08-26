@@ -279,9 +279,13 @@ export async function reviewHandoff(
     .eq("id", input.handoffId)
     .single();
   if (handoff.error) throw handoff.error;
-  if (handoff.data.status !== "requested") throw new Error("This handoff was already closed.");
+  // "accepted_pending_live" is still an open handoff: Operations has taken
+  // ownership but the home is not live until the final confirmation.
+  const OPEN = ["requested", "accepted_pending_live"];
+  if (!OPEN.includes(handoff.data.status)) throw new Error("This handoff was already closed.");
 
   const step = (handoff.data.gate_step ?? "kati_review") as string;
+
   const now = new Date().toISOString();
 
   // Immutable history entry for every decision at every gate.
@@ -307,7 +311,7 @@ export async function reviewHandoff(
         corrections: input.corrections || null,
       })
       .eq("id", input.handoffId)
-      .eq("status", "requested");
+      .in("status", OPEN);
     if (upd.error) throw upd.error;
     await supabase
       .from("properties")
@@ -347,6 +351,8 @@ export async function reviewHandoff(
     patch['accepted_at'] = now;
     patch['reviewed_by'] = userId;
     patch['reviewed_at'] = now;
+    // Operations has taken ownership, but the home is not live yet.
+    patch['status'] = "accepted_pending_live";
   }
   if (step === "live_confirmation") {
     patch['live_confirmed_by'] = userId;
@@ -358,14 +364,14 @@ export async function reviewHandoff(
     .from("property_handoffs")
     .update(patch as never)
     .eq("id", input.handoffId)
-    .eq("status", "requested");
+    .in("status", OPEN);
   if (upd.error) throw upd.error;
 
-  // Only Operations acceptance turns a home into an operational property.
   if (step === "operations_acceptance") {
+    // Acceptance only moves the property into the pending-live stage.
     await supabase
       .from("properties")
-      .update({ lifecycle_status: "active_operations", handoff_accepted_at: now })
+      .update({ onboarding_stage: "pending_live_confirmation", handoff_accepted_at: now })
       .eq("id", handoff.data.property_id);
     // Unfinished work is preserved as carryover — never closed or reset.
     await supabase
@@ -373,6 +379,14 @@ export async function reviewHandoff(
       .update({ status: "carryover" })
       .eq("property_id", handoff.data.property_id)
       .in("status", ["open", "blocked"]);
+  }
+
+  // Only the final live confirmation makes a home operational.
+  if (step === "live_confirmation") {
+    await supabase
+      .from("properties")
+      .update({ lifecycle_status: "active_operations", active: true })
+      .eq("id", handoff.data.property_id);
   }
 
   await writeAudit({
@@ -384,8 +398,17 @@ export async function reviewHandoff(
     after: { handoffId: input.handoffId, step, next },
   });
 
-  return { ok: true as const, step, status: "requested" as const };
+  return {
+    ok: true as const,
+    step,
+    status: (step === "live_confirmation"
+      ? "accepted"
+      : step === "operations_acceptance"
+        ? "accepted_pending_live"
+        : "requested") as "accepted" | "accepted_pending_live" | "requested",
+  };
 }
+
 
 /* ------------------------------------------------------------------ *
  * Stage 2 additions: internal notes, exceptions, matter links,

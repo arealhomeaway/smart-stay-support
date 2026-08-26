@@ -135,9 +135,9 @@ function OnboardingWorkspace() {
   const tasks = current ? data.tasks.filter((t) => t.property_id === current.id) : [];
   const readiness = current ? validateHandoff(current, tasks) : null;
   const openHandoff = current
-    ? data.handoffs.find((h) => h.property_id === current.id && h.status === "requested")
+    ? data.handoffs.find((h) => h.property_id === current.id && (h.status === "requested" || h.status === "accepted_pending_live"))
     : undefined;
-  const pendingReviews = data.handoffs.filter((h) => h.status === "requested");
+  const pendingReviews = data.handoffs.filter((h) => h.status === "requested" || h.status === "accepted_pending_live");
   const notes = current ? data.notes.filter((n) => n.property_id === current.id) : [];
   const docsEnabled = enabled("onboarding_sharepoint_docs");
 

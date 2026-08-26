@@ -53,6 +53,12 @@ export const seedDemoEnvironment = createServerFn({ method: "POST" })
       _actor: context.userId,
     });
     if (onboardingError) throw onboardingError;
+    // Stage 3: the isolated Active Owner scenario rides along with the same
+    // deliberate admin trigger.
+    const { error: ownerError } = await supabaseAdmin.rpc("seed_demo_owner_program", {
+      _actor: context.userId,
+    });
+    if (ownerError) throw ownerError;
     return { ok: true as const };
   });
 
@@ -74,5 +80,9 @@ export const resetDemoEnvironment = createServerFn({ method: "POST" })
       _actor: context.userId,
     });
     if (onboardingError) throw onboardingError;
+    const { error: ownerError } = await supabaseAdmin.rpc("archive_demo_owner_program", {
+      _actor: context.userId,
+    });
+    if (ownerError) throw ownerError;
     return { ok: true as const };
   });

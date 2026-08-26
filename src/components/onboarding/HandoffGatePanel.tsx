@@ -79,7 +79,8 @@ export function HandoffGatePanel({
         <ol className="space-y-2">
           {GATE_STEPS.filter((s) => s.value !== "complete").map((s, i) => {
             const done = handoff.status === "accepted" || i < currentIndex;
-            const active = i === currentIndex && handoff.status === "requested";
+            const open = handoff.status === "requested" || handoff.status === "accepted_pending_live";
+            const active = i === currentIndex && open;
             return (
               <li key={s.value} className="flex items-start gap-3 rounded-md border p-3 text-sm">
                 {done ? (
@@ -108,7 +109,7 @@ export function HandoffGatePanel({
           </div>
         )}
 
-        {handoff.status === "requested" && canReview && (
+        {(handoff.status === "requested" || handoff.status === "accepted_pending_live") && canReview && (
           <div className="flex flex-wrap gap-2">
             <ApproveDialog
               step={step}
