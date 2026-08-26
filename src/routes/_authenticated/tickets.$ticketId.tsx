@@ -491,9 +491,12 @@ function TicketDetail() {
             </Card>
           )}
 
+          <MatterOwnershipPanel ticket={ticket} closed={closed} onChanged={refresh} />
+
           {ticket.record_type !== "completed_interaction" && (
             <HandoffPanel ticket={ticket} closed={closed} onChanged={refresh} />
           )}
+
 
           {!closed && (
             <VendorDispatchPanel
