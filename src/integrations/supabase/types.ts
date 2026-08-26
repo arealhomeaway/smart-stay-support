@@ -474,6 +474,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          key: string
+          label: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          key: string
+          label: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          key?: string
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       field_conflicts: {
         Row: {
           chosen_source: string | null
@@ -2235,8 +2265,10 @@ export type Database = {
           evidence_url: string | null
           from_owner: string | null
           id: string
+          internal: boolean
           is_demo: boolean
           kind: string
+          mentions: string[]
           ticket_id: string
           to_owner: string | null
         }
@@ -2250,8 +2282,10 @@ export type Database = {
           evidence_url?: string | null
           from_owner?: string | null
           id?: string
+          internal?: boolean
           is_demo?: boolean
           kind?: string
+          mentions?: string[]
           ticket_id: string
           to_owner?: string | null
         }
@@ -2265,8 +2299,10 @@ export type Database = {
           evidence_url?: string | null
           from_owner?: string | null
           id?: string
+          internal?: boolean
           is_demo?: boolean
           kind?: string
+          mentions?: string[]
           ticket_id?: string
           to_owner?: string | null
         }
@@ -2426,6 +2462,9 @@ export type Database = {
           acknowledged_at: string | null
           action_due_at: string | null
           action_started_at: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           assigned_to: string | null
           avoidable_reopen: boolean
           breezeway_synced_at: string | null
@@ -2435,6 +2474,9 @@ export type Database = {
           bucket: string | null
           category: string
           closure_evidence: string | null
+          closure_exception_at: string | null
+          closure_exception_by: string | null
+          closure_exception_reason: string | null
           closure_qa_result: string
           created_at: string
           created_by: string | null
@@ -2512,6 +2554,9 @@ export type Database = {
           acknowledged_at?: string | null
           action_due_at?: string | null
           action_started_at?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           assigned_to?: string | null
           avoidable_reopen?: boolean
           breezeway_synced_at?: string | null
@@ -2521,6 +2566,9 @@ export type Database = {
           bucket?: string | null
           category?: string
           closure_evidence?: string | null
+          closure_exception_at?: string | null
+          closure_exception_by?: string | null
+          closure_exception_reason?: string | null
           closure_qa_result?: string
           created_at?: string
           created_by?: string | null
@@ -2598,6 +2646,9 @@ export type Database = {
           acknowledged_at?: string | null
           action_due_at?: string | null
           action_started_at?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           assigned_to?: string | null
           avoidable_reopen?: boolean
           breezeway_synced_at?: string | null
@@ -2607,6 +2658,9 @@ export type Database = {
           bucket?: string | null
           category?: string
           closure_evidence?: string | null
+          closure_exception_at?: string | null
+          closure_exception_by?: string | null
+          closure_exception_reason?: string | null
           closure_qa_result?: string
           created_at?: string
           created_by?: string | null
