@@ -44,18 +44,26 @@ export const seedDemoEnvironment = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.rpc("seed_demo_environment");
+    const { error } = await supabaseAdmin.rpc("seed_demo_environment", {
+      _actor: context.userId,
+    });
     if (error) throw error;
     return { ok: true as const };
   });
 
+/**
+ * Archives (never deletes) the demo records so the scenarios can be re-run
+ * with a clean slate while the history stays auditable.
+ */
 export const resetDemoEnvironment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({}).parse(data))
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.rpc("reset_demo_environment");
+    const { error } = await supabaseAdmin.rpc("reset_demo_environment", {
+      _actor: context.userId,
+    });
     if (error) throw error;
     return { ok: true as const };
   });

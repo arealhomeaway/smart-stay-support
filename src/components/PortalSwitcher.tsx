@@ -89,9 +89,9 @@ export function PortalSwitcher() {
             className="flex flex-col items-start gap-0.5"
           >
             <span className="flex items-center gap-2">
-              {resetting ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />} Reset demo data
+              {resetting ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />} Archive demo data
             </span>
-            <span className="text-xs text-muted-foreground">Wipe demo records to re-run scenarios</span>
+            <span className="text-xs text-muted-foreground">Archives demo records (never deleted) so scenarios can re-run</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
