@@ -47,6 +47,7 @@ import {
 } from "@/lib/owner-participation";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
+import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -191,6 +192,8 @@ function ProgramsBoard() {
       </header>
 
       <OwnerContactAlerts />
+
+      <OwnerTimeReviewQueue />
 
       <ProgramSummary rows={rows} />
 

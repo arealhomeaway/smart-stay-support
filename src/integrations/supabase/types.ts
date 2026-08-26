@@ -1601,12 +1601,14 @@ export type Database = {
         Row: {
           added_by: string | null
           added_on: string
+          archived_at: string | null
           closing_confirmed: boolean
           closing_date: string | null
           coverage_status: string
           created_at: string
           id: string
           inclusion_status: string
+          is_demo: boolean
           last_owner_activity_at: string | null
           launch_status: string
           notes: string | null
@@ -1618,12 +1620,14 @@ export type Database = {
         Insert: {
           added_by?: string | null
           added_on?: string
+          archived_at?: string | null
           closing_confirmed?: boolean
           closing_date?: string | null
           coverage_status?: string
           created_at?: string
           id?: string
           inclusion_status?: string
+          is_demo?: boolean
           last_owner_activity_at?: string | null
           launch_status?: string
           notes?: string | null
@@ -1635,12 +1639,14 @@ export type Database = {
         Update: {
           added_by?: string | null
           added_on?: string
+          archived_at?: string | null
           closing_confirmed?: boolean
           closing_date?: string | null
           coverage_status?: string
           created_at?: string
           id?: string
           inclusion_status?: string
+          is_demo?: boolean
           last_owner_activity_at?: string | null
           launch_status?: string
           notes?: string | null
@@ -1666,10 +1672,46 @@ export type Database = {
           },
         ]
       }
+      owner_program_rules: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          label: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          label: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       owner_programs: {
         Row: {
           activated_at: string | null
           activated_by: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           completed_at: string | null
           completed_by: string | null
           created_at: string
@@ -1705,6 +1747,9 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           activated_by?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -1740,6 +1785,9 @@ export type Database = {
         Update: {
           activated_at?: string | null
           activated_by?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -1820,6 +1868,7 @@ export type Database = {
       }
       owner_reviews: {
         Row: {
+          archived_at: string | null
           attachment_path: string | null
           business_question: string | null
           closed_at: string | null
@@ -1829,6 +1878,7 @@ export type Database = {
           evidence: string | null
           id: string
           impact: string | null
+          is_demo: boolean
           notified_at: string | null
           outcome: string | null
           owner_decision: string | null
@@ -1849,6 +1899,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           attachment_path?: string | null
           business_question?: string | null
           closed_at?: string | null
@@ -1858,6 +1909,7 @@ export type Database = {
           evidence?: string | null
           id?: string
           impact?: string | null
+          is_demo?: boolean
           notified_at?: string | null
           outcome?: string | null
           owner_decision?: string | null
@@ -1878,6 +1930,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           attachment_path?: string | null
           business_question?: string | null
           closed_at?: string | null
@@ -1887,6 +1940,7 @@ export type Database = {
           evidence?: string | null
           id?: string
           impact?: string | null
+          is_demo?: boolean
           notified_at?: string | null
           outcome?: string | null
           owner_decision?: string | null
@@ -2006,7 +2060,9 @@ export type Database = {
           created_at: string
           decision_outcome: string | null
           entry_date: string
+          flagged: boolean
           id: string
+          is_demo: boolean
           materials_reviewed: string | null
           minutes: number
           output: string | null
@@ -2014,6 +2070,10 @@ export type Database = {
           phase: string
           program_id: string
           review_id: string | null
+          review_note: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           ticket_id: string | null
         }
         Insert: {
@@ -2027,7 +2087,9 @@ export type Database = {
           created_at?: string
           decision_outcome?: string | null
           entry_date?: string
+          flagged?: boolean
           id?: string
+          is_demo?: boolean
           materials_reviewed?: string | null
           minutes: number
           output?: string | null
@@ -2035,6 +2097,10 @@ export type Database = {
           phase: string
           program_id: string
           review_id?: string | null
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           ticket_id?: string | null
         }
         Update: {
@@ -2048,7 +2114,9 @@ export type Database = {
           created_at?: string
           decision_outcome?: string | null
           entry_date?: string
+          flagged?: boolean
           id?: string
+          is_demo?: boolean
           materials_reviewed?: string | null
           minutes?: number
           output?: string | null
@@ -2056,6 +2124,10 @@ export type Database = {
           phase?: string
           program_id?: string
           review_id?: string | null
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           ticket_id?: string | null
         }
         Relationships: [
@@ -2834,6 +2906,9 @@ export type Database = {
           next_review_at: string | null
           occupancy_status: string
           outcome_type: string | null
+          owner_participation_path: string | null
+          owner_submitted: boolean
+          owner_submitted_by: string | null
           ownerrez_booking_id: string | null
           pending_handoff_to: string | null
           playbook_id: string | null
@@ -2926,6 +3001,9 @@ export type Database = {
           next_review_at?: string | null
           occupancy_status?: string
           outcome_type?: string | null
+          owner_participation_path?: string | null
+          owner_submitted?: boolean
+          owner_submitted_by?: string | null
           ownerrez_booking_id?: string | null
           pending_handoff_to?: string | null
           playbook_id?: string | null
@@ -3018,6 +3096,9 @@ export type Database = {
           next_review_at?: string | null
           occupancy_status?: string
           outcome_type?: string | null
+          owner_participation_path?: string | null
+          owner_submitted?: boolean
+          owner_submitted_by?: string | null
           ownerrez_booking_id?: string | null
           pending_handoff_to?: string | null
           playbook_id?: string | null
@@ -3919,6 +4000,10 @@ export type Database = {
         Returns: undefined
       }
       archive_demo_onboarding: { Args: { _actor: string }; Returns: undefined }
+      archive_demo_owner_program: {
+        Args: { _actor?: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3936,6 +4021,7 @@ export type Database = {
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
       seed_demo_onboarding: { Args: { _actor: string }; Returns: undefined }
+      seed_demo_owner_program: { Args: { _actor?: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"

@@ -30,6 +30,8 @@ export type OwnerTicket = {
   reported_at: string;
   resolved_at: string | null;
   resolution_notes: string | null;
+  owner_participation_path: string | null;
+  owner_submitted: boolean | null;
 };
 
 function addDays(iso: string, days: number) {
@@ -87,7 +89,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string) {
       ? supabase
           .from("tickets")
           .select(
-            "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes",
+            "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes, owner_participation_path, owner_submitted",
           )
           .in("property_id", propertyIds)
           .order("reported_at", { ascending: false })
@@ -351,4 +353,81 @@ export async function redeemOwnerInvite(
   });
 
   return { ok: true as const, programId: program.data.id };
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Stage 3 — a homeowner opens a matter at their own enrolled home.
+ *
+ * This reuses the Resolve matter record. There is no separate owner ticket
+ * system, and the row is only accepted by the database when the property is
+ * one the signed-in owner is enrolled in.
+ * ------------------------------------------------------------------ */
+
+export type OwnerParticipationPath = "inform" | "consult" | "approve" | "emergency";
+
+const PATH_PRIORITY: Record<OwnerParticipationPath, string> = {
+  emergency: "p1",
+  approve: "p3",
+  consult: "p3",
+  inform: "p4",
+};
+
+export async function createOwnerMatter(
+  supabase: Client,
+  userId: string,
+  input: {
+    programId: string;
+    propertyId: string;
+    path: OwnerParticipationPath;
+    title: string;
+    description: string;
+    category: string;
+  },
+) {
+  const link = await supabase
+    .from("owner_program_properties")
+    .select("property_id, inclusion_status")
+    .eq("program_id", input.programId)
+    .eq("property_id", input.propertyId)
+    .maybeSingle();
+  if (link.error) throw link.error;
+  if (!link.data || link.data.inclusion_status !== "included") {
+    throw new Error("That home is not part of your program.");
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("tickets")
+    .insert({
+      title: input.title,
+      description: input.description || null,
+      category: input.category,
+      priority: PATH_PRIORITY[input.path],
+      status: "open",
+      record_type: "ticket",
+      source_channel: "owner",
+      initiator_type: "owner",
+      owner_participation_path: input.path,
+      owner_submitted: true,
+      owner_submitted_by: userId,
+      property_id: input.propertyId,
+      created_by: userId,
+      reported_at: now,
+    })
+    .select("id, ref")
+    .single();
+  if (error) throw error;
+
+  await recordEvent(supabase, {
+    programId: input.programId,
+    kind: "owner_matter_opened",
+    summary: `Homeowner opened “${input.title}” (${input.path})`,
+    actorId: userId,
+    propertyId: input.propertyId,
+    newValue: input.path,
+    detail: { ticketId: data.id, ref: data.ref },
+  });
+
+  return { ok: true as const, ticketId: data.id, ref: data.ref };
 }

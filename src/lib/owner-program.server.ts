@@ -108,14 +108,17 @@ export async function loadPrograms(supabase: Client) {
         .from("owner_programs")
         .select(
           "id, owner_user_id, owner_name, owner_email, status, started_on, ends_on, onboarding_lead, operations_lead, dfy_confirmed, last_owner_activity_at",
-        ),
+        )
+        // Demo programs never appear in the production queue.
+        .eq("is_demo", false)
+        .is("archived_at", null),
       supabase
         .from("owner_program_properties")
         .select(
           "id, program_id, property_id, inclusion_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname)",
         ),
       supabase.from("owner_reviews").select("id, program_id, property_id, status, respond_by"),
-      supabase.from("owner_time_entries").select("id, program_id, minutes"),
+      supabase.from("owner_time_entries").select("id, program_id, minutes, review_status").eq("is_demo", false),
       supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
       supabase.from("owner_badges").select("program_id, code"),
       supabase
@@ -136,7 +139,9 @@ export async function loadPrograms(supabase: Client) {
       (l) => l.program_id === p.id && l.inclusion_status === "included",
     );
     const myReviews = (reviews.data ?? []).filter((r) => r.program_id === p.id);
-    const myEntries = (entries.data ?? []).filter((e) => e.program_id === p.id);
+    const myEntries = (entries.data ?? []).filter(
+      (e) => e.program_id === p.id && e.review_status !== "returned",
+    );
     const reported = combinedMinutes(myEntries);
     const snapshot = progressSnapshot({
       status: p.status as ProgramStatus,

@@ -37,6 +37,11 @@ export type EntryRow = {
   ticket_id: string | null;
   amends_entry_id: string | null;
   correction_reason: string | null;
+  review_status: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  flagged: boolean;
   created_at: string;
   propertyIds: string[];
 };
@@ -141,7 +146,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     supabase
       .from("owner_time_entries")
       .select(
-        "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, amends_entry_id, correction_reason, created_at",
+        "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, amends_entry_id, correction_reason, review_status, reviewed_by, reviewed_at, review_note, flagged, created_at",
       )
       .eq("program_id", programId)
       .order("entry_date", { ascending: false }),
@@ -228,8 +233,16 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
   });
 
   const included = properties.filter((x) => x.inclusionStatus === "included");
-  const reported = combinedMinutes(entryRows);
-  const onboardingMinutes = combinedMinutes(entryRows.filter((e) => e.phase === "onboarding"));
+  // A returned entry is waiting on the homeowner, so it does not count yet.
+  // Nothing here ever adds, estimates or credits time on the owner's behalf.
+  const countable = entryRows.filter((e) => e.review_status !== "returned");
+  const reported = combinedMinutes(countable);
+  const onboardingMinutes = combinedMinutes(countable.filter((e) => e.phase === "onboarding"));
+  const approvedMinutes = combinedMinutes(countable.filter((e) => e.review_status === "approved"));
+  const pendingReviewMinutes = combinedMinutes(
+    countable.filter((e) => e.review_status !== "approved"),
+  );
+  const returnedMinutes = combinedMinutes(entryRows.filter((e) => e.review_status === "returned"));
 
   const snapshot = progressSnapshot({
     status: p.status as ProgramStatus,
@@ -268,6 +281,9 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     entries: entryRows,
     badges: badges.data ?? [],
     reportedMinutes: reported,
+    approvedMinutes,
+    pendingReviewMinutes,
+    returnedMinutes,
     onboardingMinutes,
     operationalMinutes: reported - onboardingMinutes,
     reportedHours: hoursFromMinutes(reported),

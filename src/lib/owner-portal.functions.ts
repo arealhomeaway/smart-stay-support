@@ -108,3 +108,23 @@ export const redeemInvite = createServerFn({ method: "POST" })
     const email = (context.claims as { email?: string } | null)?.email ?? null;
     return redeemOwnerInvite(supabaseAdmin, context.userId, email, data.code);
   });
+
+/** A homeowner opens a matter at one of their own enrolled homes. */
+export const createOwnerMatterFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        programId: z.string().uuid(),
+        propertyId: z.string().uuid(),
+        path: z.enum(["inform", "consult", "approve", "emergency"]),
+        title: z.string().trim().min(4).max(160),
+        description: z.string().trim().max(2000).default(""),
+        category: z.enum(["maintenance", "cleaning", "admin", "guest"]).default("maintenance"),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { createOwnerMatter } = await import("./owner-portal.server");
+    return createOwnerMatter(context.supabase, context.userId, data);
+  });
