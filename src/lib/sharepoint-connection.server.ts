@@ -67,7 +67,9 @@ export async function inspectSharePointAuthorizationRequest(userId: string) {
     .map((s) => s.trim())
     .filter(Boolean);
   const expected = [...SHAREPOINT_SCOPES].map((s) => s.toLowerCase()).sort();
-  const actual = scopes.map((s) => s.split("/").pop()!.toLowerCase()).sort();
+  // The gateway appends offline_access itself, so the same value can appear
+  // twice. Compare the unique set — a duplicate is not a broader grant.
+  const actual = [...new Set(scopes.map((s) => s.split("/").pop()!.toLowerCase()))].sort();
 
   return {
     authority: url.origin,
