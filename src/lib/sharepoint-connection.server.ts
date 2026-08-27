@@ -119,6 +119,7 @@ export async function inspectSharePointAuthorizationRequest(userId: string) {
     matchesPinnedScopes: JSON.stringify(expected) === JSON.stringify(actual),
     expectedScopes: [...SHAREPOINT_SCOPES],
     appReturnUrl: returnUrl,
+    isReconnect,
   };
 }
 
