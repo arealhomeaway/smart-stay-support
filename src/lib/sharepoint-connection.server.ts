@@ -97,7 +97,7 @@ async function loadStoredConnection(
  * parameters. The full URL, OAuth state, codes and keys are never returned.
  */
 export async function inspectSharePointAuthorizationRequest(userId: string) {
-  const { authorizationUrl, returnUrl } = await buildSharePointAuthorization(userId);
+  const { authorizationUrl, returnUrl, isReconnect } = await buildSharePointAuthorization(userId);
   const url = new URL(authorizationUrl);
   const params = url.searchParams;
   const scopes = (params.get("scope") ?? "")
