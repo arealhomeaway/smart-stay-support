@@ -18,9 +18,12 @@ import {
   revokeSharePointConnect,
   sharePointConnectionStatus,
   startSharePointConnect,
+  validateSharePointAccess,
 } from "@/lib/sharepoint.functions";
 
 type Inspection = Awaited<ReturnType<typeof inspectSharePointAuthRequest>>;
+type Validation = Awaited<ReturnType<typeof validateSharePointAccess>>;
+
 
 function waitForOAuthCompletion(popup: Window) {
   return new Promise<string | null>((resolve, reject) => {
