@@ -128,6 +128,16 @@ export function SharePointConnectionPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const validate = useMutation({
+    mutationFn: () => validateFn(),
+    onSuccess: (data) => {
+      setValidation(data);
+      toast.success("Read-only validation finished.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   if (isLoading || !isPlatformOwner) return null;
 
   const connected = status.data?.connected ?? false;
