@@ -59,3 +59,13 @@ export const revokeSharePointConnect = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     return revokeSharePointConnection(context.userId);
   });
+
+/** Read-only (GET only) access-scope validation using the saved connection. */
+export const validateSharePointAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { runSharePointReadOnlyValidation } = await import("@/lib/sharepoint-validate.server");
+    return runSharePointReadOnlyValidation(context.userId);
+  });
+
