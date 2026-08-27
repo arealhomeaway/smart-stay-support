@@ -9,7 +9,9 @@
  *  - The lovack_* connection key is encrypted at rest and never leaves the
  *    server.
  */
+import { getRequest } from "@tanstack/react-start/server";
 import {
+  authorizeAppUserOAuth,
   callAsAppUser,
   disconnectAppUser,
   exchangeAppUserOAuthCode,
@@ -19,7 +21,66 @@ import {
   REQUIRED_SHAREPOINT_IDENTITY,
   SHAREPOINT_CONNECTOR_ID,
   SHAREPOINT_GATEWAY_BASE_URL,
+  SHAREPOINT_SCOPES,
 } from "@/lib/sharepoint";
+
+/**
+ * Mint a consent URL with the pinned scope list. This is the ONLY place an
+ * authorization request is generated — both the inspector and the connect
+ * button go through it, so what is reported is what is sent.
+ */
+export async function buildSharePointAuthorization(userId: string) {
+  const clientAPIKey = process.env['MICROSOFT_SHAREPOINT_APP_USER_CONNECTOR_CLIENT_API_KEY'];
+  if (!clientAPIKey) {
+    throw new Error("MICROSOFT_SHAREPOINT_APP_USER_CONNECTOR_CLIENT_API_KEY is not set");
+  }
+  const request = getRequest();
+  if (!request) throw new Error("OAuth must start from an app request.");
+  const url = new URL(request.url);
+  const sandboxHost = url.hostname === "localhost" ? request.headers.get("x-forwarded-host") : null;
+  const returnUrl = new URL(
+    "/oauth/sharepoint/return",
+    sandboxHost ? `https://${sandboxHost}` : url.origin,
+  ).toString();
+
+  const { authorizationUrl } = await authorizeAppUserOAuth({
+    gatewayBaseUrl: SHAREPOINT_GATEWAY_BASE_URL,
+    connectorId: SHAREPOINT_CONNECTOR_ID,
+    appUserId: userId,
+    clientAPIKey,
+    returnUrl,
+    credentialsConfiguration: { scopes: [...SHAREPOINT_SCOPES] },
+  });
+  return { authorizationUrl, returnUrl };
+}
+
+/**
+ * Generate the real authorization request and return only non-secret
+ * parameters. The full URL, OAuth state, codes and keys are never returned.
+ */
+export async function inspectSharePointAuthorizationRequest(userId: string) {
+  const { authorizationUrl, returnUrl } = await buildSharePointAuthorization(userId);
+  const url = new URL(authorizationUrl);
+  const params = url.searchParams;
+  const scopes = (params.get("scope") ?? "")
+    .split(/[\s+]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const expected = [...SHAREPOINT_SCOPES].map((s) => s.toLowerCase()).sort();
+  const actual = scopes.map((s) => s.split("/").pop()!.toLowerCase()).sort();
+
+  return {
+    authority: url.origin,
+    tenant: url.pathname.split("/").filter(Boolean)[0] ?? null,
+    clientId: params.get("client_id"),
+    redirectUri: params.get("redirect_uri"),
+    scopes,
+    responseType: params.get("response_type"),
+    matchesPinnedScopes: JSON.stringify(expected) === JSON.stringify(actual),
+    expectedScopes: [...SHAREPOINT_SCOPES],
+    appReturnUrl: returnUrl,
+  };
+}
 
 type ConnectionRow = {
   connection_key_ciphertext: string;
