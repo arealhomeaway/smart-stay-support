@@ -186,11 +186,48 @@ export function SharePointConnectionPanel() {
             Open Microsoft sign-in
           </Button>
           {connected ? (
-            <Button variant="ghost" disabled={readOnly || revoke.isPending} onClick={() => revoke.mutate()}>
-              Revoke
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                disabled={validate.isPending}
+                onClick={() => validate.mutate()}
+              >
+                Run read-only validation
+              </Button>
+              <Button variant="ghost" disabled={readOnly || revoke.isPending} onClick={() => revoke.mutate()}>
+                Revoke
+              </Button>
+            </>
           ) : null}
         </div>
+
+        {validation?.probes.length ? (
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/50 text-left">
+                <tr>
+                  <th className="p-2">Check</th>
+                  <th className="p-2">Expected</th>
+                  <th className="p-2">HTTP</th>
+                  <th className="p-2">Result</th>
+                  <th className="p-2">Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {validation.probes.map((p) => (
+                  <tr key={p.label} className="border-t border-border align-top">
+                    <td className="p-2">{p.label}</td>
+                    <td className="p-2 text-muted-foreground">{p.expectation}</td>
+                    <td className="p-2 font-mono">{p.status ?? "—"}</td>
+                    <td className="p-2">{p.verdict}</td>
+                    <td className="p-2 break-all text-muted-foreground">{p.detail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
 
         {!inspection ? (
           <p className="text-xs text-muted-foreground">
