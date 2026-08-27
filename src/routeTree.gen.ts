@@ -37,6 +37,7 @@ import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenticated/vendor.index'
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
+import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
@@ -190,6 +191,11 @@ const AuthenticatedVendorScorecardRoute =
     path: '/vendor/scorecard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const OauthSharepointReturnRoute = OauthSharepointReturnRouteImport.update({
+  id: '/oauth/sharepoint/return',
+  path: '/oauth/sharepoint/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksOwnerNotifyRoute =
   ApiPublicHooksOwnerNotifyRouteImport.update({
     id: '/api/public/hooks/owner-notify',
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
@@ -314,6 +322,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/oauth/sharepoint/return'
     | '/tickets/'
     | '/vendor/'
     | '/api/public/hooks/owner-notify'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/oauth/sharepoint/return'
     | '/tickets'
     | '/vendor'
     | '/api/public/hooks/owner-notify'
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/new'
     | '/_authenticated/vendor/$ticketId'
     | '/_authenticated/vendor/scorecard'
+    | '/oauth/sharepoint/return'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
     | '/api/public/hooks/owner-notify'
@@ -432,6 +444,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
@@ -637,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/oauth/sharepoint/return': {
+      id: '/oauth/sharepoint/return'
+      path: '/oauth/sharepoint/return'
+      fullPath: '/oauth/sharepoint/return'
+      preLoaderRoute: typeof OauthSharepointReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/owner-notify': {
       id: '/api/public/hooks/owner-notify'
       path: '/api/public/hooks/owner-notify'
@@ -738,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  OauthSharepointReturnRoute: OauthSharepointReturnRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
   ApiPublicHooksQuarterlySchedulerRoute: ApiPublicHooksQuarterlySchedulerRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
