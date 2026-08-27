@@ -76,6 +76,8 @@ export function SharePointConnectionPanel() {
   const startFn = useServerFn(startSharePointConnect);
   const completeFn = useServerFn(completeSharePointConnect);
   const revokeFn = useServerFn(revokeSharePointConnect);
+  const validateFn = useServerFn(validateSharePointAccess);
+
 
   const status = useQuery({
     queryKey: ["sharepoint-connection"],
