@@ -18,9 +18,12 @@ import {
   revokeSharePointConnect,
   sharePointConnectionStatus,
   startSharePointConnect,
+  validateSharePointAccess,
 } from "@/lib/sharepoint.functions";
 
 type Inspection = Awaited<ReturnType<typeof inspectSharePointAuthRequest>>;
+type Validation = Awaited<ReturnType<typeof validateSharePointAccess>>;
+
 
 function waitForOAuthCompletion(popup: Window) {
   return new Promise<string | null>((resolve, reject) => {
@@ -65,12 +68,16 @@ export function SharePointConnectionPanel() {
   const { isPlatformOwner, readOnly, isLoading } = useRole();
   const qc = useQueryClient();
   const [inspection, setInspection] = useState<Inspection | null>(null);
+  const [validation, setValidation] = useState<Validation | null>(null);
+
 
   const statusFn = useServerFn(sharePointConnectionStatus);
   const inspectFn = useServerFn(inspectSharePointAuthRequest);
   const startFn = useServerFn(startSharePointConnect);
   const completeFn = useServerFn(completeSharePointConnect);
   const revokeFn = useServerFn(revokeSharePointConnect);
+  const validateFn = useServerFn(validateSharePointAccess);
+
 
   const status = useQuery({
     queryKey: ["sharepoint-connection"],
@@ -121,6 +128,16 @@ export function SharePointConnectionPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const validate = useMutation({
+    mutationFn: () => validateFn(),
+    onSuccess: (data) => {
+      setValidation(data);
+      toast.success("Read-only validation finished.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   if (isLoading || !isPlatformOwner) return null;
 
   const connected = status.data?.connected ?? false;
@@ -169,11 +186,48 @@ export function SharePointConnectionPanel() {
             Open Microsoft sign-in
           </Button>
           {connected ? (
-            <Button variant="ghost" disabled={readOnly || revoke.isPending} onClick={() => revoke.mutate()}>
-              Revoke
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                disabled={validate.isPending}
+                onClick={() => validate.mutate()}
+              >
+                Run read-only validation
+              </Button>
+              <Button variant="ghost" disabled={readOnly || revoke.isPending} onClick={() => revoke.mutate()}>
+                Revoke
+              </Button>
+            </>
           ) : null}
         </div>
+
+        {validation?.probes.length ? (
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/50 text-left">
+                <tr>
+                  <th className="p-2">Check</th>
+                  <th className="p-2">Expected</th>
+                  <th className="p-2">HTTP</th>
+                  <th className="p-2">Result</th>
+                  <th className="p-2">Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {validation.probes.map((p) => (
+                  <tr key={p.label} className="border-t border-border align-top">
+                    <td className="p-2">{p.label}</td>
+                    <td className="p-2 text-muted-foreground">{p.expectation}</td>
+                    <td className="p-2 font-mono">{p.status ?? "—"}</td>
+                    <td className="p-2">{p.verdict}</td>
+                    <td className="p-2 break-all text-muted-foreground">{p.detail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
 
         {!inspection ? (
           <p className="text-xs text-muted-foreground">
