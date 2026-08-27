@@ -68,6 +68,8 @@ export function SharePointConnectionPanel() {
   const { isPlatformOwner, readOnly, isLoading } = useRole();
   const qc = useQueryClient();
   const [inspection, setInspection] = useState<Inspection | null>(null);
+  const [validation, setValidation] = useState<Validation | null>(null);
+
 
   const statusFn = useServerFn(sharePointConnectionStatus);
   const inspectFn = useServerFn(inspectSharePointAuthRequest);
