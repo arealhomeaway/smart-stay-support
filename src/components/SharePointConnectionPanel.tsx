@@ -201,6 +201,17 @@ export function SharePointConnectionPanel() {
           ) : null}
         </div>
 
+        {inspect.error || connect.error || validate.error || revoke.error ? (
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+          >
+            {(inspect.error ?? connect.error ?? validate.error ?? revoke.error)?.message ??
+              "Something went wrong. Nothing was changed."}
+          </p>
+        ) : null}
+
+
         {validation?.probes.length ? (
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">

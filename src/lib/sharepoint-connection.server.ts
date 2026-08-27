@@ -43,6 +43,11 @@ export async function buildSharePointAuthorization(userId: string) {
     sandboxHost ? `https://${sandboxHost}` : url.origin,
   ).toString();
 
+  // An existing connection must be re-authorized in place: the gateway requires
+  // the caller's stored lovack_* key so it updates that connection instead of
+  // creating a replacement. The key stays server-side and is never returned.
+  const stored = await loadStoredConnection(userId);
+
   const { authorizationUrl } = await authorizeAppUserOAuth({
     gatewayBaseUrl: SHAREPOINT_GATEWAY_BASE_URL,
     connectorId: SHAREPOINT_CONNECTOR_ID,
@@ -50,16 +55,49 @@ export async function buildSharePointAuthorization(userId: string) {
     clientAPIKey,
     returnUrl,
     credentialsConfiguration: { scopes: [...SHAREPOINT_SCOPES] },
+    ...(stored.key ? { connectionAPIKey: stored.key } : {}),
   });
-  return { authorizationUrl, returnUrl };
+  return { authorizationUrl, returnUrl, isReconnect: Boolean(stored.key) };
 }
+
+/**
+ * Load the caller's stored connection, if any.
+ *
+ * Returns `{ exists: false }` only for a confirmed first connection (no row).
+ * When a row exists but its key cannot be decrypted we throw rather than fall
+ * back to a first-connect request, which would create a second connection.
+ */
+async function loadStoredConnection(
+  userId: string,
+): Promise<{ exists: boolean; key: string | null }> {
+  const db = await admin();
+  const { data, error } = await db
+    .from("app_user_connections")
+    .select("connection_key_ciphertext")
+    .eq("user_id", userId)
+    .eq("connector_id", SHAREPOINT_CONNECTOR_ID)
+    .maybeSingle();
+  if (error) throw error;
+  const row = data as { connection_key_ciphertext: string } | null;
+  if (!row) return { exists: false, key: null };
+  try {
+    const key = decryptConnectionKey(row.connection_key_ciphertext);
+    if (!key) throw new Error("empty key");
+    return { exists: true, key };
+  } catch {
+    throw new Error(
+      "A SharePoint connection is already stored for this administrator, but its saved key could not be read on the server. Nothing was changed and no replacement connection was created — revoke the stored connection before authorizing again.",
+    );
+  }
+}
+
 
 /**
  * Generate the real authorization request and return only non-secret
  * parameters. The full URL, OAuth state, codes and keys are never returned.
  */
 export async function inspectSharePointAuthorizationRequest(userId: string) {
-  const { authorizationUrl, returnUrl } = await buildSharePointAuthorization(userId);
+  const { authorizationUrl, returnUrl, isReconnect } = await buildSharePointAuthorization(userId);
   const url = new URL(authorizationUrl);
   const params = url.searchParams;
   const scopes = (params.get("scope") ?? "")
@@ -81,6 +119,7 @@ export async function inspectSharePointAuthorizationRequest(userId: string) {
     matchesPinnedScopes: JSON.stringify(expected) === JSON.stringify(actual),
     expectedScopes: [...SHAREPOINT_SCOPES],
     appReturnUrl: returnUrl,
+    isReconnect,
   };
 }
 
