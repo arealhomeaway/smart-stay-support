@@ -2,61 +2,60 @@
  * Server functions for the ARHA Resolve SharePoint connection.
  *
  * Thin wrappers only — all logic lives in *.server.ts modules.
- * Authorization is invoked in `startSharePointConnect` below, and that is the
- * ONLY place a consent URL is ever minted.
+ * Every function here is admin-only: `assertAdmin` runs server-side on
+ * initiation, inspection, callback/exchange, status and revoke. Hiding the
+ * button is only cosmetic; this is the real gate.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { authorizeAppUserOAuth } from "@/integrations/lovable/appUserConnector";
+import { assertAdmin } from "@/lib/access.server";
 import {
-  SHAREPOINT_CONNECTOR_ID,
-  SHAREPOINT_GATEWAY_BASE_URL,
-  SHAREPOINT_SCOPES,
-} from "@/lib/sharepoint";
-import {
+  buildSharePointAuthorization,
   completeSharePointConnection,
   getSharePointConnectionStatus,
+  inspectSharePointAuthorizationRequest,
   revokeSharePointConnection,
 } from "@/lib/sharepoint-connection.server";
 
+/** Mints a consent URL and returns it to the admin's browser. Admin-only. */
 export const startSharePointConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const clientAPIKey = process.env['MICROSOFT_SHAREPOINT_APP_USER_CONNECTOR_CLIENT_API_KEY'];
-    if (!clientAPIKey) {
-      throw new Error("MICROSOFT_SHAREPOINT_APP_USER_CONNECTOR_CLIENT_API_KEY is not set");
-    }
-    const request = getRequest();
-    if (!request) throw new Error("OAuth must start from an app request.");
-    const url = new URL(request.url);
-    const sandboxHost =
-      url.hostname === "localhost" ? request.headers.get("x-forwarded-host") : null;
-    const returnUrl = new URL(
-      "/oauth/sharepoint/return",
-      sandboxHost ? `https://${sandboxHost}` : url.origin,
-    ).toString();
-
-    const { authorizationUrl } = await authorizeAppUserOAuth({
-      gatewayBaseUrl: SHAREPOINT_GATEWAY_BASE_URL,
-      connectorId: SHAREPOINT_CONNECTOR_ID,
-      appUserId: context.userId,
-      clientAPIKey,
-      returnUrl,
-      credentialsConfiguration: { scopes: [...SHAREPOINT_SCOPES] },
-    });
+    await assertAdmin(context.supabase, context.userId);
+    const { authorizationUrl } = await buildSharePointAuthorization(context.userId);
     return { authorizationUrl };
+  });
+
+/**
+ * Generates the same authorization request and returns ONLY non-secret
+ * parameters (client id, tenant, redirect URI, decoded scopes). The full URL,
+ * OAuth state and any code are never returned or logged.
+ */
+export const inspectSharePointAuthRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return inspectSharePointAuthorizationRequest(context.userId);
   });
 
 export const completeSharePointConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { code: string }) => input)
-  .handler(async ({ data, context }) => completeSharePointConnection(context.userId, data.code));
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return completeSharePointConnection(context.userId, data.code);
+  });
 
 export const sharePointConnectionStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => getSharePointConnectionStatus(context.userId));
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return getSharePointConnectionStatus(context.userId);
+  });
 
 export const revokeSharePointConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => revokeSharePointConnection(context.userId));
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    return revokeSharePointConnection(context.userId);
+  });

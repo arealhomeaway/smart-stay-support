@@ -13,6 +13,7 @@ import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
 import { NotionSyncPanel } from "@/components/NotionSyncPanel";
 import { MailboxIntakePanel } from "@/components/MailboxIntakePanel";
 import { FeatureFlagsPanel } from "@/components/FeatureFlagsPanel";
+import { SharePointConnectionPanel } from "@/components/SharePointConnectionPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
@@ -122,6 +123,8 @@ function IntegrationsPage() {
 
 
       </div>
+
+      <SharePointConnectionPanel />
 
       <FeatureFlagsPanel />
 
