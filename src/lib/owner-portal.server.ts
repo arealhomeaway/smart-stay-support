@@ -541,9 +541,12 @@ export async function recordOwnerApproval(
   if (error) throw error;
   if (!data) throw new Error("A decision was already recorded for this request.");
 
-  // Mirror the decision onto the onboarding task it gates, if any.
+  // Mirror the decision onto the onboarding task it gates, if any. Homeowners
+  // cannot write staff task rows themselves, so this narrow, already-authorized
+  // write runs with elevated access on the single gated task and nothing else.
   if (current.data.entity_type === "onboarding_task" && current.data.entity_id) {
-    await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
       .from("onboarding_tasks")
       .update({ owner_approval_status: input.decision === "approved" ? "approved" : "declined" })
       .eq("id", current.data.entity_id);
