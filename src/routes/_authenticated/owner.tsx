@@ -361,7 +361,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                 <p className="mt-1 text-sm text-muted-foreground">{r.business_question ?? r.recommendation}</p>
               )}
               {r.impact && <p className="mt-1 text-xs text-muted-foreground">Potential impact: {r.impact}</p>}
-              <ReviewPhotos photos={r.photos ?? []} />
+              <ReviewPhotos photos={r.photos ?? []} size="lg" />
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setAnswering(r)}>
                   Respond
