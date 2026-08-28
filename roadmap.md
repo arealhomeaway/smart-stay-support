@@ -69,3 +69,17 @@
 - [ ] No natural Fitzgerald event has processed yet (live rows: 1283 ignored_other_property,
       9 historical verify_failed, 1 invalid; zero live `processed`). Awaiting either a real
       task update on 1473933 or approval for a controlled test.
+
+## Beta acceptance reconciliation (Aug 28)
+- Owned by Claude Code (separate branch — do NOT edit here):
+  - [ ] Operations automatic assignment
+  - [ ] Property/guest/owner contact population
+  - [x] Handover written: assignment-rule sources + contact-source spec (.lovable/plan.md)
+- Owned here (reconciliation only, no live actions):
+  - [x] OwnerRez conversation/reply capability (GET+POST /v2/messages confirmed in docs)
+  - [x] Breezeway dispatch/status/evidence capability (create/update task, add task photo)
+  - [x] Info-mailbox communication + notification inventory
+  - [x] Telegram requirement + limitation statement
+  - [x] Attachment readiness (no Storage bucket, no upload code — missing)
+  - [x] Active Owner guide alignment map (branded AOP package)
+- Paused/unchanged: vendor portal, live sends, dispatch, external writes, automations
