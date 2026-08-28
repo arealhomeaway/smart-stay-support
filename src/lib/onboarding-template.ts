@@ -791,7 +791,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Confirm Initial Furnishings & Repairs Invoice Sent",
     role: "Project Manager",
     detail: "Instructions:\nClose this task once accounting has confirmed the furniture invoice has been sent. Send any follow ups to confirm status to the CFO.",
-    blocksHandoff: true,
+    blocksHandoff: false, // financial closeout — tracked after operational handoff,
     sortOrder: 790,
   },
   {
@@ -1201,7 +1201,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review Invoices",
     role: "Onboarding Manager",
     detail: "Please update the \"Invoice Status\" as necessary on the Active Projects page.\n\nAt this point the first two invoices should be sent, or the second will be sent soon.",
-    blocksHandoff: true,
+    blocksHandoff: false, // financial closeout — tracked after operational handoff,
     sortOrder: 1240,
   },
   {
@@ -1337,7 +1337,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Provide final cost for repairs, flooring, painting and landscaping to Accounting Team for owner invoice",
     role: "Project Manager",
     detail: "Adjust the Repair & Improvement Report in Smartsheet. \n Send the Smartsheet link (and Houzz Pro estimate for customer if necessary) to the onboarding manager mentioning any discrepancies. \n The Project Manager should compose a final update to the owner when sending the \"Your Home Is Ready for Booking\" email. Please provide an explanation of overages to avoid confusion between accounting and the project manager.",
-    blocksHandoff: true,
+    blocksHandoff: false, // financial closeout — tracked after operational handoff,
     sortOrder: 1390,
   },
   {
@@ -1382,7 +1382,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     stage: "phase6_handoff",
     title: "Move property to \"Pending Cost Review\" on the Active Projects page",
     role: "Onboarding Manager",
-    blocksHandoff: true,
+    blocksHandoff: false, // financial closeout — tracked after operational handoff,
     sortOrder: 1440,
   },
   {
@@ -1434,7 +1434,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Final Review - Property Costs",
     role: "Onboarding Manager",
     detail: "Complete Entry: https://www.notion.so/arealhomeaway/1834658d5f4f80228830d754dfa2584e?v=18c4658d5f4f80d5bfda000c6c4a7c2f&pvs=4",
-    blocksHandoff: true,
+    blocksHandoff: false, // financial closeout — tracked after operational handoff,
     sortOrder: 1500,
   },
 ];
