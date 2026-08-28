@@ -16,7 +16,8 @@ import { breezewayCompanyIdentity, listBreezewayProperties } from "./breezeway.s
 type ResolveProperty = {
   id: string;
   name: string | null;
-  address: string | null;
+  address_line1: string | null;
+  formatted_address: string | null;
   city: string | null;
   state: string | null;
   breezeway_property_id: string | null;
@@ -35,10 +36,10 @@ async function loadResolveProperties(): Promise<ResolveProperty[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("properties")
-    .select("id, name, address, city, state, breezeway_property_id")
+    .select("id, name, address_line1, formatted_address, city, state, breezeway_property_id")
     .order("name");
   if (error) throw new Error("Could not read Resolve properties.");
-  return (data ?? []) as ResolveProperty[];
+  return (data ?? []) as unknown as ResolveProperty[];
 }
 
 export async function buildBreezewayInventoryReport(): Promise<BreezewayInventoryReport> {
@@ -117,13 +118,14 @@ export async function buildBreezewayInventoryReport(): Promise<BreezewayInventor
     // 3. Suggestions only — a human confirms these.
     const addrKey = normalize(`${p.address ?? ""} ${p.city ?? ""}`);
     const addrHits = addrKey
-      ? resolve.filter((r) => normalize(`${r.address ?? ""} ${r.city ?? ""}`) === addrKey)
+      ? resolve.filter((r) => normalize(`${r.address_line1 ?? r.formatted_address ?? ""} ${r.city ?? ""}`) === addrKey)
       : [];
-    if (addrHits.length === 1) {
+    if (addrHits.length === 1 && addrHits[0]) {
+      const hit = addrHits[0];
       suggested.push(
         row({
-          resolveId: addrHits[0].id,
-          resolveName: addrHits[0].name,
+          resolveId: hit.id,
+          resolveName: hit.name,
           confidence: "suggested_address",
           note: "Address looks the same. Needs review before linking.",
         }),
@@ -142,11 +144,12 @@ export async function buildBreezewayInventoryReport(): Promise<BreezewayInventor
 
     const nameKey = normalize(p.name);
     const nameHits = nameKey ? resolve.filter((r) => normalize(r.name) === nameKey) : [];
-    if (nameHits.length === 1) {
+    if (nameHits.length === 1 && nameHits[0]) {
+      const hit = nameHits[0];
       suggested.push(
         row({
-          resolveId: nameHits[0].id,
-          resolveName: nameHits[0].name,
+          resolveId: hit.id,
+          resolveName: hit.name,
           confidence: "suggested_name",
           note: "Name looks the same. Needs review before linking.",
         }),
