@@ -49,6 +49,9 @@ async function destination(next?: string) {
   const roles = (data ?? []).map((r) => r.role as AppRole);
   const mine = portalsFor(roles);
 
+  // No authorised portal at all: neutral awaiting-access page, never the shell.
+  if (mine.length === 0) return { to: "/awaiting-access" };
+
   if (next && isKnownPortalRoute(next)) {
     if (mine.some((p) => p.route === next)) return { to: next };
     const wanted = portalByRoute(next);

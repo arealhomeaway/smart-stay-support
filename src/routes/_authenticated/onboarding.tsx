@@ -362,6 +362,13 @@ function OnboardingWorkspace() {
                             {t.exception_reason && (
                               <p className="text-xs text-amber-700">Exception: {t.exception_reason}</p>
                             )}
+                            {t.evidence_required && (
+                              <p className="text-xs text-muted-foreground">
+                                {t.evidence_note
+                                  ? `Evidence: ${t.evidence_note}`
+                                  : "Evidence required — none recorded yet."}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             {isOverdue(t) && <Badge variant="outline" className="bg-destructive/10 text-destructive">Overdue</Badge>}
@@ -372,11 +379,45 @@ function OnboardingWorkspace() {
                                 onRecord={(reason) => recordException.mutate({ data: { taskId: t.id, reason } })}
                               />
                             )}
+                            {t.evidence_required && (
+                              <EvidenceDialog
+                                disabled={readOnly}
+                                current={t.evidence_note ?? ""}
+                                onSave={(note) =>
+                                  saveTask.mutate({
+                                    data: {
+                                      id: t.id,
+                                      propertyId: t.property_id,
+                                      stage: t.stage,
+                                      title: t.title,
+                                      detail: t.detail ?? "",
+                                      assignedTo: t.assigned_to,
+                                      dueOn: t.due_on,
+                                      blocker: "",
+                                      requiresOwnerApproval: t.requires_owner_approval,
+                                      ownerApprovalStatus: (t.owner_approval_status ?? "pending") as never,
+                                      evidenceRequired: t.evidence_required,
+                                      evidenceNote: note,
+                                      status: t.status as never,
+                                      blocksHandoff: t.blocks_handoff,
+                                      parentTaskId: t.parent_task_id,
+                                      dependsOn: t.depends_on ?? [],
+                                      linkedTicketId: t.linked_ticket_id,
+                                    },
+                                  })
+                                }
+                              />
+                            )}
                             {t.status !== "complete" && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={readOnly || waiting.length > 0}
+                                disabled={
+                                  readOnly ||
+                                  waiting.length > 0 ||
+                                  // Evidence-required work cannot be closed on a promise.
+                                  (t.evidence_required && !(t.evidence_note ?? "").trim())
+                                }
                                 onClick={() =>
                                   saveTask.mutate({
                                     data: {
@@ -433,6 +474,53 @@ function OnboardingWorkspace() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/** Records what proves an evidence-required onboarding task was actually done. */
+function EvidenceDialog({
+  disabled,
+  current,
+  onSave,
+}: {
+  disabled: boolean;
+  current: string;
+  onSave: (note: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState(current);
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v) setNote(current);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" disabled={disabled}>
+          {current ? "Update evidence" : "Add evidence"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Evidence for this task</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <Textarea
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="What proves this is done — photo location, document name, meter reading, confirmation number."
+          />
+          <Button
+            className="w-full"
+            disabled={note.trim().length < 3}
+            onClick={() => { onSave(note.trim()); setOpen(false); }}
+          >
+            Save evidence
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -597,8 +685,18 @@ function TaskDialog({
                 dependsOn: dependsOn === "none" ? [] : [dependsOn],
               });
               setOpen(false);
+              // Every field resets: a saved task must never leak its stage,
+              // owner, dates, parent, dependency or flags into the next one.
+              setStage("intake");
               setTitle("");
               setDetail("");
+              setAssignedTo("unassigned");
+              setDueOn("");
+              setRequiresOwnerApproval(false);
+              setEvidenceRequired(false);
+              setBlocksHandoff(true);
+              setParentTaskId("none");
+              setDependsOn("none");
             }}
           >
             Save task

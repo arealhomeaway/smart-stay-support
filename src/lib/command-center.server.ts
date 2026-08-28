@@ -106,7 +106,9 @@ export async function loadCommandCenter(
         .from("properties")
         .select(
           "id, name, state, active, lifecycle_status, onboarding_stage, onboarding_started_at, handoff_accepted_at, latitude, longitude, address_line1, ownerrez_property_id",
-        ),
+        )
+        // Executive KPIs exclude demo/test homes and their paper trail.
+        .eq("is_demo", false),
       supabase
         .from("ticket_visits")
         .select("id, ticket_id, vendor_user_id, checked_in_at, checked_out_at, check_in_verified, minutes_on_site")
@@ -125,8 +127,8 @@ export async function loadCommandCenter(
       supabase
         .from("owner_programs")
         .select("id, status, target_hours, started_on, ends_on, property_id, last_owner_activity_at"),
-      supabase.from("onboarding_tasks").select("*"),
-      supabase.from("property_handoffs").select("*"),
+      supabase.from("onboarding_tasks").select("*").eq("is_demo", false),
+      supabase.from("property_handoffs").select("*").eq("is_demo", false),
       supabase.from("handoffs").select("id, ticket_id, status, created_at, responded_at").gte("created_at", priorSince),
       supabase.from("profiles").select("id, full_name, email"),
     ]);

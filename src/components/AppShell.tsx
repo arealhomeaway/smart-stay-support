@@ -63,6 +63,8 @@ type NavItem = {
   tour: string;
   /** Omit for items every internal person may open. */
   capability?: Capability;
+  /** The page itself is supervisor-gated — never show a dead-end link. */
+  supervisorOnly?: boolean;
 };
 
 type NavGroup = { label: string; items: NavItem[] };
@@ -91,7 +93,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Portfolio",
     items: [
-      { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties" },
+      { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
       { to: "/vendors", label: "Vendor Hub", icon: Handshake, tour: "vendors", capability: "vendor_admin" },
       { to: "/owner-programs", label: "Property owners", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
       { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
@@ -130,7 +132,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
-  const { can, isVendor, isOwner, readOnly, primary, isLoading: rolesLoading } = useRole();
+  const { can, isVendor, isOwner, isSupervisor, readOnly, primary, isLoading: rolesLoading } = useRole();
   const pathname = router.state.location.pathname;
   const vendorMode = !rolesLoading && isVendor;
   const ownerMode = !rolesLoading && isOwner;
@@ -140,7 +142,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     : ownerMode
       ? ownerGroups
       : navGroups
-          .map((g) => ({ ...g, items: g.items.filter((i) => !i.capability || can(i.capability)) }))
+          .map((g) => ({ ...g, items: g.items.filter(
+            (i) => (!i.capability || can(i.capability)) && (!i.supervisorOnly || isSupervisor),
+          ) }))
           .filter((g) => g.items.length > 0);
 
   const workspace = vendorMode
