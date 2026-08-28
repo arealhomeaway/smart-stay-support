@@ -1007,6 +1007,48 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_tokens: {
+        Row: {
+          access_token_enc: string | null
+          company_label: string | null
+          expires_at: string | null
+          last_auth_attempt_at: string | null
+          last_check_at: string | null
+          last_check_ok: boolean | null
+          last_error: string | null
+          obtained_at: string | null
+          provider: string
+          refresh_token_enc: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_enc?: string | null
+          company_label?: string | null
+          expires_at?: string | null
+          last_auth_attempt_at?: string | null
+          last_check_at?: string | null
+          last_check_ok?: boolean | null
+          last_error?: string | null
+          obtained_at?: string | null
+          provider: string
+          refresh_token_enc?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_enc?: string | null
+          company_label?: string | null
+          expires_at?: string | null
+          last_auth_attempt_at?: string | null
+          last_check_at?: string | null
+          last_check_ok?: boolean | null
+          last_error?: string | null
+          obtained_at?: string | null
+          provider?: string
+          refresh_token_enc?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       metric_definitions: {
         Row: {
           business_definition: string
