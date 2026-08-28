@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION private.can_edit_ticket(uuid, uuid) TO authenticated, service_role;
