@@ -65,7 +65,7 @@ export type ReviewRow = {
   responded_at: string | null;
   ticket_id: string | null;
   attachment_path: string | null;
-  photos: unknown;
+  photos: ReviewPhoto[];
   sort_order: number;
   propertyIds: string[];
 };
@@ -179,7 +179,12 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
       .filter((l) => l.review_id === r.id)
       .map((l) => l.property_id);
     const ids = linked.length > 0 ? linked : r.property_id ? [r.property_id] : [];
-    return { ...r, task_type: (r.task_type ?? "program_wide") as TaskType, propertyIds: ids };
+    return {
+      ...r,
+      task_type: (r.task_type ?? "program_wide") as TaskType,
+      photos: parseReviewPhotos((r as { photos?: unknown }).photos),
+      propertyIds: ids,
+    };
   });
 
   const today = new Date().toISOString().slice(0, 10);
