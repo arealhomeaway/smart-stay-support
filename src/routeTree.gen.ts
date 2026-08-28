@@ -43,6 +43,7 @@ import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/a
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
 import { Route as ApiPublicSyncInboundRouteImport } from './routes/api/public/sync/inbound'
 import { Route as ApiPublicSyncMailboxRouteImport } from './routes/api/public/sync/mailbox'
+import { Route as ApiPublicHooksBreezewayTokenRouteImport } from './routes/api/public/hooks/breezeway/$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -223,6 +224,12 @@ const ApiPublicSyncMailboxRoute = ApiPublicSyncMailboxRouteImport.update({
   path: '/api/public/sync/mailbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBreezewayTokenRoute =
+  ApiPublicHooksBreezewayTokenRouteImport.update({
+    id: '/api/public/hooks/breezeway/$token',
+    path: '/api/public/hooks/breezeway/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -258,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
+  '/api/public/hooks/breezeway/$token': typeof ApiPublicHooksBreezewayTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -293,6 +301,7 @@ export interface FileRoutesByTo {
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
+  '/api/public/hooks/breezeway/$token': typeof ApiPublicHooksBreezewayTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -330,6 +339,7 @@ export interface FileRoutesById {
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
   '/api/public/sync/inbound': typeof ApiPublicSyncInboundRoute
   '/api/public/sync/mailbox': typeof ApiPublicSyncMailboxRoute
+  '/api/public/hooks/breezeway/$token': typeof ApiPublicHooksBreezewayTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -367,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
     | '/api/public/sync/mailbox'
+    | '/api/public/hooks/breezeway/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
     | '/api/public/sync/mailbox'
+    | '/api/public/hooks/breezeway/$token'
   id:
     | '__root__'
     | '/'
@@ -438,6 +450,7 @@ export interface FileRouteTypes {
     | '/api/public/intake/email'
     | '/api/public/sync/inbound'
     | '/api/public/sync/mailbox'
+    | '/api/public/hooks/breezeway/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -450,6 +463,7 @@ export interface RootRouteChildren {
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
   ApiPublicSyncInboundRoute: typeof ApiPublicSyncInboundRoute
   ApiPublicSyncMailboxRoute: typeof ApiPublicSyncMailboxRoute
+  ApiPublicHooksBreezewayTokenRoute: typeof ApiPublicHooksBreezewayTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -692,6 +706,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSyncMailboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/breezeway/$token': {
+      id: '/api/public/hooks/breezeway/$token'
+      path: '/api/public/hooks/breezeway/$token'
+      fullPath: '/api/public/hooks/breezeway/$token'
+      preLoaderRoute: typeof ApiPublicHooksBreezewayTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -764,6 +785,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,
   ApiPublicSyncInboundRoute: ApiPublicSyncInboundRoute,
   ApiPublicSyncMailboxRoute: ApiPublicSyncMailboxRoute,
+  ApiPublicHooksBreezewayTokenRoute: ApiPublicHooksBreezewayTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

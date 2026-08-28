@@ -176,6 +176,75 @@ export type Database = {
         }
         Relationships: []
       }
+      breezeway_webhook_events: {
+        Row: {
+          company_id: number | null
+          home_id: number | null
+          id: string
+          is_fixture: boolean
+          outcome: string
+          reason: string | null
+          received_at: string
+          task_id: number | null
+          task_updated_at: string | null
+        }
+        Insert: {
+          company_id?: number | null
+          home_id?: number | null
+          id?: string
+          is_fixture?: boolean
+          outcome: string
+          reason?: string | null
+          received_at?: string
+          task_id?: number | null
+          task_updated_at?: string | null
+        }
+        Update: {
+          company_id?: number | null
+          home_id?: number | null
+          id?: string
+          is_fixture?: boolean
+          outcome?: string
+          reason?: string | null
+          received_at?: string
+          task_id?: number | null
+          task_updated_at?: string | null
+        }
+        Relationships: []
+      }
+      breezeway_webhook_subscriptions: {
+        Row: {
+          active: boolean
+          id: string
+          last_verified_at: string | null
+          note: string | null
+          receiver_host: string
+          registered_at: string
+          subscription_id: string | null
+          webhook_type: string
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          last_verified_at?: string | null
+          note?: string | null
+          receiver_host: string
+          registered_at?: string
+          subscription_id?: string | null
+          webhook_type: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          last_verified_at?: string | null
+          note?: string | null
+          receiver_host?: string
+          registered_at?: string
+          subscription_id?: string | null
+          webhook_type?: string
+        }
+        Relationships: []
+      }
       cleaning_regions: {
         Row: {
           created_at: string

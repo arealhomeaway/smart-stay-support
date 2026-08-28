@@ -31,6 +31,7 @@ import {
   BREEZEWAY_PROVIDER,
   BREEZEWAY_TOKEN_SKEW_MS,
   BREEZEWAY_TOKEN_TTL_MS,
+  BREEZEWAY_WEBHOOK_BASE,
   type BreezewayPropertySummary,
   type BreezewayTaskSummary,
 } from "./breezeway";
@@ -230,12 +231,22 @@ async function getAccessToken(forceRefresh = false): Promise<string> {
 type RequestOptions = {
   params?: Record<string, string | number>;
   base?: string;
-  /** Read-only guard: writes must be opted into explicitly. Nothing does today. */
-  method?: "GET";
+  /**
+   * Read-only guard: any method other than GET must be opted into explicitly
+   * with `allowWrite`. The only writer today is the webhook subscription
+   * registration, which the COO approved individually.
+   */
+  method?: "GET" | "POST" | "DELETE";
+  allowWrite?: boolean;
+  body?: unknown;
 };
 
 export async function breezewayRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const base = options.base ?? BREEZEWAY_INVENTORY_BASE;
+  const method = options.method ?? "GET";
+  if (method !== "GET" && !options.allowWrite) {
+    throw new BreezewayError(400, "Breezeway writes are disabled for this call.");
+  }
   const url = new URL(`${base}${path}`);
   for (const [k, v] of Object.entries(options.params ?? {})) url.searchParams.set(k, String(v));
 
@@ -245,12 +256,20 @@ export async function breezewayRequest<T>(path: string, options: RequestOptions 
   for (;;) {
     await takeRequestSlot();
     const res = await fetch(url, {
-      method: "GET",
-      headers: { Authorization: `JWT ${token}`, Accept: "application/json" },
+      method,
+      headers: {
+        Authorization: `JWT ${token}`,
+        Accept: "application/json",
+        ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
     });
     noteRateLimitHeaders(res);
 
-    if (res.ok) return (await res.json()) as T;
+    if (res.ok) {
+      const text = await res.text();
+      return (text ? JSON.parse(text) : {}) as T;
+    }
 
     // One re-auth on 401 in case the cached token was revoked early.
     if (res.status === 401 && attempt === 0) {
@@ -266,10 +285,11 @@ export async function breezewayRequest<T>(path: string, options: RequestOptions 
     }
 
     const body = await res.text();
-    console.error(`[breezeway] GET ${path} failed [${res.status}]: ${body.slice(0, 300)}`);
+    console.error(`[breezeway] ${method} ${path} failed [${res.status}]: ${body.slice(0, 300)}`);
     throw new BreezewayError(res.status, sanitizeError(res.status, path));
   }
 }
+
 
 /** User-facing error text: never includes tokens, credentials or raw payloads. */
 export function sanitizeError(status: number, path: string) {
@@ -452,4 +472,83 @@ export async function listBreezewayTasksForHome(homeId: string, maxPages = 10) {
     totalResults,
     pagesRemaining: Math.max(totalPages - pagesFetched, 0),
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Single task read (webhook verification)                             */
+/* ------------------------------------------------------------------ */
+
+export type BreezewayVerifiedTask = BreezewayTaskSummary & {
+  companyId: number | null;
+  updatedAt: string | null;
+};
+
+/**
+ * Authenticated read of ONE task by ID. This is the only trusted source of a
+ * task's company and property membership — webhook payloads are never trusted
+ * for that decision.
+ */
+export async function getBreezewayTask(taskId: number): Promise<BreezewayVerifiedTask | null> {
+  type Raw = BreezewayTaskRaw & {
+    company_id?: number | null;
+    updated_at?: string | null;
+    modified_at?: string | null;
+  };
+  let raw: Raw;
+  try {
+    raw = await breezewayRequest<Raw>(`/task/${taskId}`);
+  } catch (error) {
+    if (error instanceof BreezewayError && error.status === 404) return null;
+    throw error;
+  }
+  if (!raw || typeof raw.id !== "number") return null;
+  return {
+    id: raw.id,
+    name: raw.name ?? null,
+    homeId: raw.home_id ?? null,
+    status: raw.type_task_status?.name ?? raw.type_task_status?.code ?? null,
+    stage: raw.type_task_status?.stage ?? null,
+    department: raw.type_department ?? null,
+    priority: raw.type_priority ?? null,
+    scheduledDate: raw.scheduled_date ?? null,
+    scheduledTime: raw.scheduled_time ?? null,
+    createdAt: raw.created_at ?? null,
+    finishedAt: raw.finished_at ?? null,
+    assignments: (raw.assignments ?? []).map((a) => ({
+      name: a.name ?? null,
+      status: a.type_task_user_status ?? null,
+    })),
+    companyId: raw.company_id ?? null,
+    updatedAt: raw.updated_at ?? raw.modified_at ?? null,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Webhook subscriptions                                               */
+/* ------------------------------------------------------------------ */
+
+export type BreezewaySubscriptionRaw = {
+  id?: number | string;
+  url?: string | null;
+  webhook_type?: string | null;
+  status?: string | null;
+};
+
+/** Existing subscriptions on the account. Read-only. */
+export async function listBreezewaySubscriptions(): Promise<BreezewaySubscriptionRaw[]> {
+  const data = await breezewayRequest<BreezewaySubscriptionRaw[] | { results?: BreezewaySubscriptionRaw[] }>(
+    "/",
+    { base: BREEZEWAY_WEBHOOK_BASE },
+  );
+  return Array.isArray(data) ? data : (data.results ?? []);
+}
+
+/** Registers exactly one `task` subscription. Approved, single-shot write. */
+export async function createBreezewayTaskSubscription(url: string) {
+  return breezewayRequest<BreezewaySubscriptionRaw>("/", {
+    base: BREEZEWAY_WEBHOOK_BASE,
+    method: "POST",
+    allowWrite: true,
+    body: { url, webhook_type: "task" },
+  });
 }
