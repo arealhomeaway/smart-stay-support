@@ -58,6 +58,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useDemo } from "@/components/DemoProvider";
 import {
   Select,
   SelectContent,
@@ -153,7 +154,11 @@ function ProgramsBoard() {
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
 
-  const programs = useQuery({ queryKey: ["owner-programs"], queryFn: () => load() });
+  const { demoMode } = useDemo();
+  const programs = useQuery({
+    queryKey: ["owner-programs", demoMode],
+    queryFn: () => load({ data: { demo: demoMode } }),
+  });
   const roadmap = useQuery({ queryKey: ["owner-roadmap"], queryFn: () => loadRoadmap() });
 
   const rows = (programs.data?.rows ?? []) as ProgramRow[];

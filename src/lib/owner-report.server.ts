@@ -1,0 +1,455 @@
+/**
+ * Hours & Participation Report.
+ *
+ * Built entirely from saved participation records — no staff assembly, no
+ * upload, no email. Ownership is enforced by the caller (the server function
+ * resolves the program from the signed-in homeowner's own account), and the
+ * file bytes are returned through that authenticated call, never a public URL.
+ *
+ * Counting rules mirror the portal exactly (see owner-participation.server):
+ * minutes live on the entry, shared properties never multiply an entry, a
+ * superseded entry is replaced by its amendment, and a returned entry does
+ * not count until the homeowner corrects it.
+ */
+
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import type { Client } from "./owner-participation.server";
+import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
+import { PROGRAM_TOTAL_DAYS, hoursFromMinutes } from "./owner-participation";
+
+export type ReportEntry = {
+  id: string;
+  date: string;
+  activity: string;
+  detail: string;
+  minutes: number;
+  hours: number;
+  properties: string[];
+  shared: boolean;
+  status: string;
+  counts: boolean;
+  reason: string;
+  inPeriod: boolean;
+};
+
+export type ReportAction = {
+  date: string;
+  kind: string;
+  summary: string;
+  document: string;
+};
+
+export type OwnerReport = Awaited<ReturnType<typeof buildOwnerReport>>;
+
+const STATUS_LABEL: Record<string, string> = {
+  approved: "Approved by ARHA",
+  pending: "Awaiting review",
+  submitted: "Awaiting review",
+  returned: "Returned for correction",
+};
+
+function statusLabel(s: string) {
+  return STATUS_LABEL[s] ?? s;
+}
+
+function addDays(iso: string, days: number) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function fileName(base: string, ext: string) {
+  return `${base.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()}.${ext}`;
+}
+
+/** Owner-visible report model. Internal notes and other owners never appear. */
+export async function buildOwnerReport(supabase: Client, programId: string) {
+  const agg = await loadProgramAggregate(supabase, programId);
+  const p = agg.program;
+
+  const propNames = new Map(agg.properties.map((x) => [x.propertyId, x.name] as const));
+  const startedOn = p.startedOn;
+  const endsOn = p.endsOn ?? (startedOn ? addDays(startedOn, PROGRAM_TOTAL_DAYS - 1) : null);
+  const today = new Date().toISOString().slice(0, 10);
+  const windowClosed = Boolean(endsOn && endsOn < today) || p.status === "completed";
+  const kind: "progress" | "final" = windowClosed ? "final" : "progress";
+
+  const superseded = new Set(
+    agg.entries.filter((e) => e.superseded).map((e) => e.id),
+  );
+
+  const entries: ReportEntry[] = agg.entries.map((e) => {
+    const isSuperseded = superseded.has(e.id);
+    const returned = e.review_status === "returned";
+    const counts = !isSuperseded && !returned;
+    const inPeriod = !startedOn
+      ? true
+      : e.entry_date >= startedOn && (!endsOn || e.entry_date <= endsOn);
+    return {
+      id: e.id,
+      date: e.entry_date,
+      activity: e.activity,
+      detail: [e.output, e.comments].filter(Boolean).join(" — "),
+      minutes: e.minutes,
+      hours: hoursFromMinutes(e.minutes),
+      properties: e.propertyIds.map((id) => propNames.get(id) ?? "Property"),
+      shared: e.propertyIds.length > 1,
+      status: isSuperseded ? "Superseded by a correction" : statusLabel(e.review_status),
+      counts,
+      reason: e.correction_reason ?? e.review_note ?? "",
+      inPeriod,
+    };
+  });
+
+  const inPeriod = entries.filter((e) => e.inPeriod);
+  const outsidePeriod = entries.filter((e) => !e.inPeriod);
+  const countable = inPeriod.filter((e) => e.counts);
+
+  const totals = {
+    reportedMinutes: combinedMinutes(countable),
+    approvedMinutes: combinedMinutes(
+      countable.filter((e) => e.status === STATUS_LABEL['approved']),
+    ),
+    pendingMinutes: combinedMinutes(
+      countable.filter((e) => e.status !== STATUS_LABEL['approved']),
+    ),
+    returnedMinutes: combinedMinutes(
+      inPeriod.filter((e) => !e.counts && e.status !== "Superseded by a correction"),
+    ),
+    supersededMinutes: combinedMinutes(
+      inPeriod.filter((e) => e.status === "Superseded by a correction"),
+    ),
+    outsidePeriodMinutes: combinedMinutes(outsidePeriod.filter((e) => e.counts)),
+    sharedEntries: countable.filter((e) => e.shared).length,
+  };
+
+  // Participation actions: approvals, returns and revisions. These are a
+  // record of what happened — they never add hours on the owner's behalf.
+  const events = await supabase
+    .from("owner_program_events")
+    .select("kind, summary, created_at, new_value")
+    .eq("program_id", programId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (events.error) throw events.error;
+
+  const OWNER_VISIBLE = /^(entry|review|program|decision)/;
+  const actions: ReportAction[] = (events.data ?? [])
+    .filter((e) => OWNER_VISIBLE.test(e.kind))
+    .map((e) => ({
+      date: (e.created_at ?? "").slice(0, 10),
+      kind: e.kind.replace(/_/g, " "),
+      summary: e.summary,
+      document: e.new_value ?? "",
+    }));
+
+  const decisions = agg.reviews
+    .filter((r) => r.responded_at)
+    .map((r) => ({
+      date: (r.responded_at ?? "").slice(0, 10),
+      kind: "owner decision",
+      summary: `${r.title} — ${r.owner_decision ?? r.outcome ?? "responded"}`,
+      document: r.attachment_path ? r.attachment_path.split("/").pop()! : "",
+    }));
+
+  const allActions = [...actions, ...decisions].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  return {
+    kind,
+    generatedAt: new Date().toISOString(),
+    program: {
+      id: p.id,
+      ownerName: p.ownerName ?? "Homeowner",
+      status: p.status,
+      startedOn,
+      endsOn,
+      day: agg.snapshot.day,
+      totalDays: PROGRAM_TOTAL_DAYS,
+    },
+    properties: agg.includedProperties.map((x) => ({ name: x.name, address: x.address })),
+    totals: {
+      ...totals,
+      reportedHours: hoursFromMinutes(totals.reportedMinutes),
+      approvedHours: hoursFromMinutes(totals.approvedMinutes),
+      pendingHours: hoursFromMinutes(totals.pendingMinutes),
+      returnedHours: hoursFromMinutes(totals.returnedMinutes),
+      supersededHours: hoursFromMinutes(totals.supersededMinutes),
+      outsidePeriodHours: hoursFromMinutes(totals.outsidePeriodMinutes),
+    },
+    entries: inPeriod,
+    outsidePeriod,
+    actions: allActions,
+  };
+}
+
+const NOTES = [
+  "Reported hours = approved entries + entries awaiting review. Awaiting-review time is not approved and has not been verified by ARHA.",
+  "ARHA-approved hours count approved entries only. Returned entries and entries replaced by a correction are excluded from both totals.",
+  "An activity shared across several homes is counted once in the combined total; the homes are listed for attribution only.",
+  "Every hour is the homeowner's own record, entered manually. Approvals and revisions are logged as actions and never create hours.",
+  "This report is an operational record of reported participation. It is not a tax certification and not a guarantee of any tax treatment.",
+];
+
+export function reportCsv(report: OwnerReport) {
+  const esc = (v: string | number | boolean) =>
+    `"${String(v).replace(/"/g, '""')}"`;
+  const head = [
+    "entry_date",
+    "activity",
+    "detail",
+    "duration_minutes",
+    "duration_hours",
+    "properties",
+    "shared_activity",
+    "review_status",
+    "counts_toward_reported_hours",
+    "within_program_period",
+    "note",
+  ];
+  const rows = [...report.entries, ...report.outsidePeriod].map((e) =>
+    [
+      e.date,
+      e.activity,
+      e.detail,
+      e.minutes,
+      e.hours,
+      e.properties.join(" | "),
+      e.shared ? "yes" : "no",
+      e.status,
+      e.counts && e.inPeriod ? "yes" : "no",
+      e.inPeriod ? "yes" : "no",
+      e.reason,
+    ].map(esc).join(","),
+  );
+  const meta = [
+    `# ARHA Hours & Participation Report (${report.kind === "final" ? "end of period" : "progress"})`,
+    `# Owner,${report.program.ownerName}`,
+    `# Program period,${report.program.startedOn ?? "not started"} to ${report.program.endsOn ?? "n/a"}`,
+    `# Generated,${report.generatedAt}`,
+    `# Reported hours,${report.totals.reportedHours}`,
+    `# ARHA-approved hours,${report.totals.approvedHours}`,
+    `# Awaiting review hours,${report.totals.pendingHours}`,
+    `# Returned hours (not counted),${report.totals.returnedHours}`,
+    `# Superseded hours (not counted),${report.totals.supersededHours}`,
+    ...NOTES.map((n) => `# ${n.replace(/,/g, ";")}`),
+  ];
+  return [...meta, head.join(","), ...rows].join("\n");
+}
+
+const TEAL = rgb(0.075, 0.455, 0.478);
+const INK = rgb(0.067, 0.09, 0.098);
+const MUTED = rgb(0.42, 0.45, 0.46);
+const GOLD = rgb(0.722, 0.573, 0.306);
+
+export async function reportPdf(report: OwnerReport) {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const W = 612;
+  const H = 792;
+  const M = 48;
+  let page = doc.addPage([W, H]);
+  let y = H - M;
+
+  const newPage = () => {
+    page = doc.addPage([W, H]);
+    y = H - M;
+  };
+  const space = (n: number) => {
+    if (y - n < M + 24) newPage();
+    y -= n;
+  };
+  const text = (
+    s: string,
+    opts: { size?: number; f?: typeof font; color?: typeof INK; x?: number } = {},
+  ) => {
+    const size = opts.size ?? 10;
+    page.drawText(s, {
+      x: opts.x ?? M,
+      y,
+      size,
+      font: opts.f ?? font,
+      color: opts.color ?? INK,
+    });
+  };
+  const wrap = (s: string, width: number, size: number, f = font) => {
+    const out: string[] = [];
+    let line = "";
+    for (const word of s.split(/\s+/)) {
+      const next = line ? `${line} ${word}` : word;
+      if (f.widthOfTextAtSize(next, size) > width && line) {
+        out.push(line);
+        line = word;
+      } else line = next;
+    }
+    if (line) out.push(line);
+    return out;
+  };
+  const para = (s: string, size = 9, color = MUTED) => {
+    for (const line of wrap(s, W - M * 2, size)) {
+      space(size + 3);
+      text(line, { size, color });
+    }
+  };
+  const heading = (s: string) => {
+    space(24);
+    text(s, { size: 12, f: bold, color: TEAL });
+    space(4);
+    page.drawLine({
+      start: { x: M, y: y + 6 },
+      end: { x: W - M, y: y + 6 },
+      thickness: 0.7,
+      color: GOLD,
+    });
+  };
+
+  // Masthead
+  page.drawRectangle({ x: 0, y: H - 96, width: W, height: 96, color: TEAL });
+  page.drawText("A REAL HOME AWAY", {
+    x: M,
+    y: H - 46,
+    size: 16,
+    font: bold,
+    color: rgb(1, 1, 1),
+  });
+  page.drawText(
+    report.kind === "final"
+      ? "Hours & Participation Report — End of 90-day period"
+      : "Hours & Participation Report — Progress",
+    { x: M, y: H - 66, size: 11, font, color: rgb(0.9, 0.96, 0.96) },
+  );
+  page.drawText("Every home. Every guest. Every time.", {
+    x: M,
+    y: H - 82,
+    size: 8,
+    font,
+    color: rgb(0.8, 0.92, 0.92),
+  });
+  y = H - 120;
+
+  text(report.program.ownerName, { size: 14, f: bold });
+  space(16);
+  text(
+    `Program period: ${report.program.startedOn ?? "not started"} to ${report.program.endsOn ?? "n/a"} · Day ${report.program.day} of ${report.program.totalDays}`,
+    { size: 9, color: MUTED },
+  );
+  space(13);
+  text(`Report generated: ${report.generatedAt.replace("T", " ").slice(0, 16)} UTC`, {
+    size: 9,
+    color: MUTED,
+  });
+
+  heading("Participating properties");
+  if (report.properties.length === 0) para("No properties are attached to this program yet.");
+  for (const prop of report.properties) {
+    space(13);
+    text(`• ${prop.name}${prop.address ? ` — ${prop.address}` : ""}`, { size: 9.5 });
+  }
+
+  heading("Totals");
+  const totals: [string, string, string][] = [
+    [
+      "Reported hours",
+      `${report.totals.reportedHours}`,
+      "Approved entries plus entries awaiting review",
+    ],
+    [
+      "ARHA-approved hours",
+      `${report.totals.approvedHours}`,
+      "Reviewed and approved by ARHA",
+    ],
+    [
+      "Awaiting review",
+      `${report.totals.pendingHours}`,
+      "Included in reported hours; not approved or verified",
+    ],
+    [
+      "Returned entries",
+      `${report.totals.returnedHours}`,
+      "Not counted until the homeowner corrects and resubmits",
+    ],
+    [
+      "Superseded by corrections",
+      `${report.totals.supersededHours}`,
+      "Replaced by an amending entry; never counted twice",
+    ],
+    [
+      "Outside program period",
+      `${report.totals.outsidePeriodHours}`,
+      "Listed separately; excluded from the totals above",
+    ],
+  ];
+  for (const [label, value, note] of totals) {
+    space(14);
+    text(label, { size: 9.5, f: bold });
+    text(`${value} hrs`, { size: 9.5, f: bold, x: 210 });
+    text(note, { size: 8.5, color: MUTED, x: 275 });
+  }
+
+  heading("Participation detail");
+  para(
+    `${report.entries.length} entries within the program period. Shared activities (${report.totals.sharedEntries}) are counted once in the combined total and list every home they covered.`,
+  );
+  space(8);
+  const cols = [M, M + 62, M + 300, M + 350, M + 430] as const;
+  const rowHead = () => {
+    space(14);
+    text("Date", { size: 8, f: bold, x: cols[0] });
+    text("Activity", { size: 8, f: bold, x: cols[1] });
+    text("Hours", { size: 8, f: bold, x: cols[2] });
+    text("Homes", { size: 8, f: bold, x: cols[3] });
+    text("Status", { size: 8, f: bold, x: cols[4] });
+  };
+  rowHead();
+  for (const e of report.entries) {
+    space(12);
+    text(e.date, { size: 8, x: cols[0] });
+    text(wrap(e.activity, 230, 8)[0] ?? "", { size: 8, x: cols[1] });
+    text(String(e.hours), { size: 8, x: cols[2] });
+    text(e.shared ? `${e.properties.length} shared` : (e.properties[0] ?? "—").slice(0, 14), {
+      size: 8,
+      x: cols[3],
+    });
+    text(e.status.slice(0, 24), {
+      size: 8,
+      x: cols[4],
+      color: e.counts ? INK : MUTED,
+    });
+  }
+  if (report.entries.length === 0) para("No entries recorded in this period yet.");
+
+  if (report.outsidePeriod.length > 0) {
+    heading("Entries outside the program period");
+    para("Recorded by the homeowner but dated outside the configured window. Excluded from all totals above.");
+    rowHead();
+    for (const e of report.outsidePeriod) {
+      space(12);
+      text(e.date, { size: 8, x: cols[0] });
+      text(wrap(e.activity, 230, 8)[0] ?? "", { size: 8, x: cols[1] });
+      text(String(e.hours), { size: 8, x: cols[2] });
+      text("—", { size: 8, x: cols[3] });
+      text("Outside period", { size: 8, x: cols[4], color: MUTED });
+    }
+  }
+
+  heading("Recorded participation actions");
+  para("Approvals, returns, corrections and owner decisions. These are a record of review activity and never generate hours.");
+  for (const a of report.actions.slice(0, 40)) {
+    space(12);
+    text(a.date, { size: 8, x: cols[0] });
+    text(`${a.kind}: ${wrap(a.summary, 330, 8)[0] ?? ""}`, { size: 8, x: cols[1] });
+    if (a.document) text(a.document.slice(0, 20), { size: 8, x: cols[4], color: MUTED });
+  }
+  if (report.actions.length === 0) para("No review actions recorded yet.");
+
+  heading("How to read this report");
+  for (const n of NOTES) para(`• ${n}`, 8.5);
+
+  const bytes = await doc.save();
+  return bytes;
+}
+
+export function reportFileNames(report: OwnerReport) {
+  const base = `arha-participation-${report.kind}-${report.program.ownerName}-${report.generatedAt.slice(0, 10)}`;
+  return { pdf: fileName(base, "pdf"), csv: fileName(base, "csv") };
+}
