@@ -91,3 +91,50 @@ export type BreezewayInventoryReport = {
   pagesFetched: number;
   requestsUsed: number;
 };
+
+/* ------------------------------------------------------------------ */
+/* Pilot: single-property task preview (read-only)                     */
+/* ------------------------------------------------------------------ */
+
+/** Days of history included in the pilot preview window. */
+export const BREEZEWAY_PREVIEW_LOOKBACK_DAYS = 7;
+/** Days ahead included in the pilot preview window. */
+export const BREEZEWAY_PREVIEW_LOOKAHEAD_DAYS = 30;
+
+export type BreezewayTaskSummary = {
+  id: number;
+  name: string | null;
+  homeId: number | null;
+  status: string | null;
+  stage: string | null;
+  department: string | null;
+  priority: string | null;
+  scheduledDate: string | null;
+  scheduledTime: string | null;
+  createdAt: string | null;
+  finishedAt: string | null;
+  assignments: { name: string | null; status: string | null }[];
+};
+
+export type BreezewayPilotPreview = {
+  resolveId: string;
+  resolveName: string | null;
+  resolveAddress: string | null;
+  /** Unchanged by the pilot — Breezeway status never drives this. */
+  resolveLifecycleStatus: string;
+  breezewayId: string;
+  breezewayName: string | null;
+  breezewayAddress: string | null;
+  breezewayStatus: string | null;
+  addressMatches: boolean;
+  /** Inclusive ISO dates of the scheduled-date window applied to tasks. */
+  windowStart: string;
+  windowEnd: string;
+  tasksTotalForProperty: number;
+  tasksInWindow: BreezewayTaskSummary[];
+  unscheduledOpenTasks: BreezewayTaskSummary[];
+  pagesFetched: number;
+  totalPages: number;
+  pagesRemaining: boolean;
+  mappingSavedAt: string | null;
+};

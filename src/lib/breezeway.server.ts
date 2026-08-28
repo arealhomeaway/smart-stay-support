@@ -32,6 +32,7 @@ import {
   BREEZEWAY_TOKEN_SKEW_MS,
   BREEZEWAY_TOKEN_TTL_MS,
   type BreezewayPropertySummary,
+  type BreezewayTaskSummary,
 } from "./breezeway";
 import { decryptConnectionKey, encryptConnectionKey } from "./sharepoint-crypto.server";
 
@@ -374,5 +375,81 @@ export async function breezewayIdentityProbe() {
     companyId: company.id ?? first?.company_id ?? null,
     companyName: company.name,
     totalProperties: data.total_results ?? 0,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Read-only task listing (single property)                            */
+/* ------------------------------------------------------------------ */
+
+type BreezewayTaskRaw = {
+  id: number;
+  name?: string | null;
+  home_id?: number | null;
+  scheduled_date?: string | null;
+  scheduled_time?: string | null;
+  type_department?: string | null;
+  type_priority?: string | null;
+  type_task_status?: { code?: string | null; name?: string | null; stage?: string | null } | null;
+  assignments?: { id: number; name?: string | null; type_task_user_status?: string | null }[] | null;
+  created_at?: string | null;
+  finished_at?: string | null;
+};
+
+type TaskPage = {
+  limit: number;
+  page: number;
+  results: BreezewayTaskRaw[];
+  total_pages: number;
+  total_results: number;
+};
+
+/**
+ * Every task Breezeway holds for ONE property, paginated. Task listing requires
+ * a property filter; we never list account-wide. Read-only: nothing is written
+ * back to Breezeway and nothing is imported into Resolve by this function.
+ */
+export async function listBreezewayTasksForHome(homeId: string, maxPages = 10) {
+  const items: BreezewayTaskSummary[] = [];
+  let page = 1;
+  let pagesFetched = 0;
+  let totalPages = 1;
+  let totalResults = 0;
+
+  do {
+    const data = await breezewayRequest<TaskPage>("/task/", {
+      params: { home_id: homeId, limit: 100, page },
+    });
+    pagesFetched += 1;
+    totalPages = data.total_pages || 1;
+    totalResults = data.total_results ?? items.length;
+    for (const t of data.results ?? []) {
+      items.push({
+        id: t.id,
+        name: t.name ?? null,
+        homeId: t.home_id ?? null,
+        status: t.type_task_status?.name ?? t.type_task_status?.code ?? null,
+        stage: t.type_task_status?.stage ?? null,
+        department: t.type_department ?? null,
+        priority: t.type_priority ?? null,
+        scheduledDate: t.scheduled_date ?? null,
+        scheduledTime: t.scheduled_time ?? null,
+        createdAt: t.created_at ?? null,
+        finishedAt: t.finished_at ?? null,
+        assignments: (t.assignments ?? []).map((a) => ({
+          name: a.name ?? null,
+          status: a.type_task_user_status ?? null,
+        })),
+      });
+    }
+    page += 1;
+  } while (page <= totalPages && pagesFetched < maxPages);
+
+  return {
+    items,
+    pagesFetched,
+    totalPages,
+    totalResults,
+    pagesRemaining: Math.max(totalPages - pagesFetched, 0),
   };
 }

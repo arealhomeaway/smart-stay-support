@@ -34,3 +34,36 @@ export const breezewayInventoryReport = createServerFn({ method: "POST" })
     const { buildBreezewayInventoryReport } = await import("@/lib/breezeway-validate.server");
     return buildBreezewayInventoryReport();
   });
+
+/**
+ * Pilot only: links ONE Resolve property to ONE Breezeway property.
+ * Admin-gated. Writes nothing else — lifecycle stage is never touched.
+ */
+export const saveBreezewayMapping = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { resolveId: string; breezewayId: string }) => {
+    const resolveId = String(input?.resolveId ?? "").trim();
+    const breezewayId = String(input?.breezewayId ?? "").trim();
+    if (!/^[0-9a-f-]{36}$/i.test(resolveId)) throw new Error("Invalid Resolve property ID.");
+    if (!/^\d+$/.test(breezewayId)) throw new Error("Invalid Breezeway property ID.");
+    return { resolveId, breezewayId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { saveBreezewayPropertyMapping } = await import("@/lib/breezeway-pilot.server");
+    return saveBreezewayPropertyMapping(data.resolveId, data.breezewayId);
+  });
+
+/** Read-only task preview for one mapped property. Imports nothing. */
+export const breezewayPilotPreview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { resolveId: string }) => {
+    const resolveId = String(input?.resolveId ?? "").trim();
+    if (!/^[0-9a-f-]{36}$/i.test(resolveId)) throw new Error("Invalid Resolve property ID.");
+    return { resolveId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { buildBreezewayPilotPreview } = await import("@/lib/breezeway-pilot.server");
+    return buildBreezewayPilotPreview(data.resolveId);
+  });
