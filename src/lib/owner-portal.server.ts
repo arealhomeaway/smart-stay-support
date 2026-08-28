@@ -92,8 +92,10 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string) {
             "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes, owner_participation_path, owner_submitted",
           )
           .in("property_id", propertyIds)
+          .is("archived_at", null)
           .order("reported_at", { ascending: false })
           .limit(120)
+
       : Promise.resolve({ data: [], error: null } as const),
   ]);
   if (alerts.error) throw alerts.error;

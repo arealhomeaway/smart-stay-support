@@ -277,9 +277,12 @@ function Analytics() {
         .select(SELECT)
         // Demo records are excluded from every KPI.
         .eq("is_demo", false)
+        // Archived (prelaunch) matters are excluded from every KPI.
+        .is("archived_at", null)
         .gte("reported_at", since)
         .order("reported_at", { ascending: false })
         .limit(4000);
+
       if (error) throw error;
       return (data ?? []) as unknown as Ticket[];
     },

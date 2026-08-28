@@ -36,10 +36,12 @@ export async function loadCatalog(
         .from("tickets")
         .select("title, category, priority, resolution_notes")
         .eq("property_id", opts.propertyId)
-        // The Coach never learns from demo records.
+        // The Coach never learns from demo or archived prelaunch records.
         .eq("is_demo", false)
+        .is("archived_at", null)
         .order("created_at", { ascending: false })
         .limit(8),
+
     ]);
     if (propRes.data) {
       property = {

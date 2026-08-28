@@ -57,8 +57,11 @@ function Oversight() {
         .select("*, properties(name, nickname)")
         // Demo records never appear in oversight.
         .eq("is_demo", false)
+        // Archived matters are out of the active queue and raise no exceptions.
+        .is("archived_at", null)
         .order("reported_at", { ascending: false })
         .limit(500);
+
       if (error) throw error;
       return data;
     },
