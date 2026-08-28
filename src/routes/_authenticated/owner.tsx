@@ -248,7 +248,11 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         <CardContent className="space-y-4">
           <Progress value={snapshot.percentOfTarget} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Reported" value={formatHours(reportedMinutes)} hint={`${snapshot.percentOfTarget}% of ${OPERATING_TARGET_HOURS} hrs`} />
+            <Stat
+              label="Reported hours"
+              value={formatHours(reportedMinutes)}
+              hint={`${snapshot.percentOfTarget}% of ${OPERATING_TARGET_HOURS} hrs · awaiting review + approved`}
+            />
             <Stat label="Pace benchmark" value={`${Math.round(snapshot.benchmark)} hrs`} hint={varianceLabel} />
             <Stat
               label="Days remaining"
@@ -273,14 +277,14 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
           </div>
           <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
             <div className="rounded-md border border-border p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Approved by ARHA</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">ARHA-approved hours</p>
               <p className="font-medium">{formatHours(approvedMinutes)}</p>
-              <p className="text-xs text-muted-foreground">Counts toward your progress</p>
+              <p className="text-xs text-muted-foreground">Reviewed and approved by your ARHA contact</p>
             </div>
             <div className="rounded-md border border-border p-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Awaiting review</p>
               <p className="font-medium">{formatHours(pendingReviewMinutes)}</p>
-              <p className="text-xs text-muted-foreground">Counts toward your progress</p>
+              <p className="text-xs text-muted-foreground">Included in reported hours · not yet approved</p>
             </div>
             <div className="rounded-md border border-border p-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Returned to you</p>

@@ -25,7 +25,9 @@ const OUTCOME_LABELS: Record<string, string> = {
   duplicate: "Ignored — duplicate update",
   stale: "Ignored — older update",
   invalid: "Ignored — unusable payload",
-  verify_failed: "Ignored — could not verify",
+  // Not a signature check: this is our own authenticated re-read of the task
+  // against the Breezeway API failing or returning nothing.
+  verify_failed: "Dropped — Breezeway task lookup failed",
 };
 
 function Verdict({ ok, children }: { ok: boolean; children: React.ReactNode }) {
