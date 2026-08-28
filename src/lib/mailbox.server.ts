@@ -169,11 +169,20 @@ function classify(msg: GraphMessage, knownSender: boolean): SkipReason | null {
   const subject = msg.subject ?? "";
   const preview = msg.bodyPreview ?? "";
   if (!subject.trim() && !preview.trim()) return "empty";
+
+  // The category protocol comes first, before any guesswork. A person marks a
+  // message "Resolve: create task" and only then does a ticket open.
+  if (alreadyTagged(msg.categories)) return "already handled";
+  if (requestsTicket(msg.categories)) return null;
+
   if (isBulk(msg)) return "bulk";
   if (NOISE_SENDER.test(from) || NOISE_SUBJECT.test(subject)) return "automated";
 
   const text = `${subject}\n${preview}`;
+  // A reply on an existing matter still threads without a category, so a
+  // conversation never breaks in half.
   if (REF_TAG.test(text)) return null;
+  return "not categorised";
   // Until the shared inbox is delegated we may be reading a personal mailbox,
   // which carries plenty of business mail that is not coordinator work. So a
   // message only becomes a matter when we know the sender (teammate, vendor
