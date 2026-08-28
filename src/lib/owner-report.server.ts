@@ -440,8 +440,9 @@ export async function reportPdf(report: OwnerReport) {
   for (const a of report.actions.slice(0, 40)) {
     space(12);
     text(a.date, { size: 8, x: cols[0] });
-    text(`${a.kind}: ${wrap(a.summary, 330, 8)[0] ?? ""}`, { size: 8, x: cols[1] });
-    if (a.document) text(a.document.slice(0, 20), { size: 8, x: cols[4], color: MUTED });
+    text(fit(`${a.kind}: ${a.summary}`, 95), { size: 8, x: cols[1] });
+    if (a.document) text(fit(a.document, 20), { size: 8, x: cols[4], color: MUTED });
+
   }
   if (report.actions.length === 0) para("No review actions recorded yet.");
 
