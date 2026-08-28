@@ -174,7 +174,10 @@ function OnboardingWorkspace() {
               propertyName={data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"}
               canReview={
                 can("handoff_review") ||
+                // Mirrors the server rule: the assigned onboarding lead may
+                // record only its own onboarding review, never a later gate.
                 (Boolean(userId) &&
+                  (h.gate_step ?? "kati_review") === "kati_review" &&
                   data.properties.find((p) => p.id === h.property_id)?.onboarding_owner === userId)
               }
               disabled={readOnly}
