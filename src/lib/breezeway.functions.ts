@@ -107,3 +107,18 @@ export const breezewayRegisterWebhook = createServerFn({ method: "POST" })
     const { registerTaskWebhook } = await import("@/lib/breezeway-webhook-admin.server");
     return registerTaskWebhook();
   });
+
+/**
+ * Re-verifies a bounded batch of previously-failed, retryable task lookups.
+ * Manual only — no schedule calls this. Still preview-only: a recovered
+ * event goes through the exact same scope + dedupe checks as a live
+ * delivery, and nothing is written back to Breezeway or to any matter.
+ */
+export const breezewayWebhookRecoverFailures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { recoverFailedTaskVerifications } =
+      await import("@/lib/breezeway-webhook-recovery.server");
+    return recoverFailedTaskVerifications();
+  });
