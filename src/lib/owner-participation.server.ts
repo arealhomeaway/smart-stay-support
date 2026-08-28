@@ -15,6 +15,8 @@ import {
   hoursFromMinutes,
   OWNER_GOAL_HOURS,
   progressSnapshot,
+  parseReviewPhotos,
+  type ReviewPhoto,
   type CoverageState,
   type ProgramStatus,
   type TaskType,
@@ -65,6 +67,7 @@ export type ReviewRow = {
   responded_at: string | null;
   ticket_id: string | null;
   attachment_path: string | null;
+  photos: ReviewPhoto[];
   sort_order: number;
   propertyIds: string[];
 };
@@ -138,7 +141,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     supabase
       .from("owner_reviews")
       .select(
-        "id, phase, stage, title, task_type, recommendation, business_question, evidence, impact, decision_path, respond_by, status, owner_decision, owner_response, outcome, responded_at, ticket_id, property_id, attachment_path, sort_order",
+        "id, phase, stage, title, task_type, recommendation, business_question, evidence, impact, decision_path, respond_by, status, owner_decision, owner_response, outcome, responded_at, ticket_id, property_id, attachment_path, photos, sort_order",
       )
       .eq("program_id", programId)
       .order("sort_order"),
@@ -178,7 +181,12 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
       .filter((l) => l.review_id === r.id)
       .map((l) => l.property_id);
     const ids = linked.length > 0 ? linked : r.property_id ? [r.property_id] : [];
-    return { ...r, task_type: (r.task_type ?? "program_wide") as TaskType, propertyIds: ids };
+    return {
+      ...r,
+      task_type: (r.task_type ?? "program_wide") as TaskType,
+      photos: parseReviewPhotos((r as { photos?: unknown }).photos),
+      propertyIds: ids,
+    };
   });
 
   const today = new Date().toISOString().slice(0, 10);

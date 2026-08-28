@@ -403,3 +403,15 @@ export function nextHourBadge(reportedHours: number, earned: string[]) {
     hoursAway: Math.max(0, Math.round((target.hours - reportedHours) * 10) / 10),
   };
 }
+
+/** A photo attached to an owner decision (stored in owner_reviews.photos). */
+export type ReviewPhoto = { url: string; caption?: string | null };
+
+/** Parses the `photos` jsonb column into a safe, serializable list. */
+export function parseReviewPhotos(raw: unknown): ReviewPhoto[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((p) => (typeof p === "string" ? { url: p } : (p as ReviewPhoto)))
+    .filter((p) => p && typeof p.url === "string" && p.url.length > 0)
+    .map((p) => ({ url: p.url, caption: p.caption ?? null }));
+}

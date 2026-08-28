@@ -1,0 +1,1 @@
+alter table public.owner_reviews add column if not exists photos jsonb not null default '[]'::jsonb;
