@@ -122,7 +122,11 @@ const ownerGroups: NavGroup[] = [
   { label: "My home", items: [{ to: "/owner", label: "My home", icon: KeyRound, tour: "owner" }] },
 ];
 
+/** Unfinished general tour/welcome popup — hidden until role-specific tours land. */
+const SHOW_GENERAL_TOUR = false;
+
 export function AppShell({ children }: { children: ReactNode }) {
+
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
@@ -262,12 +266,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
 
-        {!vendorMode && !ownerMode && (
+        {/*
+          General "Welcome to Resolve" popup and guided tour are hidden until
+          portal- and role-specific tours replace them. Flip SHOW_GENERAL_TOUR
+          back to true to restore the existing implementation unchanged.
+        */}
+        {SHOW_GENERAL_TOUR && !vendorMode && !ownerMode && (
           <>
             <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
             <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
           </>
         )}
+
       </SidebarInset>
     </SidebarProvider>
   );
