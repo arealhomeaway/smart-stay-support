@@ -58,6 +58,16 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     (p) => lifecycleOf(p) !== "active_operations" && lifecycleOf(p) !== "offboarded",
   );
 
+  // Homeowner decisions and their history — staff read-only.
+  const ownerApprovals = await supabase
+    .from("approvals")
+    .select(
+      "id, entity_type, entity_id, property_id, kind, title, detail, status, decision_note, decided_at, approver_id, due_on, created_at",
+    )
+    .eq("approver_role", "owner")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
   return {
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
@@ -69,8 +79,10 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     externalDatabases: extDbs.data ?? [],
     externalRecords: extRecords.data ?? [],
     documents: docs.data ?? [],
+    ownerApprovals: ownerApprovals.data ?? [],
   };
 }
+
 
 
 export async function saveOnboardingTask(
