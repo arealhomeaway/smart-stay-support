@@ -36,12 +36,13 @@ export async function activeOwnerLinks(
   const ids = propertyIds?.filter(Boolean) ?? null;
   if (ids && ids.length === 0) return map;
 
+  // Every explicit link is read, not just the included ones: an explicit
+  // exclusion must win over the legacy single-property column below.
   let joinQuery = supabase
     .from("owner_program_properties")
     .select(
       "property_id, program_id, inclusion_status, owner_programs!inner(id, owner_user_id, owner_name, status)",
-    )
-    .eq("inclusion_status", "included");
+    );
   if (ids) joinQuery = joinQuery.in("property_id", ids);
 
   let legacyQuery = supabase
@@ -51,6 +52,7 @@ export async function activeOwnerLinks(
   if (ids) legacyQuery = legacyQuery.in("property_id", ids);
 
   const [joined, legacy] = await Promise.all([joinQuery, legacyQuery]);
+
   if (joined.error) throw joined.error;
   if (legacy.error) throw legacy.error;
 
