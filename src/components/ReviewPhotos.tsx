@@ -25,21 +25,17 @@ export function ReviewPhotos({
             key={p.url}
             type="button"
             onClick={() => setOpen(p)}
-            className="group overflow-hidden rounded-md border border-border text-left"
+            className={`group overflow-hidden rounded-md border border-border text-left ${size === "lg" ? "w-44" : "w-24"}`}
             aria-label={p.caption ? `View photo: ${p.caption}` : "View photo"}
           >
             <img
               src={p.url}
               alt={p.caption ?? "Photo from the team"}
               loading="lazy"
-              className={
-                size === "lg"
-                  ? "h-32 w-44 object-cover"
-                  : "h-16 w-24 object-cover"
-              }
+              className={size === "lg" ? "h-32 w-full object-cover" : "h-16 w-full object-cover"}
             />
             {p.caption && (
-              <span className="block max-w-44 truncate bg-muted px-1.5 py-1 text-[11px] text-muted-foreground">
+              <span className="block w-full truncate bg-muted px-1.5 py-1 text-[11px] text-muted-foreground">
                 {p.caption}
               </span>
             )}
