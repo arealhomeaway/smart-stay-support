@@ -192,6 +192,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
   } = data;
 
   const [timeTarget, setTimeTarget] = useState<TimeTarget | null>(null);
+  const [correcting, setCorrecting] = useState<(typeof entries)[number] | null>(null);
   const [answering, setAnswering] = useState<(typeof reviews)[number] | null>(null);
   const [openingMatter, setOpeningMatter] = useState(false);
 
