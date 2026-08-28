@@ -81,10 +81,10 @@ function Hub() {
         <h1 className="mt-3 text-3xl font-semibold md:text-4xl">
           Welcome back{name ? `, ${name.split(" ")[0]}` : ""}
         </h1>
-        <p className="mt-3 flex flex-wrap items-center gap-2 text-muted-foreground">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-muted-foreground">
           <Badge variant="secondary">{ROLE_LABELS[primary]}</Badge>
           <span>A Real Home Away</span>
-        </p>
+        </div>
 
         {isLoading ? (
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
