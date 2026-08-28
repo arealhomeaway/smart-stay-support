@@ -1,97 +1,74 @@
-# Resolve — beta acceptance reconciliation
+# Resolve beta — revised sequence under Emily's approved direction
 
-Resolve is **not beta-ready**. Individual workflows pass; the shared operating workspace (assignment, contact context, communication, vendor coordination, real files) is not complete. Vendor portal stays paused; no historical import, no live sends, no external writes, no automation activation.
+Emily's answers are the operating direction. Resolve is still not beta-ready. Vendor portal paused; no live sends, dispatch, external writes, access changes, or automation activation without specific approval.
 
-**Ownership split:** automatic assignment (#1) and property/guest/owner contact population (#3) are Claude Code's on a separate branch — nothing here touches them. The handover spec for both is in Section E so no competing implementation is built.
+**Lane split:** Claude owns automatic assignment and contact population. This plan owns communication, notifications, files, Breezeway work orders, onboarding variants, quarterly placement and the Active Owner comparison. Shared files are listed in "Coordination" so we never edit the same thing.
 
-## A. Requirements / status matrix
+## Corrections to my earlier reconciliation
 
-| # | Requirement | Status | Evidence / gap |
-|---|---|---|---|
-| 1 | Automatic assignment | **Missing — assigned to Claude** | Ownership fields and edit rules exist (`src/lib/matters.ts`, RLS `can_edit_ticket`). No router: assignment is manual in `MatterOwnershipPanel`. Only `quarterly.server.ts` auto-assigns (region inspector). No Pod/suggested-vs-actual distinction, no "nobody eligible" state. See Section E. |
-| 2 | Vocabulary | **Decision pending — nothing renamed** | Recommendation in Section B. |
-| 3 | Property & contact context | **Partial — assigned to Claude** | Guest context is real and read-only (`guest-context.functions.ts` → `ownerrez.server.currentGuestForListing`), matched by `ownerrez_property_id` only, demo excluded, gated to admin/manager/tech, hidden from vendor/owner. Missing: owner contacts on the matter, explicit vacant / upcoming / mid-stay date rule. See Section E. |
-| 4 | Breezeway field work | **Implemented: read + receiver only** | Have: credential check, property list, task read (`getBreezewayTask`, `listBreezewayTasksForHome`), subscription create, verified receiver with retry/duplicate/stale handling. The receiver **writes only `breezeway_webhook_events`** — it does not update any Request or Work Order today. API supports what we need: `POST /public/inventory/v1/task` (create), update task (status/assignment fields), `add-task-photo` (completion evidence), People API for assignees. Not implemented: any write. |
-| 5 | Quarterly reviews under Vendor management | **Missing (nav/ownership only)** | `/quarterly` sits in the Operations nav (`AppShell.tsx:87`). Records and paused scheduler fine. |
-| 6 | Real files | **Missing** | `documents.storage_path` and `vendor_documents.storage_path` columns exist, but there is **no storage bucket and no upload/download code anywhere in `src/`** — every document row today is an `external_url` link. SharePoint sign-in is not file capability. |
-| 7 | Asana replacement | **Partial** | Have: 150-task furnishing template, phases, assignment, due dates, evidence + approval gates, notes, handoff gate. Missing for daily use: subtasks, dependency enforcement, mention notifications, real attachments, plan variants beyond full furnishing. Asana still required today for attachments, subtasks and the expense-log tasks named in template text. |
-| 8 | Active Owner guide alignment | **Partial — mapped in Section D** | Guide read. |
-| 9 | Communication & notifications | **Partial** | Detailed in Section C. |
-| 10 | Telegram | **Missing; bounded by platform limits** | No Telegram code. Template + field notes show it is the live channel for handyman, realtor, designer and per-property groups. |
-| 11 | OwnerRez messaging | **Capability confirmed, not implemented** | Official v2 reference documents `GET /v2/messages?threadId=…` (thread fetch, `since_utc`, `include_attachments`) and `POST /v2/messages` (create message, with channel enum incl. Airbnb/Vrbo/Booking). Our code uses GET-only reservation/guest lookup (`ownerRezGet`). Capability ≠ access: our token's scope for messages is unverified and must be tested read-only first. |
+- **Onboarding subtasks and dependencies exist — my earlier "missing" was wrong.** `onboarding_tasks` has `parent_task_id` and `depends_on[]`; `dependencyBlocked()` enforces prerequisites and the workspace renders subtasks indented and blocks dependent tasks. Nothing to rebuild. The real gap is **plan variants**: `onboarding-template.ts` holds exactly one plan (full furnishing) with no variant key.
+- **Vocabulary is settled, not proposed:** Operations = **Ticket**. Breezeway **Work Order** = linked external field job only. Onboarding Project/Task/Subtask and Active Owner Action/Approval/Participation Entry unchanged. Labels only — no table or API renames.
+- **Quarterly reviews** move out of Operations navigation to vendor management (supersedes the SOP's older placement). Records preserved, scheduler stays paused.
 
-## B. Terminology recommendation (one, for approval)
+## Sequence (my lane — runs independently of Claude's)
 
-Adopt **Request** (Operations) with **Work Order** used *only* for a linked external field job (Breezeway), created one-per-dispatch and never automatically; **Project → Task → Subtask** for Onboarding; **Action, Approval, Participation Entry** for Active Owner.
+**W1 — Files (foundation for evidence, onboarding and owner sharing).**
+Storage recommendation first, then build after approval: private Cloud storage bucket as the system of record for in-app photos/videos/documents, persisting `documents.storage_path`; the approved ARHA Resolve SharePoint site stays a read-scoped connector, not the upload target — pushing staff uploads there needs a site-level write grant we do not have and have not requested. Access: staff upload and read; owners see only explicitly shared items and can upload requested documents; vendors submit in Breezeway this phase. No external file write until approved.
 
-Duplication risk to avoid: if Work Order becomes a full internal record, every staff-handled Request gains a shadow record with its own status and SLA, and Breezeway retries fan out. Keep Work Order as a child link record (external id + origin), not a second queue. Likewise the owner **Action** must be the owner-facing view of an existing onboarding **Task**, not a separate record.
+**W2 — Email intake category protocol** (build behind the existing paused switch; no live activation).
+Only a message categorized exactly `Resolve: create task` creates a ticket. Order of operations: read the tagged message → create and confirm the saved ticket → only then PATCH the message's categories to `Resolve: task created`, preserving every unrelated category. On ticket close, set `Resolve task: task completed`. Duplicate protection by Graph `internetMessageId` + `conversationId` uniqueness, so a retry re-tags rather than re-creates. Replies keep landing on the existing ticket through the current `conversationId`/ref-tag linking; untagged mail never creates a ticket. Mailbox stays locked to info@arealhomeaway.com through the existing allowlist.
 
-## C. Communication and notifications — capability by channel
+**W3 — Notifications.**
+Staff in-app notification store + bell: new assignment, pending handoff, urgent/overdue, vendor completion. Owner approval requests go in-app + email + **web push** (Web Push/VAPID, per-user opt-in). Push support to state plainly in the UI: works on desktop Chrome/Edge/Firefox and Android; on iPhone/iPad only when the owner adds Resolve to the Home Screen (iOS 16.4+), and never without opt-in. Delivery state shown per channel (sent / failed / skipped-not-opted-in), reusing the `email_log` pattern. Returned-entry channels left unwired pending Emily's answer.
 
-| Channel | How sent | How received | Linked to record | Delivery evidence |
-|---|---|---|---|---|
-| Internal comments / mentions | `ticket_activity` insert; `extractMentions` parses "@name" | Visible on the matter only | Yes (ticket_id) | None — **queue only, nobody is notified** |
-| In-app notifications | Owner side only (`owner_notifications`, DB trigger) | Owner portal | Yes | Read/sent flags on owner rows; **no staff notification store at all** |
-| Browser / mobile push | Not implemented | — | — | — |
-| Email | Microsoft Graph, send path fixed to `/users/<info@arealhomeaway.com>/sendMail`; no `/me`, no dynamic mailbox (`mailbox-allowlist.server.ts`) | Inbox read restricted to the same mailbox's Inbox folder; intake creates matters | Yes, via intake linking | `email_log` rows record sends; bounces not tracked |
-| External guest / owner / vendor messaging | Not implemented (owner alerts are in-app + email only) | — | — | — |
+**W4 — Breezeway work orders (the beta-required set).**
+`work_orders` link table: `ticket_id`, `external_system`, `external_id`, `origin` (resolve|breezeway), idempotency key, status, due date, assignee, external URL. Create in Breezeway from a Ticket (`POST /public/inventory/v1/task`), select vendor/assignee from the People API, set due date, show acceptance/status, and pull completion notes and photos. The receiver stops being event-log-only: a verified webhook updates the matching linked Work Order by `external_id` — retries update, never insert, so no duplicate jobs or loops. Reschedule, cancel and vendor messaging deliberately deferred. No real dispatch until the controlled test below is approved.
 
-Mailbox restriction: **application behaviour is verified in code** (single allowlist entry, every Graph path built through it, throws + logs otherwise). **Microsoft-side restriction is unverified** — an ApplicationAccessPolicy or equivalent tenant scoping screenshot from your admin is the missing evidence. No permission change proposed.
+**W5 — Onboarding plan variants.** Add a variant key and build the three missing plans from your source exports: already furnished / no furnishing, partial furnishing / refresh, and existing property transitioning into ARHA management. Any rule the exports do not cover gets flagged, not guessed. Assignment, due dates, subtasks, dependencies, evidence, approvals and the handoff gate are reused as-is.
 
-Telegram limits, stated plainly: a bot can only see groups it has been added to, cannot read history from before it joined, cannot join as a person or DM users who have not started it first, and in privacy mode sees only messages addressed to it. So Resolve can host **new** vendor/team threads (per-property group with the bot added, replies from Resolve) but cannot absorb existing Telegram conversations or the two years of history. Minimum practical step: bot in one pilot property group, inbound stored and linked to the property, replies sent from the Request — nothing else. Recommend not connecting until you decide which conversations move.
+**W6 — Quarterly reviews relocation** (navigation + ownership only).
 
-## D. Active Owner guide alignment (map + gaps)
+**W7 — Active Owner guide comparison.** The attached file is `ARHA_AOP_Review_Package_Branded.docx` — 44-page branded "Active Owner Program / Your First 90 Days" review package, undated, no version number on the cover. **Please confirm this is the final version before I treat it as authoritative.** Read differences already visible: 8 action types vs the app's approval/evidence/time model; six named meetings plus day-30/60/90 reviews that are not records; guide statuses (Not released, Ready, In progress, Submitted, Team review, Complete, Awaiting owner approval, Approved, Changes requested, Declined, Blocked, Not applicable) vs a shorter app set; versioned re-issue on material revision; business-day due dates (Mon–Fri, US federal holidays, property-local, 5 p.m., counted from next business day). The guide names individuals; the app will keep titles.
 
-Aligned: Day 1 = day after confirmed closing (matches the program clock); manual actual-minutes logging with date/task/property/action/output; shared work counted once; the >100-hour goal treated as a goal; approvals tied to a specific request; reported vs ARHA-approved distinction.
+## Channel capability check (before promising anything)
 
-Gaps to resolve (no policy invented):
-1. **Action key** — the guide defines 8 action types (Approve only, Review and comment, Review and decide, Provide information, Action or payment required, Attend and respond, Information only, Research and recommend). The app models approval / evidence / time only.
-2. **Meetings** — 6 named meetings plus day-30/60/90 reviews, each with a lead role, are not records; agenda-1-business-day-before and decisions-within-1-business-day are not tracked.
-3. **Statuses** — guide uses Not released, Ready, In progress, Submitted, Team review, Complete, plus Awaiting owner approval / Approved / Changes requested / Declined, Blocked, Not applicable. The app has a shorter set.
-4. **Versioning** — material revision must issue a new version and a new deadline; not implemented.
-5. **Due dates** — business days Mon–Fri excluding US federal holidays, property-local time zone, 5 p.m. cutoff, counted from the next business day; not implemented.
-6. **Roles** — guide names individuals; app should keep titles (Director of Onboarding, Project Manager, Operations Supervisor, Director of Operations).
+| Channel | Verified capability | Limitation to accept now |
+|---|---|---|
+| OwnerRez guest conversations | Official v2 documents `GET /v2/messages?threadId=…` (thread history, `since_utc`, attachments) and `POST /v2/messages` (reply, with channel enum incl. Airbnb/Vrbo/Booking) | Documented capability ≠ our token's access. Needs a read-only probe with our credential before any reply UI is built. |
+| info@ shared mailbox | Read + send through Graph, single-mailbox allowlist enforced in code | Microsoft-side restriction still unevidenced — an admin ApplicationAccessPolicy screenshot is the missing proof. Category PATCH is supported by Graph. |
+| Owner email | Working today (`email_log`, owner alert drain) | Bounces not tracked. |
+| Internal team | Comments and mentions exist on the ticket; nobody is notified today | Fixed by W3. |
+| Telegram | A bot can post to, and read, a group **it has been added to**, and can DM only users who messaged it first | **It cannot access existing conversations, cannot read history from before it joined, cannot act as a person, and cannot see arbitrary DMs between staff and vendors.** "All Telegram messages" is not achievable through the bot API. Practical path: new per-property or per-vendor groups with the bot added, replies from the Ticket. |
+| SMS | Not supported today — no SMS provider; the app deliberately turns urgent texts into a human call-the-owner task | Grasshopper not required for beta; leaving as-is. |
 
-## E. Handover for Claude (do not reimplement here)
+## Coordination with Claude (do not both touch)
 
-**Assignment rules — sources that already exist** (no approved matrix table exists anywhere; do not invent one):
-- Golden rule, recorded: *the property determines the Pod; priority and time determine who acts* (project memory `mem://features/arha-ticket-model.md`, restated in `src/lib/coach.server.ts`).
-- Priorities are P1–P4, stored lowercase; SLA minutes and required closure evidence come from the `work_types` catalog, never hardcoded.
-- Ownership fields and their meaning: `record_owner` (accountable end to end), `current_action_owner` (must act next), `assigned_to` (working assignee), `pending_handoff_to`; helpers in `src/lib/matters.ts`; server rule is RLS `private.can_edit_ticket`.
-- Handoff rule: not complete until accepted; originator stays responsible (`handoffs`, `handoff_reviews`, `HandoffPanel.tsx`).
-- Coverage data available: `departments`, `department_members`, `functional_roles`, `cleaning_regions`, `property_vendor_coverage`, `properties.region`.
-- Audit sink: `ticket_activity` (+ `audit_log` trigger `audit_ticket_change`).
-- **Missing decisions Claude cannot derive** — default responsible role per work-type category × pod/market; coverage hours per pod; the fallback ladder when nobody is eligible (Pod queue → Supervisor → Director of Ops?); whether a suggested assignee auto-commits after N minutes.
+- Claude: routing/assignment writes, contact population, `MatterOwnershipPanel`, guest-context server fn.
+- Me: notifications, mailbox/intake, work orders, documents, onboarding template, quarterly nav, owner portal.
+- Shared and therefore change-by-agreement only: `src/lib/tickets.ts`, `src/lib/matters.ts`, the ticket detail route, and any `tickets` migration. Label-only vocabulary changes touch presentation strings, never tables or API contracts.
+- Handover already given to Claude: ownership-field semantics, handoff acceptance rule, coverage tables, audit sink, and the two Notion SOP links above as the authoritative routing source (functional job title = lane; scheduled coverage = person; unknown routing → Operations Supervisor with a stated reason; One-Touch Resolutions stay out of queues; one Ticket type with a Cross-Team flag; no automatic transfer of open tickets at shift change; the original guest point of contact keeps guest communication; lunch and single-PC coverage rules preserved; system-created work routes automatically; a PC's valid self-owned or manual assignment is never overridden outside handoff/reassignment).
 
-**Contact-source specification:**
-- Guest: OwnerRez only, matched by `properties.ownerrez_property_id` — never by property name, never a demo row (`tickets.is_demo`/`properties.is_demo` short-circuit). Existing implementation: `src/lib/ownerrez.server.ts` (`currentGuestForListing`, `stayForListing`) behind `getGuestContext`.
-- Owner contacts: Resolve database (`owner_programs`, `owner_program_properties`, `profiles`) — not OwnerRez, not typed in.
-- Visibility: capability `guest_contact` (admin/manager/tech). Vendors and homeowners must never receive guest contact data in a payload, not just in the UI.
-- Vacant / multiple / upcoming reservations need an explicit rule from Emily: show current stay only, or current + next arrival.
+## Proposed controlled test (approval required — nothing runs yet)
 
-## F. Phased build plan (what enables a complete Operations workday)
+One end-to-end rehearsal, then full cleanup.
 
-- **Phase 0 — facts only:** confirm our OwnerRez token can read `/v2/messages` (read-only probe, approval requested first); confirm Breezeway task-create required fields against `developer.breezeway.io`; obtain Microsoft access-policy evidence.
-- **Phase 1 — real files** (first bounded task, below). Unblocks evidence, Asana replacement, vendor docs.
-- **Phase 2 — assignment** *(Claude)*, needs the missing decisions above.
-- **Phase 3 — contact context** *(Claude)*.
-- **Phase 4 — staff notifications**: notification store + in-app bell for assignment, mention, handoff, breach; delivered/failed surfaced from `email_log`. No push in beta.
-- **Phase 5 — Breezeway linked Work Order** (needs Phase 0 + dispatch approval): `work_orders` link record with `request_id`, `external_system`, `external_id`, `origin`, idempotency key; the receiver updates that record instead of only logging events; retries update, never insert.
-- **Phase 6 — quarterly reviews move under Vendor management** (nav + ownership only, records untouched, scheduler paused).
-- **Phase 7 — Onboarding parity** (subtasks, dependencies, mentions, plan variants).
-- **Phase 8 — Active Owner guide alignment** (action types, meetings, statuses, versioning, business-day due dates).
-- **Phase 9 — messaging** (OwnerRez threads, then a single Telegram pilot group) only after Phase 0 and your channel decision.
+- **Property:** 9211 Fitzgerald Dr (the existing Breezeway pilot property — no other home is in scope).
+- **Ticket:** a new demo Ticket, "Beta rehearsal — exterior light out", P3, created by me in Resolve.
+- **Vendor / assignee:** the ARHA handyman already assigned to the Fitzgerald pilot in Breezeway; assignee chosen from the People API, not typed in.
+- **Work order:** one Breezeway task created from that Ticket, title prefixed `[RESOLVE TEST — DO NOT ACTION]`, due date 2 business days out, description stating it is a system test and no work should be performed.
+- **Recipient of any message:** Emily only (emily@…), through info@arealhomeaway.com. No vendor message, no guest message, no owner message.
+- **Expected results:** Breezeway returns a task id; Resolve stores the linked Work Order with `origin=resolve`; status and acceptance appear in Resolve; a status webhook updates the same Work Order (no second record, no event-log-only outcome); completion notes and one photo pull back and display; in-app notifications fire for new assignment and vendor completion; one owner-approval push + email fires to a demo owner account, not a real owner.
+- **Cleanup:** cancel/delete the Breezeway test task, delete the linked Work Order and demo Ticket, delete the test photo from storage, and report the before/after row counts for `breezeway_webhook_events` and `work_orders`.
+- **Not in the test:** any real vendor contact, any guest or owner message, any historical import, any automation switch, any SharePoint write.
 
-## G. Blocking decisions / approvals
+## Genuine blockers (decisions or external, nothing else)
 
-1. Assignment matrix decisions listed in Section E.
-2. Terminology approval (Section B).
-3. Vacant / multiple-reservation display rule.
-4. Approval for a read-only OwnerRez `/v2/messages` probe.
-5. Approval for a bounded Breezeway write test before any dispatch ships.
-6. Microsoft-side mailbox restriction evidence, or acceptance of app-side enforcement for beta.
-7. Which Telegram conversations must move into Resolve.
-
-## H. Recommended first bounded task
-
-**Real file attachments on an Operations Request.** One private storage bucket with staff-scoped policies, upload + list + signed download on the matter detail screen, persisting `documents.storage_path`; proven with a real photo, a video and a PDF on a demo matter, including that a vendor and a homeowner cannot read them. No SharePoint write, no external write, no live data touched. It does not overlap Claude's branch.
+1. Overnight coverage and the current vacant role holder in the coverage schedule — Claude's routing cannot resolve those slots. Not inventing them.
+2. Authoritative owner-contact mapping for **all** owners: owner data lives in Notion and OwnerRez, and Resolve only holds contacts for Active Owner enrollees. Which system is authoritative for a non-enrolled owner's primary contact?
+3. Approval for a read-only OwnerRez `/v2/messages` probe with our credential.
+4. Approval for the controlled test above.
+5. Storage decision approval (private Cloud bucket as system of record; SharePoint stays read-only) before any bucket or access configuration.
+6. Microsoft-side mailbox restriction evidence, or written acceptance of app-side enforcement for beta.
+7. Returned-entry notification channels (pending your answer).
+8. Confirmation that the attached AOP package is the final guide version.
+9. Onboarding variant source exports for the three non-full-furnishing plans.
