@@ -50,6 +50,20 @@ export type TemplatePreview = {
   anchors: { planned_closing: string | null; actual_closing: string | null; actual_access: string | null };
 };
 
+/**
+ * Identity of a template row on a property. Title alone is NOT unique: the
+ * ARHA plan legitimately repeats "Update project status in Asana" once per
+ * phase and the weekly owner update twice, and subtasks such as "Add to Notion"
+ * repeat under different parents. Identity is therefore stage + title for
+ * top-level tasks, and stage + parent + title for subtasks.
+ */
+function taskKey(stage: string, title: string) {
+  return `${stage}::${title.trim().toLowerCase()}`;
+}
+function subKey(parentTaskId: string, title: string) {
+  return `${parentTaskId}::${title.trim().toLowerCase()}`;
+}
+
 async function loadContext(supabase: Client, propertyId: string) {
   const property = await supabase
     .from("properties")
@@ -60,7 +74,7 @@ async function loadContext(supabase: Client, propertyId: string) {
 
   const existing = await supabase
     .from("onboarding_tasks")
-    .select("id, title, parent_task_id")
+    .select("id, title, stage, parent_task_id")
     .eq("property_id", propertyId)
     .is("archived_at", null);
   if (existing.error) throw existing.error;
@@ -70,8 +84,20 @@ async function loadContext(supabase: Client, propertyId: string) {
     actual_closing: property.data.actual_closing_on,
     actual_access: property.data.actual_access_on,
   };
-  const taken = new Set((existing.data ?? []).map((t) => t.title.trim().toLowerCase()));
-  return { property: property.data, anchors, taken };
+  const rows = existing.data ?? [];
+  // Subtasks never block a top-level task from being created, and vice versa.
+  const taken = new Set(
+    rows.filter((t) => !t.parent_task_id).map((t) => taskKey(t.stage, t.title)),
+  );
+  const takenSubs = new Set(
+    rows
+      .filter((t) => t.parent_task_id)
+      .map((t) => subKey(t.parent_task_id as string, t.title)),
+  );
+  const parentIdByKey = new Map(
+    rows.filter((t) => !t.parent_task_id).map((t) => [taskKey(t.stage, t.title), t.id] as const),
+  );
+  return { property: property.data, anchors, taken, takenSubs, parentIdByKey };
 }
 
 function dueFor(t: TemplateTask, anchors: TemplatePreview["anchors"]) {
@@ -91,7 +117,7 @@ export async function previewOnboardingTemplate(
   const toCreate: TemplatePreview["toCreate"] = [];
   const skipped: TemplatePreview["skipped"] = [];
   for (const t of FULL_FURNISHING_TEMPLATE) {
-    if (taken.has(t.title.trim().toLowerCase())) {
+    if (taken.has(taskKey(t.stage, t.title))) {
       skipped.push({ title: t.title, reason: "Already on this property" });
       continue;
     }
@@ -112,14 +138,12 @@ export async function applyOnboardingTemplate(
   input: { propertyId: string },
 ) {
   await assertOnboardingStaff(supabase, userId);
-  const { property, anchors, taken } = await loadContext(supabase, input.propertyId);
-
-  const pending = FULL_FURNISHING_TEMPLATE.filter(
-    (t) => !taken.has(t.title.trim().toLowerCase()),
+  const { property, anchors, taken, takenSubs, parentIdByKey } = await loadContext(
+    supabase,
+    input.propertyId,
   );
-  if (pending.length === 0) {
-    return { created: 0, subtasksCreated: 0, skipped: FULL_FURNISHING_TEMPLATE.length };
-  }
+
+  const pending = FULL_FURNISHING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
   const rows = pending.map((t) => ({
     property_id: input.propertyId,
@@ -140,18 +164,27 @@ export async function applyOnboardingTemplate(
     is_demo: property.is_demo,
   }));
 
-  const inserted = await supabase.from("onboarding_tasks").insert(rows).select("id, title");
-  if (inserted.error) throw inserted.error;
+  if (rows.length) {
+    const inserted = await supabase
+      .from("onboarding_tasks")
+      .insert(rows)
+      .select("id, title, stage");
+    if (inserted.error) throw inserted.error;
+    for (const r of inserted.data ?? []) {
+      parentIdByKey.set(taskKey(r.stage, r.title), r.id);
+    }
+  }
 
-  const byTitle = new Map(
-    (inserted.data ?? []).map((r) => [r.title.trim().toLowerCase(), r.id] as const),
-  );
-
+  // Subtasks are reconciled for EVERY template task, including ones that
+  // already existed, so a partially applied plan is completed rather than
+  // duplicated.
   const subRows: Record<string, unknown>[] = [];
-  for (const t of pending) {
-    const parentId = byTitle.get(t.title.trim().toLowerCase());
-    if (!parentId || !t.subtasks?.length) continue;
+  for (const t of FULL_FURNISHING_TEMPLATE) {
+    if (!t.subtasks?.length) continue;
+    const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
+    if (!parentId) continue;
     t.subtasks.forEach((title, i) => {
+      if (takenSubs.has(subKey(parentId, title))) return;
       subRows.push({
         property_id: input.propertyId,
         stage: t.stage,

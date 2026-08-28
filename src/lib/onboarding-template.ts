@@ -123,8 +123,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "INSPECTION DATE",
     role: "Project Manager",
     blocksHandoff: true,
-    anchor: "planned_closing",
-    offsetDays: -21,
+    // No written rule: this milestone is a scheduled appointment set by the
+    // realtor/handyman ("Obtain inspection date/time from realtor"), not a
+    // deadline derived from closing. Left unset on purpose.
     sortOrder: 90,
   },
   {
@@ -457,8 +458,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     role: "Project Manager",
     detail: "Instructions:\n Please create and schedule a work order in Breezeway to have the Pre-Work Inspection done at the property.\n\n Use the New House Setup - Pre-Work Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur the same day as the lock and security package installation (Ring cameras, myQ, etc)",
     blocksHandoff: true,
-    anchor: "actual_access",
-    offsetDays: 0,
+    // Source rule is relative to another task ("same day as the lock and
+    // security package installation"), not to closing or access. Task-relative
+    // anchors are not supported, so the date is left unset.
     breezewayTemplateId: "208326",
     sortOrder: 450,
   },
@@ -709,7 +711,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     role: "Lead Designer",
     detail: "Instructions:\n Send the owner the mood boards for all rooms within the home.\n Utilize the sample email below and remember the following:\n Pls ensure that you copy the PDF of the mood boards. \n CC the Project Manager on the correspondence\n\nSample Email:\n\nSubject: Your Design Plan and Next Steps - [Address]\n\nDear [owner], \n\nI’m excited to share the customized design plan we’ve created for your new home! Attached, you’ll find mood boards for each of your spaces. These boards are tailored to the unique features of your home, incorporating neutral tones, textures, and soothing muted colors that will create a warm, inviting atmosphere.\n\nNext Steps:\nOnce you have closed on your property, we will issue an invoice for 50% of the total furnishing price. This upfront payment allows us to order the furniture and décor for your home. Once everything has been ordered and delivered …",
     blocksHandoff: true,
-    requiresOwnerApproval: true,
+    // Source instructs sending the mood boards and a sample email only; no
+    // owner sign-off is requested, so this stays a share step, not an approval.
+    evidenceRequired: true,
     sortOrder: 710,
   },
   {
@@ -760,7 +764,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     detail: "Instructions:\n Following close, send the owner a congratulatory email that contains rough timelines for the home setup process. You will use the project plan dates for this, so be sure the plan has been updated and tasks spread across the setup timeframe in a realistic fashion. Be sure not to make guarantees on any deadlines, and keep the ending date somewhat open.\n REMEMBER TO UPDATE THE DATES IN THE BELOW SAMPLE EMAIL AND MODIFY BULLETS/LANGUAGE TO FIT YOUR PROPERTY.\n CC the Onboarding Manager on the correspondence.\n\nSample email:\n\nGood morning, Owner\n \nCongratulations on closing! It's time for us to get started in earnest on your new home! \n \nWhat's Next?\nOver the next 2-3 weeks, we will be working diligently on the following items:\n \nWeek 1 (March 18th – 22nd)\n \n Home access/security equipment installation - Doorbell and spotlight cameras will be installed at the …",
     blocksHandoff: true,
     anchor: "actual_closing",
-    offsetDays: 1,
+    offsetDays: 0,
     sortOrder: 760,
   },
   {
