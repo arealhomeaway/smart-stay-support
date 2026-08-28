@@ -349,12 +349,30 @@ export async function listBreezewayProperties(pageSize = 500) {
   return { items, pagesFetched, companyId };
 }
 
+type CompanyRaw = { id?: number; name?: string | null };
+
+/** Connected company identity. `/companies` is documented on the inventory API. */
+export async function breezewayCompanyIdentity(): Promise<{ id: number | null; name: string | null }> {
+  try {
+    const data = await breezewayRequest<CompanyRaw[] | { results?: CompanyRaw[] }>("/companies");
+    const list = Array.isArray(data) ? data : (data.results ?? []);
+    const first = list[0];
+    if (first) return { id: first.id ?? null, name: first.name ?? null };
+  } catch (error) {
+    // Some keys are not granted /companies; fall back to the company_id on a property.
+    console.error("[breezeway] /companies unavailable:", (error as Error).message);
+  }
+  return { id: null, name: null };
+}
+
 /** Cheapest authenticated read — used by the panel's Test connection button. */
 export async function breezewayIdentityProbe() {
   const data = await breezewayRequest<PropertyPage>("/property", { params: { limit: 1, page: 1 } });
   const first = data.results?.[0];
+  const company = await breezewayCompanyIdentity();
   return {
-    companyId: first?.company_id ?? null,
+    companyId: company.id ?? first?.company_id ?? null,
+    companyName: company.name,
     totalProperties: data.total_results ?? 0,
   };
 }
