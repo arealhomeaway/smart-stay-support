@@ -145,6 +145,13 @@ export async function applyOnboardingTemplate(
 
   const pending = FULL_FURNISHING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
+  // Active Owner Program participation for THIS home only (existing owner
+  // enrollment is the source of truth — never the generic owner role).
+  const { activeOwnerFor } = await import("./active-owner.server");
+  const participation = await activeOwnerFor(supabase, input.propertyId);
+  const needsOwnerApproval = (t: TemplateTask) =>
+    Boolean(t.requiresOwnerApproval || (t.ownerApprovalWhenActiveOwner && participation));
+
   const rows = pending.map((t) => ({
     property_id: input.propertyId,
     stage: t.stage,
@@ -152,8 +159,8 @@ export async function applyOnboardingTemplate(
     detail: detailFor(t),
     status: "open",
     blocks_handoff: t.blocksHandoff,
-    requires_owner_approval: Boolean(t.requiresOwnerApproval),
-    owner_approval_status: t.requiresOwnerApproval ? "pending" : "not_required",
+    requires_owner_approval: needsOwnerApproval(t),
+    owner_approval_status: needsOwnerApproval(t) ? "pending" : "not_required",
     evidence_required: Boolean(t.evidenceRequired),
     due_on: dueFor(t, anchors),
     due_on_source: t.anchor ? "template_anchor" : null,
@@ -172,6 +179,20 @@ export async function applyOnboardingTemplate(
     if (inserted.error) throw inserted.error;
     for (const r of inserted.data ?? []) {
       parentIdByKey.set(taskKey(r.stage, r.title), r.id);
+    }
+    // Homeowner decision records for the steps that need one.
+    const { ensureOwnerApprovalRequest } = await import("./onboarding.server");
+    for (const r of inserted.data ?? []) {
+      const t = pending.find((x) => taskKey(x.stage, x.title) === taskKey(r.stage, r.title));
+      if (!t || !needsOwnerApproval(t)) continue;
+      await ensureOwnerApprovalRequest(supabase, userId, {
+        taskId: r.id,
+        propertyId: input.propertyId,
+        title: t.title,
+        detail: t.detail ?? "",
+        dueOn: dueFor(t, anchors),
+        isDemo: property.is_demo,
+      });
     }
   }
 
