@@ -32,6 +32,11 @@ export type TemplateTask = {
   detail?: string;
   blocksHandoff: boolean;
   requiresOwnerApproval?: boolean;
+  /**
+   * Owner approval only for homes enrolled in the 90-Day Owner Participation
+   * Program. A regular owner completes the step with evidence of sending.
+   */
+  ownerApprovalWhenActiveOwner?: boolean;
   evidenceRequired?: boolean;
   /** Only present when the source instructions document the timing. */
   anchor?: "planned_closing" | "actual_closing" | "actual_access";
