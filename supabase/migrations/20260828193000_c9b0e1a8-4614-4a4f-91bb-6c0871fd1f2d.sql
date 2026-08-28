@@ -29,6 +29,15 @@ CREATE INDEX IF NOT EXISTS breezeway_webhook_events_retryable_idx
 -- here as "duplicate" rather than an error (see verifyAndFinalizeTask in
 -- src/lib/breezeway-webhook.server.ts); this index is what makes one of the
 -- two inserts actually lose the race instead of both silently succeeding.
+--
+-- is_fixture is part of the key deliberately: lastProcessed() (the app-level
+-- dedupe read) already scopes every duplicate/stale lookup by is_fixture, so
+-- the fixture self-test (task ids in the 999_000_00x range, run on demand
+-- from the admin panel) never competes with live traffic for the same task
+-- id/timestamp pair. Without is_fixture here, that guarantee would only be
+-- app-level and this database-level guard could still let a fixture run
+-- silently suppress — or be suppressed by — a real delivery that happened to
+-- land on the same (task_id, task_updated_at).
 CREATE UNIQUE INDEX IF NOT EXISTS breezeway_webhook_events_processed_once
-  ON public.breezeway_webhook_events (task_id, task_updated_at)
+  ON public.breezeway_webhook_events (task_id, task_updated_at, is_fixture)
   WHERE outcome = 'processed';

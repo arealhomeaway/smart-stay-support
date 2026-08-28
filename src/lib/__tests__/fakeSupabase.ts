@@ -8,8 +8,15 @@
  * actually call: insert / select+eq+is+lt+order+limit(+maybeSingle) /
  * update+eq / delete+eq. It also enforces the same unique constraint the
  * prepared migration adds — one `processed` row per (task_id,
- * task_updated_at) — so the concurrency test exercises the real code path,
- * not a test-only shortcut.
+ * task_updated_at, is_fixture) — so the concurrency test exercises the real
+ * code path, not a test-only shortcut.
+ *
+ * This is an in-memory approximation, not Postgres. It proves the
+ * application code reacts correctly to a 23505 conflict and to an arbitrary
+ * insert failure (via `failNextInsert`); it does NOT prove Postgres itself
+ * will enforce the unique index as intended under real concurrent
+ * transactions — that requires a real Postgres instance (see
+ * TEST_RESULTS.txt / the PR notes for what remains unverified).
  */
 
 type Row = Record<string, unknown>;
@@ -25,17 +32,30 @@ function applyFilter(row: Row, f: Filter): boolean {
 }
 
 export function createFakeBreezewayEventsStore() {
-  const state = { rows: [] as Row[], nextId: 1 };
+  const state = {
+    rows: [] as Row[],
+    nextId: 1,
+    insertFailures: [] as { code?: string; message: string }[],
+  };
   /** Every table name any query touched, for asserting "no writes elsewhere". */
   const touchedTables = new Set<string>();
 
   function insert(payload: Row) {
+    const forced = state.insertFailures.shift();
+    if (forced) {
+      return { data: null, error: forced };
+    }
     if (payload["outcome"] === "processed") {
+      // Mirrors the migration's unique index exactly: (task_id,
+      // task_updated_at, is_fixture) WHERE outcome = 'processed'. is_fixture
+      // is part of the key so a fixture-mode row can never collide with a
+      // real one that happens to share the same task id and timestamp.
       const dupe = state.rows.find(
         (r) =>
           r["outcome"] === "processed" &&
           r["task_id"] === payload["task_id"] &&
-          r["task_updated_at"] === payload["task_updated_at"],
+          r["task_updated_at"] === payload["task_updated_at"] &&
+          r["is_fixture"] === payload["is_fixture"],
       );
       if (dupe) {
         return { data: null, error: { code: "23505", message: "duplicate key value" } };
@@ -119,7 +139,10 @@ export function createFakeBreezewayEventsStore() {
         const result = selected();
         return Promise.resolve({ data: result[0] ?? null, error: null });
       },
-      then: (resolve: (v: { data: Row[] | null; error: null }) => unknown, reject?: (e: unknown) => unknown) => {
+      then: (
+        resolve: (v: { data: Row[] | null; error: null }) => unknown,
+        reject?: (e: unknown) => unknown,
+      ) => {
         const result = selected();
         if (mode === "delete") {
           const ids = new Set(result.map((r) => r["id"]));
@@ -135,9 +158,22 @@ export function createFakeBreezewayEventsStore() {
     supabaseAdmin: { from: (table: string) => builder(table) },
     rows: () => state.rows,
     touchedTables,
+    /**
+     * Makes the next `n` insert() calls fail with the given error instead of
+     * running the normal conflict check / success path, to exercise
+     * recordEvent's "unexpected persistence failure" branch. Defaults to a
+     * generic non-23505 error (e.g. simulating the table being unreachable).
+     */
+    failNextInsert: (
+      n = 1,
+      error: { code?: string; message: string } = { code: "53300", message: "simulated failure" },
+    ) => {
+      for (let i = 0; i < n; i += 1) state.insertFailures.push(error);
+    },
     reset: () => {
       state.rows = [];
       state.nextId = 1;
+      state.insertFailures = [];
       touchedTables.clear();
     },
   };

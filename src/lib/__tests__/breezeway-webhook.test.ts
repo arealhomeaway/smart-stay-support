@@ -11,7 +11,9 @@ import { createFakeBreezewayEventsStore } from "./fakeSupabase";
 import { BreezewayError } from "@/lib/breezeway.server";
 
 const store = createFakeBreezewayEventsStore();
-mock.module("@/integrations/supabase/client.server", () => ({ supabaseAdmin: store.supabaseAdmin }));
+mock.module("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: store.supabaseAdmin,
+}));
 
 const {
   PILOT_COMPANY_ID,
@@ -30,7 +32,12 @@ const t1 = "2026-08-27T18:00:00.000Z";
 const t0 = "2026-08-27T12:00:00.000Z";
 
 function pilotVerifier(updatedAt: string | null = t1) {
-  return async (id: number) => ({ id, homeId: PILOT_HOME_ID, companyId: PILOT_COMPANY_ID, updatedAt });
+  return async (id: number) => ({
+    id,
+    homeId: PILOT_HOME_ID,
+    companyId: PILOT_COMPANY_ID,
+    updatedAt,
+  });
 }
 
 describe("secret path / receiver authentication", () => {
@@ -81,7 +88,13 @@ describe("malformed payload", () => {
     let calls = 0;
     const result = await processBreezewayWebhook(
       { webhook_type: "reservation", task_id: PILOT_TASK_ID },
-      { isFixture: true, verifyTask: async () => { calls += 1; return null; } },
+      {
+        isFixture: true,
+        verifyTask: async () => {
+          calls += 1;
+          return null;
+        },
+      },
     );
     expect(result.outcome).toBe("invalid");
     expect(calls).toBe(0);
@@ -90,7 +103,9 @@ describe("malformed payload", () => {
   it("rejects non-object bodies (array, null, string)", async () => {
     expect((await processBreezewayWebhook(null, { isFixture: true })).outcome).toBe("invalid");
     expect((await processBreezewayWebhook([1, 2, 3], { isFixture: true })).outcome).toBe("invalid");
-    expect((await processBreezewayWebhook("not json", { isFixture: true })).outcome).toBe("invalid");
+    expect((await processBreezewayWebhook("not json", { isFixture: true })).outcome).toBe(
+      "invalid",
+    );
   });
 });
 
@@ -99,7 +114,13 @@ describe("different company or unmapped property", () => {
     let calls = 0;
     const result = await processBreezewayWebhook(
       { webhook_type: "task", task_id: 1, home_id: 1_000_001 },
-      { isFixture: true, verifyTask: async () => { calls += 1; return null; } },
+      {
+        isFixture: true,
+        verifyTask: async () => {
+          calls += 1;
+          return null;
+        },
+      },
     );
     expect(result.outcome).toBe("ignored_other_property");
     expect(calls).toBe(0);
@@ -109,7 +130,13 @@ describe("different company or unmapped property", () => {
     let calls = 0;
     const result = await processBreezewayWebhook(
       { webhook_type: "task", task_id: 2, company_id: 9999 },
-      { isFixture: true, verifyTask: async () => { calls += 1; return null; } },
+      {
+        isFixture: true,
+        verifyTask: async () => {
+          calls += 1;
+          return null;
+        },
+      },
     );
     expect(result.outcome).toBe("ignored_other_company");
     expect(calls).toBe(0);
@@ -118,7 +145,15 @@ describe("different company or unmapped property", () => {
   it("trusts only the authenticated re-read, not the payload, for scope — payload claims pilot, API says otherwise", async () => {
     const result = await processBreezewayWebhook(
       { webhook_type: "task", task_id: 3, home_id: PILOT_HOME_ID },
-      { isFixture: true, verifyTask: async (id) => ({ id, homeId: 555_555, companyId: PILOT_COMPANY_ID, updatedAt: t1 }) },
+      {
+        isFixture: true,
+        verifyTask: async (id) => ({
+          id,
+          homeId: 555_555,
+          companyId: PILOT_COMPANY_ID,
+          updatedAt: t1,
+        }),
+      },
     );
     expect(result.outcome).toBe("ignored_other_property");
   });
@@ -126,7 +161,10 @@ describe("different company or unmapped property", () => {
   it("trusts only the authenticated re-read for company too", async () => {
     const result = await processBreezewayWebhook(
       { webhook_type: "task", task_id: 4 },
-      { isFixture: true, verifyTask: async (id) => ({ id, homeId: PILOT_HOME_ID, companyId: 42, updatedAt: t1 }) },
+      {
+        isFixture: true,
+        verifyTask: async (id) => ({ id, homeId: PILOT_HOME_ID, companyId: 42, updatedAt: t1 }),
+      },
     );
     expect(result.outcome).toBe("ignored_other_company");
   });
@@ -136,7 +174,10 @@ describe("different company or unmapped property", () => {
       { webhook_type: "task", task_id: 1, home_id: 1_000_001 },
       { isFixture: true },
     );
-    await processBreezewayWebhook({ webhook_type: "task", task_id: 2, company_id: 9999 }, { isFixture: true });
+    await processBreezewayWebhook(
+      { webhook_type: "task", task_id: 2, company_id: 9999 },
+      { isFixture: true },
+    );
     for (const row of store.rows()) {
       expect(row["task_id"]).toBeNull();
       expect(row["home_id"]).toBeNull();
@@ -273,13 +314,27 @@ describe("task re-fetch failure and rate-limit response", () => {
 
 describe("no business writes, notifications, or matter creation", () => {
   it("only ever touches the webhook events table across every outcome", async () => {
-    await processBreezewayWebhook({ webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 }, { isFixture: true, verifyTask: pilotVerifier(t1) });
-    await processBreezewayWebhook({ webhook_type: "task", task_id: 1, home_id: 1_000_001 }, { isFixture: true });
-    await processBreezewayWebhook({ webhook_type: "task", task_id: 2, company_id: 9999 }, { isFixture: true });
+    await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: true, verifyTask: pilotVerifier(t1) },
+    );
+    await processBreezewayWebhook(
+      { webhook_type: "task", task_id: 1, home_id: 1_000_001 },
+      { isFixture: true },
+    );
+    await processBreezewayWebhook(
+      { webhook_type: "task", task_id: 2, company_id: 9999 },
+      { isFixture: true },
+    );
     await processBreezewayWebhook({ foo: "bar" }, { isFixture: true });
     await processBreezewayWebhook(
       { webhook_type: "task", task_id: PILOT_TASK_ID + 9 },
-      { isFixture: true, verifyTask: async () => { throw new BreezewayError(500, "down"); } },
+      {
+        isFixture: true,
+        verifyTask: async () => {
+          throw new BreezewayError(500, "down");
+        },
+      },
     );
     expect(store.touchedTables).toEqual(new Set(["breezeway_webhook_events"]));
   });
@@ -290,6 +345,127 @@ describe("no business writes, notifications, or matter creation", () => {
       { isFixture: true, verifyTask: pilotVerifier(t1) },
     );
     expect(Object.keys(result).sort()).toEqual(["outcome", "reason", "taskId"]);
+  });
+});
+
+// NOTE ON WHAT THIS PROVES: the fake in fakeSupabase.ts enforces the same
+// (task_id, task_updated_at, is_fixture) uniqueness the migration's index
+// does, so these tests prove the application code reacts correctly. They do
+// NOT prove Postgres itself enforces that index under real concurrent
+// transactions — a disposable Postgres instance was not available in this
+// environment; see TEST_RESULTS.txt / the review package for that gap.
+describe("fixture/live isolation", () => {
+  it("a fixture run cannot suppress a real delivery with the same task id and timestamp", async () => {
+    // Same task id, same exact update timestamp, opposite is_fixture flags —
+    // the DB-level unique index and the fixture-run cleanup are the only
+    // things standing between a fixture self-test and silently eating a
+    // real event (or vice versa).
+    const fixtureRun = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: true, verifyTask: pilotVerifier(t1) },
+    );
+    const liveDelivery = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: false, verifyTask: pilotVerifier(t1) },
+    );
+
+    expect(fixtureRun.outcome).toBe("processed");
+    expect(liveDelivery.outcome).toBe("processed"); // NOT "duplicate" — fixture and live never share a slot
+
+    const processedRows = store.rows().filter((r) => r["outcome"] === "processed");
+    expect(processedRows.length).toBe(2);
+    expect(processedRows.some((r) => r["is_fixture"] === true)).toBe(true);
+    expect(processedRows.some((r) => r["is_fixture"] === false)).toBe(true);
+  });
+
+  it("holds in the other order too: a real delivery first does not block the fixture self-test", async () => {
+    const liveDelivery = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: false, verifyTask: pilotVerifier(t1) },
+    );
+    const fixtureRun = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: true, verifyTask: pilotVerifier(t1) },
+    );
+
+    expect(liveDelivery.outcome).toBe("processed");
+    expect(fixtureRun.outcome).toBe("processed");
+    expect(store.rows().filter((r) => r["outcome"] === "processed").length).toBe(2);
+  });
+});
+
+describe("silent database failures (recordEvent)", () => {
+  it("reports persist_failed instead of processed when the durable write fails for a reason other than a conflict", async () => {
+    store.failNextInsert(1, { code: "53300", message: "too many connections" });
+    const result = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: true, verifyTask: pilotVerifier(t1) },
+    );
+    expect(result.outcome).toBe("persist_failed");
+    expect(result.outcome).not.toBe("processed");
+    // Nothing was actually written — a genuine insert failure leaves no row.
+    expect(store.rows().length).toBe(0);
+  });
+
+  it("reports persist_failed for a failure on a non-`processed` outcome too (e.g. recording `invalid`)", async () => {
+    store.failNextInsert(1, { code: "53300", message: "too many connections" });
+    const result = await processBreezewayWebhook({ foo: "bar" }, { isFixture: true });
+    expect(result.outcome).toBe("persist_failed");
+    expect(result.outcome).not.toBe("invalid");
+  });
+
+  it("reports persist_failed for a failure while recording a verify_failed lookup error", async () => {
+    store.failNextInsert(1, { code: "53300", message: "too many connections" });
+    const result = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID },
+      {
+        isFixture: true,
+        verifyTask: async () => {
+          throw new BreezewayError(500, "down");
+        },
+      },
+    );
+    expect(result.outcome).toBe("persist_failed");
+    expect(result.outcome).not.toBe("verify_failed");
+  });
+
+  it("still reports duplicate (not persist_failed) for the expected 23505 conflict — only OTHER errors trip persist_failed", async () => {
+    await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: true, verifyTask: pilotVerifier(t1) },
+    );
+    // No failNextInsert here — the second identical insert hits the real
+    // conflict path in the fake, exactly like the concurrency test above.
+    const second = await processBreezewayWebhook(
+      { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+      { isFixture: true, verifyTask: pilotVerifier(t1) },
+    );
+    expect(second.outcome).toBe("duplicate");
+  });
+
+  it("logs enough to locate the failure but never the payload, task id, or any secret", async () => {
+    const originalError = console.error;
+    const logged: unknown[][] = [];
+    console.error = (...args: unknown[]) => {
+      logged.push(args);
+    };
+    try {
+      store.failNextInsert(1, { code: "53300", message: "too many connections" });
+      await processBreezewayWebhook(
+        { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },
+        { isFixture: true, verifyTask: pilotVerifier(t1) },
+      );
+    } finally {
+      console.error = originalError;
+    }
+
+    expect(logged.length).toBeGreaterThan(0);
+    const combined = logged.map((line) => line.join(" ")).join("\n");
+    expect(combined).toContain("insert failed");
+    expect(combined).not.toContain(String(PILOT_TASK_ID));
+    expect(combined).not.toContain(t1);
+    expect(combined.toLowerCase()).not.toContain("secret");
+    expect(combined.toLowerCase()).not.toContain("token");
   });
 });
 

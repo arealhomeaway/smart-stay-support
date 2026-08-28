@@ -10,14 +10,14 @@ import { createFakeBreezewayEventsStore } from "./fakeSupabase";
 import { BreezewayError } from "@/lib/breezeway.server";
 
 const store = createFakeBreezewayEventsStore();
-mock.module("@/integrations/supabase/client.server", () => ({ supabaseAdmin: store.supabaseAdmin }));
+mock.module("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: store.supabaseAdmin,
+}));
 
-const { processBreezewayWebhook, PILOT_COMPANY_ID, PILOT_HOME_ID } = await import("@/lib/breezeway-webhook.server");
-const {
-  recoverFailedTaskVerifications,
-  RECOVERY_BATCH_SIZE,
-  MAX_RETRY_ATTEMPTS,
-} = await import("@/lib/breezeway-webhook-recovery.server");
+const { processBreezewayWebhook, PILOT_COMPANY_ID, PILOT_HOME_ID } =
+  await import("@/lib/breezeway-webhook.server");
+const { recoverFailedTaskVerifications, RECOVERY_BATCH_SIZE, MAX_RETRY_ATTEMPTS } =
+  await import("@/lib/breezeway-webhook-recovery.server");
 
 beforeEach(() => store.reset());
 
@@ -43,7 +43,12 @@ describe("recovery of a transient lookup failure", () => {
     expect(store.rows().length).toBe(1);
 
     const summary = await recoverFailedTaskVerifications({
-      verifyTask: async (id) => ({ id, homeId: PILOT_HOME_ID, companyId: PILOT_COMPANY_ID, updatedAt: t1 }),
+      verifyTask: async (id) => ({
+        id,
+        homeId: PILOT_HOME_ID,
+        companyId: PILOT_COMPANY_ID,
+        updatedAt: t1,
+      }),
     });
 
     expect(summary.attempted).toBe(1);
@@ -62,7 +67,12 @@ describe("recovery of a transient lookup failure", () => {
   it("does not pick the same row up again after it recovers (no double processing)", async () => {
     await seedTransientFailure();
     await recoverFailedTaskVerifications({
-      verifyTask: async (id) => ({ id, homeId: PILOT_HOME_ID, companyId: PILOT_COMPANY_ID, updatedAt: t1 }),
+      verifyTask: async (id) => ({
+        id,
+        homeId: PILOT_HOME_ID,
+        companyId: PILOT_COMPANY_ID,
+        updatedAt: t1,
+      }),
     });
     expect(store.rows().filter((r) => r["outcome"] === "processed").length).toBe(1);
 
@@ -215,6 +225,59 @@ describe("bounded batch size", () => {
     });
     expect(calls).toBeLessThanOrEqual(RECOVERY_BATCH_SIZE);
     expect(summary.attempted).toBeLessThanOrEqual(RECOVERY_BATCH_SIZE);
+  });
+});
+
+describe("recovery vs. a persistence failure on the follow-up write", () => {
+  it("does not mark the original row recovered when the lookup succeeds but saving the outcome fails", async () => {
+    await seedTransientFailure();
+    store.failNextInsert(1, { code: "53300", message: "too many connections" });
+
+    const summary = await recoverFailedTaskVerifications({
+      verifyTask: async (id) => ({
+        id,
+        homeId: PILOT_HOME_ID,
+        companyId: PILOT_COMPANY_ID,
+        updatedAt: t1,
+      }),
+    });
+
+    expect(summary.persistFailed).toBe(1);
+    expect(summary.recovered).toBe(0);
+    expect(summary.stillFailing).toBe(0);
+    expect(summary.permanentlyFailed).toBe(0);
+
+    // The original failed row must be untouched: not marked recovered, and
+    // its retry count not spent on what was actually a database problem.
+    const row = store.rows()[0];
+    expect(row?.["outcome"]).toBe("verify_failed");
+    expect(row?.["recovered_at"]).toBeNull();
+    expect(row?.["retry_count"]).toBe(0);
+    expect(row?.["retryable"]).toBe(true);
+  });
+
+  it("picks the same row up again next pass after a persistence-failure run, and can recover it once the write succeeds", async () => {
+    await seedTransientFailure();
+    store.failNextInsert(1, { code: "53300", message: "too many connections" });
+    await recoverFailedTaskVerifications({
+      verifyTask: async (id) => ({
+        id,
+        homeId: PILOT_HOME_ID,
+        companyId: PILOT_COMPANY_ID,
+        updatedAt: t1,
+      }),
+    });
+
+    const summary = await recoverFailedTaskVerifications({
+      verifyTask: async (id) => ({
+        id,
+        homeId: PILOT_HOME_ID,
+        companyId: PILOT_COMPANY_ID,
+        updatedAt: t1,
+      }),
+    });
+    expect(summary.attempted).toBe(1);
+    expect(summary.recovered).toBe(1);
   });
 });
 

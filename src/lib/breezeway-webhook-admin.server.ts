@@ -116,7 +116,10 @@ export type FixtureCase = {
  * stubbed verifier, so nothing in Breezeway is touched and no API budget is
  * spent. Fixture rows are flagged `is_fixture` and never mix with live counts.
  */
-export async function runWebhookFixtureTests(): Promise<{ cases: FixtureCase[]; allPassed: boolean }> {
+export async function runWebhookFixtureTests(): Promise<{
+  cases: FixtureCase[];
+  allPassed: boolean;
+}> {
   const FIXTURE_TASK_ID = 999_000_001;
   const newer = "2026-08-27T18:00:00.000Z";
   const older = "2026-08-27T12:00:00.000Z";
@@ -142,15 +145,30 @@ export async function runWebhookFixtureTests(): Promise<{ cases: FixtureCase[]; 
 
   const pilotVerifier = verifier(PILOT_HOME_ID, PILOT_COMPANY_ID, newer);
 
-  await run("Valid pilot task event", "processed", { webhook_type: "task", task_id: FIXTURE_TASK_ID }, pilotVerifier);
-  await run("Duplicate of the same update", "duplicate", { webhook_type: "task", task_id: FIXTURE_TASK_ID }, pilotVerifier);
+  await run(
+    "Valid pilot task event",
+    "processed",
+    { webhook_type: "task", task_id: FIXTURE_TASK_ID },
+    pilotVerifier,
+  );
+  await run(
+    "Duplicate of the same update",
+    "duplicate",
+    { webhook_type: "task", task_id: FIXTURE_TASK_ID },
+    pilotVerifier,
+  );
   await run(
     "Older update arriving late",
     "stale",
     { webhook_type: "task", task_id: FIXTURE_TASK_ID },
     verifier(PILOT_HOME_ID, PILOT_COMPANY_ID, older),
   );
-  await run("Malformed payload (no task id)", "invalid", { webhook_type: "task", foo: "bar" }, pilotVerifier);
+  await run(
+    "Malformed payload (no task id)",
+    "invalid",
+    { webhook_type: "task", foo: "bar" },
+    pilotVerifier,
+  );
   await run(
     "Another property's task",
     "ignored_other_property",
@@ -179,8 +197,14 @@ export async function runWebhookFixtureTests(): Promise<{ cases: FixtureCase[]; 
     },
   );
 
-  const transientCase = cases.find((c) => c.name.startsWith("Breezeway task lookup returns a server error"));
-  if (transientCase && transientCase.actual === "verify_failed" && transientCase.retryable !== true) {
+  const transientCase = cases.find((c) =>
+    c.name.startsWith("Breezeway task lookup returns a server error"),
+  );
+  if (
+    transientCase &&
+    transientCase.actual === "verify_failed" &&
+    transientCase.retryable !== true
+  ) {
     transientCase.passed = false;
   }
 
@@ -306,7 +330,8 @@ export async function registerTaskWebhook(): Promise<RegistrationResult> {
     };
   }
 
-  const { listBreezewaySubscriptions, createBreezewayTaskSubscription } = await import("./breezeway.server");
+  const { listBreezewaySubscriptions, createBreezewayTaskSubscription } =
+    await import("./breezeway.server");
   const existing = await listBreezewaySubscriptions();
   const dupe = existing.find(
     (s) => (s.webhook_type ?? "task") === "task" && hostOf(s.url) === receiverHost(),

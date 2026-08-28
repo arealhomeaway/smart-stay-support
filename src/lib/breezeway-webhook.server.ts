@@ -44,7 +44,16 @@ export type WebhookOutcome =
   | "duplicate"
   | "stale"
   | "invalid"
-  | "verify_failed";
+  | "verify_failed"
+  /**
+   * The event was classified (as one of the outcomes above) but the database
+   * write that would have made that classification durable failed for a
+   * reason other than the expected concurrent-duplicate conflict (23505) —
+   * e.g. the database was unreachable, or the schema is out of sync with
+   * this code. Never used to mean "processed" or any other outcome actually
+   * completed; a caller must not treat this as durable success.
+   */
+  | "persist_failed";
 
 export type WebhookResult = {
   outcome: WebhookOutcome;
@@ -104,7 +113,12 @@ export function parseWebhookPayload(body: unknown) {
 
   return {
     taskId,
-    homeId: firstNumber(root["home_id"], nested["home_id"], root["property_id"], nested["property_id"]),
+    homeId: firstNumber(
+      root["home_id"],
+      nested["home_id"],
+      root["property_id"],
+      nested["property_id"],
+    ),
     companyId: firstNumber(root["company_id"], nested["company_id"]),
     updatedAt: firstDate(
       root["updated_at"],
@@ -132,7 +146,7 @@ async function recordEvent(row: {
    * 4xx that a blind retry cannot fix). Omitted for every other outcome.
    */
   retryable?: boolean;
-}): Promise<{ conflict: boolean }> {
+}): Promise<{ conflict: boolean; persisted: boolean }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("breezeway_webhook_events").insert({
     outcome: row.outcome,
@@ -144,10 +158,45 @@ async function recordEvent(row: {
     is_fixture: row.isFixture,
     retryable: row.retryable ?? false,
   });
+  if (!error) return { conflict: false, persisted: true };
+
   // 23505 = unique_violation. Only the `processed` outcome is constrained
   // (breezeway_webhook_events_processed_once); a hit here means a concurrent
-  // delivery of this exact task update already recorded it first.
-  return { conflict: error?.code === "23505" };
+  // delivery of this exact task update already recorded it first. Expected,
+  // handled by the caller — not an unexpected persistence failure.
+  if (error.code === "23505") return { conflict: true, persisted: false };
+
+  // Anything else is unexpected: the write did not happen, so nothing about
+  // this delivery is durable. Surface it in the operational logs — never the
+  // payload, the task id, or any secret; only what outcome we were trying to
+  // record and Postgres/PostgREST's own error code — and let the caller
+  // report `persist_failed` instead of silently claiming success.
+  console.error(
+    `[breezeway-webhook] insert failed for outcome "${row.outcome}" (code ${error.code ?? "unknown"})`,
+  );
+  return { conflict: false, persisted: false };
+}
+
+const PERSIST_FAILED_RESULT: WebhookResult = {
+  outcome: "persist_failed",
+  reason: "Could not durably record this event (database write failed)",
+  taskId: null,
+};
+
+/**
+ * Records an event and returns the matching WebhookResult, or
+ * `persist_failed` when the write itself could not be completed. Covers
+ * every outcome that doesn't need bespoke conflict handling — `processed`
+ * (and the `duplicate` it can fall back to on a race) records directly
+ * instead, since only that path needs to interpret a 23505 conflict.
+ */
+async function recordAndReturn(
+  row: Parameters<typeof recordEvent>[0],
+  resultTaskId: number | null,
+): Promise<WebhookResult> {
+  const { persisted } = await recordEvent(row);
+  if (!persisted) return PERSIST_FAILED_RESULT;
+  return { outcome: row.outcome, reason: row.reason, taskId: resultTaskId };
 }
 
 /** Highest update timestamp already processed for this task, if any. */
@@ -177,7 +226,9 @@ function defaultVerifyTask(): VerifyTask {
   return async (id) => {
     const { getBreezewayTask } = await import("./breezeway.server");
     const t = await getBreezewayTask(id);
-    return t ? { id: t.id, homeId: t.homeId, companyId: t.companyId, updatedAt: t.updatedAt } : null;
+    return t
+      ? { id: t.id, homeId: t.homeId, companyId: t.companyId, updatedAt: t.updatedAt }
+      : null;
   };
 }
 
@@ -227,22 +278,42 @@ export async function verifyAndFinalizeTask(
     verified = await verify(taskId);
   } catch (error) {
     const { reason, retryable } = classifyLookupFailure(error);
-    if (recordFailure) await recordEvent({ outcome: "verify_failed", reason, taskId, isFixture, retryable });
+    if (!recordFailure) return { outcome: "verify_failed", reason, taskId: null, retryable };
+    const { persisted } = await recordEvent({
+      outcome: "verify_failed",
+      reason,
+      taskId,
+      isFixture,
+      retryable,
+    });
+    if (!persisted) return PERSIST_FAILED_RESULT;
     return { outcome: "verify_failed", reason, taskId: null, retryable };
   }
 
   if (!verified) {
     const reason = "Task not found on re-read";
-    if (recordFailure) await recordEvent({ outcome: "verify_failed", reason, taskId, isFixture, retryable: false });
+    if (!recordFailure) return { outcome: "verify_failed", reason, taskId: null, retryable: false };
+    const { persisted } = await recordEvent({
+      outcome: "verify_failed",
+      reason,
+      taskId,
+      isFixture,
+      retryable: false,
+    });
+    if (!persisted) return PERSIST_FAILED_RESULT;
     return { outcome: "verify_failed", reason, taskId: null, retryable: false };
   }
   if (verified.companyId != null && verified.companyId !== PILOT_COMPANY_ID) {
-    await recordEvent({ outcome: "ignored_other_company", reason: "Outside pilot company", isFixture });
-    return { outcome: "ignored_other_company", reason: "Outside pilot company", taskId: null };
+    return recordAndReturn(
+      { outcome: "ignored_other_company", reason: "Outside pilot company", isFixture },
+      null,
+    );
   }
   if (verified.homeId !== PILOT_HOME_ID) {
-    await recordEvent({ outcome: "ignored_other_property", reason: "Outside pilot property", isFixture });
-    return { outcome: "ignored_other_property", reason: "Outside pilot property", taskId: null };
+    return recordAndReturn(
+      { outcome: "ignored_other_property", reason: "Outside pilot property", isFixture },
+      null,
+    );
   }
 
   const updatedAt = verified.updatedAt ?? options.fallbackUpdatedAt ?? null;
@@ -251,34 +322,38 @@ export async function verifyAndFinalizeTask(
 
   if (seenMs != null && updatedMs != null) {
     if (updatedMs === seenMs) {
-      await recordEvent({
-        outcome: "duplicate",
-        reason: "Same task update already processed",
+      return recordAndReturn(
+        {
+          outcome: "duplicate",
+          reason: "Same task update already processed",
+          taskId,
+          homeId: PILOT_HOME_ID,
+          companyId: PILOT_COMPANY_ID,
+          taskUpdatedAt: updatedAt,
+          isFixture,
+        },
         taskId,
-        homeId: PILOT_HOME_ID,
-        companyId: PILOT_COMPANY_ID,
-        taskUpdatedAt: updatedAt,
-        isFixture,
-      });
-      return { outcome: "duplicate", reason: "Same task update already processed", taskId };
+      );
     }
     if (updatedMs < seenMs) {
-      await recordEvent({
-        outcome: "stale",
-        reason: "Older than the update already processed",
+      return recordAndReturn(
+        {
+          outcome: "stale",
+          reason: "Older than the update already processed",
+          taskId,
+          homeId: PILOT_HOME_ID,
+          companyId: PILOT_COMPANY_ID,
+          taskUpdatedAt: updatedAt,
+          isFixture,
+        },
         taskId,
-        homeId: PILOT_HOME_ID,
-        companyId: PILOT_COMPANY_ID,
-        taskUpdatedAt: updatedAt,
-        isFixture,
-      });
-      return { outcome: "stale", reason: "Older than the update already processed", taskId };
+      );
     }
   }
 
   // "Processed" in this pilot means: verified, in scope, and recorded for the
   // admin preview. Nothing operational happens.
-  const { conflict } = await recordEvent({
+  const { conflict, persisted } = await recordEvent({
     outcome: "processed",
     reason: "Verified pilot task update",
     taskId,
@@ -292,17 +367,20 @@ export async function verifyAndFinalizeTask(
     // genuine Breezeway redelivery, or a live delivery overlapping a
     // recovery retry). It is not this call's to record twice.
     const reason = "Same task update already processed (concurrent delivery)";
-    await recordEvent({
-      outcome: "duplicate",
-      reason,
+    return recordAndReturn(
+      {
+        outcome: "duplicate",
+        reason,
+        taskId,
+        homeId: PILOT_HOME_ID,
+        companyId: PILOT_COMPANY_ID,
+        taskUpdatedAt: updatedAt,
+        isFixture,
+      },
       taskId,
-      homeId: PILOT_HOME_ID,
-      companyId: PILOT_COMPANY_ID,
-      taskUpdatedAt: updatedAt,
-      isFixture,
-    });
-    return { outcome: "duplicate", reason, taskId };
+    );
   }
+  if (!persisted) return PERSIST_FAILED_RESULT;
   return { outcome: "processed", reason: "Verified pilot task update", taskId };
 }
 
@@ -318,30 +396,39 @@ export async function processBreezewayWebhook(
   const parsed = parseWebhookPayload(body);
 
   if (!parsed) {
-    await recordEvent({ outcome: "invalid", reason: "No usable task id in payload", isFixture });
-    return { outcome: "invalid", reason: "No usable task id in payload", taskId: null };
+    return recordAndReturn(
+      { outcome: "invalid", reason: "No usable task id in payload", isFixture },
+      null,
+    );
   }
   if (parsed.webhookType && parsed.webhookType !== "task") {
-    await recordEvent({ outcome: "invalid", reason: "Not a task webhook", isFixture });
-    return { outcome: "invalid", reason: "Not a task webhook", taskId: null };
+    return recordAndReturn({ outcome: "invalid", reason: "Not a task webhook", isFixture }, null);
   }
 
   // Cheap pre-filter: if the payload names a different property, drop it now
   // and spend no API budget on it. Detail is never stored for those.
   if (parsed.homeId != null && parsed.homeId !== PILOT_HOME_ID) {
-    await recordEvent({ outcome: "ignored_other_property", reason: "Outside pilot property", isFixture });
-    return { outcome: "ignored_other_property", reason: "Outside pilot property", taskId: null };
+    return recordAndReturn(
+      { outcome: "ignored_other_property", reason: "Outside pilot property", isFixture },
+      null,
+    );
   }
   if (parsed.companyId != null && parsed.companyId !== PILOT_COMPANY_ID) {
-    await recordEvent({ outcome: "ignored_other_company", reason: "Outside pilot company", isFixture });
-    return { outcome: "ignored_other_company", reason: "Outside pilot company", taskId: null };
+    return recordAndReturn(
+      { outcome: "ignored_other_company", reason: "Outside pilot company", isFixture },
+      null,
+    );
   }
 
   // Authenticated re-read decides membership. Uses the shared rate limiter.
+  // `verifyTask` is only included when the caller actually passed one —
+  // exactOptionalPropertyTypes rejects explicitly setting an optional
+  // property to `undefined`, and omitting it here lets the callee's own
+  // `options.verifyTask ?? defaultVerifyTask()` fallback apply.
   const finalized = await verifyAndFinalizeTask(parsed.taskId, {
     isFixture,
-    verifyTask: options.verifyTask,
     fallbackUpdatedAt: parsed.updatedAt,
+    ...(options.verifyTask ? { verifyTask: options.verifyTask } : {}),
   });
   return {
     outcome: finalized.outcome,

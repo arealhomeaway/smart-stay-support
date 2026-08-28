@@ -118,6 +118,7 @@ export const breezewayWebhookRecoverFailures = createServerFn({ method: "POST" }
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { recoverFailedTaskVerifications } = await import("@/lib/breezeway-webhook-recovery.server");
+    const { recoverFailedTaskVerifications } =
+      await import("@/lib/breezeway-webhook-recovery.server");
     return recoverFailedTaskVerifications();
   });
