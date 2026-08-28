@@ -373,9 +373,10 @@ export async function syncMailbox(
     // the earlier pass saved the ticket but could not re-tag the message, the
     // retry happens here against the ticket we already have.
     const prior = await priorRecord(db, messageIds);
-    if (prior && !isStaleClaim(prior)) {
+    const action = nextActionFor(prior);
+    if (action !== "create") {
       base.skipped++;
-      if (!dryRun && prior.error_message === CATEGORY_PENDING) {
+      if (action === "retag" && !dryRun && prior) {
         const done = await retryCategory(db, msg, prior);
         if (done) base.recategoriseRetried++;
         base.items.push({
@@ -389,6 +390,8 @@ export async function syncMailbox(
       }
       continue;
     }
+
+
 
     const skip = classify(msg, known.has(from.toLowerCase()));
     if (skip) {
