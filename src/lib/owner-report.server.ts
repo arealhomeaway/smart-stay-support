@@ -391,7 +391,9 @@ export async function reportPdf(report: OwnerReport) {
     `${report.entries.length} entries within the program period. Shared activities (${report.totals.sharedEntries}) are counted once in the combined total and list every home they covered.`,
   );
   space(8);
-  const cols = [M, M + 62, M + 300, M + 350, M + 430] as const;
+  const cols = [M, M + 62, M + 296, M + 340, M + 432] as const;
+  const fit = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 3)}...` : s);
+  const shortStatus = (s: string) => (s.startsWith("Superseded") ? "Superseded" : s);
   const rowHead = () => {
     space(14);
     text("Date", { size: 8, f: bold, x: cols[0] });
@@ -404,18 +406,19 @@ export async function reportPdf(report: OwnerReport) {
   for (const e of report.entries) {
     space(12);
     text(e.date, { size: 8, x: cols[0] });
-    text(wrap(e.activity, 230, 8)[0] ?? "", { size: 8, x: cols[1] });
+    text(fit(e.activity, 66), { size: 8, x: cols[1] });
     text(String(e.hours), { size: 8, x: cols[2] });
-    text(e.shared ? `${e.properties.length} shared` : (e.properties[0] ?? "—").slice(0, 14), {
+    text(e.shared ? `${e.properties.length} shared` : fit(e.properties[0] ?? "—", 18), {
       size: 8,
       x: cols[3],
     });
-    text(e.status.slice(0, 24), {
+    text(fit(shortStatus(e.status), 20), {
       size: 8,
       x: cols[4],
       color: e.counts ? INK : MUTED,
     });
   }
+
   if (report.entries.length === 0) para("No entries recorded in this period yet.");
 
   if (report.outsidePeriod.length > 0) {
