@@ -117,7 +117,7 @@ export async function previewOnboardingTemplate(
   const toCreate: TemplatePreview["toCreate"] = [];
   const skipped: TemplatePreview["skipped"] = [];
   for (const t of FULL_FURNISHING_TEMPLATE) {
-    if (taken.has(t.title.trim().toLowerCase())) {
+    if (taken.has(taskKey(t.stage, t.title))) {
       skipped.push({ title: t.title, reason: "Already on this property" });
       continue;
     }
@@ -138,14 +138,12 @@ export async function applyOnboardingTemplate(
   input: { propertyId: string },
 ) {
   await assertOnboardingStaff(supabase, userId);
-  const { property, anchors, taken } = await loadContext(supabase, input.propertyId);
-
-  const pending = FULL_FURNISHING_TEMPLATE.filter(
-    (t) => !taken.has(t.title.trim().toLowerCase()),
+  const { property, anchors, taken, takenSubs, parentIdByKey } = await loadContext(
+    supabase,
+    input.propertyId,
   );
-  if (pending.length === 0) {
-    return { created: 0, subtasksCreated: 0, skipped: FULL_FURNISHING_TEMPLATE.length };
-  }
+
+  const pending = FULL_FURNISHING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
   const rows = pending.map((t) => ({
     property_id: input.propertyId,
@@ -166,18 +164,27 @@ export async function applyOnboardingTemplate(
     is_demo: property.is_demo,
   }));
 
-  const inserted = await supabase.from("onboarding_tasks").insert(rows).select("id, title");
-  if (inserted.error) throw inserted.error;
+  if (rows.length) {
+    const inserted = await supabase
+      .from("onboarding_tasks")
+      .insert(rows)
+      .select("id, title, stage");
+    if (inserted.error) throw inserted.error;
+    for (const r of inserted.data ?? []) {
+      parentIdByKey.set(taskKey(r.stage, r.title), r.id);
+    }
+  }
 
-  const byTitle = new Map(
-    (inserted.data ?? []).map((r) => [r.title.trim().toLowerCase(), r.id] as const),
-  );
-
+  // Subtasks are reconciled for EVERY template task, including ones that
+  // already existed, so a partially applied plan is completed rather than
+  // duplicated.
   const subRows: Record<string, unknown>[] = [];
-  for (const t of pending) {
-    const parentId = byTitle.get(t.title.trim().toLowerCase());
-    if (!parentId || !t.subtasks?.length) continue;
+  for (const t of FULL_FURNISHING_TEMPLATE) {
+    if (!t.subtasks?.length) continue;
+    const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
+    if (!parentId) continue;
     t.subtasks.forEach((title, i) => {
+      if (takenSubs.has(subKey(parentId, title))) return;
       subRows.push({
         property_id: input.propertyId,
         stage: t.stage,
