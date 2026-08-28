@@ -110,6 +110,15 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // Sending alone can never satisfy an owner approval: the step stays open
+  // until the authorised homeowner records an approval.
+  if (
+    input.status === "complete" &&
+    input.requiresOwnerApproval &&
+    input.ownerApprovalStatus !== "approved"
+  ) {
+    throw new Error("This step is waiting on the homeowner's approval and cannot be completed yet.");
+  }
   const row = {
     property_id: input.propertyId,
     stage: input.stage,
