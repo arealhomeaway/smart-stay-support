@@ -128,3 +128,28 @@ export const createOwnerMatterFn = createServerFn({ method: "POST" })
     const { createOwnerMatter } = await import("./owner-portal.server");
     return createOwnerMatter(context.supabase, context.userId, data);
   });
+
+/** Approval requests addressed to the signed-in homeowner. */
+export const ownerApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { loadOwnerApprovals } = await import("./owner-portal.server");
+    return { approvals: await loadOwnerApprovals(context.supabase, context.userId) };
+  });
+
+/** Record one homeowner decision. Single-shot: never overwrites a decision. */
+export const decideOwnerApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        approvalId: z.string().uuid(),
+        decision: z.enum(["approved", "declined"]),
+        comment: z.string().trim().max(2000).default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { recordOwnerApproval } = await import("./owner-portal.server");
+    return recordOwnerApproval(context.supabase, context.userId, data);
+  });

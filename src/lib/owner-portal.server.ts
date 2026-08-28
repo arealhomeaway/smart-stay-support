@@ -434,3 +434,130 @@ export async function createOwnerMatter(
 
   return { ok: true as const, ticketId: data.id, ref: data.ref };
 }
+
+/* ------------------------------------------------------------------ */
+/* Homeowner approval decisions                                        */
+/* ------------------------------------------------------------------ */
+
+export type OwnerApproval = {
+  id: string;
+  kind: string;
+  title: string;
+  detail: string | null;
+  amount: number | null;
+  currency: string;
+  status: string;
+  decision_note: string | null;
+  decided_at: string | null;
+  due_on: string | null;
+  evidence_url: string | null;
+  property_id: string | null;
+  property_name: string | null;
+  created_at: string;
+};
+
+/**
+ * Approval requests addressed to this homeowner. RLS already limits reads to
+ * homes/programs the signed-in owner is authorised for; the property filter
+ * here is only to label the card.
+ */
+export async function loadOwnerApprovals(supabase: Client, userId: string): Promise<OwnerApproval[]> {
+  const { data, error } = await supabase
+    .from("approvals")
+    .select(
+      "id, kind, title, detail, amount, currency, status, decision_note, decided_at, due_on, evidence_url, property_id, approver_id, created_at",
+    )
+    .eq("approver_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  const rows = data ?? [];
+  const ids = [...new Set(rows.map((r) => r.property_id).filter((v): v is string => Boolean(v)))];
+  const names = new Map<string, string>();
+  if (ids.length) {
+    const props = await supabase.from("properties").select("id, name").in("id", ids);
+    for (const p of props.data ?? []) names.set(p.id, p.name);
+  }
+  return rows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    title: r.title,
+    detail: r.detail,
+    amount: r.amount,
+    currency: r.currency,
+    status: r.status,
+    decision_note: r.decision_note,
+    decided_at: r.decided_at,
+    due_on: r.due_on,
+    evidence_url: r.evidence_url,
+    property_id: r.property_id,
+    property_name: r.property_id ? (names.get(r.property_id) ?? null) : null,
+    created_at: r.created_at,
+  }));
+}
+
+/**
+ * Record one homeowner decision. Authorisation is enforced server-side and
+ * again by RLS. The `status = pending` filter makes the write single-shot:
+ * a second submission (or a race) changes zero rows and is reported back
+ * instead of silently overwriting the first decision.
+ *
+ * Nothing here awards participation hours or sends live notifications.
+ */
+export async function recordOwnerApproval(
+  supabase: Client,
+  userId: string,
+  input: { approvalId: string; decision: "approved" | "declined"; comment: string },
+) {
+  const current = await supabase
+    .from("approvals")
+    .select("id, status, property_id, entity_type, entity_id, approver_id")
+    .eq("id", input.approvalId)
+    .maybeSingle();
+  if (current.error) throw current.error;
+  if (!current.data) throw new Error("That approval request is not available to you.");
+  if (current.data.approver_id !== userId) {
+    throw new Error("That approval request is addressed to someone else.");
+  }
+  if (current.data.status !== "pending") {
+    throw new Error("A decision was already recorded for this request.");
+  }
+  if (input.decision === "declined" && !input.comment.trim()) {
+    throw new Error("Please add a short note explaining what you would like changed.");
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("approvals")
+    .update({
+      status: input.decision,
+      decision_note: input.comment.trim() || null,
+      decided_at: now,
+    })
+    .eq("id", input.approvalId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("A decision was already recorded for this request.");
+
+  // Mirror the decision onto the onboarding task it gates, if any.
+  if (current.data.entity_type === "onboarding_task" && current.data.entity_id) {
+    await supabase
+      .from("onboarding_tasks")
+      .update({ owner_approval_status: input.decision === "approved" ? "approved" : "declined" })
+      .eq("id", current.data.entity_id);
+  }
+
+  const { writeAudit } = await import("./audit.server");
+  await writeAudit({
+    actorId: userId,
+    action: `owner_approval_${input.decision}`,
+    entityType: "approval",
+    entityId: input.approvalId,
+    reason: input.comment.trim() || null,
+    after: { decidedAt: now },
+  });
+
+  return { ok: true as const, status: input.decision, decidedAt: now };
+}
