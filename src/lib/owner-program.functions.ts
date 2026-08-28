@@ -7,12 +7,16 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
 /** Staff: every participation program plus the homes still free to enroll. */
 export const ownerPrograms = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((data: unknown) =>
+    z.object({ demo: z.boolean().optional() }).optional().parse(data ?? {}),
+  )
+  .handler(async ({ context, data }) => {
     const { assertStaff } = await import("./vendor.server");
     const { loadPrograms } = await import("./owner-program.server");
     await assertStaff(context.supabase, context.userId);
-    return loadPrograms(context.supabase);
+    return loadPrograms(context.supabase, data?.demo === true);
   });
+
 
 /** Staff: the roadmap catalog behind every program. */
 export const ownerTaskRoadmap = createServerFn({ method: "GET" })

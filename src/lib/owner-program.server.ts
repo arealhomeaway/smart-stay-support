@@ -100,7 +100,7 @@ export type AdminProgramRow = {
 };
 
 /** One row per participation program, plus the homes still free to enroll. */
-export async function loadPrograms(supabase: Client) {
+export async function loadPrograms(supabase: Client, demo = false) {
   const [properties, programs, links, reviews, entries, entryProps, badges, notifications] =
     await Promise.all([
       supabase.from("properties").select("id, name, nickname, city, state").eq("active", true).order("name"),
@@ -109,8 +109,8 @@ export async function loadPrograms(supabase: Client) {
         .select(
           "id, owner_user_id, owner_name, owner_email, status, started_on, ends_on, onboarding_lead, operations_lead, dfy_confirmed, last_owner_activity_at",
         )
-        // Demo programs never appear in the production queue.
-        .eq("is_demo", false)
+        // Demo programs stay out of the production queue unless demo mode is on.
+        .eq("is_demo", demo)
         .is("archived_at", null),
       supabase
         .from("owner_program_properties")
@@ -118,7 +118,7 @@ export async function loadPrograms(supabase: Client) {
           "id, program_id, property_id, inclusion_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname)",
         ),
       supabase.from("owner_reviews").select("id, program_id, property_id, status, respond_by"),
-      supabase.from("owner_time_entries").select("id, program_id, minutes, review_status").eq("is_demo", false),
+      supabase.from("owner_time_entries").select("id, program_id, minutes, review_status").eq("is_demo", demo),
       supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
       supabase.from("owner_badges").select("program_id, code"),
       supabase

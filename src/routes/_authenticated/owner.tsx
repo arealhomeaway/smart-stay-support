@@ -18,6 +18,8 @@ import {
 import { useRole } from "@/hooks/useRole";
 import { ReviewPhotos } from "@/components/ReviewPhotos";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
+import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
+
 import type { ReviewPhoto } from "@/lib/owner-participation";
 import { alertLabel, relativeTime } from "@/lib/owner-notify";
 import { DECISION_PATHS } from "@/lib/owner-program";
@@ -307,8 +309,11 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         </CardContent>
       </Card>
 
+      <ParticipationReportPanel />
+
       <Card>
         <CardHeader className="pb-3">
+
           <CardTitle className="flex items-center gap-2 text-base">
             <Home className="size-4 text-primary" /> Your properties
           </CardTitle>
