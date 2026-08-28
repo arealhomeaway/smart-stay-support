@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RequireCapability } from "@/components/RequireCapability";
+import { SchedulePanel } from "@/components/SchedulePanel";
 import { useRole } from "@/hooks/useRole";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -72,7 +73,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 function OnboardingWorkspace() {
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { can, readOnly } = useRole();
+  const { can, readOnly, userId } = useRole();
   const { enabled } = useFeatureFlags();
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -171,7 +172,11 @@ function OnboardingWorkspace() {
               reviews={data.reviews as never}
               people={data.people}
               propertyName={data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"}
-              canReview={can("handoff_review")}
+              canReview={
+                can("handoff_review") ||
+                (Boolean(userId) &&
+                  data.properties.find((p) => p.id === h.property_id)?.onboarding_owner === userId)
+              }
               disabled={readOnly}
               onDecision={(input) => reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })}
             />
@@ -276,13 +281,26 @@ function OnboardingWorkspace() {
                   </CardContent>
                 </Card>
 
+                <SchedulePanel
+                  propertyId={current.id}
+                  plannedClosingOn={(current as { planned_closing_on?: string | null }).planned_closing_on ?? null}
+                  actualClosingOn={(current as { actual_closing_on?: string | null }).actual_closing_on ?? null}
+                  actualAccessOn={(current as { actual_access_on?: string | null }).actual_access_on ?? null}
+                  canEdit={!readOnly && can("handoff_request")}
+                  onChange={() => void refresh()}
+                />
+
+                <OwnerDecisionsCard
+                  approvals={(data.ownerApprovals ?? []).filter((a) => a.property_id === current.id)}
+                />
+
                 {openHandoff && (
                   <HandoffGatePanel
                     handoff={openHandoff as never}
                     reviews={data.reviews as never}
                     people={data.people}
                     propertyName={current.name}
-                    canReview={can("handoff_review")}
+                    canReview={can("handoff_review") || (Boolean(userId) && current.onboarding_owner === userId)}
                     disabled={readOnly}
                     onDecision={(input) =>
                       reviewHandoff.mutate({ data: { handoffId: openHandoff.id, ...input } })
@@ -478,6 +496,48 @@ function OnboardingWorkspace() {
 }
 
 /** Records what proves an evidence-required onboarding task was actually done. */
+/** Read-only view of homeowner decisions for staff. */
+function OwnerDecisionsCard({
+  approvals,
+}: {
+  approvals: {
+    id: string;
+    title: string;
+    status: string;
+    decision_note: string | null;
+    decided_at: string | null;
+    created_at: string;
+  }[];
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Homeowner decisions</CardTitle>
+        <CardDescription>Requests sent to the homeowner and the decisions they recorded.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {approvals.length === 0 && (
+          <p className="text-sm text-muted-foreground">No homeowner approval has been requested for this home.</p>
+        )}
+        {approvals.map((a) => (
+          <div key={a.id} className="rounded-md border border-border p-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={a.status === "pending" ? "outline" : a.status === "approved" ? "default" : "secondary"}>
+                {a.status === "pending" ? "Waiting on homeowner" : a.status === "approved" ? "Approved" : "Sent back"}
+              </Badge>
+              <span className="font-medium">{a.title}</span>
+              <span className="text-xs text-muted-foreground">
+                {a.decided_at ? new Date(a.decided_at).toLocaleString() : `Requested ${new Date(a.created_at).toLocaleDateString()}`}
+              </span>
+            </div>
+            {a.decision_note && <p className="mt-1 text-muted-foreground">{a.decision_note}</p>}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 function EvidenceDialog({
   disabled,
   current,

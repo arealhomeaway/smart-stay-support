@@ -58,6 +58,16 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     (p) => lifecycleOf(p) !== "active_operations" && lifecycleOf(p) !== "offboarded",
   );
 
+  // Homeowner decisions and their history — staff read-only.
+  const ownerApprovals = await supabase
+    .from("approvals")
+    .select(
+      "id, entity_type, entity_id, property_id, kind, title, detail, status, decision_note, decided_at, approver_id, due_on, created_at",
+    )
+    .eq("approver_role", "owner")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
   return {
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
@@ -69,8 +79,10 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     externalDatabases: extDbs.data ?? [],
     externalRecords: extRecords.data ?? [],
     documents: docs.data ?? [],
+    ownerApprovals: ownerApprovals.data ?? [],
   };
 }
+
 
 
 export async function saveOnboardingTask(
@@ -155,8 +167,86 @@ export async function saveOnboardingTask(
     entityLabel: input.title,
     after: row,
   });
+  if (input.requiresOwnerApproval) {
+    await ensureOwnerApprovalRequest(supabase, userId, {
+      taskId: data.id,
+      propertyId: input.propertyId,
+      title: input.title,
+      detail: input.detail,
+      dueOn: input.dueOn,
+      isDemo: parent.data?.is_demo ?? false,
+    });
+  }
   return { id: data.id };
 }
+
+/**
+ * Create the homeowner-facing decision record for a task that needs owner
+ * approval. It is addressed to the homeowner enrolled on that property; if no
+ * homeowner is linked yet, nothing is created and staff keep the task as
+ * pending. Never creates a second request for the same task.
+ */
+async function ensureOwnerApprovalRequest(
+  supabase: Client,
+  userId: string,
+  input: {
+    taskId: string;
+    propertyId: string;
+    title: string;
+    detail: string;
+    dueOn: string | null;
+    isDemo: boolean;
+  },
+) {
+  const existing = await supabase
+    .from("approvals")
+    .select("id")
+    .eq("entity_type", "onboarding_task")
+    .eq("entity_id", input.taskId)
+    .maybeSingle();
+  if (existing.data) return existing.data.id;
+
+  const direct = await supabase
+    .from("owner_programs")
+    .select("owner_user_id")
+    .eq("property_id", input.propertyId)
+    .not("owner_user_id", "is", null)
+    .maybeSingle();
+  let ownerUserId = direct.data?.owner_user_id ?? null;
+  if (!ownerUserId) {
+    const linked = await supabase
+      .from("owner_program_properties")
+      .select("program_id, owner_programs!inner(owner_user_id)")
+      .eq("property_id", input.propertyId)
+      .limit(1)
+      .maybeSingle();
+    const rel = linked.data as { owner_programs?: { owner_user_id: string | null } } | null;
+    ownerUserId = rel?.owner_programs?.owner_user_id ?? null;
+  }
+  if (!ownerUserId) return null;
+
+  const { data, error } = await supabase
+    .from("approvals")
+    .insert({
+      entity_type: "onboarding_task",
+      entity_id: input.taskId,
+      property_id: input.propertyId,
+      kind: "onboarding_task",
+      title: input.title,
+      detail: input.detail || null,
+      requested_by: userId,
+      approver_id: ownerUserId,
+      approver_role: "owner",
+      status: "pending",
+      due_on: input.dueOn,
+      is_demo: input.isDemo,
+    })
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
 
 export async function setPropertyLifecycle(
   supabase: Client,
@@ -277,7 +367,6 @@ export async function reviewHandoff(
   },
 ) {
   const { nextGateStep } = await import("./onboarding");
-  await assertCap(supabase, userId, "is_supervisor");
   if (input.decision === "returned" && !input.corrections.trim()) {
     throw new Error("Returning a handoff requires the corrections that are needed.");
   }
@@ -294,6 +383,27 @@ export async function reviewHandoff(
   if (!OPEN.includes(handoff.data.status)) throw new Error("This handoff was already closed.");
 
   const step = (handoff.data.gate_step ?? "kati_review") as string;
+
+  // Supervisors may record any gate. The assigned onboarding lead for THIS
+  // home may record only its own onboarding review — by project assignment,
+  // never by name and never for every onboarding user.
+  const { data: isSupervisor } = await supabase.rpc("is_supervisor", { _user_id: userId });
+  if (!isSupervisor) {
+    const lead = await supabase
+      .from("properties")
+      .select("onboarding_owner")
+      .eq("id", handoff.data.property_id)
+      .maybeSingle();
+    const { data: isOnboarding } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "onboarding",
+    });
+    const isAssignedLead = Boolean(isOnboarding) && lead.data?.onboarding_owner === userId;
+    if (!isAssignedLead || step !== "kati_review") {
+      throw new Error("You do not have access to record this review step.");
+    }
+  }
+
 
   const now = new Date().toISOString();
 
