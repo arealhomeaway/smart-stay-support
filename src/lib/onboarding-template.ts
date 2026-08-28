@@ -711,7 +711,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     role: "Lead Designer",
     detail: "Instructions:\n Send the owner the mood boards for all rooms within the home.\n Utilize the sample email below and remember the following:\n Pls ensure that you copy the PDF of the mood boards. \n CC the Project Manager on the correspondence\n\nSample Email:\n\nSubject: Your Design Plan and Next Steps - [Address]\n\nDear [owner], \n\nI’m excited to share the customized design plan we’ve created for your new home! Attached, you’ll find mood boards for each of your spaces. These boards are tailored to the unique features of your home, incorporating neutral tones, textures, and soothing muted colors that will create a warm, inviting atmosphere.\n\nNext Steps:\nOnce you have closed on your property, we will issue an invoice for 50% of the total furnishing price. This upfront payment allows us to order the furniture and décor for your home. Once everything has been ordered and delivered …",
     blocksHandoff: true,
-    requiresOwnerApproval: true,
+    // Source instructs sending the mood boards and a sample email only; no
+    // owner sign-off is requested, so this stays a share step, not an approval.
+    evidenceRequired: true,
     sortOrder: 710,
   },
   {
