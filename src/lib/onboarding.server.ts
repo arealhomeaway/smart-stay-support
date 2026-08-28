@@ -296,7 +296,12 @@ export async function requestHandoff(
 
   const [property, tasks] = await Promise.all([
     supabase.from("properties").select(PROPERTY_FIELDS).eq("id", input.propertyId).single(),
-    supabase.from("onboarding_tasks").select("*").eq("property_id", input.propertyId),
+    // Retired (archived) tasks are no longer requirements and must not block handoff.
+    supabase
+      .from("onboarding_tasks")
+      .select("*")
+      .eq("property_id", input.propertyId)
+      .is("archived_at", null),
   ]);
   if (property.error) throw property.error;
   if (tasks.error) throw tasks.error;
