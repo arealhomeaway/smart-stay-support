@@ -123,8 +123,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "INSPECTION DATE",
     role: "Project Manager",
     blocksHandoff: true,
-    anchor: "planned_closing",
-    offsetDays: -21,
+    // No written rule: this milestone is a scheduled appointment set by the
+    // realtor/handyman ("Obtain inspection date/time from realtor"), not a
+    // deadline derived from closing. Left unset on purpose.
     sortOrder: 90,
   },
   {
