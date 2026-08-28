@@ -426,6 +426,59 @@ export async function syncMailbox(
   return base;
 }
 
+/**
+ * Moves the category to "task completed" for every intake message whose ticket
+ * has since closed.
+ *
+ * Driven by the ticket's own status rather than by a hook on the close button,
+ * so a close made anywhere in Resolve is picked up, and a re-run simply finds
+ * nothing left to do.
+ */
+async function tagClosedTickets(db: Db, limit = 25): Promise<number> {
+  const { data: events } = await db
+    .from("integration_events")
+    .select("id, external_id, entity_id")
+    .eq("system", SYSTEM)
+    .eq("operation", "mailbox_message")
+    .eq("status", "created")
+    .not("entity_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (!events?.length) return 0;
+
+  const ticketIds = Array.from(new Set(events.map((e) => e.entity_id).filter(Boolean) as string[]));
+  const { data: tickets } = await db.from("tickets").select("id, status").in("id", ticketIds);
+  const closedIds = new Set((tickets ?? []).filter((t) => t.status === "closed").map((t) => t.id));
+  if (!closedIds.size) return 0;
+
+  let tagged = 0;
+  for (const event of events) {
+    if (tagged >= limit) break;
+    if (!event.entity_id || !closedIds.has(event.entity_id)) continue;
+    const messageId = event.external_id as string | null;
+    // Only the Graph id addresses a message; the internetMessageId row is a
+    // duplicate guard, not something we can PATCH.
+    if (!messageId || messageId.startsWith("<")) continue;
+
+    let current: string[] = [];
+    try {
+      const res = await graph(inboxMessagesPath(`/${messageId}?$select=id,categories`));
+      current = ((await res.json())?.categories ?? []) as string[];
+    } catch {
+      continue; // Message moved or deleted — nothing to re-categorise.
+    }
+    if (hasTag(current, COMPLETED_TAG)) {
+      await db.from("integration_events").update({ status: "completed" }).eq("id", event.id);
+      continue;
+    }
+    if (await setCategories(messageId, categoriesAfterClose(current))) {
+      await db.from("integration_events").update({ status: "completed" }).eq("id", event.id);
+      tagged++;
+    }
+  }
+  return tagged;
+}
+
 
 /** True when any of this message's ids has already been recorded. */
 async function alreadyProcessed(db: Db, messageIds: string[]) {
