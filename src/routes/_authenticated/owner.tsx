@@ -359,6 +359,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                 <p className="mt-1 text-sm text-muted-foreground">{r.business_question ?? r.recommendation}</p>
               )}
               {r.impact && <p className="mt-1 text-xs text-muted-foreground">Potential impact: {r.impact}</p>}
+              <ReviewPhotos photos={r.photos ?? []} />
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setAnswering(r)}>
                   Respond
@@ -840,6 +841,14 @@ function RespondDialog({
           <DialogDescription>Your decision goes straight to the team handling your program.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          {(review.photos?.length ?? 0) > 0 && (
+            <div>
+              <p className="text-sm font-medium">Photos from the team</p>
+              <p className="text-xs text-muted-foreground">Tap a photo to see it full size.</p>
+              <ReviewPhotos photos={review.photos ?? []} size="lg" />
+            </div>
+          )}
+          {review.evidence && <p className="text-sm text-muted-foreground">{review.evidence}</p>}
           <div className="flex flex-wrap gap-2">
             {["approved", "declined", "needs discussion"].map((d) => (
               <Button key={d} size="sm" variant={decision === d ? "default" : "outline"} onClick={() => setDecision(d)}>
