@@ -57,6 +57,7 @@
 ## PR review round 3 (head 4569800)
 - [x] Only bun.lock / package.json / src/lib/__tests__/bun-env.d.ts changed; all other PR files byte-identical to round 2
 - [x] Migration `20260828193000_...sql` APPLIED to the live database (additive columns + indexes; published receiver unaffected)
-- [ ] Awaiting merge/sync + publish of the receiver code
+- [x] Merged (57c1b27), synced, published; duplicate migration files reconciled (ledger holds only 20260828212448; PR file idempotent, nothing rerun)
+- [x] Fixture-only self-test after publish: 8/8 expected outcomes, fixture rows only, no persistence errors
 - Do NOT run "Retry failed lookups" as release verification — needs separate approval
 
