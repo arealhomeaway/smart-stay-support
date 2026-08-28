@@ -127,6 +127,8 @@ function IntegrationsPage() {
 
       <SharePointConnectionPanel />
 
+      <BreezewayConnectionPanel />
+
       <FeatureFlagsPanel />
 
       <MailboxIntakePanel />
