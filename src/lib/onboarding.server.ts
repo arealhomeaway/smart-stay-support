@@ -155,8 +155,86 @@ export async function saveOnboardingTask(
     entityLabel: input.title,
     after: row,
   });
+  if (input.requiresOwnerApproval) {
+    await ensureOwnerApprovalRequest(supabase, userId, {
+      taskId: data.id,
+      propertyId: input.propertyId,
+      title: input.title,
+      detail: input.detail,
+      dueOn: input.dueOn,
+      isDemo: parent.data?.is_demo ?? false,
+    });
+  }
   return { id: data.id };
 }
+
+/**
+ * Create the homeowner-facing decision record for a task that needs owner
+ * approval. It is addressed to the homeowner enrolled on that property; if no
+ * homeowner is linked yet, nothing is created and staff keep the task as
+ * pending. Never creates a second request for the same task.
+ */
+async function ensureOwnerApprovalRequest(
+  supabase: Client,
+  userId: string,
+  input: {
+    taskId: string;
+    propertyId: string;
+    title: string;
+    detail: string;
+    dueOn: string | null;
+    isDemo: boolean;
+  },
+) {
+  const existing = await supabase
+    .from("approvals")
+    .select("id")
+    .eq("entity_type", "onboarding_task")
+    .eq("entity_id", input.taskId)
+    .maybeSingle();
+  if (existing.data) return existing.data.id;
+
+  const direct = await supabase
+    .from("owner_programs")
+    .select("owner_user_id")
+    .eq("property_id", input.propertyId)
+    .not("owner_user_id", "is", null)
+    .maybeSingle();
+  let ownerUserId = direct.data?.owner_user_id ?? null;
+  if (!ownerUserId) {
+    const linked = await supabase
+      .from("owner_program_properties")
+      .select("program_id, owner_programs!inner(owner_user_id)")
+      .eq("property_id", input.propertyId)
+      .limit(1)
+      .maybeSingle();
+    const rel = linked.data as { owner_programs?: { owner_user_id: string | null } } | null;
+    ownerUserId = rel?.owner_programs?.owner_user_id ?? null;
+  }
+  if (!ownerUserId) return null;
+
+  const { data, error } = await supabase
+    .from("approvals")
+    .insert({
+      entity_type: "onboarding_task",
+      entity_id: input.taskId,
+      property_id: input.propertyId,
+      kind: "onboarding_task",
+      title: input.title,
+      detail: input.detail || null,
+      requested_by: userId,
+      approver_id: ownerUserId,
+      approver_role: "owner",
+      status: "pending",
+      due_on: input.dueOn,
+      is_demo: input.isDemo,
+    })
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
 
 export async function setPropertyLifecycle(
   supabase: Client,
