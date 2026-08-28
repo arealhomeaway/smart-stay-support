@@ -61,3 +61,11 @@
 - [x] Fixture-only self-test after publish: 8/8 expected outcomes, fixture rows only, no persistence errors
 - Do NOT run "Retry failed lookups" as release verification — needs separate approval
 
+
+## Post-publish close-out (2026-08-28)
+- [x] Published site serving release 57c1b27; webhook route reachable (GET 200)
+- [x] Security scan run: 3 warn-level findings, no criticals; nothing changed or dismissed
+- [x] Fixture self-test (8 outcomes) recorded with is_fixture = true, separate from live counts
+- [ ] No natural Fitzgerald event has processed yet (live rows: 1283 ignored_other_property,
+      9 historical verify_failed, 1 invalid; zero live `processed`). Awaiting either a real
+      task update on 1473933 or approval for a controlled test.
