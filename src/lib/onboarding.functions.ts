@@ -23,7 +23,7 @@ export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
         dueOn: z.string().date().nullable().default(null),
         blocker: z.string().trim().max(500).default(""),
         requiresOwnerApproval: z.boolean().default(false),
-        ownerApprovalStatus: z.enum(["not_required", "pending", "approved", "declined"]).default("pending"),
+        ownerApprovalStatus: z.enum(["not_required", "pending", "awaiting_owner", "changes_requested", "approved", "declined"]).default("pending"),
         evidenceRequired: z.boolean().default(false),
         evidenceNote: z.string().trim().max(1000).default(""),
         status: z.enum(["open", "blocked", "complete", "carryover"]).default("open"),
@@ -236,4 +236,36 @@ export const applyOnboardingTemplateFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { applyOnboardingTemplate } = await import("./onboarding-template.server");
     return applyOnboardingTemplate(context.supabase, context.userId, data);
+  });
+
+export const submitOwnerApprovalFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        version: z.string().trim().max(120).default(""),
+        note: z.string().trim().max(1000).default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { submitOwnerApproval } = await import("./onboarding.server");
+    return submitOwnerApproval(context.supabase, context.userId, data);
+  });
+
+export const confirmApprovalRequirementFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        requiresOwnerApproval: z.boolean(),
+        reason: z.string().trim().min(3).max(500),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { confirmApprovalRequirement } = await import("./onboarding.server");
+    return confirmApprovalRequirement(context.supabase, context.userId, data);
   });

@@ -68,10 +68,38 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     .order("created_at", { ascending: false })
     .limit(200);
 
+  // Active Owner Program participation, per owner/property relationship.
+  const { activeOwnerLinks } = await import("./active-owner.server");
+  const { FULL_FURNISHING_TEMPLATE } = await import("./onboarding-template");
+  const participation = await activeOwnerLinks(
+    supabase,
+    (props.data ?? []).map((p) => p.id),
+  );
+  const conditionalTitles = new Set(
+    FULL_FURNISHING_TEMPLATE.filter((t) => t.ownerApprovalWhenActiveOwner).map((t) =>
+      t.title.trim().toLowerCase(),
+    ),
+  );
+  // Participation can change after tasks exist. Surface the affected steps for
+  // staff confirmation instead of silently adding or waiving an approval.
+  const approvalMismatches = (tasks.data ?? [])
+    .filter((t) => conditionalTitles.has(t.title.trim().toLowerCase()))
+    .filter((t) => t.owner_approval_status !== "approved")
+    .map((t) => ({
+      taskId: t.id,
+      propertyId: t.property_id,
+      title: t.title,
+      requiresNow: Boolean(t.requires_owner_approval),
+      shouldRequire: participation.has(t.property_id),
+    }))
+    .filter((m) => m.requiresNow !== m.shouldRequire);
+
   return {
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
     tasks: tasks.data ?? [],
+    activeOwnerProperties: [...participation.values()],
+    approvalMismatches,
     handoffs: handoffs.data ?? [],
     people: people.data ?? [],
     notes: notes.data ?? [],
@@ -110,6 +138,15 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // Sending alone can never satisfy an owner approval: the step stays open
+  // until the authorised homeowner records an approval.
+  if (
+    input.status === "complete" &&
+    input.requiresOwnerApproval &&
+    input.ownerApprovalStatus !== "approved"
+  ) {
+    throw new Error("This step is waiting on the homeowner's approval and cannot be completed yet.");
+  }
   const row = {
     property_id: input.propertyId,
     stage: input.stage,
@@ -182,11 +219,15 @@ export async function saveOnboardingTask(
 
 /**
  * Create the homeowner-facing decision record for a task that needs owner
- * approval. It is addressed to the homeowner enrolled on that property; if no
- * homeowner is linked yet, nothing is created and staff keep the task as
- * pending. Never creates a second request for the same task.
+ * approval. It is addressed to the homeowner enrolled on that property through
+ * the existing owner-program enrollment; if no enrolled homeowner is linked,
+ * nothing is created and staff keep the task pending.
+ *
+ * A new request is created only when there is no request still waiting. Earlier
+ * decisions are never overwritten — a revision request produces an additional
+ * record so identity, timestamp, comment and the reviewed version all survive.
  */
-async function ensureOwnerApprovalRequest(
+export async function ensureOwnerApprovalRequest(
   supabase: Client,
   userId: string,
   input: {
@@ -196,34 +237,29 @@ async function ensureOwnerApprovalRequest(
     detail: string;
     dueOn: string | null;
     isDemo: boolean;
+    /** Version label of the item being reviewed, e.g. "Mood boards v2". */
+    version?: string | null;
   },
 ) {
   const existing = await supabase
     .from("approvals")
-    .select("id")
+    .select("id, status")
     .eq("entity_type", "onboarding_task")
     .eq("entity_id", input.taskId)
-    .maybeSingle();
-  if (existing.data) return existing.data.id;
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (existing.error) throw existing.error;
+  const latest = existing.data?.[0];
+  if (latest && latest.status === "pending") return latest.id;
 
-  const direct = await supabase
-    .from("owner_programs")
-    .select("owner_user_id")
-    .eq("property_id", input.propertyId)
-    .not("owner_user_id", "is", null)
-    .maybeSingle();
-  let ownerUserId = direct.data?.owner_user_id ?? null;
-  if (!ownerUserId) {
-    const linked = await supabase
-      .from("owner_program_properties")
-      .select("program_id, owner_programs!inner(owner_user_id)")
-      .eq("property_id", input.propertyId)
-      .limit(1)
-      .maybeSingle();
-    const rel = linked.data as { owner_programs?: { owner_user_id: string | null } } | null;
-    ownerUserId = rel?.owner_programs?.owner_user_id ?? null;
-  }
+  const { activeOwnerFor } = await import("./active-owner.server");
+  const link = await activeOwnerFor(supabase, input.propertyId);
+  const ownerUserId = link?.ownerUserId ?? null;
   if (!ownerUserId) return null;
+
+  const detail = [input.detail || null, input.version ? `Version reviewed: ${input.version}` : null]
+    .filter(Boolean)
+    .join("\n\n");
 
   const { data, error } = await supabase
     .from("approvals")
@@ -233,7 +269,7 @@ async function ensureOwnerApprovalRequest(
       property_id: input.propertyId,
       kind: "onboarding_task",
       title: input.title,
-      detail: input.detail || null,
+      detail: detail || null,
       requested_by: userId,
       approver_id: ownerUserId,
       approver_role: "owner",
@@ -245,6 +281,143 @@ async function ensureOwnerApprovalRequest(
     .maybeSingle();
   if (error) throw error;
   return data?.id ?? null;
+}
+
+/**
+ * Send (or re-send) one task to the enrolled homeowner for approval.
+ *
+ * Used for the mood-board step after a revision: the previous decision stays
+ * in history, a fresh request records the version being reviewed, and the task
+ * returns to "awaiting owner approval". Sending alone never completes the step.
+ */
+export async function submitOwnerApproval(
+  supabase: Client,
+  userId: string,
+  input: { taskId: string; version: string; note: string },
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select("id, property_id, title, detail, due_on, is_demo, requires_owner_approval, owner_approval_status")
+    .eq("id", input.taskId)
+    .maybeSingle();
+  if (task.error) throw task.error;
+  if (!task.data) throw new Error("That task is not available.");
+  if (!task.data.requires_owner_approval) {
+    throw new Error("This step does not require a homeowner approval.");
+  }
+  if (task.data.owner_approval_status === "approved") {
+    throw new Error("The homeowner already approved this step.");
+  }
+
+  const approvalId = await ensureOwnerApprovalRequest(supabase, userId, {
+    taskId: task.data.id,
+    propertyId: task.data.property_id,
+    title: task.data.title,
+    detail: [task.data.detail ?? "", input.note].filter(Boolean).join("\n\n"),
+    dueOn: task.data.due_on,
+    isDemo: task.data.is_demo ?? false,
+    version: input.version || null,
+  });
+  if (!approvalId) {
+    throw new Error(
+      "No enrolled homeowner is linked to this home, so the approval could not be sent.",
+    );
+  }
+
+  const { error } = await supabase
+    .from("onboarding_tasks")
+    .update({ owner_approval_status: "awaiting_owner" })
+    .eq("id", task.data.id);
+  if (error) throw error;
+
+  await writeAudit({
+    actorId: userId,
+    action: "owner_approval_requested",
+    entityType: "onboarding_task",
+    entityId: task.data.id,
+    entityLabel: task.data.title,
+    after: { approvalId, version: input.version || null },
+  });
+  return { ok: true as const, approvalId };
+}
+
+/**
+ * Staff-confirmed reconciliation after a participation change.
+ *
+ * Enrollment can start or stop after tasks exist. Nothing is applied silently:
+ * the workspace surfaces the affected steps and a member of staff confirms the
+ * change here. Recorded decisions and completed work are preserved — an
+ * already-approved step keeps its approval, and a pending request is withdrawn
+ * (not deleted) when participation ends.
+ */
+export async function confirmApprovalRequirement(
+  supabase: Client,
+  userId: string,
+  input: { taskId: string; requiresOwnerApproval: boolean; reason: string },
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select("id, property_id, title, detail, due_on, is_demo, status, requires_owner_approval, owner_approval_status")
+    .eq("id", input.taskId)
+    .maybeSingle();
+  if (task.error) throw task.error;
+  if (!task.data) throw new Error("That task is not available.");
+
+  if (input.requiresOwnerApproval) {
+    const alreadyApproved = task.data.owner_approval_status === "approved";
+    const { error } = await supabase
+      .from("onboarding_tasks")
+      .update({
+        requires_owner_approval: true,
+        owner_approval_status: alreadyApproved ? "approved" : "pending",
+      })
+      .eq("id", task.data.id);
+    if (error) throw error;
+    if (!alreadyApproved) {
+      await ensureOwnerApprovalRequest(supabase, userId, {
+        taskId: task.data.id,
+        propertyId: task.data.property_id,
+        title: task.data.title,
+        detail: task.data.detail ?? "",
+        dueOn: task.data.due_on,
+        isDemo: task.data.is_demo ?? false,
+      });
+      await supabase
+        .from("onboarding_tasks")
+        .update({ owner_approval_status: "awaiting_owner" })
+        .eq("id", task.data.id);
+    }
+  } else {
+    // Withdraw only a request still waiting; decided history is untouched.
+    await supabase
+      .from("approvals")
+      .update({ status: "withdrawn", decision_note: input.reason })
+      .eq("entity_type", "onboarding_task")
+      .eq("entity_id", task.data.id)
+      .eq("status", "pending");
+    const keepApproved = task.data.owner_approval_status === "approved";
+    const { error } = await supabase
+      .from("onboarding_tasks")
+      .update({
+        requires_owner_approval: keepApproved,
+        owner_approval_status: keepApproved ? "approved" : "not_required",
+      })
+      .eq("id", task.data.id);
+    if (error) throw error;
+  }
+
+  await writeAudit({
+    actorId: userId,
+    action: "owner_approval_requirement_confirmed",
+    entityType: "onboarding_task",
+    entityId: task.data.id,
+    entityLabel: task.data.title,
+    reason: input.reason,
+    after: { requiresOwnerApproval: input.requiresOwnerApproval },
+  });
+  return { ok: true as const };
 }
 
 

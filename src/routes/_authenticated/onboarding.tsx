@@ -33,6 +33,8 @@ import {
   reviewHandoffFn,
   saveOnboardingTaskFn,
   setPropertyLifecycleFn,
+  submitOwnerApprovalFn,
+  confirmApprovalRequirementFn,
 } from "@/lib/onboarding.functions";
 import {
   LIFECYCLE,
@@ -115,6 +117,16 @@ function OnboardingWorkspace() {
     onSuccess: () => { toast.success("Exception recorded."); void refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
+  const submitApproval = useMutation({
+    mutationFn: useServerFn(submitOwnerApprovalFn),
+    onSuccess: () => { toast.success("Sent to the homeowner for approval."); void refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const confirmRequirement = useMutation({
+    mutationFn: useServerFn(confirmApprovalRequirementFn),
+    onSuccess: () => { toast.success("Requirement updated."); void refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const resolveRecord = useMutation({
     mutationFn: useServerFn(resolveExternalRecordFn),
     onSuccess: () => { toast.success("Record updated."); void refresh(); },
@@ -142,6 +154,11 @@ function OnboardingWorkspace() {
   const pendingReviews = data.handoffs.filter((h) => h.status === "requested" || h.status === "accepted_pending_live");
   const notes = current ? data.notes.filter((n) => n.property_id === current.id) : [];
   const docsEnabled = enabled("onboarding_sharepoint_docs");
+  const activeOwnerIds = new Set((data.activeOwnerProperties ?? []).map((l) => l.propertyId));
+  const activeOwner = current ? (data.activeOwnerProperties ?? []).find((l) => l.propertyId === current.id) : undefined;
+  const mismatches = current
+    ? (data.approvalMismatches ?? []).filter((m) => m.propertyId === current.id)
+    : [];
 
   return (
     <div className="space-y-8">
@@ -216,6 +233,11 @@ function OnboardingWorkspace() {
                     >
                       <span className="block font-medium">{p.name}</span>
                       <Badge variant="outline" className={`mt-1 ${meta.tone}`}>{meta.label}</Badge>
+                      {activeOwnerIds.has(p.id) && (
+                        <Badge variant="outline" className="ml-1 mt-1 border-primary/40 text-primary">
+                          Active Owner Program
+                        </Badge>
+                      )}
                     </button>
                   );
                 })}
@@ -226,7 +248,14 @@ function OnboardingWorkspace() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="font-display text-xl">{current.name}</CardTitle>
+                    <CardTitle className="flex flex-wrap items-center gap-2 font-display text-xl">
+                      {current.name}
+                      {activeOwner && (
+                        <Badge variant="outline" className="border-primary/40 text-primary">
+                          Active Owner Program
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <CardDescription>
                       Property ID {current.id.slice(0, 8)} · stage {stageLabel(current.onboarding_stage)}
                     </CardDescription>
@@ -301,6 +330,48 @@ function OnboardingWorkspace() {
                 />
 
 
+
+                {mismatches.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Participation change — confirm affected steps</CardTitle>
+                      <CardDescription>
+                        This home&apos;s Active Owner Program enrollment changed after these steps were created.
+                        Nothing is applied automatically; completed decisions and history are preserved.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {mismatches.map((m) => (
+                        <div key={m.taskId} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-sm">
+                          <div>
+                            <p className="font-medium">{m.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {m.shouldRequire
+                                ? "Enrolled now — this step should require the homeowner's approval."
+                                : "No longer enrolled — this step no longer needs a homeowner approval."}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={readOnly || !can("handoff_request")}
+                            onClick={() =>
+                              confirmRequirement.mutate({
+                                data: {
+                                  taskId: m.taskId,
+                                  requiresOwnerApproval: m.shouldRequire,
+                                  reason: "Confirmed after an Active Owner Program participation change",
+                                },
+                              })
+                            }
+                          >
+                            {m.shouldRequire ? "Require owner approval" : "Remove approval requirement"}
+                          </Button>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
 
                 <OwnerDecisionsCard
                   approvals={(data.ownerApprovals ?? []).filter((a) => a.property_id === current.id)}
@@ -404,6 +475,17 @@ function OnboardingWorkspace() {
                                   : "Evidence required — none recorded yet."}
                               </p>
                             )}
+                            {t.requires_owner_approval && (
+                              <p className="text-xs text-muted-foreground">
+                                {t.owner_approval_status === "approved"
+                                  ? "Homeowner approved."
+                                  : t.owner_approval_status === "awaiting_owner"
+                                    ? "Awaiting owner approval — sending alone does not complete this step."
+                                    : t.owner_approval_status === "changes_requested"
+                                      ? "Homeowner requested changes — revise and resubmit."
+                                      : "Homeowner approval required."}
+                              </p>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             {isOverdue(t) && <Badge variant="outline" className="bg-destructive/10 text-destructive">Overdue</Badge>}
@@ -412,6 +494,15 @@ function OnboardingWorkspace() {
                               <ExceptionDialog
                                 disabled={readOnly}
                                 onRecord={(reason) => recordException.mutate({ data: { taskId: t.id, reason } })}
+                              />
+                            )}
+                            {t.requires_owner_approval && t.owner_approval_status !== "approved" && (
+                              <ApprovalSubmitDialog
+                                disabled={readOnly || !can("handoff_request")}
+                                resubmission={t.owner_approval_status === "changes_requested"}
+                                onSubmit={(version, note) =>
+                                  submitApproval.mutate({ data: { taskId: t.id, version, note } })
+                                }
                               />
                             )}
                             {t.evidence_required && (
@@ -552,6 +643,67 @@ function OwnerDecisionsCard({
         ))}
       </CardContent>
     </Card>
+  );
+}
+
+function ApprovalSubmitDialog({
+  disabled,
+  resubmission,
+  onSubmit,
+}: {
+  disabled: boolean;
+  resubmission: boolean;
+  onSubmit: (version: string, note: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [version, setVersion] = useState("");
+  const [note, setNote] = useState("");
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v) { setVersion(""); setNote(""); }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" disabled={disabled}>
+          {resubmission ? "Resubmit for approval" : "Send for owner approval"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{resubmission ? "Resubmit to the homeowner" : "Send to the homeowner"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Version being reviewed</Label>
+            <Input
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
+              placeholder="Mood boards v2 — 12 Aug"
+            />
+          </div>
+          <Textarea
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="What changed, or what the homeowner is being asked to approve."
+          />
+          <p className="text-xs text-muted-foreground">
+            The homeowner&apos;s name, the time, their comments and this version are recorded with the decision.
+            Sending alone does not complete the step.
+          </p>
+          <Button
+            className="w-full"
+            disabled={version.trim().length < 2}
+            onClick={() => { onSubmit(version.trim(), note.trim()); setOpen(false); }}
+          >
+            {resubmission ? "Resubmit" : "Send for approval"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
