@@ -255,6 +255,17 @@ async function knownSenders(db: Db) {
   return addresses;
 }
 
+/**
+ * Marker parked in `error_message` when a ticket saved but the Outlook
+ * category could not be updated. It is the retry queue: the next pass finds
+ * the row, re-tags the message, and clears the marker. It never causes a
+ * second ticket, because the row itself is what suppresses re-creation.
+ */
+export const CATEGORY_PENDING = "recategorise_pending";
+
+/** A claim older than this is assumed abandoned (crashed pass) and reclaimable. */
+export const CLAIM_STALE_MS = 10 * 60 * 1000;
+
 export type MailboxSyncResult = {
   ok: boolean;
   scanned: number;
@@ -264,6 +275,8 @@ export type MailboxSyncResult = {
   failed: number;
   /** Messages moved from "create task" to "task created" after the ticket saved. */
   recategorised: number;
+  /** Category updates that failed earlier and succeeded on a later pass. */
+  recategoriseRetried: number;
   /** Messages moved to "task completed" because their ticket is now closed. */
   completedTagged: number;
   mailbox: string;
@@ -299,6 +312,7 @@ export async function syncMailbox(
     skipped: 0,
     failed: 0,
     recategorised: 0,
+    recategoriseRetried: 0,
     completedTagged: 0,
     mailbox: authorizedMailbox(),
     items: [],
@@ -355,12 +369,29 @@ export async function syncMailbox(
     }
 
     // Same message seen twice — a re-run, a redelivery, or a Graph id we've
-    // already handled under its internet id. Never open a second matter.
-    if (await alreadyProcessed(db, messageIds)) {
+    // already handled under its internet id. Never open a second ticket. If
+    // the earlier pass saved the ticket but could not re-tag the message, the
+    // retry happens here against the ticket we already have.
+    const prior = await priorRecord(db, messageIds);
+    const action = nextActionFor(prior);
+    if (action !== "create") {
       base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
+      if (action === "retag" && !dryRun && prior) {
+        const done = await retryCategory(db, msg, prior);
+        if (done) base.recategoriseRetried++;
+        base.items.push({
+          subject,
+          from,
+          outcome: "skipped",
+          reason: done ? "already processed · category retag retried" : "already processed · retag still failing",
+        });
+      } else {
+        base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
+      }
       continue;
     }
+
+
 
     const skip = classify(msg, known.has(from.toLowerCase()));
     if (skip) {
@@ -385,6 +416,15 @@ export async function syncMailbox(
       continue;
     }
 
+    // Claim the message BEFORE creating anything. Two passes running at once
+    // race here, and the loser is turned away by the unique index rather than
+    // going on to open a second ticket for the same email.
+    if (!(await claimMessage(db, msg, prior))) {
+      base.skipped++;
+      base.items.push({ subject, from, outcome: "skipped", reason: "claimed by another pass" });
+      continue;
+    }
+
     try {
       const result: IntakeResult = await createIntakeMatter(db, {
         subject,
@@ -401,18 +441,24 @@ export async function syncMailbox(
         base.created++;
         base.items.push({ subject, from, outcome: "created", ref: result.ref, priority: result.priority });
       }
-      await recordEvent(db, msg, result.threaded ? "threaded" : "created", null, result.ticketId);
       // Only now — the ticket exists and is saved. A failure to re-categorise
-      // never rolls back the ticket; the next pass retries the tag.
+      // never rolls back the ticket; the claim row keeps the link to it and
+      // the marker below turns the next pass into a retag-only retry.
+      let tagged = true;
       if (!result.threaded && requestsTicket(msg.categories)) {
-        const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+        tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
         if (tagged) base.recategorised++;
       }
+      await settleClaim(db, messageIds, {
+        status: result.threaded ? "threaded" : "created",
+        ticketId: result.ticketId,
+        error: tagged ? null : CATEGORY_PENDING,
+      });
     } catch (err) {
       base.failed++;
       const message = err instanceof Error ? err.message : "Intake failed";
       base.items.push({ subject, from, outcome: "failed", reason: message });
-      await recordEvent(db, msg, "failed", message, null);
+      await settleClaim(db, messageIds, { status: "failed", ticketId: null, error: message });
     }
   }
 
@@ -480,17 +526,144 @@ async function tagClosedTickets(db: Db, limit = 25): Promise<number> {
 }
 
 
-/** True when any of this message's ids has already been recorded. */
-async function alreadyProcessed(db: Db, messageIds: string[]) {
-  if (!messageIds.length) return false;
+export type MailboxRecord = {
+  id: string;
+  status: string;
+  error_message: string | null;
+  entity_id: string | null;
+  external_id: string;
+  created_at: string;
+};
+
+/** The row already held for this message under either of its ids, if any. */
+export async function priorRecord(db: Db, messageIds: string[]): Promise<MailboxRecord | null> {
+  if (!messageIds.length) return null;
   const { data } = await db
     .from("integration_events")
-    .select("id")
+    .select("id, status, error_message, entity_id, external_id, created_at")
     .eq("system", SYSTEM)
     .eq("operation", "mailbox_message")
     .in("external_id", messageIds)
+    .order("created_at", { ascending: false })
     .limit(1);
-  return Boolean(data?.length);
+  return (data?.[0] as MailboxRecord | undefined) ?? null;
+}
+
+/**
+ * A claim left behind by a pass that died mid-flight.
+ *
+ * Only a `processing` row can go stale. A settled row — created, threaded,
+ * skipped or failed — is a decision, and re-creating against it would be the
+ * duplicate we are guarding against.
+ */
+export function isStaleClaim(row: MailboxRecord, now = Date.now()) {
+  if (row.status !== "processing") return false;
+  return now - new Date(row.created_at).getTime() > CLAIM_STALE_MS;
+}
+
+/**
+ * What this pass should do with a message, given whatever record already
+ * exists for it.
+ *
+ * - `create` — nothing on file, or only an abandoned claim: open the ticket.
+ * - `retag`  — a ticket exists but the Outlook category update failed; retry
+ *              only the category. Never a second ticket.
+ * - `skip`   — a settled decision, or another pass currently holds the claim.
+ */
+export function nextActionFor(
+  prior: MailboxRecord | null,
+  now = Date.now(),
+): "create" | "retag" | "skip" {
+  if (!prior) return "create";
+  if (isStaleClaim(prior, now)) return "create";
+  if (prior.error_message === CATEGORY_PENDING && prior.entity_id) return "retag";
+  return "skip";
+}
+
+
+
+/**
+ * Takes ownership of a message before any ticket is created.
+ *
+ * The unique index on (system, operation, external_id) is what actually
+ * settles a race: whichever pass inserts first wins, and the other gets a
+ * 23505 and walks away empty-handed instead of opening a twin ticket.
+ */
+export async function claimMessage(db: Db, msg: GraphMessage, stale: MailboxRecord | null) {
+  const ids = Array.from(new Set([msg.id, msg.internetMessageId ?? ""].filter(Boolean)));
+  if (stale) {
+    // Reclaiming an abandoned attempt: re-stamp it rather than insert a twin.
+    const { error } = await db
+      .from("integration_events")
+      .update({ status: "processing", error_message: null, created_at: new Date().toISOString() })
+      .eq("system", SYSTEM)
+      .eq("operation", "mailbox_message")
+      .in("external_id", ids)
+      .eq("status", "processing");
+    return !error;
+  }
+  const { error } = await db.from("integration_events").insert(
+    ids.map((external_id) => ({
+      system: SYSTEM,
+      direction: "inbound",
+      operation: "mailbox_message",
+      external_id,
+      status: "processing",
+      resolved_at: null,
+    })),
+  );
+  if (!error) return true;
+  // 23505 means another pass claimed it a moment ago — the correct outcome.
+  if ((error as { code?: string }).code !== "23505") {
+    console.error("Could not claim mailbox message:", error.message);
+  }
+  return false;
+}
+
+/** Turns the claim into the final record of what happened to the message. */
+async function settleClaim(
+  db: Db,
+  messageIds: string[],
+  outcome: { status: string; ticketId: string | null; error: string | null },
+) {
+  const { error } = await db
+    .from("integration_events")
+    .update({
+      status: outcome.status,
+      entity_type: outcome.ticketId ? "ticket" : null,
+      entity_id: outcome.ticketId,
+      error_message: outcome.error,
+      resolved_at: outcome.status === "failed" ? null : new Date().toISOString(),
+    })
+    .eq("system", SYSTEM)
+    .eq("operation", "mailbox_message")
+    .in("external_id", messageIds);
+  if (error) console.error("Could not settle mailbox claim:", error.message);
+}
+
+/**
+ * Retries only the Outlook category for a message whose ticket already exists.
+ *
+ * No ticket is created or touched here — the row's `entity_id` proves one was
+ * already saved, which is precisely why this path is a retag and nothing more.
+ */
+export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRecord) {
+  if (!prior.entity_id) return false;
+  if (!requestsTicket(msg.categories)) {
+    // Someone re-tagged it by hand; nothing left to retry.
+    await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
+    return false;
+  }
+  const done = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+  if (done) {
+    await db
+      .from("integration_events")
+      .update({ error_message: null, resolved_at: new Date().toISOString() })
+      .eq("system", SYSTEM)
+      .eq("operation", "mailbox_message")
+      .in("external_id", [msg.id, msg.internetMessageId ?? ""].filter(Boolean));
+  }
+  return done;
 }
 
 async function recordEvent(
