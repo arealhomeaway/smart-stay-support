@@ -169,7 +169,9 @@ function CoachPage() {
           created_by: userId,
           record_owner: userId,
           accountable_owner: userId,
-          current_action_owner: userId,
+          // current_action_owner / assigned_to are resolved server-side by
+          // the tickets_auto_assign trigger from functional_role_code — see
+          // tickets.new.tsx for the same change and why.
           status: "open",
         })
         .select("id")

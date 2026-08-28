@@ -160,7 +160,12 @@ function TicketDetail() {
     const { data: userData } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("tickets")
-      .update({ acknowledged_at: now, current_action_owner: userData.user?.id ?? null })
+      .update({
+        acknowledged_at: now,
+        current_action_owner: userData.user?.id ?? null,
+        assignment_source: "manual",
+        assignment_note: null,
+      })
       .eq("id", ticketId);
     if (error) {
       toast.error(error.message);
