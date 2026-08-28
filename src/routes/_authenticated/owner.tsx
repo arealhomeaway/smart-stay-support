@@ -183,10 +183,14 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
     entries,
     badges,
     reportedMinutes,
+    approvedMinutes,
+    pendingReviewMinutes,
+    returnedMinutes,
     onboardingMinutes,
     operationalMinutes,
     snapshot,
   } = data;
+
   const [timeTarget, setTimeTarget] = useState<TimeTarget | null>(null);
   const [answering, setAnswering] = useState<(typeof reviews)[number] | null>(null);
   const [openingMatter, setOpeningMatter] = useState(false);
