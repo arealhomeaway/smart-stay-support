@@ -2025,6 +2025,7 @@ export type Database = {
           owner_decision: string | null
           owner_response: string | null
           phase: string
+          photos: Json
           program_id: string
           property_id: string | null
           recommendation: string | null
@@ -2056,6 +2057,7 @@ export type Database = {
           owner_decision?: string | null
           owner_response?: string | null
           phase: string
+          photos?: Json
           program_id: string
           property_id?: string | null
           recommendation?: string | null
@@ -2087,6 +2089,7 @@ export type Database = {
           owner_decision?: string | null
           owner_response?: string | null
           phase?: string
+          photos?: Json
           program_id?: string
           property_id?: string | null
           recommendation?: string | null
