@@ -241,16 +241,26 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
   });
 
   const included = properties.filter((x) => x.inclusionStatus === "included");
+  // An entry that a later entry amends is superseded: only the amending entry
+  // carries the current minutes, so the pair can never be counted twice.
+  const supersededIds = new Set(
+    entryRows.map((e) => e.amends_entry_id).filter((id): id is string => Boolean(id)),
+  );
   // A returned entry is waiting on the homeowner, so it does not count yet.
   // Nothing here ever adds, estimates or credits time on the owner's behalf.
-  const countable = entryRows.filter((e) => e.review_status !== "returned");
+  const countable = entryRows.filter(
+    (e) => e.review_status !== "returned" && !supersededIds.has(e.id),
+  );
   const reported = combinedMinutes(countable);
   const onboardingMinutes = combinedMinutes(countable.filter((e) => e.phase === "onboarding"));
   const approvedMinutes = combinedMinutes(countable.filter((e) => e.review_status === "approved"));
   const pendingReviewMinutes = combinedMinutes(
     countable.filter((e) => e.review_status !== "approved"),
   );
-  const returnedMinutes = combinedMinutes(entryRows.filter((e) => e.review_status === "returned"));
+  const returnedMinutes = combinedMinutes(
+    entryRows.filter((e) => e.review_status === "returned" && !supersededIds.has(e.id)),
+  );
+
 
   const snapshot = progressSnapshot({
     status: p.status as ProgramStatus,
