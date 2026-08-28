@@ -428,7 +428,7 @@ export async function reportPdf(report: OwnerReport) {
     for (const e of report.outsidePeriod) {
       space(12);
       text(e.date, { size: 8, x: cols[0] });
-      text(wrap(e.activity, 230, 8)[0] ?? "", { size: 8, x: cols[1] });
+      text(fit(e.activity, 66), { size: 8, x: cols[1] });
       text(String(e.hours), { size: 8, x: cols[2] });
       text("—", { size: 8, x: cols[3] });
       text("Outside period", { size: 8, x: cols[4], color: MUTED });
