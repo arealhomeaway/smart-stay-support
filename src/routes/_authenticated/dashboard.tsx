@@ -39,8 +39,10 @@ function Dashboard() {
           .from("tickets")
           .select("*, properties(name, nickname)")
           .eq("is_demo", demoMode)
+          .is("archived_at", null)
           .order("reported_at", { ascending: false })
           .limit(200),
+
         supabase
           .from("properties")
           .select("id", { count: "exact", head: true })
