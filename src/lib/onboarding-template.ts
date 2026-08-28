@@ -458,8 +458,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     role: "Project Manager",
     detail: "Instructions:\n Please create and schedule a work order in Breezeway to have the Pre-Work Inspection done at the property.\n\n Use the New House Setup - Pre-Work Inspection template in Breezeway, which contains the directions below\n\n (This template is found under the Inspection department)\n\n This should occur the same day as the lock and security package installation (Ring cameras, myQ, etc)",
     blocksHandoff: true,
-    anchor: "actual_access",
-    offsetDays: 0,
+    // Source rule is relative to another task ("same day as the lock and
+    // security package installation"), not to closing or access. Task-relative
+    // anchors are not supported, so the date is left unset.
     breezewayTemplateId: "208326",
     sortOrder: 450,
   },
