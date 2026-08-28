@@ -391,12 +391,15 @@ export async function confirmApprovalRequirement(
     }
   } else {
     // Withdraw only a request still waiting; decided history is untouched.
-    await supabase
+    const withdrawn = await supabase
       .from("approvals")
       .update({ status: "withdrawn", decision_note: input.reason })
       .eq("entity_type", "onboarding_task")
       .eq("entity_id", task.data.id)
-      .eq("status", "pending");
+      .eq("status", "pending")
+      .select("id");
+    if (withdrawn.error) throw withdrawn.error;
+
     const keepApproved = task.data.owner_approval_status === "approved";
     const { error } = await supabase
       .from("onboarding_tasks")
