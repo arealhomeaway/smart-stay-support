@@ -22,6 +22,7 @@ import { useFeatureFlags } from "@/lib/feature-flags";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
+import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import {
   addOnboardingNoteFn,
@@ -292,6 +293,14 @@ function OnboardingWorkspace() {
                   canEdit={!readOnly && can("handoff_request")}
                   onChange={() => void refresh()}
                 />
+
+                <TemplatePanel
+                  propertyId={current.id}
+                  propertyName={current.name}
+                  readOnly={readOnly || !can("handoff_request")}
+                />
+
+
 
                 <OwnerDecisionsCard
                   approvals={(data.ownerApprovals ?? []).filter((a) => a.property_id === current.id)}

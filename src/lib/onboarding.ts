@@ -51,19 +51,39 @@ export function lifecycleMeta(value: string | null | undefined) {
   return LIFECYCLE.find((l) => l.value === value) ?? LIFECYCLE[3]!;
 }
 
+/**
+ * The real ARHA onboarding phases, taken from the Asana project plan export.
+ * Legacy stage values from the earlier sample template still resolve a label
+ * so existing records keep reading correctly.
+ */
 export const ONBOARDING_STAGES = [
-  { value: "intake", label: "Intake & agreement" },
-  { value: "records", label: "Records & systems" },
-  { value: "readiness", label: "Property readiness" },
-  { value: "listing", label: "Listing & launch prep" },
-  { value: "verification", label: "Inspection & verification" },
+  { value: "post_contract", label: "Post contract — pre-inspection" },
+  { value: "phase1_inspection", label: "Phase 1 — Inspection / repair estimates" },
+  { value: "phase2_estimates", label: "Phase 2 — Estimates & installation purchases" },
+  { value: "phase3_work_orders", label: "Phase 3 — Plan / schedule work orders" },
+  { value: "phase4_purchasing", label: "Phase 4 — Purchasing / finalize work orders" },
+  { value: "phase5_monitor", label: "Phase 5 — Monitor repairs / setup / staging" },
+  { value: "phase6_handoff", label: "Phase 6 — Cost analysis / photos / handoff" },
 ] as const;
 
 export type OnboardingStage = (typeof ONBOARDING_STAGES)[number]["value"];
 
+const LEGACY_STAGE_LABELS: Record<string, string> = {
+  intake: "Intake & agreement",
+  records: "Records & systems",
+  readiness: "Property readiness",
+  listing: "Listing & launch prep",
+  verification: "Inspection & verification",
+};
+
 export function stageLabel(value: string | null | undefined) {
-  return ONBOARDING_STAGES.find((s) => s.value === value)?.label ?? "Intake & agreement";
+  return (
+    ONBOARDING_STAGES.find((s) => s.value === value)?.label ??
+    LEGACY_STAGE_LABELS[value ?? ""] ??
+    ONBOARDING_STAGES[0].label
+  );
 }
+
 
 export const TASK_STATUSES = ["open", "blocked", "complete", "carryover"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
