@@ -68,10 +68,38 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     .order("created_at", { ascending: false })
     .limit(200);
 
+  // Active Owner Program participation, per owner/property relationship.
+  const { activeOwnerLinks } = await import("./active-owner.server");
+  const { FULL_FURNISHING_TEMPLATE } = await import("./onboarding-template");
+  const participation = await activeOwnerLinks(
+    supabase,
+    (props.data ?? []).map((p) => p.id),
+  );
+  const conditionalTitles = new Set(
+    FULL_FURNISHING_TEMPLATE.filter((t) => t.ownerApprovalWhenActiveOwner).map((t) =>
+      t.title.trim().toLowerCase(),
+    ),
+  );
+  // Participation can change after tasks exist. Surface the affected steps for
+  // staff confirmation instead of silently adding or waiving an approval.
+  const approvalMismatches = (tasks.data ?? [])
+    .filter((t) => conditionalTitles.has(t.title.trim().toLowerCase()))
+    .filter((t) => t.owner_approval_status !== "approved")
+    .map((t) => ({
+      taskId: t.id,
+      propertyId: t.property_id,
+      title: t.title,
+      requiresNow: Boolean(t.requires_owner_approval),
+      shouldRequire: participation.has(t.property_id),
+    }))
+    .filter((m) => m.requiresNow !== m.shouldRequire);
+
   return {
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
     tasks: tasks.data ?? [],
+    activeOwnerProperties: [...participation.values()],
+    approvalMismatches,
     handoffs: handoffs.data ?? [],
     people: people.data ?? [],
     notes: notes.data ?? [],
