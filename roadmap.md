@@ -1,11 +1,13 @@
 # Resolve roadmap
 
-## Active Owner acceptance (in progress)
-- [x] Fresh demo owner invite redemption (Riley Alder)
+## Active Owner acceptance (complete)
+- [x] Fresh demo owner invite redemption (Riley Alder, code QATP-7742, redeemed by a new account)
 - [x] Activate Riley's demo program clock (started 2026-08-01, ends 2026-10-29)
-- [ ] Sign-out / sign-in persistence check
-- [ ] Submit -> approve, and return -> correct -> approve, no double counting
-- [ ] Hours labels: "Reported hours" (pending + approved) vs "ARHA-approved hours"
+- [x] Sign-out / sign-in persistence check
+- [x] Submit -> approve, and return -> correct -> approve, no double counting
+- [x] Duplicate correction prevented (returned entry shows "Corrected already", no second correction)
+- [x] Hours labels: "Reported hours" (pending + approved) vs "ARHA-approved hours"
+
 
 ## New: downloadable Hours & Participation Report (owner self-serve)
 - [x] Server-side report builder from saved participation records (owner-scoped)
