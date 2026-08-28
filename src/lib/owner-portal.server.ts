@@ -548,7 +548,11 @@ export async function recordOwnerApproval(
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
       .from("onboarding_tasks")
-      .update({ owner_approval_status: input.decision === "approved" ? "approved" : "declined" })
+      // A requested change returns the step to the team for revision and
+      // resubmission; it never completes and never waives the requirement.
+      .update({
+        owner_approval_status: input.decision === "approved" ? "approved" : "changes_requested",
+      })
       .eq("id", current.data.entity_id);
   }
 
