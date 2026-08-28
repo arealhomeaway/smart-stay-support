@@ -764,7 +764,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     detail: "Instructions:\n Following close, send the owner a congratulatory email that contains rough timelines for the home setup process. You will use the project plan dates for this, so be sure the plan has been updated and tasks spread across the setup timeframe in a realistic fashion. Be sure not to make guarantees on any deadlines, and keep the ending date somewhat open.\n REMEMBER TO UPDATE THE DATES IN THE BELOW SAMPLE EMAIL AND MODIFY BULLETS/LANGUAGE TO FIT YOUR PROPERTY.\n CC the Onboarding Manager on the correspondence.\n\nSample email:\n\nGood morning, Owner\n \nCongratulations on closing! It's time for us to get started in earnest on your new home! \n \nWhat's Next?\nOver the next 2-3 weeks, we will be working diligently on the following items:\n \nWeek 1 (March 18th – 22nd)\n \n Home access/security equipment installation - Doorbell and spotlight cameras will be installed at the …",
     blocksHandoff: true,
     anchor: "actual_closing",
-    offsetDays: 1,
+    offsetDays: 0,
     sortOrder: 760,
   },
   {
