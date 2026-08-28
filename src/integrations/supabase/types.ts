@@ -1262,6 +1262,8 @@ export type Database = {
           depends_on: string[]
           detail: string | null
           due_on: string | null
+          due_on_overridden: boolean
+          due_on_source: string | null
           evidence_note: string | null
           evidence_required: boolean
           exception_at: string | null
@@ -1274,6 +1276,8 @@ export type Database = {
           parent_task_id: string | null
           property_id: string
           requires_owner_approval: boolean
+          schedule_anchor: string | null
+          schedule_offset_days: number | null
           sort_order: number
           stage: string
           status: string
@@ -1295,6 +1299,8 @@ export type Database = {
           depends_on?: string[]
           detail?: string | null
           due_on?: string | null
+          due_on_overridden?: boolean
+          due_on_source?: string | null
           evidence_note?: string | null
           evidence_required?: boolean
           exception_at?: string | null
@@ -1307,6 +1313,8 @@ export type Database = {
           parent_task_id?: string | null
           property_id: string
           requires_owner_approval?: boolean
+          schedule_anchor?: string | null
+          schedule_offset_days?: number | null
           sort_order?: number
           stage?: string
           status?: string
@@ -1328,6 +1336,8 @@ export type Database = {
           depends_on?: string[]
           detail?: string | null
           due_on?: string | null
+          due_on_overridden?: boolean
+          due_on_source?: string | null
           evidence_note?: string | null
           evidence_required?: boolean
           exception_at?: string | null
@@ -1340,6 +1350,8 @@ export type Database = {
           parent_task_id?: string | null
           property_id?: string
           requires_owner_approval?: boolean
+          schedule_anchor?: string | null
+          schedule_offset_days?: number | null
           sort_order?: number
           stage?: string
           status?: string
@@ -2443,6 +2455,8 @@ export type Database = {
         Row: {
           access_notes: string | null
           active: boolean
+          actual_access_on: string | null
+          actual_closing_on: string | null
           address_line1: string | null
           archive_reason: string | null
           archived_at: string | null
@@ -2470,6 +2484,7 @@ export type Database = {
           onboarding_started_at: string | null
           ownerrez_property_id: string | null
           ownerrez_synced_at: string | null
+          planned_closing_on: string | null
           postal_code: string | null
           quarterly_review_due_on: string
           state: string | null
@@ -2480,6 +2495,8 @@ export type Database = {
         Insert: {
           access_notes?: string | null
           active?: boolean
+          actual_access_on?: string | null
+          actual_closing_on?: string | null
           address_line1?: string | null
           archive_reason?: string | null
           archived_at?: string | null
@@ -2507,6 +2524,7 @@ export type Database = {
           onboarding_started_at?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
+          planned_closing_on?: string | null
           postal_code?: string | null
           quarterly_review_due_on?: string
           state?: string | null
@@ -2517,6 +2535,8 @@ export type Database = {
         Update: {
           access_notes?: string | null
           active?: boolean
+          actual_access_on?: string | null
+          actual_closing_on?: string | null
           address_line1?: string | null
           archive_reason?: string | null
           archived_at?: string | null
@@ -2544,6 +2564,7 @@ export type Database = {
           onboarding_started_at?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
+          planned_closing_on?: string | null
           postal_code?: string | null
           quarterly_review_due_on?: string
           state?: string | null
