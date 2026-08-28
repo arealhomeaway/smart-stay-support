@@ -53,7 +53,7 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
     onMutate: (v) => setBusy(v.approvalId),
     onSettled: () => setBusy(null),
     onSuccess: (_r, v) => {
-      toast.success(v.decision === "approved" ? "Decision recorded — thank you." : "Sent back with your note.");
+      toast.success(v.decision === "approved" ? "Decision recorded — thank you." : "Sent back to the team with your note.");
       setNotes((n) => ({ ...n, [v.approvalId]: "" }));
       void qc.invalidateQueries({ queryKey: ["owner-approvals"] });
     },
@@ -90,6 +90,11 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">{KIND_LABEL[a.kind] ?? a.kind}</Badge>
                 {a.property_name && <span className="text-xs text-muted-foreground">{a.property_name}</span>}
+                {a.active_owner && (
+                  <Badge variant="outline" className="border-primary/40 text-primary">
+                    Active Owner Program
+                  </Badge>
+                )}
                 {amount && <span className="text-sm font-medium">{amount}</span>}
                 {a.due_on && <span className="text-xs text-muted-foreground">Needed by {a.due_on}</span>}
               </div>
@@ -108,7 +113,7 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
               <Textarea
                 className="mt-3"
                 rows={2}
-                placeholder="Add a note (required if you send this back)"
+                placeholder="Add a note (required if you request changes)"
                 value={notes[a.id] ?? ""}
                 onChange={(e) => setNotes((n) => ({ ...n, [a.id]: e.target.value }))}
                 disabled={readOnly}
@@ -129,7 +134,7 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
                   onClick={() => submit.mutate({ approvalId: a.id, decision: "declined" })}
                 >
                   <RotateCcw className="mr-1 h-4 w-4" aria-hidden="true" />
-                  Send back
+                  Request changes
                 </Button>
               </div>
               {readOnly && (
@@ -149,7 +154,7 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
                 <div key={a.id} className="rounded-md border border-border/60 p-3 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={a.status === "approved" ? "default" : "outline"}>
-                      {a.status === "approved" ? "Approved" : "Sent back"}
+                      {a.status === "approved" ? "Approved" : "Changes requested"}
                     </Badge>
                     <span className="font-medium">{a.title}</span>
                     {a.decided_at && (
