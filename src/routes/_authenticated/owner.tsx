@@ -269,6 +269,24 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
               <p className="font-medium">{formatHours(operationalMinutes)}</p>
             </div>
           </div>
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Approved by ARHA</p>
+              <p className="font-medium">{formatHours(approvedMinutes)}</p>
+              <p className="text-xs text-muted-foreground">Counts toward your progress</p>
+            </div>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Awaiting review</p>
+              <p className="font-medium">{formatHours(pendingReviewMinutes)}</p>
+              <p className="text-xs text-muted-foreground">Counts toward your progress</p>
+            </div>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Returned to you</p>
+              <p className="font-medium">{formatHours(returnedMinutes)}</p>
+              <p className="text-xs text-muted-foreground">Not counted until corrected</p>
+            </div>
+          </div>
+
           <p className="text-xs text-muted-foreground">
             All hours are self-reported. ARHA never estimates, prefills or auto-calculates your time.
           </p>
