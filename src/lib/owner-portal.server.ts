@@ -453,6 +453,8 @@ export type OwnerApproval = {
   evidence_url: string | null;
   property_id: string | null;
   property_name: string | null;
+  /** Home is enrolled in the 90-Day Owner Participation Program. */
+  active_owner: boolean;
   created_at: string;
 };
 
@@ -478,6 +480,8 @@ export async function loadOwnerApprovals(supabase: Client, userId: string): Prom
     const props = await supabase.from("properties").select("id, name").in("id", ids);
     for (const p of props.data ?? []) names.set(p.id, p.name);
   }
+  const { activeOwnerLinks } = await import("./active-owner.server");
+  const participation = ids.length ? await activeOwnerLinks(supabase, ids) : new Map();
   return rows.map((r) => ({
     id: r.id,
     kind: r.kind,
@@ -492,6 +496,7 @@ export async function loadOwnerApprovals(supabase: Client, userId: string): Prom
     evidence_url: r.evidence_url,
     property_id: r.property_id,
     property_name: r.property_id ? (names.get(r.property_id) ?? null) : null,
+    active_owner: Boolean(r.property_id && participation.has(r.property_id)),
     created_at: r.created_at,
   }));
 }
