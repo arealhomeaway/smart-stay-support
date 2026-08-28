@@ -122,7 +122,11 @@ const ownerGroups: NavGroup[] = [
   { label: "My home", items: [{ to: "/owner", label: "My home", icon: KeyRound, tour: "owner" }] },
 ];
 
+/** Unfinished general tour/welcome popup — hidden until role-specific tours land. */
+const SHOW_GENERAL_TOUR = false;
+
 export function AppShell({ children }: { children: ReactNode }) {
+
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
