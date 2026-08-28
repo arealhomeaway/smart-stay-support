@@ -231,6 +231,10 @@ export type MailboxSyncResult = {
   threaded: number;
   skipped: number;
   failed: number;
+  /** Messages moved from "create task" to "task created" after the ticket saved. */
+  recategorised: number;
+  /** Messages moved to "task completed" because their ticket is now closed. */
+  completedTagged: number;
   mailbox: string;
   items: {
     subject: string;
