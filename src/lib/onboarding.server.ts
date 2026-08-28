@@ -277,7 +277,6 @@ export async function reviewHandoff(
   },
 ) {
   const { nextGateStep } = await import("./onboarding");
-  await assertCap(supabase, userId, "is_supervisor");
   if (input.decision === "returned" && !input.corrections.trim()) {
     throw new Error("Returning a handoff requires the corrections that are needed.");
   }
@@ -294,6 +293,27 @@ export async function reviewHandoff(
   if (!OPEN.includes(handoff.data.status)) throw new Error("This handoff was already closed.");
 
   const step = (handoff.data.gate_step ?? "kati_review") as string;
+
+  // Supervisors may record any gate. The assigned onboarding lead for THIS
+  // home may record only its own onboarding review — by project assignment,
+  // never by name and never for every onboarding user.
+  const { data: isSupervisor } = await supabase.rpc("is_supervisor", { _user_id: userId });
+  if (!isSupervisor) {
+    const lead = await supabase
+      .from("properties")
+      .select("onboarding_owner")
+      .eq("id", handoff.data.property_id)
+      .maybeSingle();
+    const { data: isOnboarding } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "onboarding",
+    });
+    const isAssignedLead = Boolean(isOnboarding) && lead.data?.onboarding_owner === userId;
+    if (!isAssignedLead || step !== "kati_review") {
+      throw new Error("You do not have access to record this review step.");
+    }
+  }
+
 
   const now = new Date().toISOString();
 
