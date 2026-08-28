@@ -32,5 +32,12 @@
 - [x] Manifest + head confirmed; patch applies clean over current HEAD (only roadmap.md overlaps)
 - [x] Full typecheck / production build / 46 tests run in isolated scratch copy
 - [x] Migration + concurrent-duplicate constraint verified on a disposable local Postgres (not the live DB)
-- [ ] Blocker: `@types/bun` reference in src/lib/__tests__/bun-env.d.ts breaks 3 auto-generated Supabase files (fetch.preconnect)
-- Not merged, migration not applied, nothing published, no events replayed
+- [x] Resolved (head 4569800): global bun reference replaced with a scoped `declare module "bun:test"`; full typecheck clean, 46/46 tests, production build passes in the isolated copy
+- Not merged, nothing published, no events replayed
+
+## PR review round 3 (head 4569800)
+- [x] Only bun.lock / package.json / src/lib/__tests__/bun-env.d.ts changed; all other PR files byte-identical to round 2
+- [x] Migration `20260828193000_...sql` APPLIED to the live database (additive columns + indexes; published receiver unaffected)
+- [ ] Awaiting merge/sync + publish of the receiver code
+- Do NOT run "Retry failed lookups" as release verification — needs separate approval
+

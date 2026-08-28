@@ -185,6 +185,9 @@ export type Database = {
           outcome: string
           reason: string | null
           received_at: string
+          recovered_at: string | null
+          retry_count: number
+          retryable: boolean
           task_id: number | null
           task_updated_at: string | null
         }
@@ -196,6 +199,9 @@ export type Database = {
           outcome: string
           reason?: string | null
           received_at?: string
+          recovered_at?: string | null
+          retry_count?: number
+          retryable?: boolean
           task_id?: number | null
           task_updated_at?: string | null
         }
@@ -207,6 +213,9 @@ export type Database = {
           outcome?: string
           reason?: string | null
           received_at?: string
+          recovered_at?: string | null
+          retry_count?: number
+          retryable?: boolean
           task_id?: number | null
           task_updated_at?: string | null
         }
