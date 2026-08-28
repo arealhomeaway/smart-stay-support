@@ -16,6 +16,7 @@ import {
 } from "@/lib/owner-portal.functions";
 import { useRole } from "@/hooks/useRole";
 import { ReviewPhotos } from "@/components/ReviewPhotos";
+import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import type { ReviewPhoto } from "@/lib/owner-participation";
 import { alertLabel, relativeTime } from "@/lib/owner-notify";
 import { DECISION_PATHS } from "@/lib/owner-program";
@@ -332,6 +333,8 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
           })}
         </CardContent>
       </Card>
+
+      <OwnerApprovalPanel readOnly={readOnly} />
 
       <Card>
         <CardHeader className="pb-3">
