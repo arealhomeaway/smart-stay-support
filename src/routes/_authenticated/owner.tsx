@@ -529,38 +529,71 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Your participation log</CardTitle>
           <CardDescription>
-            {entries.length} entries recorded. Entries cannot be edited once saved — ask your ARHA contact to
-            record a correction.
+            {entries.length} entries recorded. A saved entry is never edited. If your ARHA contact returns one,
+            you can correct it here — the original stays in your history and only the corrected entry counts.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-1">
           {entries.slice(0, 15).map((e) => (
-            <div key={e.id} className="flex flex-wrap gap-2 border-b border-border/60 py-1.5 text-sm last:border-0">
-              <span className="text-muted-foreground">{e.entry_date}</span>
-              <span>{e.activity}</span>
-              {e.propertyIds.length > 1 && (
-                <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-                  Shared · {e.propertyIds.length} homes
-                </Badge>
+            <div key={e.id} className="border-b border-border/60 py-1.5 text-sm last:border-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground">{e.entry_date}</span>
+                <span>{e.activity}</span>
+                {e.propertyIds.length > 1 && (
+                  <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                    Shared · {e.propertyIds.length} homes
+                  </Badge>
+                )}
+                {e.superseded && (
+                  <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                    Superseded · not counted
+                  </Badge>
+                )}
+                {e.amends_entry_id && (
+                  <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                    Correction
+                  </Badge>
+                )}
+                {e.review_status && e.review_status !== "submitted" && (
+                  <Badge
+                    variant="outline"
+                    className={
+                      e.review_status === "approved"
+                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+                        : "border-amber-500/20 bg-amber-500/10 text-amber-700"
+                    }
+                  >
+                    {e.review_status}
+                  </Badge>
+                )}
+                <span className="ml-auto font-medium">{e.minutes} min</span>
+              </div>
+              {e.review_status === "returned" && (
+                <div className="mt-1 flex flex-wrap items-center gap-2 rounded-md bg-muted/60 px-2 py-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    {e.review_note
+                      ? `Returned with a note: ${e.review_note}`
+                      : "Returned for a correction."}
+                  </span>
+                  {!readOnly && !e.superseded && (
+                    <Button size="sm" variant="outline" className="ml-auto" onClick={() => setCorrecting(e)}>
+                      Correct and resubmit
+                    </Button>
+                  )}
+                  {e.superseded && (
+                    <span className="ml-auto text-xs text-muted-foreground">Corrected already</span>
+                  )}
+                </div>
               )}
-              {e.review_status && e.review_status !== "submitted" && (
-                <Badge
-                  variant="outline"
-                  className={
-                    e.review_status === "approved"
-                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-                      : "border-amber-500/20 bg-amber-500/10 text-amber-700"
-                  }
-                  title={e.review_note ?? undefined}
-                >
-                  {e.review_status}
-                </Badge>
-              )}
-              <span className="ml-auto font-medium">{e.minutes} min</span>
             </div>
           ))}
         </CardContent>
       </Card>
+
+      {!readOnly && correcting && (
+        <CorrectEntryDialog entry={correcting} onClose={() => setCorrecting(null)} onSaved={onChange} />
+      )}
+
 
       {!readOnly && timeTarget && (
         <LogTimeDialog
