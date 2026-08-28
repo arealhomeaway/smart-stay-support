@@ -365,6 +365,12 @@ export async function syncMailbox(
         base.items.push({ subject, from, outcome: "created", ref: result.ref, priority: result.priority });
       }
       await recordEvent(db, msg, result.threaded ? "threaded" : "created", null, result.ticketId);
+      // Only now — the ticket exists and is saved. A failure to re-categorise
+      // never rolls back the ticket; the next pass retries the tag.
+      if (!result.threaded && requestsTicket(msg.categories)) {
+        const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+        if (tagged) base.recategorised++;
+      }
     } catch (err) {
       base.failed++;
       const message = err instanceof Error ? err.message : "Intake failed";
