@@ -20,4 +20,23 @@
 
 ## Breezeway
 - [x] Webhook label fix (task lookup failures, not signature failures)
+- [x] Confirmed: the nine historical failures are `verify_failed` (Breezeway task
+      re-fetch failing, e.g. HTTP 500), not signature/auth rejections. Historical
+      log attribution beyond the code path is unverified — no authorized log
+      access in this pass.
+- [x] Verify_failed events now capture the task id and a transient/permanent
+      classification, so a real failure is attributable instead of anonymous
+- [x] Bounded, manual recovery pass for transient lookup failures (batch-limited,
+      per-event retry cap, reuses the exact live scope/dedupe path) — "Retry
+      failed lookups" in the admin panel. Requires the prepared-but-not-applied
+      migration `20260828193000_...sql` before the retryable/retry_count/
+      recovered_at columns exist.
+- [x] Closed a concurrent-duplicate-delivery gap: two identical deliveries could
+      both pass the "not yet processed" check and both record `processed`. A
+      unique index (same migration) plus a conflict-aware insert now force the
+      loser to record as `duplicate` instead.
+- [x] Regression tests added (`bun test src/lib/__tests__`) for valid pilot
+      events, wrong/missing secret, malformed payloads, other company/property,
+      duplicate/stale, concurrent duplicate delivery, transient vs permanent
+      lookup failures, bounded recovery/retry cap, and "no business writes".
 - Fitzgerald-only preview processing stays unchanged

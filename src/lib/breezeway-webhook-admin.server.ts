@@ -102,7 +102,14 @@ export async function checkReceiverReachable(): Promise<ReachabilityResult> {
 /* Fixture self-test                                                   */
 /* ------------------------------------------------------------------ */
 
-export type FixtureCase = { name: string; expected: WebhookOutcome; actual: WebhookOutcome; passed: boolean };
+export type FixtureCase = {
+  name: string;
+  expected: WebhookOutcome;
+  actual: WebhookOutcome;
+  passed: boolean;
+  /** Set only for verify_failed cases: whether the failure was classified retryable. */
+  retryable?: boolean;
+};
 
 /**
  * Exercises valid / invalid / duplicate / older payloads end to end against a
@@ -124,7 +131,13 @@ export async function runWebhookFixtureTests(): Promise<{ cases: FixtureCase[]; 
   const cases: FixtureCase[] = [];
   const run = async (name: string, expected: WebhookOutcome, body: unknown, verify: VerifyTask) => {
     const result = await processBreezewayWebhook(body, { isFixture: true, verifyTask: verify });
-    cases.push({ name, expected, actual: result.outcome, passed: result.outcome === expected });
+    cases.push({
+      name,
+      expected,
+      actual: result.outcome,
+      passed: result.outcome === expected,
+      ...(result.retryable !== undefined ? { retryable: result.retryable } : {}),
+    });
   };
 
   const pilotVerifier = verifier(PILOT_HOME_ID, PILOT_COMPANY_ID, newer);
@@ -156,6 +169,20 @@ export async function runWebhookFixtureTests(): Promise<{ cases: FixtureCase[]; 
     { webhook_type: "task", task_id: FIXTURE_TASK_ID + 3 },
     async () => null,
   );
+  await run(
+    "Breezeway task lookup returns a server error (e.g. the nine historical failures)",
+    "verify_failed",
+    { webhook_type: "task", task_id: FIXTURE_TASK_ID + 4 },
+    async () => {
+      const { BreezewayError } = await import("./breezeway.server");
+      throw new BreezewayError(500, "Breezeway is returning a server error.");
+    },
+  );
+
+  const transientCase = cases.find((c) => c.name.startsWith("Breezeway task lookup returns a server error"));
+  if (transientCase && transientCase.actual === "verify_failed" && transientCase.retryable !== true) {
+    transientCase.passed = false;
+  }
 
   return { cases, allPassed: cases.every((c) => c.passed) };
 }
