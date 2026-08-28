@@ -293,6 +293,14 @@ function OnboardingWorkspace() {
                   onChange={() => void refresh()}
                 />
 
+                <TemplatePanel
+                  propertyId={current.id}
+                  propertyName={current.name}
+                  readOnly={readOnly || !can("handoff_request")}
+                />
+
+
+
                 <OwnerDecisionsCard
                   approvals={(data.ownerApprovals ?? []).filter((a) => a.property_id === current.id)}
                 />
