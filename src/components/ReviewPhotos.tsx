@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export type ReviewPhoto = { url: string; caption?: string | null };
-
-/** Parses the `photos` jsonb column into a safe list. */
-export function parseReviewPhotos(raw: unknown): ReviewPhoto[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((p) => (typeof p === "string" ? { url: p } : (p as ReviewPhoto)))
-    .filter((p) => p && typeof p.url === "string" && p.url.length > 0);
-}
+import type { ReviewPhoto } from "@/lib/owner-participation";
 
 /**
  * Photo evidence attached to an owner decision. Thumbnails open full size so an
