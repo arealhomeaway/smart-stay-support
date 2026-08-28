@@ -393,9 +393,9 @@ export async function reportPdf(report: OwnerReport) {
   space(8);
   const cols = [M, M + 62, M + 296, M + 340, M + 432] as const;
   const fit = (s: string, maxWidth: number, size = 8) => {
-    if (regular.widthOfTextAtSize(s, size) <= maxWidth) return s;
+    if (font.widthOfTextAtSize(s, size) <= maxWidth) return s;
     let out = s;
-    while (out.length > 1 && regular.widthOfTextAtSize(`${out}...`, size) > maxWidth) {
+    while (out.length > 1 && font.widthOfTextAtSize(`${out}...`, size) > maxWidth) {
       out = out.slice(0, -1);
     }
     return `${out}...`;
@@ -414,13 +414,13 @@ export async function reportPdf(report: OwnerReport) {
   for (const e of report.entries) {
     space(12);
     text(e.date, { size: 8, x: cols[0] });
-    text(fit(e.activity, 66), { size: 8, x: cols[1] });
+    text(fit(e.activity, 226), { size: 8, x: cols[1] });
     text(String(e.hours), { size: 8, x: cols[2] });
-    text(e.shared ? `${e.properties.length} shared` : fit(e.properties[0] ?? "—", 18), {
+    text(e.shared ? `${e.properties.length} shared` : fit(e.properties[0] ?? "—", 86), {
       size: 8,
       x: cols[3],
     });
-    text(fit(shortStatus(e.status), 20), {
+    text(fit(shortStatus(e.status), 84), {
       size: 8,
       x: cols[4],
       color: e.counts ? INK : MUTED,
@@ -436,7 +436,7 @@ export async function reportPdf(report: OwnerReport) {
     for (const e of report.outsidePeriod) {
       space(12);
       text(e.date, { size: 8, x: cols[0] });
-      text(fit(e.activity, 66), { size: 8, x: cols[1] });
+      text(fit(e.activity, 226), { size: 8, x: cols[1] });
       text(String(e.hours), { size: 8, x: cols[2] });
       text("—", { size: 8, x: cols[3] });
       text("Outside period", { size: 8, x: cols[4], color: MUTED });
@@ -448,8 +448,8 @@ export async function reportPdf(report: OwnerReport) {
   for (const a of report.actions.slice(0, 40)) {
     space(12);
     text(a.date, { size: 8, x: cols[0] });
-    text(fit(`${a.kind}: ${a.summary}`, 95), { size: 8, x: cols[1] });
-    if (a.document) text(fit(a.document, 20), { size: 8, x: cols[4], color: MUTED });
+    text(fit(`${a.kind}: ${a.summary}`, 360), { size: 8, x: cols[1] });
+    if (a.document) text(fit(a.document, 84), { size: 8, x: cols[4], color: MUTED });
 
   }
   if (report.actions.length === 0) para("No review actions recorded yet.");
