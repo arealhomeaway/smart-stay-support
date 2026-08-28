@@ -26,17 +26,18 @@ export function useRole() {
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return [] as AppRole[];
+      if (!auth.user) return { userId: null as string | null, roles: [] as AppRole[] };
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", auth.user.id);
       if (error) throw error;
-      return (data ?? []).map((r) => r.role as AppRole);
+      return { userId: auth.user.id, roles: (data ?? []).map((r) => r.role as AppRole) };
     },
   });
 
-  const actualRoles = query.data ?? [];
+  const actualRoles = query.data?.roles ?? [];
+  const userId = query.data?.userId ?? null;
   const previewing = Boolean(viewAs) && actualRoles.includes("admin");
   const roles: AppRole[] = previewing && viewAs ? [viewAs] : actualRoles;
 
@@ -45,6 +46,7 @@ export function useRole() {
   const isOwner = roles.includes("owner") && !roles.some((r) => r === "admin" || r === "manager");
 
   return {
+    userId,
     roles,
     actualRoles,
     previewing,
