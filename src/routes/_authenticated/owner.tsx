@@ -12,6 +12,7 @@ import {
   ownerHome,
   ownerHomePreview,
   redeemInvite,
+  resubmitOwnerParticipation,
   saveOwnerAlertPreferences,
 } from "@/lib/owner-portal.functions";
 import { useRole } from "@/hooks/useRole";
@@ -183,11 +184,16 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
     entries,
     badges,
     reportedMinutes,
+    approvedMinutes,
+    pendingReviewMinutes,
+    returnedMinutes,
     onboardingMinutes,
     operationalMinutes,
     snapshot,
   } = data;
+
   const [timeTarget, setTimeTarget] = useState<TimeTarget | null>(null);
+  const [correcting, setCorrecting] = useState<(typeof entries)[number] | null>(null);
   const [answering, setAnswering] = useState<(typeof reviews)[number] | null>(null);
   const [openingMatter, setOpeningMatter] = useState(false);
 
@@ -265,6 +271,24 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
               <p className="font-medium">{formatHours(operationalMinutes)}</p>
             </div>
           </div>
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Approved by ARHA</p>
+              <p className="font-medium">{formatHours(approvedMinutes)}</p>
+              <p className="text-xs text-muted-foreground">Counts toward your progress</p>
+            </div>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Awaiting review</p>
+              <p className="font-medium">{formatHours(pendingReviewMinutes)}</p>
+              <p className="text-xs text-muted-foreground">Counts toward your progress</p>
+            </div>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Returned to you</p>
+              <p className="font-medium">{formatHours(returnedMinutes)}</p>
+              <p className="text-xs text-muted-foreground">Not counted until corrected</p>
+            </div>
+          </div>
+
           <p className="text-xs text-muted-foreground">
             All hours are self-reported. ARHA never estimates, prefills or auto-calculates your time.
           </p>
@@ -507,38 +531,71 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Your participation log</CardTitle>
           <CardDescription>
-            {entries.length} entries recorded. Entries cannot be edited once saved — ask your ARHA contact to
-            record a correction.
+            {entries.length} entries recorded. A saved entry is never edited. If your ARHA contact returns one,
+            you can correct it here — the original stays in your history and only the corrected entry counts.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-1">
           {entries.slice(0, 15).map((e) => (
-            <div key={e.id} className="flex flex-wrap gap-2 border-b border-border/60 py-1.5 text-sm last:border-0">
-              <span className="text-muted-foreground">{e.entry_date}</span>
-              <span>{e.activity}</span>
-              {e.propertyIds.length > 1 && (
-                <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-                  Shared · {e.propertyIds.length} homes
-                </Badge>
+            <div key={e.id} className="border-b border-border/60 py-1.5 text-sm last:border-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground">{e.entry_date}</span>
+                <span>{e.activity}</span>
+                {e.propertyIds.length > 1 && (
+                  <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                    Shared · {e.propertyIds.length} homes
+                  </Badge>
+                )}
+                {e.superseded && (
+                  <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                    Superseded · not counted
+                  </Badge>
+                )}
+                {e.amends_entry_id && (
+                  <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                    Correction
+                  </Badge>
+                )}
+                {e.review_status && e.review_status !== "submitted" && (
+                  <Badge
+                    variant="outline"
+                    className={
+                      e.review_status === "approved"
+                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+                        : "border-amber-500/20 bg-amber-500/10 text-amber-700"
+                    }
+                  >
+                    {e.review_status}
+                  </Badge>
+                )}
+                <span className="ml-auto font-medium">{e.minutes} min</span>
+              </div>
+              {e.review_status === "returned" && (
+                <div className="mt-1 flex flex-wrap items-center gap-2 rounded-md bg-muted/60 px-2 py-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    {e.review_note
+                      ? `Returned with a note: ${e.review_note}`
+                      : "Returned for a correction."}
+                  </span>
+                  {!readOnly && !e.superseded && (
+                    <Button size="sm" variant="outline" className="ml-auto" onClick={() => setCorrecting(e)}>
+                      Correct and resubmit
+                    </Button>
+                  )}
+                  {e.superseded && (
+                    <span className="ml-auto text-xs text-muted-foreground">Corrected already</span>
+                  )}
+                </div>
               )}
-              {e.review_status && e.review_status !== "submitted" && (
-                <Badge
-                  variant="outline"
-                  className={
-                    e.review_status === "approved"
-                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-                      : "border-amber-500/20 bg-amber-500/10 text-amber-700"
-                  }
-                  title={e.review_note ?? undefined}
-                >
-                  {e.review_status}
-                </Badge>
-              )}
-              <span className="ml-auto font-medium">{e.minutes} min</span>
             </div>
           ))}
         </CardContent>
       </Card>
+
+      {!readOnly && correcting && (
+        <CorrectEntryDialog entry={correcting} onClose={() => setCorrecting(null)} onSaved={onChange} />
+      )}
+
 
       {!readOnly && timeTarget && (
         <LogTimeDialog
@@ -563,6 +620,96 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
     </div>
   );
 }
+
+/**
+ * The homeowner corrects an entry a reviewer returned. Nothing is prefilled
+ * with an estimate: the minutes and description carry over exactly as the
+ * owner first reported them, for the owner to change.
+ */
+function CorrectEntryDialog({
+  entry,
+  onClose,
+  onSaved,
+}: {
+  entry: HomeData["entries"][number];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [minutes, setMinutes] = useState(String(entry.minutes));
+  const [activity, setActivity] = useState(entry.activity);
+  const [note, setNote] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const resubmit = useServerFn(resubmitOwnerParticipation);
+
+  const total = Number.parseInt(minutes || "0", 10) || 0;
+  const valid = total >= 1 && total <= 1440 && activity.trim().length >= 3 && confirmed;
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      resubmit({
+        data: { entryId: entry.id, minutes: total, activity: activity.trim(), note, confirmed: true as const },
+      }),
+    onSuccess: () => {
+      toast.success("Corrected entry resubmitted for review.");
+      onSaved();
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Correct and resubmit</DialogTitle>
+          <DialogDescription>
+            {entry.review_note
+              ? `Your ARHA contact wrote: ${entry.review_note}`
+              : "Your ARHA contact returned this entry for a correction."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="correct-minutes">Minutes you actually spent</Label>
+            <Input
+              id="correct-minutes"
+              inputMode="numeric"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="correct-activity">What you did</Label>
+            <Textarea
+              id="correct-activity"
+              rows={3}
+              value={activity}
+              onChange={(e) => setActivity(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="correct-note">Note for your ARHA contact (optional)</Label>
+            <Textarea id="correct-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          <p className="text-xs text-muted-foreground">{MANUAL_ENTRY_NOTICE}</p>
+          <label className="flex items-start gap-2 text-sm">
+            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} />
+            <span>{MANUAL_ENTRY_CONFIRMATION}</span>
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button disabled={!valid || mutation.isPending} onClick={() => mutation.mutate()}>
+            Resubmit
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; onSaved: () => void }) {
   const [email, setEmail] = useState(program.notifyEmail);

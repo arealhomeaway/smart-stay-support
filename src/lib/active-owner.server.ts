@@ -36,12 +36,13 @@ export async function activeOwnerLinks(
   const ids = propertyIds?.filter(Boolean) ?? null;
   if (ids && ids.length === 0) return map;
 
+  // Every explicit link is read, not just the included ones: an explicit
+  // exclusion must win over the legacy single-property column below.
   let joinQuery = supabase
     .from("owner_program_properties")
     .select(
       "property_id, program_id, inclusion_status, owner_programs!inner(id, owner_user_id, owner_name, status)",
-    )
-    .eq("inclusion_status", "included");
+    );
   if (ids) joinQuery = joinQuery.in("property_id", ids);
 
   let legacyQuery = supabase
@@ -51,8 +52,12 @@ export async function activeOwnerLinks(
   if (ids) legacyQuery = legacyQuery.in("property_id", ids);
 
   const [joined, legacy] = await Promise.all([joinQuery, legacyQuery]);
+
   if (joined.error) throw joined.error;
   if (legacy.error) throw legacy.error;
+
+  /** Property ids that carry an explicit decision, whatever that decision is. */
+  const explicit = new Set<string>();
 
   for (const row of joined.data ?? []) {
     const program = row.owner_programs as unknown as {
@@ -61,7 +66,10 @@ export async function activeOwnerLinks(
       owner_name: string | null;
       status: string;
     } | null;
-    if (!program || INACTIVE_PROGRAM.has(program.status)) continue;
+    if (!program) continue;
+    explicit.add(row.property_id);
+    if (INACTIVE_PROGRAM.has(program.status)) continue;
+    if (row.inclusion_status !== "included") continue;
     map.set(row.property_id, {
       propertyId: row.property_id,
       programId: program.id,
@@ -72,7 +80,9 @@ export async function activeOwnerLinks(
   }
 
   for (const p of legacy.data ?? []) {
-    if (!p.property_id || map.has(p.property_id)) continue;
+    // An explicit link row — included or excluded — is the decision. The legacy
+    // single-property column only fills the gap where no link row exists.
+    if (!p.property_id || map.has(p.property_id) || explicit.has(p.property_id)) continue;
     if (INACTIVE_PROGRAM.has(p.status)) continue;
     map.set(p.property_id, {
       propertyId: p.property_id,
@@ -82,6 +92,7 @@ export async function activeOwnerLinks(
       programStatus: p.status,
     });
   }
+
 
   return map;
 }

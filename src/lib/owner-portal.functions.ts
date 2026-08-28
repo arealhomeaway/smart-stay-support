@@ -79,6 +79,27 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
     return logOwnerTime(context.supabase, context.userId, data);
   });
 
+/** The homeowner corrects and resubmits an entry a reviewer returned. */
+export const resubmitOwnerParticipation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        entryId: z.string().uuid(),
+        minutes: z.number().int().min(1).max(1440),
+        activity: z.string().trim().min(3).max(500),
+        note: z.string().trim().max(1000).default(""),
+        confirmed: z.literal(true, {
+          message: "Please confirm the entry reflects the time you personally spent.",
+        }),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { resubmitOwnerTime } = await import("./owner-portal.server");
+    return resubmitOwnerTime(context.supabase, context.userId, data);
+  });
+
 export const answerOwnerReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
