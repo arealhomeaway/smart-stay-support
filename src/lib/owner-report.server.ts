@@ -392,7 +392,15 @@ export async function reportPdf(report: OwnerReport) {
   );
   space(8);
   const cols = [M, M + 62, M + 296, M + 340, M + 432] as const;
-  const fit = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 3)}...` : s);
+  const fit = (s: string, maxWidth: number, size = 8) => {
+    if (regular.widthOfTextAtSize(s, size) <= maxWidth) return s;
+    let out = s;
+    while (out.length > 1 && regular.widthOfTextAtSize(`${out}...`, size) > maxWidth) {
+      out = out.slice(0, -1);
+    }
+    return `${out}...`;
+  };
+
   const shortStatus = (s: string) => (s.startsWith("Superseded") ? "Superseded" : s);
   const rowHead = () => {
     space(14);
