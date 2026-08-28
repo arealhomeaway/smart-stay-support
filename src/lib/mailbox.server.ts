@@ -267,6 +267,8 @@ export async function syncMailbox(
     threaded: 0,
     skipped: 0,
     failed: 0,
+    recategorised: 0,
+    completedTagged: 0,
     mailbox: authorizedMailbox(),
     items: [],
   };
