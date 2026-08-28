@@ -303,7 +303,12 @@ function OnboardingWorkspace() {
                     reviews={data.reviews as never}
                     people={data.people}
                     propertyName={current.name}
-                    canReview={can("handoff_review") || (Boolean(userId) && current.onboarding_owner === userId)}
+                    canReview={
+                      can("handoff_review") ||
+                      (Boolean(userId) &&
+                        (openHandoff.gate_step ?? "kati_review") === "kati_review" &&
+                        current.onboarding_owner === userId)
+                    }
                     disabled={readOnly}
                     onDecision={(input) =>
                       reviewHandoff.mutate({ data: { handoffId: openHandoff.id, ...input } })
