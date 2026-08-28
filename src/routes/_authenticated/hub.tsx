@@ -54,7 +54,9 @@ function Hub() {
         .from("tickets")
         .select("status, priority")
         .eq("is_demo", demoMode)
+        .is("archived_at", null)
         .in("status", OPEN_STATUSES);
+
       if (error) throw error;
       const open = data?.length ?? 0;
       const urgent = (data ?? []).filter((t) => t.priority === "p1").length;
