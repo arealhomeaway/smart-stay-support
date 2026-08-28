@@ -27,3 +27,10 @@
 - [ ] Blocker: 4 typecheck errors introduced (2 exactOptionalPropertyTypes, 2 missing bun:test types)
 - [ ] Migration must be applied BEFORE the code ships (recordEvent writes the new retryable column)
 - Not merged, migration not applied, nothing published
+
+## PR review round 2 (head 062eb47)
+- [x] Manifest + head confirmed; patch applies clean over current HEAD (only roadmap.md overlaps)
+- [x] Full typecheck / production build / 46 tests run in isolated scratch copy
+- [x] Migration + concurrent-duplicate constraint verified on a disposable local Postgres (not the live DB)
+- [ ] Blocker: `@types/bun` reference in src/lib/__tests__/bun-env.d.ts breaks 3 auto-generated Supabase files (fetch.preconnect)
+- Not merged, migration not applied, nothing published, no events replayed
