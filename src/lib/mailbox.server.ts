@@ -562,6 +562,27 @@ export function isStaleClaim(row: MailboxRecord, now = Date.now()) {
 }
 
 /**
+ * What this pass should do with a message, given whatever record already
+ * exists for it.
+ *
+ * - `create` — nothing on file, or only an abandoned claim: open the ticket.
+ * - `retag`  — a ticket exists but the Outlook category update failed; retry
+ *              only the category. Never a second ticket.
+ * - `skip`   — a settled decision, or another pass currently holds the claim.
+ */
+export function nextActionFor(
+  prior: MailboxRecord | null,
+  now = Date.now(),
+): "create" | "retag" | "skip" {
+  if (!prior) return "create";
+  if (isStaleClaim(prior, now)) return "create";
+  if (prior.error_message === CATEGORY_PENDING && prior.entity_id) return "retag";
+  return "skip";
+}
+
+
+
+/**
  * Takes ownership of a message before any ticket is created.
  *
  * The unique index on (system, operation, external_id) is what actually
