@@ -643,9 +643,6 @@ export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRec
 }
 
 async function recordEvent(
-
-
-async function recordEvent(
   db: Db,
   msg: GraphMessage,
   status: string,
