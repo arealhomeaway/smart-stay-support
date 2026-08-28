@@ -15,6 +15,8 @@ import {
   hoursFromMinutes,
   OWNER_GOAL_HOURS,
   progressSnapshot,
+  parseReviewPhotos,
+  type ReviewPhoto,
   type CoverageState,
   type ProgramStatus,
   type TaskType,
