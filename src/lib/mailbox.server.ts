@@ -122,7 +122,7 @@ async function writeCheckpoint(db: Db, iso: string) {
 async function fetchInbox(limit: number, since: string) {
   const query =
     `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc` +
-    `&$select=id,internetMessageId,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders`;
+    `&$select=id,internetMessageId,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders,categories`;
   const path = inboxMessagesPath(query);
   const res = await graph(path);
   return ((await res.json()).value ?? []) as GraphMessage[];
