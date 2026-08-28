@@ -84,7 +84,6 @@ const navGroups: NavGroup[] = [
     label: "Work",
     items: [
       { to: "/tickets", label: "Work queue", icon: ClipboardList, tour: "tickets" },
-      { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly" },
       { to: "/map", label: "Job map", icon: MapPinned, tour: "map", capability: "matters_all" },
       { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach", capability: "coaching" },
       { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
@@ -95,6 +94,10 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
       { to: "/vendors", label: "Vendor Hub", icon: Handshake, tour: "vendors", capability: "vendor_admin" },
+      // Quarterly property reviews are vendor management work — cleaning
+      // supervisors run them — so they sit with the Vendor Hub, not the
+      // operations queue. The records and the paused scheduler are unchanged.
+      { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly", capability: "vendor_admin" },
       { to: "/owner-programs", label: "Property owners", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
       { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
     ],

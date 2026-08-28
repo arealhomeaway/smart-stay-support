@@ -24,6 +24,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { createIntakeMatter, REF_TAG, type IntakeResult } from "./intake.server";
 import { authorizedMailbox, inboxMessagesPath } from "./mailbox-allowlist.server";
+import {
+  alreadyTagged,
+  categoriesAfterClose,
+  categoriesAfterCreate,
+  hasTag,
+  requestsTicket,
+  COMPLETED_TAG,
+} from "./mail-categories";
 
 type Db = SupabaseClient<Database>;
 
@@ -51,11 +59,32 @@ type GraphMessage = {
   receivedDateTime?: string | null;
   isRead?: boolean;
   webLink?: string | null;
+  /** Outlook categories — the intake protocol lives here. */
+  categories?: string[] | null;
   from?: { emailAddress?: { name?: string | null; address?: string | null } | null } | null;
   body?: { content?: string | null; contentType?: string | null } | null;
   internetMessageHeaders?: { name?: string | null; value?: string | null }[] | null;
   "@odata.type"?: string;
 };
+
+/**
+ * Writes the message's categories back.
+ *
+ * Never throws: re-categorising is bookkeeping, and a failure here must not
+ * undo a ticket that already saved. The next pass tries again.
+ */
+async function setCategories(messageId: string, categories: string[]) {
+  try {
+    await graph(inboxMessagesPath(`/${messageId}`), {
+      method: "PATCH",
+      body: JSON.stringify({ categories }),
+    });
+    return true;
+  } catch (err) {
+    console.error("Could not update mail categories:", err instanceof Error ? err.message : err);
+    return false;
+  }
+}
 
 async function graph(path: string, init?: RequestInit) {
   const cfg = mailConfig();
@@ -122,7 +151,7 @@ async function writeCheckpoint(db: Db, iso: string) {
 async function fetchInbox(limit: number, since: string) {
   const query =
     `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc` +
-    `&$select=id,internetMessageId,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders`;
+    `&$select=id,internetMessageId,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders,categories`;
   const path = inboxMessagesPath(query);
   const res = await graph(path);
   return ((await res.json()).value ?? []) as GraphMessage[];
@@ -136,13 +165,13 @@ const NOISE_SUBJECT =
   /^(re: )?(declined|accepted|tentative|canceled|cancelled):|unsubscribe|your (daily|weekly) |newsletter|webinar|invitation:|out of office|automatic reply|market digest|% off|sale ends|just for you|availability|price list|rate sheet|weekly (update|round-?up|list)/i;
 const CALENDAR_TYPE = /eventMessage/i;
 
-/** Words that mean a coordinator actually has to do something at a home. */
-const OPERATIONAL =
-  /(guest|owner|homeowner|tenant|property|unit|house|home at|listing|address|check-?in|check-?out|clean|turnover|linen|maintenance|repair|leak|water|hvac|heat|furnace|a\/?c|air condition|plumb|electric|appliance|water heater|lock|lockbox|code|key|access|alarm|smoke|carbon|detector|pest|inspection|walkthrough|vendor|handyman|technician|work order|invoice for|damage|broken|not working|complaint|refund|reservation|booking)/i;
-
-const HOUSE_DOMAIN = /@arealhomeaway\.com$/i;
-
-export type SkipReason = "automated" | "calendar" | "bulk" | "not operational" | "unknown sender" | "empty";
+export type SkipReason =
+  | "automated"
+  | "calendar"
+  | "bulk"
+  | "not categorised"
+  | "already handled"
+  | "empty";
 
 function isBulk(msg: GraphMessage) {
   for (const h of msg.internetMessageHeaders ?? []) {
@@ -169,18 +198,20 @@ function classify(msg: GraphMessage, knownSender: boolean): SkipReason | null {
   const subject = msg.subject ?? "";
   const preview = msg.bodyPreview ?? "";
   if (!subject.trim() && !preview.trim()) return "empty";
+
+  // The category protocol comes first, before any guesswork. A person marks a
+  // message "Resolve: create task" and only then does a ticket open.
+  if (alreadyTagged(msg.categories)) return "already handled";
+  if (requestsTicket(msg.categories)) return null;
+
   if (isBulk(msg)) return "bulk";
   if (NOISE_SENDER.test(from) || NOISE_SUBJECT.test(subject)) return "automated";
 
   const text = `${subject}\n${preview}`;
+  // A reply on an existing matter still threads without a category, so a
+  // conversation never breaks in half.
   if (REF_TAG.test(text)) return null;
-  // Until the shared inbox is delegated we may be reading a personal mailbox,
-  // which carries plenty of business mail that is not coordinator work. So a
-  // message only becomes a matter when we know the sender (teammate, vendor
-  // contact or programme homeowner) AND it reads like work at a home.
-  if (!knownSender && !HOUSE_DOMAIN.test(from)) return "unknown sender";
-  if (!OPERATIONAL.test(text)) return "not operational";
-  return null;
+  return "not categorised";
 }
 
 function plainText(msg: GraphMessage) {
@@ -231,6 +262,10 @@ export type MailboxSyncResult = {
   threaded: number;
   skipped: number;
   failed: number;
+  /** Messages moved from "create task" to "task created" after the ticket saved. */
+  recategorised: number;
+  /** Messages moved to "task completed" because their ticket is now closed. */
+  completedTagged: number;
   mailbox: string;
   items: {
     subject: string;
@@ -263,6 +298,8 @@ export async function syncMailbox(
     threaded: 0,
     skipped: 0,
     failed: 0,
+    recategorised: 0,
+    completedTagged: 0,
     mailbox: authorizedMailbox(),
     items: [],
   };
@@ -365,6 +402,12 @@ export async function syncMailbox(
         base.items.push({ subject, from, outcome: "created", ref: result.ref, priority: result.priority });
       }
       await recordEvent(db, msg, result.threaded ? "threaded" : "created", null, result.ticketId);
+      // Only now — the ticket exists and is saved. A failure to re-categorise
+      // never rolls back the ticket; the next pass retries the tag.
+      if (!result.threaded && requestsTicket(msg.categories)) {
+        const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+        if (tagged) base.recategorised++;
+      }
     } catch (err) {
       base.failed++;
       const message = err instanceof Error ? err.message : "Intake failed";
@@ -377,7 +420,63 @@ export async function syncMailbox(
   // never silently skips the next run past unread work.
   if (!dryRun && highWater !== checkpoint) await writeCheckpoint(db, highWater);
 
+  // Tickets closed since the last pass get their message re-categorised.
+  if (!dryRun) base.completedTagged = await tagClosedTickets(db);
+
   return base;
+}
+
+/**
+ * Moves the category to "task completed" for every intake message whose ticket
+ * has since closed.
+ *
+ * Driven by the ticket's own status rather than by a hook on the close button,
+ * so a close made anywhere in Resolve is picked up, and a re-run simply finds
+ * nothing left to do.
+ */
+async function tagClosedTickets(db: Db, limit = 25): Promise<number> {
+  const { data: events } = await db
+    .from("integration_events")
+    .select("id, external_id, entity_id")
+    .eq("system", SYSTEM)
+    .eq("operation", "mailbox_message")
+    .eq("status", "created")
+    .not("entity_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (!events?.length) return 0;
+
+  const ticketIds = Array.from(new Set(events.map((e) => e.entity_id).filter(Boolean) as string[]));
+  const { data: tickets } = await db.from("tickets").select("id, status").in("id", ticketIds);
+  const closedIds = new Set((tickets ?? []).filter((t) => t.status === "closed").map((t) => t.id));
+  if (!closedIds.size) return 0;
+
+  let tagged = 0;
+  for (const event of events) {
+    if (tagged >= limit) break;
+    if (!event.entity_id || !closedIds.has(event.entity_id)) continue;
+    const messageId = event.external_id as string | null;
+    // Only the Graph id addresses a message; the internetMessageId row is a
+    // duplicate guard, not something we can PATCH.
+    if (!messageId || messageId.startsWith("<")) continue;
+
+    let current: string[] = [];
+    try {
+      const res = await graph(inboxMessagesPath(`/${messageId}?$select=id,categories`));
+      current = ((await res.json())?.categories ?? []) as string[];
+    } catch {
+      continue; // Message moved or deleted — nothing to re-categorise.
+    }
+    if (hasTag(current, COMPLETED_TAG)) {
+      await db.from("integration_events").update({ status: "completed" }).eq("id", event.id);
+      continue;
+    }
+    if (await setCategories(messageId, categoriesAfterClose(current))) {
+      await db.from("integration_events").update({ status: "completed" }).eq("id", event.id);
+      tagged++;
+    }
+  }
+  return tagged;
 }
 
 

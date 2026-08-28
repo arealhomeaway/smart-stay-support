@@ -52,8 +52,8 @@ export function MailboxIntakePanel() {
               <Inbox className="size-4" /> Inbox intake
             </CardTitle>
             <CardDescription className="mt-1">
-              Reads unread mail in the team inbox and opens a matter for anything a coordinator has to action.
-              Replies carrying an [ARHA-000] tag are filed on the original matter instead of opening a duplicate.
+              Opens a ticket only for mail someone has categorised “Resolve: create task” in the shared inbox.
+              Replies carrying an [ARHA-000] tag are filed on the original ticket instead of opening a duplicate.
             </CardDescription>
           </div>
           <Badge variant={connected ? "default" : "secondary"}>{connected ? "Connected" : "Not connected"}</Badge>
@@ -64,8 +64,10 @@ export function MailboxIntakePanel() {
           <Skeleton className="h-16 w-full" />
         ) : (
           <p className="text-sm text-muted-foreground">
-            Mailbox: <span className="font-medium text-foreground">{status.data?.mailbox}</span> · newsletters,
-            calendar replies and no-reply notices are skipped automatically, and each message is only ever read once.
+            Mailbox: <span className="font-medium text-foreground">{status.data?.mailbox}</span> · untagged mail is
+            left alone. Once the ticket is saved the category becomes “Resolve: task created”, and when the ticket is
+            closed it becomes “Resolve task: task completed”. Your other categories are never changed, and each
+            message is only ever read once.
           </p>
         )}
 
