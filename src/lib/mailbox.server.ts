@@ -255,6 +255,17 @@ async function knownSenders(db: Db) {
   return addresses;
 }
 
+/**
+ * Marker parked in `error_message` when a ticket saved but the Outlook
+ * category could not be updated. It is the retry queue: the next pass finds
+ * the row, re-tags the message, and clears the marker. It never causes a
+ * second ticket, because the row itself is what suppresses re-creation.
+ */
+export const CATEGORY_PENDING = "recategorise_pending";
+
+/** A claim older than this is assumed abandoned (crashed pass) and reclaimable. */
+export const CLAIM_STALE_MS = 10 * 60 * 1000;
+
 export type MailboxSyncResult = {
   ok: boolean;
   scanned: number;
@@ -264,6 +275,8 @@ export type MailboxSyncResult = {
   failed: number;
   /** Messages moved from "create task" to "task created" after the ticket saved. */
   recategorised: number;
+  /** Category updates that failed earlier and succeeded on a later pass. */
+  recategoriseRetried: number;
   /** Messages moved to "task completed" because their ticket is now closed. */
   completedTagged: number;
   mailbox: string;
