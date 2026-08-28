@@ -24,6 +24,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { createIntakeMatter, REF_TAG, type IntakeResult } from "./intake.server";
 import { authorizedMailbox, inboxMessagesPath } from "./mailbox-allowlist.server";
+import {
+  alreadyTagged,
+  categoriesAfterClose,
+  categoriesAfterCreate,
+  hasTag,
+  requestsTicket,
+  COMPLETED_TAG,
+} from "./mail-categories";
 
 type Db = SupabaseClient<Database>;
 
