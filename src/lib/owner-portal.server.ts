@@ -256,6 +256,94 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
   return { ok: true as const, entryId: data.id, awarded: badges.awarded };
 }
 
+/**
+ * The homeowner corrects an entry a reviewer returned to them. The original is
+ * never edited: it stays in the history as returned, and the corrected entry
+ * points back at it, so only one of the pair is ever counted.
+ */
+export async function resubmitOwnerTime(
+  supabase: Client,
+  userId: string,
+  input: { entryId: string; minutes: number; activity: string; note: string },
+) {
+  const original = await supabase
+    .from("owner_time_entries")
+    .select(
+      "id, program_id, owner_user_id, phase, entry_date, activity, activity_category, output, comments, review_id, ticket_id, review_status",
+    )
+    .eq("id", input.entryId)
+    .single();
+  if (original.error) throw original.error;
+  if (original.data.owner_user_id !== userId) {
+    throw new Error("That entry belongs to another homeowner.");
+  }
+  if (original.data.review_status !== "returned") {
+    throw new Error("Only an entry your ARHA contact returned to you can be corrected.");
+  }
+
+  const already = await supabase
+    .from("owner_time_entries")
+    .select("id")
+    .eq("amends_entry_id", input.entryId)
+    .limit(1);
+  if (already.error) throw already.error;
+  if ((already.data ?? []).length > 0) {
+    throw new Error("This entry has already been corrected and resubmitted.");
+  }
+
+  const links = await supabase
+    .from("owner_time_entry_properties")
+    .select("property_id")
+    .eq("entry_id", input.entryId);
+  if (links.error) throw links.error;
+
+  const insert = await supabase
+    .from("owner_time_entries")
+    .insert({
+      program_id: original.data.program_id,
+      owner_user_id: userId,
+      phase: original.data.phase,
+      entry_date: original.data.entry_date,
+      minutes: input.minutes,
+      activity: input.activity,
+      activity_category: original.data.activity_category,
+      output: original.data.output,
+      comments: input.note || original.data.comments,
+      review_id: original.data.review_id,
+      ticket_id: original.data.ticket_id,
+      amends_entry_id: input.entryId,
+      correction_reason: input.note || "Corrected by the homeowner after review.",
+      review_status: "submitted",
+      attested: true,
+    })
+    .select("id")
+    .single();
+  if (insert.error) throw insert.error;
+
+  const propertyIds = (links.data ?? []).map((l) => l.property_id);
+  if (propertyIds.length > 0) {
+    const relink = await supabase
+      .from("owner_time_entry_properties")
+      .insert(propertyIds.map((property_id) => ({ entry_id: insert.data.id, property_id })));
+    if (relink.error) throw relink.error;
+  }
+
+  await recordEvent(supabase, {
+    programId: original.data.program_id,
+    kind: "time_entry",
+    summary: `Homeowner resubmitted a returned entry: ${input.activity}`,
+    actorId: userId,
+    entryId: insert.data.id,
+    reason: input.note || null,
+    newValue: String(input.minutes),
+    detail: { correctionOf: input.entryId, propertyIds },
+  });
+
+  return { ok: true as const, entryId: insert.data.id };
+}
+
+
+
 /** Owner answers a task that was waiting on them. */
 export async function respondToReview(
   supabase: Client,
