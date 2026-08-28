@@ -369,10 +369,24 @@ export async function syncMailbox(
     }
 
     // Same message seen twice — a re-run, a redelivery, or a Graph id we've
-    // already handled under its internet id. Never open a second matter.
-    if (await alreadyProcessed(db, messageIds)) {
+    // already handled under its internet id. Never open a second ticket. If
+    // the earlier pass saved the ticket but could not re-tag the message, the
+    // retry happens here against the ticket we already have.
+    const prior = await priorRecord(db, messageIds);
+    if (prior && !isStaleClaim(prior)) {
       base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
+      if (!dryRun && prior.error_message === CATEGORY_PENDING) {
+        const done = await retryCategory(db, msg, prior);
+        if (done) base.recategoriseRetried++;
+        base.items.push({
+          subject,
+          from,
+          outcome: "skipped",
+          reason: done ? "already processed · category retag retried" : "already processed · retag still failing",
+        });
+      } else {
+        base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
+      }
       continue;
     }
 
@@ -399,6 +413,15 @@ export async function syncMailbox(
       continue;
     }
 
+    // Claim the message BEFORE creating anything. Two passes running at once
+    // race here, and the loser is turned away by the unique index rather than
+    // going on to open a second ticket for the same email.
+    if (!(await claimMessage(db, msg, prior))) {
+      base.skipped++;
+      base.items.push({ subject, from, outcome: "skipped", reason: "claimed by another pass" });
+      continue;
+    }
+
     try {
       const result: IntakeResult = await createIntakeMatter(db, {
         subject,
@@ -415,18 +438,24 @@ export async function syncMailbox(
         base.created++;
         base.items.push({ subject, from, outcome: "created", ref: result.ref, priority: result.priority });
       }
-      await recordEvent(db, msg, result.threaded ? "threaded" : "created", null, result.ticketId);
       // Only now — the ticket exists and is saved. A failure to re-categorise
-      // never rolls back the ticket; the next pass retries the tag.
+      // never rolls back the ticket; the claim row keeps the link to it and
+      // the marker below turns the next pass into a retag-only retry.
+      let tagged = true;
       if (!result.threaded && requestsTicket(msg.categories)) {
-        const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+        tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
         if (tagged) base.recategorised++;
       }
+      await settleClaim(db, messageIds, {
+        status: result.threaded ? "threaded" : "created",
+        ticketId: result.ticketId,
+        error: tagged ? null : CATEGORY_PENDING,
+      });
     } catch (err) {
       base.failed++;
       const message = err instanceof Error ? err.message : "Intake failed";
       base.items.push({ subject, from, outcome: "failed", reason: message });
-      await recordEvent(db, msg, "failed", message, null);
+      await settleClaim(db, messageIds, { status: "failed", ticketId: null, error: message });
     }
   }
 
