@@ -51,11 +51,32 @@ type GraphMessage = {
   receivedDateTime?: string | null;
   isRead?: boolean;
   webLink?: string | null;
+  /** Outlook categories — the intake protocol lives here. */
+  categories?: string[] | null;
   from?: { emailAddress?: { name?: string | null; address?: string | null } | null } | null;
   body?: { content?: string | null; contentType?: string | null } | null;
   internetMessageHeaders?: { name?: string | null; value?: string | null }[] | null;
   "@odata.type"?: string;
 };
+
+/**
+ * Writes the message's categories back.
+ *
+ * Never throws: re-categorising is bookkeeping, and a failure here must not
+ * undo a ticket that already saved. The next pass tries again.
+ */
+async function setCategories(messageId: string, categories: string[]) {
+  try {
+    await graph(inboxMessagesPath(`/${messageId}`), {
+      method: "PATCH",
+      body: JSON.stringify({ categories }),
+    });
+    return true;
+  } catch (err) {
+    console.error("Could not update mail categories:", err instanceof Error ? err.message : err);
+    return false;
+  }
+}
 
 async function graph(path: string, init?: RequestInit) {
   const cfg = mailConfig();
