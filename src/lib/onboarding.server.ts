@@ -17,7 +17,7 @@ import { writeAudit } from "./audit.server";
 type Client = SupabaseClient<Database>;
 
 const PROPERTY_FIELDS =
-  "id, name, nickname, address_line1, city, state, postal_code, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, handoff_accepted_at, quarterly_review_due_on, active";
+  "id, name, nickname, address_line1, city, state, postal_code, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, handoff_accepted_at, quarterly_review_due_on, active, is_demo";
 
 async function assertCap(supabase: Client, userId: string, fn: "is_supervisor" | "is_onboarding_staff") {
   const { data, error } = await supabase.rpc(fn, { _user_id: userId });
@@ -134,9 +134,16 @@ export async function saveOnboardingTask(
     return { id: input.id };
   }
 
+  // Test/demo homes must keep their whole paper trail out of live reporting.
+  const parent = await supabase
+    .from("properties")
+    .select("is_demo")
+    .eq("id", input.propertyId)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("onboarding_tasks")
-    .insert({ ...row, created_by: userId })
+    .insert({ ...row, created_by: userId, is_demo: parent.data?.is_demo ?? false })
     .select("id")
     .single();
   if (error) throw error;
@@ -235,6 +242,8 @@ export async function requestHandoff(
       carryover_accepted: input.carryoverAccepted && !ready,
       gate_step: "kati_review",
       notes: input.notes || null,
+      // Inherit isolation from the home, so demo/test handoffs never count.
+      is_demo: property.data.is_demo ?? false,
     })
     .select("id")
     .single();
