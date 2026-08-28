@@ -64,12 +64,17 @@ One end-to-end rehearsal, then full cleanup.
 
 ## Genuine blockers (decisions or external, nothing else)
 
-1. Overnight coverage and the current vacant role holder in the coverage schedule — Claude's routing cannot resolve those slots. Not inventing them.
+1. **On-call rotation data.** Now settled: Christine Sendico holds the Evening/Weekend Property Operations seat, and overnight urgent tickets route to the scheduled on-call person from the monthly roster — James Almario, Emily Jimenez or Micah Sinor. What is still missing is the roster itself: routing needs the month-by-month (or week-by-week) schedule of which of the three is on call on a given night, plus the exact start/end hours of the overnight window in property-local time. I will not invent or infer the rotation; until the roster is supplied, overnight urgent tickets fall back to the Operations Supervisor with an explicit "on-call roster not loaded" reason and stay visible in-app.
 2. Authoritative owner-contact mapping for **all** owners: owner data lives in Notion and OwnerRez, and Resolve only holds contacts for Active Owner enrollees. Which system is authoritative for a non-enrolled owner's primary contact?
 3. Approval for a read-only OwnerRez `/v2/messages` probe with our credential.
 4. Approval for the controlled test above.
 5. Storage decision approval (private Cloud bucket as system of record; SharePoint stays read-only) before any bucket or access configuration.
 6. Microsoft-side mailbox restriction evidence, or written acceptance of app-side enforcement for beta.
-7. Returned-entry notification channels (pending your answer).
+7. Approval to enable returned participation entry **email** notifications (in-app only until then).
 8. Confirmation that the attached AOP package is the final guide version.
 9. Onboarding variant source exports for the three non-full-furnishing plans.
+10. Telegram: which specific groups and which staff/vendor DMs must be covered, so I can test the bot against those exact conversations and report what falls outside bot reach.
+
+## What plan approval authorizes
+
+Implementation and isolated testing only — code, demo/fixture records, and local or preview verification. It does **not** authorize live sends, vendor dispatch, external writes (SharePoint, Breezeway, OwnerRez, Telegram, outbound email), production migrations, access or permission changes, or activation of any paused automation. Each of those is requested separately, described in chat first, and only acted on after a specific approval.
