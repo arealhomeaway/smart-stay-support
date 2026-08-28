@@ -537,7 +537,7 @@ export type BreezewaySubscriptionRaw = {
 /** Existing subscriptions on the account. Read-only. */
 export async function listBreezewaySubscriptions(): Promise<BreezewaySubscriptionRaw[]> {
   const data = await breezewayRequest<BreezewaySubscriptionRaw[] | { results?: BreezewaySubscriptionRaw[] }>(
-    "/",
+    "/webhooks",
     { base: BREEZEWAY_WEBHOOK_BASE },
   );
   return Array.isArray(data) ? data : (data.results ?? []);
@@ -545,7 +545,7 @@ export async function listBreezewaySubscriptions(): Promise<BreezewaySubscriptio
 
 /** Registers exactly one `task` subscription. Approved, single-shot write. */
 export async function createBreezewayTaskSubscription(url: string) {
-  return breezewayRequest<BreezewaySubscriptionRaw>("/", {
+  return breezewayRequest<BreezewaySubscriptionRaw>("/subscribe", {
     base: BREEZEWAY_WEBHOOK_BASE,
     method: "POST",
     allowWrite: true,
