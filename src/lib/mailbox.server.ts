@@ -183,13 +183,6 @@ function classify(msg: GraphMessage, knownSender: boolean): SkipReason | null {
   // conversation never breaks in half.
   if (REF_TAG.test(text)) return null;
   return "not categorised";
-  // Until the shared inbox is delegated we may be reading a personal mailbox,
-  // which carries plenty of business mail that is not coordinator work. So a
-  // message only becomes a matter when we know the sender (teammate, vendor
-  // contact or programme homeowner) AND it reads like work at a home.
-  if (!knownSender && !HOUSE_DOMAIN.test(from)) return "unknown sender";
-  if (!OPERATIONAL.test(text)) return "not operational";
-  return null;
 }
 
 function plainText(msg: GraphMessage) {
