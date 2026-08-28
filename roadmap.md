@@ -21,3 +21,9 @@
 ## Breezeway
 - [x] Webhook label fix (task lookup failures, not signature failures)
 - Fitzgerald-only preview processing stays unchanged
+
+## PR review (Claude PR #1 — Breezeway webhook recovery)
+- [x] Reviewed in isolated scratch copy: patch applies, 37/37 tests pass, build passes
+- [ ] Blocker: 4 typecheck errors introduced (2 exactOptionalPropertyTypes, 2 missing bun:test types)
+- [ ] Migration must be applied BEFORE the code ships (recordEvent writes the new retryable column)
+- Not merged, migration not applied, nothing published
