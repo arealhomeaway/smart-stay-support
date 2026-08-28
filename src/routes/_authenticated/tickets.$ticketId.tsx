@@ -258,10 +258,10 @@ function TicketDetail() {
     const now = new Date().toISOString();
     // Moving a matter into progress is the action starting — stop both clocks
     // even when the coordinator uses the status menu instead of the clock buttons.
-    const patch: Record<string, unknown> = { status };
+    const patch: { status: string; acknowledged_at?: string; action_started_at?: string } = { status };
     if (status === "in_progress") {
-      if (!ticket.acknowledged_at) patch['acknowledged_at'] = now;
-      if (!ticket.action_started_at) patch['action_started_at'] = now;
+      if (!ticket.acknowledged_at) patch.acknowledged_at = now;
+      if (!ticket.action_started_at) patch.action_started_at = now;
     }
     const { error } = await supabase.from("tickets").update(patch).eq("id", ticketId);
     if (error) {
