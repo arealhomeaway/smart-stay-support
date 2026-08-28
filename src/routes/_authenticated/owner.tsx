@@ -15,6 +15,8 @@ import {
   saveOwnerAlertPreferences,
 } from "@/lib/owner-portal.functions";
 import { useRole } from "@/hooks/useRole";
+import { ReviewPhotos } from "@/components/ReviewPhotos";
+import type { ReviewPhoto } from "@/lib/owner-participation";
 import { alertLabel, relativeTime } from "@/lib/owner-notify";
 import { DECISION_PATHS } from "@/lib/owner-program";
 import {
@@ -815,7 +817,7 @@ function RespondDialog({
   onClose,
   onSaved,
 }: {
-  review: { id: string; title: string };
+  review: { id: string; title: string; evidence?: string | null; photos?: ReviewPhoto[] };
   onClose: () => void;
   onSaved: () => void;
 }) {
