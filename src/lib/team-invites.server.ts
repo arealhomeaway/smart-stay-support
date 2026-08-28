@@ -145,7 +145,14 @@ export async function redeemTeamInvite(userId: string, userEmail: string | null,
     .eq("code", code)
     .maybeSingle();
   if (invite.error) throw invite.error;
-  if (!invite.data) throw new Error("That code was not recognised. Check it and try again.");
+  if (!invite.data) {
+    // Homeowner participation codes live in owner_invites. A brand-new homeowner
+    // lands on the awaiting-access screen before they hold any role, so this is
+    // the only redemption box they can reach.
+    const { redeemOwnerInvite } = await import("./owner-portal.server");
+    await redeemOwnerInvite(supabaseAdmin, userId, userEmail, code);
+    return { ok: true as const, role: "owner" as AppRole };
+  }
   if (invite.data.revoked_at) throw new Error("That code was revoked. Ask an admin for a new one.");
   if (invite.data.redeemed_by) throw new Error("That code has already been used.");
   if (new Date(invite.data.expires_at) < new Date()) throw new Error("That code has expired.");
