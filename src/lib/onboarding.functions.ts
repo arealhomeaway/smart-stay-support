@@ -165,3 +165,59 @@ export const resolveExternalRecordFn = createServerFn({ method: "POST" })
     const { resolveExternalRecord } = await import("./onboarding.server");
     return resolveExternalRecord(context.supabase, context.userId, data);
   });
+
+/* Controlled scheduling — preview first, apply only what is confirmed. */
+
+export const saveScheduleAnchorsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        plannedClosingOn: z.string().date().nullable().default(null),
+        actualClosingOn: z.string().date().nullable().default(null),
+        actualAccessOn: z.string().date().nullable().default(null),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { saveScheduleAnchors } = await import("./onboarding-schedule.server");
+    return saveScheduleAnchors(context.supabase, context.userId, data);
+  });
+
+export const previewScheduleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { previewScheduleRecalc } = await import("./onboarding-schedule.server");
+    return previewScheduleRecalc(context.supabase, context.userId, data);
+  });
+
+export const applyScheduleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ propertyId: z.string().uuid(), taskIds: z.array(z.string().uuid()).max(300) })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { applyScheduleRecalc } = await import("./onboarding-schedule.server");
+    return applyScheduleRecalc(context.supabase, context.userId, data);
+  });
+
+export const setTaskScheduleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        anchor: z.enum(["planned_closing", "actual_closing", "actual_access"]).nullable().default(null),
+        offsetDays: z.number().int().min(-365).max(365).nullable().default(null),
+        manualOverride: z.boolean().default(false),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { setTaskSchedule } = await import("./onboarding-schedule.server");
+    return setTaskSchedule(context.supabase, context.userId, data);
+  });
