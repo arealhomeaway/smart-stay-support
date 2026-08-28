@@ -67,3 +67,43 @@ export const breezewayPilotPreview = createServerFn({ method: "POST" })
     const { buildBreezewayPilotPreview } = await import("@/lib/breezeway-pilot.server");
     return buildBreezewayPilotPreview(data.resolveId);
   });
+
+/* ------------------------------------------------------------------ */
+/* Webhook pilot (task events)                                         */
+/* ------------------------------------------------------------------ */
+
+/** Status of the single task subscription plus event counts. No secrets. */
+export const breezewayWebhookStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { getWebhookStatus } = await import("@/lib/breezeway-webhook-admin.server");
+    return getWebhookStatus();
+  });
+
+/** Proves the deployed receiver answers publicly and refuses a wrong secret. */
+export const breezewayWebhookReachability = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { checkReceiverReachable } = await import("@/lib/breezeway-webhook-admin.server");
+    return checkReceiverReachable();
+  });
+
+/** Valid / invalid / duplicate / older fixtures. Touches nothing in Breezeway. */
+export const breezewayWebhookFixtures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { runWebhookFixtureTests } = await import("@/lib/breezeway-webhook-admin.server");
+    return runWebhookFixtureTests();
+  });
+
+/** Registers the one approved task subscription after all checks pass. */
+export const breezewayRegisterWebhook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { registerTaskWebhook } = await import("@/lib/breezeway-webhook-admin.server");
+    return registerTaskWebhook();
+  });
