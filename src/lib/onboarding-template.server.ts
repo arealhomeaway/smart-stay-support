@@ -50,6 +50,20 @@ export type TemplatePreview = {
   anchors: { planned_closing: string | null; actual_closing: string | null; actual_access: string | null };
 };
 
+/**
+ * Identity of a template row on a property. Title alone is NOT unique: the
+ * ARHA plan legitimately repeats "Update project status in Asana" once per
+ * phase and the weekly owner update twice, and subtasks such as "Add to Notion"
+ * repeat under different parents. Identity is therefore stage + title for
+ * top-level tasks, and stage + parent + title for subtasks.
+ */
+function taskKey(stage: string, title: string) {
+  return `${stage}::${title.trim().toLowerCase()}`;
+}
+function subKey(parentTaskId: string, title: string) {
+  return `${parentTaskId}::${title.trim().toLowerCase()}`;
+}
+
 async function loadContext(supabase: Client, propertyId: string) {
   const property = await supabase
     .from("properties")
@@ -60,7 +74,7 @@ async function loadContext(supabase: Client, propertyId: string) {
 
   const existing = await supabase
     .from("onboarding_tasks")
-    .select("id, title, parent_task_id")
+    .select("id, title, stage, parent_task_id")
     .eq("property_id", propertyId)
     .is("archived_at", null);
   if (existing.error) throw existing.error;
@@ -70,8 +84,20 @@ async function loadContext(supabase: Client, propertyId: string) {
     actual_closing: property.data.actual_closing_on,
     actual_access: property.data.actual_access_on,
   };
-  const taken = new Set((existing.data ?? []).map((t) => t.title.trim().toLowerCase()));
-  return { property: property.data, anchors, taken };
+  const rows = existing.data ?? [];
+  // Subtasks never block a top-level task from being created, and vice versa.
+  const taken = new Set(
+    rows.filter((t) => !t.parent_task_id).map((t) => taskKey(t.stage, t.title)),
+  );
+  const takenSubs = new Set(
+    rows
+      .filter((t) => t.parent_task_id)
+      .map((t) => subKey(t.parent_task_id as string, t.title)),
+  );
+  const parentIdByKey = new Map(
+    rows.filter((t) => !t.parent_task_id).map((t) => [taskKey(t.stage, t.title), t.id] as const),
+  );
+  return { property: property.data, anchors, taken, takenSubs, parentIdByKey };
 }
 
 function dueFor(t: TemplateTask, anchors: TemplatePreview["anchors"]) {
