@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import {
   CREATE_TAG,
   CREATED_TAG,
@@ -10,7 +10,7 @@ import {
 } from "../mail-categories";
 
 describe("email intake category protocol", () => {
-  test("only the exact category asks for a ticket", () => {
+  it("only the exact category asks for a ticket", () => {
     expect(requestsTicket([CREATE_TAG])).toBe(true);
     expect(requestsTicket(["resolve: create task"])).toBe(true); // case is forgiven
     expect(requestsTicket([" Resolve: create task "])).toBe(true); // stray spacing is forgiven
@@ -20,13 +20,13 @@ describe("email intake category protocol", () => {
     expect(requestsTicket(null)).toBe(false);
   });
 
-  test("a message Resolve has already acted on is not re-opened", () => {
+  it("a message Resolve has already acted on is not re-opened", () => {
     expect(alreadyTagged([CREATED_TAG])).toBe(true);
     expect(alreadyTagged([COMPLETED_TAG])).toBe(true);
     expect(alreadyTagged([CREATE_TAG])).toBe(false);
   });
 
-  test("creating swaps the request tag and keeps every other category", () => {
+  it("creating swaps the request tag and keeps every other category", () => {
     expect(categoriesAfterCreate(["Guest", CREATE_TAG, "Urgent"])).toEqual([
       "Guest",
       "Urgent",
@@ -34,13 +34,13 @@ describe("email intake category protocol", () => {
     ]);
   });
 
-  test("closing replaces the created tag, never duplicating Resolve tags", () => {
+  it("closing replaces the created tag, never duplicating Resolve tags", () => {
     expect(categoriesAfterClose(["Owner", CREATED_TAG])).toEqual(["Owner", COMPLETED_TAG]);
     expect(categoriesAfterClose([COMPLETED_TAG])).toEqual([COMPLETED_TAG]);
     expect(categoriesAfterClose([CREATE_TAG, CREATED_TAG, "Vendor"])).toEqual(["Vendor", COMPLETED_TAG]);
   });
 
-  test("unrelated categories survive de-duplication with order intact", () => {
+  it("unrelated categories survive de-duplication with order intact", () => {
     expect(categoriesAfterCreate(["Guest", "guest", null, "", "Owner", CREATE_TAG])).toEqual([
       "Guest",
       "Owner",
