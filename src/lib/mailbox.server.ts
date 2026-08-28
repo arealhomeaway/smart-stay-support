@@ -377,6 +377,9 @@ export async function syncMailbox(
   // never silently skips the next run past unread work.
   if (!dryRun && highWater !== checkpoint) await writeCheckpoint(db, highWater);
 
+  // Tickets closed since the last pass get their message re-categorised.
+  if (!dryRun) base.completedTagged = await tagClosedTickets(db);
+
   return base;
 }
 
