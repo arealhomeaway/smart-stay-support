@@ -136,13 +136,13 @@ const NOISE_SUBJECT =
   /^(re: )?(declined|accepted|tentative|canceled|cancelled):|unsubscribe|your (daily|weekly) |newsletter|webinar|invitation:|out of office|automatic reply|market digest|% off|sale ends|just for you|availability|price list|rate sheet|weekly (update|round-?up|list)/i;
 const CALENDAR_TYPE = /eventMessage/i;
 
-/** Words that mean a coordinator actually has to do something at a home. */
-const OPERATIONAL =
-  /(guest|owner|homeowner|tenant|property|unit|house|home at|listing|address|check-?in|check-?out|clean|turnover|linen|maintenance|repair|leak|water|hvac|heat|furnace|a\/?c|air condition|plumb|electric|appliance|water heater|lock|lockbox|code|key|access|alarm|smoke|carbon|detector|pest|inspection|walkthrough|vendor|handyman|technician|work order|invoice for|damage|broken|not working|complaint|refund|reservation|booking)/i;
-
-const HOUSE_DOMAIN = /@arealhomeaway\.com$/i;
-
-export type SkipReason = "automated" | "calendar" | "bulk" | "not operational" | "unknown sender" | "empty";
+export type SkipReason =
+  | "automated"
+  | "calendar"
+  | "bulk"
+  | "not categorised"
+  | "already handled"
+  | "empty";
 
 function isBulk(msg: GraphMessage) {
   for (const h of msg.internetMessageHeaders ?? []) {
