@@ -185,10 +185,14 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
     .eq("program_id", input.programId);
   if (links.error) throw links.error;
 
-  const allowed = new Map((links.data ?? []).map((l) => [l.property_id, l]));
+  // Only homes currently included in the program can carry participation.
+  const allowed = new Map(
+    (links.data ?? []).filter((l) => l.inclusion_status === "included").map((l) => [l.property_id, l]),
+  );
   const chosen = [...new Set(input.propertyIds)].filter((id) => allowed.has(id));
   for (const id of chosen) {
     const link = allowed.get(id)!;
+
     // A home cannot carry participation from before it closed.
     if (link.closing_date && input.entryDate < link.closing_date) {
       throw new Error(
