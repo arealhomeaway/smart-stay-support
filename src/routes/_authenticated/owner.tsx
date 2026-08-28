@@ -620,6 +620,96 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
   );
 }
 
+/**
+ * The homeowner corrects an entry a reviewer returned. Nothing is prefilled
+ * with an estimate: the minutes and description carry over exactly as the
+ * owner first reported them, for the owner to change.
+ */
+function CorrectEntryDialog({
+  entry,
+  onClose,
+  onSaved,
+}: {
+  entry: HomeData["entries"][number];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [minutes, setMinutes] = useState(String(entry.minutes));
+  const [activity, setActivity] = useState(entry.activity);
+  const [note, setNote] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const resubmit = useServerFn(resubmitOwnerParticipation);
+
+  const total = Number.parseInt(minutes || "0", 10) || 0;
+  const valid = total >= 1 && total <= 1440 && activity.trim().length >= 3 && confirmed;
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      resubmit({
+        data: { entryId: entry.id, minutes: total, activity: activity.trim(), note, confirmed: true as const },
+      }),
+    onSuccess: () => {
+      toast.success("Corrected entry resubmitted for review.");
+      onSaved();
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Correct and resubmit</DialogTitle>
+          <DialogDescription>
+            {entry.review_note
+              ? `Your ARHA contact wrote: ${entry.review_note}`
+              : "Your ARHA contact returned this entry for a correction."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="correct-minutes">Minutes you actually spent</Label>
+            <Input
+              id="correct-minutes"
+              inputMode="numeric"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="correct-activity">What you did</Label>
+            <Textarea
+              id="correct-activity"
+              rows={3}
+              value={activity}
+              onChange={(e) => setActivity(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="correct-note">Note for your ARHA contact (optional)</Label>
+            <Textarea id="correct-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          <p className="text-xs text-muted-foreground">{MANUAL_ENTRY_NOTICE}</p>
+          <label className="flex items-start gap-2 text-sm">
+            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} />
+            <span>{MANUAL_ENTRY_CONFIRMATION}</span>
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button disabled={!valid || mutation.isPending} onClick={() => mutation.mutate()}>
+            Resubmit
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; onSaved: () => void }) {
   const [email, setEmail] = useState(program.notifyEmail);
   const [smsP1, setSmsP1] = useState(program.notifySmsP1);
