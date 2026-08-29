@@ -431,51 +431,87 @@ export type Database = {
         Row: {
           archived_at: string | null
           created_at: string
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           department_id: string | null
           entity_id: string
           entity_type: string
           external_url: string | null
           id: string
+          is_demo: boolean
           kind: string
+          mime_type: string | null
           note: string | null
+          original_filename: string | null
+          property_id: string | null
+          requested_from: string | null
           required: boolean
+          size_bytes: number | null
           storage_path: string | null
           title: string
           updated_at: string
+          upload_key: string | null
+          upload_status: string
+          uploaded_at: string | null
           uploaded_by: string | null
           visibility: string
         }
         Insert: {
           archived_at?: string | null
           created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           department_id?: string | null
           entity_id: string
           entity_type: string
           external_url?: string | null
           id?: string
+          is_demo?: boolean
           kind?: string
+          mime_type?: string | null
           note?: string | null
+          original_filename?: string | null
+          property_id?: string | null
+          requested_from?: string | null
           required?: boolean
+          size_bytes?: number | null
           storage_path?: string | null
           title: string
           updated_at?: string
+          upload_key?: string | null
+          upload_status?: string
+          uploaded_at?: string | null
           uploaded_by?: string | null
           visibility?: string
         }
         Update: {
           archived_at?: string | null
           created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           department_id?: string | null
           entity_id?: string
           entity_type?: string
           external_url?: string | null
           id?: string
+          is_demo?: boolean
           kind?: string
+          mime_type?: string | null
           note?: string | null
+          original_filename?: string | null
+          property_id?: string | null
+          requested_from?: string | null
           required?: boolean
+          size_bytes?: number | null
           storage_path?: string | null
           title?: string
           updated_at?: string
+          upload_key?: string | null
+          upload_status?: string
+          uploaded_at?: string | null
           uploaded_by?: string | null
           visibility?: string
         }
@@ -485,6 +521,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -4188,6 +4231,10 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      owner_can_see_property: {
+        Args: { _property_id: string; _user_id: string }
+        Returns: boolean
+      }
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
