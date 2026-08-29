@@ -20,6 +20,7 @@ import { useRole } from "@/hooks/useRole";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
@@ -750,6 +751,9 @@ function EvidenceDialog({
           >
             Save evidence
           </Button>
+          {open ? (
+            <AttachmentsPanel entityType="onboarding_task" entityId={taskId} title="Photos & documents" />
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
