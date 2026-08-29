@@ -711,10 +711,12 @@ function ApprovalSubmitDialog({
 function EvidenceDialog({
   disabled,
   current,
+  taskId,
   onSave,
 }: {
   disabled: boolean;
   current: string;
+  taskId: string;
   onSave: (note: string) => void;
 }) {
   const [open, setOpen] = useState(false);
