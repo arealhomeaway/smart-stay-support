@@ -4231,10 +4231,6 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
-      owner_can_see_property: {
-        Args: { _property_id: string; _user_id: string }
-        Returns: boolean
-      }
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
