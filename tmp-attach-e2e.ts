@@ -40,7 +40,7 @@ let ticket = await supabaseAdmin
 if (!ticket.data) {
   const made = await supabaseAdmin
     .from("tickets")
-    .insert({ title: "E2E file-handling check (temporary)", property_id: propertyId!, is_demo: true, status: "open", priority: "p4", created_by: staff.userId })
+    .insert({ title: "E2E file-handling check (temporary)", property_id: propertyId!, is_demo: true, record_type: "active_task", status: "open", priority: "p4", created_by: staff.userId })
     .select("id, ref, status, is_demo")
     .single();
   if (made.error) throw made.error;
