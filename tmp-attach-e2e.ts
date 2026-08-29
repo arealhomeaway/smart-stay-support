@@ -29,7 +29,7 @@ const opp = await supabaseAdmin
   .eq("owner_programs.owner_user_id", owner.userId)
   .eq("inclusion_status", "included");
 const propertyId = opp.data?.[0]?.property_id;
-const ticket = await supabaseAdmin
+let ticket = await supabaseAdmin
   .from("tickets")
   .select("id, ref, status, is_demo")
   .eq("is_demo", true)
@@ -37,8 +37,19 @@ const ticket = await supabaseAdmin
   .neq("status", "closed")
   .limit(1)
   .maybeSingle();
-console.log("demo ticket:", ticket.data?.ref, "property:", propertyId);
+if (!ticket.data) {
+  const made = await supabaseAdmin
+    .from("tickets")
+    .insert({ title: "E2E file-handling check (temporary)", property_id: propertyId!, is_demo: true, status: "open", priority: "p4", created_by: staff.userId })
+    .select("id, ref, status, is_demo")
+    .single();
+  if (made.error) throw made.error;
+  ticket = { ...ticket, data: made.data } as typeof ticket;
+  console.log("created a temporary demo ticket for this run");
+}
+console.log("demo ticket:", ticket.data!.ref, "property:", propertyId);
 const ticketId = ticket.data!.id;
+const createdTicket = true;
 
 async function upload(viewer: A.Viewer, name: string, type: string, bytes: Uint8Array, key: string, fulfils?: string) {
   const started = await A.beginUpload(viewer, {
@@ -126,4 +137,5 @@ await supabaseAdmin.from("tickets").update({ status: ticket.data!.status }).eq("
 const created = [photo, doc, ownerDoc, req.documentId];
 for (const id of created) { try { await A.removeAttachment(supervisor, id, "e2e cleanup"); } catch { /* already gone */ } }
 await supabaseAdmin.from("documents").delete().in("id", [...created, video]);
+if (createdTicket) await supabaseAdmin.from("tickets").delete().eq("id", ticketId);
 console.log("cleanup done — ticket restored to status", ticket.data!.status);
