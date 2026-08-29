@@ -204,6 +204,8 @@ export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null
                   <Badge variant="secondary">
                     {f.requested_from === "owner" ? "Requested from owner" : "Upload unfinished"}
                   </Badge>
+                ) : !f.original_filename ? (
+                  <Badge variant="secondary">Request completed</Badge>
                 ) : (
                   <span className="text-muted-foreground">
                     {formatBytes(f.size_bytes ?? 0)} ·{" "}
@@ -220,7 +222,7 @@ export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null
                     Owner
                   </label>
                 ) : null}
-                {f.upload_status === "stored" ? (
+                {f.upload_status === "stored" && f.original_filename ? (
                   <>
                     <Button size="icon" variant="ghost" onClick={() => open.mutate({ documentId: f.id, download: false })}>
                       <Eye className="size-4" />
