@@ -734,7 +734,7 @@ function EvidenceDialog({
           {current ? "Update evidence" : "Add evidence"}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Evidence for this task</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <Textarea
