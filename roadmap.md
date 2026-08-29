@@ -83,3 +83,10 @@
   - [x] Attachment readiness (no Storage bucket, no upload code — missing)
   - [x] Active Owner guide alignment map (branded AOP package)
 - Paused/unchanged: vendor portal, live sends, dispatch, external writes, automations
+
+## Phase 1 — real file storage (Aug 29, done)
+- [x] Email retry/concurrency re-verified (11 tests): claim-first + unique index, retag-only retry
+- [x] Private bucket `resolve-attachments` (50 MB), documents metadata + RLS, helper moved to `private` schema
+- [x] attachments.ts / attachments.server.ts / attachments.functions.ts / AttachmentsPanel; wired to ticket detail + onboarding evidence dialog
+- [x] 17 unit tests + 19-check isolated end-to-end run on a temporary demo ticket (cleaned up, bucket empty)
+- Still needs approval: any SharePoint *write* (new Microsoft scope) — Resolve stays the source of truth for attachments
