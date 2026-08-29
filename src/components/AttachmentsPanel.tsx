@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ALLOWED_MIME_TYPES, formatBytes, type AttachmentEntity, validateFile } from "@/lib/attachments";
+import { ALLOWED_MIME_TYPES, formatBytes, MAX_FILE_BYTES, type AttachmentEntity, validateFile } from "@/lib/attachments";
 import {
   attachmentUrlFn,
   beginUploadFn,
