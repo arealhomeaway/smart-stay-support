@@ -506,9 +506,10 @@ function OnboardingWorkspace() {
                               />
                             )}
                             {t.evidence_required && (
-                              <EvidenceDialog
-                                disabled={readOnly}
-                                current={t.evidence_note ?? ""}
+                               <EvidenceDialog
+                                 disabled={readOnly}
+                                 taskId={t.id}
+                                 current={t.evidence_note ?? ""}
                                 onSave={(note) =>
                                   saveTask.mutate({
                                     data: {
