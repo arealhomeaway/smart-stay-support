@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { GuestContextPanel } from "@/components/GuestContextPanel";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
@@ -691,6 +692,8 @@ function TicketDetail() {
               </div>
             </CardContent>
           </Card>
+
+          <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Photos, video & documents" />
         </div>
 
         <div className="space-y-6">
