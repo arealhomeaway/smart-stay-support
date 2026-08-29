@@ -90,3 +90,11 @@
 - [x] attachments.ts / attachments.server.ts / attachments.functions.ts / AttachmentsPanel; wired to ticket detail + onboarding evidence dialog
 - [x] 17 unit tests + 19-check isolated end-to-end run on a temporary demo ticket (cleaned up, bucket empty)
 - Still needs approval: any SharePoint *write* (new Microsoft scope) — Resolve stays the source of truth for attachments
+
+## PR #2 review (feat/operations-assignment-contact-context)
+- [ ] Isolated dry-run merge vs main; report commits/overlaps
+- [ ] Reconcile typecheck discrepancy (~401 implicit-any vs clean)
+- [ ] Verify auto-assignment rules vs approved SOP
+- [ ] Verify guest + primary-owner contact population honesty
+- [ ] Review unapplied migration + RLS; decision (merge/fix/blocked)
+- [ ] Hold file-storage publish until combined Operations release
