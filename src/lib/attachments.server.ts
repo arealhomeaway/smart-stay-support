@@ -487,3 +487,59 @@ export async function requestOwnerDocument(
   });
   return { documentId: insert.data.id };
 }
+
+/* ------------------------------------------------------------------ */
+/* Owner-facing: only records where staff shared or asked for a file    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The homeowner's narrow view of files. This is deliberately not a file
+ * library: it lists only the records where a coordinator has either shared a
+ * file with this owner or opened an upload slot for them.
+ */
+export async function listOwnerFileRecords(viewer: Viewer) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const props = await supabaseAdmin
+    .from("owner_program_properties")
+    .select("property_id, inclusion_status, archived_at, owner_programs!inner(owner_user_id)")
+    .eq("owner_programs.owner_user_id", viewer.userId);
+  const propertyIds = (props.data ?? [])
+    .filter((r) => r.inclusion_status === "included" && r.archived_at == null)
+    .map((r) => r.property_id as string);
+  if (propertyIds.length === 0) return { records: [] };
+
+  const { data, error } = await supabaseAdmin
+    .from("documents")
+    .select("id, entity_type, entity_id, requested_from, upload_status, visibility, created_at")
+    .in("property_id", propertyIds)
+    .is("deleted_at", null)
+    .or("visibility.eq.owner_shared,requested_from.eq.owner")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  const grouped = new Map<
+    string,
+    { entityType: AttachmentEntity; entityId: string; shared: number; openRequestId: string | null }
+  >();
+  for (const row of data ?? []) {
+    const key = `${row.entity_type}:${row.entity_id}`;
+    const g =
+      grouped.get(key) ??
+      { entityType: row.entity_type as AttachmentEntity, entityId: row.entity_id as string, shared: 0, openRequestId: null };
+    if (row.requested_from === "owner" && row.upload_status === "pending") g.openRequestId = row.id as string;
+    else if (row.upload_status === "stored") g.shared += 1;
+    grouped.set(key, g);
+  }
+
+  const records = [];
+  for (const g of grouped.values()) {
+    try {
+      const record = await loadRecord(g.entityType, g.entityId);
+      records.push({ ...g, label: record.label });
+    } catch {
+      // A record the owner can no longer reach simply drops out of the list.
+    }
+  }
+  return { records };
+}

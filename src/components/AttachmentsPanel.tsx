@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ALLOWED_MIME_TYPES, formatBytes, type AttachmentEntity, validateFile } from "@/lib/attachments";
+import { ALLOWED_MIME_TYPES, formatBytes, MAX_FILE_BYTES, type AttachmentEntity, validateFile } from "@/lib/attachments";
 import {
   attachmentUrlFn,
   beginUploadFn,
@@ -141,8 +141,9 @@ export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null
             </CardTitle>
             <CardDescription className="mt-1">
               Photos, video and documents stay attached to this record through assignment, review, handoff and closure.
-              Homeowners see only what is marked shared.
+              Homeowners see only what is marked shared. Each file can be up to {formatBytes(MAX_FILE_BYTES)}.
             </CardDescription>
+
           </div>
           {data?.canUpload ? (
             <Button size="sm" disabled={upload.isPending} onClick={() => inputRef.current?.click()}>

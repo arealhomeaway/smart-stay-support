@@ -39,6 +39,7 @@ import {
   type TaskType,
 } from "@/lib/owner-participation";
 import { OwnerBadges } from "@/components/OwnerBadges";
+import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -421,6 +422,8 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
           ))}
         </CardContent>
       </Card>
+
+      <OwnerFilesPanel />
 
       <OwnerBadges earned={badges} reportedHours={hoursFromMinutes(reportedMinutes)} />
 

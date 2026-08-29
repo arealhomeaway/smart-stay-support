@@ -83,3 +83,11 @@ export const requestOwnerDocumentFn = createServerFn({ method: "POST" })
     const viewer = await m.loadViewer(context.supabase, context.userId);
     return m.requestOwnerDocument(viewer, data);
   });
+
+export const listOwnerFileRecordsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const m = await import("@/lib/attachments.server");
+    const viewer = await m.loadViewer(context.supabase, context.userId);
+    return m.listOwnerFileRecords(viewer);
+  });
