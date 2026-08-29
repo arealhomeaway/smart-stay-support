@@ -141,8 +141,9 @@ export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null
             </CardTitle>
             <CardDescription className="mt-1">
               Photos, video and documents stay attached to this record through assignment, review, handoff and closure.
-              Homeowners see only what is marked shared.
+              Homeowners see only what is marked shared. Each file can be up to {formatBytes(MAX_FILE_BYTES)}.
             </CardDescription>
+
           </div>
           {data?.canUpload ? (
             <Button size="sm" disabled={upload.isPending} onClick={() => inputRef.current?.click()}>
