@@ -20,6 +20,7 @@ import { useRole } from "@/hooks/useRole";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
@@ -506,9 +507,10 @@ function OnboardingWorkspace() {
                               />
                             )}
                             {t.evidence_required && (
-                              <EvidenceDialog
-                                disabled={readOnly}
-                                current={t.evidence_note ?? ""}
+                               <EvidenceDialog
+                                 disabled={readOnly}
+                                 taskId={t.id}
+                                 current={t.evidence_note ?? ""}
                                 onSave={(note) =>
                                   saveTask.mutate({
                                     data: {
@@ -710,10 +712,12 @@ function ApprovalSubmitDialog({
 function EvidenceDialog({
   disabled,
   current,
+  taskId,
   onSave,
 }: {
   disabled: boolean;
   current: string;
+  taskId: string;
   onSave: (note: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -731,7 +735,7 @@ function EvidenceDialog({
           {current ? "Update evidence" : "Add evidence"}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Evidence for this task</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <Textarea
@@ -747,6 +751,9 @@ function EvidenceDialog({
           >
             Save evidence
           </Button>
+          {open ? (
+            <AttachmentsPanel entityType="onboarding_task" entityId={taskId} title="Photos & documents" />
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
