@@ -191,7 +191,7 @@ function Overview() {
 
       <footer className="mt-6 border-t border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-10 text-center">
-          <BrandLogo className="h-12" />
+          <BrandLogo className="h-14 sm:h-16" />
           <p className="text-xs uppercase tracking-[0.2em] text-sidebar-foreground/60">
             Every home. Every guest. Every time.
           </p>
