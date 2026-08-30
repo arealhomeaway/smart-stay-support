@@ -26,7 +26,7 @@ const BRAND = {
   accent: "#03A7B2",
   ivory: "#F7F5F0",
   muted: "#6B7280",
-  logo: "https://smart-stay-support.lovable.app/__l5e/assets-v1/09a79f51-224c-49e2-ae62-9d57991f85b3/arha-logo-white.png",
+  logo: "https://smart-stay-support.lovable.app/__l5e/assets-v1/17169db2-e619-4906-bd3d-b31447c9855c/arha-resolve-logo.png",
 };
 
 function mailConfig() {

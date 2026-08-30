@@ -79,14 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Resolve — A Real Home Away Operations" },
+      { title: "ARHA Resolve — Operations Hub" },
       {
         name: "description",
         content:
           "Internal maintenance and guest-issue ticketing for A Real Home Away short and mid-term rentals.",
       },
       { name: "author", content: "A Real Home Away" },
-      { property: "og:title", content: "Resolve — A Real Home Away Operations" },
+      { property: "og:title", content: "ARHA Resolve — Operations Hub" },
       {
         property: "og:description",
         content: "Guided playbooks and tickets so every guest issue gets solved completely.",
