@@ -75,7 +75,7 @@ function Overview() {
       <header className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
           <div className="flex items-center gap-3">
-            <BrandLogo className="h-9" />
+            <BrandLogo className="h-10 sm:h-12" />
             <span className="h-8 w-px bg-sidebar-foreground/25" />
             <span className="font-display text-lg font-semibold">Resolve</span>
           </div>
