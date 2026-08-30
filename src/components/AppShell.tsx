@@ -183,7 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <Link to={home} className="flex items-center gap-3 px-2 py-1.5">
-            <BrandLogo className="h-8 shrink-0" />
+            <BrandLogo className="h-9 shrink-0" />
             <span className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
               <span className="font-display text-base font-semibold">Resolve</span>
               <span className="text-[0.65rem] uppercase tracking-[0.18em] text-sidebar-foreground/60">
