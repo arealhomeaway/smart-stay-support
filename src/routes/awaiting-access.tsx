@@ -78,10 +78,10 @@ function AwaitingAccess() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-secondary px-4 py-12">
       <div className="w-full max-w-md space-y-6">
-        <div className="rounded-xl bg-sidebar px-6 py-8 text-center text-sidebar-foreground">
-          <BrandLogo className="mx-auto h-14" />
-          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-sidebar-foreground/60">
-            Resolve · A Real Home Away
+        <div className="rounded-xl border border-border bg-white px-6 py-8 text-center">
+          <BrandLogo className="mx-auto h-20 sm:h-24" />
+          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+            ARHA Resolve
           </p>
         </div>
 
