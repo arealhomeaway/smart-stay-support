@@ -66,7 +66,7 @@ function MapPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="flex items-center gap-2 font-display text-2xl font-semibold">
-            <MapPinned className="size-6" /> Job map
+            <MapPinned className="size-6" /> Work map
           </h1>
           <p className="text-sm text-muted-foreground">
             Every managed home with a pin, sized and coloured by the work waiting there. Use it to dispatch the
