@@ -84,3 +84,48 @@ export const createBreezewayOutboundTask = createServerFn({ method: "POST" })
     const { createOutboundTask } = await import("@/lib/breezeway-outbound.server");
     return createOutboundTask(data, context.userId);
   });
+
+/**
+ * Admin review queue: outbound records Resolve could not confirm.
+ * Admin-gated — this is the only place a Breezeway task id can be bound by hand.
+ */
+export const breezewayOutboundReviewQueue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { assertAdmin } = await import("@/lib/access.server");
+    await assertAdmin(context.supabase, context.userId);
+    const { listOutboundNeedingReview } = await import("@/lib/breezeway-outbound.server");
+    return listOutboundNeedingReview();
+  });
+
+/** Admin resolves ONE uncertain record: bind a verified task id, or close it as never created. */
+export const reconcileBreezewayOutboundTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      id: string;
+      action: "link" | "abandon";
+      breezewayTaskId?: number | string | null;
+      note?: string | null;
+    }) => {
+      const id = String(input?.id ?? "").trim();
+      if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Invalid record reference.");
+      const action = input?.action === "abandon" ? "abandon" : "link";
+      const raw = String(input?.breezewayTaskId ?? "").trim();
+      if (action === "link" && !/^\d{1,15}$/.test(raw)) {
+        throw new Error("Enter the numeric Breezeway task id.");
+      }
+      return {
+        id,
+        action,
+        breezewayTaskId: action === "link" ? Number(raw) : null,
+        note: String(input?.note ?? "").slice(0, 500),
+      } as const;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { assertAdmin } = await import("@/lib/access.server");
+    await assertAdmin(context.supabase, context.userId);
+    const { reconcileOutboundTask } = await import("@/lib/breezeway-outbound.server");
+    return reconcileOutboundTask(data, context.userId);
+  });

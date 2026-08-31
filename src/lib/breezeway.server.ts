@@ -239,7 +239,15 @@ type RequestOptions = {
   method?: "GET" | "POST" | "DELETE";
   allowWrite?: boolean;
   body?: unknown;
+  /**
+   * Automatic retry on 429/5xx. Safe for reads, NEVER safe for a
+   * non-idempotent create: a 500 can mean "created but the response was
+   * lost", and retrying it produces a second real Breezeway task. Callers
+   * that create records pass `retry: false` and reconcile by hand instead.
+   */
+  retry?: boolean;
 };
+
 
 export async function breezewayRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const base = options.base ?? BREEZEWAY_INVENTORY_BASE;
@@ -278,11 +286,16 @@ export async function breezewayRequest<T>(path: string, options: RequestOptions 
       continue;
     }
 
-    if ((res.status === 429 || res.status >= 500) && attempt < 2) {
+    // A 401 above is safe to retry (Breezeway refused, so nothing was
+    // created). A 429/5xx is NOT, unless the caller opted in: the request may
+    // have succeeded server-side with the response lost.
+    const retryAllowed = options.retry ?? true;
+    if (retryAllowed && (res.status === 429 || res.status >= 500) && attempt < 2) {
       attempt += 1;
       await sleep(Math.max(blockedUntil - Date.now(), 1000 * attempt * attempt));
       continue;
     }
+
 
     const body = await res.text();
     console.error(`[breezeway] ${method} ${path} failed [${res.status}]: ${body.slice(0, 300)}`);

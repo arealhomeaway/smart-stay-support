@@ -16,7 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BREEZEWAY_DEPARTMENTS, BREEZEWAY_PRIORITIES } from "@/lib/breezeway-outbound";
+import {
+  BREEZEWAY_DEPARTMENTS,
+  BREEZEWAY_PRIORITIES,
+  OUTBOUND_STATUS_LABEL,
+} from "@/lib/breezeway-outbound";
 import {
   breezewayOutboundState,
   createBreezewayOutboundTask,
@@ -29,12 +33,15 @@ type Props = {
   defaultDescription?: string | null;
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  creating: "Sending",
-  created: "Created in Breezeway",
-  synced: "Confirmed by Breezeway",
-  error: "Failed",
-};
+const STATUS_LABEL: Record<string, string> = OUTBOUND_STATUS_LABEL;
+
+/** Uncertain is neither success nor failure — it must not read as either. */
+function statusVariant(status: string) {
+  if (status === "error" || status === "abandoned") return "destructive" as const;
+  if (status === "needs_review") return "secondary" as const;
+  if (status === "creating") return "outline" as const;
+  return "default" as const;
+}
 
 /**
  * Send-to-Breezeway control for one Resolve record.
@@ -102,6 +109,7 @@ export function BreezewayTaskPanel({
   if (state.isLoading || !state.data) return null;
 
   const { eligibility, links } = state.data;
+  const unresolved = links.find((l) => l.status === "creating" || l.status === "needs_review");
   if (!eligibility.enabled && links.length === 0) return null;
 
   return (
@@ -127,7 +135,7 @@ export function BreezewayTaskPanel({
                 key={link.id}
                 className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-xs"
               >
-                <Badge variant={link.status === "error" ? "destructive" : "outline"}>
+                <Badge variant={statusVariant(link.status)}>
                   {STATUS_LABEL[link.status] ?? link.status}
                 </Badge>
                 <span className="font-medium">{link.title}</span>
@@ -138,14 +146,33 @@ export function BreezewayTaskPanel({
                   {new Date(link.createdAt).toLocaleString()}
                 </span>
                 {link.errorMessage ? (
-                  <span className="text-destructive">{link.errorMessage}</span>
+                  <span
+                    className={
+                      link.status === "needs_review" ? "text-amber-700" : "text-destructive"
+                    }
+                  >
+                    {link.errorMessage}
+                  </span>
+                ) : null}
+                {link.status === "needs_review" ? (
+                  <span className="w-full text-amber-700">
+                    Resolve cannot confirm whether Breezeway created this task. An admin must check
+                    Breezeway and resolve it from Integrations — do not send it again.
+                  </span>
+                ) : null}
+                {link.reviewNote ? (
+                  <span className="w-full text-muted-foreground">Review: {link.reviewNote}</span>
                 ) : null}
               </li>
             ))}
           </ul>
         ) : null}
 
-        {eligibility.eligible ? (
+        {!links.length ? (
+          <p className="text-xs text-muted-foreground">Not sent to Breezeway.</p>
+        ) : null}
+
+        {eligibility.eligible && !unresolved ? (
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="bz-title">Task title</Label>
@@ -208,6 +235,13 @@ export function BreezewayTaskPanel({
               </Button>
             </div>
           </div>
+        ) : null}
+
+        {eligibility.eligible && unresolved ? (
+          <p className="text-xs text-amber-700">
+            An earlier request for this record is still open. Sending is paused until it is
+            resolved, so a duplicate Breezeway task cannot be created.
+          </p>
         ) : null}
       </CardContent>
     </Card>

@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RequireCapability } from "@/components/RequireCapability";
 import { SchedulePanel } from "@/components/SchedulePanel";
@@ -573,6 +574,15 @@ function OnboardingWorkspace() {
                                 Mark complete
                               </Button>
                             )}
+                          </div>
+                          {/* Renders nothing unless this task's property is the approved Breezeway pilot home. */}
+                          <div className="w-full">
+                            <BreezewayTaskPanel
+                              sourceType="onboarding_task"
+                              sourceId={t.id}
+                              defaultTitle={t.title}
+                              defaultDescription={t.detail ?? null}
+                            />
                           </div>
                         </div>
                       );

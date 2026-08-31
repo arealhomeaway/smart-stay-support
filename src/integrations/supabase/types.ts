@@ -194,6 +194,9 @@ export type Database = {
           priority: string | null
           property_id: string | null
           request_key: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           scheduled_date: string | null
           scheduled_time: string | null
           source_type: string
@@ -221,6 +224,9 @@ export type Database = {
           priority?: string | null
           property_id?: string | null
           request_key: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           source_type: string
@@ -248,6 +254,9 @@ export type Database = {
           priority?: string | null
           property_id?: string | null
           request_key?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           source_type?: string
