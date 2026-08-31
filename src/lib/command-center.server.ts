@@ -141,6 +141,12 @@ export async function loadCommandCenter(
   const properties = propsRes.data ?? [];
   const propById = new Map(properties.map((p) => [p.id, p]));
   const profiles = profilesRes.data ?? [];
+  // Anything hanging off a demo or archived pre-launch ticket is excluded too,
+  // so visits, ratings and handoffs match the live ticket set exactly.
+  const liveTicketIds = new Set((ticketsRes.data ?? []).map((t) => t.id));
+  const onLiveTicket = (row: { ticket_id?: string | null }) =>
+    !row.ticket_id || liveTicketIds.has(row.ticket_id);
+  const liveHandoffs = (ticketHandoffRes.data ?? []).filter(onLiveTicket);
 
   const matchesFilters = (t: (typeof ticketsRes.data extends null ? never : NonNullable<typeof ticketsRes.data>)[number]) => {
     if (filters.propertyId && t.property_id !== filters.propertyId) return false;
