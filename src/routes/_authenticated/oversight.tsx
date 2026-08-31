@@ -15,6 +15,7 @@ import {
   statusTone,
 } from "@/lib/tickets";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -148,6 +149,7 @@ function Oversight() {
         <p className="mt-1 text-muted-foreground">
           Exceptions only. {totalExceptions === 0 ? "Nothing is slipping right now." : `${totalExceptions} matters need attention.`}
         </p>
+        <ReportingBaselineNote className="mt-3 max-w-2xl" />
       </div>
 
       {sections.map((section) => (

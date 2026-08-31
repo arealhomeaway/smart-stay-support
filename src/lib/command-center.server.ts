@@ -115,7 +115,7 @@ export async function loadCommandCenter(
         .gte("checked_in_at", priorSince),
       supabase
         .from("vendor_job_ratings")
-        .select("id, vendor_user_id, overall, thoroughness, timeliness, communication, photos_complete, reopened, on_time, created_at")
+        .select("id, ticket_id, vendor_user_id, overall, thoroughness, timeliness, communication, photos_complete, reopened, on_time, created_at")
         .gte("created_at", priorSince),
       supabase
         .from("owner_reviews")
@@ -141,6 +141,12 @@ export async function loadCommandCenter(
   const properties = propsRes.data ?? [];
   const propById = new Map(properties.map((p) => [p.id, p]));
   const profiles = profilesRes.data ?? [];
+  // Anything hanging off a demo or archived pre-launch ticket is excluded too,
+  // so visits, ratings and handoffs match the live ticket set exactly.
+  const liveTicketIds = new Set((ticketsRes.data ?? []).map((t) => t.id));
+  const onLiveTicket = (row: { ticket_id?: string | null }) =>
+    !row.ticket_id || liveTicketIds.has(row.ticket_id);
+  const liveHandoffs = (ticketHandoffRes.data ?? []).filter(onLiveTicket);
 
   const matchesFilters = (t: (typeof ticketsRes.data extends null ? never : NonNullable<typeof ticketsRes.data>)[number]) => {
     if (filters.propertyId && t.property_id !== filters.propertyId) return false;
@@ -178,7 +184,7 @@ export async function loadCommandCenter(
   const overdueGuestImpacting = openGuestImpacting.filter(
     (t) => t.action_due_at && t.action_due_at < now.toISOString(),
   );
-  const unacceptedHandoffs = (ticketHandoffRes.data ?? []).filter((h) => h.status === "pending");
+  const unacceptedHandoffs = liveHandoffs.filter((h) => h.status === "pending");
   const waitingNoReview = allTickets.filter(
     (t) => t.status === "waiting" && !t.next_review_at,
   );
@@ -243,7 +249,7 @@ export async function loadCommandCenter(
         value: unacceptedHandoffs.length,
         target: "0",
         status: unacceptedHandoffs.length === 0 ? "green" : unacceptedHandoffs.length < 3 ? "yellow" : "red",
-        denominator: `${(ticketHandoffRes.data ?? []).length} handoffs in window`,
+        denominator: `${liveHandoffs.length} handoffs in window`,
         drill: { to: "/oversight", label: "Oversight queue" },
         note: "A handoff is not complete until it is accepted — the original owner stays responsible.",
       }),
@@ -316,9 +322,9 @@ export async function loadCommandCenter(
   // ---------- Vendors ----------
   const vendorTickets = allTickets.filter((t) => t.vendor_user_id);
   const vendorCurrent = vendorTickets.filter((t) => t.reported_at >= since);
-  const visits = (visitsRes.data ?? []).filter((v) => v.checked_in_at >= since);
-  const ratings = (ratingsRes.data ?? []).filter((r) => r.created_at >= since);
-  const priorRatings = (ratingsRes.data ?? []).filter((r) => r.created_at < since);
+  const visits = (visitsRes.data ?? []).filter((v) => onLiveTicket(v) && v.checked_in_at >= since);
+  const ratings = (ratingsRes.data ?? []).filter((r) => onLiveTicket(r) && r.created_at >= since);
+  const priorRatings = (ratingsRes.data ?? []).filter((r) => onLiveTicket(r) && r.created_at < since);
   const onTime = ratings.filter((r) => r.on_time).length;
   const evidenceComplete = ratings.filter((r) => r.photos_complete).length;
   const vendorReopen = ratings.filter((r) => r.reopened).length;
