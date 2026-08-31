@@ -129,3 +129,13 @@
 - [ ] Phase 7: Handoff Review workspace by job title (Onboarding Dir, Ops Dir, Ops Acceptance, Live Confirmation)
 - [ ] Phase 8: 5-account demo validation; report any step still needing another platform
 - [ ] Hold: no tenant-wide Graph scopes, no permission change, no file moves, no Notion retirement, no publish/automation
+
+## SharePoint architecture audit (read-only, 2026-08-31) — COMPLETE
+- Findings only. No permissions changed, no files touched, no Property Hub work, nothing published.
+- Site: ARHA Resolve — id `arealhomeaway.sharepoint.com,973560d0-454a-41fd-804c-659e7e460f83,67ecd2c1-b4e6-40d9-9eac-00c4b241c0bc`
+- Library: "Documents" (Shared Documents) — drive id `b!0GA1l0pF_UGATGWefkYPg8HS7GfmtNlAnqwAxLJBwLwYFC_w8_PAQZ-W78Pw_f6p`; root currently empty (~1.5 MB site usage)
+- Two Microsoft paths exist and disagree: app-user connector (Sites.Selected, resolve.integration@) vs workspace connection "ARHA Sharepoint Folder" (Sites.Read.All / Sites.ReadWrite.All / Files.Read.All / Sites.Manage.All, NOT linked to project)
+- Required target: single app-scoped identity + Sites.Selected + one site-level write grant on /sites/ARHAResolve
+- Buckets: `resolve-attachments` (private, 50MB cap, 1 object), `database_export_24_08_26` (private, 1 export)
+- Properties: 162 rows, 156 with OwnerRez ids, 6 demo
+- Next priority: Operations/Breezeway release readiness (Property Hub deferred)
