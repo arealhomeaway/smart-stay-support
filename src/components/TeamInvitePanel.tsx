@@ -5,6 +5,7 @@ import { Copy, Mail, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import {
   createTeamInvite,
+  emailTeamInvite,
   listTeamInvites,
   revokeTeamInvite,
 } from "@/lib/team-invites.functions";
@@ -41,6 +42,7 @@ export function TeamInvitePanel() {
   const listFn = useServerFn(listTeamInvites);
   const createFn = useServerFn(createTeamInvite);
   const revokeFn = useServerFn(revokeTeamInvite);
+  const emailFn = useServerFn(emailTeamInvite);
 
   const [role, setRole] = useState<InviteRole>("tech");
   const [email, setEmail] = useState("");
@@ -82,6 +84,15 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
     onError: (e: Error) => toast.error(e.message),
   });
 
+
+  const resend = useMutation({
+    mutationFn: (inviteId: string) => emailFn({ data: { inviteId } }),
+    onSuccess: (res) => {
+      if (res.status === "sent") toast.success("Invite emailed.");
+      else toast.warning(`Not sent: ${res.error}`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const revoke = useMutation({
     mutationFn: (inviteId: string) => revokeFn({ data: { inviteId } }),
@@ -195,6 +206,16 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
                           ? "Expired"
                           : `Expires ${new Date(i.expires_at).toLocaleDateString()}`}
                   </span>
+                  {!used && !revoked && !expired && i.invitee_email && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={resend.isPending}
+                      onClick={() => resend.mutate(i.id)}
+                    >
+                      <Mail className="mr-1 size-3.5" /> Email code
+                    </Button>
+                  )}
                   {!used && !revoked && (
                     <Button
                       size="sm"
