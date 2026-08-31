@@ -107,6 +107,8 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/analytics", label: "Analytics", icon: BarChart3, tour: "analytics", capability: "analytics" },
       { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", capability: "oversight" },
+      { to: "/owner-analytics", label: "Owner participation", icon: KeyRound, tour: "owner-analytics", capability: "owner_programs" },
+      { to: "/ops-analytics", label: "Operations performance", icon: BarChart3, tour: "ops-analytics", capability: "analytics" },
     ],
   },
   {
