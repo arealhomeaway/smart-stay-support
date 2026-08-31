@@ -15,6 +15,7 @@ import {
   type RatingInput,
   type Tier,
 } from "./scorecard";
+import { excludeNonLiveTicketRows } from "./live-tickets";
 
 export type VendorScorecard = {
   vendorUserId: string;
@@ -123,16 +124,27 @@ export async function loadJobRating(ticketId: string) {
   return data;
 }
 
+/**
+ * vendor_job_ratings has no is_demo/archived_at column of its own, so a demo
+ * or pre-launch-archived ticket's rating is excluded by checking its ticket
+ * directly, once here — every scorecard/scoreboard consumer of loadAllRatings
+ * inherits the exclusion rather than needing to re-implement it.
+ */
 async function loadAllRatings(): Promise<RatingRow[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("vendor_job_ratings")
-    .select(
-      "ticket_id, vendor_user_id, overall, points, thoroughness, photos_complete, on_time, reopened, created_at",
-    )
-    .order("created_at", { ascending: false });
+  const [{ data, error }, { data: liveTickets, error: ticketsError }] = await Promise.all([
+    supabaseAdmin
+      .from("vendor_job_ratings")
+      .select(
+        "ticket_id, vendor_user_id, overall, points, thoroughness, photos_complete, on_time, reopened, created_at",
+      )
+      .order("created_at", { ascending: false }),
+    supabaseAdmin.from("tickets").select("id").eq("is_demo", false).is("archived_at", null),
+  ]);
   if (error) throw error;
-  return (data ?? []) as RatingRow[];
+  if (ticketsError) throw ticketsError;
+  const liveTicketIds = new Set(((liveTickets ?? []) as { id: string }[]).map((t) => t.id));
+  return excludeNonLiveTicketRows((data ?? []) as RatingRow[], liveTicketIds);
 }
 
 function build(vendorUserId: string, all: RatingRow[]): Omit<VendorScorecard, "recent" | "completedJobs"> {
@@ -192,7 +204,9 @@ export async function loadVendorScorecard(vendorUserId: string): Promise<VendorS
     .from("tickets")
     .select("id", { count: "exact", head: true })
     .eq("vendor_user_id", vendorUserId)
-    .eq("vendor_status", "completed");
+    .eq("vendor_status", "completed")
+    .eq("is_demo", false)
+    .is("archived_at", null);
 
   let recent: VendorScorecard["recent"] = [];
   if (mine.length > 0) {

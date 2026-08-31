@@ -35,6 +35,8 @@ export const listImportedMatters = createServerFn({ method: "GET" })
         "id, ref, title, priority, status, external_source, external_id, external_status, external_synced_at, property_id, properties(name)",
       )
       .not("external_source", "is", null)
+      .eq("is_demo", false)
+      .is("archived_at", null)
       .order("external_synced_at", { ascending: false })
       .limit(25);
     if (error) return { ok: false as const, error: error.message, data: [] };

@@ -159,6 +159,7 @@ export async function loadJobMap(supabase: Client) {
       .from("tickets")
       .select("id, ref, title, priority, status, due_at, property_id, vendor_name, vendor_status")
       .in("status", OPEN_STATUSES)
+      .eq("is_demo", false)
       .is("archived_at", null)
       .not("property_id", "is", null),
 

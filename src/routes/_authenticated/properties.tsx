@@ -119,7 +119,7 @@ function PropertiesPage() {
     queryFn: async () => {
       const [properties, tickets] = await Promise.all([
         supabase.from("properties").select("*").order("name"),
-        supabase.from("tickets").select("id, property_id, status").is("archived_at", null),
+        supabase.from("tickets").select("id, property_id, status").eq("is_demo", false).is("archived_at", null),
       ]);
       if (properties.error) throw properties.error;
       return { properties: properties.data ?? [], tickets: tickets.data ?? [] };
