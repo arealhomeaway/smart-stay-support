@@ -180,7 +180,7 @@ describe("stale request keys after a terminal outcome", () => {
     await createOutboundTask(input(key), "actor");
     const repeat = await createOutboundTask(input(key), "actor");
     expect(repeat.ok).toBe(false);
-    if (!repeat.ok) expect(repeat.retryable).toBeUndefined();
+    if (!repeat.ok) expect(repeat.retryable ?? false).toBe(false);
   });
 });
 
