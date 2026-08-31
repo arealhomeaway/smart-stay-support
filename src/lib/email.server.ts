@@ -190,7 +190,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     return { status: "skipped", error };
   }
 
-  // Replies always come back to the shared inbox, even when a matter is owned
+  // Replies always come back to the shared inbox, even when a ticket is owned
   // by an individual coordinator. Their name may appear in the signature; the
   // address never changes.
   if (isEmailAddress(input.replyTo) && input.replyTo.trim().toLowerCase() !== SHARED_MAILBOX) {

@@ -456,9 +456,9 @@ export async function redeemOwnerInvite(
 
 
 /* ------------------------------------------------------------------ *
- * Stage 3 — a homeowner opens a matter at their own enrolled home.
+ * Stage 3 — a homeowner opens a ticket at their own enrolled home.
  *
- * This reuses the Resolve matter record. There is no separate owner ticket
+ * This reuses the Resolve ticket record. There is no separate owner ticket
  * system, and the row is only accepted by the database when the property is
  * one the signed-in owner is enrolled in.
  * ------------------------------------------------------------------ */

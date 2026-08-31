@@ -2,7 +2,7 @@
  * The vendor paperwork ARHA actually handles, and what Resolve is allowed to
  * keep of each kind.
  *
- * Two retention rules, and the difference matters legally, not cosmetically:
+ * Two retention rules, and the difference tickets legally, not cosmetically:
  *   - "store"        the file lives in Resolve, some of it supervisor-only.
  *   - "verify_only"  a person checks the document, records that they checked
  *                    it, and the document is never stored. Identity documents

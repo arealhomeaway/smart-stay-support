@@ -31,7 +31,7 @@ export type VendorCandidate = {
 
 const TIER_WEIGHT: Record<Tier, number> = { gold: 30, trusted: 15, rising: 0 };
 
-/** 0-100-ish fit score. Higher is a better dispatch for this matter. */
+/** 0-100-ish fit score. Higher is a better dispatch for this ticket. */
 export function candidateScore(input: {
   tier: Tier;
   averageOverall: number | null;

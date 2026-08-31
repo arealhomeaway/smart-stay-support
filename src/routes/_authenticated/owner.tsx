@@ -468,12 +468,12 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
             <div>
               <CardTitle className="text-base">Activity at your homes</CardTitle>
               <CardDescription>
-                Every matter our team opens appears here automatically — {openTickets.length} open now.
+                Every ticket our team opens appears here automatically — {openTickets.length} open now.
               </CardDescription>
             </div>
             {!readOnly && included.length > 0 && (
               <Button size="sm" variant="outline" onClick={() => setOpeningMatter(true)}>
-                <Plus className="size-4" /> Open a matter
+                <Plus className="size-4" /> Open a ticket
               </Button>
             )}
           </div>
@@ -750,7 +750,7 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">How we reach you</CardTitle>
-        <CardDescription>Urgent matters reach you personally; everything else comes by email and in-app.</CardDescription>
+        <CardDescription>Urgent tickets reach you personally; everything else comes by email and in-app.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between gap-4">
@@ -767,7 +767,7 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
         </div>
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="pref-sms" className="flex items-center gap-2 font-normal">
-            <MessageSquare className="size-4 text-muted-foreground" /> Call or text me for urgent (P1) matters
+            <MessageSquare className="size-4 text-muted-foreground" /> Call or text me for urgent (P1) tickets
           </Label>
           <Switch id="pref-sms" checked={smsP1} onCheckedChange={setSmsP1} />
         </div>
@@ -1040,7 +1040,7 @@ function RespondDialog({
 
 
 /**
- * A homeowner opens a matter at their own enrolled home. ARHA keeps
+ * A homeowner opens a ticket at their own enrolled home. ARHA keeps
  * operational control: the owner chooses how they want to participate, not
  * the priority, the assignee or the closure.
  */
@@ -1074,7 +1074,7 @@ function OpenMatterDialog({
         data: { programId, propertyId, path, title: title.trim(), description: description.trim(), category: "maintenance" },
       }),
     onSuccess: (r) => {
-      toast.success(`Matter #${r.ref} is with the ARHA team.`);
+      toast.success(`Ticket #${r.ref} is with the ARHA team.`);
       onSaved();
       onClose();
     },
@@ -1085,7 +1085,7 @@ function OpenMatterDialog({
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Open a matter</DialogTitle>
+          <DialogTitle>Open a ticket</DialogTitle>
           <DialogDescription>
             Tell us what is going on at your home. Our team takes it from here and keeps you posted.
           </DialogDescription>

@@ -6,7 +6,7 @@
  *   - read that property's tasks for an admin preview
  *
  * What this file never does: change a property's lifecycle stage, create
- * matters, assign vendors, notify anyone, register webhooks, or write anything
+ * tickets, assign vendors, notify anyone, register webhooks, or write anything
  * back to Breezeway. Breezeway "active" carries no meaning for Resolve's
  * lifecycle_status and is never copied into it.
  */

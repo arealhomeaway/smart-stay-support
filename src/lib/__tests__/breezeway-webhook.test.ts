@@ -312,7 +312,7 @@ describe("task re-fetch failure and rate-limit response", () => {
   });
 });
 
-describe("no business writes, notifications, or matter creation", () => {
+describe("no business writes, notifications, or ticket creation", () => {
   it("only ever touches the webhook events table across every outcome", async () => {
     await processBreezewayWebhook(
       { webhook_type: "task", task_id: PILOT_TASK_ID, updated_at: t1 },

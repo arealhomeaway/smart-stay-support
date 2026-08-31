@@ -9,7 +9,7 @@ import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 
 /**
- * Read-only "Current guest/tenant" block for an Operations matter.
+ * Read-only "Current guest/tenant" block for an Operations ticket.
  *
  * Shown only to Operations coordinators and supervisors, never in Vendor,
  * Homeowner, demo or executive views. Data comes live from OwnerRez on each

@@ -29,7 +29,7 @@ const pillars = [
   {
     icon: Building2,
     title: "The property is the spine",
-    body: "Onboarding, matters, vendor visits, homeowner decisions and reviews all attach to the same home, so one operating history follows a property for life.",
+    body: "Onboarding, tickets, vendor visits, homeowner decisions and reviews all attach to the same home, so one operating history follows a property for life.",
   },
   {
     icon: Repeat,
@@ -50,7 +50,7 @@ const pillars = [
 
 const chain = [
   { label: "Onboarding", note: "Contract through launch" },
-  { label: "Operations", note: "Matters, guests, follow-up" },
+  { label: "Operations", note: "Tickets, guests, follow-up" },
   { label: "Vendors", note: "Scheduled work and evidence" },
   { label: "Homeowners", note: "Decisions, reports, updates" },
   { label: "Oversight", note: "Health and accountability" },
@@ -162,7 +162,7 @@ function Overview() {
           </ol>
           <p className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 p-5 text-sm text-muted-foreground">
             <strong className="text-foreground">One operating history per property.</strong>{" "}
-            Onboarding decisions, every matter and visit, vendor evidence, homeowner approvals and
+            Onboarding decisions, every ticket and visit, vendor evidence, homeowner approvals and
             quarterly reviews accumulate on the same home — so anyone picking it up tomorrow can see
             what happened, who owns it, and what was promised.
           </p>

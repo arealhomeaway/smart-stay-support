@@ -238,7 +238,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {!vendorMode && !ownerMode && !readOnly && (
                   <Button asChild data-tour="log" size="sm" className="min-h-11 md:min-h-9">
                     <Link to="/tickets/new">
-                      <Plus className="size-4" aria-hidden="true" /> Log a matter
+                      <Plus className="size-4" aria-hidden="true" /> Log a ticket
                     </Link>
                   </Button>
                 )}

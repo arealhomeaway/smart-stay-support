@@ -169,7 +169,7 @@ function OnboardingWorkspace() {
         <h1 className="font-display text-3xl font-semibold">Onboarding workspace</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Homes stay on their existing Property ID from day one. Pre-handoff work lives here and never
-          mixes with operational matters. A home only becomes an active operation after the two documented
+          mixes with operational tickets. A home only becomes an active operation after the two documented
           reviews and an Operations acceptance.
         </p>
       </header>
@@ -442,7 +442,7 @@ function OnboardingWorkspace() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Onboarding tasks</CardTitle>
-                    <CardDescription>Pre-handoff work only — separate from operational matters.</CardDescription>
+                    <CardDescription>Pre-handoff work only — separate from operational tickets.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {tasks.length === 0 && (

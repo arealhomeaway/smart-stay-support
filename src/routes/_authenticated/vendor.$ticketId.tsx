@@ -335,7 +335,7 @@ function VendorJob() {
           )}
           {finished && (
             <p className="text-xs text-muted-foreground">
-              Marked complete. A coordinator reviews the evidence before the matter is closed.
+              Marked complete. A coordinator reviews the evidence before the ticket is closed.
             </p>
           )}
         </CardContent>

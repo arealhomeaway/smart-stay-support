@@ -175,7 +175,7 @@ export function VendorDocumentsPanel({
               <Input type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
             </div>
             <Textarea
-              placeholder="What matters about this document? Coverage limits, rate changes, exclusions…"
+              placeholder="What tickets about this document? Coverage limits, rate changes, exclusions…"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={1000}

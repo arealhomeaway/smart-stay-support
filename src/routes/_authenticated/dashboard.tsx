@@ -71,7 +71,7 @@ function Dashboard() {
   );
 
   const stats = [
-    { label: "Open matters", value: open.length, tone: "text-foreground" },
+    { label: "Open tickets", value: open.length, tone: "text-foreground" },
     { label: "SLA breached", value: breached.length, tone: "text-danger" },
     { label: "Not yet acknowledged", value: unacked.length, tone: "text-warning-foreground" },
     { label: "Closed this week", value: resolvedWeek.length, tone: "text-success" },
@@ -129,7 +129,7 @@ function Dashboard() {
         <CardContent className="space-y-2">
           {open.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Nothing open. <Link to="/tickets/new" className="text-primary hover:underline">Log a matter</Link>.
+              Nothing open. <Link to="/tickets/new" className="text-primary hover:underline">Log a ticket</Link>.
             </p>
           )}
           {open

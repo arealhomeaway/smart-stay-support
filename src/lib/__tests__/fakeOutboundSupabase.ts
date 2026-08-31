@@ -3,7 +3,7 @@
  * (`feature_flags`, `tickets`, `onboarding_tasks`, `properties`,
  * `breezeway_outbound_tasks`), used only in tests via `mock.module`.
  *
- * It reproduces the constraints that actually matter for duplicate safety:
+ * It reproduces the constraints that actually ticket for duplicate safety:
  *   - unique `request_key`
  *   - unique `breezeway_task_id` when not null
  *   - ONE open row per source record, where "open" is status

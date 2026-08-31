@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
 
-/** The signed-in homeowner's whole hub: program, matters, reviews, alerts. */
+/** The signed-in homeowner's whole hub: program, tickets, reviews, alerts. */
 export const ownerHome = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -130,7 +130,7 @@ export const redeemInvite = createServerFn({ method: "POST" })
     return redeemOwnerInvite(supabaseAdmin, context.userId, email, data.code);
   });
 
-/** A homeowner opens a matter at one of their own enrolled homes. */
+/** A homeowner opens a ticket at one of their own enrolled homes. */
 export const createOwnerMatterFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

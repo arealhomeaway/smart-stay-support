@@ -122,7 +122,7 @@ export function BreezewayWebhookPanel() {
             <CardDescription>
               One subscription, company-wide delivery. Only tasks for the approved pilot property
               are verified and retained; everything else is counted and discarded. Preview only — no
-              matters, assignments, messages, stage changes or Breezeway writes.
+              tickets, assignments, messages, stage changes or Breezeway writes.
             </CardDescription>
           </div>
           <Badge variant={status?.registered ? "default" : "secondary"}>

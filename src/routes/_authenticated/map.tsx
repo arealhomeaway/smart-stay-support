@@ -87,7 +87,7 @@ function MapPage() {
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         <span>{pins.length} homes pinned</span>
         <span>·</span>
-        <span>{openCount} open matters on the map</span>
+        <span>{openCount} open tickets on the map</span>
         {unpinned > 0 && (
           <>
             <span>·</span>

@@ -140,13 +140,13 @@ export function OperationsContextPanel({
         </section>
 
         <section className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Linked matters</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Linked tickets</p>
           {linked.length === 0 ? (
-            <p className="text-muted-foreground">No onboarding item is linked to an Operations matter.</p>
+            <p className="text-muted-foreground">No onboarding item is linked to an Operations ticket.</p>
           ) : (
             linked.map((t) => (
               <p key={t.id} className="text-xs">
-                {t.title} → matter {String(t.linked_ticket_id).slice(0, 8)}
+                {t.title} → ticket {String(t.linked_ticket_id).slice(0, 8)}
               </p>
             ))
           )}

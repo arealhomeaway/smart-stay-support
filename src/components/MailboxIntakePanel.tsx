@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getMailboxStatus, runMailboxSync } from "@/lib/mailbox.functions";
 
 /**
- * Supervisor control for inbox intake: read the team inbox and open matters
+ * Supervisor control for inbox intake: read the team inbox and open tickets
  * for the mail that is real work. Preview first, then run it for real.
  */
 export function MailboxIntakePanel() {
@@ -28,8 +28,8 @@ export function MailboxIntakePanel() {
       }
       toast.success(
         dryRun
-          ? `Preview: ${result.created} of ${result.scanned} unread would open a matter (${result.skipped} skipped).`
-          : `${result.created} matter${result.created === 1 ? "" : "s"} opened · ${result.threaded} filed on existing matters · ${result.skipped} skipped.`,
+          ? `Preview: ${result.created} of ${result.scanned} unread would open a ticket (${result.skipped} skipped).`
+          : `${result.created} ticket${result.created === 1 ? "" : "s"} opened · ${result.threaded} filed on existing tickets · ${result.skipped} skipped.`,
       );
       if (!dryRun) {
         void queryClient.invalidateQueries({ queryKey: ["mailbox-status"] });
@@ -81,7 +81,7 @@ export function MailboxIntakePanel() {
             <Eye className="size-4" /> Preview unread
           </Button>
           <Button size="sm" disabled={!connected || sync.isPending} onClick={() => sync.mutate(false)}>
-            <RefreshCw className={`size-4 ${sync.isPending ? "animate-spin" : ""}`} /> Read inbox &amp; open matters
+            <RefreshCw className={`size-4 ${sync.isPending ? "animate-spin" : ""}`} /> Read inbox &amp; open tickets
           </Button>
         </div>
 
@@ -89,7 +89,7 @@ export function MailboxIntakePanel() {
           <div className="rounded-md border border-border">
             <div className="flex flex-wrap gap-4 border-b border-border px-3 py-2 text-sm">
               <span>{preview.scanned} unread scanned</span>
-              <span className="font-medium">{preview.created} matters</span>
+              <span className="font-medium">{preview.created} tickets</span>
               <span>{preview.threaded} threaded</span>
               <span className="text-muted-foreground">{preview.skipped} skipped</span>
               {preview.failed > 0 ? <span className="text-destructive">{preview.failed} failed</span> : null}

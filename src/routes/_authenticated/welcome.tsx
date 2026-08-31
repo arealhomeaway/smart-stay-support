@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/welcome")({
       {
         name: "description",
         content:
-          "Watch the Resolve walkthrough and learn how matters, response clocks, playbooks and handoffs keep guest issues resolved properly.",
+          "Watch the Resolve walkthrough and learn how tickets, response clocks, playbooks and handoffs keep guest issues resolved properly.",
       },
       { property: "og:title", content: "How Resolve Works | ARHA Coordinator Training" },
       {
@@ -28,15 +28,15 @@ export const Route = createFileRoute("/_authenticated/welcome")({
 const basics = [
   {
     icon: ClipboardList,
-    title: "One matter per issue",
+    title: "One ticket per issue",
     body: "Log it once. Resolve pulls live occupancy from OwnerRez and sets the priority floor, so nobody has to guess how urgent it is.",
     to: "/tickets/new" as const,
-    cta: "Log a matter",
+    cta: "Log a ticket",
   },
   {
     icon: ListChecks,
     title: "Playbooks do the coaching",
-    body: "Each work type carries required steps — test every smoke and CO device, replace anything removed, photograph the wall — and the matter cannot close until they are done.",
+    body: "Each work type carries required steps — test every smoke and CO device, replace anything removed, photograph the wall — and the ticket cannot close until they are done.",
     to: "/playbooks" as const,
     cta: "See playbooks",
   },
@@ -126,7 +126,7 @@ function WelcomePage() {
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
           Common sense has to be written down to be reliable. If a coordinator or a vendor has to remember a step, the
           step will eventually be missed — so Resolve puts it in the playbook, on the clock, and in front of the person
-          who owns the matter.
+          who owns the ticket.
         </p>
       </section>
     </div>
