@@ -90,7 +90,7 @@ export const ACTIVITY_CATEGORIES = [
   "Listing, photography or pricing review",
   "Guest experience or standards",
   "Operating decision",
-  "Inspection or maintenance review",
+  "Assessment or maintenance review",
   "Financial or reporting review",
   "Other participation",
 ] as const;

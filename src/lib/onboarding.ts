@@ -226,8 +226,17 @@ export function validateHandoff(
  * ------------------------------------------------------------------------ */
 
 export const GATE_STEPS = [
-  { value: "kati_review", label: "Kati review", blurb: "Onboarding lead verifies the readiness record." },
-  { value: "micah_review", label: "Micah review", blurb: "Second review of exceptions and carryover work." },
+  {
+    value: "kati_review",
+    label: "Director of Onboarding review",
+    blurb: "The Director of Onboarding verifies the readiness record.",
+  },
+  {
+    value: "micah_review",
+    label: "Director of Operations review",
+    blurb:
+      "The Director of Operations reviews exceptions and assigns every carryover item to Operations with an owner and due date.",
+  },
   {
     value: "operations_acceptance",
     label: "Operations acceptance",
@@ -240,7 +249,7 @@ export const GATE_STEPS = [
 export type GateStep = (typeof GATE_STEPS)[number]["value"];
 
 export function gateLabel(value: string | null | undefined) {
-  return GATE_STEPS.find((s) => s.value === value)?.label ?? "Kati review";
+  return GATE_STEPS.find((s) => s.value === value)?.label ?? "Director of Onboarding review";
 }
 
 export function nextGateStep(step: string | null | undefined): GateStep {

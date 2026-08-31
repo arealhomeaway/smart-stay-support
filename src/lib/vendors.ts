@@ -55,7 +55,7 @@ export const VENDOR_CLASS_LABELS: Record<VendorClass, string> = {
 
 export const SERVICE_CATEGORIES = [
   "Cleaning",
-  "Inspection",
+  "Assessment",
   "Maintenance",
   "Handyman",
   "HVAC",

@@ -100,7 +100,7 @@ function OnboardingWorkspace() {
   });
   const requestHandoff = useMutation({
     mutationFn: useServerFn(requestHandoffFn),
-    onSuccess: () => { toast.success("Handoff requested. The review gate starts with Kati."); void refresh(); },
+    onSuccess: () => { toast.success("Handoff requested. The review gate starts with the Director of Onboarding."); void refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
   const reviewHandoff = useMutation({
