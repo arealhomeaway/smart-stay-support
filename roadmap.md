@@ -139,3 +139,38 @@
 - Buckets: `resolve-attachments` (private, 50MB cap, 1 object), `database_export_24_08_26` (private, 1 export)
 - Properties: 162 rows, 156 with OwnerRez ids, 6 demo
 - Next priority: Operations/Breezeway release readiness (Property Hub deferred)
+
+## Amended beta scope (ChatGPT prompt + Aug 31 onboarding meeting) — 2026-09-01
+Applied now (UI/content only, no schema, nothing published):
+- [x] "Inspection" reads as **Assessment** in user-facing labels (ticket category, vendor service
+      category, owner participation activity, quarterly page copy, onboarding template titles);
+      internal keys unchanged
+- [x] Assessment report task is **save-only** — no ARHA review; bids only when the Realtor asks
+- [x] Handoff gate steps now read by job title: **Director of Onboarding review** → **Director of
+      Operations review** → Operations acceptance → Live confirmation
+- [x] Carryover copy states the work belongs to Operations after handoff, assigned by the Director
+      of Operations with a named owner and due date
+
+Confirmed already correct, no change needed:
+- Single 90-day owner review (no 30/60 milestones in the program clock)
+- Owner goal 100+ hours, internal operating target 105 (`src/lib/owner-participation.ts`)
+
+Accepted scope decisions (not yet built):
+- [ ] NO historical migration for beta (old tickets, Asana/Notion activity, legacy docs, old
+      SharePoint/OneDrive folders, historical Breezeway work, productivity backfill)
+- [ ] Analytics start from clean non-demo beta activity, with a visible "analytics start date" label
+- [ ] Current PID field set imported/mapped (facts, contacts, external ids, operating instructions,
+      onboarding status) so nobody needs to open the Notion PID
+- [ ] Eight-tab Property Hub polished to one consistent application (shared header, states, no fake data)
+- [ ] Active Owner analytics completed: owner-facing + staff/exec program view, filters, CSV
+- [ ] Operations ticket analytics: volume, response/resolution (median + average), assignment and
+      handoff credit from the immutable activity log, team activity filters, CSV export
+- [ ] Accuracy tests: demo/archived excluded, shared activity counted once, superseded/returned
+      excluded, SLA timestamps, no handoff double-count, Central-time boundaries, CSV = dashboard
+
+Critical path (historical migration removed):
+- By Sep 4: current-PID import + mapping, Property Hub tabs 1–5 (Overview, Details, Contacts,
+  Onboarding, Operations) polished, Active Owner staff/exec analytics + CSV, analytics start-date label
+- Week of Sep 7: SharePoint-backed uploads (needs the site-level write grant), Documents & Media,
+  Approvals with versioned files, Activity, Operations ticket analytics + CSV, accuracy tests,
+  My Active Projects and handoff review by job title, demo validation
