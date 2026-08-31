@@ -22,6 +22,9 @@ import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { TeamAccessPanel } from "@/components/TeamAccessPanel";
 import { TeamInvitePanel } from "@/components/TeamInvitePanel";
 import { VendorScoreboardPanel } from "@/components/VendorScoreboardPanel";
+import { CoverageSchedulePanel } from "@/components/CoverageSchedulePanel";
+import { AssignmentExceptionQueue } from "@/components/AssignmentExceptionQueue";
+import { OwnerDirectoryPanel } from "@/components/OwnerDirectoryPanel";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({
