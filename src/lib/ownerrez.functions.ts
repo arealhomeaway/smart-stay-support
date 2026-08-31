@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type OwnerRezResult<T> = { ok: true; data: T } | { ok: false; error: string };
+export type OwnerRezResult<T> =
+  | { ok: true; data: T; propertyId: string }
+  | { ok: false; error: string; propertyId: string };
 
 /** Listings available in the connected OwnerRez account, for linking to homes. */
 export const listOwnerRezListings = createServerFn({ method: "GET" })
@@ -42,15 +44,19 @@ export const getPropertyStay = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw error;
     if (!property?.ownerrez_property_id) {
-      return { ok: false as const, error: "This home is not linked to an OwnerRez listing yet." };
+      return {
+        ok: false as const,
+        error: "This home is not linked to an OwnerRez listing yet.",
+        propertyId: data.propertyId,
+      };
     }
 
     try {
       const snapshot = await stayForListing(property.ownerrez_property_id);
-      return { ok: true as const, data: snapshot };
+      return { ok: true as const, data: snapshot, propertyId: data.propertyId };
     } catch (err) {
       const message = err instanceof OwnerRezError ? err.message : "Could not reach OwnerRez.";
-      return { ok: false as const, error: message };
+      return { ok: false as const, error: message, propertyId: data.propertyId };
     }
   });
 

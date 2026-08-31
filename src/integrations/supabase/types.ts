@@ -326,6 +326,53 @@ export type Database = {
           },
         ]
       }
+      coverage_shifts: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          end_minute: number
+          id: string
+          note: string | null
+          role_code: string
+          start_minute: number
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          end_minute: number
+          id?: string
+          note?: string | null
+          role_code: string
+          start_minute: number
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          end_minute?: number
+          id?: string
+          note?: string | null
+          role_code?: string
+          start_minute?: number
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_shifts_role_code_fkey"
+            columns: ["role_code"]
+            isOneToOne: false
+            referencedRelation: "functional_roles"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       demo_environment: {
         Row: {
           active: boolean
@@ -1441,6 +1488,47 @@ export type Database = {
           },
         ]
       }
+      oncall_roster: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_on: string
+          id: string
+          label: string | null
+          starts_on: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_on: string
+          id?: string
+          label?: string | null
+          starts_on: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string
+          id?: string
+          label?: string | null
+          starts_on?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oncall_roster_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_alert_log: {
         Row: {
           alert_kind: string
@@ -2482,6 +2570,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          oncall_eligible: boolean
           phone: string | null
           updated_at: string
         }
@@ -2490,6 +2579,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          oncall_eligible?: boolean
           phone?: string | null
           updated_at?: string
         }
@@ -2498,6 +2588,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          oncall_eligible?: boolean
           phone?: string | null
           updated_at?: string
         }
@@ -2731,6 +2822,62 @@ export type Database = {
             foreignKeyName: "property_handoffs_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_owner_contacts: {
+        Row: {
+          candidate_count: number
+          created_at: string
+          detail: string | null
+          id: string
+          match_status: string
+          owner_email: string | null
+          owner_name: string | null
+          owner_phone: string | null
+          property_id: string
+          source: string
+          source_id: string | null
+          synced_at: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_count?: number
+          created_at?: string
+          detail?: string | null
+          id?: string
+          match_status?: string
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          property_id: string
+          source: string
+          source_id?: string | null
+          synced_at?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_count?: number
+          created_at?: string
+          detail?: string | null
+          id?: string
+          match_status?: string
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          property_id?: string
+          source?: string
+          source_id?: string | null
+          synced_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_owner_contacts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -3075,6 +3222,8 @@ export type Database = {
           archived_at: string | null
           archived_by: string | null
           assigned_to: string | null
+          assignment_note: string | null
+          assignment_source: string | null
           avoidable_reopen: boolean
           breezeway_synced_at: string | null
           breezeway_task_id: string | null
@@ -3170,6 +3319,8 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           assigned_to?: string | null
+          assignment_note?: string | null
+          assignment_source?: string | null
           avoidable_reopen?: boolean
           breezeway_synced_at?: string | null
           breezeway_task_id?: string | null
@@ -3265,6 +3416,8 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           assigned_to?: string | null
+          assignment_note?: string | null
+          assignment_source?: string | null
           avoidable_reopen?: boolean
           breezeway_synced_at?: string | null
           breezeway_task_id?: string | null
@@ -4234,11 +4387,16 @@ export type Database = {
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
+      seat_on_duty: {
+        Args: { _at?: string; _role_code: string }
+        Returns: boolean
+      }
       seed_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
       seed_demo_onboarding: { Args: { _actor: string }; Returns: undefined }
       seed_demo_owner_program: { Args: { _actor?: string }; Returns: string }
+      staff_assignable: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
