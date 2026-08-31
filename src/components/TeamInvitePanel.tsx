@@ -42,6 +42,7 @@ export function TeamInvitePanel() {
   const listFn = useServerFn(listTeamInvites);
   const createFn = useServerFn(createTeamInvite);
   const revokeFn = useServerFn(revokeTeamInvite);
+  const emailFn = useServerFn(emailTeamInvite);
 
   const [role, setRole] = useState<InviteRole>("tech");
   const [email, setEmail] = useState("");
