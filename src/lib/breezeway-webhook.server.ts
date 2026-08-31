@@ -430,6 +430,19 @@ export async function processBreezewayWebhook(
     fallbackUpdatedAt: parsed.updatedAt,
     ...(options.verifyTask ? { verifyTask: options.verifyTask } : {}),
   });
+
+  // Reconciliation only: if this verified task is one Resolve created, note the
+  // acknowledgement against our own record. Never changes Resolve ticket state
+  // and never fails the delivery.
+  if (!isFixture && finalized.outcome === "processed" && finalized.taskId != null) {
+    try {
+      const { noteOutboundWebhook } = await import("./breezeway-outbound.server");
+      await noteOutboundWebhook(finalized.taskId);
+    } catch {
+      /* bookkeeping only */
+    }
+  }
+
   return {
     outcome: finalized.outcome,
     reason: finalized.reason,
@@ -437,3 +450,4 @@ export async function processBreezewayWebhook(
     ...(finalized.retryable !== undefined ? { retryable: finalized.retryable } : {}),
   };
 }
+
