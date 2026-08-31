@@ -115,7 +115,7 @@ export async function loadCommandCenter(
         .gte("checked_in_at", priorSince),
       supabase
         .from("vendor_job_ratings")
-        .select("id, vendor_user_id, overall, thoroughness, timeliness, communication, photos_complete, reopened, on_time, created_at")
+        .select("id, ticket_id, vendor_user_id, overall, thoroughness, timeliness, communication, photos_complete, reopened, on_time, created_at")
         .gte("created_at", priorSince),
       supabase
         .from("owner_reviews")
