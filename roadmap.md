@@ -288,3 +288,42 @@ No historical Notion/Asana/Breezeway/documents/OneDrive/participation/comments/h
 - **Rai / Ask Resolve** — future company-wide, permission-aware grounded
   knowledge and action assistant.
 - **Operations Coach** — the specialized Operations execution/coaching feature.
+
+## Breezeway integration status (approved 2026-08-31 by COO)
+- Breezeway inbound: validated
+- Breezeway outbound Operations: validated
+- Breezeway outbound Onboarding: validated
+- Duplicate / idempotency protection: validated
+- Webhook reconciliation: validated
+- Resolve source-of-truth boundary: validated
+- Controlled pilot (9211 Fitzgerald Dr / home 1473933): PASS
+- Outbound writes are NOT portfolio-wide. The server-side allowlist stays the
+  gate: the `breezeway_outbound` flag may be ON, but a property must be
+  explicitly listed to be writable. Never convert this to "every mapped
+  property is writable".
+
+### Limited outbound beta (3–5 approved properties) — awaiting COO approval of the list
+Monitoring set (system health only — NEVER employee-performance metrics):
+successful create rate, duplicate prevention, needs_review occurrences, failed
+sends, webhook confirmation rate, create→confirmation latency, admin recovery
+usage, Operations vs Onboarding source, Breezeway/Resolve state mismatches.
+
+### Breezeway retirement objective (architecture rule)
+Breezeway is a TRANSITIONAL execution platform. ARHA intends to retire it once
+Resolve safely replaces the Breezeway operational functionality ARHA still
+requires. Do not deepen Breezeway dependency unnecessarily. Test every proposed
+Breezeway work item with: does this migrate operational execution INTO Resolve,
+or does it make Resolve MORE dependent on Breezeway? Only the former is
+prioritized.
+Long-term target chain: OwnerRez reservation/event → Resolve creates and
+schedules the work → Resolve assigns staff/vendors → Resolve runs
+checklists/work orders → Resolve captures evidence and exceptions → Resolve
+tracks completion and analytics, with Breezeway removed from the chain.
+
+### Development focus (no further Breezeway expansion unless a beta defect appears)
+1. Sept 4–7 Onboarding + Active Owner readiness
+2. Current authoritative property/PID architecture
+3. Sept 8–9 Property Hub functional beta
+4. SharePoint scoped-write integration
+5. Sept 12 homeowner-ready release candidate
+Rai / Ask Resolve stays architected for later — out of current beta build scope.
