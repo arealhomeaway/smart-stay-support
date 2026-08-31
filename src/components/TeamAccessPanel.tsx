@@ -87,11 +87,9 @@ export function TeamAccessPanel() {
               >
                 <span className="font-medium">{p.full_name ?? p.email ?? "Unnamed teammate"}</span>
                 <span className="text-muted-foreground">{p.email}</span>
-                {current !== "tech" && (
-                  <Badge variant="outline" className="uppercase">
-                    {current === "admin" ? "Admin" : current === "vendor" ? "Vendor" : "Supervisor"}
-                  </Badge>
-                )}
+                <Badge variant="outline" className="uppercase">
+                  {ROLE_LABELS[current]}
+                </Badge>
                 <Button
                   type="button"
                   size="sm"

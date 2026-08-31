@@ -673,7 +673,7 @@ function TicketDetail() {
               <div className="space-y-2">
                 <Textarea
                   rows={3}
-                  placeholder="Add an update: who you called, what the tech found, what the guest said…"
+                  placeholder="Add an update: who you called, what the vendor found, what the guest said…"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                 />
