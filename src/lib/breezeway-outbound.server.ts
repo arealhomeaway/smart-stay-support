@@ -25,7 +25,6 @@ import {
   BREEZEWAY_OUTBOUND_FLAG,
   BREEZEWAY_DEPARTMENTS,
   BREEZEWAY_PRIORITIES,
-  OUTBOUND_PILOT_HOME_ID,
   isOutboundAllowedHome,
   type BreezewayOutboundEligibility,
   type BreezewayOutboundLink,
