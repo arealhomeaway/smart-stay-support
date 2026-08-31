@@ -50,21 +50,15 @@ const UNAVAILABLE = {
  * exclusion, and the same underlying OwnerRez read. See src/lib/property-contact.ts
  * for the result type and the pure resolution logic (resolvePropertyGuestContext).
  *
- * KNOWN LIMITATION, not silently papered over: the only owner contact
- * Resolve's own database holds today is on `owner_programs`, which is
- * scoped to Active Owner Program *enrollment* — it does not exist for a
- * regular (non-enrolled) owner. The general property → owner mapping lives
- * in Notion's "Property Master Data" database (each property row links to
- * an Owner contact page), keyed by the same OwnerRez property id already
- * stored here, and is not synced into Supabase anywhere. It could not be
- * verified whether OwnerRez's own API additionally exposes owner contact
- * directly — this session had no live OwnerRez credentials and
- * api.ownerrez.com is blocked by this session's own network egress policy,
- * so even the public API docs couldn't be checked. Wiring in the general
- * mapping needs either a new Notion sync job or confirmation that OwnerRez
- * exposes it — a real decision, not something to guess at here. Until then,
- * `owner.source` below is always "active_owner_program", and a null `owner`
- * means "not found in that program", never "this property has no owner".
+ * Owner resolution (2026-08-31): the DESIGNATED primary owner comes from the
+ * general directory table `property_owner_contacts`, imported read-only from
+ * OwnerRez — the connected account was verified to expose `/v2/owners` and an
+ * `owner_id` on every listing naming its designated owner, so no Notion
+ * import is needed. Active Owner Program enrollment is reported separately as
+ * a programme status and is never used as an owner source: a home with no
+ * program row is not "ownerless". Only the designated primary owner is shown,
+ * never every owner, and "no mapped owner", "stale" and "source failure" are
+ * distinct states.
  */
 export const getPropertyContactContext = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -86,26 +80,47 @@ export const getPropertyContactContext = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!property || property.is_demo) return { visible: false };
 
-    // Owner contact: reuses the existing owner_programs record and its
-    // existing staff-only RLS — no new table, no copy of the contact detail.
-    // See the KNOWN LIMITATION note above: this only covers enrolled owners.
-    const { data: ownerProgram } = await supabase
-      .from("owner_programs")
-      .select("owner_name, owner_phone, owner_email")
-      .eq("property_id", property.id)
-      .eq("is_demo", false)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const owner = ownerProgram
+    const [{ data: directory }, { data: ownerProgram }] = await Promise.all([
+      supabase
+        .from("property_owner_contacts")
+        .select("owner_name, owner_phone, owner_email, source, source_id, match_status, synced_at, detail")
+        .eq("property_id", property.id)
+        .maybeSingle(),
+      supabase
+        .from("owner_programs")
+        .select("id")
+        .eq("property_id", property.id)
+        .eq("is_demo", false)
+        .is("archived_at", null)
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    const owner: PrimaryOwnerContact = directory
       ? {
-          source: "active_owner_program" as const,
-          name: ownerProgram.owner_name,
-          phone: ownerProgram.owner_phone,
-          email: ownerProgram.owner_email,
+          status: directory.match_status as PrimaryOwnerContact["status"],
+          name: directory.owner_name,
+          phone: directory.owner_phone,
+          email: directory.owner_email,
+          source: directory.source,
+          sourceId: directory.source_id,
+          syncedAt: directory.synced_at,
+          stale:
+            new Date(directory.synced_at).getTime() <
+            Date.now() - OWNER_CONTACT_STALE_DAYS * 86400000,
+          detail: directory.detail,
         }
-      : null;
+      : {
+          status: "not_synced",
+          name: null,
+          phone: null,
+          email: null,
+          source: null,
+          sourceId: null,
+          syncedAt: null,
+          stale: true,
+          detail: "This home has not been through an owner-directory import yet.",
+        };
 
     const { currentGuestForListing, stayForListing } = await import("@/lib/ownerrez.server");
     const guest = await resolvePropertyGuestContext(property.ownerrez_property_id, {
@@ -113,8 +128,15 @@ export const getPropertyContactContext = createServerFn({ method: "POST" })
       stayForListing,
     });
 
-    return { visible: true, propertyId: data.propertyId, owner, guest };
+    return {
+      visible: true,
+      propertyId: data.propertyId,
+      owner,
+      activeOwnerProgram: Boolean(ownerProgram),
+      guest,
+    };
   });
+
 
 export const getGuestContext = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
