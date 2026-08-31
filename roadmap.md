@@ -174,3 +174,51 @@ Critical path (historical migration removed):
 - Week of Sep 7: SharePoint-backed uploads (needs the site-level write grant), Documents & Media,
   Approvals with versioned files, Activity, Operations ticket analytics + CSV, accuracy tests,
   My Active Projects and handoff review by job title, demo validation
+
+## APPROVED REVISED CRITICAL PATH (2026-08-31) — supersedes dates above
+
+### Track 0 — Operations beta (Sept 2)
+- [x] Archive 437 pre-launch imported tickets (441 archived 2026-08-28, reversible reason tag)
+- [ ] Verify archived + demo records are excluded from every live queue AND every live analytics query (audit each query path, not just the queue)
+- [ ] Visible analytics baseline banner: "Live reporting begins September 2, 2026"
+- [ ] Reissue staff invites: Romeo Canales, Avy Vergara, Mike Cacatain, Christine Sendico (email-bound, resend)
+- [ ] Kati Hand — create onboarding-role invite now (redemption is a Sept 4–7 gate, not Sept 2)
+- [ ] Confirm Micah Sinor supervisor access (invite NJCY-9K58 still pending redemption)
+- [ ] Enter September overnight on-call roster (oncall_roster is EMPTY for September — routing has no destination)
+- [ ] Controlled live Breezeway test on 9211 Fitzgerald + documented result (failure = isolated integration defect, not a beta block)
+- Josh Dunham redemption: NOT a Sept 2 blocker
+
+### Track 1 — Active Owner beta (Sept 4–7) — feature freeze, QA/analytics only
+- [ ] Owner analytics: start/end dates, days remaining, 100+ goal, internal 105 target, reported vs approved vs awaiting review, pace, shared counted once, returned/superseded/out-of-period excluded
+- [ ] Owner PDF + CSV (exists — re-validate against new analytics numbers)
+- [ ] Staff/exec analytics: all programs, filters (active/completed, owner, property, status, pace, date range), reported vs approved, CSV export
+- [ ] Validation pass: shared once, returned/superseded excluded, pending vs approved, timestamps, CSV totals == displayed totals, demo excluded
+
+### Track 2 — Operations analytics (Sept 4–7)
+- [ ] Workload: created, completed, open, overdue, unassigned, waiting, reopened, created-vs-completed trend
+- [ ] Response/resolution: acknowledgement, action-start, resolution, SLA met/breached/at-risk, closure exceptions, median + average
+- [ ] Assignment/handoff: by employee and role, handoffs requested/accepted/rejected/pending, time awaiting acceptance, assignment exceptions
+- [ ] Filters: employee, role, work type, priority, property, market/Pod, status, date range
+- [ ] Attribution derived from immutable ticket_activity (original assignment, active ownership, contributor, accepted handoff, closer) — never "who closed it"
+- [ ] CSV: America/Chicago with timezone stated, demo/archived excluded, no credentials/private URLs, no unnecessary PII, totals match dashboard
+
+### Track 3A — Onboarding beta (Sept 4–7) — NOT deferred to Sept 14
+- [ ] Real property end-to-end: 150-task Full Furnishing template, milestones, evidence capture, owner evidence + explicit approvals, exceptions/blockers
+- [ ] Gates: Director of Onboarding review → Director of Operations review → Operations acceptance → live confirmation
+- [ ] Carryover tasks to Operations with named owner + due date
+- [ ] Current property facts, contacts, external identifiers, operating instructions, onboarding status available in Resolve (no Notion needed)
+- [ ] Permissions tested for Kati / Micah / Operations
+
+### Track 3B — Full Property Hub (Sept 14)
+- [ ] Eight tabs (Overview, Details, Contacts, Onboarding, Operations, Documents & Media, Approvals, Activity)
+- [ ] Shared header, consistent nav/typography/spacing, real loading/empty/permission-denied/integration-error states, no raw DB values or role keys, no fake production data, consistent status terms
+
+### SharePoint (parallel, non-blocking)
+- FINDING: deployed onboarding + ticket evidence capture uses ONLY the private `resolve-attachments` bucket. No SharePoint write path is deployed.
+- [ ] Request tenant-admin site-level WRITE grant for ARHA Resolve site only
+- [ ] Keep `resolve-attachments` as beta fallback; keep storage behind the existing documents-table abstraction (storage_path/external_url) so a later SharePoint sync needs no UI rebuild
+- [ ] Narrow/retire the tenant-wide Sites.ReadWrite.All connection once scoped grant works
+- No historical file migration for beta
+
+### Beta migration rule
+No historical Notion/Asana/Breezeway/documents/OneDrive/participation/comments/handoffs/productivity migration. Current authoritative property information is NOT historical and must be imported.
