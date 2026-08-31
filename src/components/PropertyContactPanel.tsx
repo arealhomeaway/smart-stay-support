@@ -63,7 +63,7 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
   // to render a payload that doesn't say it's for the property on screen.
   if (!result || result.visible === false || result.propertyId !== propertyId) return null;
 
-  const { owner, guest } = result;
+  const { owner, guest, activeOwnerProgram } = result;
 
   return (
     <Card>
@@ -72,27 +72,61 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
           <UserRound className="size-4" /> Owner &amp; guest context
         </CardTitle>
         <CardDescription>
-          Live from OwnerRez and the Active Owner Program record. Read-only — nothing here is saved or sent.
+          Guest detail is live from OwnerRez; the designated primary owner comes from the imported owner
+          directory. Read-only — nothing here is saved or sent.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="space-y-2">
-          <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <Phone className="size-3.5" /> Owner
-          </p>
-          {owner ? (
+          <div className="flex items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <Phone className="size-3.5" /> Designated primary owner
+            </p>
+            {activeOwnerProgram && <Badge variant="outline">Active Owner Program</Badge>}
+          </div>
+
+          {owner.status === "matched" && (
             <>
               <Row label="Name" value={owner.name ?? "Not on file"} />
               <Row label="Phone" value={owner.phone ?? "Not on file"} />
               <Row label="Email" value={owner.email ?? "Not on file"} />
+              <p className="text-xs text-muted-foreground">
+                Source: {owner.source ?? "unknown"}
+                {owner.sourceId ? ` #${owner.sourceId}` : ""} · last checked{" "}
+                {owner.syncedAt ? formatDate(owner.syncedAt) : "never"}
+                {owner.stale ? " · may be out of date" : ""}
+              </p>
             </>
-          ) : (
+          )}
+
+          {owner.status === "unmatched" && (
             <p className="text-muted-foreground">
-              No Active Owner Program contact on file for this property. This does not necessarily mean the property
-              has no owner — check the property record directly for owners who aren't enrolled in the program.
+              No owner is mapped to this home in the owner directory.{" "}
+              {owner.detail ?? ""} This is a gap in the directory, not a statement that the home has no owner.
+            </p>
+          )}
+
+          {owner.status === "ambiguous" && (
+            <p className="text-muted-foreground">
+              More than one owner contact matches this home, so none was chosen automatically.{" "}
+              {owner.detail ?? ""} A supervisor needs to confirm the designated owner.
+            </p>
+          )}
+
+          {owner.status === "source_error" && (
+            <p className="text-danger">
+              The owner directory could not be read for this home. {owner.detail ?? ""} Treat this as unknown, not
+              as "no owner".
+            </p>
+          )}
+
+          {owner.status === "not_synced" && (
+            <p className="text-muted-foreground">
+              This home has not been through an owner-directory import yet, so no primary owner can be shown.
             </p>
           )}
         </div>
+
 
         <div className="space-y-2 border-t border-border pt-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Guest</p>
