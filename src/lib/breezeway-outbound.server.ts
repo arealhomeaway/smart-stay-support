@@ -325,6 +325,7 @@ export async function createOutboundTask(
       message: "Outbound task creation is limited to the approved beta properties.",
     };
   }
+  const allowedHomeId: string = String(homeId);
 
   const title = clean(input.title, 200) ?? defaults?.title ?? "Resolve task";
   const description = clean(input.description, 4000) ?? defaults?.description ?? null;
