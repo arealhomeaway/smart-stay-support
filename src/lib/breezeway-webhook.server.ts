@@ -381,7 +381,23 @@ export async function verifyAndFinalizeTask(
     );
   }
   if (!persisted) return PERSIST_FAILED_RESULT;
+
+  // Reconciliation only: if this verified task is one Resolve created, note
+  // the acknowledgement against our own record. Lives here, not in the live
+  // webhook path alone, so a delivery recovered by the retry pass reconciles
+  // exactly the same way. Never changes Resolve state, never fails delivery.
+  if (!isFixture) await noteOutboundAcknowledgement(taskId);
+
   return { outcome: "processed", reason: "Verified pilot task update", taskId };
+}
+
+async function noteOutboundAcknowledgement(taskId: number) {
+  try {
+    const { noteOutboundWebhook } = await import("./breezeway-outbound.server");
+    await noteOutboundWebhook(taskId);
+  } catch {
+    /* bookkeeping only */
+  }
 }
 
 /**
@@ -430,18 +446,6 @@ export async function processBreezewayWebhook(
     fallbackUpdatedAt: parsed.updatedAt,
     ...(options.verifyTask ? { verifyTask: options.verifyTask } : {}),
   });
-
-  // Reconciliation only: if this verified task is one Resolve created, note the
-  // acknowledgement against our own record. Never changes Resolve ticket state
-  // and never fails the delivery.
-  if (!isFixture && finalized.outcome === "processed" && finalized.taskId != null) {
-    try {
-      const { noteOutboundWebhook } = await import("./breezeway-outbound.server");
-      await noteOutboundWebhook(finalized.taskId);
-    } catch {
-      /* bookkeeping only */
-    }
-  }
 
   return {
     outcome: finalized.outcome,

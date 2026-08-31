@@ -28,6 +28,8 @@ import {
   OUTBOUND_PILOT_HOME_ID,
   type BreezewayOutboundEligibility,
   type BreezewayOutboundLink,
+  type BreezewayOutboundReviewItem,
+  type BreezewayOutboundStatus,
 } from "./breezeway-outbound";
 
 export type OutboundSource = { sourceType: "ticket" | "onboarding_task"; sourceId: string };
@@ -48,16 +50,20 @@ type Row = {
   ticket_id: string | null;
   onboarding_task_id: string | null;
   breezeway_task_id: number | null;
-  status: "creating" | "created" | "synced" | "error";
+  status: BreezewayOutboundStatus;
   title: string;
   department: string | null;
   priority: string | null;
   scheduled_date: string | null;
   scheduled_time: string | null;
   error_message: string | null;
+  review_note: string | null;
+  reviewed_at: string | null;
   created_at: string;
   last_synced_at: string | null;
   last_webhook_at: string | null;
+  property_id: string | null;
+  breezeway_home_id: string | null;
 };
 
 function toLink(row: Row): BreezewayOutboundLink {
@@ -74,6 +80,8 @@ function toLink(row: Row): BreezewayOutboundLink {
     scheduledDate: row.scheduled_date,
     scheduledTime: row.scheduled_time,
     errorMessage: row.error_message,
+    reviewNote: row.review_note,
+    reviewedAt: row.reviewed_at,
     createdAt: row.created_at,
     lastSyncedAt: row.last_synced_at,
     lastWebhookAt: row.last_webhook_at,
@@ -81,7 +89,7 @@ function toLink(row: Row): BreezewayOutboundLink {
 }
 
 const SELECT =
-  "id, source_type, ticket_id, onboarding_task_id, breezeway_task_id, status, title, department, priority, scheduled_date, scheduled_time, error_message, created_at, last_synced_at, last_webhook_at";
+  "id, source_type, ticket_id, onboarding_task_id, breezeway_task_id, status, title, department, priority, scheduled_date, scheduled_time, error_message, review_note, reviewed_at, created_at, last_synced_at, last_webhook_at, property_id, breezeway_home_id";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -238,6 +246,43 @@ function clean(value: string | null, max: number) {
   return v ? v.slice(0, max) : null;
 }
 
+export type CreateOutboundResult =
+  | { ok: true; link: BreezewayOutboundLink }
+  | { ok: false; message: string; link?: BreezewayOutboundLink };
+
+/**
+ * Reports the true state of a previous attempt carrying the same request key.
+ * Returning a bare `ok: true` here would tell the operator a task exists when
+ * the first attempt actually failed or is unresolved.
+ */
+function resultForExisting(row: Row): CreateOutboundResult {
+  const link = toLink(row);
+  if (row.status === "created" || row.status === "synced") return { ok: true, link };
+  if (row.status === "creating") {
+    return { ok: false, message: "This request is already being sent to Breezeway.", link };
+  }
+  if (row.status === "needs_review") {
+    return {
+      ok: false,
+      message:
+        "The earlier attempt is unresolved — Resolve cannot tell whether Breezeway created it. An admin must check Breezeway before it is sent again.",
+      link,
+    };
+  }
+  if (row.status === "abandoned") {
+    return {
+      ok: false,
+      message: "This attempt was reviewed and closed. Start a new send if the work is still needed.",
+      link,
+    };
+  }
+  return {
+    ok: false,
+    message: row.error_message ?? "The earlier attempt failed. Nothing was created in Breezeway.",
+    link,
+  };
+}
+
 /**
  * Creates ONE Breezeway task for a Resolve record. Safe to call twice with the
  * same request key: the second call returns the first result without touching
@@ -246,15 +291,28 @@ function clean(value: string | null, max: number) {
 export async function createOutboundTask(
   input: CreateOutboundInput,
   actorId: string,
-): Promise<{ ok: true; link: BreezewayOutboundLink } | { ok: false; message: string }> {
+): Promise<CreateOutboundResult> {
+  // Idempotent fast path. The earlier attempt's REAL state is reported —
+  // a failed or uncertain first attempt must never look like a success.
   const existing = await rowByRequestKey(input.requestKey);
-  if (existing) return { ok: true, link: toLink(existing) };
+  if (existing) return resultForExisting(existing);
 
   if (!(await outboundEnabled())) {
     return { ok: false, message: "Breezeway outbound task creation is switched off." };
   }
 
-  const { propertyId, property, defaults } = await resolveSource(input);
+  // Guard failures (missing record, demo, archived, no property) are turned
+  // into a sanitized refusal — they are never surfaced as thrown errors.
+  let resolved: Awaited<ReturnType<typeof resolveSource>>;
+  try {
+    resolved = await resolveSource(input);
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "That record cannot be sent to Breezeway.",
+    };
+  }
+  const { propertyId, property, defaults } = resolved;
   const homeId = property?.breezeway_property_id ?? null;
   if (homeId !== OUTBOUND_PILOT_HOME_ID) {
     return {
@@ -304,10 +362,11 @@ export async function createOutboundTask(
     // creation for this record is already in flight (refuse, never duplicate).
     if (insert.error.code === "23505") {
       const raced = await rowByRequestKey(input.requestKey);
-      if (raced) return { ok: true, link: toLink(raced) };
+      if (raced) return resultForExisting(raced);
       return {
         ok: false,
-        message: "A Breezeway task for this record is already being created.",
+        message:
+          "Another Breezeway request for this record is still open (being created, or awaiting admin review). It must resolve first.",
       };
     }
     return { ok: false, message: "Could not record the Breezeway request." };
@@ -319,6 +378,9 @@ export async function createOutboundTask(
     const created = await breezewayRequest<{ id?: number; task?: { id?: number } }>("/task/", {
       method: "POST",
       allowWrite: true,
+      // Non-idempotent: a 429/5xx may still have created the task, so a retry
+      // would create a second one. Failures land in admin review instead.
+      retry: false,
       body: {
         home_id: Number(homeId),
         name: title,
@@ -345,22 +407,195 @@ export async function createOutboundTask(
       // The task exists in Breezeway; only our bookkeeping failed. Never retry
       // the write on the back of this — that is how duplicates happen.
       console.error(`[breezeway-outbound] created task but could not record id (${update.error.code})`);
+      await markNeedsReview(
+        row.id,
+        "Breezeway accepted the task but Resolve could not record the task id.",
+      );
+      const stuck = await rowById(row.id);
       return {
         ok: false,
         message:
-          "The Breezeway task was created but Resolve could not record it. Check Breezeway before trying again.",
+          "The Breezeway task was created but Resolve could not record it. It is flagged for admin review — do not send it again.",
+        ...(stuck ? { link: toLink(stuck) } : {}),
       };
     }
     return { ok: true, link: toLink(update.data as unknown as Row) };
   } catch (error) {
     const message =
-      error instanceof BreezewayError ? error.message : "Breezeway did not accept the task.";
-    await db
-      .from("breezeway_outbound_tasks")
-      .update({ status: "error", error_message: message })
-      .eq("id", row.id);
-    return { ok: false, message };
+      error instanceof BreezewayError ? error.message : "Breezeway did not respond.";
+    // A 4xx is a definite refusal — nothing was created, so the row is closed
+    // as an error and the operator may safely try again. Anything else
+    // (timeout, network drop, 429/5xx) is UNCERTAIN: the task may exist in
+    // Breezeway. Those are never retried automatically and never reported as
+    // a plain failure — they go to the admin review queue.
+    const certainRefusal =
+      error instanceof BreezewayError && error.status >= 400 && error.status < 500 &&
+      error.status !== 408 && error.status !== 429;
+
+    if (certainRefusal) {
+      await db
+        .from("breezeway_outbound_tasks")
+        .update({ status: "error", error_message: message })
+        .eq("id", row.id);
+      const failed = await rowById(row.id);
+      return { ok: false, message, ...(failed ? { link: toLink(failed) } : {}) };
+    }
+
+    await markNeedsReview(row.id, message);
+    const uncertain = await rowById(row.id);
+    return {
+      ok: false,
+      message:
+        `${message} Resolve cannot tell whether the task was created, so it is flagged for admin review. Do not send it again until someone checks Breezeway.`,
+      ...(uncertain ? { link: toLink(uncertain) } : {}),
+    };
   }
+}
+
+async function rowById(id: string): Promise<Row | null> {
+  const db = await admin();
+  const { data } = await db
+    .from("breezeway_outbound_tasks")
+    .select(SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  return (data as unknown as Row | null) ?? null;
+}
+
+async function markNeedsReview(id: string, message: string) {
+  const db = await admin();
+  await db
+    .from("breezeway_outbound_tasks")
+    .update({ status: "needs_review", error_message: message })
+    .eq("id", id);
+}
+
+/* ------------------------------------------------------------------ */
+/* Admin recovery for uncertain records                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Every unresolved outbound record: still creating, or flagged for review.
+ * This is the admin queue — nothing here is retried automatically.
+ */
+export async function listOutboundNeedingReview(): Promise<BreezewayOutboundReviewItem[]> {
+  const db = await admin();
+  const { data, error } = await db
+    .from("breezeway_outbound_tasks")
+    .select(SELECT)
+    .in("status", ["creating", "needs_review"])
+    .order("created_at", { ascending: true })
+    .limit(50);
+  if (error) throw new Error("Could not read the Breezeway review queue.");
+  const rows = (data ?? []) as unknown as Row[];
+  if (!rows.length) return [];
+
+  const propertyIds = [...new Set(rows.map((r) => r.property_id).filter(Boolean))] as string[];
+  const names = new Map<string, string | null>();
+  if (propertyIds.length) {
+    const { data: props } = await db.from("properties").select("id, name").in("id", propertyIds);
+    for (const p of (props ?? []) as unknown as { id: string; name: string | null }[]) {
+      names.set(p.id, p.name);
+    }
+  }
+
+  return rows.map((row) => ({
+    ...toLink(row),
+    propertyName: row.property_id ? (names.get(row.property_id) ?? null) : null,
+    sourceTitle: row.title,
+  }));
+}
+
+/**
+ * Admin reconciliation of ONE uncertain record.
+ *
+ * `link`  — the admin found the task in Breezeway and types its id. The id is
+ *           verified against Breezeway (it must exist AND belong to the pilot
+ *           property) before it is accepted, so a typo cannot bind Resolve to
+ *           someone else's task.
+ * `abandon` — the admin confirmed no task exists. The row is closed, which
+ *           also releases the in-flight lock so the work can be sent again.
+ *
+ * Neither branch ever calls the Breezeway create endpoint.
+ */
+export async function reconcileOutboundTask(
+  input: { id: string; action: "link" | "abandon"; breezewayTaskId?: number | null; note: string },
+  actorId: string,
+): Promise<{ ok: true; link: BreezewayOutboundLink } | { ok: false; message: string }> {
+  const row = await rowById(input.id);
+  if (!row) return { ok: false, message: "That Breezeway record no longer exists." };
+  if (row.status !== "needs_review" && row.status !== "creating") {
+    return { ok: false, message: "That record is already resolved." };
+  }
+
+  const db = await admin();
+  const now = new Date().toISOString();
+  const note = input.note.trim().slice(0, 500) || null;
+
+  if (input.action === "abandon") {
+    const { data, error } = await db
+      .from("breezeway_outbound_tasks")
+      .update({
+        status: "abandoned",
+        reviewed_by: actorId,
+        reviewed_at: now,
+        review_note: note,
+      })
+      .eq("id", row.id)
+      .select(SELECT)
+      .single();
+    if (error) return { ok: false, message: "Could not close that record." };
+    return { ok: true, link: toLink(data as unknown as Row) };
+  }
+
+  const taskId = Number(input.breezewayTaskId);
+  if (!Number.isInteger(taskId) || taskId <= 0) {
+    return { ok: false, message: "Enter the Breezeway task id you found." };
+  }
+
+  // Verify before binding: read-only, and it must be the pilot property.
+  let verified: { id?: number; home_id?: number } | null = null;
+  try {
+    verified = await breezewayRequest<{ id?: number; home_id?: number }>(`/task/${taskId}`);
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        error instanceof BreezewayError
+          ? `Could not confirm that task in Breezeway: ${error.message}`
+          : "Could not reach Breezeway to confirm that task.",
+    };
+  }
+  if (!verified || String(verified.home_id ?? "") !== OUTBOUND_PILOT_HOME_ID) {
+    return {
+      ok: false,
+      message: "That Breezeway task does not exist on the pilot property.",
+    };
+  }
+
+  const { data, error } = await db
+    .from("breezeway_outbound_tasks")
+    .update({
+      status: "created",
+      breezeway_task_id: taskId,
+      error_message: null,
+      last_synced_at: now,
+      reviewed_by: actorId,
+      reviewed_at: now,
+      review_note: note,
+    })
+    .eq("id", row.id)
+    .select(SELECT)
+    .single();
+  if (error) {
+    // 23505 here means that Breezeway task is already recorded against
+    // another Resolve record — never bind it twice.
+    if (error.code === "23505") {
+      return { ok: false, message: "That Breezeway task is already linked to another record." };
+    }
+    return { ok: false, message: "Could not record that Breezeway task id." };
+  }
+  return { ok: true, link: toLink(data as unknown as Row) };
 }
 
 /**
