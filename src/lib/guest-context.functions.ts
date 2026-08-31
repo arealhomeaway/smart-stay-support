@@ -1,9 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolvePropertyGuestContext, type PropertyContactResult } from "@/lib/property-contact";
+import {
+  OWNER_CONTACT_STALE_DAYS,
+  resolvePropertyGuestContext,
+  type PrimaryOwnerContact,
+  type PropertyContactResult,
+} from "@/lib/property-contact";
 
-export type { PropertyContactResult };
+export type { PropertyContactResult, PrimaryOwnerContact };
+
 
 /**
  * Current guest / tenant context for an Operations matter.
