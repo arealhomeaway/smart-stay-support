@@ -174,11 +174,13 @@ export function createFakeOutboundStore() {
         is_demo: false,
         archived_at: null,
       });
-      state.properties.push({
-        id: "prop-1",
-        name: "9211 Fitzgerald Dr",
-        breezeway_property_id: "1473933",
-      });
+      if (!state.properties.some((p) => p["id"] === "prop-1")) {
+        state.properties.push({
+          id: "prop-1",
+          name: "9211 Fitzgerald Dr",
+          breezeway_property_id: "1473933",
+        });
+      }
     },
     /** The onboarding-task source type, on the same pilot property. */
     seedPilotOnboardingTask: (id: string) => {
