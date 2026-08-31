@@ -383,3 +383,38 @@ describe("admin reconciliation", () => {
     expect(again.ok).toBe(false);
   });
 });
+
+/**
+ * The approved limited beta is five verified homes and nothing else. These
+ * guard both directions: every approved home is accepted, and any other home
+ * — including a plausible neighbouring one — is refused before any POST.
+ */
+describe("limited-beta allowlist", () => {
+  const APPROVED = ["1473933", "1295301", "368125", "322641", "1293536"];
+
+  it("accepts every approved beta home", async () => {
+    for (const [i, homeId] of APPROVED.entries()) {
+      store.reset();
+      calls.length = 0;
+      store.setFlag(true);
+      store.seedPilotTicket(TICKET);
+      store.state.properties[0]!["breezeway_property_id"] = homeId;
+      const result = await createOutboundTask(input(`key-allow-${i}-00000000`), "actor");
+      expect(result.ok).toBe(true);
+      expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+    }
+  });
+
+  it("refuses any home outside the approved five", async () => {
+    for (const [i, homeId] of ["676169", "1473934", "0", "999999"].entries()) {
+      store.reset();
+      calls.length = 0;
+      store.setFlag(true);
+      store.seedPilotTicket(TICKET);
+      store.state.properties[0]!["breezeway_property_id"] = homeId;
+      const result = await createOutboundTask(input(`key-deny-${i}-000000000`), "actor");
+      expect(result.ok).toBe(false);
+      expect(calls.length).toBe(0);
+    }
+  });
+});
