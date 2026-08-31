@@ -22,6 +22,8 @@ export const FLAG_KEYS = [
   "quarterly_scheduler",
   "owner_alerts",
   "breezeway_bridge",
+  "breezeway_outbound",
+
   "notion_sync",
   "operations_queue_v2",
   "onboarding_portal_v2",
