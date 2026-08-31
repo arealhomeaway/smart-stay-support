@@ -236,3 +236,44 @@ No historical Notion/Asana/Breezeway/documents/OneDrive/participation/comments/h
 - Priority 1 DONE — Active Owner staff/exec analytics: `/owner-analytics` (supervisor+), `src/lib/owner-analytics.server.ts` + `.functions.ts`. Reported vs approved vs pending hours, 100h goal / 105h operating target, benchmark variance, hours-per-week needed, staleness, CSV export. Demo-lens aware; excludes demo + archived by default.
 - Priority 2 DONE — Operations performance: `/ops-analytics` (supervisor+), `src/lib/ops-analytics.server.ts` + `.functions.ts`. Volume by priority/status/source, response + resolution medians and averages (overall and per priority), response/action SLA compliance, open-past-due count, and contributor credit from the immutable `ticket_activity` log (touched, resolved, first responses, actions started, handoffs in/out, open owned, overdue). CSV export. No scoring or ranking of staff.
 - NEXT: Priority 3 (authoritative PID/property field import mapping) and Priority 4 (Onboarding beta QA).
+
+## Canonical product requirements (recorded 2026-08-31)
+
+### Vocabulary (user-facing, fixed)
+- Operations: **Ticket**. Never "Matter", never a generic "Request".
+- Onboarding: **Project → Task → Subtask**.
+- Vendor execution: **Work Order** (Breezeway may show "Breezeway work order"
+  while it remains the transitional execution path; the platform term stays
+  Work Order so it survives Breezeway retirement).
+- Active Owner: **Action**, **Approval**, **Participation entry** — never
+  renamed to Ticket.
+- Legacy database/table/key names may stay, but must not surface in the UI.
+
+### Priorities
+- Three Operations priorities only: **P1 Critical, P2 High, P3 Standard**.
+- P4 is retired: no UI, filter, SLA, assignment, analytics, fixture or server
+  path may produce or present it.
+
+### Onboarding must replace BOTH Notion and Asana
+- The Onboarding team runs a live onboarding project entirely in Resolve, with
+  no duplicate active workflow in Notion or Asana.
+- Resolve is the active system for: projects, tasks, subtasks, dependencies,
+  ownership, due dates, milestones, blockers/exceptions, evidence, owner
+  approvals, internal reviews, handoff, carryover work.
+- No historical Asana or Notion migration for beta; history stays archived in
+  the original systems until retirement.
+- Current authoritative property information moves into Resolve; SOPs and
+  reference documents live in SharePoint and surface through Resolve.
+
+### System retirement targets (long term, not beta scope)
+- Notion — retire as the daily operational system.
+- Asana — retire as the onboarding/project workflow system.
+- Fillout — retire as forms become native Resolve workflows.
+- Breezeway — transitional integration; retire once Resolve replaces the
+  required operational execution capability.
+- Principle: Resolve simplifies the stack rather than adding a layer.
+
+### Assistants (do not merge or rename)
+- **Rai / Ask Resolve** — future company-wide, permission-aware grounded
+  knowledge and action assistant.
+- **Operations Coach** — the specialized Operations execution/coaching feature.
