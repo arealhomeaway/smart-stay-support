@@ -206,6 +206,16 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
                           ? "Expired"
                           : `Expires ${new Date(i.expires_at).toLocaleDateString()}`}
                   </span>
+                  {!used && !revoked && !expired && i.invitee_email && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={resend.isPending}
+                      onClick={() => resend.mutate(i.id)}
+                    >
+                      <Mail className="mr-1 size-3.5" /> Email code
+                    </Button>
+                  )}
                   {!used && !revoked && (
                     <Button
                       size="sm"
