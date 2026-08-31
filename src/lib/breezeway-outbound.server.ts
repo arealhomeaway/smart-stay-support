@@ -4,8 +4,8 @@
  * Approved beta scope, deliberately narrow:
  *   - Resolve remains the operational source of truth. A Breezeway task is a
  *     downstream copy; Breezeway never changes Resolve state from here.
- *   - Writes are restricted to the single mapped pilot property
- *     (OUTBOUND_PILOT_HOME_ID). Any other property is refused server-side.
+ *   - Writes are restricted to the approved, verified beta properties
+ *     (OUTBOUND_ALLOWED_HOME_IDS). Any other property is refused server-side.
  *   - The `breezeway_outbound` feature flag must be ON. OFF means no write.
  *
  * Idempotency (double-click and retry protection):
@@ -26,6 +26,7 @@ import {
   BREEZEWAY_DEPARTMENTS,
   BREEZEWAY_PRIORITIES,
   OUTBOUND_PILOT_HOME_ID,
+  isOutboundAllowedHome,
   type BreezewayOutboundEligibility,
   type BreezewayOutboundLink,
   type BreezewayOutboundReviewItem,
@@ -192,11 +193,11 @@ export async function outboundEligibility(
         breezewayHomeId: null,
       };
     }
-    if (homeId !== OUTBOUND_PILOT_HOME_ID) {
+    if (!isOutboundAllowedHome(homeId)) {
       return {
         enabled,
         eligible: false,
-        reason: "Outbound task creation is limited to the approved pilot property.",
+        reason: "Outbound task creation is limited to the approved beta properties.",
         propertyName: property?.name ?? null,
         breezewayHomeId: homeId,
       };
@@ -319,10 +320,10 @@ export async function createOutboundTask(
   }
   const { propertyId, property, defaults } = resolved;
   const homeId = property?.breezeway_property_id ?? null;
-  if (homeId !== OUTBOUND_PILOT_HOME_ID) {
+  if (!isOutboundAllowedHome(homeId)) {
     return {
       ok: false,
-      message: "Outbound task creation is limited to the approved pilot property.",
+      message: "Outbound task creation is limited to the approved beta properties.",
     };
   }
 
@@ -571,10 +572,10 @@ export async function reconcileOutboundTask(
           : "Could not reach Breezeway to confirm that task.",
     };
   }
-  if (!verified || String(verified.home_id ?? "") !== OUTBOUND_PILOT_HOME_ID) {
+  if (!verified || !isOutboundAllowedHome(verified.home_id)) {
     return {
       ok: false,
-      message: "That Breezeway task does not exist on the pilot property.",
+      message: "That Breezeway task does not exist on an approved beta property.",
     };
   }
 
