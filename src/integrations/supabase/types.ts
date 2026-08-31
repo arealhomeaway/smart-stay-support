@@ -176,6 +176,112 @@ export type Database = {
         }
         Relationships: []
       }
+      breezeway_outbound_tasks: {
+        Row: {
+          assignee: string | null
+          attempts: number
+          breezeway_home_id: string
+          breezeway_task_id: number | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          description: string | null
+          error_message: string | null
+          id: string
+          last_synced_at: string | null
+          last_webhook_at: string | null
+          onboarding_task_id: string | null
+          priority: string | null
+          property_id: string | null
+          request_key: string
+          scheduled_date: string | null
+          scheduled_time: string | null
+          source_type: string
+          status: string
+          tags: string[] | null
+          template_id: string | null
+          ticket_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee?: string | null
+          attempts?: number
+          breezeway_home_id: string
+          breezeway_task_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          error_message?: string | null
+          id?: string
+          last_synced_at?: string | null
+          last_webhook_at?: string | null
+          onboarding_task_id?: string | null
+          priority?: string | null
+          property_id?: string | null
+          request_key: string
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          source_type: string
+          status?: string
+          tags?: string[] | null
+          template_id?: string | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee?: string | null
+          attempts?: number
+          breezeway_home_id?: string
+          breezeway_task_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          error_message?: string | null
+          id?: string
+          last_synced_at?: string | null
+          last_webhook_at?: string | null
+          onboarding_task_id?: string | null
+          priority?: string | null
+          property_id?: string | null
+          request_key?: string
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          source_type?: string
+          status?: string
+          tags?: string[] | null
+          template_id?: string | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breezeway_outbound_tasks_onboarding_task_id_fkey"
+            columns: ["onboarding_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_outbound_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_outbound_tasks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       breezeway_webhook_events: {
         Row: {
           company_id: number | null
