@@ -69,7 +69,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "post_contract_obtain_inspection_date_time_from_realtor_and_u",
     stage: "post_contract",
-    title: "Obtain inspection date/time from realtor and update project plan",
+    title: "Obtain assessment date/time from realtor and update project plan",
     role: "Project Manager",
     detail: "Instructions:\n Consult the Telegram thread for the inspection date and time. Alternatively, if this has not been scheduled, please schedule this in coordination with the Realtor and handyman.\n On the Project Plan, update the due date for the INSPECTION DATE milestone.\n Document the time of the inspection in the comment section of the milestone.",
     blocksHandoff: true,
@@ -96,7 +96,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "post_contract_create_work_order_for_vendor_to_attend_inspect",
     stage: "post_contract",
-    title: "Create work order for Vendor to attend inspection and conduct home assessment",
+    title: "Create work order for Vendor to attend the assessment appointment and conduct home assessment",
     role: "Project Manager",
     detail: "Information: \n The Realtor, Handyman and the professional home inspector will attend this appointment. The professional home inspector will conduct his inspection, but the Realtor and the Handyman will do their own walkthroughs to assess the property for any cosmetic/safety concerns that ARHA needs to address. The Designer will be available via Telegram during this time and the Project Manager will video conference with the Realtor during the inspection to ask questions while the Realtor and Handyman are on the premises.\n\n This is the only time ARHA will be able to see the property in person prior to our buyer's purchase of the property, so this is an important appointment. We need to be able to identify any home improvements/repairs that are necessary and quickly obtain estimates for them. \n\nInstruction:\n Send a Telegram message to the property Telegram group and …",
     blocksHandoff: true,
@@ -125,7 +125,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase1_inspection_inspection_date",
     stage: "phase1_inspection",
-    title: "INSPECTION DATE",
+    title: "ASSESSMENT DATE",
     role: "Project Manager",
     blocksHandoff: true,
     // No written rule: this milestone is a scheduled appointment set by the
@@ -277,9 +277,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase1_inspection_save_and_review_inspection_report_and_trr",
     stage: "phase1_inspection",
-    title: "Save and review inspection report and TRR",
+    title: "Save assessment report and TRR to the property file (save only \u2014 no review)",
     role: "Project Manager",
-    detail: "INSPECTION REPORT - This report is usually available 1-2 days following the home inspection and will be provided to us by the Realtor. It will contain recommendations for repairs, with each repair classed as Immediate, Moderate or Routine Maintenance. Most Immediate or Moderate maintenance issues are negotiated to be handled by the Seller before the sale of the home, and we do not need to address these. Sometimes, however, there are remaining Routine Maintenance issues that are also cosmetic/safety concerns that may affect the guest experience, so we need to include them as we consider possible home improvements for the property.\n\nTRR - This is the Treatments, Repairs and Replacements notice. It outlines which repairs from the inspection report the Seller has agreed to complete prior to sale of the property, and which repairs the Seller will not complete prior to the …",
+    detail: "SAVE ONLY \u2014 ARHA does not review assessment reports. Save the report to the property file and stop there. Only work on bids the Realtor has explicitly requested; do not proactively review or quote assessment findings.\n\nASSESSMENT REPORT - This report is usually available 1-2 days following the home inspection and will be provided to us by the Realtor. It will contain recommendations for repairs, with each repair classed as Immediate, Moderate or Routine Maintenance. Most Immediate or Moderate maintenance issues are negotiated to be handled by the Seller before the sale of the home, and we do not need to address these. Sometimes, however, there are remaining Routine Maintenance issues that are also cosmetic/safety concerns that may affect the guest experience, so we need to include them as we consider possible home improvements for the property.\n\nTRR - This is the Treatments, Repairs and Replacements notice. It outlines which repairs from the inspection report the Seller has agreed to complete prior to sale of the property, and which repairs the Seller will not complete prior to the …",
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 250,

@@ -84,8 +84,8 @@ function QuarterlyPage() {
             <CalendarCheck className="size-6" /> Quarterly reviews
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            The first inspection is scheduled 30 days after a home is handed off to operations, and every one after
-            that lands 90 days later. Inspections open on their own as the date arrives, assigned to the regional
+            The first assessment is scheduled 30 days after a home is handed off to operations, and every one after
+            that lands 90 days later. Assessments open on their own as the date arrives, assigned to the regional
             cleaning manager for that market.
           </p>
 

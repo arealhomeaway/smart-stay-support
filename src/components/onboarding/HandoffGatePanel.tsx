@@ -33,7 +33,8 @@ export type ReviewRow = {
 type Person = { id: string; full_name: string | null; email: string | null };
 
 /**
- * The documented handoff gate: Kati review, then Micah review, then Operations
+ * The documented handoff gate: Director of Onboarding review, then Director of
+ * Operations review, then Operations
  * acceptance, then live confirmation. Every decision writes an immutable
  * history row with reviewer, date, decision and any recorded exception.
  */
@@ -72,7 +73,9 @@ export function HandoffGatePanel({
           {handoff.status === "returned"
             ? "Returned to onboarding with corrections."
             : `Currently at ${gateLabel(step)}.`}
-          {handoff.carryover_accepted ? " Carryover work was accepted." : ""}
+          {handoff.carryover_accepted
+            ? " Carryover work was accepted — it belongs to Operations from handoff onward, assigned by the Director of Operations."
+            : ""}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
