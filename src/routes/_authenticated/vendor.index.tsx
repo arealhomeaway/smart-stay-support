@@ -41,6 +41,7 @@ function VendorQueue() {
         .select(
           "id, ref, title, priority, status, vendor_status, due_at, vendor_dispatched_at, properties(name, city, state)",
         )
+        .eq("is_demo", false)
         .is("archived_at", null)
         .order("vendor_dispatched_at", { ascending: false });
 

@@ -62,7 +62,11 @@ function TeamPage() {
       const [roles, people, tickets] = await Promise.all([
         supabase.from("functional_roles").select("*").order("sort_order"),
         supabase.from("profiles").select("id, full_name, email").order("full_name"),
-        supabase.from("tickets").select("id, functional_role_code, status, priority").is("archived_at", null),
+        supabase
+          .from("tickets")
+          .select("id, functional_role_code, status, priority")
+          .eq("is_demo", false)
+          .is("archived_at", null),
       ]);
       if (roles.error) throw roles.error;
       return { roles: roles.data, people: people.data ?? [], tickets: tickets.data ?? [] };

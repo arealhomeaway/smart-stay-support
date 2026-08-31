@@ -120,6 +120,8 @@ function TicketDetail() {
         .select("id, ref, title, status, reported_at, category")
         .eq("property_id", propertyId!)
         .neq("id", ticketId)
+        .eq("is_demo", false)
+        .is("archived_at", null)
         .order("reported_at", { ascending: false })
         .limit(8);
       if (error) throw error;

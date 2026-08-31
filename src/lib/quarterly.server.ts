@@ -81,6 +81,7 @@ export async function loadQuarterlyReviews(db: Client) {
       .from("tickets")
       .select("id, ref, property_id, status, due_at, assigned_to, current_action_owner, created_at")
       .eq("work_type_id", wt.id)
+      .eq("is_demo", false)
       .is("archived_at", null)
       .in("status", OPEN_STATUSES),
 

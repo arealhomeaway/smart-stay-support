@@ -112,6 +112,7 @@ export async function loadCommandCenter(
       supabase
         .from("ticket_visits")
         .select("id, ticket_id, vendor_user_id, checked_in_at, checked_out_at, check_in_verified, minutes_on_site")
+        .eq("is_demo", false)
         .gte("checked_in_at", priorSince),
       supabase
         .from("vendor_job_ratings")

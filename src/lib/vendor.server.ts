@@ -133,12 +133,15 @@ export async function rankVendorsForTicket(ticketId: string) {
       .from("ticket_visits")
       .select("vendor_user_id, check_in_lat, check_in_lng, checked_in_at")
       .in("vendor_user_id", ids)
+      .eq("is_demo", false)
       .order("checked_in_at", { ascending: false }),
     supabaseAdmin
       .from("tickets")
       .select("vendor_user_id")
       .in("vendor_user_id", ids)
-      .in("vendor_status", ["dispatched", "accepted", "on_site"]),
+      .in("vendor_status", ["dispatched", "accepted", "on_site"])
+      .eq("is_demo", false)
+      .is("archived_at", null),
   ]);
 
   const lastSeen = new Map<string, { lat: number; lng: number; at: string }>();
