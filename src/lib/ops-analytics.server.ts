@@ -120,7 +120,6 @@ function titleize(value: string) {
   return value.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
-const RESPONSE_KINDS = new Set(["acknowledged", "response", "first_response"]);
 
 export async function loadOpsAnalytics(
   supabase: Client,
