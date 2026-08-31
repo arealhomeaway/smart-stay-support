@@ -18,7 +18,32 @@
  * is unreachable.
  */
 
+/** How long a directory row stays "current" before it reads as stale. */
+export const OWNER_CONTACT_STALE_DAYS = 14;
+
+export type PrimaryOwnerContact = {
+  /**
+   * matched      — a designated primary owner is on file
+   * unmatched    — the source ran, and this home has no mapped owner
+   * ambiguous    — more than one candidate; deliberately not picked
+   * source_error — the import could not complete; say so, don't imply "none"
+   * not_synced   — this home has never been through an import at all
+   */
+  status: "matched" | "unmatched" | "ambiguous" | "source_error" | "not_synced";
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  /** e.g. "ownerrez" — null only when never synced. */
+  source: string | null;
+  /** Identifier in that source, so a row is traceable back to its origin. */
+  sourceId: string | null;
+  syncedAt: string | null;
+  stale: boolean;
+  detail: string | null;
+};
+
 export type PropertyContactResult =
+
   | { visible: false }
   | {
       visible: true;
