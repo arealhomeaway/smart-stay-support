@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { CATEGORIES, OPEN_STATUSES, PRIORITIES, priorityMeta } from "@/lib/tickets";
+import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
@@ -481,6 +482,7 @@ function Analytics() {
           <p className="mt-1 text-muted-foreground">
             Whether guests were protected, whether work stayed fixed, and which homes and handoffs keep costing us.
           </p>
+          <ReportingBaselineNote className="mt-3 max-w-2xl" />
         </div>
         <div className="flex flex-wrap gap-2">
           {RANGES.map((r) => (
