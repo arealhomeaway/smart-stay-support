@@ -72,7 +72,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /** Emails the invite code. Returns how the send went so the UI can say so. */
-async function sendInviteEmail(input: {
+export async function sendInviteEmail(input: {
   email: string;
   name: string;
   role: string;
