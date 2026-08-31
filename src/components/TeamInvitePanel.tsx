@@ -5,6 +5,7 @@ import { Copy, Mail, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import {
   createTeamInvite,
+  emailTeamInvite,
   listTeamInvites,
   revokeTeamInvite,
 } from "@/lib/team-invites.functions";
