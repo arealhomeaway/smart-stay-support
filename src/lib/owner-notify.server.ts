@@ -20,7 +20,7 @@ const APP_URL = "https://smart-stay-support.lovable.app/owner";
 async function sendEmail(to: string, subject: string, body: string, ticketRef?: number | null, ticketId?: string | null) {
   const { sendEmail: send, emailShell } = await import("./email.server");
   const { refTag } = await import("./intake.server");
-  // The tag lets an owner's reply land back on the matter instead of an inbox.
+  // The tag lets an owner's reply land back on the ticket instead of an inbox.
   const taggedSubject = ticketRef ? `${subject} ${refTag(ticketRef)}` : subject;
   return send({
     to,
@@ -106,8 +106,8 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
         title: row.title,
         body: row.body,
         reason: program?.owner_phone
-          ? "Urgent matter at this owner's home — text or call them now."
-          : "Urgent matter at this owner's home, and we have no phone number on file — reach them by email and collect a number.",
+          ? "Urgent ticket at this owner's home — text or call them now."
+          : "Urgent ticket at this owner's home, and we have no phone number on file — reach them by email and collect a number.",
       });
       if (alertError) {
         notes.push(alertError.message);

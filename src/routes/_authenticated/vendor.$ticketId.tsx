@@ -16,13 +16,13 @@ export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
   component: VendorJob,
   head: () => ({
     meta: [
-      { title: "Job details | Resolve vendor portal" },
+      { title: "Work order details | Resolve vendor portal" },
       {
         name: "description",
-        content: "Access details, required steps and sign-off for a job dispatched by A Real Home Away.",
+        content: "Access details, required steps and sign-off for a work order dispatched by A Real Home Away.",
       },
-      { property: "og:title", content: "Job details | Resolve vendor portal" },
-      { property: "og:description", content: "Everything you need on site for this job." },
+      { property: "og:title", content: "Work order details | Resolve vendor portal" },
+      { property: "og:description", content: "Everything you need on site for this work order." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -67,13 +67,13 @@ function VendorJob() {
         .update({ vendor_status: "accepted", vendor_accepted_at: new Date().toISOString() })
         .eq("id", ticketId);
       if (error) throw error;
-      await logActivity("Vendor accepted the job and is on the way.");
+      await logActivity("Vendor accepted the work order and is on the way.");
     },
     onSuccess: () => {
       toast.success("Thanks — the team can see you're on it.");
       void refresh();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not accept the job"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not accept the work order"),
   });
 
   const toggleStep = useMutation({
@@ -144,13 +144,13 @@ function VendorJob() {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-border p-8 text-center">
         <ShieldAlert className="mx-auto size-8 text-muted-foreground" />
-        <h1 className="font-display text-xl font-semibold">Job not available</h1>
+        <h1 className="font-display text-xl font-semibold">Work order not available</h1>
         <p className="text-sm text-muted-foreground">
           This job is not assigned to you, or it has been reassigned. Reach out to your coordinator if you think
           that's wrong.
         </p>
         <Button asChild variant="outline">
-          <Link to="/vendor">Back to my jobs</Link>
+          <Link to="/vendor">Back to my work orders</Link>
         </Button>
       </div>
     );
@@ -335,7 +335,7 @@ function VendorJob() {
           )}
           {finished && (
             <p className="text-xs text-muted-foreground">
-              Marked complete. A coordinator reviews the evidence before the matter is closed.
+              Marked complete. A coordinator reviews the evidence before the ticket is closed.
             </p>
           )}
         </CardContent>
@@ -343,7 +343,7 @@ function VendorJob() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">History on this job</CardTitle>
+          <CardTitle className="text-base">History on this work order</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {(job.data?.activity ?? []).length === 0 ? (

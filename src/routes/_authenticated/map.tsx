@@ -17,12 +17,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({
     meta: [
-      { title: "Job map — Resolve Operations" },
+      { title: "Work map — Resolve Operations" },
       {
         name: "description",
         content: "See every managed home on a map with its open work, so you can dispatch by who is closest.",
       },
-      { property: "og:title", content: "Job map — Resolve Operations" },
+      { property: "og:title", content: "Work map — Resolve Operations" },
       { property: "og:description", content: "Managed homes and open work plotted for smarter dispatch." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -66,7 +66,7 @@ function MapPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="flex items-center gap-2 font-display text-2xl font-semibold">
-            <MapPinned className="size-6" /> Job map
+            <MapPinned className="size-6" /> Work map
           </h1>
           <p className="text-sm text-muted-foreground">
             Every managed home with a pin, sized and coloured by the work waiting there. Use it to dispatch the
@@ -87,7 +87,7 @@ function MapPage() {
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         <span>{pins.length} homes pinned</span>
         <span>·</span>
-        <span>{openCount} open matters on the map</span>
+        <span>{openCount} open tickets on the map</span>
         {unpinned > 0 && (
           <>
             <span>·</span>

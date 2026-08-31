@@ -212,10 +212,10 @@ function CoachPage() {
       ]);
 
       await link({ data: { sessionId: session.id, ticketId: ticket.id } });
-      toast.success("Matter opened with the coached checklist attached.");
+      toast.success("Ticket opened with the coached checklist attached.");
       router.navigate({ to: "/tickets/$ticketId", params: { ticketId: ticket.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not open the matter");
+      toast.error(err instanceof Error ? err.message : "Could not open the ticket");
     } finally {
       setCreating(false);
     }
@@ -418,11 +418,11 @@ function CoachPage() {
 
               <Separator />
               <Button onClick={openMatter} disabled={creating} className="w-full">
-                {creating ? "Opening…" : "Open a matter with this plan"}
+                {creating ? "Opening…" : "Open a ticket with this plan"}
                 <ArrowRight className="size-4" />
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                The checklist becomes the matter&apos;s steps, the clocks start, and this coaching session stays
+                The checklist becomes the ticket&apos;s steps, the clocks start, and this coaching session stays
                 attached to the record.
               </p>
             </CardContent>

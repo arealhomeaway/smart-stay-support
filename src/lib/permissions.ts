@@ -29,7 +29,7 @@ export const ROLE_BLURBS: Record<AppRole, string> = {
   admin: "Everything in Resolve, including roles, seats, portals, settings and audit history.",
   manager: "Escalations, routing, oversight, analytics, coaching and playbook publishing.",
   onboarding: "Onboarding workspace, readiness checklists and handoff requests.",
-  tech: "Their own work: assigned matters, tickets and coaching.",
+  tech: "Their own work: assigned tickets, tickets and coaching.",
   vendor: "Assigned jobs, evidence, scheduling and their private scorecard.",
   owner: "Their own enrolled homes, approvals, communications and self-reported hours.",
 };

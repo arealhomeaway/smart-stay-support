@@ -3,7 +3,7 @@
  * (`feature_flags`, `tickets`, `onboarding_tasks`, `properties`,
  * `breezeway_outbound_tasks`), used only in tests via `mock.module`.
  *
- * It reproduces the constraints that actually matter for duplicate safety:
+ * It reproduces the constraints that actually ticket for duplicate safety:
  *   - unique `request_key`
  *   - unique `breezeway_task_id` when not null
  *   - ONE open row per source record, where "open" is status
@@ -174,11 +174,31 @@ export function createFakeOutboundStore() {
         is_demo: false,
         archived_at: null,
       });
-      state.properties.push({
-        id: "prop-1",
-        name: "9211 Fitzgerald Dr",
-        breezeway_property_id: "1473933",
+      if (!state.properties.some((p) => p["id"] === "prop-1")) {
+        state.properties.push({
+          id: "prop-1",
+          name: "9211 Fitzgerald Dr",
+          breezeway_property_id: "1473933",
+        });
+      }
+    },
+    /** The onboarding-task source type, on the same pilot property. */
+    seedPilotOnboardingTask: (id: string) => {
+      state.onboarding.push({
+        id,
+        title: "Install lockbox",
+        detail: "Front door, code in the brief",
+        property_id: "prop-1",
+        is_demo: false,
+        archived_at: null,
       });
+      if (!state.properties.some((p) => p["id"] === "prop-1")) {
+        state.properties.push({
+          id: "prop-1",
+          name: "9211 Fitzgerald Dr",
+          breezeway_property_id: "1473933",
+        });
+      }
     },
     failNextUpdate: (n = 1) => {
       state.failNextOutboundUpdate = n;

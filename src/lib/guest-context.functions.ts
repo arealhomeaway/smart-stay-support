@@ -12,7 +12,7 @@ export type { PropertyContactResult, PrimaryOwnerContact };
 
 
 /**
- * Current guest / tenant context for an Operations matter.
+ * Current guest / tenant context for an Operations ticket.
  *
  * Read-only in every direction:
  *  - the only OwnerRez call is a GET for the active reservation and its guest;
@@ -156,7 +156,7 @@ export const getGuestContext = createServerFn({ method: "POST" })
     const allowed = roles.some((r) => r === "admin" || r === "manager" || r === "tech");
     if (!allowed) return { visible: false };
 
-    // The matter itself is still read through the caller's own RLS client.
+    // The ticket itself is still read through the caller's own RLS client.
     const { data: ticket } = await supabase
       .from("tickets")
       .select("id, property_id, is_demo")

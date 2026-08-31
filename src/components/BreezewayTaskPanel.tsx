@@ -46,9 +46,9 @@ function statusVariant(status: string) {
 /**
  * Send-to-Breezeway control for one Resolve record.
  *
- * Resolve stays the source of truth: this creates a downstream Breezeway task
+ * Resolve stays the source of truth: this creates a downstream Breezeway work order
  * and records the link. A fresh request key is minted per composed request, so
- * double-clicks and retries can never produce two Breezeway tasks — only a
+ * double-clicks and retries can never produce two Breezeway work orders — only a
  * deliberate new send does.
  */
 export function BreezewayTaskPanel({
@@ -96,6 +96,9 @@ export function BreezewayTaskPanel({
     onSuccess: (result) => {
       if (result && "ok" in result && !result.ok) {
         toast.error(result.message);
+        // A definite failure created nothing in Breezeway, so the operator can
+        // send again straight away without reloading the page.
+        if ("retryable" in result && result.retryable) setRequestKey(crypto.randomUUID());
       } else {
         toast.success("Sent to Breezeway.");
         // A new key means the next send is a deliberate second task, not a retry.
@@ -122,7 +125,7 @@ export function BreezewayTaskPanel({
           </Badge>
         </CardTitle>
         <CardDescription>
-          Creates a Breezeway task from this record. Resolve stays the source of truth — Breezeway
+          Creates a Breezeway work order from this record. Resolve stays the source of truth — Breezeway
           never changes anything here.
           {eligibility.reason ? ` ${eligibility.reason}` : ""}
         </CardDescription>
@@ -240,7 +243,7 @@ export function BreezewayTaskPanel({
         {eligibility.eligible && unresolved ? (
           <p className="text-xs text-amber-700">
             An earlier request for this record is still open. Sending is paused until it is
-            resolved, so a duplicate Breezeway task cannot be created.
+            resolved, so a duplicate Breezeway work order cannot be created.
           </p>
         ) : null}
       </CardContent>

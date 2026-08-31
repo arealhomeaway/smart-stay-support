@@ -1,5 +1,5 @@
 /**
- * Staff view of the vendor's site visits on a matter: when they arrived, how
+ * Staff view of the vendor's site visits on a ticket: when they arrived, how
  * long they were there, and whether the phone's location matched the home.
  */
 

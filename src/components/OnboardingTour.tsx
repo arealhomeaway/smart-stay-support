@@ -17,7 +17,7 @@ const steps: TourStep[] = [
     target: null,
     route: "/dashboard",
     title: "Welcome to Resolve",
-    body: "A 60-second tour of how a guest issue becomes a tracked matter — with the safety checks built in so nothing gets removed and left as a hole in the wall.",
+    body: "A 60-second tour of how a guest issue becomes a tracked ticket — with the safety checks built in so nothing gets removed and left as a hole in the wall.",
   },
   {
     target: '[data-tour="dashboard"]',
@@ -28,20 +28,20 @@ const steps: TourStep[] = [
   {
     target: '[data-tour="log"]',
     route: "/dashboard",
-    title: "Log a matter",
-    body: "Every guest message or property issue becomes one matter. Pick the property and Resolve pulls live occupancy from OwnerRez, which sets the priority floor automatically.",
+    title: "Log a ticket",
+    body: "Every guest message or property issue becomes one ticket. Pick the property and Resolve pulls live occupancy from OwnerRez, which sets the priority floor automatically.",
   },
   {
     target: '[data-tour="tickets"]',
     route: "/tickets",
-    title: "Matters",
+    title: "Tickets",
     body: "The working queue. Priority (P1–P3) and the response clock decide what you touch next — the property decides which pod owns it.",
   },
   {
     target: '[data-tour="playbooks"]',
     route: "/playbooks",
     title: "Playbooks",
-    body: "This is where the water-heater incident gets prevented. Each work type carries required steps — check every smoke and CO alarm, replace any device removed on the same visit — and the matter cannot close until they are done.",
+    body: "This is where the water-heater incident gets prevented. Each work type carries required steps — check every smoke and CO alarm, replace any device removed on the same visit — and the ticket cannot close until they are done.",
   },
   {
     target: '[data-tour="oversight"]',
@@ -65,13 +65,13 @@ const steps: TourStep[] = [
     target: '[data-tour="help"]',
     route: "/dashboard",
     title: "Help is always here",
-    body: "The Help page holds the walkthrough video and a quick refresher on how matters, playbooks, seats and handoffs work. Send new coordinators here first.",
+    body: "The Help page holds the walkthrough video and a quick refresher on how tickets, playbooks, seats and handoffs work. Send new coordinators here first.",
   },
   {
     target: null,
     route: "/dashboard",
     title: "You're set",
-    body: "Log a real matter to try it end to end. You can replay this tour any time from “Take the tour” in the header.",
+    body: "Log a real ticket to try it end to end. You can replay this tour any time from “Take the tour” in the header.",
   },
 
 ];

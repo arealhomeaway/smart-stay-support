@@ -3,7 +3,7 @@
  *
  * Onboarding runs on the EXISTING property record and its immutable Property
  * ID. Pre-handoff work lives in `onboarding_tasks` so it can never be confused
- * with an operational matter, and nothing is silently converted or reset: open
+ * with an operational ticket, and nothing is silently converted or reset: open
  * items either block the handoff or are accepted as carryover with an owner,
  * a due date and a reason.
  */
@@ -711,7 +711,7 @@ export async function reviewHandoff(
 
 
 /* ------------------------------------------------------------------ *
- * Stage 2 additions: internal notes, exceptions, matter links,
+ * Stage 2 additions: internal notes, exceptions, ticket links,
  * archiving and the standard external-record review queue.
  * ------------------------------------------------------------------ */
 

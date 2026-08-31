@@ -82,7 +82,7 @@ export const askCoachFollowUp = createServerFn({ method: "POST" })
     return { answer, history: nextHistory };
   });
 
-/** Links a coaching session to the matter that was opened from it. */
+/** Links a coaching session to the ticket that was opened from it. */
 export const linkCoachSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

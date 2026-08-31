@@ -248,7 +248,7 @@ function clean(value: string | null, max: number) {
 
 export type CreateOutboundResult =
   | { ok: true; link: BreezewayOutboundLink }
-  | { ok: false; message: string; link?: BreezewayOutboundLink };
+  | { ok: false; message: string; link?: BreezewayOutboundLink; retryable?: boolean };
 
 /**
  * Reports the true state of a previous attempt carrying the same request key.
@@ -269,17 +269,22 @@ function resultForExisting(row: Row): CreateOutboundResult {
       link,
     };
   }
+  // Terminal, DEFINITE outcomes. Nothing exists in Breezeway for this key, so a
+  // fresh explicit send is legitimate: `retryable` tells the UI to mint a new
+  // request key. The idempotency contract is unchanged — this key stays spent.
   if (row.status === "abandoned") {
     return {
       ok: false,
       message: "This attempt was reviewed and closed. Start a new send if the work is still needed.",
       link,
+      retryable: true,
     };
   }
   return {
     ok: false,
     message: row.error_message ?? "The earlier attempt failed. Nothing was created in Breezeway.",
     link,
+    retryable: true,
   };
 }
 

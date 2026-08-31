@@ -2,10 +2,10 @@
  * Inbound task sync (server-only).
  *
  * Pulls work that was created *outside* Resolve — OwnerRez maintenance tasks
- * and message intake — into the matters queue so Resolve stays the single place
+ * and message intake — into the tickets queue so Resolve stays the single place
  * the team works from. Every imported record keeps a stable link back to the
  * source system (external_source + external_id) so repeated syncs update the
- * same matter instead of creating duplicates.
+ * same ticket instead of creating duplicates.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -63,7 +63,7 @@ function mapPriorityNumber(n: unknown): "p1" | "p2" | "p3" {
   return "p3";
 }
 
-/** Writes one normalized task into the matters table, insert-or-update by external id. */
+/** Writes one normalized task into the tickets table, insert-or-update by external id. */
 async function upsertTask(
   db: Db,
   source: "ownerrez",

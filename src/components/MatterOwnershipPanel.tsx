@@ -38,10 +38,10 @@ type Ticket = {
 };
 
 /**
- * Ownership, assignment and supervisor exceptions for one matter.
+ * Ownership, assignment and supervisor exceptions for one ticket.
  *
  * Assignment always writes both the working assignee and the action owner so
- * "whose matter is this" is never ambiguous. Every change is written to the
+ * "whose ticket is this" is never ambiguous. Every change is written to the
  * activity log, and the database audit trigger records it independently.
  */
 export function MatterOwnershipPanel({
@@ -112,7 +112,7 @@ export function MatterOwnershipPanel({
       if (error) throw error;
       await log(
         "assignment",
-        self ? "Picked this matter up." : `Assigned to ${displayName(target)}.`,
+        self ? "Picked this ticket up." : `Assigned to ${displayName(target)}.`,
         ownerId ? "reassigned" : "assigned",
       );
       setAssignee("");
@@ -159,7 +159,7 @@ export function MatterOwnershipPanel({
       if (error) throw error;
       await log("exception", `Closure exception authorised: ${exception.trim()}`, "closure_exception");
       setException("");
-      toast.success("Exception recorded. This matter can now be closed.");
+      toast.success("Exception recorded. This ticket can now be closed.");
     });
 
   const archive = () =>
@@ -217,7 +217,7 @@ export function MatterOwnershipPanel({
 
         {!canEdit && !readOnly && (
           <p className="rounded-md border border-border bg-secondary/40 p-2 text-xs text-muted-foreground">
-            This matter belongs to {displayName(owner)}. Ask a supervisor to reassign it if you need to work on it.
+            This ticket belongs to {displayName(owner)}. Ask a supervisor to reassign it if you need to work on it.
           </p>
         )}
 
@@ -226,7 +226,7 @@ export function MatterOwnershipPanel({
             <div className="flex flex-wrap gap-2">
               {ownerId !== userId && userId && (
                 <Button size="sm" variant="secondary" disabled={busy} onClick={() => assign(userId, true)}>
-                  Take this matter
+                  Take this ticket
                 </Button>
               )}
               {!closed && (
@@ -315,7 +315,7 @@ export function MatterOwnershipPanel({
                   placeholder="Duplicate of #1234, test record, logged in error…"
                 />
                 <Button size="sm" variant="outline" disabled={busy} onClick={archive}>
-                  Archive matter
+                  Archive ticket
                 </Button>
               </div>
             )}

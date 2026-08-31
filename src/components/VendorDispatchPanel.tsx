@@ -33,7 +33,7 @@ const STATUS_LABEL: Record<string, string> = {
   completed: "Vendor marked complete",
 };
 
-/** Staff-side dispatch: hand a matter to a vendor and it appears in their portal. */
+/** Staff-side dispatch: hand a ticket to a vendor and it appears in their portal. */
 export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendorStatus, onChanged }: Props) {
   const qc = useQueryClient();
   const rankFn = useServerFn(rankVendors);

@@ -66,7 +66,7 @@ function Scorecard() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat label="Points" value={String(s.points)} />
-            <Stat label="Jobs scored" value={String(s.ratedJobs)} />
+            <Stat label="Work orders scored" value={String(s.ratedJobs)} />
             <Stat
               label="Average score"
               value={s.averageOverall !== null ? `${s.averageOverall.toFixed(1)}/5` : "—"}
@@ -127,7 +127,7 @@ function Scorecard() {
           <CardDescription>Thoroughness is worth the most — finish the job, don't just stop the leak.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-1 text-sm text-muted-foreground">
-          <p>Every completed job starts at 10 points.</p>
+          <p>Every completed work order starts at 10 points.</p>
           <p>Thoroughness moves your score the most, then communication and timeliness.</p>
           <p>+10 for complete photo evidence, +8 for finishing inside the window, +6 for taking urgent P1 work.</p>
           <p>−20 if we have to send you back for the same issue.</p>
@@ -137,7 +137,7 @@ function Scorecard() {
       {s.recent.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Recent scored jobs</CardTitle>
+            <CardTitle className="text-base">Recent scored work orders</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {s.recent.map((r) => (

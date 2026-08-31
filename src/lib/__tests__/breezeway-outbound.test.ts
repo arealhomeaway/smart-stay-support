@@ -47,6 +47,7 @@ const { createOutboundTask, listOutboundNeedingReview, reconcileOutboundTask } =
 );
 
 const TICKET = "11111111-1111-4111-8111-111111111111";
+const ONBOARDING_TASK = "33333333-3333-4333-8333-333333333333";
 
 function input(requestKey: string) {
   return {
@@ -68,6 +69,119 @@ beforeEach(() => {
   responder = () => ({ id: 900001 });
   store.setFlag(true);
   store.seedPilotTicket(TICKET);
+  store.seedPilotOnboardingTask(ONBOARDING_TASK);
+});
+
+/**
+ * Both supported source types must behave identically. The ticket path is
+ * covered throughout; these exercise the onboarding-task path directly.
+ */
+describe("onboarding task source", () => {
+  function taskInput(requestKey: string) {
+    return {
+      ...input(requestKey),
+      sourceType: "onboarding_task" as const,
+      sourceId: ONBOARDING_TASK,
+      title: "Install lockbox",
+      department: "maintenance",
+    };
+  }
+
+  it("creates one Breezeway task and records it against the onboarding task", async () => {
+    const result = await createOutboundTask(taskInput("key-onb-happy-000000"), "actor");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.link.sourceType).toBe("onboarding_task");
+      expect(result.link.onboardingTaskId).toBe(ONBOARDING_TASK);
+      expect(result.link.ticketId).toBeNull();
+      expect(result.link.breezewayTaskId).toBe(900001);
+    }
+    expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+  });
+
+  it("refuses when the flag is off", async () => {
+    store.setFlag(false);
+    const result = await createOutboundTask(taskInput("key-onb-off-00000000"), "actor");
+    expect(result.ok).toBe(false);
+    expect(calls.length).toBe(0);
+  });
+
+  it("refuses demo and archived onboarding tasks", async () => {
+    store.state.onboarding[0]!["is_demo"] = true;
+    expect((await createOutboundTask(taskInput("key-onb-demo-0000000"), "actor")).ok).toBe(false);
+    store.state.onboarding[0]!["is_demo"] = false;
+    store.state.onboarding[0]!["archived_at"] = "2026-01-01T00:00:00Z";
+    expect((await createOutboundTask(taskInput("key-onb-arch-0000000"), "actor")).ok).toBe(false);
+    expect(calls.length).toBe(0);
+  });
+
+  it("refuses an onboarding task on a non-pilot property", async () => {
+    store.state.properties[0]!["breezeway_property_id"] = "999999";
+    const result = await createOutboundTask(taskInput("key-onb-notpilot-000"), "actor");
+    expect(result.ok).toBe(false);
+    expect(calls.length).toBe(0);
+  });
+
+  it("a repeated request key never sends a second task", async () => {
+    const key = "key-onb-repeat-00000";
+    await createOutboundTask(taskInput(key), "actor");
+    const second = await createOutboundTask(taskInput(key), "actor");
+    expect(second.ok).toBe(true);
+    expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+    expect(store.outbound().length).toBe(1);
+  });
+
+  it("an uncertain outcome is needs_review and locks further sends for the task", async () => {
+    responder = () => {
+      throw new FakeBreezewayError(500, "server error");
+    };
+    await createOutboundTask(taskInput("key-onb-5xx-00000000"), "actor");
+    expect(store.outbound()[0]!["status"]).toBe("needs_review");
+    responder = () => ({ id: 900002 });
+    const second = await createOutboundTask(taskInput("key-onb-blocked-0000"), "actor");
+    expect(second.ok).toBe(false);
+    expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+  });
+
+  it("an unresolved onboarding-task record does not block the ticket on the same property", async () => {
+    responder = () => {
+      throw new FakeBreezewayError(500, "server error");
+    };
+    await createOutboundTask(taskInput("key-onb-stuck-000000"), "actor");
+    responder = () => ({ id: 900003 });
+    const ticket = await createOutboundTask(input("key-tkt-after-onb-00"), "actor");
+    expect(ticket.ok).toBe(true);
+    expect(store.outbound().length).toBe(2);
+  });
+});
+
+describe("stale request keys after a terminal outcome", () => {
+  it("a definite refusal is marked retryable so a new send needs no page refresh", async () => {
+    responder = () => {
+      throw new FakeBreezewayError(422, "Breezeway rejected the request (422).");
+    };
+    const key = "key-terminal-4xx-000";
+    await createOutboundTask(input(key), "actor");
+    const repeat = await createOutboundTask(input(key), "actor");
+    expect(repeat.ok).toBe(false);
+    if (!repeat.ok) expect(repeat.retryable).toBe(true);
+
+    // A fresh key on the same record still goes through — nothing is locked.
+    responder = () => ({ id: 900010 });
+    const fresh = await createOutboundTask(input("key-terminal-fresh-0"), "actor");
+    expect(fresh.ok).toBe(true);
+  });
+
+  it("an uncertain outcome is NOT retryable — it stays locked for admin review", async () => {
+    responder = () => {
+      throw new FakeBreezewayError(503, "server error");
+    };
+    const key = "key-uncertain-lock-0";
+    await createOutboundTask(input(key), "actor");
+    const repeat = await createOutboundTask(input(key), "actor");
+    expect(repeat.ok).toBe(false);
+    if (!repeat.ok) expect(repeat.retryable ?? false).toBe(false);
+  });
 });
 
 describe("feature flag and pilot lock", () => {

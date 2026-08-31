@@ -3,7 +3,7 @@
  *
  * Reads exactly one mailbox — the address in EMAIL_SOURCE_MAILBOX, verified
  * against the server-side allowlist before every request — and turns real work
- * emails into matters in the operations queue.
+ * emails into tickets in the operations queue.
  *
  * Hard rules:
  *
@@ -14,8 +14,8 @@
  *     runs, and only mail received after that point is ever processed.
  *  3. Nothing is created twice. Both the Graph message id and the
  *     internetMessageId are recorded in `integration_events`, so a re-run or a
- *     redelivery can't duplicate a matter.
- *  4. Only mail a coordinator would actually action becomes a matter. Anything
+ *     redelivery can't duplicate a ticket.
+ *  4. Only mail a coordinator would actually action becomes a ticket. Anything
  *     that looks like a newsletter, a calendar response or an automated
  *     no-reply notice is skipped and recorded as skipped.
  */
@@ -187,9 +187,9 @@ function isBulk(msg: GraphMessage) {
 /**
  * Decides whether a message is coordinator work.
  *
- * Anything from an ARHA address, a reply on one of our matters, or a message
+ * Anything from an ARHA address, a reply on one of our tickets, or a message
  * that clearly describes work at a home is kept. Everything else is left in
- * the inbox for a human — Resolve would rather miss a matter than fill the
+ * the inbox for a human — Resolve would rather miss a ticket than fill the
  * queue with marketing.
  */
 function classify(msg: GraphMessage, knownSender: boolean): SkipReason | null {
@@ -208,7 +208,7 @@ function classify(msg: GraphMessage, knownSender: boolean): SkipReason | null {
   if (NOISE_SENDER.test(from) || NOISE_SUBJECT.test(subject)) return "automated";
 
   const text = `${subject}\n${preview}`;
-  // A reply on an existing matter still threads without a category, so a
+  // A reply on an existing ticket still threads without a category, so a
   // conversation never breaks in half.
   if (REF_TAG.test(text)) return null;
   return "not categorised";
@@ -227,7 +227,7 @@ function plainText(msg: GraphMessage) {
           .replace(/&nbsp;/g, " ")
           .replace(/&amp;/g, "&")
       : raw;
-  // Drop the quoted history so the matter shows the new message, not the thread.
+  // Drop the quoted history so the ticket shows the new message, not the thread.
   return text
     .split(/\n-{3,}\s*Original Message|\nFrom: .*\nSent: /)[0]!
     .replace(/[ \t]+\n/g, "\n")
@@ -404,7 +404,7 @@ export async function syncMailbox(
     const dupeKey = `${subject.toLowerCase()}|${from.toLowerCase()}`;
     if (seen.has(dupeKey)) {
       base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: "duplicate of an existing matter" });
+      base.items.push({ subject, from, outcome: "skipped", reason: "duplicate of an existing ticket" });
       if (!dryRun) await recordEvent(db, msg, "skipped", "duplicate", null);
       continue;
     }
@@ -674,7 +674,7 @@ async function recordEvent(
   ticketId: string | null,
 ) {
   // Both ids are recorded so neither a Graph id change nor a redelivery under
-  // the same internet id can produce a second matter.
+  // the same internet id can produce a second ticket.
   const ids = Array.from(new Set([msg.id, msg.internetMessageId ?? ""].filter(Boolean)));
   const rows = ids.map((external_id) => ({
     system: SYSTEM,

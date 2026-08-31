@@ -11,7 +11,7 @@ export const getInboundStatus = createServerFn({ method: "GET" })
   });
 
 /**
- * Pulls tasks that were created in OwnerRez into the matters
+ * Pulls tasks that were created in OwnerRez into the tickets
  * queue, and refreshes the status of ones already imported.
  */
 export const runInboundSync = createServerFn({ method: "POST" })
@@ -25,7 +25,7 @@ export const runInboundSync = createServerFn({ method: "POST" })
     return { results };
   });
 
-/** The most recent matters that arrived from an outside system. */
+/** The most recent tickets that arrived from an outside system. */
 export const listImportedMatters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

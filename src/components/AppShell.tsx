@@ -84,7 +84,7 @@ const navGroups: NavGroup[] = [
     label: "Work",
     items: [
       { to: "/tickets", label: "Work queue", icon: ClipboardList, tour: "tickets" },
-      { to: "/map", label: "Job map", icon: MapPinned, tour: "map", capability: "matters_all" },
+      { to: "/map", label: "Work map", icon: MapPinned, tour: "map", capability: "matters_all" },
       { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach", capability: "coaching" },
       { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
     ],
@@ -123,7 +123,7 @@ const navGroups: NavGroup[] = [
 ];
 
 const vendorGroups: NavGroup[] = [
-  { label: "My company", items: [{ to: "/vendor", label: "My jobs", icon: HardHat, tour: "vendor" }] },
+  { label: "My company", items: [{ to: "/vendor", label: "My work orders", icon: HardHat, tour: "vendor" }] },
 ];
 const ownerGroups: NavGroup[] = [
   { label: "My home", items: [{ to: "/owner", label: "My home", icon: KeyRound, tour: "owner" }] },
@@ -238,7 +238,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {!vendorMode && !ownerMode && !readOnly && (
                   <Button asChild data-tour="log" size="sm" className="min-h-11 md:min-h-9">
                     <Link to="/tickets/new">
-                      <Plus className="size-4" aria-hidden="true" /> Log a matter
+                      <Plus className="size-4" aria-hidden="true" /> Log a ticket
                     </Link>
                   </Button>
                 )}

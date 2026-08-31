@@ -30,12 +30,12 @@ export const Route = createFileRoute("/_authenticated/integrations")({
       {
         name: "description",
         content:
-          "Pull OwnerRez tasks and inbound messages into Resolve so every matter is tracked, documented and closed in one place.",
+          "Pull OwnerRez tasks and inbound messages into Resolve so every ticket is tracked, documented and closed in one place.",
       },
       { property: "og:title", content: "Integrations & inbound sync | Resolve" },
       {
         property: "og:description",
-        content: "Keep OwnerRez work in sync with the Resolve matters queue.",
+        content: "Keep OwnerRez work in sync with the Resolve tickets queue.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -113,7 +113,7 @@ function IntegrationsPage() {
             </CardTitle>
             <CardDescription>
               Homes and live occupancy sync both ways into Resolve. Occupancy still sets the priority floor when a
-              matter is opened.
+              ticket is opened.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
@@ -149,7 +149,7 @@ function IntegrationsPage() {
             <Badge>Live</Badge>
           </CardTitle>
           <CardDescription>
-            The workaround for OwnerRez: anything that arrives as a message can become a matter automatically.
+            The workaround for OwnerRez: anything that arrives as a message can become a ticket automatically.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
@@ -167,7 +167,7 @@ function IntegrationsPage() {
           </code>
           <p>
             Duplicate deliveries are ignored when the sender includes an <code>externalId</code>, so retries never
-            create a second matter.
+            create a second ticket.
           </p>
         </CardContent>
       </Card>
@@ -175,7 +175,7 @@ function IntegrationsPage() {
       <Card>
 
         <CardHeader>
-          <CardTitle className="text-base">Imported matters</CardTitle>
+          <CardTitle className="text-base">Imported tickets</CardTitle>
           <CardDescription>The most recent work pulled in from an outside system.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">

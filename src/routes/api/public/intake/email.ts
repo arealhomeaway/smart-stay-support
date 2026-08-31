@@ -14,7 +14,7 @@ const payloadSchema = z.object({
 /**
  * Inbound message intake. An email forwarding service, OwnerRez notification
  * relay or any other tool can POST here with the shared secret and the message
- * becomes a matter in the queue.
+ * becomes a ticket in the queue.
  */
 export const Route = createFileRoute("/api/public/intake/email")({
   server: {

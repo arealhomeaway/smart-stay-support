@@ -25,14 +25,14 @@ import { QUEUE_TABS, currentOwnerId, matchesTab, queueSort, type QueueTab } from
 export const Route = createFileRoute("/_authenticated/tickets/")({
   head: () => ({
     meta: [
-      { title: "Matters queue — Resolve Operations" },
+      { title: "Tickets queue — Resolve Operations" },
       {
         name: "description",
         content:
-          "One searchable queue for every guest, owner and maintenance matter across the A Real Home Away portfolio, with live response clocks.",
+          "One searchable queue for every guest, owner and maintenance ticket across the A Real Home Away portfolio, with live response clocks.",
       },
-      { property: "og:title", content: "Matters queue — Resolve Operations" },
-      { property: "og:description", content: "My work, team queue, unassigned and escalated matters in one place." },
+      { property: "og:title", content: "Tickets queue — Resolve Operations" },
+      { property: "og:description", content: "My work, team queue, unassigned and escalated tickets in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -99,17 +99,17 @@ function TicketsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">Matters</h1>
+          <h1 className="text-3xl font-semibold">Tickets</h1>
           <p className="mt-1 text-muted-foreground">{activeTab?.hint}</p>
         </div>
         <Button asChild>
-          <Link to="/tickets/new">Log a matter</Link>
+          <Link to="/tickets/new">Log a ticket</Link>
         </Button>
       </div>
 
       {demoMode && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
-          <span className="font-medium">Demo data.</span> These matters are seeded examples. They are excluded from
+          <span className="font-medium">Demo data.</span> These tickets are seeded examples. They are excluded from
           production analytics and never trigger emails, texts or integrations.
         </div>
       )}

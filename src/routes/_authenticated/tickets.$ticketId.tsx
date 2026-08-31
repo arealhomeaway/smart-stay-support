@@ -46,20 +46,20 @@ import {
 export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
   head: () => ({
     meta: [
-      { title: "Matter detail — Resolve Operations" },
+      { title: "Ticket detail — Resolve Operations" },
       {
         name: "description",
         content: "Acknowledge, work the playbook, and close with the evidence the work type requires.",
       },
-      { property: "og:title", content: "Matter detail — Resolve Operations" },
+      { property: "og:title", content: "Ticket detail — Resolve Operations" },
       { property: "og:description", content: "Acknowledge, work the playbook, and close it properly." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TicketDetail,
-  errorComponent: () => <p className="text-muted-foreground">This matter could not be loaded.</p>,
-  notFoundComponent: () => <p className="text-muted-foreground">Matter not found.</p>,
+  errorComponent: () => <p className="text-muted-foreground">This ticket could not be loaded.</p>,
+  notFoundComponent: () => <p className="text-muted-foreground">Ticket not found.</p>,
 });
 
 function TicketDetail() {
@@ -176,7 +176,7 @@ function TicketDetail() {
       toast.error(error.message);
       return;
     }
-    await log("acknowledged", "Acknowledged — this matter is being worked.", "acknowledged");
+    await log("acknowledged", "Acknowledged — this ticket is being worked.", "acknowledged");
     await refresh();
     toast.success("Acknowledged.");
   }
@@ -195,7 +195,7 @@ function TicketDetail() {
       toast.error(error.message);
       return;
     }
-    await log("action_started", "Work started on this matter.", "action_started");
+    await log("action_started", "Work started on this ticket.", "action_started");
     await refresh();
     toast.success("Action started.");
   }
@@ -266,7 +266,7 @@ function TicketDetail() {
 
   async function changeStatus(status: string) {
     const now = new Date().toISOString();
-    // Moving a matter into progress is the action starting — stop both clocks
+    // Moving a ticket into progress is the action starting — stop both clocks
     // even when the coordinator uses the status menu instead of the clock buttons.
     const patch: { status: string; acknowledged_at?: string; action_started_at?: string } = { status };
     if (status === "in_progress") {
@@ -340,7 +340,7 @@ function TicketDetail() {
     setResolution("");
     setEvidence("");
     await refresh();
-    toast.success("Matter closed.");
+    toast.success("Ticket closed.");
   }
 
   async function reopen() {
@@ -365,7 +365,7 @@ function TicketDetail() {
   return (
     <div className="space-y-6">
       <Link to="/tickets" className="text-sm text-muted-foreground hover:underline">
-        ← All matters
+        ← All tickets
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -581,7 +581,7 @@ function TicketDetail() {
               <CardHeader>
                 <CardTitle>Close it out properly</CardTitle>
                 <CardDescription>
-                  This work type sets what evidence is required before the matter can close.
+                  This work type sets what evidence is required before the ticket can close.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -657,7 +657,7 @@ function TicketDetail() {
                 )}
 
                 <Button onClick={resolveTicket} className="w-full">
-                  <CheckCircle2 className="size-4" /> Close matter
+                  <CheckCircle2 className="size-4" /> Close ticket
                 </Button>
               </CardContent>
             </Card>
@@ -665,7 +665,7 @@ function TicketDetail() {
 
           {closed && ticket.record_type !== "completed_interaction" && (
             <Button variant="outline" onClick={reopen}>
-              Reopen this matter
+              Reopen this ticket
             </Button>
           )}
 
@@ -772,7 +772,7 @@ function TicketDetail() {
             </CardHeader>
             <CardContent className="space-y-2">
               {(history ?? []).length === 0 && (
-                <p className="text-sm text-muted-foreground">No other matters at this property.</p>
+                <p className="text-sm text-muted-foreground">No other tickets at this property.</p>
               )}
               {(history ?? []).map((h) => (
                 <Link

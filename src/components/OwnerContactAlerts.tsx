@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Owner texts and calls stay human. When an urgent matter needs voice contact,
+ * Owner texts and calls stay human. When an urgent ticket needs voice contact,
  * it lands here for a coordinator to handle and close out.
  */
 export function OwnerContactAlerts() {
@@ -49,7 +49,7 @@ export function OwnerContactAlerts() {
           {pending.length > 0 && <Badge variant="destructive">{pending.length} waiting</Badge>}
         </CardTitle>
         <CardDescription>
-          Resolve sends email and in-app alerts automatically. Urgent matters that deserve a voice or
+          Resolve sends email and in-app alerts automatically. Urgent tickets that deserve a voice or
           text come here so a teammate reaches the homeowner personally.
         </CardDescription>
       </CardHeader>
@@ -82,7 +82,7 @@ export function OwnerContactAlerts() {
               {a.ticket_id && (
                 <Button asChild variant="outline" size="sm">
                   <Link to="/tickets/$ticketId" params={{ ticketId: a.ticket_id }}>
-                    Open the matter
+                    Open the ticket
                   </Link>
                 </Button>
               )}

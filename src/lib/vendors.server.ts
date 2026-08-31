@@ -1,7 +1,7 @@
 /**
  * Vendor company management (server-only).
  *
- * The rules that matter here, in plain terms:
+ * The rules that ticket here, in plain terms:
  *   - Nothing becomes an approved vendor by accident. Status only moves with a
  *     written reason, and the move is recorded.
  *   - Legacy records land in staging. A person decides create / match / skip.

@@ -40,7 +40,7 @@ export async function loadVendors() {
   return data ?? [];
 }
 
-/** Sends a matter to a vendor with the brief they need to do the job right. */
+/** Sends a ticket to a vendor with the brief they need to do the job right. */
 export async function dispatchVendor(input: {
   ticketId: string;
   vendorUserId: string | null;
@@ -100,7 +100,7 @@ export async function dispatchVendor(input: {
 }
 
 /**
- * Ranks vendors for a matter: distance from the home (their most recent site
+ * Ranks vendors for a ticket: distance from the home (their most recent site
  * check-in), scorecard tier/average, and how many jobs they already carry.
  */
 export async function rankVendorsForTicket(ticketId: string) {

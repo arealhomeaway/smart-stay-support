@@ -216,7 +216,7 @@ function healthScore(s: Stats) {
       label: "Backlog under control",
       value: s.open.length === 0 ? 100 : Math.max(0, 100 - Math.round((s.breachedOpen.length / s.open.length) * 100)),
       weight: 0.15,
-      hint: "Open matters not currently past a clock",
+      hint: "Open tickets not currently past a clock",
     },
   ];
   const scored = parts.filter((p) => p.value !== null);
@@ -278,7 +278,7 @@ function Analytics() {
         .select(SELECT)
         // Demo records are excluded from every KPI.
         .eq("is_demo", false)
-        // Archived (prelaunch) matters are excluded from every KPI.
+        // Archived (prelaunch) tickets are excluded from every KPI.
         .is("archived_at", null)
         .gte("reported_at", since)
         .order("reported_at", { ascending: false })
@@ -309,9 +309,9 @@ function Analytics() {
     goodDirection: "up" | "down";
   }[] = [
     {
-      label: "Guest-impacting matters",
+      label: "Guest-impacting tickets",
       value: String(s.guestImpacting.length),
-      hint: `${s.total} matters logged · ${s.open.length} still open`,
+      hint: `${s.total} tickets logged · ${s.open.length} still open`,
       current: s.guestImpacting.length,
       previous: p.guestImpacting.length,
       goodDirection: "down",
@@ -319,7 +319,7 @@ function Analytics() {
     {
       label: "Response SLA — guest impacting",
       value: fmtPct(s.guestResponseSla),
-      hint: `${s.guestResponseScope} on the clock · all matters ${fmtPct(s.responseSla)}`,
+      hint: `${s.guestResponseScope} on the clock · all tickets ${fmtPct(s.responseSla)}`,
       current: s.guestResponseSla,
       previous: p.guestResponseSla,
       goodDirection: "up",
@@ -327,7 +327,7 @@ function Analytics() {
     {
       label: "First-time fix",
       value: fmtPct(s.firstTimeFix),
-      hint: `${s.reopened.length} matters came back after closing`,
+      hint: `${s.reopened.length} tickets came back after closing`,
       current: s.firstTimeFix,
       previous: p.firstTimeFix,
       goodDirection: "up",
@@ -351,7 +351,7 @@ function Analytics() {
     {
       label: "Median time to close",
       value: fmtDuration(s.medianClose),
-      hint: `${s.resolved.length} matters closed in this window`,
+      hint: `${s.resolved.length} tickets closed in this window`,
       current: s.medianClose,
       previous: p.medianClose,
       goodDirection: "down",
@@ -471,7 +471,7 @@ function Analytics() {
     .map((b) => ({
       label: b.label,
       count: b.count,
-      sub: `${b.count} matters${b.p1 ? ` · ${b.p1} P1` : ""}${b.reopens ? ` · ${b.reopens} reopened` : ""}`,
+      sub: `${b.count} tickets${b.p1 ? ` · ${b.p1} P1` : ""}${b.reopens ? ` · ${b.reopens} reopened` : ""}`,
     }));
 
   return (
@@ -599,7 +599,7 @@ function Analytics() {
           <CardHeader>
             <CardTitle className="text-base">What open work is stuck on</CardTitle>
             <CardDescription>
-              Every open matter in a waiting state, grouped by who or what we're waiting for. Chronic entries here are
+              Every open ticket in a waiting state, grouped by who or what we're waiting for. Chronic entries here are
               process problems, not people problems.
             </CardDescription>
           </CardHeader>
@@ -611,7 +611,7 @@ function Analytics() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Why we ran late</CardTitle>
-            <CardDescription>Recorded late reasons on matters that missed a clock.</CardDescription>
+            <CardDescription>Recorded late reasons on tickets that missed a clock.</CardDescription>
           </CardHeader>
           <CardContent>
             <Bars rows={lateReasons} empty="No late reasons recorded in this window." />
@@ -648,7 +648,7 @@ function Analytics() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Backlog aging</CardTitle>
-            <CardDescription>How long open matters have been sitting.</CardDescription>
+            <CardDescription>How long open tickets have been sitting.</CardDescription>
           </CardHeader>
           <CardContent>
             <Bars rows={ageBuckets.filter((b) => b.count > 0)} empty="Nothing open right now." />
@@ -697,7 +697,7 @@ function Analytics() {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Matters reported in the last {days} days, compared with the {days} days before that. {s.open.length} are still
+        Tickets reported in the last {days} days, compared with the {days} days before that. {s.open.length} are still
         open right now.
       </p>
     </div>

@@ -16,7 +16,7 @@ export const getMailboxStatus = createServerFn({ method: "GET" })
   });
 
 /**
- * Reads unread mail and opens matters for the real work. `dryRun` previews the
+ * Reads unread mail and opens tickets for the real work. `dryRun` previews the
  * result without touching the mailbox or the queue.
  */
 export const runMailboxSync = createServerFn({ method: "POST" })

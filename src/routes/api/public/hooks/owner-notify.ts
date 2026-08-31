@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /**
- * Drains queued owner alerts to email and (for urgent matters) text.
+ * Drains queued owner alerts to email and (for urgent tickets) text.
  * Called on a schedule; the in-app inbox is already updated by the database.
  */
 export const Route = createFileRoute("/api/public/hooks/owner-notify")({

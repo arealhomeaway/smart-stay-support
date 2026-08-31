@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 /**
  * Scheduled inbox sweep. A cron job calls this with the shared secret so work
- * emailed to the team inbox becomes a matter without anyone clicking sync.
+ * emailed to the team inbox becomes a ticket without anyone clicking sync.
  */
 export const Route = createFileRoute("/api/public/sync/mailbox")({
   server: {

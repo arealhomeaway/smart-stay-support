@@ -24,10 +24,10 @@ export const Route = createFileRoute("/_authenticated/oversight")({
       {
         name: "description",
         content:
-          "The supervisor exception queue: unacknowledged P1s, stalled work, waiting matters with no review date, and reopened issues.",
+          "The supervisor exception queue: unacknowledged P1s, stalled work, waiting tickets with no review date, and reopened issues.",
       },
       { property: "og:title", content: "Oversight queue — Resolve Operations" },
-      { property: "og:description", content: "Exceptions only — the matters that need a supervisor's eyes." },
+      { property: "og:description", content: "Exceptions only — the tickets that need a supervisor's eyes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -58,7 +58,7 @@ function Oversight() {
         .select("*, properties(name, nickname)")
         // Demo records never appear in oversight.
         .eq("is_demo", false)
-        // Archived matters are out of the active queue and raise no exceptions.
+        // Archived tickets are out of the active queue and raise no exceptions.
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
         .limit(500);
@@ -125,14 +125,14 @@ function Oversight() {
       tone: "warning" as const,
     },
     {
-      title: "Reopened matters",
+      title: "Reopened tickets",
       description: "Closed too early, or the fix did not hold. Worth a look at the playbook.",
       rows: reopened,
       tone: "warning" as const,
     },
     {
       title: "Closure QA pending",
-      description: "Resolved matters that have not been quality-checked yet.",
+      description: "Resolved tickets that have not been quality-checked yet.",
       rows: closureQa,
       tone: "neutral" as const,
     },
@@ -147,7 +147,7 @@ function Oversight() {
       <div>
         <h1 className="text-3xl font-semibold">Oversight queue</h1>
         <p className="mt-1 text-muted-foreground">
-          Exceptions only. {totalExceptions === 0 ? "Nothing is slipping right now." : `${totalExceptions} matters need attention.`}
+          Exceptions only. {totalExceptions === 0 ? "Nothing is slipping right now." : `${totalExceptions} tickets need attention.`}
         </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
       </div>

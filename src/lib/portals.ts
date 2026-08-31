@@ -46,7 +46,7 @@ export const PORTAL_REGISTRY: PortalDefinition[] = [
     name: "ARHA Operations Hub",
     audience: "Property coordinators, supervisors and internal staff",
     description:
-      "Manage property matters, guest and homeowner requests, assignments, escalations, communications, follow-ups, and property history.",
+      "Manage property tickets, guest and homeowner requests, assignments, escalations, communications, follow-ups, and property history.",
     icon: Building2,
     route: "/dashboard",
     action: "Enter Operations",

@@ -75,7 +75,7 @@ export async function rateVendorJob(input: {
     .eq("id", input.ticketId)
     .maybeSingle();
   if (ticketError) throw ticketError;
-  if (!ticket?.vendor_user_id) throw new Error("This matter has no vendor assigned to score.");
+  if (!ticket?.vendor_user_id) throw new Error("This ticket has no vendor assigned to score.");
 
   const rating = { ...input.rating, priority: ticket.priority };
   const points = jobPoints(rating);
@@ -112,7 +112,7 @@ export async function rateVendorJob(input: {
   return { ok: true as const, points, overall };
 }
 
-/** Existing rating for a matter, if a coordinator has already scored it. */
+/** Existing rating for a ticket, if a coordinator has already scored it. */
 export async function loadJobRating(ticketId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
