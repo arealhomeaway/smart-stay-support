@@ -222,3 +222,11 @@ Critical path (historical migration removed):
 
 ### Beta migration rule
 No historical Notion/Asana/Breezeway/documents/OneDrive/participation/comments/handoffs/productivity migration. Current authoritative property information is NOT historical and must be imported.
+
+
+## Track 0 status (2026-08-31)
+- Command Center now excludes visits, vendor ratings and handoffs tied to demo/archived tickets (matches the ticket set).
+- Reporting baseline note (`src/lib/reporting.ts`) shown on Command Center, Analytics and Oversight.
+- Invite emails re-sent: Romeo, Avy, Mike, Christine, Micah. Kati Hand production onboarding code KATI-H7M4 created (needs her email to lock/send).
+- Breezeway: live non-fixture pilot event processed 2026-08-29; receiver proven in production.
+- OPEN: September overnight on-call roster is empty — needs Emily's staffing decision.
