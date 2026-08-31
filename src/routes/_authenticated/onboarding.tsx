@@ -633,7 +633,7 @@ function OwnerDecisionsCard({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Homeowner decisions</CardTitle>
-        <CardDescription>Requests sent to the homeowner and the decisions they recorded.</CardDescription>
+        <CardDescription>Approval requests sent to the homeowner and the decisions they recorded.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {approvals.length === 0 && (

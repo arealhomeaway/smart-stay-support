@@ -31,7 +31,7 @@ const ROLE_LABEL: Record<InviteRole, string> = {
   manager: "Supervisor — oversight, analytics and handoff review",
   onboarding: "Onboarding staff — pre-handoff work and readiness",
   tech: "Staff — their own assigned work",
-  vendor: "Vendor — only their dispatched jobs",
+  vendor: "Vendor — only their dispatched work orders",
   owner: "Homeowner — their own enrolled home",
 };
 

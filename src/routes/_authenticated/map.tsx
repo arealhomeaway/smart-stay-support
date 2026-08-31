@@ -17,12 +17,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({
     meta: [
-      { title: "Job map — Resolve Operations" },
+      { title: "Work map — Resolve Operations" },
       {
         name: "description",
         content: "See every managed home on a map with its open work, so you can dispatch by who is closest.",
       },
-      { property: "og:title", content: "Job map — Resolve Operations" },
+      { property: "og:title", content: "Work map — Resolve Operations" },
       { property: "og:description", content: "Managed homes and open work plotted for smarter dispatch." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

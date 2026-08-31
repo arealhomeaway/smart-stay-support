@@ -10,16 +10,16 @@ export const Route = createFileRoute("/_authenticated/vendor/")({
   component: VendorQueue,
   head: () => ({
     meta: [
-      { title: "My jobs | Resolve vendor portal" },
+      { title: "My work orders | Resolve vendor portal" },
       {
         name: "description",
         content:
-          "Every job A Real Home Away has dispatched to you, with the access details, safety steps and sign-off you need on site.",
+          "Every work order A Real Home Away has dispatched to you, with the access details, safety steps and sign-off you need on site.",
       },
-      { property: "og:title", content: "My jobs | Resolve vendor portal" },
+      { property: "og:title", content: "My work orders | Resolve vendor portal" },
       {
         property: "og:description",
-        content: "Your dispatched jobs, access notes and required steps in one place.",
+        content: "Your dispatched work orders, access notes and required steps in one place.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -57,7 +57,7 @@ function VendorQueue() {
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="font-display text-2xl font-semibold">My jobs</h1>
+          <h1 className="font-display text-2xl font-semibold">My work orders</h1>
           <Link
             to="/vendor/scorecard"
             className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-accent/40"
@@ -120,7 +120,7 @@ function VendorQueue() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Recently finished</CardTitle>
-            <CardDescription>Your last completed jobs.</CardDescription>
+            <CardDescription>Your last completed work orders.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {done.slice(0, 10).map((job) => (
