@@ -209,9 +209,20 @@ Critical path (historical migration removed):
 - [ ] Current property facts, contacts, external identifiers, operating instructions, onboarding status available in Resolve (no Notion needed)
 - [ ] Permissions tested for Kati / Micah / Operations
 
-### Track 3B — Full Property Hub (Sept 14)
+### Track 3B — Full Property Hub (revised targets, 2026-08-31)
+- Sept 8–9: Property Hub Functional Beta (Overview, Details, Contacts, Onboarding, Operations, Documents, Approvals, Activity)
+- Sept 10–11: Internal QA
+- Sept 12: Homeowner-Ready Release Candidate
+- Sept 14: Production use with first real owner/property
 - [ ] Eight tabs (Overview, Details, Contacts, Onboarding, Operations, Documents & Media, Approvals, Activity)
 - [ ] Shared header, consistent nav/typography/spacing, real loading/empty/permission-denied/integration-error states, no raw DB values or role keys, no fake production data, consistent status terms
+- Rule: SharePoint completion, historical migration, Rai, Finance and advanced analytics must NOT block the functional Property Hub beta.
+
+### Breezeway outbound pilot (2026-08-31) — PASS
+- Flag `breezeway_outbound` ON, locked to 9211 Fitzgerald Dr / Breezeway home 1473933.
+- Ops ticket #511 → Breezeway work order 166028165 (synced by webhook); onboarding task → 166030275 (synced).
+- Repeat request key returned the existing record; no duplicate created. Do not expand the allowlist without COO approval.
+
 
 ### SharePoint (parallel, non-blocking)
 - FINDING: deployed onboarding + ticket evidence capture uses ONLY the private `resolve-attachments` bucket. No SharePoint write path is deployed.
