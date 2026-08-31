@@ -18,6 +18,8 @@ import { ownerRezGet, type OwnerRezListing } from "@/lib/ownerrez.server";
 export type OwnerRezOwner = {
   id: number;
   name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   email_address?: string | null;
   phone?: { number?: string | null } | null;
   active?: boolean;
@@ -218,7 +220,9 @@ export function resolvePrimaryOwners(
     counts.matched += 1;
     rows.push({
       property_id: p.id,
-      owner_name: o.name?.trim() || null,
+      // OwnerRez returns either a composed `name` or the parts; accept both.
+      owner_name:
+        o.name?.trim() || [o.first_name, o.last_name].filter(Boolean).join(" ").trim() || null,
       owner_email: o.email_address?.trim() || null,
       owner_phone: o.phone?.number?.trim() || null,
       source: "ownerrez",
