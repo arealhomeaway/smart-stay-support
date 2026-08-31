@@ -327,3 +327,32 @@ tracks completion and analytics, with Breezeway removed from the chain.
 4. SharePoint scoped-write integration
 5. Sept 12 homeowner-ready release candidate
 Rai / Ask Resolve stays architected for later — out of current beta build scope.
+
+## Breezeway limited beta (approved 2026-08-31)
+Allowlist extended to five verified homes only — enforced server-side in
+`src/lib/breezeway-outbound.ts` (`OUTBOUND_ALLOWED_HOME_IDS`) and mirrored by the
+webhook retention scope (`PILOT_HOME_IDS`). Each mapping was verified against the
+Breezeway record's OwnerRez `reference_property_id`, not by name/address similarity.
+
+| Property | Breezeway home | OwnerRez | Resolve state |
+|---|---|---|---|
+| 9211 Fitzgerald Dr., Indianapolis IN | 1473933 | 492500 | active, not demo, not archived |
+| 2901 E. 75th St., Tulsa OK | 1295301 | 480826 | active, not demo, not archived |
+| 2701 Berkshire Way, Oklahoma City OK | 368125 | 380978 | active, not demo, not archived |
+| 721 Dusty Trail, Yukon OK | 322641 | 376992 | active, not demo, not archived |
+| 7351 Red Rock Rd, Indianapolis IN | 1293536 | 480764 | active, not demo, not archived |
+
+Notes:
+- Near-miss guarded: Breezeway home 676169 (15701 E 75th Pl N, Owasso) is NOT the
+  Tulsa 75th St home and is not allowlisted; regression test covers the refusal.
+- 7351 Red Rock Rd currently has **no** onboarding project/tasks. Onboarding-side
+  validation there is deferred until legitimate onboarding work exists — no
+  artificial onboarding work will be created to test the integration.
+- The two pilot work orders (166028165, 166030275) stay as labelled test records
+  and are to be closed manually in Breezeway by an authorized ARHA user. No
+  status-transition capability will be built for them.
+- Monitoring (system health only, never employee performance): outbound creations,
+  duplicate prevention, needs_review, definite failures, webhook confirmation,
+  create-to-confirm timing, admin recovery usage, Operations vs Onboarding source,
+  Resolve/Breezeway state mismatches.
+- No further Breezeway scope expansion unless a defect is found.

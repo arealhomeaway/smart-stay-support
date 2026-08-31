@@ -20,7 +20,7 @@ import {
  * Deliberately manual. Resolve never re-sends a task creation automatically:
  * an unconfirmed create may already exist in Breezeway, and retrying it is how
  * duplicates happen. An admin checks Breezeway and either binds the real task
- * id (verified against the pilot property before it is accepted) or records
+ * id (verified against the approved beta properties before it is accepted) or records
  * that nothing was created.
  */
 export function BreezewayOutboundReviewPanel() {

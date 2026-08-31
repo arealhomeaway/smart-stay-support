@@ -4,8 +4,8 @@
  * Approved beta scope, deliberately narrow:
  *   - Resolve remains the operational source of truth. A Breezeway task is a
  *     downstream copy; Breezeway never changes Resolve state from here.
- *   - Writes are restricted to the single mapped pilot property
- *     (OUTBOUND_PILOT_HOME_ID). Any other property is refused server-side.
+ *   - Writes are restricted to the approved, verified beta properties
+ *     (OUTBOUND_ALLOWED_HOME_IDS). Any other property is refused server-side.
  *   - The `breezeway_outbound` feature flag must be ON. OFF means no write.
  *
  * Idempotency (double-click and retry protection):
@@ -25,7 +25,7 @@ import {
   BREEZEWAY_OUTBOUND_FLAG,
   BREEZEWAY_DEPARTMENTS,
   BREEZEWAY_PRIORITIES,
-  OUTBOUND_PILOT_HOME_ID,
+  isOutboundAllowedHome,
   type BreezewayOutboundEligibility,
   type BreezewayOutboundLink,
   type BreezewayOutboundReviewItem,
@@ -192,11 +192,11 @@ export async function outboundEligibility(
         breezewayHomeId: null,
       };
     }
-    if (homeId !== OUTBOUND_PILOT_HOME_ID) {
+    if (!isOutboundAllowedHome(homeId)) {
       return {
         enabled,
         eligible: false,
-        reason: "Outbound task creation is limited to the approved pilot property.",
+        reason: "Outbound task creation is limited to the approved beta properties.",
         propertyName: property?.name ?? null,
         breezewayHomeId: homeId,
       };
@@ -319,12 +319,13 @@ export async function createOutboundTask(
   }
   const { propertyId, property, defaults } = resolved;
   const homeId = property?.breezeway_property_id ?? null;
-  if (homeId !== OUTBOUND_PILOT_HOME_ID) {
+  if (!isOutboundAllowedHome(homeId)) {
     return {
       ok: false,
-      message: "Outbound task creation is limited to the approved pilot property.",
+      message: "Outbound task creation is limited to the approved beta properties.",
     };
   }
+  const allowedHomeId: string = String(homeId);
 
   const title = clean(input.title, 200) ?? defaults?.title ?? "Resolve task";
   const description = clean(input.description, 4000) ?? defaults?.description ?? null;
@@ -347,7 +348,7 @@ export async function createOutboundTask(
       ticket_id: input.sourceType === "ticket" ? input.sourceId : null,
       onboarding_task_id: input.sourceType === "onboarding_task" ? input.sourceId : null,
       property_id: propertyId,
-      breezeway_home_id: homeId,
+      breezeway_home_id: allowedHomeId,
       request_key: input.requestKey,
       status: "creating",
       title,
@@ -387,7 +388,7 @@ export async function createOutboundTask(
       // would create a second one. Failures land in admin review instead.
       retry: false,
       body: {
-        home_id: Number(homeId),
+        home_id: Number(allowedHomeId),
         name: title,
         ...(description ? { description } : {}),
         ...(department ? { type_department: department } : {}),
@@ -571,10 +572,10 @@ export async function reconcileOutboundTask(
           : "Could not reach Breezeway to confirm that task.",
     };
   }
-  if (!verified || String(verified.home_id ?? "") !== OUTBOUND_PILOT_HOME_ID) {
+  if (!verified || !isOutboundAllowedHome(verified.home_id)) {
     return {
       ok: false,
-      message: "That Breezeway task does not exist on the pilot property.",
+      message: "That Breezeway task does not exist on an approved beta property.",
     };
   }
 

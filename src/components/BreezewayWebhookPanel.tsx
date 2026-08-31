@@ -21,7 +21,7 @@ type Registration = Awaited<ReturnType<typeof breezewayRegisterWebhook>>;
 type Recovery = Awaited<ReturnType<typeof breezewayWebhookRecoverFailures>>;
 
 const OUTCOME_LABELS: Record<string, string> = {
-  processed: "Processed (pilot property)",
+  processed: "Processed (beta property)",
   ignored_other_property: "Ignored — other property",
   ignored_other_company: "Ignored — other company",
   duplicate: "Ignored — duplicate update",
@@ -120,7 +120,7 @@ export function BreezewayWebhookPanel() {
               <Antenna className="h-4 w-4" /> Breezeway work order webhook (pilot)
             </CardTitle>
             <CardDescription>
-              One subscription, company-wide delivery. Only tasks for the approved pilot property
+              One subscription, company-wide delivery. Only tasks for the approved beta properties
               are verified and retained; everything else is counted and discarded. Preview only — no
               tickets, assignments, messages, stage changes or Breezeway writes.
             </CardDescription>

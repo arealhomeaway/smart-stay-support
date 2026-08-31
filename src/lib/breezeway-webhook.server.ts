@@ -34,8 +34,16 @@ import { BreezewayError } from "./breezeway.server";
 
 /** The only company whose task detail may be retained. */
 export const PILOT_COMPANY_ID = 3641;
-/** The only property whose task detail may be retained. */
+/** The original pilot property; kept for fixtures and existing references. */
 export const PILOT_HOME_ID = 1473933;
+/**
+ * The approved limited-beta properties whose task detail may be retained.
+ * Same verified set as the outbound allowlist — nothing else is stored.
+ */
+export const PILOT_HOME_IDS: readonly number[] = [1473933, 1295301, 368125, 322641, 1293536];
+export function isPilotHome(homeId: number | null | undefined) {
+  return homeId != null && PILOT_HOME_IDS.includes(homeId);
+}
 
 export type WebhookOutcome =
   | "processed"
@@ -309,9 +317,9 @@ export async function verifyAndFinalizeTask(
       null,
     );
   }
-  if (verified.homeId !== PILOT_HOME_ID) {
+  if (!isPilotHome(verified.homeId)) {
     return recordAndReturn(
-      { outcome: "ignored_other_property", reason: "Outside pilot property", isFixture },
+      { outcome: "ignored_other_property", reason: "Outside beta properties", isFixture },
       null,
     );
   }
@@ -327,7 +335,7 @@ export async function verifyAndFinalizeTask(
           outcome: "duplicate",
           reason: "Same task update already processed",
           taskId,
-          homeId: PILOT_HOME_ID,
+          homeId: verified.homeId,
           companyId: PILOT_COMPANY_ID,
           taskUpdatedAt: updatedAt,
           isFixture,
@@ -341,7 +349,7 @@ export async function verifyAndFinalizeTask(
           outcome: "stale",
           reason: "Older than the update already processed",
           taskId,
-          homeId: PILOT_HOME_ID,
+          homeId: verified.homeId,
           companyId: PILOT_COMPANY_ID,
           taskUpdatedAt: updatedAt,
           isFixture,
@@ -357,7 +365,7 @@ export async function verifyAndFinalizeTask(
     outcome: "processed",
     reason: "Verified pilot task update",
     taskId,
-    homeId: PILOT_HOME_ID,
+    homeId: verified.homeId,
     companyId: PILOT_COMPANY_ID,
     taskUpdatedAt: updatedAt,
     isFixture,
@@ -372,7 +380,7 @@ export async function verifyAndFinalizeTask(
         outcome: "duplicate",
         reason,
         taskId,
-        homeId: PILOT_HOME_ID,
+        homeId: verified.homeId,
         companyId: PILOT_COMPANY_ID,
         taskUpdatedAt: updatedAt,
         isFixture,
@@ -423,9 +431,9 @@ export async function processBreezewayWebhook(
 
   // Cheap pre-filter: if the payload names a different property, drop it now
   // and spend no API budget on it. Detail is never stored for those.
-  if (parsed.homeId != null && parsed.homeId !== PILOT_HOME_ID) {
+  if (parsed.homeId != null && !isPilotHome(parsed.homeId)) {
     return recordAndReturn(
-      { outcome: "ignored_other_property", reason: "Outside pilot property", isFixture },
+      { outcome: "ignored_other_property", reason: "Outside beta properties", isFixture },
       null,
     );
   }
