@@ -108,3 +108,24 @@
 - [ ] BLOCKER: 5 of 6 functional seats vacant — James Almario, Roms, Christine Sendico, Avy, Mike Cacatian have no Resolve profile/role
 - [ ] BLOCKER: September overnight roster not yet entered
 - [ ] Held: publish, mailbox polling, Breezeway automation, live intake
+
+## Staff invitations (2026-08-31)
+- [x] `tech` displays as Staff everywhere (display-only; no RLS/auth change)
+- [x] Five email-bound single-use invites created (James, Romeo, Avy, Mike, Christine)
+- [x] Admin "Email code" resend control in Team invite panel
+- [x] Invite codes emailed from info@arealhomeaway.com (Aug 31)
+- [ ] Seats stay pending until each person redeems with their exact invited email
+
+## Property Hub / SharePoint canonical store (requested 2026-08-31) — NOT STARTED
+- [ ] Phase 1: confirm OwnerRez → Resolve property identity + draft intake linking
+- [ ] Phase 2: move durable file bytes from `resolve-attachments` to ARHA Resolve SharePoint Documents library
+  - [ ] Report current Entra scopes, Sites.Selected grant, site/drive IDs, read vs write
+  - [ ] Prepare (do NOT apply) smallest site-level write grant; approval required
+  - [ ] Bucket inventory; idempotent upload + reconciliation records; proxied secure viewing
+- [ ] Phase 3: Property Hub page (Overview, Details, Contacts, Onboarding, Operations, Documents & Media, Approvals, Activity) + search by name/address/owner/market/stage/external IDs
+- [ ] Phase 4: read-only Notion PID inventory + full field mapping/reconciliation report; no writes, no retirement
+- [ ] Phase 5: owner approval packages must carry ≥1 owner-visible file; versioned change requests
+- [ ] Phase 6: Onboarding work views (My Active Projects, Needs My Attention, All Active, Awaiting Handoff, Completed)
+- [ ] Phase 7: Handoff Review workspace by job title (Onboarding Dir, Ops Dir, Ops Acceptance, Live Confirmation)
+- [ ] Phase 8: 5-account demo validation; report any step still needing another platform
+- [ ] Hold: no tenant-wide Graph scopes, no permission change, no file moves, no Notion retirement, no publish/automation
