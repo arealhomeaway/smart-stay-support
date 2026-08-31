@@ -31,6 +31,10 @@ type Ticket = {
   archive_reason: string | null;
   closure_exception_reason: string | null;
   closure_exception_at: string | null;
+  /** How current_action_owner/assigned_to was set: 'automatic', 'manual', or null (never assigned). */
+  assignment_source: string | null;
+  /** Why — populated by the automatic-assignment trigger; cleared on manual (re)assignment. */
+  assignment_note: string | null;
 };
 
 /**
@@ -99,6 +103,10 @@ export function MatterOwnershipPanel({
           current_action_owner: targetId,
           record_owner: ticket.record_owner ?? targetId,
           accountable_owner: ticket.accountable_owner ?? targetId,
+          // A human decided this — supersedes whatever the automatic
+          // assignment trigger set (or didn't) at creation.
+          assignment_source: "manual",
+          assignment_note: null,
         })
         .eq("id", ticket.id);
       if (error) throw error;
@@ -179,12 +187,19 @@ export function MatterOwnershipPanel({
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Ownership</CardTitle>
         <CardDescription>
-          {ownerId ? `${displayName(owner)} is accountable for what happens next.` : "Nobody owns this yet."}
+          {ownerId
+            ? `${displayName(owner)} is accountable for what happens next.`
+            : (ticket.assignment_note ?? "Nobody owns this yet.")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Badge variant="outline">{ownerId ? displayName(owner) : "Unassigned"}</Badge>
+          {ownerId && ticket.assignment_source === "automatic" && (
+            <Badge variant="outline" className="text-muted-foreground">
+              Auto-assigned
+            </Badge>
+          )}
           {ticket.pending_handoff_to && <Badge variant="outline">Handoff pending</Badge>}
           {ticket.escalation_level && (
             <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">

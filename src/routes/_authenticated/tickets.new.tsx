@@ -2,6 +2,7 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPropertyStay } from "@/lib/ownerrez.functions";
+import { PropertyContactPanel } from "@/components/PropertyContactPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Clock, Users, Zap } from "lucide-react";
@@ -165,8 +166,12 @@ function NewMatter() {
   }, [mechanical, priorityTouched]);
 
   // Prefill occupancy and guest from the live reservation instead of guessing.
+  // Guards against an out-of-order response: react-query's queryKey already
+  // scopes the cache by property_id, but this also refuses to apply a
+  // payload that doesn't say it's for the property currently selected —
+  // belt-and-suspenders against a stale fetch resolving after a newer one.
   useEffect(() => {
-    if (!stay?.ok) return;
+    if (!stay?.ok || stay.propertyId !== form.property_id) return;
     const s = stay.data;
     setForm((f) => ({
       ...f,
@@ -174,7 +179,7 @@ function NewMatter() {
       guest_name: s.guest_name ?? f.guest_name,
       guest_in_residence: s.occupancy_status !== "vacant" ? true : f.guest_in_residence,
     }));
-  }, [stay]);
+  }, [stay, form.property_id]);
 
   // The work type also carries its owning seat from the ownership matrix.
   useEffect(() => {
@@ -250,7 +255,12 @@ function NewMatter() {
           created_by: userId,
           record_owner: userId,
           accountable_owner: userId,
-          current_action_owner: oneTouch ? null : userId,
+          // current_action_owner / assigned_to are no longer set here — the
+          // tickets_auto_assign database trigger resolves the owning role
+          // (functional_role_code) to its current seat holder server-side,
+          // or leaves the ticket unassigned with a reason if none is
+          // eligible. One-touch resolutions are created already closed, so
+          // the trigger skips them and this insert's omission is a no-op.
           status: oneTouch ? "closed" : "open",
           outcome_type: oneTouch ? form.outcome_type : null,
           resolution_notes: oneTouch ? form.resolution_notes.trim() : null,
@@ -403,6 +413,8 @@ function NewMatter() {
                 </Select>
               </div>
             </div>
+
+            {form.property_id && <PropertyContactPanel propertyId={form.property_id} />}
 
             <div className="space-y-2">
               <Label>Work type</Label>
