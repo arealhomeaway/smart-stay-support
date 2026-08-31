@@ -348,7 +348,7 @@ export async function createOutboundTask(
       ticket_id: input.sourceType === "ticket" ? input.sourceId : null,
       onboarding_task_id: input.sourceType === "onboarding_task" ? input.sourceId : null,
       property_id: propertyId,
-      breezeway_home_id: homeId,
+      breezeway_home_id: allowedHomeId,
       request_key: input.requestKey,
       status: "creating",
       title,
@@ -388,7 +388,7 @@ export async function createOutboundTask(
       // would create a second one. Failures land in admin review instead.
       retry: false,
       body: {
-        home_id: Number(homeId),
+        home_id: Number(allowedHomeId),
         name: title,
         ...(description ? { description } : {}),
         ...(department ? { type_department: department } : {}),
