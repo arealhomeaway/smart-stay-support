@@ -248,7 +248,9 @@ export async function loadOpsAnalytics(
     return a;
   };
 
-  const acknowledged = new Set<string>();
+  // First response credit: the earliest logged action on a ticket that is not
+  // the intake event itself. Explicit acknowledgement kinds win when present.
+  const responded = new Set<string>();
   for (const e of activity.data ?? []) {
     const t = ticketById.get(e.ticket_id);
     if (!t || !e.author_id) continue;
@@ -260,22 +262,17 @@ export async function loadOpsAnalytics(
       a.lastActivityAt = e.created_at;
     }
     if (kind === "note") a.notes += 1;
-    if (kind === "action_started") {
-      a.actionsStarted += 1;
-      if (t.action_started_at) {
-        a.responseMinutes.push(minutesBetween(t.reported_at, t.action_started_at));
-      }
-    }
+    if (kind === "action_started") a.actionsStarted += 1;
     if (kind === "handoff") {
       if (e.from_owner === e.author_id) a.handoffsGiven += 1;
       if (e.to_owner === e.author_id) a.handoffsAccepted += 1;
     }
-    if (RESPONSE_KINDS.has(kind) && !acknowledged.has(e.ticket_id)) {
-      acknowledged.add(e.ticket_id);
+    const isResponse = kind !== "created" && kind !== "intake";
+    if (isResponse && !responded.has(e.ticket_id)) {
+      responded.add(e.ticket_id);
       a.firstResponses += 1;
-      if (t.acknowledged_at) {
-        a.responseMinutes.push(minutesBetween(t.reported_at, t.acknowledged_at));
-      }
+      const at = t.acknowledged_at ?? e.created_at;
+      if (at) a.responseMinutes.push(minutesBetween(t.reported_at, at));
     }
     if (kind === "resolved" || kind === "closed") {
       a.resolved.add(e.ticket_id);
