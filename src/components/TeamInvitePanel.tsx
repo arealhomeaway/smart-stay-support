@@ -85,6 +85,15 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
   });
 
 
+  const resend = useMutation({
+    mutationFn: (inviteId: string) => emailFn({ data: { inviteId } }),
+    onSuccess: (res) => {
+      if (res.status === "sent") toast.success("Invite emailed.");
+      else toast.warning(`Not sent: ${res.error}`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const revoke = useMutation({
     mutationFn: (inviteId: string) => revokeFn({ data: { inviteId } }),
     onSuccess: () => {
