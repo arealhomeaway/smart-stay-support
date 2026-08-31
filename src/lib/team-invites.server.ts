@@ -176,3 +176,27 @@ export async function redeemTeamInvite(userId: string, userEmail: string | null,
   await applyRole(userId, invite.data.role as AppRole);
   return { ok: true as const, role: invite.data.role as AppRole };
 }
+
+/** Admin: re-send an existing, still-usable invite code to its locked email address. */
+export async function resendTeamInvite(supabase: Client, userId: string, inviteId: string) {
+  await assertAdmin(supabase, userId);
+  const { data, error } = await supabase
+    .from("team_invites")
+    .select("code, role, invitee_email, invitee_name, note, expires_at, revoked_at, redeemed_at")
+    .eq("id", inviteId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("That invite no longer exists.");
+  if (data.redeemed_at) throw new Error("That code has already been redeemed.");
+  if (data.revoked_at) throw new Error("That code was revoked.");
+  if (!data.invitee_email) throw new Error("That code has no email address on it — copy the message instead.");
+
+  return sendInviteEmail({
+    email: data.invitee_email,
+    name: data.invitee_name ?? "",
+    role: data.role,
+    code: data.code,
+    note: data.note ?? "",
+    expiresAt: data.expires_at,
+  });
+}
