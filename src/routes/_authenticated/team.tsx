@@ -87,7 +87,14 @@ function TeamPage() {
 
       <TeamAccessPanel />
 
+      <CoverageSchedulePanel />
+
+      <AssignmentExceptionQueue />
+
+      <OwnerDirectoryPanel />
+
       <VendorScoreboardPanel />
+
 
       {TEAMS.map((team) => {
         const roles = data.roles.filter((r) => r.team === team.value);
