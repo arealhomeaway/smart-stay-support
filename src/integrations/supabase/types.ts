@@ -3075,6 +3075,8 @@ export type Database = {
           archived_at: string | null
           archived_by: string | null
           assigned_to: string | null
+          assignment_note: string | null
+          assignment_source: string | null
           avoidable_reopen: boolean
           breezeway_synced_at: string | null
           breezeway_task_id: string | null
@@ -3170,6 +3172,8 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           assigned_to?: string | null
+          assignment_note?: string | null
+          assignment_source?: string | null
           avoidable_reopen?: boolean
           breezeway_synced_at?: string | null
           breezeway_task_id?: string | null
@@ -3265,6 +3269,8 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           assigned_to?: string | null
+          assignment_note?: string | null
+          assignment_source?: string | null
           avoidable_reopen?: boolean
           breezeway_synced_at?: string | null
           breezeway_task_id?: string | null

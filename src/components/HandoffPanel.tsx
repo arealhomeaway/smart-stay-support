@@ -188,6 +188,8 @@ export function HandoffPanel({
         handoff_status: "accepted",
         pending_handoff_to: null,
         current_action_owner: userData.user?.id ?? null,
+        assignment_source: "manual",
+        assignment_note: null,
       })
       .eq("id", ticket.id);
     await log("Handoff accepted — ownership of the next action transferred.", "handoff_accepted");
