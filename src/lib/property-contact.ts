@@ -26,15 +26,18 @@ export type PropertyContactResult =
        *  that arrived after the selection moved on to a different property. */
       propertyId: string;
       /**
-       * Resolved only from Active Owner Program enrollment (see the KNOWN
-       * LIMITATION note on getPropertyContactContext in
-       * guest-context.functions.ts) — `source` names that scope explicitly
-       * so a null owner can never be misread as "this property has no
-       * owner" rather than "no enrolled-program contact on file".
+       * The DESIGNATED primary owner of the home, from the general
+       * property-to-owner directory (`property_owner_contacts`, imported
+       * read-only from OwnerRez) — not from Active Owner Program
+       * enrollment. `status` is always explicit so "no mapped owner",
+       * "stale data" and "the source failed" can never collapse into one
+       * another, and a blank name is never read as "this home has no owner".
+       * Only the designated primary owner is shown; other owners are not.
        */
-      owner:
-        | { source: "active_owner_program"; name: string | null; phone: string | null; email: string | null }
-        | null;
+      owner: PrimaryOwnerContact;
+      /** Active Owner Program enrollment is a separate programme status, not an owner source. */
+      activeOwnerProgram: boolean;
+
       guest:
         | { status: "not_linked" }
         | { status: "vacant"; next_arrival: string | null }
