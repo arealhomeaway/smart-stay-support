@@ -230,3 +230,9 @@ No historical Notion/Asana/Breezeway/documents/OneDrive/participation/comments/h
 - Invite emails re-sent: Romeo, Avy, Mike, Christine, Micah. Kati Hand production onboarding code KATI-H7M4 created (needs her email to lock/send).
 - Breezeway: live non-fixture pilot event processed 2026-08-29; receiver proven in production.
 - OPEN: September overnight on-call roster is empty — needs Emily's staffing decision.
+
+## Sept 4–7 progress (2026-08-31)
+- Leadership access: Kati Hand invite KATI-H7M4 locked to kati@arealhomeaway.com and emailed; Josh Dunham (ZH5G-L3BQ, admin) and James Miller (JMIL-2P6X, manager) emailed. Micah Sinor already provisioned (manager + director_ops seat).
+- Priority 1 DONE — Active Owner staff/exec analytics: `/owner-analytics` (supervisor+), `src/lib/owner-analytics.server.ts` + `.functions.ts`. Reported vs approved vs pending hours, 100h goal / 105h operating target, benchmark variance, hours-per-week needed, staleness, CSV export. Demo-lens aware; excludes demo + archived by default.
+- Priority 2 DONE — Operations performance: `/ops-analytics` (supervisor+), `src/lib/ops-analytics.server.ts` + `.functions.ts`. Volume by priority/status/source, response + resolution medians and averages (overall and per priority), response/action SLA compliance, open-past-due count, and contributor credit from the immutable `ticket_activity` log (touched, resolved, first responses, actions started, handoffs in/out, open owned, overdue). CSV export. No scoring or ranking of staff.
+- NEXT: Priority 3 (authoritative PID/property field import mapping) and Priority 4 (Onboarding beta QA).
