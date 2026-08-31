@@ -11,7 +11,7 @@ export const getCommandCenter = createServerFn({ method: "POST" })
         days: z.number().int().min(7).max(365).default(30),
         market: z.string().max(40).nullable().default(null),
         propertyId: z.string().uuid().nullable().default(null),
-        priority: z.enum(["p1", "p2", "p3", "p4"]).nullable().default(null),
+        priority: z.enum(["p1", "p2", "p3"]).nullable().default(null),
         team: z.string().max(60).nullable().default(null),
         vendorId: z.string().uuid().nullable().default(null),
       })

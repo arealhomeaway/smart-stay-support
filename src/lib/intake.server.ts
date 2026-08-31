@@ -28,7 +28,7 @@ export type IntakeResult = {
   ticketId: string;
   ref: number;
   propertyMatched: boolean;
-  priority: "p1" | "p2" | "p3" | "p4";
+  priority: "p1" | "p2" | "p3";
   /** True when the message was filed as a reply on an existing matter. */
   threaded?: boolean;
 };
@@ -43,7 +43,7 @@ export function refTag(ref: number) {
 const P1 = /(fire|smoke|carbon monoxide|co alarm|gas|flood|flooding|active leak|no heat|no ac|no a\/c|no power|lockout|locked out|break-?in|injur|emergenc|urgent)/i;
 const P2 = /(leak|water|hvac|heat|air condition|no hot water|toilet|clog|backed up|pest|roach|bed bug|broken|not working|guest complain)/i;
 
-function guessPriority(text: string): "p1" | "p2" | "p3" | "p4" {
+function guessPriority(text: string): "p1" | "p2" | "p3" {
   if (P1.test(text)) return "p1";
   if (P2.test(text)) return "p2";
   return "p3";

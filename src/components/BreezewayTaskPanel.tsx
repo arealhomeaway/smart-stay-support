@@ -96,6 +96,9 @@ export function BreezewayTaskPanel({
     onSuccess: (result) => {
       if (result && "ok" in result && !result.ok) {
         toast.error(result.message);
+        // A definite failure created nothing in Breezeway, so the operator can
+        // send again straight away without reloading the page.
+        if ("retryable" in result && result.retryable) setRequestKey(crypto.randomUUID());
       } else {
         toast.success("Sent to Breezeway.");
         // A new key means the next send is a deliberate second task, not a retry.

@@ -469,7 +469,7 @@ const PATH_PRIORITY: Record<OwnerParticipationPath, string> = {
   emergency: "p1",
   approve: "p3",
   consult: "p3",
-  inform: "p4",
+  inform: "p3",
 };
 
 export async function createOwnerMatter(
