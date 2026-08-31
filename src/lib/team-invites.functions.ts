@@ -52,3 +52,12 @@ export const redeemTeamInvite = createServerFn({ method: "POST" })
     const email = (context.claims as { email?: string } | null)?.email ?? null;
     return redeem(context.userId, email, data.code);
   });
+
+/** Admin: email an existing invite code again to the address it was issued to. */
+export const emailTeamInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ inviteId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { resendTeamInvite } = await import("./team-invites.server");
+    return resendTeamInvite(context.supabase, context.userId, data.inviteId);
+  });
