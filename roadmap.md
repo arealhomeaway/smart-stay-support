@@ -356,3 +356,28 @@ Notes:
   create-to-confirm timing, admin recovery usage, Operations vs Onboarding source,
   Resolve/Breezeway state mismatches.
 - No further Breezeway scope expansion unless a defect is found.
+
+## Breezeway feature freeze (approved 2026-08-31)
+No new Breezeway functionality and no allowlist expansion without COO approval.
+Collect integration-health data only (outbound success/failure, duplicate
+prevention, needs_review, webhook confirmation, admin recovery, state
+mismatches). System-health data only — never employee performance.
+
+### Inbound webhook scope clarification
+- Endpoint receives EVERY task event for the whole Breezeway company on the one
+  subscription (Breezeway offers no per-property subscription).
+- Every delivery is counted and persisted as a classification row in
+  `breezeway_webhook_events` (outcome + reason only).
+- Task DETAIL (task id, home id, timestamps) is retained only for the five
+  approved homes; everything else is stored as `ignored_other_property` with no
+  payload.
+- Inbound has never created tickets, assigned work, messaged, or changed
+  property stage. Nothing operational was disabled by the five-home scope.
+- Outbound-created work orders on the five homes reconcile normally via
+  `noteOutboundAcknowledgement` -> status `synced`.
+
+## Sept 8–14 schedule (approved)
+- Sept 8–9  Property Hub functional beta (8 tabs)
+- Sept 10–11 Internal QA with production-equivalent roles
+- Sept 12  Homeowner-ready release candidate
+- Sept 14  First real-owner production use
