@@ -180,6 +180,24 @@ export function createFakeOutboundStore() {
         breezeway_property_id: "1473933",
       });
     },
+    /** The onboarding-task source type, on the same pilot property. */
+    seedPilotOnboardingTask: (id: string) => {
+      state.onboarding.push({
+        id,
+        title: "Install lockbox",
+        detail: "Front door, code in the brief",
+        property_id: "prop-1",
+        is_demo: false,
+        archived_at: null,
+      });
+      if (!state.properties.some((p) => p["id"] === "prop-1")) {
+        state.properties.push({
+          id: "prop-1",
+          name: "9211 Fitzgerald Dr",
+          breezeway_property_id: "1473933",
+        });
+      }
+    },
     failNextUpdate: (n = 1) => {
       state.failNextOutboundUpdate = n;
     },
