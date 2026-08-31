@@ -98,3 +98,13 @@
 - [ ] Verify guest + primary-owner contact population honesty
 - [ ] Review unapplied migration + RLS; decision (merge/fix/blocked)
 - [ ] Hold file-storage publish until combined Operations release
+
+## Combined Operations release (PR #2 integration) — 2026-08-31
+- [x] PR #2 patch integrated into main; attachment/owner-file/branding work preserved
+- [x] Migrations re-timestamped 20260831141014 / 20260831141045 (in sequence)
+- [x] Schedule-aware auto-assignment (Central, DST-safe) + exception queue
+- [x] Overnight on-call roster UI (admin-managed, no default person)
+- [x] General primary-owner directory from OwnerRez (read-only import)
+- [ ] BLOCKER: 5 of 6 functional seats vacant — James Almario, Roms, Christine Sendico, Avy, Mike Cacatian have no Resolve profile/role
+- [ ] BLOCKER: September overnight roster not yet entered
+- [ ] Held: publish, mailbox polling, Breezeway automation, live intake
