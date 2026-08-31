@@ -10,7 +10,7 @@ describe("resolvePrimaryOwners", () => {
   it("matches the designated primary owner and records its source", () => {
     const { rows, counts } = resolvePrimaryOwners(
       [{ id: "p1", ownerrez_property_id: "10" }],
-      [{ id: 10, owner_id: 1 }],
+      [{ id: 10, name: "A", owner_id: 1 }],
       owners,
     );
     expect(counts.matched).toBe(1);
@@ -24,7 +24,7 @@ describe("resolvePrimaryOwners", () => {
   it("reports a home with no OwnerRez link as unmatched, never as ownerless-by-default", () => {
     const { rows, counts } = resolvePrimaryOwners(
       [{ id: "p2", ownerrez_property_id: null }],
-      [{ id: 10, owner_id: 1 }],
+      [{ id: 10, name: "A", owner_id: 1 }],
       owners,
     );
     expect(counts.not_linked).toBe(1);
@@ -36,8 +36,8 @@ describe("resolvePrimaryOwners", () => {
     const { rows, counts } = resolvePrimaryOwners(
       [{ id: "p3", ownerrez_property_id: "10" }],
       [
-        { id: 10, owner_id: 1 },
-        { id: 10, owner_id: 2 },
+        { id: 10, name: "A", owner_id: 1 },
+        { id: 10, name: "A", owner_id: 2 },
       ],
       owners,
     );
@@ -49,7 +49,7 @@ describe("resolvePrimaryOwners", () => {
   it("does not invent an owner when the listing names none", () => {
     const { rows } = resolvePrimaryOwners(
       [{ id: "p4", ownerrez_property_id: "11" }],
-      [{ id: 11, owner_id: null }],
+      [{ id: 11, name: "B", owner_id: null }],
       owners,
     );
     expect(rows[0]!.match_status).toBe("unmatched");
