@@ -701,6 +701,14 @@ function TicketDetail() {
           </Card>
 
           <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Photos, video & documents" />
+
+          <BreezewayTaskPanel
+            sourceType="ticket"
+            sourceId={ticketId}
+            defaultTitle={ticket.title}
+            defaultDescription={ticket.description}
+          />
+
         </div>
 
         <div className="space-y-6">
