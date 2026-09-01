@@ -179,6 +179,11 @@ export function createFakeOutboundStore() {
           id: "prop-1",
           name: "9211 Fitzgerald Dr",
           breezeway_property_id: "1473933",
+          breezeway_mapping_state: "verified",
+          active: true,
+          lifecycle_status: "active",
+          is_demo: false,
+          archived_at: null,
         });
       }
     },
@@ -197,6 +202,11 @@ export function createFakeOutboundStore() {
           id: "prop-1",
           name: "9211 Fitzgerald Dr",
           breezeway_property_id: "1473933",
+          breezeway_mapping_state: "verified",
+          active: true,
+          lifecycle_status: "active",
+          is_demo: false,
+          archived_at: null,
         });
       }
     },
