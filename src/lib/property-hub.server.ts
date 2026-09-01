@@ -377,7 +377,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         tone: "warn",
         text: `${openConflicts} imported field${openConflicts === 1 ? "" : "s"} disagree with the system of record and need review.`,
       });
-    const quarterly = fmtDate(p.quarterly_review_due_on);
+    const quarterly = quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null;
     if (quarterly && quarterly < new Date().toISOString().slice(0, 10))
       alerts.push({ id: "quarterly", tone: "warn", text: `Quarterly review was due ${quarterly}.` });
     if (p.lifecycle_status && p.lifecycle_status !== "active_operations")
