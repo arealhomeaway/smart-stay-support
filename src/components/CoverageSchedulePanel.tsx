@@ -229,104 +229,79 @@ function WeekCalendar({
       </div>
 
       <div className="overflow-x-auto p-4">
-        <div className="min-w-[52rem]">
-          <div className="grid grid-cols-[3.25rem_repeat(7,1fr)] gap-1.5">
-            <div />
+        <div className="min-w-[52rem] space-y-1.5">
+          <div className="grid grid-cols-[16rem_repeat(7,1fr)] gap-1.5">
+            <div className="eyebrow self-end">Seat</div>
             {DAYS.map((d) => (
               <div key={d} className="pb-1 text-center text-xs font-semibold">
                 {d.slice(0, 3)}
               </div>
             ))}
+          </div>
 
-            {/* Hour gutter */}
-            <div className="relative h-72">
-              {hourMarks.map((h) => (
-                <span
-                  key={h}
-                  className="absolute right-1 -translate-y-1/2 text-[0.625rem] text-muted-foreground"
-                  style={{ top: `${((h * 60 - CAL_START) / CAL_SPAN) * 100}%` }}
-                >
-                  {clock(h * 60 === 1440 ? 1439 : h * 60)}
-                </span>
-              ))}
-            </div>
+          {roles.map((role) => {
+            const kind = seatOwnership(role.code);
+            const holder = role.current_seat_name ?? nameFor(people, role.current_seat_holder);
+            const pending = Boolean(role.current_seat_name && !role.current_seat_holder);
+            const covered = activeOverrides.filter((o) => o.role_code === role.code);
+            return (
+              <div key={role.code} className="grid grid-cols-[16rem_repeat(7,1fr)] items-stretch gap-1.5">
+                <div className="flex flex-col justify-center rounded-md border border-border bg-sunken px-3 py-2">
+                  <span className="truncate text-xs font-semibold">
+                    {SEAT_LABELS[role.code] ?? role.name}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {holder ?? <span className="text-danger">Seat unfilled</span>}
+                    {pending && <span className="text-warning"> · invite pending</span>}
+                    {role.available === false && <span className="text-warning"> · unavailable</span>}
+                  </span>
+                  {covered.length > 0 && (
+                    <span className="truncate text-xs text-module-override">
+                      {covered.length} temporary override{covered.length > 1 ? "s" : ""} in force
+                    </span>
+                  )}
+                </div>
 
-            {DAYS.map((day, weekday) => {
-              // Two seats on duty at once sit side by side rather than on top
-              // of each other.
-              const dayShifts = shifts
-                .filter((s) => s.weekday === weekday)
-                .sort((a, b) => a.start_minute - b.start_minute);
-              const laneEnds: number[] = [];
-              const laneOf = new Map<string, number>();
-              for (const s of dayShifts) {
-                let lane = laneEnds.findIndex((end) => end <= s.start_minute);
-                if (lane === -1) lane = laneEnds.length;
-                laneEnds[lane] = s.end_minute;
-                laneOf.set(s.id, lane);
-              }
-              const lanes = Math.max(1, laneEnds.length);
-              const dayTriage = triage.filter((t) => t.weekday === weekday);
-              return (
-                <div key={day} className="relative h-72 rounded-md border border-border bg-sunken">
-                  {hourMarks.slice(1, -1).map((h) => (
-                    <div
-                      key={h}
-                      className="absolute inset-x-0 border-t border-border/60"
-                      style={{ top: `${((h * 60 - CAL_START) / CAL_SPAN) * 100}%` }}
-                    />
-                  ))}
-
-                  {dayTriage.map((t) => (
-                    <div
-                      key={t.id}
-                      title={`Triage cover — ${SEAT_LABELS[t.role_code] ?? t.role_code}`}
-                      className="absolute inset-x-0.5 rounded border border-dashed border-module-coverage/60 bg-module-coverage/10"
-                      style={{
-                        top: `${((t.start_minute - CAL_START) / CAL_SPAN) * 100}%`,
-                        height: `${((t.end_minute - t.start_minute) / CAL_SPAN) * 100}%`,
-                      }}
-                    />
-                  ))}
-
-                  {dayShifts.map((s) => {
-                    const role = roleByCode.get(s.role_code);
-                    const kind = seatOwnership(s.role_code);
-                    const holder =
-                      role?.current_seat_name ?? nameFor(people, role?.current_seat_holder ?? null);
-                    const pending = Boolean(role?.current_seat_name && !role?.current_seat_holder);
-                    const covered = activeOverrides.find((o) => o.role_code === s.role_code);
+                {DAYS.map((day, weekday) => {
+                  const rows = shifts
+                    .filter((s) => s.role_code === role.code && s.weekday === weekday)
+                    .sort((a, b) => a.start_minute - b.start_minute);
+                  const cover = triage.filter(
+                    (t) => t.role_code === role.code && t.weekday === weekday,
+                  );
+                  if (rows.length === 0 && cover.length === 0) {
                     return (
                       <div
-                        key={s.id}
-                        title={`${SEAT_LABELS[s.role_code] ?? s.role_code} · ${clock(s.start_minute)}–${clock(s.end_minute)}${holder ? ` · ${holder}` : ""}`}
-                        className={`absolute overflow-hidden rounded border px-1.5 py-1 text-[0.625rem] leading-tight ${BLOCK_FILL[kind]}`}
-                        style={{
-                          top: `${((s.start_minute - CAL_START) / CAL_SPAN) * 100}%`,
-                          height: `${((s.end_minute - s.start_minute) / CAL_SPAN) * 100}%`,
-                          left: `calc(${((laneOf.get(s.id) ?? 0) / lanes) * 100}% + 2px)`,
-                          width: `calc(${100 / lanes}% - 4px)`,
-                        }}
-                      >
-                        <span className="block truncate font-semibold">
-                          {holder ?? "Seat unfilled"}
-                        </span>
-                        <span className="block truncate opacity-80">
-                          {clock(s.start_minute)}–{clock(s.end_minute)}
-                        </span>
-                        {pending && <span className="block truncate">Invite pending</span>}
-                        {covered && (
-                          <span className="block truncate">
-                            {covered.kind === "off" ? "Off duty" : "Temporary cover"}
-                          </span>
-                        )}
-                      </div>
+                        key={day}
+                        className="rounded-md border border-dashed border-border/70 bg-sunken/40"
+                      />
                     );
-                  })}
-                </div>
-              );
-            })}
-          </div>
+                  }
+                  return (
+                    <div key={day} className="flex flex-col gap-1">
+                      {rows.map((s) => (
+                        <div
+                          key={s.id}
+                          className={`rounded-md border px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight ${BLOCK_FILL[kind]}`}
+                        >
+                          {clock(s.start_minute)}–{clock(s.end_minute)}
+                        </div>
+                      ))}
+                      {cover.map((t) => (
+                        <div
+                          key={t.id}
+                          title="Approved cross-team triage cover"
+                          className="rounded-md border border-dashed border-module-coverage/60 bg-module-coverage/10 px-1.5 py-1.5 text-center text-[0.6875rem] leading-tight text-module-coverage"
+                        >
+                          triage {clock(t.start_minute)}–{clock(t.end_minute)}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
 
           {/* Overnight is one continuous band, not seven separate shifts. */}
           <div className="mt-3 flex items-center gap-3 rounded-md border border-module-override/40 bg-module-override/10 px-3 py-2 text-xs text-module-override">
@@ -338,6 +313,7 @@ function WeekCalendar({
           </div>
         </div>
       </div>
+
     </section>
   );
 }
