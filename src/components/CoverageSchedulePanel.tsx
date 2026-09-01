@@ -113,7 +113,7 @@ export function CoverageSchedulePanel() {
       starts_on: startsOn,
       ends_on: endsOn,
       user_id: person,
-      label: "Overnight on-call, 10 p.m.–8 a.m. Central",
+      label: "On-call — coverage window pending business input",
     });
     setSaving(false);
     if (error) {
