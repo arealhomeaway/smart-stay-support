@@ -291,6 +291,45 @@ export type Database = {
           },
         ]
       }
+      breezeway_people: {
+        Row: {
+          active: boolean
+          breezeway_person_id: number
+          email: string | null
+          first_name: string | null
+          id: string
+          is_integration_identity: boolean
+          last_name: string | null
+          mapping_state: string
+          resolve_user_id: string | null
+          synced_at: string
+        }
+        Insert: {
+          active?: boolean
+          breezeway_person_id: number
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_integration_identity?: boolean
+          last_name?: string | null
+          mapping_state?: string
+          resolve_user_id?: string | null
+          synced_at?: string
+        }
+        Update: {
+          active?: boolean
+          breezeway_person_id?: number
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_integration_identity?: boolean
+          last_name?: string | null
+          mapping_state?: string
+          resolve_user_id?: string | null
+          synced_at?: string
+        }
+        Relationships: []
+      }
       breezeway_webhook_events: {
         Row: {
           company_id: number | null
@@ -374,38 +413,128 @@ export type Database = {
           author: string | null
           body: string
           breezeway_comment_id: number | null
+          breezeway_person_id: number | null
           breezeway_task_id: number
           commented_at: string | null
           created_at: string
+          delivery_error: string | null
+          delivery_state: string
           direction: string
           id: string
+          identity_mode: string | null
+          posted_at: string | null
+          resolve_author_id: string | null
+          resolve_author_name: string | null
+          source: string
           work_order_id: string
         }
         Insert: {
           author?: string | null
           body: string
           breezeway_comment_id?: number | null
+          breezeway_person_id?: number | null
           breezeway_task_id: number
           commented_at?: string | null
           created_at?: string
+          delivery_error?: string | null
+          delivery_state?: string
           direction?: string
           id?: string
+          identity_mode?: string | null
+          posted_at?: string | null
+          resolve_author_id?: string | null
+          resolve_author_name?: string | null
+          source?: string
           work_order_id: string
         }
         Update: {
           author?: string | null
           body?: string
           breezeway_comment_id?: number | null
+          breezeway_person_id?: number | null
           breezeway_task_id?: number
           commented_at?: string | null
           created_at?: string
+          delivery_error?: string | null
+          delivery_state?: string
           direction?: string
           id?: string
+          identity_mode?: string | null
+          posted_at?: string | null
+          resolve_author_id?: string | null
+          resolve_author_name?: string | null
+          source?: string
           work_order_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "breezeway_work_order_comments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "breezeway_work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      breezeway_work_order_photos: {
+        Row: {
+          breezeway_created_at: string | null
+          breezeway_photo_id: number | null
+          breezeway_task_id: number
+          caption: string | null
+          evidence_item_id: string | null
+          first_seen_at: string
+          id: string
+          last_synced_at: string
+          photo_type: string | null
+          property_id: string | null
+          source: string
+          uploader: string | null
+          url: string
+          work_order_id: string
+        }
+        Insert: {
+          breezeway_created_at?: string | null
+          breezeway_photo_id?: number | null
+          breezeway_task_id: number
+          caption?: string | null
+          evidence_item_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_synced_at?: string
+          photo_type?: string | null
+          property_id?: string | null
+          source?: string
+          uploader?: string | null
+          url: string
+          work_order_id: string
+        }
+        Update: {
+          breezeway_created_at?: string | null
+          breezeway_photo_id?: number | null
+          breezeway_task_id?: number
+          caption?: string | null
+          evidence_item_id?: string | null
+          first_seen_at?: string
+          id?: string
+          last_synced_at?: string
+          photo_type?: string | null
+          property_id?: string | null
+          source?: string
+          uploader?: string | null
+          url?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breezeway_work_order_photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_work_order_photos_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "breezeway_work_orders"
@@ -908,6 +1037,210 @@ export type Database = {
           ticket_id?: string | null
         }
         Relationships: []
+      }
+      evidence_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          event: string
+          id: string
+          item_id: string | null
+          requirement_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          event: string
+          id?: string
+          item_id?: string | null
+          requirement_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          event?: string
+          id?: string
+          item_id?: string | null
+          requirement_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_events_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_events_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_items: {
+        Row: {
+          breezeway_photo_id: number | null
+          breezeway_task_id: number | null
+          created_at: string
+          document_id: string | null
+          evaluated_at: string | null
+          evaluator: string | null
+          exception_at: string | null
+          exception_by: string | null
+          exception_reason: string | null
+          external_url: string | null
+          guidance: string | null
+          id: string
+          original_rejection: string | null
+          posted_to_breezeway_at: string | null
+          property_id: string | null
+          reason_codes: string[]
+          requirement_id: string | null
+          source: string
+          stage_a: Json
+          stage_b: Json
+          status: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          breezeway_photo_id?: number | null
+          breezeway_task_id?: number | null
+          created_at?: string
+          document_id?: string | null
+          evaluated_at?: string | null
+          evaluator?: string | null
+          exception_at?: string | null
+          exception_by?: string | null
+          exception_reason?: string | null
+          external_url?: string | null
+          guidance?: string | null
+          id?: string
+          original_rejection?: string | null
+          posted_to_breezeway_at?: string | null
+          property_id?: string | null
+          reason_codes?: string[]
+          requirement_id?: string | null
+          source?: string
+          stage_a?: Json
+          stage_b?: Json
+          status?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          breezeway_photo_id?: number | null
+          breezeway_task_id?: number | null
+          created_at?: string
+          document_id?: string | null
+          evaluated_at?: string | null
+          evaluator?: string | null
+          exception_at?: string | null
+          exception_by?: string | null
+          exception_reason?: string | null
+          external_url?: string | null
+          guidance?: string | null
+          id?: string
+          original_rejection?: string | null
+          posted_to_breezeway_at?: string | null
+          property_id?: string | null
+          reason_codes?: string[]
+          requirement_id?: string | null
+          source?: string
+          stage_a?: Json
+          stage_b?: Json
+          status?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_items_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_requirements: {
+        Row: {
+          accepted_item_id: string | null
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          id: string
+          instruction: string | null
+          label: string
+          property_id: string | null
+          required: boolean
+          requirement_kind: string
+          slot_key: string
+          status: string
+          subject_id: string
+          subject_type: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          instruction?: string | null
+          label: string
+          property_id?: string | null
+          required?: boolean
+          requirement_kind?: string
+          slot_key: string
+          status?: string
+          subject_id: string
+          subject_type: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          instruction?: string | null
+          label?: string
+          property_id?: string | null
+          required?: boolean
+          requirement_kind?: string
+          slot_key?: string
+          status?: string
+          subject_id?: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_requirements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       external_databases: {
         Row: {

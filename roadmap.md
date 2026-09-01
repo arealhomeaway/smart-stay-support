@@ -429,3 +429,59 @@ mismatches). System-health data only — never employee performance.
       task comments are the only supported message surface today.
 - [ ] Photos: counts are mirrored; binary photo display needs the per-task photo
       endpoint (next pass).
+
+## Breezeway portfolio operation + Evidence Quality Gate (2026-09-01)
+
+### Portfolio state (production)
+- `breezeway_outbound`: **ON**.
+- 156 properties `verified` (Breezeway home ID + OwnerRez identity, 1:1). 6 properties
+  not verified (demo/inactive) and blocked from every Breezeway write.
+- Write gate is the database mapping state, not a hardcoded list. Staff can
+  create/update/close/reopen/approve on all 156; anything else is refused server-side.
+- Mirror populated: 852 current work orders across 120 homes, refreshed by webhook per
+  task and by the scheduled sweep `/api/public/hooks/breezeway-mirror`.
+
+### Comments (two-way)
+- Breezeway people directory mirrored: 134 people; **5 map to Resolve staff by email**
+  (James Almario, Romeo Canales, Kati Hand, Emily Jimenez, Micah Sinor).
+- Identity order: staff's own Breezeway person → shared "ARHA Resolve" integration
+  identity with the staff name written into the body. Never a colleague's account.
+- **Open item:** no "ARHA Resolve" person exists in Breezeway yet, and
+  `BREEZEWAY_COMMENT_PEOPLE_ID` is unset — so replies from staff outside the five above
+  cannot be posted. Create that Breezeway user and set the ID.
+- Every outbound comment records author, Breezeway identity used, identity mode,
+  timestamp, IDs and delivery state (sending/delivered/failed). Inbound mirroring
+  de-duplicates on the Breezeway comment ID, so a reply never doubles in Resolve.
+
+### Photos
+- Per-task read mirrors Breezeway photos into Resolve and shows them in the Hub.
+- **Uploads to Breezeway are not supported by their API.** Evidence captured in Resolve
+  stays in Resolve; incoming Breezeway photos can be run through the gate.
+
+### Evidence Quality Gate
+- One reusable gate for Work Orders, Tickets, Onboarding tasks, Assessments and
+  property records. Standard: can a reasonable reviewer clearly verify the work?
+- Stage A technical (blur, resolution, dark, overexposed, glare, obstruction,
+  framing/distance) and Stage B requirement-specific (labels, dimensions,
+  before/after state), evaluated by vision model, 17 named reason codes with a fix
+  sentence each. Generic rejection is impossible by construction (test-enforced).
+- Statuses: Awaiting evidence · Checking photo · Evidence verified · Photo not accepted ·
+  Needs better photo · Accepted with exception.
+- Supervisor override records reason, person, timestamp and audit event, and keeps the
+  original verdict.
+- Analytics are system-level only (first-attempt pass, rejection reasons, attempts to
+  pass, subject coverage). No staff scoring, by design.
+
+### Breezeway Chats / Messaging
+REQUIRES BREEZEWAY MESSAGING API ACCESS. No workaround built. Task comments remain the
+only supported conversation surface.
+
+### Remaining reasons to open Breezeway
+1. Guest/team messaging (Chats) — no API.
+2. Creating or editing the Breezeway people directory, groups and property setup.
+3. Cleaner scheduling/dispatch boards and recurring cleaning templates.
+4. Adding photos to a Breezeway task from Breezeway's own app (their API is read-only
+   for photos).
+5. Breezeway-native reporting/billing exports.
+Everything else — read, create, update, close, reopen, approve, comment, read photos —
+is now doable from Resolve.

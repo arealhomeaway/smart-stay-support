@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, Camera, MessageSquare, RefreshCw, Send } from "lucide-react";
+import { CalendarClock, Camera, MessageSquare, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,9 @@ import {
   replyToWorkOrderFn,
   workOrderComments,
   workOrderLifecycle,
+  workOrderPhotos,
 } from "@/lib/breezeway-workorders.functions";
+import { EvidenceQualityGate } from "@/components/EvidenceQualityGate";
 import type { BreezewayWorkOrder } from "@/lib/breezeway-workorders";
 
 function stageTone(stage: string | null) {
@@ -80,6 +82,18 @@ function CommentThread({ workOrderId }: { workOrderId: string }) {
           {comments.map((c) => (
             <li key={c.id} className="text-sm">
               <span className="font-medium">{c.author ?? (c.direction === "outbound" ? "Resolve" : "Breezeway")}</span>
+              {c.direction === "outbound" && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {c.identityMode === "staff" ? "sent as themselves" : "sent as ARHA Resolve"}
+                  {c.deliveryState === "delivered"
+                    ? " · delivered"
+                    : c.deliveryState === "failed"
+                      ? ` · not delivered${c.deliveryError ? ` (${c.deliveryError})` : ""}`
+                      : c.deliveryState === "sending"
+                        ? " · sending"
+                        : ""}
+                </span>
+              )}
               {c.commentedAt && (
                 <span className="ml-2 text-xs text-muted-foreground">
                   {new Date(c.commentedAt).toLocaleString()}
@@ -111,8 +125,50 @@ function CommentThread({ workOrderId }: { workOrderId: string }) {
   );
 }
 
+function PhotoStrip({ workOrderId }: { workOrderId: string }) {
+  const load = useServerFn(workOrderPhotos);
+  const { data, isLoading } = useQuery({
+    queryKey: ["bw-wo-photos", workOrderId],
+    queryFn: () => load({ data: { workOrderId } }),
+  });
+
+  if (isLoading) return <Skeleton className="h-20 w-full" />;
+  const photos = data?.photos ?? [];
+  if (photos.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        {data?.notice ?? "No photos on this work order yet."}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {data?.notice && <p className="text-xs text-muted-foreground">{data.notice}</p>}
+      <div className="flex flex-wrap gap-2">
+        {photos.map((p) => (
+          <a key={p.id} href={p.url} target="_blank" rel="noreferrer" title={p.caption ?? "Breezeway photo"}>
+            <img
+              src={p.url}
+              alt={p.caption ?? `Breezeway work order photo${p.uploader ? ` from ${p.uploader}` : ""}`}
+              className="size-24 rounded object-cover"
+              loading="lazy"
+            />
+          </a>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Photos are read from Breezeway. Evidence captured in Resolve stays in Resolve — Breezeway's
+        API does not accept photo uploads.
+      </p>
+    </div>
+  );
+}
+
 function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writable: boolean }) {
   const [open, setOpen] = useState(false);
+  const [showPhotos, setShowPhotos] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(false);
   const act = useServerFn(workOrderLifecycle);
   const qc = useQueryClient();
   const lifecycle = useMutation({
@@ -159,11 +215,13 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
           <MessageSquare className="mr-1 size-3" />
           {order.commentCount > 0 ? `Comments (${order.commentCount})` : "Comments"}
         </Button>
-        {order.photoCount > 0 && (
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <Camera className="size-3" /> {order.photoCount} photo{order.photoCount === 1 ? "" : "s"}
-          </span>
-        )}
+        <Button variant="ghost" size="sm" onClick={() => setShowPhotos((v) => !v)}>
+          <Camera className="mr-1 size-3" />
+          {order.photoCount > 0 ? `Photos (${order.photoCount})` : "Photos"}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => setShowEvidence((v) => !v)}>
+          <ShieldCheck className="mr-1 size-3" /> Evidence
+        </Button>
         {writable && (
           <>
             <Button variant="outline" size="sm" disabled={lifecycle.isPending} onClick={() => lifecycle.mutate("close")}>
@@ -184,6 +242,17 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
         )}
       </div>
 
+      {showPhotos && <PhotoStrip workOrderId={order.id} />}
+      {showEvidence && order.propertyId && (
+        <EvidenceQualityGate
+          subjectType="work_order"
+          subjectId={order.id}
+          attachTo={{ entityType: "property", entityId: order.propertyId }}
+          propertyId={order.propertyId}
+          title="Evidence for this work order"
+          description="Resolve's own proof that the work is done. Checked against the same standard everywhere."
+        />
+      )}
       {open && <CommentThread workOrderId={order.id} />}
     </div>
   );

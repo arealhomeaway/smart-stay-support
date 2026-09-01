@@ -17,6 +17,7 @@ import {
   isCurrentWorkOrder,
   type BreezewayWorkOrder,
   type BreezewayWorkOrderComment,
+  type BreezewayWorkOrderPhoto,
 } from "./breezeway-workorders";
 import { BREEZEWAY_OUTBOUND_FLAG } from "./breezeway-outbound";
 
@@ -291,7 +292,9 @@ export async function listWorkOrderComments(workOrderId: string): Promise<Breeze
   const db = await admin();
   const { data } = await db
     .from("breezeway_work_order_comments")
-    .select("id, breezeway_comment_id, author, body, commented_at, direction")
+    .select(
+      "id, breezeway_comment_id, author, body, commented_at, direction, resolve_author_name, identity_mode, delivery_state, delivery_error, posted_at",
+    )
     .eq("work_order_id", workOrderId)
     .order("commented_at", { ascending: true, nullsFirst: true });
   return ((data ?? []) as unknown as {
@@ -301,6 +304,11 @@ export async function listWorkOrderComments(workOrderId: string): Promise<Breeze
     body: string;
     commented_at: string | null;
     direction: "inbound" | "outbound";
+    resolve_author_name: string | null;
+    identity_mode: string | null;
+    delivery_state: "mirrored" | "sending" | "delivered" | "failed";
+    delivery_error: string | null;
+    posted_at: string | null;
   }[]).map((c) => ({
     id: c.id,
     breezewayCommentId: c.breezeway_comment_id,
@@ -308,20 +316,33 @@ export async function listWorkOrderComments(workOrderId: string): Promise<Breeze
     body: c.body,
     commentedAt: c.commented_at,
     direction: c.direction,
+    resolveAuthorName: c.resolve_author_name,
+    identityMode: (c.identity_mode as "staff" | "integration" | null) ?? null,
+    deliveryState: c.delivery_state,
+    deliveryError: c.delivery_error,
+    postedAt: c.posted_at,
   }));
 }
 
 /**
  * Posts a reply as a Breezeway task comment. Documented endpoint:
  *   POST /task/{task_id}/comments  { comment, company_people_id }
- * The returning webhook reconciles through the same external-id dedupe, so a
- * reply is never mirrored twice.
+ *
+ * Identity is deterministic (see breezeway-people.server): the staff member's
+ * own Breezeway person when one exists, otherwise the shared ARHA Resolve
+ * integration identity with their name in the body. Resolve never posts under
+ * an unrelated colleague's account.
+ *
+ * The row is written BEFORE the call, in `sending`, and settled afterwards, so
+ * a reply that half-succeeded is visible rather than lost. The returning
+ * webhook reconciles on the external comment id, so nothing is mirrored twice.
  */
 export async function replyToWorkOrder(
   workOrderId: string,
   body: string,
   authorLabel: string,
-): Promise<{ ok: boolean; message?: string }> {
+  authorUserId: string,
+): Promise<{ ok: boolean; message?: string; identityMode?: "staff" | "integration" }> {
   const wo = await getWorkOrder(workOrderId);
   if (!wo) return { ok: false, message: "That work order is not in Resolve." };
   if (!(await outboundEnabled())) return { ok: false, message: "Breezeway writes are switched off." };
@@ -331,42 +352,247 @@ export async function replyToWorkOrder(
 
   const text = body.trim().slice(0, 4000);
   if (!text) return { ok: false, message: "Write something first." };
-  const peopleId = Number(process.env["BREEZEWAY_COMMENT_PEOPLE_ID"] ?? "");
-  if (!Number.isInteger(peopleId) || peopleId <= 0) {
-    return {
-      ok: false,
-      message:
-        "Replying needs the Breezeway person id Resolve posts as (BREEZEWAY_COMMENT_PEOPLE_ID).",
-    };
-  }
+
+  const { commentIdentityFor } = await import("./breezeway-people.server");
+  const identity = await commentIdentityFor(authorUserId);
+  if (!identity.ok) return { ok: false, message: identity.message };
+
+  // Under the shared identity the person's name has to be in the text, or the
+  // Breezeway thread cannot tell who is speaking.
+  const outbound = identity.mode === "staff" ? text : `${authorLabel} (ARHA Resolve): ${text}`;
+
+  const db = await admin();
+  const startedAt = new Date().toISOString();
+  const pending = await db
+    .from("breezeway_work_order_comments")
+    .insert({
+      work_order_id: wo.id,
+      breezeway_task_id: wo.breezewayTaskId,
+      author: authorLabel,
+      body: text,
+      commented_at: startedAt,
+      direction: "outbound",
+      source: "resolve",
+      resolve_author_id: authorUserId,
+      resolve_author_name: authorLabel,
+      breezeway_person_id: identity.peopleId,
+      identity_mode: identity.mode,
+      delivery_state: "sending",
+    } as never)
+    .select("id")
+    .single();
+  const rowId = (pending.data as { id: string } | null)?.id ?? null;
 
   try {
     const created = await breezewayRequest<{ id?: number }>(`/task/${wo.breezewayTaskId}/comments`, {
       method: "POST",
       allowWrite: true,
       retry: false,
-      body: { comment: `${authorLabel} (Resolve): ${text}`, company_people_id: peopleId },
+      body: { comment: outbound, company_people_id: identity.peopleId },
     });
-    const db = await admin();
-    await db.from("breezeway_work_order_comments").insert({
-      work_order_id: wo.id,
-      breezeway_task_id: wo.breezewayTaskId,
-      breezeway_comment_id: typeof created?.id === "number" ? created.id : null,
-      author: authorLabel,
-      body: text,
-      commented_at: new Date().toISOString(),
-      direction: "outbound",
-    } as never);
-    return { ok: true };
+    if (rowId) {
+      await db
+        .from("breezeway_work_order_comments")
+        .update({
+          breezeway_comment_id: typeof created?.id === "number" ? created.id : null,
+          delivery_state: "delivered",
+          posted_at: new Date().toISOString(),
+        } as never)
+        .eq("id", rowId);
+    }
+    return { ok: true, identityMode: identity.mode };
+  } catch (error) {
+    const message =
+      error instanceof BreezewayError
+        ? `Breezeway refused the comment (${error.status}).`
+        : "Could not reach Breezeway.";
+    if (rowId) {
+      await db
+        .from("breezeway_work_order_comments")
+        .update({ delivery_state: "failed", delivery_error: message } as never)
+        .eq("id", rowId);
+    }
+    return { ok: false, message };
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Photos                                                             */
+/* ------------------------------------------------------------------ */
+
+type RawPhoto = {
+  id?: number;
+  url?: string | null;
+  photo_url?: string | null;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
+  caption?: string | null;
+  description?: string | null;
+  type?: string | null;
+  photo_type?: string | null;
+  created_by?: string | null;
+  uploaded_by?: string | null;
+  created_at?: string | null;
+};
+
+function photoUrl(p: RawPhoto) {
+  return p.url ?? p.photo_url ?? p.image_url ?? p.thumbnail_url ?? null;
+}
+
+/**
+ * Mirrors the photos on one work order. Breezeway returns them on the task
+ * payload (`GET /task/{id}`), so this is the per-task read rather than a
+ * portfolio sweep — Operations opens a work order, and its photos are there.
+ *
+ * Uploading INTO Breezeway is not available: the public API exposes photos as
+ * read-only on the task, and `POST /task/{id}/photos` is refused. Evidence
+ * captured in Resolve therefore stays in Resolve and is referenced in the
+ * Breezeway comment thread instead.
+ */
+export async function syncWorkOrderPhotos(
+  workOrderId: string,
+): Promise<{ ok: boolean; message?: string; photos: number }> {
+  const wo = await getWorkOrder(workOrderId);
+  if (!wo) return { ok: false, message: "That work order is not in Resolve.", photos: 0 };
+
+  let raw: RawPhoto[] = [];
+  try {
+    const task = await breezewayRequest<{ photos?: RawPhoto[] | null }>(`/task/${wo.breezewayTaskId}`);
+    raw = (task.photos ?? []).filter((p): p is RawPhoto => Boolean(p));
   } catch (error) {
     return {
       ok: false,
       message:
         error instanceof BreezewayError
-          ? `Breezeway refused the comment (${error.status}).`
+          ? `Breezeway refused the photo read (${error.status}).`
           : "Could not reach Breezeway.",
+      photos: 0,
     };
   }
+
+  const db = await admin();
+  const now = new Date().toISOString();
+  let kept = 0;
+  let writeError: string | null = null;
+  for (const p of raw) {
+    const url = photoUrl(p);
+    if (!url) continue;
+    kept += 1;
+    if (typeof p.id === "number") {
+      const up = await db.from("breezeway_work_order_photos").upsert(
+        {
+          work_order_id: wo.id,
+          breezeway_task_id: wo.breezewayTaskId,
+          breezeway_photo_id: p.id,
+          property_id: wo.propertyId,
+          url,
+          caption: p.caption ?? p.description ?? null,
+          photo_type: p.photo_type ?? p.type ?? null,
+          uploader: p.created_by ?? p.uploaded_by ?? null,
+          breezeway_created_at: normalizeDate(p.created_at),
+          source: "breezeway",
+          last_synced_at: now,
+        } as never,
+        { onConflict: "breezeway_photo_id" },
+      );
+      if (up.error && !writeError) writeError = up.error.message;
+    } else {
+      const existing = await db
+        .from("breezeway_work_order_photos")
+        .select("id")
+        .eq("work_order_id", wo.id)
+        .eq("url", url)
+        .maybeSingle();
+      if (!existing.data) {
+        await db.from("breezeway_work_order_photos").insert({
+          work_order_id: wo.id,
+          breezeway_task_id: wo.breezewayTaskId,
+          property_id: wo.propertyId,
+          url,
+          caption: p.caption ?? p.description ?? null,
+          photo_type: p.photo_type ?? p.type ?? null,
+          uploader: p.created_by ?? p.uploaded_by ?? null,
+          breezeway_created_at: normalizeDate(p.created_at),
+          source: "breezeway",
+          last_synced_at: now,
+        } as never);
+      }
+    }
+  }
+
+  await db.from("breezeway_work_orders").update({ photo_count: kept } as never).eq("id", wo.id);
+  if (writeError) {
+    return { ok: false, message: `Photos could not be stored: ${writeError}`, photos: 0 };
+  }
+  return { ok: true, photos: kept };
+}
+
+export async function listWorkOrderPhotos(workOrderId: string): Promise<BreezewayWorkOrderPhoto[]> {
+  const db = await admin();
+  const { data } = await db
+    .from("breezeway_work_order_photos")
+    .select("id, breezeway_photo_id, url, caption, photo_type, uploader, breezeway_created_at, source, evidence_item_id")
+    .eq("work_order_id", workOrderId)
+    .order("breezeway_created_at", { ascending: true, nullsFirst: true });
+  return ((data ?? []) as unknown as {
+    id: string;
+    breezeway_photo_id: number | null;
+    url: string;
+    caption: string | null;
+    photo_type: string | null;
+    uploader: string | null;
+    breezeway_created_at: string | null;
+    source: "breezeway" | "resolve";
+    evidence_item_id: string | null;
+  }[]).map((p) => ({
+    id: p.id,
+    breezewayPhotoId: p.breezeway_photo_id,
+    url: p.url,
+    caption: p.caption,
+    photoType: p.photo_type,
+    uploader: p.uploader,
+    takenAt: p.breezeway_created_at,
+    source: p.source,
+    evidenceItemId: p.evidence_item_id,
+  }));
+}
+
+/**
+ * Sends one mirrored Breezeway photo through the Evidence Quality Gate. An
+ * incoming photo does not satisfy a Resolve requirement just because Breezeway
+ * accepted it — it clears the same bar as anything captured in Resolve.
+ */
+export async function checkBreezewayPhotoAsEvidence(
+  actor: { userId: string; name: string; isSupervisor: boolean },
+  photoId: string,
+  requirementId: string,
+) {
+  const db = await admin();
+  const { data } = await db
+    .from("breezeway_work_order_photos")
+    .select("id, url, breezeway_photo_id, breezeway_task_id")
+    .eq("id", photoId)
+    .maybeSingle();
+  const photo = data as
+    | { id: string; url: string; breezeway_photo_id: number | null; breezeway_task_id: number }
+    | null;
+  if (!photo) return { ok: false as const, message: "That photo is no longer mirrored." };
+
+  const { submitEvidence } = await import("./evidence.server");
+  const res = await submitEvidence(actor, {
+    requirementId,
+    externalUrl: photo.url,
+    breezewayPhotoId: photo.breezeway_photo_id,
+    breezewayTaskId: photo.breezeway_task_id,
+    source: "breezeway_photo",
+  });
+  if (res.ok && res.itemId) {
+    await db
+      .from("breezeway_work_order_photos")
+      .update({ evidence_item_id: res.itemId } as never)
+      .eq("id", photo.id);
+  }
+  return res;
 }
 
 /* ------------------------------------------------------------------ */
