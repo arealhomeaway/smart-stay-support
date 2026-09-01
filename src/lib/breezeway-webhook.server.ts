@@ -37,12 +37,30 @@ export const PILOT_COMPANY_ID = 3641;
 /** The original pilot property; kept for fixtures and existing references. */
 export const PILOT_HOME_ID = 1473933;
 /**
- * The approved limited-beta properties whose task detail may be retained.
- * Same verified set as the outbound allowlist — nothing else is stored.
+ * The original limited-beta homes. Retained only as the fixture/self-test set
+ * and as an offline fallback — real scope now comes from the database.
  */
 export const PILOT_HOME_IDS: readonly number[] = [1473933, 1295301, 368125, 322641, 1293536];
 export function isPilotHome(homeId: number | null | undefined) {
   return homeId != null && PILOT_HOME_IDS.includes(homeId);
+}
+
+/**
+ * Portfolio scope: task detail is retained for any home bound to a Resolve
+ * property whose mapping state is `verified`. That set is deterministic
+ * (Breezeway home id + OwnerRez reference identity), so widening scope is a
+ * data change, not a code change. If the lookup itself fails we fall back to
+ * the original beta homes rather than storing detail we cannot justify.
+ */
+export async function isRetainedHome(homeId: number | null | undefined) {
+  if (homeId == null) return false;
+  try {
+    const { propertyForHomeId } = await import("./breezeway-mapping.server");
+    if (await propertyForHomeId(homeId)) return true;
+  } catch {
+    // fall through to the offline fallback
+  }
+  return isPilotHome(homeId);
 }
 
 export type WebhookOutcome =
@@ -317,9 +335,9 @@ export async function verifyAndFinalizeTask(
       null,
     );
   }
-  if (!isPilotHome(verified.homeId)) {
+  if (!(await isRetainedHome(verified.homeId))) {
     return recordAndReturn(
-      { outcome: "ignored_other_property", reason: "Outside beta properties", isFixture },
+      { outcome: "ignored_other_property", reason: "Outside verified portfolio", isFixture },
       null,
     );
   }
@@ -431,9 +449,9 @@ export async function processBreezewayWebhook(
 
   // Cheap pre-filter: if the payload names a different property, drop it now
   // and spend no API budget on it. Detail is never stored for those.
-  if (parsed.homeId != null && !isPilotHome(parsed.homeId)) {
+  if (parsed.homeId != null && !(await isRetainedHome(parsed.homeId))) {
     return recordAndReturn(
-      { outcome: "ignored_other_property", reason: "Outside beta properties", isFixture },
+      { outcome: "ignored_other_property", reason: "Outside verified portfolio", isFixture },
       null,
     );
   }
