@@ -34,7 +34,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { createIntakeMatter, REF_TAG, type IntakeResult } from "./intake.server";
-import { authorizedMailbox, inboxMessagesPath } from "./mailbox-allowlist.server";
+import { authorizedMailbox, mailboxMessagesPath } from "./mailbox-allowlist.server";
 import { createLeadFromEmail } from "./outlook-lead.server";
 import { plainTextBody, type OutlookSource } from "./outlook-email";
 import {
@@ -120,7 +120,7 @@ async function graph(path: string, init?: RequestInit) {
  */
 async function setCategories(messageId: string, categories: string[]) {
   try {
-    await graph(inboxMessagesPath(`/${messageId}`), {
+    await graph(mailboxMessagesPath(`/${messageId}`), {
       method: "PATCH",
       body: JSON.stringify({ categories }),
     });
@@ -134,7 +134,7 @@ async function setCategories(messageId: string, categories: string[]) {
 /** Reads one message by id — used by the change-notification handler. */
 export async function fetchMessage(messageId: string): Promise<GraphMessage | null> {
   try {
-    const res = await graph(inboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`));
+    const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`));
     return (await res.json()) as GraphMessage;
   } catch {
     return null;
@@ -145,7 +145,7 @@ export async function fetchMessage(messageId: string): Promise<GraphMessage | nu
 async function attachmentMeta(messageId: string) {
   try {
     const res = await graph(
-      inboxMessagesPath(`/${encodeURIComponent(messageId)}/attachments?$select=name,contentType,size`),
+      mailboxMessagesPath(`/${encodeURIComponent(messageId)}/attachments?$select=name,contentType,size`),
     );
     const rows = ((await res.json())?.value ?? []) as { name?: string; contentType?: string; size?: number }[];
     return rows.slice(0, 20).map((a) => ({
@@ -203,7 +203,7 @@ async function writeCheckpoint(db: Db, iso: string) {
 async function fetchInbox(limit: number, since: string) {
   const query =
     `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
-  const res = await graph(inboxMessagesPath(query));
+  const res = await graph(mailboxMessagesPath(query));
   return ((await res.json()).value ?? []) as GraphMessage[];
 }
 
@@ -603,7 +603,7 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
 
     let current: string[] = [];
     try {
-      const res = await graph(inboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`));
+      const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`));
       current = ((await res.json())?.categories ?? []) as string[];
     } catch {
       continue; // Message moved or deleted — nothing to re-categorise.
