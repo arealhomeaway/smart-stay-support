@@ -626,14 +626,27 @@ for (const c of candidates) {
           report.manualReview.push({ property: label, field: m.name, value: String(v), reason: "out of range" });
           break;
         }
-        if (prop?.latitude != null && prop?.longitude != null) {
-          const diff = Math.abs(lat - Number(prop.latitude)) > 0.001 || Math.abs(lng - Number(prop.longitude)) > 0.001;
+        const hasCoords =
+          (prop?.latitude != null && prop?.longitude != null) ||
+          (prop == null && report.foxtail?.geocode?.lat != null);
+        if (hasCoords) {
+          const curLat = prop?.latitude ?? report.foxtail?.geocode?.lat;
+          const curLng = prop?.longitude ?? report.foxtail?.geocode?.lng;
+          const diff = Math.abs(lat - Number(curLat)) > 0.001 || Math.abs(lng - Number(curLng)) > 0.001;
           if (diff) report.gpsDiffOwnerRezWins.push({ property: label });
-          break; // valid geocode is never overwritten by PID
+          break; // a valid derived pin is never overwritten by PID
         }
+        // Only reached when authoritative geocoding produced nothing at all.
         report.gpsFallback.push({ property: label, lat, lng });
-        put(["latitude_fallback_note"], null, m.name); // placeholder; handled below
+        columns["latitude"] = lat;
+        columns["longitude"] = lng;
+        columns["geocode_source"] = "notion_pid_fallback";
+        columns["geocode_status"] = "pid_fallback";
+        provenance.push({ field_key: "latitude", as_of: c.asOf });
+        provenance.push({ field_key: "longitude", as_of: c.asOf });
+        report.valuesWritten += 2;
         break;
+
       }
 
       // ---- external links ------------------------------------------------
