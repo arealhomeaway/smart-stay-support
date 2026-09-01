@@ -1,4 +1,4 @@
-import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
+import { EmptyState, LoadingPage, PageHeader, StageRail } from "@/components/ui/page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
