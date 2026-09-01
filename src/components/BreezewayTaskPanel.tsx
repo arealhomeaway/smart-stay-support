@@ -22,6 +22,7 @@ import {
   OUTBOUND_STATUS_LABEL,
 } from "@/lib/breezeway-outbound";
 import {
+  breezewayCreationOptions,
   breezewayOutboundState,
   createBreezewayOutboundTask,
 } from "@/lib/breezeway-outbound.functions";
@@ -59,11 +60,15 @@ export function BreezewayTaskPanel({
 }: Props) {
   const qc = useQueryClient();
   const stateFn = useServerFn(breezewayOutboundState);
+  const optionsFn = useServerFn(breezewayCreationOptions);
   const createFn = useServerFn(createBreezewayOutboundTask);
 
   const [title, setTitle] = useState(defaultTitle);
   const [description, setDescription] = useState(defaultDescription ?? "");
   const [department, setDepartment] = useState<string>("maintenance");
+  const [templateId, setTemplateId] = useState<string>("none");
+  const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
+  const [evidenceNote, setEvidenceNote] = useState("");
   const [priority, setPriority] = useState<string>("normal");
   const [scheduledDate, setScheduledDate] = useState("");
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
@@ -79,6 +84,20 @@ export function BreezewayTaskPanel({
     queryFn: () => stateFn({ data: { sourceType, sourceId } }),
   });
 
+  // Breezeway's own directories — never a hardcoded list, so a renamed template
+  // or a deactivated worker disappears here too.
+  const options = useQuery({
+    queryKey: ["breezeway-create-options"],
+    queryFn: () => optionsFn({ data: undefined as never }),
+    staleTime: 10 * 60_000,
+  });
+  const templates = options.data?.templates ?? [];
+  const assignees = options.data?.assignees ?? [];
+  const visibleTemplates = useMemo(
+    () => templates.filter((t) => !t.department || !department || t.department === department),
+    [templates, department],
+  );
+
   const send = useMutation({
     mutationFn: () =>
       createFn({
@@ -91,6 +110,9 @@ export function BreezewayTaskPanel({
           department,
           priority,
           scheduledDate: scheduledDate || null,
+          templateId: templateId === "none" ? null : Number(templateId),
+          assigneeIds,
+          resolveEvidenceNote: evidenceNote || null,
         },
       }),
     onSuccess: (result) => {
@@ -103,6 +125,8 @@ export function BreezewayTaskPanel({
         toast.success("Sent to Breezeway.");
         // A new key means the next send is a deliberate second task, not a retry.
         setRequestKey(crypto.randomUUID());
+        setAssigneeIds([]);
+        setEvidenceNote("");
       }
       void qc.invalidateQueries({ queryKey });
     },
@@ -161,6 +185,20 @@ export function BreezewayTaskPanel({
                   <span className="w-full text-amber-700">
                     Resolve cannot confirm whether Breezeway created this task. An admin must check
                     Breezeway and resolve it from Integrations — do not send it again.
+                  </span>
+                ) : null}
+                {link.templateName ? (
+                  <span className="text-muted-foreground">Template: {link.templateName}</span>
+                ) : null}
+                {link.assigneeNames.length ? (
+                  <span className="text-muted-foreground">
+                    Assigned: {link.assigneeNames.join(", ")}
+                  </span>
+                ) : null}
+                {link.resolveEvidenceNote ? (
+                  <span className="w-full text-muted-foreground">
+                    Resolve evidence (kept in Resolve, not uploaded to Breezeway):{" "}
+                    {link.resolveEvidenceNote}
                   </span>
                 ) : null}
                 {link.reviewNote ? (
@@ -231,6 +269,82 @@ export function BreezewayTaskPanel({
                 />
               </div>
             </div>
+            <div className="grid gap-1.5">
+              <Label>Breezeway template</Label>
+              <Select value={templateId} onValueChange={setTemplateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="No template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No template</SelectItem>
+                  {visibleTemplates.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Templates come straight from Breezeway. Choosing one attaches its checklist to the
+                work order.
+              </p>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label>Assign to</Label>
+              <div className="max-h-44 overflow-y-auto rounded-lg border border-border p-2">
+                {assignees.length === 0 ? (
+                  <p className="p-1 text-xs text-muted-foreground">
+                    No Breezeway people available. The work order can still be created unassigned.
+                  </p>
+                ) : (
+                  assignees.map((person) => {
+                    const checked = assigneeIds.includes(person.id);
+                    return (
+                      <label
+                        key={person.id}
+                        className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs hover:bg-muted"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            setAssigneeIds((prev) =>
+                              checked ? prev.filter((id) => id !== person.id) : [...prev, person.id],
+                            )
+                          }
+                        />
+                        <span>{person.name}</span>
+                        {person.email ? (
+                          <span className="text-muted-foreground">{person.email}</span>
+                        ) : null}
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Only real Breezeway people are listed, so an assignment here always reaches
+                Breezeway.
+              </p>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label htmlFor="bz-evidence">Resolve evidence reference</Label>
+              <Textarea
+                id="bz-evidence"
+                rows={2}
+                value={evidenceNote}
+                onChange={(e) => setEvidenceNote(e.target.value)}
+                placeholder="Which Resolve photos or documents support this work order"
+              />
+              <p className="text-xs text-muted-foreground">
+                Files stay attached in Resolve. Breezeway's API does not accept file uploads from
+                Resolve at creation time, so nothing here is sent to Breezeway — Breezeway-native
+                task photos continue to mirror back into Resolve.
+              </p>
+            </div>
+
             <div>
               <Button disabled={send.isPending || !title.trim()} onClick={() => send.mutate()}>
                 <Send className="size-4" />
