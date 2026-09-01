@@ -113,11 +113,38 @@ export function LeadDrawer({
     queryKey: ["lead-property-search", propertySearch],
     enabled: Boolean(leadId) && propertySearch.trim().length > 1,
     queryFn: async () => {
+      const q = propertySearch.trim();
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname, city, bedrooms, lifecycle_status")
-        .or(`name.ilike.%${propertySearch}%,nickname.ilike.%${propertySearch}%,city.ilike.%${propertySearch}%`)
-        .limit(8);
+        .select(
+          "id, name, nickname, city, market, neighborhood, address_line1, ownerrez_property_id, bedrooms, lifecycle_status",
+        )
+        .or(
+          [
+            `name.ilike.%${q}%`,
+            `nickname.ilike.%${q}%`,
+            `city.ilike.%${q}%`,
+            `market.ilike.%${q}%`,
+            `neighborhood.ilike.%${q}%`,
+            `address_line1.ilike.%${q}%`,
+            `ownerrez_property_id.ilike.%${q}%`,
+          ].join(","),
+        )
+        .limit(40);
+      if (error) throw error;
+      return rankProperties(q, data ?? []);
+    },
+  });
+
+  const convertedProperty = useQuery({
+    queryKey: ["lead-converted-property", lead?.converted_property_id],
+    enabled: Boolean(lead?.converted_property_id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id, name, nickname, city")
+        .eq("id", lead!.converted_property_id!)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
