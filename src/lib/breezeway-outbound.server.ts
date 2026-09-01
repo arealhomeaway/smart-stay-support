@@ -4,8 +4,10 @@
  * Approved beta scope, deliberately narrow:
  *   - Resolve remains the operational source of truth. A Breezeway task is a
  *     downstream copy; Breezeway never changes Resolve state from here.
- *   - Writes are restricted to the approved, verified beta properties
- *     (OUTBOUND_ALLOWED_HOME_IDS). Any other property is refused server-side.
+ *   - Writes are restricted to properties whose Breezeway mapping state is
+ *     `verified` (see breezeway-mapping.server.ts). Any other property —
+ *     unmapped, ambiguous, inactive, excluded, demo or archived — is refused
+ *     server-side.
  *   - The `breezeway_outbound` feature flag must be ON. OFF means no write.
  *
  * Idempotency (double-click and retry protection):
@@ -25,7 +27,6 @@ import {
   BREEZEWAY_OUTBOUND_FLAG,
   BREEZEWAY_DEPARTMENTS,
   BREEZEWAY_PRIORITIES,
-  isOutboundAllowedHome,
   type BreezewayOutboundEligibility,
   type BreezewayOutboundLink,
   type BreezewayOutboundReviewItem,
