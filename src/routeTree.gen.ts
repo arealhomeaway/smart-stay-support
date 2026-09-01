@@ -35,6 +35,9 @@ import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated/onboarding.index'
+import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/_authenticated/onboarding.$propertyId'
+import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
 import { Route as AuthenticatedPropertyPropertyIdRouteImport } from './routes/_authenticated/property.$propertyId'
 import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
 import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
@@ -186,6 +189,24 @@ const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOnboardingIndexRoute =
+  AuthenticatedOnboardingIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
+const AuthenticatedOnboardingPropertyIdRoute =
+  AuthenticatedOnboardingPropertyIdRouteImport.update({
+    id: '/$propertyId',
+    path: '/$propertyId',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
+const AuthenticatedOnboardingMyWorkRoute =
+  AuthenticatedOnboardingMyWorkRouteImport.update({
+    id: '/my-work',
+    path: '/my-work',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
 const AuthenticatedPropertyPropertyIdRoute =
   AuthenticatedPropertyPropertyIdRouteImport.update({
     id: '/property/$propertyId',
@@ -291,7 +312,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
-  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
@@ -303,6 +324,8 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
+  '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
@@ -310,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
@@ -334,7 +358,6 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
-  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
@@ -346,6 +369,8 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
+  '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
@@ -353,6 +378,7 @@ export interface FileRoutesByTo {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
@@ -379,7 +405,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/join': typeof AuthenticatedJoinRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
-  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/_authenticated/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
@@ -391,6 +417,8 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
+  '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
@@ -398,6 +426,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
@@ -436,6 +465,8 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/onboarding/$propertyId'
+    | '/onboarding/my-work'
     | '/property/$propertyId'
     | '/tickets/$ticketId'
     | '/tickets/new'
@@ -443,6 +474,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/onboarding/'
     | '/tickets/'
     | '/vendor/'
     | '/api/public/hooks/breezeway-mirror'
@@ -467,7 +499,6 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/join'
     | '/map'
-    | '/onboarding'
     | '/ops-analytics'
     | '/oversight'
     | '/owner'
@@ -479,6 +510,8 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/onboarding/$propertyId'
+    | '/onboarding/my-work'
     | '/property/$propertyId'
     | '/tickets/$ticketId'
     | '/tickets/new'
@@ -486,6 +519,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/onboarding'
     | '/tickets'
     | '/vendor'
     | '/api/public/hooks/breezeway-mirror'
@@ -523,6 +557,8 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
+    | '/_authenticated/onboarding/$propertyId'
+    | '/_authenticated/onboarding/my-work'
     | '/_authenticated/property/$propertyId'
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/tickets/new'
@@ -530,6 +566,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/_authenticated/onboarding/'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
     | '/api/public/hooks/breezeway-mirror'
@@ -742,6 +779,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/onboarding/': {
+      id: '/_authenticated/onboarding/'
+      path: '/'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof AuthenticatedOnboardingIndexRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
+    '/_authenticated/onboarding/$propertyId': {
+      id: '/_authenticated/onboarding/$propertyId'
+      path: '/$propertyId'
+      fullPath: '/onboarding/$propertyId'
+      preLoaderRoute: typeof AuthenticatedOnboardingPropertyIdRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
+    '/_authenticated/onboarding/my-work': {
+      id: '/_authenticated/onboarding/my-work'
+      path: '/my-work'
+      fullPath: '/onboarding/my-work'
+      preLoaderRoute: typeof AuthenticatedOnboardingMyWorkRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
     '/_authenticated/property/$propertyId': {
       id: '/_authenticated/property/$propertyId'
       path: '/property/$propertyId'
@@ -857,6 +915,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedOnboardingRouteChildren {
+  AuthenticatedOnboardingPropertyIdRoute: typeof AuthenticatedOnboardingPropertyIdRoute
+  AuthenticatedOnboardingMyWorkRoute: typeof AuthenticatedOnboardingMyWorkRoute
+  AuthenticatedOnboardingIndexRoute: typeof AuthenticatedOnboardingIndexRoute
+}
+
+const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren =
+  {
+    AuthenticatedOnboardingPropertyIdRoute:
+      AuthenticatedOnboardingPropertyIdRoute,
+    AuthenticatedOnboardingMyWorkRoute: AuthenticatedOnboardingMyWorkRoute,
+    AuthenticatedOnboardingIndexRoute: AuthenticatedOnboardingIndexRoute,
+  }
+
+const AuthenticatedOnboardingRouteWithChildren =
+  AuthenticatedOnboardingRoute._addFileChildren(
+    AuthenticatedOnboardingRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
@@ -867,7 +944,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
-  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRouteWithChildren
   AuthenticatedOpsAnalyticsRoute: typeof AuthenticatedOpsAnalyticsRoute
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
@@ -898,7 +975,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
-  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRouteWithChildren,
   AuthenticatedOpsAnalyticsRoute: AuthenticatedOpsAnalyticsRoute,
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
