@@ -47,6 +47,7 @@ import {
   type LeadStage,
 } from "@/lib/leads";
 import type { LeadRow, LeadUpdate } from "@/lib/lead-types";
+import { rankProperties } from "@/lib/property-search";
 
 const CONTACT_CHANNELS: LeadChannel[] = ["call", "email", "text", "other"];
 
@@ -354,6 +355,37 @@ export function LeadDrawer({
               ["Dates flexible", lead.date_flexible === null ? "—" : lead.date_flexible ? "Yes" : "No"],
             ]}
           />
+
+          {lead.stage === "converted" ? (
+            <section className="resolve-rise space-y-1.5 rounded-lg border border-success/40 bg-success/10 px-4 py-3">
+              <p className="eyebrow">Conversion</p>
+              <p className="text-sm font-semibold">Booking confirmed</p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                <dt className="text-muted-foreground">Converted</dt>
+                <dd className="text-right font-medium">{formatDate(lead.converted_at)}</dd>
+                <dt className="text-muted-foreground">Property</dt>
+                <dd className="text-right font-medium">
+                  {convertedProperty.data ? (
+                    <Link
+                      to="/property/$propertyId"
+                      params={{ propertyId: convertedProperty.data.id }}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {convertedProperty.data.nickname ?? convertedProperty.data.name}
+                    </Link>
+                  ) : (
+                    "Not recorded"
+                  )}
+                </dd>
+                <dt className="text-muted-foreground">Reservation ref</dt>
+                <dd className="text-right font-medium">{lead.reservation_ref ?? "Not recorded"}</dd>
+                <dt className="text-muted-foreground">Converted by</dt>
+                <dd className="text-right font-medium">
+                  {lead.converted_by ? displayName(people.find((p) => p.id === lead.converted_by)) : "Not recorded"}
+                </dd>
+              </dl>
+            </section>
+          ) : null}
 
           {lead.requirements ? (
             <p className="text-sm leading-relaxed text-muted-foreground">{lead.requirements}</p>
