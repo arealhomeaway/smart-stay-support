@@ -521,9 +521,10 @@ function OnboardingWorkspace() {
                                 }
                               />
                             )}
-                            {t.evidence_required && (
+                            {(
                                <EvidenceDialog
                                  disabled={readOnly}
+                                 evidenceRequired={t.evidence_required}
                                  taskId={t.id}
                                  current={t.evidence_note ?? ""}
                                 onSave={(note) =>
@@ -738,11 +739,13 @@ function EvidenceDialog({
   current,
   taskId,
   onSave,
+  evidenceRequired = true,
 }: {
   disabled: boolean;
   current: string;
   taskId: string;
   onSave: (note: string) => void;
+  evidenceRequired?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState(current);
@@ -756,7 +759,7 @@ function EvidenceDialog({
     >
       <DialogTrigger asChild>
         <Button size="sm" variant="ghost" disabled={disabled}>
-          {current ? "Update evidence" : "Add evidence"}
+          {evidenceRequired ? (current ? "Update evidence" : "Add evidence") : "Notes & files"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
