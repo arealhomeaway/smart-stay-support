@@ -90,7 +90,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .order("sort_order"),
     supabaseAdmin
       .from("tickets")
-      .select("id, ref, title, status, priority, created_at, closed_at, assigned_to, work_type_id")
+      .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
       .eq("property_id", propertyId)
       .is("archived_at", null)
       .order("created_at", { ascending: false })
