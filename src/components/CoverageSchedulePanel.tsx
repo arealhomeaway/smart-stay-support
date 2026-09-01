@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { windowLabel, type CoverageConfig } from "@/lib/coverage";
 import { SEAT_LABELS } from "@/lib/coverage-model";
+import type { Ownership } from "@/lib/semantic";
 import {
   coverageModel,
   deleteOnCall,
@@ -218,9 +219,9 @@ function WeekCalendar({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className={`chip ${BLOCK_FILL.team_a}`}>Team A — Guest Experience</span>
-          <span className={`chip ${BLOCK_FILL.team_b}`}>Team B — Property Operations</span>
-          <span className={`chip ${BLOCK_FILL.leadership}`}>Supervisor</span>
+          <span className={`chip ${BLOCK_FILL["team_a"]}`}>Team A — Guest Experience</span>
+          <span className={`chip ${BLOCK_FILL["team_b"]}`}>Team B — Property Operations</span>
+          <span className={`chip ${BLOCK_FILL["leadership"]}`}>Supervisor</span>
           <span className="chip border-dashed border-module-coverage/50 bg-module-coverage/10 text-module-coverage">
             Cross-team triage
           </span>
