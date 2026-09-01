@@ -28,10 +28,10 @@ export function localParts(at: Date, timeZone: string) {
     hour12: false,
   });
   const parts = Object.fromEntries(fmt.formatToParts(at).map((p) => [p.type, p.value]));
-  const hour = Number(parts.hour === "24" ? "0" : parts.hour);
+  const hour = Number(parts['hour'] === "24" ? "0" : parts['hour']);
   return {
-    date: `${parts.year}-${parts.month}-${parts.day}`,
-    minutes: hour * 60 + Number(parts.minute),
+    date: `${parts['year']}-${parts['month']}-${parts['day']}`,
+    minutes: hour * 60 + Number(parts['minute']),
   };
 }
 
@@ -143,7 +143,7 @@ function tzOffsetMs(at: Date, timeZone: string) {
     hour12: false,
   });
   const p = Object.fromEntries(fmt.formatToParts(at).map((x) => [x.type, x.value]));
-  const hour = p.hour === "24" ? "00" : p.hour;
-  const asUtc = Date.parse(`${p.year}-${p.month}-${p.day}T${hour}:${p.minute}:${p.second}Z`);
+  const hour = p['hour'] === "24" ? "00" : p['hour'];
+  const asUtc = Date.parse(`${p['year']}-${p['month']}-${p['day']}T${hour}:${p['minute']}:${p['second']}Z`);
   return asUtc - at.getTime();
 }
