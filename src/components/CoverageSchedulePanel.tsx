@@ -97,7 +97,8 @@ export function CoverageSchedulePanel() {
   if (isLoading || !data) return <Skeleton className="h-72 w-full" />;
 
   const today = chicagoToday();
-  const coveredToday = data.roster.some((r) => r.starts_on <= today && r.ends_on >= today);
+  const onCallToday = data.roster.find((r) => r.starts_on <= today && r.ends_on >= today);
+  const coveredToday = Boolean(onCallToday);
   const nameOf = (id: string) => {
     const p = data.eligible.find((e) => e.id === id);
     return p?.full_name ?? p?.email ?? "Unknown";
@@ -113,7 +114,7 @@ export function CoverageSchedulePanel() {
       starts_on: startsOn,
       ends_on: endsOn,
       user_id: person,
-      label: "Overnight on-call, 10 p.m.–8 a.m. Central",
+      label: "On-call — coverage window pending business input",
     });
     setSaving(false);
     if (error) {
@@ -182,20 +183,36 @@ export function CoverageSchedulePanel() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Moon className="size-4" /> Overnight on-call, 10 p.m.–8 a.m. Central
+            <Moon className="size-4" /> After-hours on-call roster
           </CardTitle>
           <CardDescription>
-            One named person per dated period. Nothing is chosen by default. Until a period covering today is
-            entered, overnight urgent assignment is not active and existing overnight escalation procedures apply.
+            One named person per date. Guests reach the on-call person on the ARHA Grasshopper number; the work
+            itself is recorded and managed here in Resolve. The after-hours start and end times are not yet
+            defined, so nothing routes automatically on this roster yet.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
+          <div className="rounded-lg border border-border bg-secondary/40 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">On call today ({today})</p>
+            <p className="text-lg font-semibold">
+              {onCallToday ? nameOf(onCallToday.user_id) : "No one scheduled"}
+            </p>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <p>
+              <strong>Coverage window: not configured.</strong> The imported schedule is date-based only and does
+              not define after-hours start/end times. Until those hours are set by the business, after-hours
+              auto-routing and the overnight handoff view stay off and existing escalation procedures apply.
+            </p>
+          </div>
+
           {!coveredToday && (
             <div className="flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 p-3 text-danger">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               <p>
-                Overnight coverage is <strong>incomplete</strong> for {today}. Tickets created between 10 p.m. and
-                8 a.m. Central stay visibly unassigned with a recorded reason and appear in the exception queue.
+                No on-call person is scheduled for {today}. Add a dated entry to close the gap.
               </p>
             </div>
           )}

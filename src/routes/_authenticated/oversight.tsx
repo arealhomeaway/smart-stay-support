@@ -16,6 +16,7 @@ import {
 } from "@/lib/tickets";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
+import { OnCallNowCard } from "@/components/OnCallNowCard";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -151,6 +152,9 @@ function Oversight() {
         </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
       </div>
+
+      <OnCallNowCard className="max-w-2xl" />
+
 
       {sections.map((section) => (
         <Card key={section.title}>
