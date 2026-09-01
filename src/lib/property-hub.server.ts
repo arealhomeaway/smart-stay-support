@@ -254,8 +254,13 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       id: "operations",
       title: "Operations",
       fields: [
-        f("Quarterly review due", "quarterly_review_due_on", fmtDate(p.quarterly_review_due_on), "Resolve", p.last_quarterly_review_at, false),
-        f("Last quarterly review", "last_quarterly_review_at", fmtDate(p.last_quarterly_review_at), "Resolve", p.last_quarterly_review_at, false),
+        ...(quarterlyLive
+          ? [
+              f("Quarterly review due", "quarterly_review_due_on", fmtDate(p.quarterly_review_due_on), "Resolve", p.last_quarterly_review_at, false),
+              f("Last quarterly review", "last_quarterly_review_at", fmtDate(p.last_quarterly_review_at), "Resolve", p.last_quarterly_review_at, false),
+            ]
+          : []),
+
         f("Active", "active", p.active ? "Yes" : "No", "Resolve", p.updated_at, false),
       ],
     },
