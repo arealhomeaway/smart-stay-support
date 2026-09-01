@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import {
   canManageCredentials,
   decryptSecret,
@@ -6,9 +6,7 @@ import {
   isInternalStaff,
 } from "@/lib/credentials.server";
 
-beforeAll(() => {
-  process.env["CREDENTIAL_ENCRYPTION_KEY"] = "test-key-not-a-real-secret";
-});
+process.env["CREDENTIAL_ENCRYPTION_KEY"] = "test-key-not-a-real-secret";
 
 const v = (...roles: string[]) => ({ userId: "u", roles });
 
