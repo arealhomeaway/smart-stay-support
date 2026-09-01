@@ -169,7 +169,14 @@ export function CoverageSchedulePanel() {
                       <span className="text-danger">Seat unfilled — work cannot route here</span>
                     )}
                   </p>
+                  {role.current_seat_name && !role.current_seat_holder && (
+                    <p className="text-warning">
+                      Assignment held as pending — this person has not redeemed their invitation yet, so work
+                      cannot route to the seat until their account is active.
+                    </p>
+                  )}
                 </div>
+
                 <div className="text-right">
                   {rows.length === 0 ? (
                     <span className="text-muted-foreground">No schedule — available by exception</span>
