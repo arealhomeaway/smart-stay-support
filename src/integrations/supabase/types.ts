@@ -441,6 +441,39 @@ export type Database = {
           },
         ]
       }
+      coverage_config: {
+        Row: {
+          after_hours_end_minute: number | null
+          after_hours_start_minute: number | null
+          configured_at: string | null
+          configured_by: string | null
+          id: boolean
+          note: string | null
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          after_hours_end_minute?: number | null
+          after_hours_start_minute?: number | null
+          configured_at?: string | null
+          configured_by?: string | null
+          id?: boolean
+          note?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          after_hours_end_minute?: number | null
+          after_hours_start_minute?: number | null
+          configured_at?: string | null
+          configured_by?: string | null
+          id?: boolean
+          note?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coverage_shifts: {
         Row: {
           active: boolean
