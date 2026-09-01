@@ -98,6 +98,25 @@ function PropertiesPage() {
     }
   }
 
+  const runEnrichment = useServerFn(syncPropertyEnrichment);
+
+  async function refreshInfo() {
+    setEnriching(true);
+    try {
+      const res = await runEnrichment();
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
+      toast.success(res.message);
+      await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Refresh failed");
+    } finally {
+      setEnriching(false);
+    }
+  }
+
   async function linkListing(propertyId: string, listingId: string) {
     const { error } = await supabase
       .from("properties")
