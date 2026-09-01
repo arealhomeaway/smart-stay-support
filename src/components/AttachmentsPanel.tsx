@@ -17,7 +17,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ALLOWED_MIME_TYPES, formatBytes, MAX_FILE_BYTES, type AttachmentEntity, validateFile } from "@/lib/attachments";
+import {
+  ALLOWED_MIME_TYPES,
+  type AttachmentEntity,
+  DOCUMENT_CATEGORIES,
+  documentCategoryLabel,
+  formatBytes,
+  MAX_FILE_BYTES,
+  validateFile,
+} from "@/lib/attachments";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   attachmentUrlFn,
   beginUploadFn,
@@ -33,6 +42,7 @@ type Props = {
   /** Owners uploading against a specific staff request pass its id. */
   fulfilsRequestId?: string | null;
   title?: string;
+  description?: string;
 };
 
 function iconFor(kind: string) {
@@ -41,7 +51,15 @@ function iconFor(kind: string) {
   return <FileText className="size-4" />;
 }
 
-export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null, title = "Files" }: Props) {
+export function AttachmentsPanel({
+  entityType,
+  entityId,
+  fulfilsRequestId = null,
+  title = "Files",
+  description,
+}: Props) {
+  const propertyLevel = entityType === "property";
+  const [category, setCategory] = useState<string>("reference");
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ name: string; pct: number } | null>(null);
@@ -72,6 +90,7 @@ export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null
           filename: file.name,
           mimeType: file.type,
           sizeBytes: file.size,
+          category: propertyLevel ? category : null,
           fulfilsRequestId,
         },
       });
@@ -140,11 +159,26 @@ export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null
               <Paperclip className="size-4" /> {title}
             </CardTitle>
             <CardDescription className="mt-1">
-              Photos, video and documents stay attached to this record through assignment, review, handoff and closure.
-              Homeowners see only what is marked shared. Each file can be up to {formatBytes(MAX_FILE_BYTES)}.
+              {description ??
+                "Photos, video and documents stay attached to this record through assignment, review, handoff and closure. Homeowners see only what is marked shared."}{" "}
+              Each file can be up to {formatBytes(MAX_FILE_BYTES)}.
             </CardDescription>
 
           </div>
+          {data?.canUpload && propertyLevel ? (
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-9 w-56" aria-label="Document type">
+                <SelectValue placeholder="Document type" />
+              </SelectTrigger>
+              <SelectContent>
+                {DOCUMENT_CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           {data?.canUpload ? (
             <Button size="sm" disabled={upload.isPending} onClick={() => inputRef.current?.click()}>
               {upload.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />} Add file
@@ -200,6 +234,9 @@ export function AttachmentsPanel({ entityType, entityId, fulfilsRequestId = null
               <li key={f.id} className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm">
                 <span className="text-muted-foreground">{iconFor(f.kind)}</span>
                 <span className="min-w-0 flex-1 truncate font-medium">{f.original_filename ?? f.title}</span>
+                {documentCategoryLabel((f as { category?: string | null }).category) ? (
+                  <Badge variant="outline">{documentCategoryLabel((f as { category?: string | null }).category)}</Badge>
+                ) : null}
                 {f.upload_status === "pending" ? (
                   <Badge variant="secondary">
                     {f.requested_from === "owner" ? "Requested from owner" : "Upload unfinished"}

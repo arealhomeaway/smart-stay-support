@@ -101,7 +101,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .eq("property_id", propertyId),
     supabaseAdmin
       .from("documents")
-      .select("id, title, kind, visibility, upload_status, uploaded_at, entity_type, entity_id, mime_type, size_bytes")
+      .select("id, title, kind, visibility, upload_status, uploaded_at, entity_type, entity_id, mime_type, size_bytes, category")
       .eq("property_id", propertyId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -148,6 +148,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     (t) => t.requires_owner_approval && (t.owner_approval_status ?? "pending") === "pending",
   );
   const gates = top.filter((t) => t.blocks_handoff && t.status !== "complete");
+  const subs = taskRows.filter((t) => t.parent_task_id);
+  const subsComplete = subs.filter((t) => t.status === "complete").length;
   const unassigned = top.filter((t) => !t.assigned_to).length;
 
   const openTickets = (tickets.data ?? []).filter((t) => t.status !== "closed");
@@ -296,6 +298,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       stage: p.onboarding_stage,
       total: top.length,
       complete,
+      subtaskTotal: subs.length,
+      subtaskComplete: subsComplete,
       percent: top.length ? Math.round((complete / top.length) * 100) : 0,
       blockers: blocked.slice(0, 10).map((t) => ({ id: t.id, title: t.title, blocker: t.blocker, stage: t.stage })),
       ownerActions: ownerActions.slice(0, 10).map((t) => ({ id: t.id, title: t.title, stage: t.stage, dueOn: t.due_on })),
@@ -337,6 +341,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         uploadedAt: d.uploaded_at,
         entityType: d.entity_type,
         entityId: d.entity_id,
+        category: d.category,
       })),
     approvals: {
       ownerActions: ownerActions.map((t) => ({

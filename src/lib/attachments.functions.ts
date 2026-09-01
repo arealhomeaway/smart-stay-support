@@ -28,6 +28,7 @@ export const beginUploadFn = createServerFn({ method: "POST" })
       sizeBytes: number;
       visibility?: AttachmentVisibility;
       note?: string | null;
+      category?: string | null;
       fulfilsRequestId?: string | null;
     }) => input,
   )
