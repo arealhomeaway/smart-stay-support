@@ -712,12 +712,10 @@ for (const c of candidates) {
     }
   }
 
-  delete columns["latitude_fallback_note"];
-  const provFiltered = provenance.filter((p) => p.field_key !== "latitude_fallback_note");
-  plans.push({ c, columns, groups, provenance: provFiltered, links });
+  plans.push({ c, columns, groups, provenance, links });
 }
 
-report.valuesWritten -= report.gpsFallback.length; // placeholder rows removed above
+
 
 for (const p of plans) for (const l of p.links) report.linksByKind[l.kind] = (report.linksByKind[l.kind] ?? 0) + 1;
 report.provenanceRows = plans.reduce((n, p) => n + p.provenance.length, 0);
