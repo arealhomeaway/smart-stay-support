@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/public/bz-probe")({
         const body = (await request.json().catch(() => ({}))) as {
           paths?: string[];
           scanHomes?: number[];
-          op?: "people" | "mirror" | "photos";
+          op?: "people" | "mirror" | "photos" | "gate";
           limit?: number;
         };
         const out: Record<string, unknown> = {};
@@ -38,6 +38,30 @@ export const Route = createFileRoute("/api/public/bz-probe")({
             results.push({ name: wo.name, ...(await mod.syncWorkOrderPhotos(wo.id)) });
           }
           out["photos"] = results;
+        }
+        if (body.op === "gate") {
+          const { runGate } = await import("@/lib/evidence.server");
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data } = await supabaseAdmin
+            .from("breezeway_work_order_photos")
+            .select("url, caption")
+            .limit(body.limit ?? 3);
+          const results: unknown[] = [];
+          for (const ph of (data ?? []) as { url: string; caption: string | null }[]) {
+            try {
+              results.push({
+                caption: ph.caption,
+                verdict: await runGate({
+                  imageUrl: ph.url,
+                  kind: "completed_repair",
+                  label: "Completed repair",
+                }),
+              });
+            } catch (e) {
+              results.push({ caption: ph.caption, error: String(e).slice(0, 200) });
+            }
+          }
+          out["gate"] = results;
         }
         if (body.op === "mirror") {
           const mod = await import("@/lib/breezeway-workorders.server");
