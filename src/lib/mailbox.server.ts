@@ -14,9 +14,13 @@
  *
  * Hard rules:
  *
- *  1. Only `/users/<authorised mailbox>/mailFolders/Inbox/messages` is read.
- *     No user enumeration, no /me/*, no dynamic mailbox selection, and no
- *     sent items, drafts, deleted items or archive folders.
+ *  1. Only the one authorised mailbox is ever read, through
+ *     `/users/<authorised mailbox>/messages`. No user enumeration, no /me/*,
+ *     and no dynamic mailbox selection. Folder location is deliberately not
+ *     part of the decision: Outlook rules route mail into Team A, Team B,
+ *     Accounting, Direct Bookings / Mid Term Leads, Deliveries and Needs
+ *     Triage to say who owns it, and Resolve never moves a message.
+
  *  2. No record is ever created without a trigger category. Uncategorised mail
  *     is left completely alone.
  *  3. No historical import. A checkpoint is stamped the first time the reader
