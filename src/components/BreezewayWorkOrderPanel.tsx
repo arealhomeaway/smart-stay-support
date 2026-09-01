@@ -125,42 +125,133 @@ function CommentThread({ workOrderId }: { workOrderId: string }) {
   );
 }
 
-function PhotoStrip({ workOrderId }: { workOrderId: string }) {
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const PHOTO_MAX_BYTES = 15 * 1024 * 1024;
+
+function PhotoStrip({ workOrderId, writable }: { workOrderId: string; writable: boolean }) {
   const load = useServerFn(workOrderPhotos);
+  const upload = useServerFn(uploadWorkOrderPhotoFn);
+  const qc = useQueryClient();
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Owner/client report inclusion is OFF unless a staff member ticks it.
+  const [includeInReport, setIncludeInReport] = useState(false);
+
   const { data, isLoading } = useQuery({
     queryKey: ["bw-wo-photos", workOrderId],
     queryFn: () => load({ data: { workOrderId } }),
   });
 
-  if (isLoading) return <Skeleton className="h-20 w-full" />;
-  const photos = data?.photos ?? [];
-  if (photos.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        {data?.notice ?? "No photos on this work order yet."}
-      </p>
-    );
+  const send = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("workOrderId", workOrderId);
+      form.append("includeInTaskReport", includeInReport ? "true" : "false");
+      form.append("file", file);
+      return upload({ data: form });
+    },
+    // A refused upload is reported as a failure — never as a silent success.
+    onSuccess: (res) => {
+      if (!res?.ok) {
+        toast.error(res?.message ?? "Breezeway did not accept that photo.");
+        return;
+      }
+      toast.success(
+        res.includeInTaskReport
+          ? "Photo uploaded to Breezeway and included in the owner/client task report."
+          : "Photo uploaded to Breezeway (not in the owner/client report).",
+      );
+      setIncludeInReport(false);
+      void qc.invalidateQueries({ queryKey: ["bw-wo-photos", workOrderId] });
+      void qc.invalidateQueries({ queryKey: ["bw-work-orders"] });
+    },
+    onError: () => toast.error("The photo was not uploaded."),
+  });
+
+  function pick(file: File | undefined) {
+    if (!file) return;
+    if (!PHOTO_TYPES.includes(file.type)) {
+      toast.error("Choose a JPEG, PNG, WebP or HEIC photo.");
+      return;
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      toast.error("That photo is larger than 15 MB.");
+      return;
+    }
+    send.mutate(file);
   }
+
+  const photos = data?.photos ?? [];
 
   return (
     <div className="space-y-2">
-      {data?.notice && <p className="text-xs text-muted-foreground">{data.notice}</p>}
-      <div className="flex flex-wrap gap-2">
-        {photos.map((p) => (
-          <a key={p.id} href={p.url} target="_blank" rel="noreferrer" title={p.caption ?? "Breezeway photo"}>
-            <img
-              src={p.url}
-              alt={p.caption ?? `Breezeway work order photo${p.uploader ? ` from ${p.uploader}` : ""}`}
-              className="size-24 rounded object-cover"
-              loading="lazy"
+      {isLoading ? (
+        <Skeleton className="h-20 w-full" />
+      ) : photos.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {data?.notice ?? "No photos on this work order yet."}
+        </p>
+      ) : (
+        <>
+          {data?.notice && <p className="text-xs text-muted-foreground">{data.notice}</p>}
+          <div className="flex flex-wrap gap-2">
+            {photos.map((p) => (
+              <a key={p.id} href={p.url} target="_blank" rel="noreferrer" title={p.caption ?? "Breezeway photo"}>
+                <img
+                  src={p.url}
+                  alt={p.caption ?? `Breezeway work order photo${p.uploader ? ` from ${p.uploader}` : ""}`}
+                  className="size-24 rounded object-cover"
+                  loading="lazy"
+                />
+              </a>
+            ))}
+          </div>
+        </>
+      )}
+
+      {writable && (
+        <div className="space-y-2 rounded border border-dashed p-2">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              className="size-3.5 accent-current"
+              checked={includeInReport}
+              disabled={send.isPending}
+              onChange={(e) => setIncludeInReport(e.target.checked)}
             />
-          </a>
-        ))}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Photos are read from Breezeway. Evidence captured in Resolve stays in Resolve — Breezeway's
-        API does not accept photo uploads.
-      </p>
+            Include in owner/client task report
+          </label>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={PHOTO_TYPES.join(",")}
+            className="hidden"
+            onChange={(e) => {
+              pick(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={send.isPending}
+            onClick={() => inputRef.current?.click()}
+          >
+            {send.isPending ? (
+              <>
+                <RefreshCw className="mr-1 size-3 animate-spin" /> Uploading…
+              </>
+            ) : (
+              <>
+                <Upload className="mr-1 size-3" /> Add photo to Breezeway
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Uploads go straight onto the Breezeway task. JPEG, PNG, WebP or HEIC, up to 15 MB.
+            Breezeway has no photo delete — check the image before you send it.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
