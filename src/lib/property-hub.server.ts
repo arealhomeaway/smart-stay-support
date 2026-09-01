@@ -156,6 +156,18 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .eq("status", "open"),
   ]);
 
+  // Quarterly reviews ship behind a launch-state flag. While the flag is OFF
+  // the records and scheduler stay untouched, but the Hub must not surface a
+  // review field, warning or dead-end action anywhere in the interface.
+  const quarterlyFlag = await supabaseAdmin
+    .from("feature_flags")
+    .select("enabled")
+    .eq("key", "quarterly_reviews")
+    .maybeSingle();
+  const quarterlyLive = quarterlyFlag.data?.enabled === true;
+
+
+
 
   const taskRows = tasks.data ?? [];
   const top = taskRows.filter((t) => !t.parent_task_id);
