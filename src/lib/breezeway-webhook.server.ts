@@ -423,12 +423,11 @@ export async function verifyAndFinalizeTask(
 
 async function refreshMirroredWorkOrder(taskId: number) {
   try {
-    const { refreshWorkOrder, syncWorkOrderComments, getWorkOrder } = await import(
+    const { refreshWorkOrder, syncWorkOrderComments } = await import(
       "./breezeway-workorders.server"
     );
     const mirrored = await refreshWorkOrder(taskId);
     if (mirrored) await syncWorkOrderComments(mirrored.id);
-    void getWorkOrder;
   } catch {
     /* mirror refresh is best-effort; delivery must still succeed */
   }
