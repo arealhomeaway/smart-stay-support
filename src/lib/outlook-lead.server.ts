@@ -84,9 +84,11 @@ export async function createLeadFromEmail(
   await db.from("lead_activity").insert({
     lead_id: data.id,
     channel: "email",
-    direction: "inbound",
-    summary: `Created from an Outlook email: ${input.source.subject}`.slice(0, 300),
-    body: input.body.slice(0, 4000) || null,
+    outcome: "Created from Outlook",
+    note: [`Created from an Outlook email: ${input.source.subject}`, input.body.slice(0, 3000)]
+      .filter(Boolean)
+      .join("\n\n"),
+    to_stage: "new",
     occurred_at: input.source.receivedAt ?? new Date().toISOString(),
   });
 
