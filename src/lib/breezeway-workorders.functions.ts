@@ -136,3 +136,32 @@ export const updateWorkOrderFn = createServerFn({ method: "POST" })
     const patch = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     return updateWorkOrder(workOrderId, patch);
   });
+
+/** Photos on one work order, refreshed from the per-task Breezeway read. */
+export const workOrderPhotos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { workOrderId: string; refresh?: boolean }) => ({
+    workOrderId: uuid(input?.workOrderId, "work order"),
+    refresh: input?.refresh !== false,
+  }))
+  .handler(async ({ data, context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const mod = await import("@/lib/breezeway-workorders.server");
+    let notice: string | null = null;
+    if (data.refresh) {
+      const res = await mod.syncWorkOrderPhotos(data.workOrderId);
+      if (!res.ok) notice = res.message ?? "Could not load the newest photos.";
+    }
+    return { photos: await mod.listWorkOrderPhotos(data.workOrderId), notice };
+  });
+
+/** Refreshes the Breezeway people directory and reports the mapping picture. */
+export const syncBreezewayPeopleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(() => ({}))
+  .handler(async ({ context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const mod = await import("@/lib/breezeway-people.server");
+    const sync = await mod.syncBreezewayPeople();
+    return { sync, audit: await mod.breezewayPeopleAudit() };
+  });
