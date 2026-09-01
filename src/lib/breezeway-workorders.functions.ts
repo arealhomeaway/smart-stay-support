@@ -82,6 +82,7 @@ export const replyToWorkOrderFn = createServerFn({ method: "POST" })
       data.workOrderId,
       data.body,
       (profile as { full_name: string | null } | null)?.full_name ?? "ARHA",
+      context.userId,
     );
   });
 

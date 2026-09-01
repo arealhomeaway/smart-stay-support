@@ -38,6 +38,25 @@ export type BreezewayWorkOrderComment = {
   body: string;
   commentedAt: string | null;
   direction: "inbound" | "outbound";
+  /** Audit trail for anything Resolve sent. */
+  resolveAuthorName: string | null;
+  identityMode: "staff" | "integration" | null;
+  deliveryState: "mirrored" | "sending" | "delivered" | "failed";
+  deliveryError: string | null;
+  postedAt: string | null;
+};
+
+/** A photo attached to a Breezeway work order, mirrored for viewing in Resolve. */
+export type BreezewayWorkOrderPhoto = {
+  id: string;
+  breezewayPhotoId: number | null;
+  url: string;
+  caption: string | null;
+  photoType: string | null;
+  uploader: string | null;
+  takenAt: string | null;
+  source: "breezeway" | "resolve";
+  evidenceItemId: string | null;
 };
 
 /** Breezeway stages we treat as current work. Closed history is never imported. */
