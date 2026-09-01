@@ -229,7 +229,7 @@ export async function revealCredential(
 }
 
 export type CredentialInput = {
-  id?: string;
+  id?: string | undefined;
   propertyId: string;
   category: CredentialCategory;
   label: string;

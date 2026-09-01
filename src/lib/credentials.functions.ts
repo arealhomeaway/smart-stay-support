@@ -28,7 +28,7 @@ export const saveCredentialFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (input: {
-      id?: string;
+      id?: string | undefined;
       propertyId: string;
       category: CredentialCategory;
       label: string;
