@@ -51,11 +51,11 @@ export type Actor = { userId: string; name: string; isSupervisor: boolean };
 
 export type RequirementSeed = {
   slotKey: string;
-  label?: string;
+  label?: string | undefined;
   kind: EvidenceKind;
-  instruction?: string | null;
-  detail?: string | null;
-  required?: boolean;
+  instruction?: string | null | undefined;
+  detail?: string | null | undefined;
+  required?: boolean | undefined;
 };
 
 /**
