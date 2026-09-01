@@ -1,3 +1,4 @@
+import { LaunchStateGate } from "@/components/LaunchStateGate";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/quarterly")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: QuarterlyPage,
+  component: GatedQuarterlyPage,
 });
 
 function dueText(row: QuarterlyRow) {
@@ -41,6 +42,14 @@ function dueText(row: QuarterlyRow) {
   if (d === 0) return "Due today";
   if (d < 0) return `${Math.abs(d)} day${Math.abs(d) === 1 ? "" : "s"} overdue`;
   return `Due in ${d} day${d === 1 ? "" : "s"}`;
+}
+
+function GatedQuarterlyPage() {
+  return (
+    <LaunchStateGate flag="quarterly_reviews" title="Quarterly reviews are not part of the Operations beta" description="Quarterly property reviews launch later, alongside the mature Vendor Portal.">
+      <QuarterlyPage />
+    </LaunchStateGate>
+  );
 }
 
 function QuarterlyPage() {

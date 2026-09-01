@@ -54,6 +54,9 @@ export const createBreezewayOutboundTask = createServerFn({ method: "POST" })
         priority?: string | null;
         scheduledDate?: string | null;
         scheduledTime?: string | null;
+        templateId?: number | string | null;
+        assigneeIds?: (number | string)[];
+        resolveEvidenceNote?: string | null;
       },
     ) => {
       const source = parseSource(input);
@@ -76,6 +79,17 @@ export const createBreezewayOutboundTask = createServerFn({ method: "POST" })
         priority: input?.priority ? String(input.priority) : null,
         scheduledDate: date || null,
         scheduledTime: time || null,
+        templateId: Number(input?.templateId) > 0 ? Number(input.templateId) : null,
+        assigneeIds: Array.from(
+          new Set(
+            (input?.assigneeIds ?? [])
+              .map((id) => Number(id))
+              .filter((id) => Number.isInteger(id) && id > 0),
+          ),
+        ).slice(0, 10),
+        resolveEvidenceNote: input?.resolveEvidenceNote
+          ? String(input.resolveEvidenceNote).slice(0, 1000)
+          : null,
       };
     },
   )
@@ -128,4 +142,22 @@ export const reconcileBreezewayOutboundTask = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { reconcileOutboundTask } = await import("@/lib/breezeway-outbound.server");
     return reconcileOutboundTask(data, context.userId);
+  });
+
+/**
+ * Breezeway's own template and assignee directories, for composing a Work Order.
+ * Read-only; staff-gated like every other outbound call.
+ */
+export const breezewayCreationOptions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { listBreezewayTemplates, listAssignableBreezewayPeople } = await import(
+      "@/lib/breezeway-directory.server"
+    );
+    const [templates, assignees] = await Promise.all([
+      listBreezewayTemplates().catch(() => []),
+      listAssignableBreezewayPeople().catch(() => []),
+    ]);
+    return { templates, assignees };
   });

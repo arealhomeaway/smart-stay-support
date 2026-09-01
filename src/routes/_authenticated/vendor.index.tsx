@@ -1,3 +1,4 @@
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Award } from "lucide-react";
@@ -33,6 +34,7 @@ const PRIORITY_TONE: Record<string, string> = {
 };
 
 function VendorQueue() {
+  const { enabled: flagEnabled } = useFeatureFlags();
   const jobs = useQuery({
     queryKey: ["vendor-jobs"],
     queryFn: async () => {
@@ -50,6 +52,8 @@ function VendorQueue() {
     },
   });
 
+  const showScorecard = flagEnabled("vendor_portal");
+
   const open = (jobs.data ?? []).filter((j) => j.vendor_status !== "completed" && j.status !== "closed");
   const done = (jobs.data ?? []).filter((j) => j.vendor_status === "completed" || j.status === "closed");
 
@@ -58,12 +62,14 @@ function VendorQueue() {
       <header className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="font-display text-2xl font-semibold">My work orders</h1>
+          {showScorecard ? (
           <Link
             to="/vendor/scorecard"
             className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-accent/40"
           >
             <Award className="size-4" /> My scorecard
           </Link>
+          ) : null}
         </div>
         <p className="text-sm text-muted-foreground">
           Everything A Real Home Away has sent your way. Open a job for the address, access details and the steps

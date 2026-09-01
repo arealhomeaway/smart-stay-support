@@ -43,6 +43,12 @@ export type CreateOutboundInput = OutboundSource & {
   priority: string | null;
   scheduledDate: string | null;
   scheduledTime: string | null;
+  /** Breezeway checklist template chosen by the operator, if any. */
+  templateId?: number | null;
+  /** Breezeway person ids to assign. Only ids from Breezeway's own directory. */
+  assigneeIds?: number[];
+  /** Free-text note recording which Resolve evidence supports this work order. */
+  resolveEvidenceNote?: string | null;
 };
 
 type Row = {
@@ -65,6 +71,11 @@ type Row = {
   last_webhook_at: string | null;
   property_id: string | null;
   breezeway_home_id: string | null;
+  template_id: string | null;
+  template_name: string | null;
+  assignee_ids: number[] | null;
+  assignee_names: string[] | null;
+  resolve_evidence_note: string | null;
 };
 
 function toLink(row: Row): BreezewayOutboundLink {
@@ -86,11 +97,16 @@ function toLink(row: Row): BreezewayOutboundLink {
     createdAt: row.created_at,
     lastSyncedAt: row.last_synced_at,
     lastWebhookAt: row.last_webhook_at,
+    templateId: row.template_id ? Number(row.template_id) : null,
+    templateName: row.template_name,
+    assigneeIds: row.assignee_ids ?? [],
+    assigneeNames: row.assignee_names ?? [],
+    resolveEvidenceNote: row.resolve_evidence_note,
   };
 }
 
 const SELECT =
-  "id, source_type, ticket_id, onboarding_task_id, breezeway_task_id, status, title, department, priority, scheduled_date, scheduled_time, error_message, review_note, reviewed_at, created_at, last_synced_at, last_webhook_at, property_id, breezeway_home_id";
+  "id, source_type, ticket_id, onboarding_task_id, breezeway_task_id, status, title, department, priority, scheduled_date, scheduled_time, error_message, review_note, reviewed_at, created_at, last_synced_at, last_webhook_at, property_id, breezeway_home_id, template_id, template_name, assignee_ids, assignee_names, resolve_evidence_note";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -335,6 +351,42 @@ export async function createOutboundTask(
     ? input.priority
     : null;
 
+  // Template and assignees are validated against Breezeway's OWN directories.
+  // An operator must never be able to send an id Breezeway will not honour —
+  // a silently dropped assignment reads in Resolve as "assigned" while nobody
+  // in Breezeway ever receives the work.
+  const { listBreezewayTemplates, listAssignableBreezewayPeople } = await import(
+    "./breezeway-directory.server"
+  );
+  let templateId: number | null = null;
+  let templateName: string | null = null;
+  if (input.templateId) {
+    const template = (await listBreezewayTemplates()).find((t) => t.id === input.templateId);
+    if (!template) {
+      return { ok: false, message: "That Breezeway template is no longer available.", retryable: true };
+    }
+    templateId = template.id;
+    templateName = template.name;
+  }
+  const assigneeIds: number[] = [];
+  const assigneeNames: string[] = [];
+  if (input.assigneeIds?.length) {
+    const people = await listAssignableBreezewayPeople();
+    for (const id of input.assigneeIds.slice(0, 10)) {
+      const person = people.find((p) => p.id === id);
+      if (!person) {
+        return {
+          ok: false,
+          message: "One of the selected people is no longer active in Breezeway.",
+          retryable: true,
+        };
+      }
+      assigneeIds.push(person.id);
+      assigneeNames.push(person.name);
+    }
+  }
+  const evidenceNote = clean(input.resolveEvidenceNote ?? null, 1000);
+
   const db = await admin();
   const insert = await db
     .from("breezeway_outbound_tasks")
@@ -352,6 +404,11 @@ export async function createOutboundTask(
       priority,
       scheduled_date: input.scheduledDate,
       scheduled_time: input.scheduledTime,
+      template_id: templateId === null ? null : String(templateId),
+      template_name: templateName,
+      assignee_ids: assigneeIds,
+      assignee_names: assigneeNames,
+      resolve_evidence_note: evidenceNote,
       attempts: 1,
       created_by: actorId,
     })
@@ -388,8 +445,12 @@ export async function createOutboundTask(
         ...(description ? { description } : {}),
         ...(department ? { type_department: department } : {}),
         ...(priority ? { type_priority: priority } : {}),
+        ...(templateId ? { template_id: templateId } : {}),
+        ...(assigneeIds.length ? { assignments: assigneeIds } : {}),
         ...(input.scheduledDate ? { scheduled_date: input.scheduledDate } : {}),
-        ...(input.scheduledTime ? { scheduled_time: input.scheduledTime } : {}),
+        ...(input.scheduledTime
+          ? { scheduled_time: input.scheduledTime.length === 5 ? `${input.scheduledTime}:00` : input.scheduledTime }
+          : {}),
       },
     });
     const taskId = created?.id ?? created?.task?.id ?? null;
