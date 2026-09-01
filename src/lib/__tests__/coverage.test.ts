@@ -58,11 +58,17 @@ describe("lastAfterHoursWindow", () => {
   });
 
   it("stays DST-correct across the November fall-back", () => {
-    // CDT (UTC-5) at 10 p.m. Nov 1 -> CST (UTC-6) at 8 a.m. Nov 2.
+    // Clocks fall back early on Nov 1, so both ends of the following night are
+    // CST (UTC-6) and the window is still exactly ten hours.
     const w = lastAfterHoursWindow(CFG, new Date("2026-11-02T15:00:00Z"))!;
     expect(w.rosterDate).toBe("2026-11-01");
-    expect(w.startsAt.toISOString()).toBe("2026-11-02T03:00:00.000Z");
+    expect(w.startsAt.toISOString()).toBe("2026-11-02T04:00:00.000Z");
     expect(w.endsAt.toISOString()).toBe("2026-11-02T14:00:00.000Z");
+
+    // The spring-forward night is nine hours long, not ten.
+    const spring = lastAfterHoursWindow(CFG, new Date("2026-03-08T15:00:00Z"))!;
+    expect(spring.rosterDate).toBe("2026-03-07");
+    expect(spring.endsAt.getTime() - spring.startsAt.getTime()).toBe(9 * 3600 * 1000);
   });
 
   it("returns nothing when no window is configured", () => {
