@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/bz-probe")({
         }
         if (body.op === "mirror") {
           const mod = await import("@/lib/breezeway-workorders.server");
-          out["mirror"] = await mod.syncPortfolioWorkOrders({ limitProperties: body.limit ?? 25 });
+          out["mirror"] = await mod.syncVerifiedPortfolio(body.limit ?? 25);
         }
         for (const home of body.scanHomes ?? []) {
           try {
