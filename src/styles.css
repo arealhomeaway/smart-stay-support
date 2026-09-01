@@ -363,3 +363,65 @@
   border: 1px solid var(--color-sidebar-border);
   border-radius: var(--radius-xl);
 }
+
+/* --------------------------------------------------------------------------
+   Motion: one ease, two durations. Feedback and momentum, never decoration.
+   -------------------------------------------------------------------------- */
+
+@theme {
+  --ease-resolve: cubic-bezier(0.2, 0.7, 0.25, 1);
+  --duration-resolve-fast: 120ms;
+  --duration-resolve: 240ms;
+}
+
+@keyframes resolve-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes resolve-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Entrance for a result that has just been decided. First paint only. */
+@utility resolve-rise {
+  animation: resolve-rise var(--duration-resolve) var(--ease-resolve) both;
+}
+
+/* Reserved for live SLA clocks that are actually running out. */
+@utility resolve-pulse {
+  animation: resolve-pulse 2s var(--ease-resolve) infinite;
+}
+
+/* Press feedback on choice cards and rows. */
+@utility resolve-press {
+  transition:
+    transform var(--duration-resolve-fast) var(--ease-resolve),
+    box-shadow var(--duration-resolve-fast) var(--ease-resolve),
+    background-color var(--duration-resolve-fast) var(--ease-resolve);
+}
+.resolve-press:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resolve-rise,
+  .resolve-pulse {
+    animation: none;
+  }
+  .resolve-press:active {
+    transform: none;
+  }
+}
