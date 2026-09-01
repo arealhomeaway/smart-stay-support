@@ -16,6 +16,7 @@ import {
 } from "@/lib/tickets";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
+import { OnCallNowCard } from "@/components/OnCallNowCard";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
