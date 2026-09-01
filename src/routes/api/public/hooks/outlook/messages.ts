@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * Microsoft Graph change notifications for the team inbox.
  *
- * Graph tells us "message X in the authorised Inbox changed". It does not tell
+ * Graph tells us "message X in the authorised mailbox changed" — in any
+ * folder, because Outlook rules route mail to the team that owns it. It does not tell
  * us what changed, and it is not trusted to: Resolve reads the message back
  * through the allowlisted mailbox path and decides from the categories it
  * finds there. A notification for an ordinary read/unread change therefore
