@@ -191,15 +191,15 @@ Coverage is against the 156-property candidate set.
 | 165 | Internal Verification Link | formula | 159 | 100% | — | Derive in Resolve | Resolve | — | — | None | Notion formula; replacement: Resolve Property Hub |
 | 166 | Field Verification Link | formula | 159 | 100% | — | Derive in Resolve | Resolve | — | — | None | Notion formula; replacement: Resolve Property Hub |
 
-## Disposition totals
-| Action | Fields |
-|---|---|
-| Import | 81 |
-| Exclude | 47 |
-| Derive in Resolve | 21 |
-| Manual Review | 15 |
-| External Link | 2 |
-| **Total** | **166** |
+## Disposition totals (after the 2026-09-01 decisions)
+| Action | Fields | Change |
+|---|---|---|
+| Import | 91 | +10 (Greater Area, Status, Handoff Date, Bedrooms, Bathrooms, Occupancy, Smoke Detector Expiration, Sprinkler Season, Rental Restriction Notes, Permit Review Status) |
+| Exclude | 47 | — |
+| Derive in Resolve | 21 | — |
+| Manual Review | 2 | −13 (only GPS Coordinates and Listing Photos remain) |
+| External Link | 5 | +3 (Security Camera Feed, Pool & Hot Tub Fillout, Furniture Pick List / OneDrive) |
+| **Total** | **166** | |
 
 ## Document and media link inventory (by destination decision)
 
