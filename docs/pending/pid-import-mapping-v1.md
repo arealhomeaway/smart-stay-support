@@ -1,12 +1,15 @@
-# PID → Resolve field-by-field import mapping (v1) — FOR APPROVAL
+# PID → Resolve field-by-field import mapping (v1, decision-updated 2026-09-01) — FOR APPROVAL
 
 Planning artifact only. Nothing imported, no schema created or altered, Notion untouched.
+All 12 open business decisions were approved by Emily on 2026-09-01 and are recorded in
+"Approved decisions" at the end of this document; the mapping rows below reflect them.
 
 ## Candidate population
-- **156 PID rows** matched to Resolve properties by OwnerRez Internal ID — the only import set.
-- **Held for manual confirmation:** 21036 Owens Rd (OwnerRez 410153, Live, absent from Resolve) and 1399 Foxtail Ln (OwnerRez 494863, In Preparation).
+- **157 PID rows** in the import set: the 156 matched by OwnerRez Internal ID **plus 1399 Foxtail Ln** (OwnerRez 494863), which is now approved for inclusion as **In Preparation**.
+- **21036 Owens Rd (OwnerRez 410153): EXCLUDED.** Not created in Resolve, Notion row untouched.
 - **Excluded:** the Aziz test row (no OwnerRez ID). Not deleted, not modified.
 - No Resolve property is ever auto-created from an unmatched PID row. Join key is `ownerrez_property_id` only; address and name matching are prohibited.
+
 
 ## Ownership model applied
 | Domain | Owner |
