@@ -566,10 +566,13 @@ export async function reconcileOutboundTask(
           : "Could not reach Breezeway to confirm that task.",
     };
   }
-  if (!verified || !isOutboundAllowedHome(verified.home_id)) {
+  const { propertyForHomeId } = await import("./breezeway-mapping.server");
+  const boundProperty =
+    verified?.home_id != null ? await propertyForHomeId(verified.home_id) : null;
+  if (!verified || !boundProperty) {
     return {
       ok: false,
-      message: "That Breezeway task does not exist on an approved beta property.",
+      message: "That Breezeway task does not exist on a verified property.",
     };
   }
 
