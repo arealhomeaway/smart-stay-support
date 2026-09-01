@@ -59,7 +59,7 @@ export async function auditPortfolioMapping(
     .select(
       "id, name, status, is_demo, archived_at, ownerrez_property_id, breezeway_property_id, breezeway_mapping_state",
     );
-  if (error) throw new Error("Could not read the property portfolio.");
+  if (error) throw new Error(`Could not read the property portfolio: ${error.message}`);
   const properties = ((data ?? []) as unknown as PropertyRow[]).filter(isActiveResolve);
 
   const { items } = await listBreezewayProperties();
