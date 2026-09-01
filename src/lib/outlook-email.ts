@@ -86,7 +86,7 @@ const SOURCE_RULES: { source: string; test: RegExp }[] = [
   { source: "insurance", test: /(insurance|claims?|adjuster|alacrity|sedgwick|crawford|allstate|statefarm|state farm|usaa|farmers|travelers|alestate|cat team)/i },
   { source: "relocation", test: /(relocation|reloc|moving services|corporate move|sirva|cartus|graebel|aires)/i },
   { source: "corporate", test: /(corporate housing|per ?diem|crew housing|travel department|project team housing)/i },
-  { source: "realtor", test: /(realtor|real estate|brokerage|keller ?williams|remax|re\/max|coldwell|compass\.com)/i },
+  { source: "realtor", test: /(realtor|real estate|brokerage|keller[ -]?williams|remax|re\/max|coldwell|compass\.com)/i },
   { source: "referral", test: /(referred by|referral|recommended us|your name came up)/i },
   { source: "website", test: /(website inquiry|contact form|submitted through|web inquiry|arealhomeaway\.com\/contact)/i },
 ];
