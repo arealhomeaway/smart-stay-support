@@ -91,6 +91,8 @@
   --color-module-approval: var(--module-approval);
   --color-module-coverage: var(--module-coverage);
   --color-module-override: var(--module-override);
+  /* Cross-team triage cover — deliberately not a team colour. */
+  --color-triage: var(--triage);
   /* Calibri is the ARHA standard; Carlito is its metric-compatible web twin. */
   --font-display: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
   --font-sans: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
@@ -168,7 +170,10 @@
   --module-approval: oklch(0.55 0.115 315); /* Approvals — plum */
   --module-coverage: oklch(0.545 0.128 268);
   --module-override: oklch(0.61 0.137 48.4); /* Temporary cover — burnt orange */
+  /* Cross-team triage: slate, so it never reads as Team A indigo. */
+  --triage: oklch(0.45 0.024 250);
 }
+
 
 
 .dark {
@@ -234,7 +239,22 @@
   --module-approval: oklch(0.72 0.1 315);
   --module-coverage: oklch(0.72 0.11 268);
   --module-override: oklch(0.72 0.13 48.4);
+  --triage: oklch(0.79 0.022 250);
 }
+
+/**
+ * Cross-team triage blocks: slate colour plus a diagonal hatch, so they are
+ * distinguishable from a solid team block without relying on colour alone.
+ */
+@utility triage-block {
+  background-color: color-mix(in oklab, var(--triage) 12%, transparent);
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--triage) 30%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+}
+
 
 
 @layer base {

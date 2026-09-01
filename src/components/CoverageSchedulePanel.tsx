@@ -227,8 +227,8 @@ function WeekCalendar({
           <span className={`chip ${BLOCK_FILL["team_a"]}`}>Team A — Guest Experience</span>
           <span className={`chip ${BLOCK_FILL["team_b"]}`}>Team B — Property Operations</span>
           <span className={`chip ${BLOCK_FILL["leadership"]}`}>Supervisor</span>
-          <span className="chip border-dashed border-module-coverage/50 bg-module-coverage/10 text-module-coverage">
-            Cross-team triage
+          <span className="chip triage-block border-dashed border-triage/60 text-triage">
+            ⁄⁄ Cross-team triage
           </span>
         </div>
       </div>
@@ -296,9 +296,9 @@ function WeekCalendar({
                         <div
                           key={t.id}
                           title="Approved cross-team triage cover"
-                          className="rounded-md border border-dashed border-module-coverage/60 bg-module-coverage/10 px-1.5 py-1.5 text-center text-[0.6875rem] leading-tight text-module-coverage"
+                          className="triage-block rounded-md border border-dashed border-triage/60 px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight text-triage"
                         >
-                          triage {clock(t.start_minute)}–{clock(t.end_minute)}
+                          Triage {clock(t.start_minute)}–{clock(t.end_minute)}
                         </div>
                       ))}
                     </div>
