@@ -170,7 +170,10 @@
   --module-approval: oklch(0.55 0.115 315); /* Approvals — plum */
   --module-coverage: oklch(0.545 0.128 268);
   --module-override: oklch(0.61 0.137 48.4); /* Temporary cover — burnt orange */
+  /* Cross-team triage: slate, so it never reads as Team A indigo. */
+  --triage: oklch(0.45 0.024 250);
 }
+
 
 
 .dark {
