@@ -70,12 +70,15 @@ function NewMatter() {
   const [mode, setMode] = useState<Mode>("ticket");
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
     description: "",
     property_id: "",
+    situation_id: "",
     work_type_id: "",
+
     guest_impact: "none",
     occupancy_status: "vacant",
     priority: "p3",
