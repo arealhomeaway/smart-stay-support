@@ -205,7 +205,12 @@ function WeekCalendar({
   const nightStart = config?.after_hours_start_minute ?? 22 * 60;
   const nightEnd = config?.after_hours_end_minute ?? 8 * 60;
 
-  const hourMarks = [6, 9, 12, 15, 18, 21, 24];
+  // Only seats that actually carry hours belong on the week grid; the rest are
+  // named underneath so nothing disappears.
+  const scheduled = roles.filter(
+    (r) => shifts.some((s) => s.role_code === r.code) || triage.some((t) => t.role_code === r.code),
+  );
+  const unscheduled = roles.filter((r) => !scheduled.includes(r));
 
   return (
     <section className="surface overflow-hidden">
@@ -239,7 +244,7 @@ function WeekCalendar({
             ))}
           </div>
 
-          {roles.map((role) => {
+          {scheduled.map((role) => {
             const kind = seatOwnership(role.code);
             const holder = role.current_seat_name ?? nameFor(people, role.current_seat_holder);
             const pending = Boolean(role.current_seat_name && !role.current_seat_holder);
@@ -302,6 +307,13 @@ function WeekCalendar({
               </div>
             );
           })}
+
+          {unscheduled.length > 0 && (
+            <p className="pt-1 text-xs text-muted-foreground">
+              No recurring hours, available by exception:{" "}
+              {unscheduled.map((r) => SEAT_LABELS[r.code] ?? r.name).join(" · ")}
+            </p>
+          )}
 
           {/* Overnight is one continuous band, not seven separate shifts. */}
           <div className="mt-3 flex items-center gap-3 rounded-md border border-module-override/40 bg-module-override/10 px-3 py-2 text-xs text-module-override">
