@@ -649,9 +649,8 @@ export async function acceptWithException(actor: Actor, itemId: string, reason: 
       exception_by: actor.userId,
       exception_reason: text,
       exception_at: at,
-      original_rejection: item.original_rejection ?? item.guidance ?? rejectionSummary(
-        (item.reason_codes ?? []).filter(isReasonCode),
-      ),
+      original_rejection:
+        item.guidance ?? rejectionSummary((item.reason_codes ?? []).filter(isReasonCode)),
     } as never)
     .eq("id", itemId);
 
