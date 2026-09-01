@@ -858,6 +858,8 @@ console.log(
       conflicts: summary.conflicts,
       manualReview: summary.manualReview,
       credentialFieldsSkipped: summary.credentialFieldsSkipped,
+      secretsRedactedFromFreeText: secretsRedacted,
+
       linksByKind: summary.linksByKind,
       unmappableMarket: summary.unmappableMarket,
       unparseableExpiry: summary.unparseableExpiry.length,
