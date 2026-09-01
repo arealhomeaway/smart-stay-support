@@ -107,7 +107,7 @@ Coverage is against the 156-property candidate set.
 | 81 | Sprinkler System Status | select | 151 | 97% | properties.sprinklers.status | Import | Notion transition-only | enum | enum | None | Seasonal service |
 | 82 | Sprinkler System Brand | rich_text | 140 | 90% | properties.sprinklers.brand | Import | Notion transition-only | trim | <=80 chars | None | Parts/repair |
 | 83 | Sprinkler System Location | rich_text | 141 | 90% | properties.sprinklers.controller_location | Import | Notion transition-only | trim | <=200 chars | None | Service access |
-| 84 | Sprinkler System Set for Season? | select | 140 | 90% | properties.sprinklers.set_for_season | Manual Review | Resolve | boolean from select | true/false | None | Seasonal state goes stale; Resolve seasonal task should own it after import |
+| 84 | Sprinkler System Set for Season? | select | 140 | 90% | properties.sprinklers.set_for_season (seeded, dated) | Import | Resolve | boolean from select; one-time seed stamped with `as_of`, displayed as dated reference | true/false + required `as_of` | None | APPROVED: temporary state flag seeded as a clearly dated reference value; Resolve seasonal Work Order owns it going forward |
 | 85 | Mowing | select | 153 | 98% | properties.grounds.mowing_cadence | Import | Notion transition-only | enum | enum | None | Recurring service |
 | 86 | Mowing Day | multi_select | 148 | 95% | properties.grounds.mowing_days | Import | Notion transition-only | multi-select to weekday array | valid weekday names | None | Recurring service |
 | 87 | Trash Day | multi_select | 153 | 98% | properties.waste.trash_days | Import | Notion transition-only | multi-select to weekday array | valid weekday names | None | Turnover ops |
