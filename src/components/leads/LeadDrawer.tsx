@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -355,6 +356,8 @@ export function LeadDrawer({
               ["Dates flexible", lead.date_flexible === null ? "—" : lead.date_flexible ? "Yes" : "No"],
             ]}
           />
+
+          <OutlookSourceCard entityType="lead" entityId={lead.id} />
 
           {lead.stage === "converted" ? (
             <section className="resolve-rise space-y-1.5 rounded-lg border border-success/40 bg-success/10 px-4 py-3">

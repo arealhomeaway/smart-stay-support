@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /**
- * Scheduled inbox sweep. A cron job calls this with the shared secret so work
- * emailed to the team inbox becomes a ticket without anyone clicking sync.
+ * Scheduled reconciliation sweep.
+ *
+ * Change notifications do the fast work; this is the safety net. Each run also
+ * keeps the Graph subscription alive, so a missed notification, an expired
+ * subscription or a temporary Microsoft failure self-heals instead of quietly
+ * leaving categorised mail unprocessed.
  */
 export const Route = createFileRoute("/api/public/sync/mailbox")({
   server: {
@@ -23,9 +27,11 @@ export const Route = createFileRoute("/api/public/sync/mailbox")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { syncMailbox } = await import("@/lib/mailbox.server");
+        const { ensureSubscription } = await import("@/lib/outlook-subscription.server");
 
+        const subscription = await ensureSubscription(supabaseAdmin);
         const result = await syncMailbox(supabaseAdmin, { limit: 50 });
-        return Response.json(result, { status: result.ok ? 200 : 502 });
+        return Response.json({ ...result, subscription }, { status: result.ok ? 200 : 502 });
       },
     },
   },

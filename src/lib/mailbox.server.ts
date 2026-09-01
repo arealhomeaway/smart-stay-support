@@ -1,42 +1,58 @@
 /**
- * Inbox reader (server-only).
+ * Outlook → Resolve intake (server-only).
  *
- * Reads exactly one mailbox — the address in EMAIL_SOURCE_MAILBOX, verified
- * against the server-side allowlist before every request — and turns real work
- * emails into tickets in the operations queue.
+ * Nothing in the inbox becomes work on its own. A person decides, in Outlook,
+ * by applying one of two categories:
+ *
+ *   "Resolve: create ticket"                        → one Operations Ticket
+ *   "Resolve: lead management- create a ticket"     → one Tenant Lead
+ *
+ * Resolve then owns the administrative half: it creates exactly one record,
+ * keeps the email as provenance, swaps the trigger category for
+ * "Resolve: ticket created", and later moves it to "Resolve: ticket closed"
+ * when the record is settled (and back again if a Ticket is reopened).
  *
  * Hard rules:
  *
  *  1. Only `/users/<authorised mailbox>/mailFolders/Inbox/messages` is read.
- *     No user enumeration, no /me/*, no dynamic mailbox selection, and no sent
- *     items, drafts, deleted items or archive folders.
- *  2. No historical import. A checkpoint is stamped the first time the reader
+ *     No user enumeration, no /me/*, no dynamic mailbox selection, and no
+ *     sent items, drafts, deleted items or archive folders.
+ *  2. No record is ever created without a trigger category. Uncategorised mail
+ *     is left completely alone.
+ *  3. No historical import. A checkpoint is stamped the first time the reader
  *     runs, and only mail received after that point is ever processed.
- *  3. Nothing is created twice. Both the Graph message id and the
- *     internetMessageId are recorded in `integration_events`, so a re-run or a
- *     redelivery can't duplicate a ticket.
- *  4. Only mail a coordinator would actually action becomes a ticket. Anything
- *     that looks like a newsletter, a calendar response or an automated
- *     no-reply notice is skipped and recorded as skipped.
+ *  4. Nothing is created twice. Both the Graph message id and the
+ *     internetMessageId are claimed in `integration_events` behind a unique
+ *     index, and the conversation id links replies to the record that already
+ *     exists for the thread.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { createIntakeMatter, REF_TAG, type IntakeResult } from "./intake.server";
 import { authorizedMailbox, inboxMessagesPath } from "./mailbox-allowlist.server";
+import { createLeadFromEmail } from "./outlook-lead.server";
+import { plainTextBody, type OutlookSource } from "./outlook-email";
 import {
   alreadyTagged,
   categoriesAfterClose,
   categoriesAfterCreate,
+  categoriesAfterReopen,
   hasTag,
-  requestsTicket,
-  COMPLETED_TAG,
+  requestsRecord,
+  triggerKind,
+  CLOSED_TAG,
+  CREATED_TAG,
+  CREATE_LEAD_TAG,
+  CREATE_TICKET_TAG,
+  type TriggerKind,
 } from "./mail-categories";
 
 type Db = SupabaseClient<Database>;
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/microsoft_outlook";
-const SYSTEM = "outlook_inbox";
+export const SYSTEM = "outlook_inbox";
+export const OPERATION = "mailbox_message";
 const CHECKPOINT_KEY = "processing_checkpoint";
 
 function mailConfig() {
@@ -51,40 +67,26 @@ export function mailboxReadEnabled() {
   return Boolean(mailConfig());
 }
 
-type GraphMessage = {
+export type GraphMessage = {
   id: string;
   internetMessageId?: string | null;
+  conversationId?: string | null;
   subject?: string | null;
   bodyPreview?: string | null;
   receivedDateTime?: string | null;
   isRead?: boolean;
   webLink?: string | null;
+  hasAttachments?: boolean;
   /** Outlook categories — the intake protocol lives here. */
   categories?: string[] | null;
   from?: { emailAddress?: { name?: string | null; address?: string | null } | null } | null;
+  toRecipients?: { emailAddress?: { address?: string | null } | null }[] | null;
   body?: { content?: string | null; contentType?: string | null } | null;
-  internetMessageHeaders?: { name?: string | null; value?: string | null }[] | null;
   "@odata.type"?: string;
 };
 
-/**
- * Writes the message's categories back.
- *
- * Never throws: re-categorising is bookkeeping, and a failure here must not
- * undo a ticket that already saved. The next pass tries again.
- */
-async function setCategories(messageId: string, categories: string[]) {
-  try {
-    await graph(inboxMessagesPath(`/${messageId}`), {
-      method: "PATCH",
-      body: JSON.stringify({ categories }),
-    });
-    return true;
-  } catch (err) {
-    console.error("Could not update mail categories:", err instanceof Error ? err.message : err);
-    return false;
-  }
-}
+const SELECT_FIELDS =
+  "id,internetMessageId,conversationId,subject,bodyPreview,receivedDateTime,isRead,webLink,hasAttachments,from,toRecipients,body,categories";
 
 async function graph(path: string, init?: RequestInit) {
   const cfg = mailConfig();
@@ -100,10 +102,56 @@ async function graph(path: string, init?: RequestInit) {
   });
   if (!res.ok) {
     const detail = await res.text();
-    console.error(`Outlook read failed [${res.status}] ${path}: ${detail}`);
+    console.error(`Outlook request failed [${res.status}] ${path}: ${detail}`);
     throw new Error(`Mail provider [${res.status}]: ${detail.slice(0, 300)}`);
   }
   return res;
+}
+
+/**
+ * Writes the message's categories back.
+ *
+ * Never throws: re-categorising is bookkeeping, and a failure here must not
+ * undo a record that already saved. The next pass tries again.
+ */
+async function setCategories(messageId: string, categories: string[]) {
+  try {
+    await graph(inboxMessagesPath(`/${messageId}`), {
+      method: "PATCH",
+      body: JSON.stringify({ categories }),
+    });
+    return true;
+  } catch (err) {
+    console.error("Could not update mail categories:", err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
+/** Reads one message by id — used by the change-notification handler. */
+export async function fetchMessage(messageId: string): Promise<GraphMessage | null> {
+  try {
+    const res = await graph(inboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`));
+    return (await res.json()) as GraphMessage;
+  } catch {
+    return null;
+  }
+}
+
+/** Attachment metadata only — no file bytes are copied into Resolve. */
+async function attachmentMeta(messageId: string) {
+  try {
+    const res = await graph(
+      inboxMessagesPath(`/${encodeURIComponent(messageId)}/attachments?$select=name,contentType,size`),
+    );
+    const rows = ((await res.json())?.value ?? []) as { name?: string; contentType?: string; size?: number }[];
+    return rows.slice(0, 20).map((a) => ({
+      name: a.name ?? "attachment",
+      contentType: a.contentType ?? null,
+      size: typeof a.size === "number" ? a.size : null,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -150,116 +198,46 @@ async function writeCheckpoint(db: Db, iso: string) {
  */
 async function fetchInbox(limit: number, since: string) {
   const query =
-    `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc` +
-    `&$select=id,internetMessageId,subject,bodyPreview,receivedDateTime,isRead,webLink,from,body,internetMessageHeaders,categories`;
-  const path = inboxMessagesPath(query);
-  const res = await graph(path);
+    `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
+  const res = await graph(inboxMessagesPath(query));
   return ((await res.json()).value ?? []) as GraphMessage[];
 }
 
-
-/** Senders and subjects that are never operational work. */
-const NOISE_SENDER =
-  /(no-?reply|do-?not-?reply|newsletter|notifications?@|marketing|mailer-daemon|postmaster|billing@|invoice@|calendar-notification|@(members|email|mail|e|news|info|updates|shared\d*)\.|ccsend\.com|mailchimp|sendgrid\.net|hubspot|constantcontact|salesforce|substack|linkedin\.com|indeed\.com|zillow|stocktwits)/i;
-const NOISE_SUBJECT =
-  /^(re: )?(declined|accepted|tentative|canceled|cancelled):|unsubscribe|your (daily|weekly) |newsletter|webinar|invitation:|out of office|automatic reply|market digest|% off|sale ends|just for you|availability|price list|rate sheet|weekly (update|round-?up|list)/i;
-const CALENDAR_TYPE = /eventMessage/i;
-
 export type SkipReason =
-  | "automated"
-  | "calendar"
-  | "bulk"
   | "not categorised"
   | "already handled"
-  | "empty";
+  | "already processed"
+  | "claimed by another pass"
+  | "linked to the existing record for this thread"
+  | "filed on the existing ticket";
 
-function isBulk(msg: GraphMessage) {
-  for (const h of msg.internetMessageHeaders ?? []) {
-    const name = (h.name ?? "").toLowerCase();
-    const value = (h.value ?? "").toLowerCase();
-    if (name === "list-unsubscribe" || name === "list-id" || name === "x-campaign-id") return true;
-    if (name === "precedence" && /bulk|list|junk/.test(value)) return true;
-    if (name === "auto-submitted" && value !== "no") return true;
-  }
-  return false;
-}
-
-/**
- * Decides whether a message is coordinator work.
- *
- * Anything from an ARHA address, a reply on one of our tickets, or a message
- * that clearly describes work at a home is kept. Everything else is left in
- * the inbox for a human — Resolve would rather miss a ticket than fill the
- * queue with marketing.
- */
-function classify(msg: GraphMessage, knownSender: boolean): SkipReason | null {
-  if (CALENDAR_TYPE.test(msg["@odata.type"] ?? "")) return "calendar";
-  const from = msg.from?.emailAddress?.address ?? "";
-  const subject = msg.subject ?? "";
-  const preview = msg.bodyPreview ?? "";
-  if (!subject.trim() && !preview.trim()) return "empty";
-
-  // The category protocol comes first, before any guesswork. A person marks a
-  // message "Resolve: create task" and only then does a ticket open.
-  if (alreadyTagged(msg.categories)) return "already handled";
-  if (requestsTicket(msg.categories)) return null;
-
-  if (isBulk(msg)) return "bulk";
-  if (NOISE_SENDER.test(from) || NOISE_SUBJECT.test(subject)) return "automated";
-
-  const text = `${subject}\n${preview}`;
-  // A reply on an existing ticket still threads without a category, so a
-  // conversation never breaks in half.
-  if (REF_TAG.test(text)) return null;
-  return "not categorised";
-}
-
-function plainText(msg: GraphMessage) {
-  const raw = msg.body?.content ?? msg.bodyPreview ?? "";
-  const text =
-    msg.body?.contentType === "html"
-      ? raw
-          .replace(/<style[\s\S]*?<\/style>/gi, " ")
-          .replace(/<script[\s\S]*?<\/script>/gi, " ")
-          .replace(/<br\s*\/?>/gi, "\n")
-          .replace(/<\/p>/gi, "\n\n")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/&nbsp;/g, " ")
-          .replace(/&amp;/g, "&")
-      : raw;
-  // Drop the quoted history so the ticket shows the new message, not the thread.
-  return text
-    .split(/\n-{3,}\s*Original Message|\nFrom: .*\nSent: /)[0]!
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim()
-    .slice(0, 4000);
-}
-
-/** Every email address Resolve already knows: staff, vendor contacts, programme owners. */
-async function knownSenders(db: Db) {
-  const addresses = new Set<string>();
-  const add = (value: string | null | undefined) => {
-    if (value && value.includes("@")) addresses.add(value.trim().toLowerCase());
+/** The full provenance record kept for a message. */
+export async function sourceFor(msg: GraphMessage, trigger: TriggerKind): Promise<OutlookSource> {
+  return {
+    mailbox: authorizedMailbox(),
+    messageId: msg.id,
+    internetMessageId: msg.internetMessageId ?? null,
+    conversationId: msg.conversationId ?? null,
+    subject: (msg.subject ?? "").trim() || "(no subject)",
+    fromName: msg.from?.emailAddress?.name ?? null,
+    fromAddress: msg.from?.emailAddress?.address ?? null,
+    toRecipients: (msg.toRecipients ?? [])
+      .map((r) => r.emailAddress?.address ?? "")
+      .filter(Boolean)
+      .slice(0, 10),
+    receivedAt: msg.receivedDateTime ?? null,
+    webLink: msg.webLink ?? null,
+    hasAttachments: Boolean(msg.hasAttachments),
+    attachments: msg.hasAttachments ? await attachmentMeta(msg.id) : [],
+    trigger,
   };
-  const [staff, contacts, orgs, owners] = await Promise.all([
-    db.from("profiles").select("email"),
-    db.from("vendor_contacts").select("email"),
-    db.from("vendor_orgs").select("primary_contact_email"),
-    db.from("owner_programs").select("owner_email"),
-  ]);
-  (staff.data ?? []).forEach((r) => add(r.email));
-  (contacts.data ?? []).forEach((r) => add(r.email));
-  (orgs.data ?? []).forEach((r) => add(r.primary_contact_email));
-  (owners.data ?? []).forEach((r) => add(r.owner_email));
-  return addresses;
 }
 
 /**
- * Marker parked in `error_message` when a ticket saved but the Outlook
+ * Marker parked in `error_message` when a record saved but the Outlook
  * category could not be updated. It is the retry queue: the next pass finds
  * the row, re-tags the message, and clears the marker. It never causes a
- * second ticket, because the row itself is what suppresses re-creation.
+ * second record, because the row itself is what suppresses re-creation.
  */
 export const CATEGORY_PENDING = "recategorise_pending";
 
@@ -270,20 +248,23 @@ export type MailboxSyncResult = {
   ok: boolean;
   scanned: number;
   created: number;
+  leadsCreated: number;
   threaded: number;
   skipped: number;
   failed: number;
-  /** Messages moved from "create task" to "task created" after the ticket saved. */
+  /** Messages moved from a trigger category to "ticket created". */
   recategorised: number;
   /** Category updates that failed earlier and succeeded on a later pass. */
   recategoriseRetried: number;
-  /** Messages moved to "task completed" because their ticket is now closed. */
+  /** Messages moved to "ticket closed" because their record is now settled. */
   completedTagged: number;
+  /** Messages moved back to "ticket created" because their Ticket reopened. */
+  reopenedTagged: number;
   mailbox: string;
   items: {
     subject: string;
     from: string;
-    outcome: "created" | "threaded" | "skipped" | "failed";
+    outcome: "created" | "lead" | "threaded" | "skipped" | "failed";
     ref?: number;
     priority?: string;
     reason?: string;
@@ -292,11 +273,10 @@ export type MailboxSyncResult = {
 };
 
 /**
- * One pass over the unread inbox.
+ * One pass over the inbox since the checkpoint.
  *
- * `markProcessed` writes the mail back as read so the next run starts clean —
- * the dry-run path leaves the mailbox untouched so a supervisor can preview
- * exactly what would be opened.
+ * `dryRun` previews what would happen without touching the mailbox or the
+ * queue, so a supervisor can see exactly what a live run would create.
  */
 export async function syncMailbox(
   db: Db,
@@ -308,12 +288,14 @@ export async function syncMailbox(
     ok: true,
     scanned: 0,
     created: 0,
+    leadsCreated: 0,
     threaded: 0,
     skipped: 0,
     failed: 0,
     recategorised: 0,
     recategoriseRetried: 0,
     completedTagged: 0,
+    reopenedTagged: 0,
     mailbox: authorizedMailbox(),
     items: [],
   };
@@ -323,7 +305,7 @@ export async function syncMailbox(
   }
 
   // First run ever: stamp the checkpoint and stop. Nothing historical is imported.
-  let checkpoint = await readCheckpoint(db);
+  const checkpoint = await readCheckpoint(db);
   if (!checkpoint) {
     const now = new Date().toISOString();
     if (!dryRun) await writeCheckpoint(db, now);
@@ -343,164 +325,273 @@ export async function syncMailbox(
     return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the inbox." };
   }
 
-  const known = await knownSenders(db);
-  // A broadcast that lands 13 times is still one thing. Never open the same
-  // subject from the same sender twice, in this run or within the last week.
-  const seen = new Set<string>();
-  const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-  const { data: recentTickets } = await db
-    .from("tickets")
-    .select("title, source_reference")
-    .eq("external_source", "email")
-    .gte("created_at", since);
-  for (const row of recentTickets ?? []) {
-    seen.add(`${(row.title ?? "").toLowerCase()}|${(row.source_reference ?? "").toLowerCase()}`);
-  }
   base.scanned = messages.length;
-
   let highWater = checkpoint;
 
   for (const msg of messages) {
-    const subject = (msg.subject ?? "").trim() || "(no subject)";
-    const from = msg.from?.emailAddress?.address ?? "unknown sender";
-    const messageIds = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
     if (msg.receivedDateTime && new Date(msg.receivedDateTime) > new Date(highWater)) {
       highWater = msg.receivedDateTime;
     }
-
-    // Same message seen twice — a re-run, a redelivery, or a Graph id we've
-    // already handled under its internet id. Never open a second ticket. If
-    // the earlier pass saved the ticket but could not re-tag the message, the
-    // retry happens here against the ticket we already have.
-    const prior = await priorRecord(db, messageIds);
-    const action = nextActionFor(prior);
-    if (action !== "create") {
-      base.skipped++;
-      if (action === "retag" && !dryRun && prior) {
-        const done = await retryCategory(db, msg, prior);
-        if (done) base.recategoriseRetried++;
-        base.items.push({
-          subject,
-          from,
-          outcome: "skipped",
-          reason: done ? "already processed · category retag retried" : "already processed · retag still failing",
-        });
-      } else {
-        base.items.push({ subject, from, outcome: "skipped", reason: "already processed" });
-      }
-      continue;
-    }
-
-
-
-    const skip = classify(msg, known.has(from.toLowerCase()));
-    if (skip) {
-      base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: skip });
-      if (!dryRun) await recordEvent(db, msg, "skipped", skip, null);
-      continue;
-    }
-
-    const dupeKey = `${subject.toLowerCase()}|${from.toLowerCase()}`;
-    if (seen.has(dupeKey)) {
-      base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: "duplicate of an existing ticket" });
-      if (!dryRun) await recordEvent(db, msg, "skipped", "duplicate", null);
-      continue;
-    }
-    seen.add(dupeKey);
-
-    if (dryRun) {
-      base.created++;
-      base.items.push({ subject, from, outcome: "created" });
-      continue;
-    }
-
-    // Claim the message BEFORE creating anything. Two passes running at once
-    // race here, and the loser is turned away by the unique index rather than
-    // going on to open a second ticket for the same email.
-    if (!(await claimMessage(db, msg, prior))) {
-      base.skipped++;
-      base.items.push({ subject, from, outcome: "skipped", reason: "claimed by another pass" });
-      continue;
-    }
-
-    try {
-      const result: IntakeResult = await createIntakeMatter(db, {
-        subject,
-        body: plainText(msg),
-        from,
-        source: "email",
-        externalId: msg.id,
-        externalUrl: msg.webLink ?? null,
-      });
-      if (result.threaded) {
-        base.threaded++;
-        base.items.push({ subject, from, outcome: "threaded", ref: result.ref });
-      } else {
-        base.created++;
-        base.items.push({ subject, from, outcome: "created", ref: result.ref, priority: result.priority });
-      }
-      // Only now — the ticket exists and is saved. A failure to re-categorise
-      // never rolls back the ticket; the claim row keeps the link to it and
-      // the marker below turns the next pass into a retag-only retry.
-      let tagged = true;
-      if (!result.threaded && requestsTicket(msg.categories)) {
-        tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
-        if (tagged) base.recategorised++;
-      }
-      await settleClaim(db, messageIds, {
-        status: result.threaded ? "threaded" : "created",
-        ticketId: result.ticketId,
-        error: tagged ? null : CATEGORY_PENDING,
-      });
-    } catch (err) {
-      base.failed++;
-      const message = err instanceof Error ? err.message : "Intake failed";
-      base.items.push({ subject, from, outcome: "failed", reason: message });
-      await settleClaim(db, messageIds, { status: "failed", ticketId: null, error: message });
-    }
+    const outcome = await processMessage(db, msg, dryRun);
+    applyOutcome(base, outcome);
   }
 
   // Advance the checkpoint only for mail we actually looked at, so a failure
   // never silently skips the next run past unread work.
   if (!dryRun && highWater !== checkpoint) await writeCheckpoint(db, highWater);
 
-  // Tickets closed since the last pass get their message re-categorised.
-  if (!dryRun) base.completedTagged = await tagClosedTickets(db);
+  if (!dryRun) {
+    const settled = await syncTerminalStates(db);
+    base.completedTagged = settled.closed;
+    base.reopenedTagged = settled.reopened;
+  }
 
   return base;
 }
 
+type MessageOutcome = MailboxSyncResult["items"][number] & { recategorised?: boolean; retried?: boolean };
+
+function applyOutcome(base: MailboxSyncResult, o: MessageOutcome) {
+  base.items.push(o);
+  if (o.outcome === "created") base.created++;
+  if (o.outcome === "lead") base.leadsCreated++;
+  if (o.outcome === "threaded") base.threaded++;
+  if (o.outcome === "skipped") base.skipped++;
+  if (o.outcome === "failed") base.failed++;
+  if (o.recategorised) base.recategorised++;
+  if (o.retried) base.recategoriseRetried++;
+}
+
 /**
- * Moves the category to "task completed" for every intake message whose ticket
- * has since closed.
+ * Everything that happens to one message.
  *
- * Driven by the ticket's own status rather than by a hook on the close button,
- * so a close made anywhere in Resolve is picked up, and a re-run simply finds
- * nothing left to do.
+ * Shared by the scheduled sweep and the Graph change-notification handler, so
+ * a webhook delivery and a sweep can never disagree about what to do.
  */
-async function tagClosedTickets(db: Db, limit = 25): Promise<number> {
+export async function processMessage(db: Db, msg: GraphMessage, dryRun = false): Promise<MessageOutcome> {
+  const subject = (msg.subject ?? "").trim() || "(no subject)";
+  const from = msg.from?.emailAddress?.address ?? "unknown sender";
+  const messageIds = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
+
+  // Same message seen twice — a re-run, a duplicate notification, or a Graph
+  // id we already handled under its internet id. Never create a second record.
+  const prior = await priorRecord(db, messageIds);
+  const action = nextActionFor(prior);
+  if (action !== "create") {
+    if (action === "retag" && !dryRun && prior) {
+      const done = await retryCategory(db, msg, prior);
+      return {
+        subject,
+        from,
+        outcome: "skipped",
+        retried: done,
+        reason: done ? "already processed · category retag retried" : "already processed · retag still failing",
+      };
+    }
+    return { subject, from, outcome: "skipped", reason: "already processed" };
+  }
+
+  const trigger = triggerKind(msg.categories);
+  if (!trigger) {
+    // No category, no record — ever. The one exception is a reply that still
+    // carries our [ARHA-123] tag: that is filed as a note on the ticket it
+    // names, and cannot create anything.
+    if (!alreadyTagged(msg.categories) && !dryRun) {
+      const filed = await fileTaggedReply(db, msg);
+      if (filed) return { subject, from, outcome: "threaded", ref: filed, reason: "filed on the existing ticket" };
+    }
+    return {
+      subject,
+      from,
+      outcome: "skipped",
+      reason: alreadyTagged(msg.categories) ? "already handled" : "not categorised",
+    };
+  }
+
+  if (dryRun) {
+    return { subject, from, outcome: trigger === "lead" ? "lead" : "created" };
+  }
+
+  // Claim the message BEFORE creating anything. Two passes racing here are
+  // settled by the unique index: the loser walks away rather than opening a
+  // twin record.
+  if (!(await claimMessage(db, msg, isStaleClaim(prior ?? ({} as MailboxRecord)) ? prior : null))) {
+    return { subject, from, outcome: "skipped", reason: "claimed by another pass" };
+  }
+
+  const body = plainTextBody(msg.body?.content ?? msg.bodyPreview ?? "", msg.body?.contentType);
+  const source = await sourceFor(msg, trigger);
+
+  // A reply on a thread that already produced work: link it, never duplicate.
+  const threadMate = await conversationRecord(db, msg.conversationId ?? null, messageIds);
+  if (threadMate?.entity_id) {
+    await linkToExisting(db, threadMate, subject, body, from);
+    const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+    await settleClaim(db, messageIds, {
+      status: "linked",
+      entityType: threadMate.entity_type,
+      entityId: threadMate.entity_id,
+      error: tagged ? null : CATEGORY_PENDING,
+      conversationId: msg.conversationId ?? null,
+      source,
+    });
+    return {
+      subject,
+      from,
+      outcome: "skipped",
+      recategorised: tagged,
+      reason: "linked to the existing record for this thread",
+    };
+  }
+
+  try {
+    if (trigger === "lead") {
+      const lead = await createLeadFromEmail(db, { subject, body, source });
+      const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+      await settleClaim(db, messageIds, {
+        status: "created",
+        entityType: "lead",
+        entityId: lead.leadId,
+        error: tagged ? null : CATEGORY_PENDING,
+        conversationId: msg.conversationId ?? null,
+        source,
+      });
+      return { subject, from, outcome: "lead", recategorised: tagged };
+    }
+
+    const result: IntakeResult = await createIntakeMatter(db, {
+      subject,
+      body,
+      from,
+      source: "email",
+      externalId: msg.id,
+      externalUrl: msg.webLink ?? null,
+    });
+    const tagged = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
+    await settleClaim(db, messageIds, {
+      status: result.threaded ? "linked" : "created",
+      entityType: "ticket",
+      entityId: result.ticketId,
+      error: tagged ? null : CATEGORY_PENDING,
+      conversationId: msg.conversationId ?? null,
+      source,
+    });
+    return {
+      subject,
+      from,
+      outcome: result.threaded ? "threaded" : "created",
+      ref: result.ref,
+      priority: result.priority,
+      recategorised: tagged,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Intake failed";
+    await settleClaim(db, messageIds, {
+      status: "failed",
+      entityType: null,
+      entityId: null,
+      error: message,
+      conversationId: msg.conversationId ?? null,
+      source,
+    });
+    return { subject, from, outcome: "failed", reason: message };
+  }
+}
+
+/**
+ * A reply carrying [ARHA-123] is filed on that ticket's timeline.
+ * It can only ever add a note — nothing here creates a ticket.
+ */
+async function fileTaggedReply(db: Db, msg: GraphMessage): Promise<number | null> {
+  const text = `${msg.subject ?? ""}\n${msg.bodyPreview ?? ""}`;
+  const tag = text.match(REF_TAG);
+  if (!tag) return null;
+  const { data: parent } = await db.from("tickets").select("id, ref").eq("ref", Number(tag[1])).maybeSingle();
+  if (!parent) return null;
+  const body = plainTextBody(msg.body?.content ?? msg.bodyPreview ?? "", msg.body?.contentType);
+  await db.from("ticket_activity").insert({
+    ticket_id: parent.id,
+    kind: "note",
+    event_type: "note",
+    channel: "email",
+    body: [`Emailed reply from ${msg.from?.emailAddress?.address ?? "unknown sender"}:`, body].join("\n\n"),
+  });
+  await recordEvent(db, msg, "linked", null, { entityType: "ticket", entityId: parent.id });
+  return parent.ref;
+}
+
+/** Files the message on the Ticket or Lead the thread already produced. */
+async function linkToExisting(db: Db, row: MailboxRecord, subject: string, body: string, from: string) {
+  if (!row.entity_id) return;
+  if (row.entity_type === "lead") {
+    await db.from("lead_activity").insert({
+      lead_id: row.entity_id,
+      channel: "email",
+      outcome: "Reply received",
+      note: [`Reply on the same Outlook thread — ${subject}`, `From ${from}`, body.slice(0, 3000)]
+        .filter(Boolean)
+        .join("\n\n"),
+    });
+    return;
+  }
+  await db.from("ticket_activity").insert({
+    ticket_id: row.entity_id,
+    kind: "note",
+    event_type: "note",
+    channel: "email",
+    body: [`Reply on the same Outlook thread — ${subject}`, `From ${from}`, body].filter(Boolean).join("\n\n"),
+  });
+}
+
+/**
+ * Moves the category on for records that have reached a terminal state, and
+ * back again for Tickets that were reopened.
+ *
+ * Driven by the record's own status rather than by a hook on a button, so a
+ * close made anywhere in Resolve is picked up and a re-run finds nothing left
+ * to do.
+ */
+export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: number; reopened: number }> {
   const { data: events } = await db
     .from("integration_events")
-    .select("id, external_id, entity_id")
+    .select("id, external_id, entity_id, entity_type, status")
     .eq("system", SYSTEM)
-    .eq("operation", "mailbox_message")
-    .eq("status", "created")
+    .eq("operation", OPERATION)
+    .in("status", ["created", "linked", "closed"])
     .not("entity_id", "is", null)
     .order("created_at", { ascending: false })
     .limit(200);
-  if (!events?.length) return 0;
+  if (!events?.length) return { closed: 0, reopened: 0 };
 
-  const ticketIds = Array.from(new Set(events.map((e) => e.entity_id).filter(Boolean) as string[]));
-  const { data: tickets } = await db.from("tickets").select("id, status").in("id", ticketIds);
-  const closedIds = new Set((tickets ?? []).filter((t) => t.status === "closed").map((t) => t.id));
-  if (!closedIds.size) return 0;
+  const ticketIds = events.filter((e) => e.entity_type === "ticket").map((e) => e.entity_id!) as string[];
+  const leadIds = events.filter((e) => e.entity_type === "lead").map((e) => e.entity_id!) as string[];
 
-  let tagged = 0;
+  const [tickets, leads] = await Promise.all([
+    ticketIds.length
+      ? db.from("tickets").select("id, status").in("id", Array.from(new Set(ticketIds)))
+      : Promise.resolve({ data: [] as { id: string; status: string }[] }),
+    leadIds.length
+      ? db.from("leads").select("id, stage").in("id", Array.from(new Set(leadIds)))
+      : Promise.resolve({ data: [] as { id: string; stage: string }[] }),
+  ]);
+
+  const ticketStatus = new Map((tickets.data ?? []).map((t) => [t.id, t.status]));
+  const leadStage = new Map((leads.data ?? []).map((l) => [l.id, l.stage]));
+
+  let closed = 0;
+  let reopened = 0;
   for (const event of events) {
-    if (tagged >= limit) break;
-    if (!event.entity_id || !closedIds.has(event.entity_id)) continue;
+    if (closed + reopened >= limit) break;
+    if (!event.entity_id) continue;
+    // Both Converted and Lost are settled work: Outlook only answers "is this
+    // still open?", and the reason lives in Resolve where anyone would look.
+    const settled =
+      event.entity_type === "lead"
+        ? ["converted", "lost"].includes(leadStage.get(event.entity_id) ?? "")
+        : ticketStatus.get(event.entity_id) === "closed";
+    const alreadyClosed = event.status === "closed";
+    if (settled === alreadyClosed) continue;
+
     const messageId = event.external_id as string | null;
     // Only the Graph id addresses a message; the internetMessageId row is a
     // duplicate guard, not something we can PATCH.
@@ -508,30 +599,36 @@ async function tagClosedTickets(db: Db, limit = 25): Promise<number> {
 
     let current: string[] = [];
     try {
-      const res = await graph(inboxMessagesPath(`/${messageId}?$select=id,categories`));
+      const res = await graph(inboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`));
       current = ((await res.json())?.categories ?? []) as string[];
     } catch {
       continue; // Message moved or deleted — nothing to re-categorise.
     }
-    if (hasTag(current, COMPLETED_TAG)) {
-      await db.from("integration_events").update({ status: "completed" }).eq("id", event.id);
+
+    if (settled) {
+      if (hasTag(current, CLOSED_TAG) || (await setCategories(messageId, categoriesAfterClose(current)))) {
+        await db.from("integration_events").update({ status: "closed" }).eq("id", event.id);
+        closed++;
+      }
       continue;
     }
-    if (await setCategories(messageId, categoriesAfterClose(current))) {
-      await db.from("integration_events").update({ status: "completed" }).eq("id", event.id);
-      tagged++;
+    // Reopened: the same mapping goes back to "ticket created". No new record.
+    if (hasTag(current, CREATED_TAG) || (await setCategories(messageId, categoriesAfterReopen(current)))) {
+      await db.from("integration_events").update({ status: "created" }).eq("id", event.id);
+      reopened++;
     }
   }
-  return tagged;
+  return { closed, reopened };
 }
-
 
 export type MailboxRecord = {
   id: string;
   status: string;
   error_message: string | null;
   entity_id: string | null;
+  entity_type?: string | null;
   external_id: string;
+  conversation_id?: string | null;
   created_at: string;
 };
 
@@ -540,9 +637,9 @@ export async function priorRecord(db: Db, messageIds: string[]): Promise<Mailbox
   if (!messageIds.length) return null;
   const { data } = await db
     .from("integration_events")
-    .select("id, status, error_message, entity_id, external_id, created_at")
+    .select("id, status, error_message, entity_id, entity_type, external_id, conversation_id, created_at")
     .eq("system", SYSTEM)
-    .eq("operation", "mailbox_message")
+    .eq("operation", OPERATION)
     .in("external_id", messageIds)
     .order("created_at", { ascending: false })
     .limit(1);
@@ -550,14 +647,40 @@ export async function priorRecord(db: Db, messageIds: string[]): Promise<Mailbox
 }
 
 /**
+ * The record this thread already produced, if any.
+ *
+ * This is what stops a second Ticket appearing when someone categorises a
+ * later reply in a conversation Resolve has already turned into work.
+ */
+export async function conversationRecord(
+  db: Db,
+  conversationId: string | null,
+  excludeIds: string[] = [],
+): Promise<MailboxRecord | null> {
+  if (!conversationId) return null;
+  const { data } = await db
+    .from("integration_events")
+    .select("id, status, error_message, entity_id, entity_type, external_id, conversation_id, created_at")
+    .eq("system", SYSTEM)
+    .eq("operation", OPERATION)
+    .eq("conversation_id", conversationId)
+    .not("entity_id", "is", null)
+    .in("status", ["created", "linked", "closed"])
+    .order("created_at", { ascending: true })
+    .limit(5);
+  const rows = (data ?? []) as MailboxRecord[];
+  return rows.find((r) => !excludeIds.includes(r.external_id)) ?? null;
+}
+
+/**
  * A claim left behind by a pass that died mid-flight.
  *
- * Only a `processing` row can go stale. A settled row — created, threaded,
+ * Only a `processing` row can go stale. A settled row — created, linked,
  * skipped or failed — is a decision, and re-creating against it would be the
  * duplicate we are guarding against.
  */
 export function isStaleClaim(row: MailboxRecord, now = Date.now()) {
-  if (row.status !== "processing") return false;
+  if (!row || row.status !== "processing") return false;
   return now - new Date(row.created_at).getTime() > CLAIM_STALE_MS;
 }
 
@@ -565,29 +688,24 @@ export function isStaleClaim(row: MailboxRecord, now = Date.now()) {
  * What this pass should do with a message, given whatever record already
  * exists for it.
  *
- * - `create` — nothing on file, or only an abandoned claim: open the ticket.
- * - `retag`  — a ticket exists but the Outlook category update failed; retry
- *              only the category. Never a second ticket.
+ * - `create` — nothing on file, or only an abandoned claim.
+ * - `retag`  — a record exists but the Outlook category update failed; retry
+ *              only the category. Never a second record.
  * - `skip`   — a settled decision, or another pass currently holds the claim.
  */
-export function nextActionFor(
-  prior: MailboxRecord | null,
-  now = Date.now(),
-): "create" | "retag" | "skip" {
+export function nextActionFor(prior: MailboxRecord | null, now = Date.now()): "create" | "retag" | "skip" {
   if (!prior) return "create";
   if (isStaleClaim(prior, now)) return "create";
   if (prior.error_message === CATEGORY_PENDING && prior.entity_id) return "retag";
   return "skip";
 }
 
-
-
 /**
- * Takes ownership of a message before any ticket is created.
+ * Takes ownership of a message before any record is created.
  *
  * The unique index on (system, operation, external_id) is what actually
  * settles a race: whichever pass inserts first wins, and the other gets a
- * 23505 and walks away empty-handed instead of opening a twin ticket.
+ * 23505 and walks away empty-handed instead of opening a twin.
  */
 export async function claimMessage(db: Db, msg: GraphMessage, stale: MailboxRecord | null) {
   const ids = Array.from(new Set([msg.id, msg.internetMessageId ?? ""].filter(Boolean)));
@@ -597,7 +715,7 @@ export async function claimMessage(db: Db, msg: GraphMessage, stale: MailboxReco
       .from("integration_events")
       .update({ status: "processing", error_message: null, created_at: new Date().toISOString() })
       .eq("system", SYSTEM)
-      .eq("operation", "mailbox_message")
+      .eq("operation", OPERATION)
       .in("external_id", ids)
       .eq("status", "processing");
     return !error;
@@ -606,8 +724,9 @@ export async function claimMessage(db: Db, msg: GraphMessage, stale: MailboxReco
     ids.map((external_id) => ({
       system: SYSTEM,
       direction: "inbound",
-      operation: "mailbox_message",
+      operation: OPERATION,
       external_id,
+      conversation_id: msg.conversationId ?? null,
       status: "processing",
       resolved_at: null,
     })),
@@ -620,36 +739,45 @@ export async function claimMessage(db: Db, msg: GraphMessage, stale: MailboxReco
   return false;
 }
 
-/** Turns the claim into the final record of what happened to the message. */
+/** Turns the claim into the durable mapping of what happened to the message. */
 async function settleClaim(
   db: Db,
   messageIds: string[],
-  outcome: { status: string; ticketId: string | null; error: string | null },
+  outcome: {
+    status: string;
+    entityType: string | null | undefined;
+    entityId: string | null;
+    error: string | null;
+    conversationId: string | null;
+    source: OutlookSource;
+  },
 ) {
   const { error } = await db
     .from("integration_events")
     .update({
       status: outcome.status,
-      entity_type: outcome.ticketId ? "ticket" : null,
-      entity_id: outcome.ticketId,
+      entity_type: outcome.entityType ?? null,
+      entity_id: outcome.entityId,
+      conversation_id: outcome.conversationId,
       error_message: outcome.error,
+      request_payload: outcome.source as unknown as Database["public"]["Tables"]["integration_events"]["Row"]["request_payload"],
       resolved_at: outcome.status === "failed" ? null : new Date().toISOString(),
     })
     .eq("system", SYSTEM)
-    .eq("operation", "mailbox_message")
+    .eq("operation", OPERATION)
     .in("external_id", messageIds);
   if (error) console.error("Could not settle mailbox claim:", error.message);
 }
 
 /**
- * Retries only the Outlook category for a message whose ticket already exists.
+ * Retries only the Outlook category for a message whose record already exists.
  *
- * No ticket is created or touched here — the row's `entity_id` proves one was
+ * No record is created or touched here — the row's `entity_id` proves one was
  * already saved, which is precisely why this path is a retag and nothing more.
  */
 export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRecord) {
   if (!prior.entity_id) return false;
-  if (!requestsTicket(msg.categories)) {
+  if (!requestsRecord(msg.categories)) {
     // Someone re-tagged it by hand; nothing left to retry.
     await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
     return false;
@@ -660,7 +788,7 @@ export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRec
       .from("integration_events")
       .update({ error_message: null, resolved_at: new Date().toISOString() })
       .eq("system", SYSTEM)
-      .eq("operation", "mailbox_message")
+      .eq("operation", OPERATION)
       .in("external_id", [msg.id, msg.internetMessageId ?? ""].filter(Boolean));
   }
   return done;
@@ -671,18 +799,19 @@ async function recordEvent(
   msg: GraphMessage,
   status: string,
   error: string | null,
-  ticketId: string | null,
+  entity: { entityType: string | null; entityId: string | null },
 ) {
   // Both ids are recorded so neither a Graph id change nor a redelivery under
-  // the same internet id can produce a second ticket.
+  // the same internet id can produce a second record.
   const ids = Array.from(new Set([msg.id, msg.internetMessageId ?? ""].filter(Boolean)));
   const rows = ids.map((external_id) => ({
     system: SYSTEM,
     direction: "inbound",
-    operation: "mailbox_message",
+    operation: OPERATION,
     external_id,
-    entity_type: ticketId ? "ticket" : null,
-    entity_id: ticketId,
+    conversation_id: msg.conversationId ?? null,
+    entity_type: entity.entityType,
+    entity_id: entity.entityId,
     status,
     error_message: error,
     resolved_at: status === "failed" ? null : new Date().toISOString(),
@@ -691,16 +820,39 @@ async function recordEvent(
   if (insertError) console.error("Could not record mailbox event:", insertError.message);
 }
 
-
 /** The last few inbox messages Resolve acted on, newest first. */
 export async function recentMailboxEvents(db: Db, limit = 20) {
   const { data, error } = await db
     .from("integration_events")
-    .select("id, status, error_message, created_at, entity_id, external_id")
+    .select("id, status, error_message, created_at, entity_id, entity_type, external_id, conversation_id, request_payload")
     .eq("system", SYSTEM)
-    .eq("operation", "mailbox_message")
+    .eq("operation", OPERATION)
+    .not("external_id", "like", "<%")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) return [];
   return data ?? [];
 }
+
+/** The Outlook provenance held for a Ticket or Lead, if it came from email. */
+export async function outlookSourceFor(db: Db, entityType: "ticket" | "lead", entityId: string) {
+  const { data } = await db
+    .from("integration_events")
+    .select("request_payload, status, created_at")
+    .eq("system", SYSTEM)
+    .eq("operation", OPERATION)
+    .eq("entity_type", entityType)
+    .eq("entity_id", entityId)
+    .not("request_payload", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!data?.request_payload) return null;
+  return {
+    ...(data.request_payload as unknown as OutlookSource),
+    syncState: data.status as string,
+    linkedAt: data.created_at as string,
+  };
+}
+
+export { CREATE_TICKET_TAG, CREATE_LEAD_TAG, CREATED_TAG, CLOSED_TAG };

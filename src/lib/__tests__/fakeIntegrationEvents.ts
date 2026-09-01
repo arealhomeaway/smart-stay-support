@@ -13,10 +13,11 @@
  */
 
 type Row = Record<string, unknown>;
-type Filter = { col: string; op: "eq" | "in"; value: unknown };
+type Filter = { col: string; op: "eq" | "in" | "notNull"; value: unknown };
 
 function matches(row: Row, f: Filter) {
   if (f.op === "eq") return row[f.col] === f.value;
+  if (f.op === "notNull") return row[f.col] !== null && row[f.col] !== undefined;
   return Array.isArray(f.value) && f.value.includes(row[f.col]);
 }
 
@@ -86,6 +87,13 @@ export function createFakeIntegrationEvents() {
         filters.push({ col, op: "in", value });
         return finish(col, value);
       },
+      // Only `.not(col, "is", null)` is used by the intake code.
+      not: (col: string, _op: string, _value: unknown) => {
+        filters.push({ col, op: "notNull", value: null });
+        return api;
+      },
+      maybeSingle: () => Promise.resolve({ data: selected()[0] ?? null, error: null }),
+      single: () => Promise.resolve({ data: selected()[0] ?? null, error: null }),
       order: (col: string, opts?: { ascending?: boolean }) => {
         order = { col, ascending: opts?.ascending ?? true };
         return api;
