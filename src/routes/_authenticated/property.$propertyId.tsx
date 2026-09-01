@@ -308,11 +308,36 @@ function DetailsTab({ hub }: { hub: Hub }) {
 }
 
 function ContactsTab({ hub }: { hub: Hub }) {
-  if (hub.contacts.length === 0) {
+  const owner = hub.ownerRecord;
+  if (!owner && hub.contacts.length === 0) {
     return <Empty text="No structured contact records for this home yet. Contacts come from the owner record, not free text." />;
   }
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="space-y-4">
+      {owner && (
+        <Card className="border-primary/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="size-4 text-primary" />
+              {owner.name ?? "Unnamed owner record"}
+              <Badge variant="secondary">Owner of record</Badge>
+            </CardTitle>
+            <CardDescription>
+              {owner.source === "ownerrez" ? "OwnerRez owner record" : owner.source}
+              {owner.propertyCount > 1 ? ` · owns ${owner.propertyCount} homes with ARHA` : " · single home"}
+              {` · as of ${owner.syncedAt.slice(0, 10)}`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-1 text-sm sm:grid-cols-2">
+            <p>{owner.email ?? "No email on file"}</p>
+            <p>{owner.phone ?? "No phone on file"}</p>
+            <p className="text-muted-foreground">
+              {[owner.city, owner.state].filter(Boolean).join(", ") || "No mailing city on file"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+      <div className="grid gap-3 md:grid-cols-2">
       {hub.contacts.map((c) => (
         <Card key={c.id}>
           <CardHeader className="pb-2">
