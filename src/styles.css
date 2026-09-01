@@ -91,6 +91,8 @@
   --color-module-approval: var(--module-approval);
   --color-module-coverage: var(--module-coverage);
   --color-module-override: var(--module-override);
+  /* Cross-team triage cover — deliberately not a team colour. */
+  --color-triage: var(--triage);
   /* Calibri is the ARHA standard; Carlito is its metric-compatible web twin. */
   --font-display: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
   --font-sans: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
