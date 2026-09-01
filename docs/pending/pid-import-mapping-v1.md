@@ -234,31 +234,55 @@ Front Photo, Covenants, Breaker Box Photo, both Water Shutoff photos, Sprinkler 
 ## Dry-run summary (no writes performed)
 | Measure | Projected |
 |---|---|
-| Properties in scope | 156 |
-| Properties expected to receive at least one value | 156 (100%) |
-| Fields written per property | up to 81 |
-| Populated values projected | ~10,759 |
-| Blank source cells skipped | ~1,877 |
+| Properties in scope | 157 (156 matched + 1399 Foxtail Ln) |
+| Properties expected to receive at least one value | 157 (100%) |
+| Fields written per property | up to 91 |
+| Populated values projected | ~11,600 |
+| Blank source cells skipped | ~1,890 |
 | Sensitive values excluded (never read into Resolve) | ~1,282 across 9 credential fields |
-| Provenance rows created | one per written value, ~10,759 (`property_field_provenance`: field, source `notion_pid`, `as_of`, updated_by) |
-| Conflicts expected | only on Bedrooms / Bathrooms / Occupancy Limit / GPS / Status vs OwnerRez-or-Resolve values — logged to `field_conflicts`, never auto-overwritten |
-| Unresolved mappings | 15 Manual Review fields |
-| Rows held out | 2 (Owens Rd, Foxtail Ln) + 1 excluded test row |
+| Provenance rows created | one per written value (`property_field_provenance`: field, source `notion_pid`, `as_of`, updated_by) |
+| Conflicts expected | Bedrooms / Bathrooms / Occupancy Limit / GPS vs OwnerRez — logged to `field_conflicts`, never auto-overwritten |
+| Unresolved mappings | 2 Manual Review fields (GPS Coordinates, Listing Photos) |
+| Rows held out | 1 excluded property (21036 Owens Rd) + 1 excluded test row (Aziz) |
 
 Identity fields (`name`, address, city, state, zip, `ownerrez_property_id`, lat/lng where OwnerRez supplied it) are write-protected in the planned importer: PID values for those fields cannot be written under any condition.
 
-## Decisions needed from Emily
-1. **21036 Owens Rd** — Live in the PID and OwnerRez (410153) but absent from Resolve. Add it to Resolve, or confirm it is out of scope?
-2. **1399 Foxtail Ln** — pre-launch (OwnerRez 494863). Bring into Resolve now as In Preparation, or wait for handoff?
-3. **`Live_12M` status (4 properties)** — is this MTR? Which Resolve lifecycle value should it map to?
-4. **Greater Area vs Resolve market** — approve mapping PID areas onto existing Resolve markets, or create markets to match the PID?
-5. **Handoff Date (153)** — import only where Resolve has no handoff date, or never import (Resolve handoff workflow authoritative)?
-6. **Fact conflicts (Bedrooms/Bathrooms/Occupancy)** — confirm OwnerRez always wins and PID differences are logged as conflicts for review.
-7. **Seasonal state fields** (Sprinkler Set for Season, Detector battery dates, filter dates) — import as a one-time seed with an `as_of` date, or leave to Resolve work orders only?
-8. **Ring/camera portal links** — approve storing the portal URL as a staff-only operational link with no credentials.
-9. **Pool & Hot Tub Technician Fillout form** — keep as a temporary external link, or schedule replacement by a Resolve work-order form now?
-10. **Personal OneDrive links (169)** — approve inventory-now / migrate-at-item-7, with legacy links labelled non-canonical in the interim.
-11. **Compliance rollups (permits, rental restrictions)** — approve dated snapshots surfaced as reference, source of truth staying outside the Hub.
-12. **Storage shape** — approve grouped JSONB blocks on `properties` (per the v2 field map) rather than ~81 flat columns.
+## Approved decisions — Emily, 2026-09-01
+1. **21036 Owens Rd** — EXCLUDED from the import. Not created in Resolve; Notion row untouched.
+2. **1399 Foxtail Ln** — INCLUDED now as **In Preparation**, business identifier OwnerRez ID 494863.
+3. **`Live_12M`** — means a 12-month minimum stay. Lifecycle maps to **Live**; no separate Live_12M lifecycle. The 12-month minimum is preserved as a distinct rental-policy / minimum-stay attribute.
+4. **Greater Area vs Resolve market** — map PID values onto the existing Resolve market structure; no new markets created to mirror Notion; neighborhood preserved separately; only genuinely unmappable values flagged for review.
+5. **Handoff Date** — imported only where Resolve has none; a Resolve-generated handoff date is never overwritten; imported values are marked legacy/reference with provenance.
+6. **Bedrooms / Bathrooms / Occupancy** — OwnerRez always wins; PID differences logged as conflicts; authoritative values never overwritten.
+7. **Seasonal state** — useful historical dates imported as one-time seeded values with `as_of` provenance; temporary state flags seeded only as clearly dated reference values; Resolve Work Orders / Assessments authoritative going forward.
+8. **Ring / camera portal links** — APPROVED as staff-only operational external links; portal/system reference only; no usernames, passwords, query-string credentials, codes or secrets.
+9. **Pool & Hot Tub Technician Fillout** — kept temporarily as an external link, flagged for later replacement by a native Resolve workflow; not recreated one-for-one now.
+10. **Personal OneDrive links** — inventoried now, labelled legacy / non-canonical; underlying documents migrate during the SharePoint/Documents workstream; never the final document source of truth.
+11. **Compliance rollups** — imported as dated, reference-only snapshots with `as_of` clearly displayed; never treated as authoritative compliance status.
+12. **Storage shape** — grouped JSONB approved for coherent descriptive property domains; typed columns / related tables used for fields that drive filtering, analytics, routing, joins, automation or lifecycle logic. Neither all-flat nor all-JSONB.
 
-Nothing proceeds to schema or import until these are answered.
+### Guardrails carried forward (unchanged)
+- OwnerRez Property ID is the universal business identifier; Resolve keeps its own internal UUID.
+- OwnerRez authoritative for PMS/current listing data; Resolve authoritative for workflow, onboarding, approvals, exceptions and activity.
+- SharePoint is the intended document-storage system.
+- Credentials and security codes are permanently excluded.
+- Aziz test row excluded and untouched.
+- No address or name matching. No duplicate source-of-truth creation.
+
+## Schema implications introduced by these decisions
+Typed / structured (not JSONB) because they drive logic:
+- `properties.min_stay_months` (or `rental_policy` typed field) — preserves the 12-month minimum released from `Live_12M`.
+- `properties.neighborhood` — kept separate from `market`.
+- `properties.legacy_handoff_date` + provenance — distinct from Resolve's `handoff_accepted_at`, never merged.
+- `property_external_links` (kind: camera_portal | fillout_form | legacy_onedrive | builder | hoa | system) with a staff-only visibility flag.
+- `property_field_provenance` rows carrying `as_of` for every seeded/snapshot value.
+
+Grouped JSONB domains: systems, sprinklers, pool_spa, grounds/trash, hoa, amenities, parking/access (reference only), utilities (no credentials), compliance snapshots.
+
+## Remaining ambiguity
+- **GPS Coordinates** — still gap-fill only where the OwnerRez geocode is missing (Manual Review).
+- **Listing Photos URLs** — OwnerRez photos already populate 156/156; whether to keep PID listing-photo links as secondary references is open (Manual Review).
+- **Unmappable Greater Area values** — the review list can only be produced during the import dry run.
+- **Unparseable Smoke Detector Expiration text** — routed to a review list rather than guessed.
+
+**Status: ready for final implementation approval.** No schema change, import, Notion change or publish has been performed.
