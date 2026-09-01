@@ -131,15 +131,38 @@ async function setCategories(messageId: string, categories: string[]) {
   }
 }
 
-/** Reads one message by id — used by the change-notification handler. */
-export async function fetchMessage(messageId: string): Promise<GraphMessage | null> {
+/**
+ * Reads one message by id from the mailbox, whatever folder holds it.
+ *
+ * A Graph message id changes when Outlook moves a message between folders, so
+ * a notification that arrives just before a rule fires can point at an id that
+ * no longer resolves. In that case the message is found again by its stable
+ * internetMessageId, which survives the move.
+ */
+export async function fetchMessage(messageId: string, internetMessageId?: string | null): Promise<GraphMessage | null> {
   try {
     const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`));
     return (await res.json()) as GraphMessage;
   } catch {
+    if (!internetMessageId) return null;
+    return findByInternetMessageId(internetMessageId);
+  }
+}
+
+/** Mailbox-wide lookup by the id that survives a folder move. */
+export async function findByInternetMessageId(internetMessageId: string): Promise<GraphMessage | null> {
+  try {
+    const filter = `internetMessageId eq '${internetMessageId.replace(/'/g, "''")}'`;
+    const res = await graph(
+      mailboxMessagesPath(`?$filter=${encodeURIComponent(filter)}&$top=1&$select=${SELECT_FIELDS}`),
+    );
+    const rows = ((await res.json())?.value ?? []) as GraphMessage[];
+    return rows[0] ?? null;
+  } catch {
     return null;
   }
 }
+
 
 /** Attachment metadata only — no file bytes are copied into Resolve. */
 async function attachmentMeta(messageId: string) {
