@@ -768,8 +768,11 @@ if (APPLY) {
     }
     const patch: Json = { ...p.columns };
     for (const [group, value] of Object.entries(p.groups)) {
-      patch[group] = { ...(prop[group] ?? {}), ...value };
+      // PID owns these descriptive groups outright, so they are rebuilt rather
+      // than merged — a re-run cannot leave a stale key behind.
+      patch[group] = value;
     }
+
     if (Object.keys(patch).length === 0) continue;
     const { error } = await sb.from("properties").update(patch).eq("id", prop.id);
     if (error) {
