@@ -198,9 +198,12 @@ export function humanizeKey(key: string): string {
   return joined.charAt(0).toUpperCase() + joined.slice(1);
 }
 
+/** Import placeholders that carry no information; treated as empty. */
+const PLACEHOLDERS = new Set(["not mentioned", "n/a", "na", "none mentioned", "unknown", "tbd", "-", "--"]);
+
 function isBlank(v: unknown): boolean {
   if (v === null || v === undefined) return true;
-  if (typeof v === "string") return v.trim() === "";
+  if (typeof v === "string") return v.trim() === "" || PLACEHOLDERS.has(v.trim().toLowerCase());
   if (Array.isArray(v)) return v.length === 0 || v.every(isBlank);
   if (typeof v === "object") return Object.keys(v as object).length === 0;
   return false;
