@@ -4,8 +4,10 @@
  * Approved beta scope, deliberately narrow:
  *   - Resolve remains the operational source of truth. A Breezeway task is a
  *     downstream copy; Breezeway never changes Resolve state from here.
- *   - Writes are restricted to the approved, verified beta properties
- *     (OUTBOUND_ALLOWED_HOME_IDS). Any other property is refused server-side.
+ *   - Writes are restricted to properties whose Breezeway mapping state is
+ *     `verified` (see breezeway-mapping.server.ts). Any other property —
+ *     unmapped, ambiguous, inactive, excluded, demo or archived — is refused
+ *     server-side.
  *   - The `breezeway_outbound` feature flag must be ON. OFF means no write.
  *
  * Idempotency (double-click and retry protection):
@@ -25,7 +27,6 @@ import {
   BREEZEWAY_OUTBOUND_FLAG,
   BREEZEWAY_DEPARTMENTS,
   BREEZEWAY_PRIORITIES,
-  isOutboundAllowedHome,
   type BreezewayOutboundEligibility,
   type BreezewayOutboundLink,
   type BreezewayOutboundReviewItem,
@@ -181,32 +182,24 @@ export async function outboundEligibility(
 ): Promise<BreezewayOutboundEligibility> {
   const enabled = await outboundEnabled();
   try {
-    const { property } = await resolveSource(source);
-    const homeId = property?.breezeway_property_id ?? null;
-    if (!homeId) {
+    const { propertyId } = await resolveSource(source);
+    const { propertyWriteEligibility } = await import("./breezeway-mapping.server");
+    const gate = await propertyWriteEligibility(propertyId!);
+    if (!gate.eligible) {
       return {
         enabled,
         eligible: false,
-        reason: "This property is not mapped to Breezeway.",
-        propertyName: property?.name ?? null,
-        breezewayHomeId: null,
-      };
-    }
-    if (!isOutboundAllowedHome(homeId)) {
-      return {
-        enabled,
-        eligible: false,
-        reason: "Outbound task creation is limited to the approved beta properties.",
-        propertyName: property?.name ?? null,
-        breezewayHomeId: homeId,
+        reason: gate.reason,
+        propertyName: gate.propertyName,
+        breezewayHomeId: gate.homeId,
       };
     }
     return {
       enabled,
       eligible: enabled,
       reason: enabled ? null : "Breezeway outbound task creation is switched off.",
-      propertyName: property?.name ?? null,
-      breezewayHomeId: homeId,
+      propertyName: gate.propertyName,
+      breezewayHomeId: gate.homeId,
     };
   } catch (error) {
     return {
@@ -317,15 +310,17 @@ export async function createOutboundTask(
       message: error instanceof Error ? error.message : "That record cannot be sent to Breezeway.",
     };
   }
-  const { propertyId, property, defaults } = resolved;
-  const homeId = property?.breezeway_property_id ?? null;
-  if (!isOutboundAllowedHome(homeId)) {
+  const { propertyId, defaults } = resolved;
+  // Single write gate: the persisted, deterministic mapping state.
+  const { propertyWriteEligibility } = await import("./breezeway-mapping.server");
+  const gate = await propertyWriteEligibility(propertyId!);
+  if (!gate.eligible || !gate.homeId) {
     return {
       ok: false,
-      message: "Outbound task creation is limited to the approved beta properties.",
+      message: gate.reason ?? "This property is not eligible for Breezeway writes.",
     };
   }
-  const allowedHomeId: string = String(homeId);
+  const allowedHomeId: string = gate.homeId;
 
   const title = clean(input.title, 200) ?? defaults?.title ?? "Resolve task";
   const description = clean(input.description, 4000) ?? defaults?.description ?? null;
@@ -572,10 +567,13 @@ export async function reconcileOutboundTask(
           : "Could not reach Breezeway to confirm that task.",
     };
   }
-  if (!verified || !isOutboundAllowedHome(verified.home_id)) {
+  const { propertyForHomeId } = await import("./breezeway-mapping.server");
+  const boundProperty =
+    verified?.home_id != null ? await propertyForHomeId(verified.home_id) : null;
+  if (!verified || !boundProperty) {
     return {
       ok: false,
-      message: "That Breezeway task does not exist on an approved beta property.",
+      message: "That Breezeway task does not exist on a verified property.",
     };
   }
 

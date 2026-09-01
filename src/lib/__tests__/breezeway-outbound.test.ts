@@ -36,6 +36,7 @@ let responder: (path: string, options: { method?: string }) => unknown = () => (
 
 mock.module("@/lib/breezeway.server", () => ({
   BreezewayError: FakeBreezewayError,
+  listBreezewayProperties: async () => [],
   breezewayRequest: async (path: string, options: { method?: string } = {}) => {
     calls.push({ path, method: options.method ?? "GET" });
     return responder(path, options);
@@ -115,8 +116,8 @@ describe("onboarding task source", () => {
     expect(calls.length).toBe(0);
   });
 
-  it("refuses an onboarding task on a non-pilot property", async () => {
-    store.state.properties[0]!["breezeway_property_id"] = "999999";
+  it("refuses an onboarding task on a property that is not verified", async () => {
+    store.state.properties[0]!["breezeway_mapping_state"] = "unmapped";
     const result = await createOutboundTask(taskInput("key-onb-notpilot-000"), "actor");
     expect(result.ok).toBe(false);
     expect(calls.length).toBe(0);
@@ -193,8 +194,8 @@ describe("feature flag and pilot lock", () => {
     expect(store.outbound().length).toBe(0);
   });
 
-  it("refuses a property that is not the pilot home", async () => {
-    store.state.properties[0]!["breezeway_property_id"] = "999999";
+  it("refuses a property whose mapping is not verified", async () => {
+    store.state.properties[0]!["breezeway_mapping_state"] = "ambiguous";
     const result = await createOutboundTask(input("key-notpilot-00000000"), "actor");
     expect(result.ok).toBe(false);
     expect(calls.length).toBe(0);
@@ -385,36 +386,46 @@ describe("admin reconciliation", () => {
 });
 
 /**
- * The approved limited beta is five verified homes and nothing else. These
- * guard both directions: every approved home is accepted, and any other home
- * — including a plausible neighbouring one — is refused before any POST.
+ * Write scope is the persisted mapping state, not a hardcoded list. These
+ * guard both directions: a verified property is accepted whatever its home id,
+ * and any non-verified state is refused before any POST.
  */
-describe("limited-beta allowlist", () => {
-  const APPROVED = ["1473933", "1295301", "368125", "322641", "1293536"];
-
-  it("accepts every approved beta home", async () => {
-    for (const [i, homeId] of APPROVED.entries()) {
+describe("verified-mapping write gate", () => {
+  it("accepts any home whose property mapping is verified", async () => {
+    for (const [i, homeId] of ["1473933", "1295301", "676169", "2222222"].entries()) {
       store.reset();
       calls.length = 0;
       store.setFlag(true);
       store.seedPilotTicket(TICKET);
       store.state.properties[0]!["breezeway_property_id"] = homeId;
+      store.state.properties[0]!["breezeway_mapping_state"] = "verified";
       const result = await createOutboundTask(input(`key-allow-${i}-00000000`), "actor");
       expect(result.ok).toBe(true);
       expect(calls.filter((c) => c.method === "POST").length).toBe(1);
     }
   });
 
-  it("refuses any home outside the approved five", async () => {
-    for (const [i, homeId] of ["676169", "1473934", "0", "999999"].entries()) {
+  it("refuses every non-verified mapping state before any POST", async () => {
+    for (const [i, state] of ["unmapped", "ambiguous", "inactive", "excluded"].entries()) {
       store.reset();
       calls.length = 0;
       store.setFlag(true);
       store.seedPilotTicket(TICKET);
-      store.state.properties[0]!["breezeway_property_id"] = homeId;
+      store.state.properties[0]!["breezeway_mapping_state"] = state;
       const result = await createOutboundTask(input(`key-deny-${i}-000000000`), "actor");
       expect(result.ok).toBe(false);
       expect(calls.length).toBe(0);
     }
+  });
+
+  it("refuses a verified property with no Breezeway home id", async () => {
+    store.reset();
+    calls.length = 0;
+    store.setFlag(true);
+    store.seedPilotTicket(TICKET);
+    store.state.properties[0]!["breezeway_property_id"] = null;
+    const result = await createOutboundTask(input("key-nohome-0000000"), "actor");
+    expect(result.ok).toBe(false);
+    expect(calls.length).toBe(0);
   });
 });

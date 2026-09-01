@@ -236,7 +236,7 @@ type RequestOptions = {
    * with `allowWrite`. The only writer today is the webhook subscription
    * registration, which the COO approved individually.
    */
-  method?: "GET" | "POST" | "DELETE";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   allowWrite?: boolean;
   body?: unknown;
   /**

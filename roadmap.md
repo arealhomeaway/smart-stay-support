@@ -409,3 +409,23 @@ mismatches). System-health data only — never employee performance.
 - [ ] Avy Vergara, Mike Cacatain, Christine Sendico invitations outstanding —
       evening + property-ops routing is pending until redeemed.
 - Telegram unchanged and in scope (communication/alerts); Resolve owns tickets.
+
+## Breezeway portfolio expansion (2026-09-01)
+- [x] Write scope moved from a hardcoded five-home allowlist to the persisted
+      `breezeway_mapping_state = 'verified'` gate (156 active properties verified
+      deterministically via OwnerRez reference ids).
+- [x] Webhook retention widened to the same verified set; fixture self-tests keep
+      the offline pilot set.
+- [x] Work Order mirror: `breezeway_work_orders` + `breezeway_work_order_comments`,
+      current work only (no historical import), staff-read RLS, server-write only.
+- [x] Resolve UI: Property Hub > Operations shows Breezeway work orders with
+      status/stage, assignees, schedule, photo count, comment thread, reply, and
+      close / reopen / approve — all badged "Breezeway".
+- [x] Resolve stays source of truth: a Breezeway change never rewrites a Ticket;
+      escalation to a Ticket is a deliberate link, never automatic.
+- [ ] Blocked: replies need `BREEZEWAY_COMMENT_PEOPLE_ID` (the Breezeway person
+      Resolve posts as). Reads and lifecycle work without it.
+- [ ] Gap: Breezeway Chats/Messaging is not in the public Inventory API —
+      task comments are the only supported message surface today.
+- [ ] Photos: counts are mirrored; binary photo display needs the per-task photo
+      endpoint (next pass).

@@ -10,33 +10,17 @@
 export const BREEZEWAY_OUTBOUND_FLAG = "breezeway_outbound";
 
 /**
- * Approved limited-beta scope: the five verified, mapped properties.
- * Each entry was confirmed against Breezeway by home id AND the OwnerRez
- * reference id on the Breezeway record — never by name/address similarity.
- * Enforced server-side; the UI only mirrors it.
+ * Verified-eligibility model (replaces the original five-home beta allowlist).
  *
- *   1473933 — 9211 Fitzgerald Dr., Indianapolis IN   (OwnerRez 492500)
- *   1295301 — 2901 E. 75th St., Tulsa OK             (OwnerRez 480826)
- *    368125 — 2701 Berkshire Way, Oklahoma City OK   (OwnerRez 380978)
- *    322641 — 721 Dusty Trail, Yukon OK              (OwnerRez 376992)
- *   1293536 — 7351 Red Rock Rd, Indianapolis IN      (OwnerRez 480764)
+ * Write authorization now lives in the database: a property may receive
+ * Breezeway writes only while its `breezeway_mapping_state` is `verified`,
+ * which is set by the deterministic audit in `breezeway-mapping.server.ts`
+ * (Breezeway home id + OwnerRez reference identity). Name or address
+ * similarity is never authorization, and no home id is hardcoded here.
  */
-export const OUTBOUND_ALLOWED_HOME_IDS = [
-  "1473933",
-  "1295301",
-  "368125",
-  "322641",
-  "1293536",
-] as const;
 
-/** The original single pilot home; kept for the webhook/company baseline. */
+/** The original single pilot home; kept for fixtures and the webhook baseline. */
 export const OUTBOUND_PILOT_HOME_ID = "1473933";
-
-/** Server-side gate: only these Breezeway homes may receive outbound writes. */
-export function isOutboundAllowedHome(homeId: string | number | null | undefined) {
-  if (homeId === null || homeId === undefined || homeId === "") return false;
-  return (OUTBOUND_ALLOWED_HOME_IDS as readonly string[]).includes(String(homeId));
-}
 
 export const BREEZEWAY_DEPARTMENTS = [
   "maintenance",

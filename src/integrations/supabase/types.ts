@@ -369,6 +369,140 @@ export type Database = {
         }
         Relationships: []
       }
+      breezeway_work_order_comments: {
+        Row: {
+          author: string | null
+          body: string
+          breezeway_comment_id: number | null
+          breezeway_task_id: number
+          commented_at: string | null
+          created_at: string
+          direction: string
+          id: string
+          work_order_id: string
+        }
+        Insert: {
+          author?: string | null
+          body: string
+          breezeway_comment_id?: number | null
+          breezeway_task_id: number
+          commented_at?: string | null
+          created_at?: string
+          direction?: string
+          id?: string
+          work_order_id: string
+        }
+        Update: {
+          author?: string | null
+          body?: string
+          breezeway_comment_id?: number | null
+          breezeway_task_id?: number
+          commented_at?: string | null
+          created_at?: string
+          direction?: string
+          id?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breezeway_work_order_comments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "breezeway_work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      breezeway_work_orders: {
+        Row: {
+          assignees: Json
+          breezeway_created_at: string | null
+          breezeway_home_id: string
+          breezeway_task_id: number
+          breezeway_updated_at: string | null
+          comment_count: number
+          created_at: string
+          department: string | null
+          description: string | null
+          id: string
+          last_synced_at: string
+          linked_ticket_id: string | null
+          name: string | null
+          needs_attention: boolean
+          photo_count: number
+          priority: string | null
+          property_id: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          stage: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assignees?: Json
+          breezeway_created_at?: string | null
+          breezeway_home_id: string
+          breezeway_task_id: number
+          breezeway_updated_at?: string | null
+          comment_count?: number
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          last_synced_at?: string
+          linked_ticket_id?: string | null
+          name?: string | null
+          needs_attention?: boolean
+          photo_count?: number
+          priority?: string | null
+          property_id?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          stage?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assignees?: Json
+          breezeway_created_at?: string | null
+          breezeway_home_id?: string
+          breezeway_task_id?: number
+          breezeway_updated_at?: string | null
+          comment_count?: number
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          last_synced_at?: string
+          linked_ticket_id?: string | null
+          name?: string | null
+          needs_attention?: boolean
+          photo_count?: number
+          priority?: string | null
+          property_id?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          stage?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breezeway_work_orders_linked_ticket_id_fkey"
+            columns: ["linked_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaning_regions: {
         Row: {
           created_at: string
@@ -2757,6 +2891,9 @@ export type Database = {
           address_line1: string | null
           archive_reason: string | null
           archived_at: string | null
+          breezeway_mapping_note: string | null
+          breezeway_mapping_state: string
+          breezeway_mapping_verified_at: string | null
           breezeway_property_id: string | null
           breezeway_synced_at: string | null
           city: string | null
@@ -2797,6 +2934,9 @@ export type Database = {
           address_line1?: string | null
           archive_reason?: string | null
           archived_at?: string | null
+          breezeway_mapping_note?: string | null
+          breezeway_mapping_state?: string
+          breezeway_mapping_verified_at?: string | null
           breezeway_property_id?: string | null
           breezeway_synced_at?: string | null
           city?: string | null
@@ -2837,6 +2977,9 @@ export type Database = {
           address_line1?: string | null
           archive_reason?: string | null
           archived_at?: string | null
+          breezeway_mapping_note?: string | null
+          breezeway_mapping_state?: string
+          breezeway_mapping_verified_at?: string | null
           breezeway_property_id?: string | null
           breezeway_synced_at?: string | null
           city?: string | null

@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
 import { documentCategoryLabel } from "@/lib/attachments";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
@@ -438,6 +439,8 @@ function OperationsTab({ hub }: { hub: Hub }) {
           )}
         </CardContent>
       </Card>
+
+      {hub.viewer.staff && <BreezewayWorkOrderPanel propertyId={hub.property.id} />}
     </div>
   );
 }
