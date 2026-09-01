@@ -8,6 +8,7 @@ import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 
 import { GuestContextPanel } from "@/components/GuestContextPanel";
+import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
@@ -609,6 +610,8 @@ function TicketDetail() {
               </div>
             </CardContent>
           </Card>
+
+          <OutlookSourceCard entityType="ticket" entityId={ticketId} />
 
           <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Photos, video & documents" />
 

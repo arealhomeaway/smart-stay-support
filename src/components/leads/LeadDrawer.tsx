@@ -356,6 +356,8 @@ export function LeadDrawer({
             ]}
           />
 
+          <OutlookSourceCard entityType="lead" entityId={lead.id} />
+
           {lead.stage === "converted" ? (
             <section className="resolve-rise space-y-1.5 rounded-lg border border-success/40 bg-success/10 px-4 py-3">
               <p className="eyebrow">Conversion</p>
