@@ -160,7 +160,11 @@ export async function auditPortfolioMapping(
       };
       // Backfill the home id only when the audit resolved it deterministically.
       if (row.breezewayHomeId) patch["breezeway_property_id"] = row.breezewayHomeId;
-      await db.from("properties").update(patch).eq("id", row.propertyId);
+      await db
+        .from("properties")
+        // Generated types lag the mapping columns added in this migration.
+        .update(patch as never)
+        .eq("id", row.propertyId);
     }
   }
 
