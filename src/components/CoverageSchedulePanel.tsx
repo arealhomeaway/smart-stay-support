@@ -97,7 +97,8 @@ export function CoverageSchedulePanel() {
   if (isLoading || !data) return <Skeleton className="h-72 w-full" />;
 
   const today = chicagoToday();
-  const coveredToday = data.roster.some((r) => r.starts_on <= today && r.ends_on >= today);
+  const onCallToday = data.roster.find((r) => r.starts_on <= today && r.ends_on >= today);
+  const coveredToday = Boolean(onCallToday);
   const nameOf = (id: string) => {
     const p = data.eligible.find((e) => e.id === id);
     return p?.full_name ?? p?.email ?? "Unknown";
