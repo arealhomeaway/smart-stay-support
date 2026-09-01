@@ -48,7 +48,19 @@ export function mailboxRoot(requested: string = authorizedMailbox()): string {
   return `/users/${encodeURIComponent(assertAllowedMailbox(requested))}`;
 }
 
-/** Read path: the authorised Inbox only. No sent items, drafts, deleted items or archive. */
+/**
+ * Read path: any folder of the authorised mailbox.
+ *
+ * Folder location is how the team decides who owns an email (Team A, Team B,
+ * Accounting, Direct Bookings / Mid Term Leads, Deliveries, Needs Triage), so
+ * intake must not care where a message currently sits. The mailbox itself is
+ * still the hard boundary — no other mailbox is ever addressable.
+ */
+export function mailboxMessagesPath(query = ""): string {
+  return `${mailboxRoot()}/messages${query}`;
+}
+
+/** Legacy Inbox-only path, kept for anything that must scope to the Inbox. */
 export function inboxMessagesPath(query = ""): string {
   return `${mailboxRoot()}/mailFolders/Inbox/messages${query}`;
 }
@@ -57,3 +69,4 @@ export function inboxMessagesPath(query = ""): string {
 export function sendMailPath(): string {
   return `${mailboxRoot()}/sendMail`;
 }
+
