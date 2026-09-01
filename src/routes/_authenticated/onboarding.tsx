@@ -521,9 +521,10 @@ function OnboardingWorkspace() {
                                 }
                               />
                             )}
-                            {t.evidence_required && (
+                            {(
                                <EvidenceDialog
                                  disabled={readOnly}
+                                 evidenceRequired={t.evidence_required}
                                  taskId={t.id}
                                  current={t.evidence_note ?? ""}
                                 onSave={(note) =>
