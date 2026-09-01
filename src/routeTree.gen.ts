@@ -43,6 +43,7 @@ import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
 import { Route as ApiPublicBzProbeRouteImport } from './routes/api/public/bz-probe'
 import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
+import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
 import { Route as ApiPublicIntakeEmailRouteImport } from './routes/api/public/intake/email'
@@ -230,6 +231,12 @@ const OauthSharepointReturnRoute = OauthSharepointReturnRouteImport.update({
   path: '/oauth/sharepoint/return',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBreezewayMirrorRoute =
+  ApiPublicHooksBreezewayMirrorRouteImport.update({
+    id: '/api/public/hooks/breezeway-mirror',
+    path: '/api/public/hooks/breezeway-mirror',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOwnerNotifyRoute =
   ApiPublicHooksOwnerNotifyRouteImport.update({
     id: '/api/public/hooks/owner-notify',
@@ -298,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
@@ -339,6 +347,7 @@ export interface FileRoutesByTo {
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
@@ -382,6 +391,7 @@ export interface FileRoutesById {
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
   '/api/public/intake/email': typeof ApiPublicIntakeEmailRoute
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/oauth/sharepoint/return'
     | '/tickets/'
     | '/vendor/'
+    | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
@@ -466,6 +477,7 @@ export interface FileRouteTypes {
     | '/oauth/sharepoint/return'
     | '/tickets'
     | '/vendor'
+    | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
@@ -508,6 +520,7 @@ export interface FileRouteTypes {
     | '/oauth/sharepoint/return'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
+    | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
     | '/api/public/intake/email'
@@ -523,6 +536,7 @@ export interface RootRouteChildren {
   AwaitingAccessRoute: typeof AwaitingAccessRoute
   ApiPublicBzProbeRoute: typeof ApiPublicBzProbeRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
+  ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
   ApiPublicIntakeEmailRoute: typeof ApiPublicIntakeEmailRoute
@@ -771,6 +785,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthSharepointReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/breezeway-mirror': {
+      id: '/api/public/hooks/breezeway-mirror'
+      path: '/api/public/hooks/breezeway-mirror'
+      fullPath: '/api/public/hooks/breezeway-mirror'
+      preLoaderRoute: typeof ApiPublicHooksBreezewayMirrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/owner-notify': {
       id: '/api/public/hooks/owner-notify'
       path: '/api/public/hooks/owner-notify'
@@ -888,6 +909,7 @@ const rootRouteChildren: RootRouteChildren = {
   AwaitingAccessRoute: AwaitingAccessRoute,
   ApiPublicBzProbeRoute: ApiPublicBzProbeRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,
+  ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
   ApiPublicHooksQuarterlySchedulerRoute: ApiPublicHooksQuarterlySchedulerRoute,
   ApiPublicIntakeEmailRoute: ApiPublicIntakeEmailRoute,

@@ -16,8 +16,6 @@ export const Route = createFileRoute("/api/public/bz-probe")({
         const body = (await request.json().catch(() => ({}))) as {
           paths?: string[];
           scanHomes?: number[];
-          op?: "people" | "mirror" | "photos" | "gate" | "photodebug";
-          limit?: number;
         };
         const out: Record<string, unknown> = {};
         if (body.op === "people") {
@@ -38,59 +36,6 @@ export const Route = createFileRoute("/api/public/bz-probe")({
             results.push({ name: wo.name, ...(await mod.syncWorkOrderPhotos(wo.id)) });
           }
           out["photos"] = results;
-        }
-        if (body.op === "photodebug") {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data: wo } = await supabaseAdmin
-            .from("breezeway_work_orders")
-            .select("id, breezeway_task_id, property_id")
-            .gt("photo_count", 0)
-            .limit(1)
-            .maybeSingle();
-          const row = wo as { id: string; breezeway_task_id: number; property_id: string } | null;
-          const res = await supabaseAdmin
-            .from("breezeway_work_order_photos")
-            .upsert(
-              {
-                work_order_id: row?.id,
-                breezeway_task_id: row?.breezeway_task_id,
-                breezeway_photo_id: 999999901,
-                property_id: row?.property_id,
-                url: "https://example.com/probe.jpg",
-                source: "breezeway",
-              } as never,
-              { onConflict: "breezeway_photo_id" },
-            )
-            .select();
-          out["photodebug"] = { row, error: res.error, data: res.data, status: res.status };
-        }
-        if (body.op === "gate") {
-          const { runGate } = await import("@/lib/evidence.server");
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data } = await supabaseAdmin
-            .from("breezeway_work_order_photos")
-            .select("url, caption")
-            .limit(body.limit ?? 3);
-          const results: unknown[] = [];
-          for (const ph of (data ?? []) as { url: string; caption: string | null }[]) {
-            try {
-              results.push({
-                caption: ph.caption,
-                verdict: await runGate({
-                  imageUrl: ph.url,
-                  kind: "completed_repair",
-                  label: "Completed repair",
-                }),
-              });
-            } catch (e) {
-              results.push({ caption: ph.caption, error: String(e).slice(0, 200) });
-            }
-          }
-          out["gate"] = results;
-        }
-        if (body.op === "mirror") {
-          const mod = await import("@/lib/breezeway-workorders.server");
-          out["mirror"] = await mod.syncVerifiedPortfolio(body.limit ?? 25);
         }
         for (const home of body.scanHomes ?? []) {
           try {
