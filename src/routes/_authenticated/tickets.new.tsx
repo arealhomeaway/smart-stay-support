@@ -161,6 +161,25 @@ function NewMatter() {
     [workTypes, form.work_type_id],
   );
 
+  /**
+   * Situation → work type. Presentation only: it fills the same work_type_id
+   * the select always filled, plus sensible starting answers for the two
+   * contextual questions. The rubric still decides priority.
+   */
+  function pickSituation(id: string) {
+    const situation = situationById(id);
+    const resolved = resolveWorkType(situation, workTypes);
+    setShowCatalog(Boolean(situation?.openCatalog) || (Boolean(situation) && !resolved));
+    setForm((f) => ({
+      ...f,
+      situation_id: id,
+      work_type_id: resolved?.id ?? "",
+      guest_impact: situation?.guestImpact ?? f.guest_impact,
+      occupancy_status: situation?.occupancy ?? f.occupancy_status,
+    }));
+  }
+
+
   const role = useMemo(
     () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
     [roles, form.functional_role_code],
