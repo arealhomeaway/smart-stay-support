@@ -252,7 +252,20 @@ function WeekCalendar({
             </div>
 
             {DAYS.map((day, weekday) => {
-              const dayShifts = shifts.filter((s) => s.weekday === weekday);
+              // Two seats on duty at once sit side by side rather than on top
+              // of each other.
+              const dayShifts = shifts
+                .filter((s) => s.weekday === weekday)
+                .sort((a, b) => a.start_minute - b.start_minute);
+              const laneEnds: number[] = [];
+              const laneOf = new Map<string, number>();
+              for (const s of dayShifts) {
+                let lane = laneEnds.findIndex((end) => end <= s.start_minute);
+                if (lane === -1) lane = laneEnds.length;
+                laneEnds[lane] = s.end_minute;
+                laneOf.set(s.id, lane);
+              }
+              const lanes = Math.max(1, laneEnds.length);
               const dayTriage = triage.filter((t) => t.weekday === weekday);
               return (
                 <div key={day} className="relative h-72 rounded-md border border-border bg-sunken">
@@ -287,10 +300,12 @@ function WeekCalendar({
                       <div
                         key={s.id}
                         title={`${SEAT_LABELS[s.role_code] ?? s.role_code} · ${clock(s.start_minute)}–${clock(s.end_minute)}${holder ? ` · ${holder}` : ""}`}
-                        className={`absolute inset-x-1 overflow-hidden rounded border px-1.5 py-1 text-[0.625rem] leading-tight ${BLOCK_FILL[kind]}`}
+                        className={`absolute overflow-hidden rounded border px-1.5 py-1 text-[0.625rem] leading-tight ${BLOCK_FILL[kind]}`}
                         style={{
                           top: `${((s.start_minute - CAL_START) / CAL_SPAN) * 100}%`,
                           height: `${((s.end_minute - s.start_minute) / CAL_SPAN) * 100}%`,
+                          left: `calc(${((laneOf.get(s.id) ?? 0) / lanes) * 100}% + 2px)`,
+                          width: `calc(${100 / lanes}% - 4px)`,
                         }}
                       >
                         <span className="block truncate font-semibold">
