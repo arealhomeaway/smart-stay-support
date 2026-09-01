@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
 
-export const Route = createFileRoute("/_authenticated/properties/$propertyId")({
+export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
     meta: [
       { title: "Property Hub — Resolve" },
