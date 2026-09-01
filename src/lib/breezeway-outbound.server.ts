@@ -181,32 +181,24 @@ export async function outboundEligibility(
 ): Promise<BreezewayOutboundEligibility> {
   const enabled = await outboundEnabled();
   try {
-    const { property } = await resolveSource(source);
-    const homeId = property?.breezeway_property_id ?? null;
-    if (!homeId) {
+    const { propertyId } = await resolveSource(source);
+    const { propertyWriteEligibility } = await import("./breezeway-mapping.server");
+    const gate = await propertyWriteEligibility(propertyId!);
+    if (!gate.eligible) {
       return {
         enabled,
         eligible: false,
-        reason: "This property is not mapped to Breezeway.",
-        propertyName: property?.name ?? null,
-        breezewayHomeId: null,
-      };
-    }
-    if (!isOutboundAllowedHome(homeId)) {
-      return {
-        enabled,
-        eligible: false,
-        reason: "Outbound task creation is limited to the approved beta properties.",
-        propertyName: property?.name ?? null,
-        breezewayHomeId: homeId,
+        reason: gate.reason,
+        propertyName: gate.propertyName,
+        breezewayHomeId: gate.homeId,
       };
     }
     return {
       enabled,
       eligible: enabled,
       reason: enabled ? null : "Breezeway outbound task creation is switched off.",
-      propertyName: property?.name ?? null,
-      breezewayHomeId: homeId,
+      propertyName: gate.propertyName,
+      breezewayHomeId: gate.homeId,
     };
   } catch (error) {
     return {
