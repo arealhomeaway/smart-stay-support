@@ -1,0 +1,3 @@
+ALTER TABLE public.onboarding_tasks ADD COLUMN IF NOT EXISTS assigned_seat text;
+COMMENT ON COLUMN public.onboarding_tasks.assigned_seat IS 'Functional seat code (functional_roles.code) that owns this task. Durable ownership: the person is resolved from the seat holder, so a staffing change does not orphan the plan.';
+CREATE INDEX IF NOT EXISTS onboarding_tasks_assigned_seat_idx ON public.onboarding_tasks (assigned_seat);
