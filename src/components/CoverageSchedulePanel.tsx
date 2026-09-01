@@ -110,25 +110,222 @@ export function CoverageSchedulePanel() {
 
   return (
     <div className="space-y-4">
-      <SeatsCard
+      {/* Read the week first. Everything below it is the editing surface for
+          what the calendar shows. */}
+      <WeekCalendar
         roles={roles}
         shifts={data.shifts as Shift[]}
+        triage={data.triage as Triage[]}
         overrides={data.overrides as Override[]}
         people={people}
-        canEdit={canEdit}
-        onChanged={refresh}
-      />
-      <TriageCard windows={data.triage as Triage[]} roles={roles} />
-      <OnCallCard
-        roster={data.roster as Roster[]}
-        people={people}
         config={(data.config ?? null) as CoverageConfig | null}
-        canEdit={canEdit}
-        onChanged={refresh}
       />
+
+      <details className="group surface">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
+          <span>
+            <span className="font-semibold">Manage seats, schedules and on-call</span>
+            <span className="block text-sm text-muted-foreground">
+              {canEdit
+                ? "Change a seat holder, a recurring shift, a temporary override or the overnight roster."
+                : "View the seat holders, recurring shifts and the overnight roster."}
+            </span>
+          </span>
+          <span className="text-sm text-primary group-open:hidden">Open</span>
+          <span className="hidden text-sm text-primary group-open:inline">Close</span>
+        </summary>
+        <div className="space-y-4 border-t border-border p-4">
+          <SeatsCard
+            roles={roles}
+            shifts={data.shifts as Shift[]}
+            overrides={data.overrides as Override[]}
+            people={people}
+            canEdit={canEdit}
+            onChanged={refresh}
+          />
+          <TriageCard windows={data.triage as Triage[]} roles={roles} />
+          <OnCallCard
+            roster={data.roster as Roster[]}
+            people={people}
+            config={(data.config ?? null) as CoverageConfig | null}
+            canEdit={canEdit}
+            onChanged={refresh}
+          />
+        </div>
+      </details>
     </div>
   );
 }
+
+/** Which colour a seat carries in the calendar: Team A, Team B or leadership. */
+function seatOwnership(code: string): Ownership {
+  if (code.startsWith("ge_")) return "team_a";
+  if (code.startsWith("po_")) return "team_b";
+  return "leadership";
+}
+
+const CAL_START = 6 * 60; // 6 a.m.
+const CAL_END = 24 * 60;
+const CAL_SPAN = CAL_END - CAL_START;
+
+const BLOCK_FILL: Record<Ownership, string> = {
+  team_a: "bg-team-a/15 border-team-a/45 text-team-a",
+  team_b: "bg-team-b/15 border-team-b/45 text-team-b",
+  leadership: "bg-leadership/15 border-leadership/45 text-leadership",
+  vendor: "bg-module-override/15 border-module-override/45 text-module-override",
+  owner: "bg-module-owner/15 border-module-owner/45 text-module-owner",
+  unassigned: "bg-muted border-border text-muted-foreground",
+};
+
+/**
+ * The whole operating week on one screen: who is on duty, when a seat is
+ * covered by the other team, and who carries the overnight phone.
+ *
+ * Purely a view of the same rows the routing engine reads — editing stays in
+ * the panels below.
+ */
+function WeekCalendar({
+  roles,
+  shifts,
+  triage,
+  overrides,
+  people,
+  config,
+}: {
+  roles: Role[];
+  shifts: Shift[];
+  triage: Triage[];
+  overrides: Override[];
+  people: Person[];
+  config: CoverageConfig | null;
+}) {
+  const roleByCode = new Map(roles.map((r) => [r.code, r]));
+  const activeOverrides = overrides.filter((o) => new Date(o.ends_at) > new Date());
+  const nightStart = config?.after_hours_start_minute ?? 22 * 60;
+  const nightEnd = config?.after_hours_end_minute ?? 8 * 60;
+
+  const hourMarks = [6, 9, 12, 15, 18, 21, 24];
+
+  return (
+    <section className="surface overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
+        <div>
+          <h3 className="flex items-center gap-2 font-semibold">
+            <CalendarClock className="size-4" /> The operating week
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Central time, daylight-saving safe. New work routes to whoever is on duty here.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className={`chip ${BLOCK_FILL.team_a}`}>Team A — Guest Experience</span>
+          <span className={`chip ${BLOCK_FILL.team_b}`}>Team B — Property Operations</span>
+          <span className={`chip ${BLOCK_FILL.leadership}`}>Supervisor</span>
+          <span className="chip border-dashed border-module-coverage/50 bg-module-coverage/10 text-module-coverage">
+            Cross-team triage
+          </span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto p-4">
+        <div className="min-w-[52rem]">
+          <div className="grid grid-cols-[3.25rem_repeat(7,1fr)] gap-1.5">
+            <div />
+            {DAYS.map((d) => (
+              <div key={d} className="pb-1 text-center text-xs font-semibold">
+                {d.slice(0, 3)}
+              </div>
+            ))}
+
+            {/* Hour gutter */}
+            <div className="relative h-72">
+              {hourMarks.map((h) => (
+                <span
+                  key={h}
+                  className="absolute right-1 -translate-y-1/2 text-[0.625rem] text-muted-foreground"
+                  style={{ top: `${((h * 60 - CAL_START) / CAL_SPAN) * 100}%` }}
+                >
+                  {clock(h * 60 === 1440 ? 1439 : h * 60)}
+                </span>
+              ))}
+            </div>
+
+            {DAYS.map((day, weekday) => {
+              const dayShifts = shifts.filter((s) => s.weekday === weekday);
+              const dayTriage = triage.filter((t) => t.weekday === weekday);
+              return (
+                <div key={day} className="relative h-72 rounded-md border border-border bg-sunken">
+                  {hourMarks.slice(1, -1).map((h) => (
+                    <div
+                      key={h}
+                      className="absolute inset-x-0 border-t border-border/60"
+                      style={{ top: `${((h * 60 - CAL_START) / CAL_SPAN) * 100}%` }}
+                    />
+                  ))}
+
+                  {dayTriage.map((t) => (
+                    <div
+                      key={t.id}
+                      title={`Triage cover — ${SEAT_LABELS[t.role_code] ?? t.role_code}`}
+                      className="absolute inset-x-0.5 rounded border border-dashed border-module-coverage/60 bg-module-coverage/10"
+                      style={{
+                        top: `${((t.start_minute - CAL_START) / CAL_SPAN) * 100}%`,
+                        height: `${((t.end_minute - t.start_minute) / CAL_SPAN) * 100}%`,
+                      }}
+                    />
+                  ))}
+
+                  {dayShifts.map((s) => {
+                    const role = roleByCode.get(s.role_code);
+                    const kind = seatOwnership(s.role_code);
+                    const holder =
+                      role?.current_seat_name ?? nameFor(people, role?.current_seat_holder ?? null);
+                    const pending = Boolean(role?.current_seat_name && !role?.current_seat_holder);
+                    const covered = activeOverrides.find((o) => o.role_code === s.role_code);
+                    return (
+                      <div
+                        key={s.id}
+                        title={`${SEAT_LABELS[s.role_code] ?? s.role_code} · ${clock(s.start_minute)}–${clock(s.end_minute)}${holder ? ` · ${holder}` : ""}`}
+                        className={`absolute inset-x-1 overflow-hidden rounded border px-1.5 py-1 text-[0.625rem] leading-tight ${BLOCK_FILL[kind]}`}
+                        style={{
+                          top: `${((s.start_minute - CAL_START) / CAL_SPAN) * 100}%`,
+                          height: `${((s.end_minute - s.start_minute) / CAL_SPAN) * 100}%`,
+                        }}
+                      >
+                        <span className="block truncate font-semibold">
+                          {holder ?? "Seat unfilled"}
+                        </span>
+                        <span className="block truncate opacity-80">
+                          {clock(s.start_minute)}–{clock(s.end_minute)}
+                        </span>
+                        {pending && <span className="block truncate">Invite pending</span>}
+                        {covered && (
+                          <span className="block truncate">
+                            {covered.kind === "off" ? "Off duty" : "Temporary cover"}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Overnight is one continuous band, not seven separate shifts. */}
+          <div className="mt-3 flex items-center gap-3 rounded-md border border-module-override/40 bg-module-override/10 px-3 py-2 text-xs text-module-override">
+            <Moon className="size-3.5 shrink-0" />
+            <span>
+              <span className="font-semibold">On-call, every night {clock(nightStart)}–{clock(nightEnd)} Central.</span>{" "}
+              The overnight roster takes precedence over every seat schedule above.
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 
 function nameFor(people: Person[], id: string | null) {
   if (!id) return null;
