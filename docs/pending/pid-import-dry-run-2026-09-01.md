@@ -161,3 +161,31 @@ Nothing below exists yet; all of it would need one migration (with GRANTs + RLS)
    month-precision rule (5 of 21 recoverable if approved).
 
 No blocking defect was found in the dry run.
+
+---
+
+# Addendum — approved architecture decisions (2026-09-01, planning only)
+
+## A. Coordinates are derived system fields
+- Provider already wired: **Google Maps Geocoding API** via the Lovable connector gateway (`src/lib/geo.server.ts`), server-only, batch-capped at 60 per run. All **156/156** non-demo properties are already `geocode_status = ok` with coordinates.
+- Address stays authoritative from OwnerRez; Resolve geocodes `address_line1, city, state, postal_code` and caches `latitude`, `longitude`, `formatted_address`, `geocode_status`, `geocoded_at`.
+- Geocoding runs on: property create, OwnerRez address change (address fingerprint differs), a failed/missing status retry sweep, and an explicit supervisor "force" re-run. Never overwrites valid coordinates when the address fingerprint is unchanged.
+- Manual override allowed only on `not_found` / `missing_address` / materially wrong pin; sets `geocode_source = manual` and writes an `audit_log` entry (actor, old/new coords, reason). Later automated runs never silently replace a manual override.
+- PID GPS is fallback/reference only: considered solely when there are no current coordinates **and** geocoding cannot resolve the address. Never overwrites valid coordinates.
+- Dry-run effect: the single GPS gap-fill was **1399 Foxtail Ln**, which has no Resolve row yet. Under this architecture it would be geocoded from its OwnerRez address at creation, and PID GPS is used only if that fails. **Projected PID GPS writes: 0–2 (fallback only).**
+- Cost: geocoding is ~$5 per 1,000 lookups, one lookup per property lifetime plus address changes — a few dollars per year at 157 properties; no new provider or key required.
+
+## B. Smoke Detector Expiration month/year values
+- Source precision is preserved rather than fabricated: `systems.smoke.expires_on` (SQL date = **last calendar day of the stated month**), plus `systems.smoke.expires_precision` = `month` and `systems.smoke.expires_source_text` = the raw PID string; provenance records `as_of` and precision.
+- Applies to the 5 recoverable values: `07/2035`, `04/2036`, `9-2034`, `10/34`, `01 2021`.
+- Full-precision values keep `expires_precision = day`. Any alert/expiry logic must respect the precision flag.
+- The remaining **16** unparseable values stay in manual review with **no write**.
+- Revised projection: smoke-detector expiration imports **132** (127 day-precision + 5 month-precision); total projected values written rises from 12,460 to **12,465** (+5 values, +5 provenance rows); manual-review items drop from 21 to 16.
+
+## C. Schema impact of these two decisions
+- **Smoke detector:** none. `systems` is already a proposed grouped JSONB column; precision and source text are keys inside it.
+- **Geocoding:** small addition to `properties` — `geocode_source` (`google_maps` | `manual` | `pid_legacy`), `geocode_address_fingerprint` (text, drives "address changed" detection), `coords_overridden_by` (uuid), `coords_overridden_at` (timestamptz), `coords_override_reason` (text). `latitude`/`longitude`/`formatted_address`/`geocode_status`/`geocoded_at` already exist. Override audit uses existing `audit_log`.
+- Section 7 of the dry run otherwise stands unchanged.
+
+## D. Recommendation
+**GO still stands** for the 157-property import, unchanged in scope, once the schema migration (section 7 + the five geocoding columns) is approved. Geocoding automation is specified but not implemented.
