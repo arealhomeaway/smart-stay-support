@@ -130,6 +130,8 @@ export const updateWorkOrderFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertStaff(context.supabase, context.userId);
     const { updateWorkOrder } = await import("@/lib/breezeway-workorders.server");
-    const { workOrderId, ...patch } = data;
+    const { workOrderId, ...rest } = data;
+    // exactOptionalPropertyTypes: drop the keys the caller did not send.
+    const patch = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     return updateWorkOrder(workOrderId, patch);
   });
