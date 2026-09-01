@@ -36,7 +36,7 @@ describe("situation map", () => {
   it("resolves every non-catalog situation to a real work type", () => {
     for (const s of SITUATIONS) {
       if (s.openCatalog) continue;
-      expect(resolveWorkType(s, CATALOG), s.id).not.toBeNull();
+      expect(resolveWorkType(s, CATALOG)).not.toBeNull();
     }
   });
 
