@@ -633,17 +633,27 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
     const alreadyClosed = event.status === "closed";
     if (settled === alreadyClosed) continue;
 
-    const messageId = event.external_id as string | null;
+    const storedId = event.external_id as string | null;
     // Only the Graph id addresses a message; the internetMessageId row is a
     // duplicate guard, not something we can PATCH.
-    if (!messageId || messageId.startsWith("<")) continue;
+    if (!storedId || storedId.startsWith("<")) continue;
 
+    let messageId = storedId;
     let current: string[] = [];
     try {
       const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`));
       current = ((await res.json())?.categories ?? []) as string[];
     } catch {
-      continue; // Message moved or deleted — nothing to re-categorise.
+      // The id no longer resolves — almost always because an Outlook rule moved
+      // the message into a team folder. Find it again by the id that survives
+      // the move rather than abandoning the category lifecycle.
+      const twin = events.find(
+        (e) => e.entity_id === event.entity_id && typeof e.external_id === "string" && e.external_id.startsWith("<"),
+      );
+      const relocated = twin?.external_id ? await findByInternetMessageId(twin.external_id as string) : null;
+      if (!relocated) continue;
+      messageId = relocated.id;
+      current = (relocated.categories ?? []) as string[];
     }
 
     if (settled) {
@@ -658,6 +668,7 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
       await db.from("integration_events").update({ status: "created" }).eq("id", event.id);
       reopened++;
     }
+
   }
   return { closed, reopened };
 }
