@@ -2,67 +2,42 @@
  * Breezeway-origin Ticket routing (server-only).
  *
  * Scope, deliberately narrow:
- *   - A NEW Ticket created out of a Breezeway work order goes to Team B /
- *     Property Operations, to whichever eligible person carries the lightest
- *     weighted load right now.
+ *   - A NEW Ticket created out of a Breezeway work order follows the real
+ *     coverage model: overnight on-call, then the Team B / Property Operations
+ *     weighted queue, then the approved cross-team triage role, then an
+ *     ON-DUTY Operations Supervisor, then unassigned (surfaced in Oversight).
  *   - Updates, comments and status changes arriving from Breezeway NEVER touch
  *     ownership of an existing Ticket. This module is only ever called on
  *     creation; the webhook path writes no ticket columns at all.
  *
- * Weighting (open tickets owned by the candidate):
- *   P1 = 5, P2 = 3, P3 = 1.
- *
- * Eligibility reuses the existing shift / on-call / availability model —
- * `staff_assignable`, `seat_on_duty`, `coverage_config`, `oncall_roster`. No
- * second queue and no second schedule is introduced here.
- *
- * Ties break deterministically: least recently auto-routed first, then the
- * lowest user id. Two identical portfolio states therefore always produce the
- * same assignee, and repeated ties rotate round-robin.
+ * Every eligibility question is answered by the single coverage model —
+ * `coverage_shifts`, `coverage_overrides`, seat availability,
+ * `coverage_triage_windows` and `oncall_roster` — through the database helpers
+ * `seat_eligible_now` / `seat_holder_at`. There is no second schedule.
  */
 
-/** Team B — the Property Operations Coordinator seats. */
-export const TEAM_B_ROLE_CODES = ["po_day", "po_evening"] as const;
-export const AUTO_ROUTE_SOURCE = "breezeway_auto_route";
+import {
+  TEAM_B,
+  TEAM_B_ROLE_CODES,
+  decideRoute,
+  isWithinWindow,
+  localWeekdayMinutes,
+  pickLightestCandidate,
+  triageRoleFor,
+  weightOf,
+  type RoutingDecision,
+  type TriageWindow,
+} from "./coverage-model";
 
-const WEIGHTS: Record<string, number> = { p1: 5, p2: 3, p3: 1 };
+export { TEAM_B_ROLE_CODES, isWithinWindow, pickLightestCandidate };
+export type { RoutingDecision };
+
+export const AUTO_ROUTE_SOURCE = "breezeway_auto_route";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
 }
-
-
-/**
- * Lowest weighted load wins. Ties break deterministically: whoever was
- * auto-routed longest ago (never-routed first), then the lowest user id — that
- * is the round-robin, and it needs no extra counter to stay stable.
- */
-export function pickLightestCandidate<T extends { userId: string; weight: number }>(
-  candidates: T[],
-  lastRouted: Map<string, string>,
-): T | null {
-  if (candidates.length === 0) return null;
-  return [...candidates].sort(
-    (a, b) =>
-      a.weight - b.weight ||
-      (lastRouted.get(a.userId) ?? "").localeCompare(lastRouted.get(b.userId) ?? "") ||
-      a.userId.localeCompare(b.userId),
-  )[0]!;
-}
-
-/** Whether a minute-of-day falls inside a possibly overnight window. */
-export function isWithinWindow(nowMinutes: number, start: number, end: number) {
-  return start > end ? nowMinutes >= start || nowMinutes < end : nowMinutes >= start && nowMinutes < end;
-}
-
-export type RoutingDecision = {
-  userId: string | null;
-  roleCode: string | null;
-  reason: string;
-  fallback: boolean;
-  candidates: { userId: string; roleCode: string; weight: number }[];
-};
 
 /** Open-ticket weight for one person: P1=5, P2=3, P3=1. */
 export async function weightedLoad(userId: string): Promise<number> {
@@ -74,38 +49,30 @@ export async function weightedLoad(userId: string): Promise<number> {
     .not("status", "in", "(resolved,closed)")
     .is("archived_at", null)
     .eq("is_demo", false);
-  return ((data ?? []) as { priority: string | null }[]).reduce(
-    (sum, t) => sum + (WEIGHTS[String(t.priority ?? "p3")] ?? 1),
-    0,
-  );
+  return ((data ?? []) as { priority: string | null }[]).reduce((sum, t) => sum + weightOf(t.priority), 0);
 }
 
-/** Whether the after-hours window (coverage_config, Central) is open now. */
-async function afterHoursNow(): Promise<boolean> {
+/** Coverage config (timezone + after-hours window). */
+async function coverageConfig() {
   const db = await admin();
   const { data } = await db
     .from("coverage_config")
     .select("timezone, after_hours_start_minute, after_hours_end_minute")
     .limit(1)
     .maybeSingle();
-  const cfg = data as {
+  return (data ?? null) as {
     timezone: string | null;
     after_hours_start_minute: number | null;
     after_hours_end_minute: number | null;
   } | null;
-  if (!cfg?.after_hours_start_minute && cfg?.after_hours_start_minute !== 0) return false;
-  if (cfg.after_hours_end_minute == null) return false;
-  const tz = cfg.timezone || "America/Chicago";
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
-  const now = hour * 60 + minute;
-  return isWithinWindow(now, cfg.after_hours_start_minute, cfg.after_hours_end_minute);
+}
+
+/** Whether the after-hours window (coverage_config, Central) is open now. */
+async function afterHoursNow(now: Date, tz: string): Promise<boolean> {
+  const cfg = await coverageConfig();
+  if (cfg?.after_hours_start_minute == null || cfg.after_hours_end_minute == null) return false;
+  const { minutes } = localWeekdayMinutes(now, tz);
+  return isWithinWindow(minutes, cfg.after_hours_start_minute, cfg.after_hours_end_minute);
 }
 
 async function assignable(userId: string | null): Promise<boolean> {
@@ -115,114 +82,112 @@ async function assignable(userId: string | null): Promise<boolean> {
   return data === true;
 }
 
-async function onDuty(roleCode: string): Promise<boolean> {
+/** Seat is on duty right now, honouring availability and temporary overrides. */
+async function seatEligible(roleCode: string, at: Date): Promise<boolean> {
   const db = await admin();
-  const { data } = await db.rpc("seat_on_duty", { _role_code: roleCode, _at: new Date().toISOString() });
+  const { data } = await db.rpc("seat_eligible_now", { _role_code: roleCode, _at: at.toISOString() });
   return data === true;
 }
 
-async function supervisorFallback(reason: string): Promise<RoutingDecision> {
+/** Who is holding a seat right now — a temporary cover wins over the seat holder. */
+async function seatHolder(roleCode: string, at: Date): Promise<string | null> {
   const db = await admin();
-  const { data } = await db
-    .from("functional_roles")
-    .select("current_seat_holder")
-    .eq("code", "ops_supervisor")
-    .eq("active", true)
-    .maybeSingle();
-  const holder = (data as { current_seat_holder: string | null } | null)?.current_seat_holder ?? null;
-  if (await assignable(holder)) {
-    return {
-      userId: holder,
-      roleCode: "ops_supervisor",
-      reason: `${reason} Held by the Operations Supervisor so it is never unowned.`,
-      fallback: true,
-      candidates: [],
-    };
-  }
-  return {
-    userId: null,
-    roleCode: null,
-    reason: `${reason} No eligible Operations Supervisor either — needs a manual assignment.`,
-    fallback: true,
-    candidates: [],
-  };
+  const { data } = await db.rpc("seat_holder_at", { _role_code: roleCode, _at: at.toISOString() });
+  return (data as string | null) ?? null;
 }
 
 /**
- * Picks the Team B owner for a new Breezeway-origin ticket. Read-only: it
- * decides, it does not write.
+ * Picks the owner for a new Breezeway-origin ticket. Read-only: it decides, it
+ * does not write.
  */
-export async function routeBreezewayTicket(): Promise<RoutingDecision> {
+export async function routeBreezewayTicket(now: Date = new Date()): Promise<RoutingDecision> {
   const db = await admin();
+  const cfg = await coverageConfig();
+  const tz = cfg?.timezone || "America/Chicago";
 
-  // Existing after-hours model wins during its window; priority is untouched —
-  // after-hours never means P1.
-  if (await afterHoursNow()) {
+  // 1. Overnight on-call keeps precedence, DST-safe. Priority is untouched —
+  //    after-hours never means P1.
+  let onCallUserId: string | null = null;
+  const afterHours = await afterHoursNow(now, tz);
+  if (afterHours) {
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
     const { data: roster } = await db
       .from("oncall_roster")
       .select("user_id, starts_on, ends_on")
-      .lte("starts_on", new Date().toISOString().slice(0, 10))
-      .gte("ends_on", new Date().toISOString().slice(0, 10))
+      .lte("starts_on", today)
+      .gte("ends_on", today)
       .limit(1);
-    const oncall = ((roster ?? []) as { user_id: string }[])[0]?.user_id ?? null;
-    if (await assignable(oncall)) {
-      return {
-        userId: oncall,
-        roleCode: null,
-        reason:
-          "Created from Breezeway inside the after-hours window; routed to the rostered on-call person. Priority is unchanged.",
-        fallback: false,
-        candidates: [],
-      };
-    }
+    const candidate = ((roster ?? []) as { user_id: string }[])[0]?.user_id ?? null;
+    if (await assignable(candidate)) onCallUserId = candidate;
   }
 
+  // 2. Eligible Team B seats and their weighted load.
   const { data: seats } = await db
     .from("functional_roles")
     .select("code, current_seat_holder")
     .in("code", TEAM_B_ROLE_CODES as unknown as string[])
     .eq("active", true);
 
-  const candidates: { userId: string; roleCode: string; weight: number }[] = [];
-  for (const seat of (seats ?? []) as { code: string; current_seat_holder: string | null }[]) {
-    const holder = seat.current_seat_holder;
-    if (!holder) continue;
+  const teamB: { userId: string; roleCode: string; weight: number }[] = [];
+  for (const seat of (seats ?? []) as { code: string }[]) {
+    if (!(await seatEligible(seat.code, now))) continue;
+    const holder = await seatHolder(seat.code, now);
     if (!(await assignable(holder))) continue;
-    if (!(await onDuty(seat.code))) continue;
-    candidates.push({ userId: holder, roleCode: seat.code, weight: await weightedLoad(holder) });
+    teamB.push({ userId: holder!, roleCode: seat.code, weight: await weightedLoad(holder!) });
   }
 
-  if (candidates.length === 0) {
-    return supervisorFallback("No Team B / Property Operations seat is eligible right now.");
-  }
-
-  // Deterministic round-robin on ties: least recently auto-routed, then user id.
-  const { data: recent } = await db
-    .from("tickets")
-    .select("current_action_owner, created_at")
-    .eq("assignment_source", AUTO_ROUTE_SOURCE)
-    .in(
-      "current_action_owner",
-      candidates.map((c) => c.userId),
-    )
-    .order("created_at", { ascending: false })
-    .limit(200);
-  const lastRouted = new Map<string, string>();
-  for (const row of (recent ?? []) as { current_action_owner: string | null; created_at: string }[]) {
-    if (row.current_action_owner && !lastRouted.has(row.current_action_owner)) {
-      lastRouted.set(row.current_action_owner, row.created_at);
+  // 3. Approved cross-team triage window, if Team B is off duty.
+  let triage: { userId: string; roleCode: string } | null = null;
+  if (teamB.length === 0) {
+    const { data: windows } = await db
+      .from("coverage_triage_windows")
+      .select("weekday, start_minute, end_minute, covers_team, role_code, active")
+      .eq("active", true);
+    const { weekday, minutes } = localWeekdayMinutes(now, tz);
+    const roleCode = triageRoleFor((windows ?? []) as TriageWindow[], weekday, minutes, TEAM_B);
+    if (roleCode && (await seatEligible(roleCode, now))) {
+      const holder = await seatHolder(roleCode, now);
+      if (await assignable(holder)) triage = { userId: holder!, roleCode };
     }
   }
 
-  const winner = pickLightestCandidate(candidates, lastRouted)!;
-  return {
-    userId: winner.userId,
-    roleCode: winner.roleCode,
-    reason: `Created from Breezeway; routed to the lightest eligible Property Operations queue (weighted load ${winner.weight}, P1=5/P2=3/P3=1).`,
-    fallback: false,
-    candidates,
-  };
+  // 4. Supervisor fallback — only when actually on duty.
+  let supervisorOnDuty: { userId: string; roleCode: string } | null = null;
+  if (teamB.length === 0 && !triage && !(afterHours && onCallUserId)) {
+    if (await seatEligible("ops_supervisor", now)) {
+      const holder = await seatHolder("ops_supervisor", now);
+      if (await assignable(holder)) supervisorOnDuty = { userId: holder!, roleCode: "ops_supervisor" };
+    }
+  }
+
+  // Deterministic round-robin on ties: least recently auto-routed, then user id.
+  const lastRouted = new Map<string, string>();
+  if (teamB.length > 1) {
+    const { data: recent } = await db
+      .from("tickets")
+      .select("current_action_owner, created_at")
+      .eq("assignment_source", AUTO_ROUTE_SOURCE)
+      .in(
+        "current_action_owner",
+        teamB.map((c) => c.userId),
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+    for (const row of (recent ?? []) as { current_action_owner: string | null; created_at: string }[]) {
+      if (row.current_action_owner && !lastRouted.has(row.current_action_owner)) {
+        lastRouted.set(row.current_action_owner, row.created_at);
+      }
+    }
+  }
+
+  return decideRoute({ afterHours, onCallUserId, teamB, lastRouted, triage, supervisorOnDuty });
 }
+
 
 export type EscalateResult =
   | { ok: true; ticketId: string; ref: number | null; assignedTo: string | null; note: string }

@@ -141,7 +141,7 @@ export async function redeemTeamInvite(userId: string, userEmail: string | null,
 
   const invite = await supabaseAdmin
     .from("team_invites")
-    .select("id, role, invitee_email, expires_at, revoked_at, redeemed_by")
+    .select("id, role, invitee_email, expires_at, revoked_at, redeemed_by, seat_role_code")
     .eq("code", code)
     .maybeSingle();
   if (invite.error) throw invite.error;
@@ -174,6 +174,46 @@ export async function redeemTeamInvite(userId: string, userEmail: string | null,
   if (!claim.data) throw new Error("That code has already been used.");
 
   await applyRole(userId, invite.data.role as AppRole);
+
+  // The invite already says which seat this person was hired into, so the real
+  // auth user is seated the moment it exists. No duplicate account, no phantom
+  // seat holder before redemption, and an already-filled seat is never taken
+  // over silently.
+  const seatCode = (invite.data as { seat_role_code?: string | null }).seat_role_code ?? null;
+  if (seatCode) {
+    const { data: seat } = await supabaseAdmin
+      .from("functional_roles")
+      .select("id, code, current_seat_holder, current_seat_name")
+      .eq("code", seatCode)
+      .maybeSingle();
+    if (seat && !(seat as { current_seat_holder: string | null }).current_seat_holder) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", userId)
+        .maybeSingle();
+      const label =
+        (profile as { full_name: string | null; email: string | null } | null)?.full_name ??
+        (seat as { current_seat_name: string | null }).current_seat_name ??
+        userEmail;
+      await supabaseAdmin
+        .from("functional_roles")
+        .update({ current_seat_holder: userId, current_seat_name: label })
+        .eq("code", seatCode);
+      const { writeAudit } = await import("./audit.server");
+      await writeAudit({
+        actorId: userId,
+        action: "seat.assigned_on_redemption",
+        entityType: "functional_role",
+        entityId: seatCode,
+        entityLabel: seatCode,
+        before: { current_seat_holder: null },
+        after: { current_seat_holder: userId },
+        reason: "Invited staff member redeemed their invitation.",
+      });
+    }
+  }
+
   return { ok: true as const, role: invite.data.role as AppRole };
 }
 

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, CalendarClock, Moon, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { AlertTriangle, CalendarClock, Moon, Pause, Play, Plus, Trash2, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,16 +16,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRole } from "@/hooks/useRole";
 import { windowLabel, type CoverageConfig } from "@/lib/coverage";
+import { SEAT_LABELS } from "@/lib/coverage-model";
+import {
+  coverageModel,
+  deleteOnCall,
+  deleteOverride,
+  deleteShift,
+  saveOnCall,
+  saveOverride,
+  saveShift,
+  setSeatAvailability,
+  setSeatHolder,
+} from "@/lib/coverage-admin.functions";
 
 /**
- * Machine-readable coverage: the weekly shift windows each seat is on duty
- * for (America/Chicago, evaluated by the database so daylight saving is
- * handled), plus the admin-managed overnight on-call roster.
+ * The one coverage plan: who holds each seat, the recurring hours they are on
+ * duty (Central, daylight-saving safe), any temporary override, the approved
+ * cross-team triage windows and the overnight on-call roster.
  *
- * Nothing here reassigns existing work. Coverage only decides who NEW
- * eligible work routes to; tickets already owned by a person keep that owner.
+ * This is the same data the routing engine reads, so a change here changes
+ * where NEW work goes on the next decision. It never moves work somebody
+ * already owns.
  */
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -38,266 +50,645 @@ function clock(minutes: number) {
   return `${hour12}${m ? `:${String(m).padStart(2, "0")}` : ""} ${suffix}`;
 }
 
-/** Collapse identical windows into a readable day range list. */
-function summarise(rows: { weekday: number; start_minute: number; end_minute: number }[]) {
-  const groups = new Map<string, number[]>();
-  for (const r of rows) {
-    const key = `${r.start_minute}-${r.end_minute}`;
-    groups.set(key, [...(groups.get(key) ?? []), r.weekday]);
-  }
-  return Array.from(groups.entries()).map(([key, days]) => {
-    const [start, end] = key.split("-").map(Number) as [number, number];
-    const ordered = [...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
-    return {
-      days: ordered.map((d) => DAYS[d]!.slice(0, 3)).join(", "),
-      window: `${clock(start)}–${clock(end)}`,
-    };
-  });
+function toMinutes(value: string) {
+  const [h, m] = value.split(":").map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
 }
 
-/** Today in America/Chicago, as yyyy-mm-dd, without pulling in a date library. */
+function toTimeValue(minutes: number) {
+  return `${String(Math.floor(minutes / 60) % 24).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
 function chicagoToday() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
-  return parts;
 }
+
+type Role = {
+  id: string;
+  code: string;
+  name: string;
+  current_seat_holder: string | null;
+  current_seat_name: string | null;
+  available?: boolean | null;
+  unavailable_note?: string | null;
+  sort_order?: number | null;
+};
+type Shift = { id: string; role_code: string; weekday: number; start_minute: number; end_minute: number };
+type Override = {
+  id: string;
+  role_code: string;
+  kind: string;
+  user_id: string | null;
+  starts_at: string;
+  ends_at: string;
+  note: string | null;
+};
+type Triage = { id: string; weekday: number; start_minute: number; end_minute: number; role_code: string; note: string | null };
+type Roster = { id: string; user_id: string; starts_on: string; ends_on: string; label: string | null };
+type Person = { id: string; full_name: string | null; email: string | null; oncall_eligible?: boolean | null };
 
 export function CoverageSchedulePanel() {
   const qc = useQueryClient();
-  const { isSupervisor, readOnly } = useRole();
-  const canEdit = isSupervisor && !readOnly;
-
-  const [startsOn, setStartsOn] = useState("");
-  const [endsOn, setEndsOn] = useState("");
-  const [person, setPerson] = useState("");
-  const [saving, setSaving] = useState(false);
+  const load = useServerFn(coverageModel);
 
   const { data, isLoading } = useQuery({
     queryKey: ["coverage-model"],
-    queryFn: async () => {
-      const [shifts, roles, roster, eligible] = await Promise.all([
-        supabase.from("coverage_shifts").select("*").eq("active", true),
-        supabase.from("functional_roles").select("code, name, current_seat_name, current_seat_holder").order("sort_order"),
-        supabase.from("oncall_roster").select("*").order("starts_on"),
-        supabase.from("profiles").select("id, full_name, email").eq("oncall_eligible", true).order("full_name"),
-      ]);
-      const { data: cfg } = await supabase
-        .from("coverage_config")
-        .select("after_hours_start_minute, after_hours_end_minute, timezone")
-        .maybeSingle();
-      if (shifts.error) throw shifts.error;
-      return {
-        shifts: shifts.data ?? [],
-        roles: roles.data ?? [],
-        roster: roster.data ?? [],
-        eligible: eligible.data ?? [],
-        coverage: (cfg ?? null) as CoverageConfig | null,
-      };
-    },
+    queryFn: () => load({ data: {} as never }),
   });
 
   if (isLoading || !data) return <Skeleton className="h-72 w-full" />;
 
-  const today = chicagoToday();
-  const coverageWindow = windowLabel(data.coverage);
-  const onCallToday = data.roster.find((r) => r.starts_on <= today && r.ends_on >= today);
-  const coveredToday = Boolean(onCallToday);
-  const nameOf = (id: string) => {
-    const p = data.eligible.find((e) => e.id === id);
-    return p?.full_name ?? p?.email ?? "Unknown";
-  };
-
-  async function addPeriod() {
-    if (!startsOn || !endsOn || !person) {
-      toast.error("Pick a start date, an end date and one person.");
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase.from("oncall_roster").insert({
-      starts_on: startsOn,
-      ends_on: endsOn,
-      user_id: person,
-      label: "On-call",
-    });
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setStartsOn("");
-    setEndsOn("");
-    setPerson("");
-    toast.success("On-call period saved.");
-    await qc.invalidateQueries({ queryKey: ["coverage-model"] });
-  }
-
-  async function removePeriod(id: string) {
-    const { error } = await supabase.from("oncall_roster").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    await qc.invalidateQueries({ queryKey: ["coverage-model"] });
-  }
+  const canEdit = data.canEdit === true;
+  const roles = (data.roles as Role[]).filter((r) => r.code !== "__none__");
+  const people = data.people as Person[];
+  const refresh = () => qc.invalidateQueries({ queryKey: ["coverage-model"] });
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarClock className="size-4" /> Coverage windows
-          </CardTitle>
-          <CardDescription>
-            The hours each seat is on duty, in Central time and adjusted automatically for daylight saving. New
-            eligible work only routes to a seat inside its window — a schedule change never moves work that
-            somebody already owns.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {data.roles.map((role) => {
-            const rows = data.shifts.filter((s) => s.role_code === role.code);
-            return (
-              <div key={role.code} className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3 last:border-0 last:pb-0">
+      <SeatsCard
+        roles={roles}
+        shifts={data.shifts as Shift[]}
+        overrides={data.overrides as Override[]}
+        people={people}
+        canEdit={canEdit}
+        onChanged={refresh}
+      />
+      <TriageCard windows={data.triage as Triage[]} roles={roles} />
+      <OnCallCard
+        roster={data.roster as Roster[]}
+        people={people}
+        config={(data.config ?? null) as CoverageConfig | null}
+        canEdit={canEdit}
+        onChanged={refresh}
+      />
+    </div>
+  );
+}
+
+function nameFor(people: Person[], id: string | null) {
+  if (!id) return null;
+  const p = people.find((e) => e.id === id);
+  return p?.full_name ?? p?.email ?? "Unknown";
+}
+
+function SeatsCard({
+  roles,
+  shifts,
+  overrides,
+  people,
+  canEdit,
+  onChanged,
+}: {
+  roles: Role[];
+  shifts: Shift[];
+  overrides: Override[];
+  people: Person[];
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [open, setOpen] = useState<string | null>(null);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CalendarClock className="size-4" /> Seats &amp; coverage windows
+        </CardTitle>
+        <CardDescription>
+          The hours each seat is on duty, in Central time and adjusted automatically for daylight saving. This is
+          the same plan the routing engine uses — a change takes effect on the next new ticket and never moves
+          work somebody already owns.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {roles.map((role) => {
+          const rows = shifts.filter((s) => s.role_code === role.code).sort((a, b) => a.weekday - b.weekday);
+          const active = overrides.filter(
+            (o) => o.role_code === role.code && new Date(o.ends_at) > new Date(),
+          );
+          const unavailable = role.available === false;
+          return (
+            <div key={role.code} className="space-y-2 border-b border-border pb-3 last:border-0 last:pb-0">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium">{role.name}</p>
+                  <p className="font-medium">{SEAT_LABELS[role.code] ?? role.name}</p>
                   <p className="text-muted-foreground">
-                    {role.current_seat_name ?? (
-                      <span className="text-danger">Seat unfilled — work cannot route here</span>
-                    )}
+                    {role.current_seat_name ?? <span className="text-danger">Seat unfilled</span>}
                   </p>
                   {role.current_seat_name && !role.current_seat_holder && (
                     <p className="text-warning">
-                      Assignment held as pending — this person has not redeemed their invitation yet, so work
-                      cannot route to the seat until their account is active.
+                      Pending — this person has not redeemed their invitation yet, so work cannot route to the
+                      seat until their account exists. It is seated automatically the moment they join.
+                    </p>
+                  )}
+                  {unavailable && (
+                    <p className="text-warning">
+                      Marked unavailable{role.unavailable_note ? ` — ${role.unavailable_note}` : ""}.
                     </p>
                   )}
                 </div>
-
                 <div className="text-right">
                   {rows.length === 0 ? (
                     <span className="text-muted-foreground">No schedule — available by exception</span>
                   ) : (
-                    summarise(rows).map((s) => (
-                      <p key={`${s.days}${s.window}`}>
-                        <span className="text-muted-foreground">{s.days}</span> {s.window}
+                    rows.map((s) => (
+                      <p key={s.id}>
+                        <span className="text-muted-foreground">{DAYS[s.weekday]?.slice(0, 3)}</span>{" "}
+                        {clock(s.start_minute)}–{clock(s.end_minute)}
+                        {canEdit && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="ml-1 size-6"
+                            onClick={async () => {
+                              try {
+                                await deleteShift({ data: { id: s.id } });
+                                toast.success("Shift removed.");
+                                onChanged();
+                              } catch (e) {
+                                toast.error((e as Error).message);
+                              }
+                            }}
+                          >
+                            <Trash2 className="size-3" />
+                          </Button>
+                        )}
                       </p>
                     ))
                   )}
                 </div>
               </div>
-            );
-          })}
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Moon className="size-4" /> After-hours on-call roster
-          </CardTitle>
-          <CardDescription>
-            One named person per date. Guests reach the on-call person on the ARHA Grasshopper number; the work
-            itself is recorded and managed here in Resolve. Inside the after-hours window the rostered person is
-            the active escalation owner; when it closes, normal Operations routing resumes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <div className="rounded-lg border border-border bg-secondary/40 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">On call today ({today})</p>
-            <p className="text-lg font-semibold">
-              {onCallToday ? nameOf(onCallToday.user_id) : "No one scheduled"}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-secondary/40 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">After-hours coverage window</p>
-            <p className="font-medium">{coverageWindow ?? "Not configured"}</p>
-            <p className="mt-1 text-muted-foreground">
-              Held in Central time and adjusted automatically for daylight saving. Work created inside the window
-              routes to the rostered on-call person; priority is still judged on impact, so overnight is not
-              automatically P1.
-            </p>
-          </div>
-
-          {!coveredToday && (
-            <div className="flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 p-3 text-danger">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-              <p>
-                No on-call person is scheduled for {today}. Add a dated entry to close the gap.
-              </p>
-            </div>
-          )}
-
-          {data.roster.length === 0 ? (
-            <p className="text-muted-foreground">No on-call periods have been entered.</p>
-          ) : (
-            <ul className="space-y-2">
-              {data.roster.map((r) => {
-                const current = r.starts_on <= today && r.ends_on >= today;
-                return (
-                  <li key={r.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-2">
-                    <span>
-                      <span className="font-medium">{nameOf(r.user_id)}</span>{" "}
-                      <span className="text-muted-foreground">
-                        {r.starts_on} → {r.ends_on}
+              {active.length > 0 && (
+                <ul className="space-y-1 rounded-lg border border-border bg-secondary/40 p-2 text-xs">
+                  {active.map((o) => (
+                    <li key={o.id} className="flex items-center justify-between gap-2">
+                      <span>
+                        <Badge variant="outline" className="mr-2">
+                          {o.kind === "off" ? "Off" : "Temporary cover"}
+                        </Badge>
+                        {o.kind === "cover" ? nameFor(people, o.user_id) : "Seat off duty"}{" "}
+                        <span className="text-muted-foreground">
+                          {new Date(o.starts_at).toLocaleString()} → {new Date(o.ends_at).toLocaleString()}
+                        </span>
                       </span>
-                    </span>
-                    <span className="flex items-center gap-2">
-                      {current && <Badge variant="outline">On call now</Badge>}
                       {canEdit && (
-                        <Button size="icon" variant="ghost" onClick={() => void removePeriod(r.id)}>
-                          <Trash2 className="size-4" />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-6"
+                          onClick={async () => {
+                            try {
+                              await deleteOverride({ data: { id: o.id } });
+                              toast.success("Override removed — the normal schedule is back.");
+                              onChanged();
+                            } catch (e) {
+                              toast.error((e as Error).message);
+                            }
+                          }}
+                        >
+                          <Trash2 className="size-3" />
                         </Button>
                       )}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-          {canEdit && (
-            <div className="space-y-3 rounded-lg border border-border p-3">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label>Period starts</Label>
-                  <Input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Period ends</Label>
-                  <Input type="date" value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>On-call person</Label>
-                  <Select value={person} onValueChange={setPerson}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose one" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data.eligible.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.full_name ?? p.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button size="sm" onClick={() => void addPeriod()} disabled={saving}>
-                {saving ? "Saving…" : "Add on-call period"}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Only people approved for overnight on-call appear here. If someone is missing, they need a Resolve
-                account and an administrator approval first.
-              </p>
+              {canEdit &&
+                (open === role.code ? (
+                  <SeatEditor role={role} people={people} onDone={onChanged} onClose={() => setOpen(null)} />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => setOpen(role.code)}>
+                      Manage seat &amp; schedule
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        try {
+                          await setSeatAvailability({
+                            data: { roleCode: role.code, available: unavailable, note: "Temporarily unavailable" },
+                          });
+                          toast.success(unavailable ? "Seat is available again." : "Seat marked unavailable.");
+                          onChanged();
+                        } catch (e) {
+                          toast.error((e as Error).message);
+                        }
+                      }}
+                    >
+                      {unavailable ? <Play className="mr-1 size-3" /> : <Pause className="mr-1 size-3" />}
+                      {unavailable ? "Mark available" : "Mark unavailable"}
+                    </Button>
+                  </div>
+                ))}
             </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SeatEditor({
+  role,
+  people,
+  onDone,
+  onClose,
+}: {
+  role: Role;
+  people: Person[];
+  onDone: () => void;
+  onClose: () => void;
+}) {
+  const [holder, setHolder] = useState(role.current_seat_holder ?? "");
+  const [weekday, setWeekday] = useState("1");
+  const [start, setStart] = useState("08:00");
+  const [end, setEnd] = useState("17:00");
+  const [ovKind, setOvKind] = useState<"cover" | "off">("cover");
+  const [ovPerson, setOvPerson] = useState("");
+  const [ovStart, setOvStart] = useState("");
+  const [ovEnd, setOvEnd] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function run(fn: () => Promise<unknown>, message: string) {
+    setBusy(true);
+    try {
+      await fn();
+      toast.success(message);
+      onDone();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border p-3">
+      <div className="space-y-1.5">
+        <Label>Seat holder</Label>
+        <div className="flex gap-2">
+          <Select value={holder} onValueChange={setHolder}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose an existing Resolve account" />
+            </SelectTrigger>
+            <SelectContent>
+              {people.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name ?? p.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            disabled={busy || !holder}
+            onClick={() => run(() => setSeatHolder({ data: { roleCode: role.code, userId: holder } }), "Seat updated.")}
+          >
+            <UserCheck className="mr-1 size-3" /> Seat
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => run(() => setSeatHolder({ data: { roleCode: role.code, userId: null } }), "Seat cleared.")}
+          >
+            Clear
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Only people with a Resolve account appear here. Invited staff are seated automatically when they redeem
+          their invitation — no second account is ever created.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Add a recurring shift</Label>
+        <div className="grid gap-2 sm:grid-cols-4">
+          <Select value={weekday} onValueChange={setWeekday}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DAYS.map((d, i) => (
+                <SelectItem key={d} value={String(i)}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input type="time" value={start} onChange={(e) => setStart(e.target.value)} />
+          <Input type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
+          <Button
+            size="sm"
+            disabled={busy}
+            onClick={() =>
+              run(
+                () =>
+                  saveShift({
+                    data: {
+                      roleCode: role.code,
+                      weekday: Number(weekday),
+                      startMinute: toMinutes(start),
+                      endMinute: toMinutes(end),
+                    },
+                  }),
+                "Shift added.",
+              )
+            }
+          >
+            <Plus className="mr-1 size-3" /> Add
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Temporary override for a specific date and time</Label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Select value={ovKind} onValueChange={(v) => setOvKind(v as "cover" | "off")}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Someone covers this seat</SelectItem>
+              <SelectItem value="off">Seat is off duty</SelectItem>
+            </SelectContent>
+          </Select>
+          {ovKind === "cover" && (
+            <Select value={ovPerson} onValueChange={setOvPerson}>
+              <SelectTrigger>
+                <SelectValue placeholder="Who is covering?" />
+              </SelectTrigger>
+              <SelectContent>
+                {people.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.full_name ?? p.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
-        </CardContent>
-      </Card>
+          <Input type="datetime-local" value={ovStart} onChange={(e) => setOvStart(e.target.value)} />
+          <Input type="datetime-local" value={ovEnd} onChange={(e) => setOvEnd(e.target.value)} />
+        </div>
+        <Button
+          size="sm"
+          disabled={busy || !ovStart || !ovEnd}
+          onClick={() =>
+            run(
+              () =>
+                saveOverride({
+                  data: {
+                    roleCode: role.code,
+                    kind: ovKind,
+                    userId: ovPerson || null,
+                    startsAt: new Date(ovStart).toISOString(),
+                    endsAt: new Date(ovEnd).toISOString(),
+                  },
+                }),
+              "Override saved — it beats the recurring schedule while it lasts.",
+            )
+          }
+        >
+          Save override
+        </Button>
+      </div>
+
+      <Button size="sm" variant="ghost" onClick={onClose}>
+        Done
+      </Button>
     </div>
   );
 }
+
+function TriageCard({ windows, roles }: { windows: Triage[]; roles: Role[] }) {
+  const label = (code: string) =>
+    SEAT_LABELS[code] ?? roles.find((r) => r.code === code)?.name ?? code;
+  const ordered = useMemo(
+    () => [...windows].sort((a, b) => ((a.weekday + 6) % 7) - ((b.weekday + 6) % 7) || a.start_minute - b.start_minute),
+    [windows],
+  );
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Approved cross-team triage windows</CardTitle>
+        <CardDescription>
+          Hours where Property Operations is off duty on purpose and a Guest Experience seat handles triage. These
+          are covered hours, not gaps — new Breezeway work routes to the named seat.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-1 text-sm">
+        {ordered.length === 0 ? (
+          <p className="text-muted-foreground">No cross-team windows are configured.</p>
+        ) : (
+          ordered.map((w) => (
+            <p key={w.id}>
+              <span className="text-muted-foreground">
+                {DAYS[w.weekday]} {clock(w.start_minute)}–{clock(w.end_minute)}
+              </span>{" "}
+              → {label(w.role_code)}
+            </p>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function OnCallCard({
+  roster,
+  people,
+  config,
+  canEdit,
+  onChanged,
+}: {
+  roster: Roster[];
+  people: Person[];
+  config: CoverageConfig | null;
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const [startsOn, setStartsOn] = useState("");
+  const [endsOn, setEndsOn] = useState("");
+  const [person, setPerson] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const today = chicagoToday();
+  const eligible = people.filter((p) => p.oncall_eligible !== false);
+  const onCallToday = roster.find((r) => r.starts_on <= today && r.ends_on >= today);
+
+  async function submit(id: string | null) {
+    if (!startsOn || !endsOn || !person) {
+      toast.error("Pick a start date, an end date and one person.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveOnCall({ data: { id, userId: person, startsOn, endsOn, label: "On-call" } });
+      setStartsOn("");
+      setEndsOn("");
+      setPerson("");
+      setEditing(null);
+      toast.success("On-call schedule updated.");
+      onChanged();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Moon className="size-4" /> After-hours on-call roster
+        </CardTitle>
+        <CardDescription>
+          One named person per date, held in Central time. Inside the after-hours window the rostered person is the
+          active escalation owner and takes precedence over normal routing; priority is still judged on impact, so
+          overnight is never automatically P1.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-border bg-secondary/40 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">On call today ({today})</p>
+            <p className="text-lg font-semibold">
+              {onCallToday ? nameFor(people, onCallToday.user_id) : "No one scheduled"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-secondary/40 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">After-hours window</p>
+            <p className="font-medium">{windowLabel(config) ?? "Not configured"}</p>
+          </div>
+        </div>
+
+        {!onCallToday && (
+          <div className="flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 p-3 text-danger">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <p>No on-call person is scheduled for {today}. Add a dated entry to close the gap.</p>
+          </div>
+        )}
+
+        {roster.length === 0 ? (
+          <p className="text-muted-foreground">No on-call periods have been entered.</p>
+        ) : (
+          <ul className="space-y-2">
+            {roster.map((r) => {
+              const current = r.starts_on <= today && r.ends_on >= today;
+              return (
+                <li key={r.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-2">
+                  <span>
+                    <span className="font-medium">{nameFor(people, r.user_id)}</span>{" "}
+                    <span className="text-muted-foreground">
+                      {r.starts_on} → {r.ends_on}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    {current && <Badge variant="outline">On call now</Badge>}
+                    {canEdit && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditing(r.id);
+                            setPerson(r.user_id);
+                            setStartsOn(r.starts_on);
+                            setEndsOn(r.ends_on);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={async () => {
+                            try {
+                              await deleteOnCall({ data: { id: r.id } });
+                              toast.success("On-call period removed.");
+                              onChanged();
+                            } catch (e) {
+                              toast.error((e as Error).message);
+                            }
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {canEdit && (
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <p className="font-medium">{editing ? "Edit on-call period" : "Add on-call period"}</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label>Starts</Label>
+                <Input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Ends</Label>
+                <Input type="date" value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>On-call person</Label>
+                <Select value={person} onValueChange={setPerson}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose one" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {eligible.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.full_name ?? p.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => void submit(editing)} disabled={saving}>
+                {saving ? "Saving…" : editing ? "Save changes" : "Add on-call period"}
+              </Button>
+              {editing && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditing(null);
+                    setPerson("");
+                    setStartsOn("");
+                    setEndsOn("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              A one-night override is just a period with the same start and end date. The routing engine reads this
+              exact roster, so there is no second on-call list.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export { toTimeValue };
