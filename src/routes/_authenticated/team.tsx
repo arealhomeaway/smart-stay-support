@@ -1,3 +1,4 @@
+import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -73,7 +74,7 @@ function TeamPage() {
     },
   });
 
-  if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
+  if (isLoading || !data) return <LoadingPage />;
 
   const openByRole = (code: string) =>
     data.tickets.filter(
@@ -81,14 +82,13 @@ function TeamPage() {
     );
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Seats &amp; coverage</h1>
-        <p className="mt-1 max-w-2xl text-muted-foreground">
-          Work routes to a permanent seat, never to a name. When someone changes role, update the seat holder
-          here — the routing rules, queues and playbooks stay exactly as they are.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Operations"
+        title="Seats & coverage"
+        description="Work routes to a permanent seat, never to a name. When someone changes role, update the seat holder here — the routing rules, queues and playbooks stay exactly as they are."
+      />
+
 
       <TeamInvitePanel />
 

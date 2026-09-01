@@ -178,6 +178,7 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
 
   h1,
@@ -186,4 +187,64 @@
     font-family: var(--font-display);
     letter-spacing: -0.015em;
   }
+
+  /* One visible, consistent focus treatment for every interactive control. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 }
+
+/*
+ * Resolve surface language.
+ *
+ * Elevation is expressed with two soft, warm shadows only — a resting card and
+ * a raised panel. Anything that needs more emphasis earns it through spacing
+ * and type scale, never through another shadow or a heavier border.
+ */
+@theme inline {
+  --shadow-card: 0 1px 2px oklch(0.27 0.013 222.5 / 6%), 0 1px 3px oklch(0.27 0.013 222.5 / 4%);
+  --shadow-raised: 0 4px 16px -6px oklch(0.27 0.013 222.5 / 14%), 0 1px 2px oklch(0.27 0.013 222.5 / 6%);
+}
+
+/* Standard page section surface: card background, hairline border, soft rest. */
+@utility surface {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* A row that can be clicked through to a record. */
+@utility surface-row {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 32%, var(--color-border));
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+/* Small uppercase eyebrow used above section titles and in stat tiles. */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* Tabular figures keep counts and clocks from shifting as they update. */
+@utility numeric {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+

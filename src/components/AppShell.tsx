@@ -204,27 +204,34 @@ export function AppShell({ children }: { children: ReactNode }) {
         <SidebarContent>
           {groups.map((group) => (
             <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/50">
+                {group.label}
+              </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {group.items.map((item) => (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={pathname === item.to || pathname.startsWith(`${item.to}/`)}
-                        tooltip={item.label}
-                      >
-                        <Link to={item.to} data-tour={item.tour}>
-                          <item.icon aria-hidden="true" />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {group.items.map((item) => {
+                    const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                    return (
+                      <SidebarMenuItem key={item.to}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={active}
+                          tooltip={item.label}
+                          className="relative data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:left-0 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:[&>svg]:text-sidebar-primary"
+                        >
+                          <Link to={item.to} data-tour={item.tour} aria-current={active ? "page" : undefined}>
+                            <item.icon aria-hidden="true" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
           ))}
+
         </SidebarContent>
         <SidebarFooter>
           <p className="px-2 pb-1 text-[0.65rem] leading-relaxed text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
@@ -236,10 +243,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <SidebarInset>
         <TooltipProvider delayDuration={200}>
-          <header className="sticky top-0 z-30 border-b bg-background">
-            <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
+          <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+            <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 md:px-6">
               <SidebarTrigger className="min-h-11 min-w-11 md:min-h-9 md:min-w-9" />
               <span className="hidden text-sm font-medium sm:inline">{workspace}</span>
+
               <div className="ml-auto flex flex-1 flex-wrap items-center justify-end gap-2">
                 <GlobalSearch targets={searchTargets} />
                 {!vendorMode && !ownerMode && !readOnly && (
@@ -278,8 +286,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
         </TooltipProvider>
 
-        <main className="min-h-[70vh] px-4 py-8 md:px-8">
-          <div className="mx-auto max-w-6xl">{children}</div>
+        <main className="min-h-[70vh] px-4 py-6 md:px-8 md:py-8">
+          <div className="mx-auto w-full max-w-[1400px]">{children}</div>
+
         </main>
 
         {/*

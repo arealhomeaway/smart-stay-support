@@ -1,3 +1,4 @@
+import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -186,15 +187,19 @@ function ProgramsBoard() {
     .sort((a, b) => a.flag.rank - b.flag.rank);
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="font-display text-3xl font-semibold">Owner participation programs</h1>
-        <p className="max-w-3xl text-muted-foreground">
-          Each homeowner runs one 90-day program with a single combined goal of{" "}
-          <span className="font-medium text-foreground">{OWNER_GOAL_LABEL.toLowerCase()}</span> of
-          self-reported participation. {COMBINED_TOTAL_NOTICE}
-        </p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Active Owner"
+        title="Owner participation programs"
+        description={
+          <>
+            Each homeowner runs one 90-day program with a single combined goal of{" "}
+            <span className="font-medium text-foreground">{OWNER_GOAL_LABEL.toLowerCase()}</span> of
+            self-reported participation. {COMBINED_TOTAL_NOTICE}
+          </>
+        }
+      />
+
 
       <OwnerContactAlerts />
 
@@ -290,11 +295,11 @@ function ProgramsBoard() {
       {programs.isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            No participation programs yet. Create one above.
-          </CardContent>
-        </Card>
+        <EmptyState
+          title="No participation programs yet."
+          hint="Pick a property above and create a draft program to start a homeowner's 90 days."
+        />
+
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (

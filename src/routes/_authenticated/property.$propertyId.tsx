@@ -175,7 +175,7 @@ function HubHeader({ hub }: { hub: Hub }) {
     p.maxGuests == null ? null : `sleeps ${p.maxGuests}`,
   ].filter(Boolean) as string[];
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="surface overflow-hidden shadow-raised">
       <div className="grid gap-0 md:grid-cols-[320px_1fr]">
         <div className="relative aspect-[4/3] bg-muted md:aspect-auto md:min-h-[220px]">
           {p.photoUrl ? (
@@ -193,10 +193,13 @@ function HubHeader({ hub }: { hub: Hub }) {
           )}
         </div>
         <div className="flex flex-wrap items-start justify-between gap-4 p-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <Building2 className="size-5 text-primary" />
-              <h1 className="text-2xl font-semibold">{p.nickname || p.name}</h1>
+          <div className="min-w-0">
+            <p className="eyebrow flex items-center gap-1.5">
+              <Building2 className="size-3.5" aria-hidden="true" />
+              Property hub
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight">{p.nickname || p.name}</h1>
               {p.isDemo && <Badge variant="outline">Demo</Badge>}
             </div>
             <p className="mt-1 text-muted-foreground">{p.address || "No address on file"}</p>
@@ -212,7 +215,7 @@ function HubHeader({ hub }: { hub: Hub }) {
                 )}
               </p>
             )}
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
               {p.market && <Badge variant="secondary">{p.market}</Badge>}
               {p.neighborhood && <Badge variant="outline">{p.neighborhood}</Badge>}
               {p.lifecycleStatus && <Badge variant="outline">{label(p.lifecycleStatus)}</Badge>}
@@ -221,23 +224,24 @@ function HubHeader({ hub }: { hub: Hub }) {
               <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Active" : "Inactive"}</Badge>
             </div>
             {hub.viewer.staff && p.operatingNotes && (
-              <div className="mt-4 rounded-lg border border-warning/40 bg-warning/5 p-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Special handling
-                </div>
-                <p className="mt-1 whitespace-pre-line text-sm">{p.operatingNotes}</p>
+              <div className="mt-4 max-w-2xl rounded-lg border border-warning/40 bg-warning/5 p-3">
+                <div className="eyebrow">Special handling</div>
+                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed">{p.operatingNotes}</p>
               </div>
             )}
-
           </div>
           {hub.viewer.staff && (
-            <Link to="/properties" className="text-sm text-primary underline">
+            <Link
+              to="/properties"
+              className="shrink-0 text-sm font-medium text-primary hover:underline"
+            >
               All properties
             </Link>
           )}
         </div>
       </div>
     </div>
+
   );
 }
 
