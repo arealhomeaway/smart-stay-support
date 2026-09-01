@@ -22,8 +22,15 @@ describe("where Resolve is allowed to read", () => {
   });
 
   it("still refuses any other mailbox", () => {
-    expect(() => assertAllowedMailbox("someone.else@arealhomeaway.com")).toThrow(UnauthorizedMailboxError);
-    expect(() => assertAllowedMailbox("")).toThrow(UnauthorizedMailboxError);
+    for (const bad of ["someone.else@arealhomeaway.com", ""]) {
+      let caught: unknown = null;
+      try {
+        assertAllowedMailbox(bad);
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught).toBeInstanceOf(UnauthorizedMailboxError);
+    }
   });
 
   it("keeps the Inbox path available without making it the rule", () => {
