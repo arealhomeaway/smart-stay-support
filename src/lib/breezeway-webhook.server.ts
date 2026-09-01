@@ -335,7 +335,8 @@ export async function verifyAndFinalizeTask(
       null,
     );
   }
-  if (!(await isRetainedHome(verified.homeId))) {
+  // Fixture self-tests stay offline and use the original beta set.
+  if (!(isFixture ? isPilotHome(verified.homeId) : await isRetainedHome(verified.homeId))) {
     return recordAndReturn(
       { outcome: "ignored_other_property", reason: "Outside verified portfolio", isFixture },
       null,
@@ -465,7 +466,10 @@ export async function processBreezewayWebhook(
 
   // Cheap pre-filter: if the payload names a different property, drop it now
   // and spend no API budget on it. Detail is never stored for those.
-  if (parsed.homeId != null && !(await isRetainedHome(parsed.homeId))) {
+  if (
+    parsed.homeId != null &&
+    !(isFixture ? isPilotHome(parsed.homeId) : await isRetainedHome(parsed.homeId))
+  ) {
     return recordAndReturn(
       { outcome: "ignored_other_property", reason: "Outside verified portfolio", isFixture },
       null,
