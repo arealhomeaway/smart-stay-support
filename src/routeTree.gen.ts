@@ -43,6 +43,7 @@ import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
 import { Route as ApiPublicBzProbeRouteImport } from './routes/api/public/bz-probe'
+import { Route as ApiPublicPidAuditTmpRouteImport } from './routes/api/public/pid-audit-tmp'
 import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
 import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
@@ -232,6 +233,11 @@ const ApiPublicBzProbeRoute = ApiPublicBzProbeRouteImport.update({
   path: '/api/public/bz-probe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPidAuditTmpRoute = ApiPublicPidAuditTmpRouteImport.update({
+  id: '/api/public/pid-audit-tmp',
+  path: '/api/public/pid-audit-tmp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthSharepointReturnRoute = OauthSharepointReturnRouteImport.update({
   id: '/oauth/sharepoint/return',
   path: '/oauth/sharepoint/return',
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
+  '/api/public/pid-audit-tmp': typeof ApiPublicPidAuditTmpRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
@@ -352,6 +359,7 @@ export interface FileRoutesByTo {
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
+  '/api/public/pid-audit-tmp': typeof ApiPublicPidAuditTmpRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
@@ -397,6 +405,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
+  '/api/public/pid-audit-tmp': typeof ApiPublicPidAuditTmpRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
@@ -442,6 +451,7 @@ export interface FileRouteTypes {
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
+    | '/api/public/pid-audit-tmp'
     | '/oauth/sharepoint/return'
     | '/tickets/'
     | '/vendor/'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
+    | '/api/public/pid-audit-tmp'
     | '/oauth/sharepoint/return'
     | '/tickets'
     | '/vendor'
@@ -529,6 +540,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/$ticketId'
     | '/_authenticated/vendor/scorecard'
     | '/api/public/bz-probe'
+    | '/api/public/pid-audit-tmp'
     | '/oauth/sharepoint/return'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
@@ -548,6 +560,7 @@ export interface RootRouteChildren {
   AwaitingAccessRoute: typeof AwaitingAccessRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicBzProbeRoute: typeof ApiPublicBzProbeRoute
+  ApiPublicPidAuditTmpRoute: typeof ApiPublicPidAuditTmpRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
@@ -798,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBzProbeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/pid-audit-tmp': {
+      id: '/api/public/pid-audit-tmp'
+      path: '/api/public/pid-audit-tmp'
+      fullPath: '/api/public/pid-audit-tmp'
+      preLoaderRoute: typeof ApiPublicPidAuditTmpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/sharepoint/return': {
       id: '/oauth/sharepoint/return'
       path: '/oauth/sharepoint/return'
@@ -929,6 +949,7 @@ const rootRouteChildren: RootRouteChildren = {
   AwaitingAccessRoute: AwaitingAccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicBzProbeRoute: ApiPublicBzProbeRoute,
+  ApiPublicPidAuditTmpRoute: ApiPublicPidAuditTmpRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,
   ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
