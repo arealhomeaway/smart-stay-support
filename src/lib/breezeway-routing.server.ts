@@ -32,6 +32,30 @@ async function admin() {
   return supabaseAdmin;
 }
 
+
+/**
+ * Lowest weighted load wins. Ties break deterministically: whoever was
+ * auto-routed longest ago (never-routed first), then the lowest user id — that
+ * is the round-robin, and it needs no extra counter to stay stable.
+ */
+export function pickLightestCandidate<T extends { userId: string; weight: number }>(
+  candidates: T[],
+  lastRouted: Map<string, string>,
+): T | null {
+  if (candidates.length === 0) return null;
+  return [...candidates].sort(
+    (a, b) =>
+      a.weight - b.weight ||
+      (lastRouted.get(a.userId) ?? "").localeCompare(lastRouted.get(b.userId) ?? "") ||
+      a.userId.localeCompare(b.userId),
+  )[0]!;
+}
+
+/** Whether a minute-of-day falls inside a possibly overnight window. */
+export function isWithinWindow(nowMinutes: number, start: number, end: number) {
+  return start > end ? nowMinutes >= start || nowMinutes < end : nowMinutes >= start && nowMinutes < end;
+}
+
 export type RoutingDecision = {
   userId: string | null;
   roleCode: string | null;
@@ -81,8 +105,7 @@ async function afterHoursNow(): Promise<boolean> {
   const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
   const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
   const now = hour * 60 + minute;
-  const { after_hours_start_minute: start, after_hours_end_minute: end } = cfg;
-  return start > end ? now >= start || now < end : now >= start && now < end;
+  return isWithinWindow(now, cfg.after_hours_start_minute, cfg.after_hours_end_minute);
 }
 
 async function assignable(userId: string | null): Promise<boolean> {
@@ -191,13 +214,7 @@ export async function routeBreezewayTicket(): Promise<RoutingDecision> {
     }
   }
 
-  candidates.sort(
-    (a, b) =>
-      a.weight - b.weight ||
-      (lastRouted.get(a.userId) ?? "").localeCompare(lastRouted.get(b.userId) ?? "") ||
-      a.userId.localeCompare(b.userId),
-  );
-  const winner = candidates[0]!;
+  const winner = pickLightestCandidate(candidates, lastRouted)!;
   return {
     userId: winner.userId,
     roleCode: winner.roleCode,
