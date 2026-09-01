@@ -788,8 +788,9 @@ if (APPLY) {
         source_record_id: p.c.page.id,
         as_of: pr.as_of,
         note: pr.field_key.startsWith("systems.smoke.expires")
-          ? "Source supplied month/year precision only where expires_precision = month."
+          ? "Source precision preserved in systems.smoke.expires_precision (day/month/year)."
           : null,
+
       });
   }
 
