@@ -240,6 +240,13 @@ type RequestOptions = {
   allowWrite?: boolean;
   body?: unknown;
   /**
+   * multipart/form-data body (Breezeway task photo upload). Mutually exclusive
+   * with `body`. The Content-Type header is deliberately NOT set: the runtime
+   * writes it together with the boundary, and setting it by hand produces a
+   * body Breezeway cannot parse.
+   */
+  form?: FormData;
+  /**
    * Automatic retry on 429/5xx. Safe for reads, NEVER safe for a
    * non-idempotent create: a 500 can mean "created but the response was
    * lost", and retrying it produces a second real Breezeway task. Callers
@@ -261,6 +268,10 @@ export async function breezewayRequest<T>(path: string, options: RequestOptions 
   let attempt = 0;
   let token = await getAccessToken();
 
+  if (options.form && options.body !== undefined) {
+    throw new BreezewayError(400, "A Breezeway request cannot send JSON and multipart together.");
+  }
+
   for (;;) {
     await takeRequestSlot();
     const res = await fetch(url, {
@@ -270,7 +281,11 @@ export async function breezewayRequest<T>(path: string, options: RequestOptions 
         Accept: "application/json",
         ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
       },
-      ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+      ...(options.form
+        ? { body: options.form }
+        : options.body === undefined
+          ? {}
+          : { body: JSON.stringify(options.body) }),
     });
     noteRateLimitHeaders(res);
 

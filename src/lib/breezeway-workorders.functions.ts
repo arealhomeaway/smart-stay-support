@@ -165,3 +165,63 @@ export const syncBreezewayPeopleFn = createServerFn({ method: "POST" })
     const sync = await mod.syncBreezewayPeople();
     return { sync, audit: await mod.breezewayPeopleAudit() };
   });
+
+/**
+ * Uploads one photo to the Breezeway task behind a mirrored work order.
+ *
+ * FormData input: the browser sends the raw file, so nothing is base64-inflated.
+ * The client sends a Resolve work-order UUID only — the Breezeway task id is
+ * resolved server-side and is never trusted from the client.
+ */
+export const uploadWorkOrderPhotoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: FormData) => {
+    if (!(input instanceof FormData)) throw new Error("Expected a file upload.");
+    const file = input.get("file");
+    if (!(file instanceof File)) throw new Error("Choose a photo first.");
+    return {
+      workOrderId: uuid(input.get("workOrderId"), "work order"),
+      // Only ever true when the staff member explicitly ticked the box.
+      includeInTaskReport: String(input.get("includeInTaskReport") ?? "") === "true",
+      file,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const { uploadWorkOrderPhoto } = await import("@/lib/breezeway-workorders.server");
+    return uploadWorkOrderPhoto(
+      data.workOrderId,
+      {
+        name: data.file.name,
+        type: data.file.type,
+        bytes: await data.file.arrayBuffer(),
+      },
+      data.includeInTaskReport,
+      (profile as { full_name: string | null } | null)?.full_name ?? "ARHA Resolve",
+    );
+  });
+
+/**
+ * Deliberate escalation: create a Resolve Ticket from a Breezeway work order
+ * and auto-route it to the Property Operations (Team B) queue.
+ */
+export const escalateWorkOrderToTicketFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { workOrderId: string; priority?: string }) => ({
+    workOrderId: uuid(input?.workOrderId, "work order"),
+    priority: ["p1", "p2", "p3"].includes(String(input?.priority)) ? String(input?.priority) : "p3",
+  }))
+  .handler(async ({ data, context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { createTicketFromWorkOrder } = await import("@/lib/breezeway-routing.server");
+    return createTicketFromWorkOrder(
+      data.workOrderId,
+      data.priority as "p1" | "p2" | "p3",
+      context.userId,
+    );
+  });
