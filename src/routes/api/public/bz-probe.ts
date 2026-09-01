@@ -15,8 +15,28 @@ export const Route = createFileRoute("/api/public/bz-probe")({
         const { breezewayRequest, BreezewayError } = await import("@/lib/breezeway.server");
         const body = (await request.json().catch(() => ({}))) as {
           paths?: string[];
+          scanHomes?: number[];
         };
         const out: Record<string, unknown> = {};
+        for (const home of body.scanHomes ?? []) {
+          try {
+            const data = await breezewayRequest<{ results?: { id: number; photos?: unknown[] }[] }>(
+              "/task/",
+              { params: { home_id: home, limit: 100 } },
+            );
+            const withPhotos = (data.results ?? []).filter(
+              (t) => Array.isArray(t.photos) && t.photos.length > 0,
+            );
+            out[`scan:${home}`] = {
+              total: (data.results ?? []).length,
+              withPhotos: withPhotos.length,
+              sample: JSON.stringify(withPhotos[0]?.photos?.slice(0, 2) ?? []).slice(0, 1500),
+              taskId: withPhotos[0]?.id ?? null,
+            };
+          } catch (e) {
+            out[`scan:${home}`] = { error: String(e).slice(0, 200) };
+          }
+        }
         for (const p of body.paths ?? []) {
           try {
             const data = await breezewayRequest<unknown>(p);
