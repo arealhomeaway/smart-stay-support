@@ -485,3 +485,18 @@ only supported conversation surface.
 5. Breezeway-native reporting/billing exports.
 Everything else — read, create, update, close, reopen, approve, comment, read photos —
 is now doable from Resolve.
+
+### Pre-publish regression (2026-09-01) — PASS except the shared comment identity
+- 156 verified / 6 unmapped; write guard refuses on mapping state, flag state and
+  missing property before any Breezeway call.
+- Hub Operations tab verified live as a staff user: retrieval, comments, photos
+  (77 on one work order), Close/Reopen/Approve controls, evidence gate per work order.
+- Breezeway tables are staff-only SELECT; no anon/owner/vendor grants. Every server fn
+  re-checks `is_staff`; supervisor-only actions re-check role.
+- Ticket state independent: no path creates or mutates a Ticket from a work order or
+  comment (mirror + optional activity note only).
+- BLOCKED: "ARHA Resolve" person does not exist in Breezeway yet. Unmapped staff replies
+  refuse cleanly ("Resolve has no Breezeway identity to post under…") — no impersonation,
+  nothing posted. Once the person exists, a people sync auto-detects it by name; the
+  BREEZEWAY_COMMENT_PEOPLE_ID secret is only a manual override.
+- Publish held per COO instruction until the fallback comment test passes.
