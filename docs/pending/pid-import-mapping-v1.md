@@ -32,7 +32,7 @@ Coverage is against the 156-property candidate set.
 | 6 | State | rich_text | 159 | 100% | — | Exclude | OwnerRez | — | — | None | Same as above |
 | 7 | Zip | rich_text | 158 | 100% | — | Exclude | OwnerRez | — | — | None | Same as above |
 | 8 | GPS Coordinates | rich_text | 159 | 100% | properties.latitude / longitude | Manual Review | OwnerRez | parse 'lat, lng' decimal pair | abs(lat)<=90, abs(lng)<=180; only fill when OwnerRez geocode missing | None | Fill gaps only; OwnerRez geocode preferred |
-| 9 | Greater Area | select | 159 | 100% | properties.market | Manual Review | Resolve | map to existing market values | must match Resolve market enum | None | Reconcile PID areas with Resolve markets before import |
+| 9 | Greater Area | select | 159 | 100% | properties.market (typed column) + properties.neighborhood | Import | Resolve | map PID Greater Area onto existing Resolve market values; never create a market to mirror Notion; neighborhood kept separately | must resolve to an existing Resolve market; unmappable values → review list, not a new market | None | APPROVED: map onto existing Resolve market structure; only genuinely unmappable values are flagged |
 | 10 | Neighborhood Name | rich_text | 151 | 97% | properties.neighborhood | Import | Notion transition-only | trim | <=120 chars | None | Operationally used for routing/context |
 | 11 | OwnerRez Internal ID | rich_text | 158 | 100% | join key only | Exclude | OwnerRez | strip 'ORP' prefix | must equal existing properties.ownerrez_property_id | None | Join key; not stored again |
 | 12 | OwnerRez Order | number | 157 | 100% | — | Exclude | OwnerRez | — | — | None | Notion sort artifact |
