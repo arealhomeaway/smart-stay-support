@@ -749,6 +749,45 @@ export type Database = {
         }
         Relationships: []
       }
+      coverage_overrides: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          id: string
+          kind: string
+          note: string | null
+          role_code: string
+          starts_at: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          id?: string
+          kind?: string
+          note?: string | null
+          role_code: string
+          starts_at: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          role_code?: string
+          starts_at?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       coverage_shifts: {
         Row: {
           active: boolean
@@ -795,6 +834,48 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      coverage_triage_windows: {
+        Row: {
+          active: boolean
+          covers_team: string
+          created_at: string
+          created_by: string | null
+          end_minute: number
+          id: string
+          note: string | null
+          role_code: string
+          start_minute: number
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          active?: boolean
+          covers_team: string
+          created_at?: string
+          created_by?: string | null
+          end_minute: number
+          id?: string
+          note?: string | null
+          role_code: string
+          start_minute: number
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          active?: boolean
+          covers_team?: string
+          created_at?: string
+          created_by?: string | null
+          end_minute?: number
+          id?: string
+          note?: string | null
+          role_code?: string
+          start_minute?: number
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: []
       }
       credential_access_log: {
         Row: {
@@ -1613,6 +1694,7 @@ export type Database = {
       functional_roles: {
         Row: {
           active: boolean
+          available: boolean
           backup_role_code: string | null
           code: string
           coverage_window: string | null
@@ -1625,10 +1707,13 @@ export type Database = {
           name: string
           sort_order: number
           team: string
+          unavailable_note: string | null
+          unavailable_until: string | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          available?: boolean
           backup_role_code?: string | null
           code: string
           coverage_window?: string | null
@@ -1641,10 +1726,13 @@ export type Database = {
           name: string
           sort_order?: number
           team?: string
+          unavailable_note?: string | null
+          unavailable_until?: string | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          available?: boolean
           backup_role_code?: string | null
           code?: string
           coverage_window?: string | null
@@ -1657,6 +1745,8 @@ export type Database = {
           name?: string
           sort_order?: number
           team?: string
+          unavailable_note?: string | null
+          unavailable_until?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4096,6 +4186,7 @@ export type Database = {
           redeemed_by: string | null
           revoked_at: string | null
           role: Database["public"]["Enums"]["app_role"]
+          seat_role_code: string | null
         }
         Insert: {
           code: string
@@ -4110,6 +4201,7 @@ export type Database = {
           redeemed_by?: string | null
           revoked_at?: string | null
           role: Database["public"]["Enums"]["app_role"]
+          seat_role_code?: string | null
         }
         Update: {
           code?: string
@@ -4124,6 +4216,7 @@ export type Database = {
           redeemed_by?: string | null
           revoked_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          seat_role_code?: string | null
         }
         Relationships: []
       }
@@ -5506,9 +5599,24 @@ export type Database = {
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
+      seat_eligible_now: {
+        Args: { _at?: string; _role_code: string }
+        Returns: boolean
+      }
+      seat_holder_at: {
+        Args: { _at?: string; _role_code: string }
+        Returns: string
+      }
       seat_on_duty: {
         Args: { _at?: string; _role_code: string }
         Returns: boolean
+      }
+      seat_override_at: {
+        Args: { _at?: string; _role_code: string }
+        Returns: {
+          kind: string
+          user_id: string
+        }[]
       }
       seed_demo_environment:
         | { Args: never; Returns: undefined }
