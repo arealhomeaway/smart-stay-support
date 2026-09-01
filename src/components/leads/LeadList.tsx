@@ -5,7 +5,7 @@
  * rows and show the same derived facts — so the query, the row and the drawer
  * wiring live here once.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Chip } from "@/components/ui/page";
@@ -109,7 +109,16 @@ export function LeadListSection({
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const people = useStaffDirectory().data ?? [];
-  const open = leads.find((l) => l.id === openId) ?? null;
+  // Logging contact can move a lead out of the list this view filters to. The
+  // workspace should stay open on the row the coordinator is working, so the
+  // last known version of it is kept until they close the drawer themselves.
+  const lastOpen = useRef<LeadRow | null>(null);
+  const fromList = leads.find((l) => l.id === openId) ?? null;
+  if (fromList) lastOpen.current = fromList;
+  const open = openId ? (fromList ?? lastOpen.current) : null;
+  useEffect(() => {
+    if (!openId) lastOpen.current = null;
+  }, [openId]);
 
   return (
     <>
