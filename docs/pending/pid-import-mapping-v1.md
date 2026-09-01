@@ -124,7 +124,7 @@ Coverage is against the 156-property candidate set.
 | 98 | Backyard Pool Season | rich_text | 6 | 4% | properties.pool_spa.season | Import | Notion transition-only | trim | <=120 chars | None | Seasonal service |
 | 99 | Backyard Pool Service Schedule | rich_text | 6 | 4% | properties.pool_spa.service_schedule | Import | Notion transition-only | trim | <=200 chars | None | Recurring service |
 | 100 | Hot Tub Control Panel Location | rich_text | 4 | 3% | properties.pool_spa.control_panel_location | Import | Notion transition-only | trim | <=200 chars | None | Service access |
-| 101 | Pool & Hot Tub Technician Form | formula | 159 | 100% | external_links (fillout) | Manual Review | External | host arha.fillout.com | https URL | None | Fillout form — decide keep-temporarily vs replace with Resolve work order |
+| 101 | Pool & Hot Tub Technician Form | formula | 159 | 100% | property_external_links (kind = fillout_form, flagged for replacement) | External Link | External | host arha.fillout.com | https URL | None | APPROVED: keep temporarily as an external link, flagged for later replacement by a native Resolve workflow; not recreated one-for-one now |
 | 102 | HOA? | select | 148 | 95% | properties.hoa.present | Import | Notion transition-only | boolean from select | true/false | None | Compliance/fines |
 | 103 | HOA Notes (General) | rich_text | 67 | 43% | properties.hoa.notes + external_links | Import | Notion transition-only | trim; split HOA site URLs into external links | <=1000 chars | None | Compliance/fines |
 | 104 | Neighborhood Amenities? | multi_select | 153 | 98% | properties.amenities.list | Import | Notion transition-only | multi-select to string[] | array | None | Guest context |
