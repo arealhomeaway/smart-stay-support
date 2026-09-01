@@ -6,8 +6,9 @@ import { useDemo } from "@/components/DemoProvider";
 import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTeam";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { EmptyState, LoadingRows, PageHeader, PriorityRail } from "@/components/ui/page";
+
 import {
   OPEN_STATUSES,
   PRIORITIES,
@@ -97,66 +98,82 @@ function TicketsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold">Tickets</h1>
-          <p className="mt-1 text-muted-foreground">{activeTab?.hint}</p>
-        </div>
-        <Button asChild>
-          <Link to="/tickets/new">Log a ticket</Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Tickets"
+        description={activeTab?.hint}
+        actions={
+          <Button asChild>
+            <Link to="/tickets/new">Log a ticket</Link>
+          </Button>
+        }
+      />
 
       {demoMode && (
-        <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2 text-sm">
+        <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">
           <span className="font-medium">Demo data.</span> These tickets are seeded examples. They are excluded from
           production analytics and never trigger emails, texts or integrations.
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1 rounded-md border border-border p-1">
-        {QUEUE_TABS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setTab(t.value)}
-            className={`rounded px-3 py-1.5 text-sm transition-colors ${
-              tab === t.value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            {t.label}
-            <span className="ml-2 text-xs opacity-70">{counts[t.value] ?? 0}</span>
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-1 rounded-md border border-border bg-card p-1" role="tablist">
+          {QUEUE_TABS.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.value}
+              onClick={() => setTab(t.value)}
+              className={`rounded px-3 py-1.5 text-sm transition-colors ${
+                tab === t.value
+                  ? "bg-primary font-medium text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              }`}
+            >
+              {t.label}
+              <span className="numeric ml-2 text-xs opacity-70">{counts[t.value] ?? 0}</span>
+            </button>
+          ))}
+        </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Input
-          placeholder="Search reference, title, guest, property, work type, owner…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex gap-1 rounded-md border border-border p-1">
+        <div className="flex gap-1 rounded-md border border-border bg-card p-1">
           {["all", ...PRIORITIES.map((p) => p.value)].map((p) => (
             <button
               key={p}
+              type="button"
+              aria-pressed={priority === p}
               onClick={() => setPriority(p)}
               className={`rounded px-3 py-1 text-sm uppercase transition-colors ${
-                priority === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"
+                priority === p
+                  ? "bg-primary font-medium text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               }`}
             >
               {p}
             </button>
           ))}
         </div>
+
+        <Input
+          placeholder="Search reference, title, guest, property, work type, owner…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Search tickets"
+          className="w-full max-w-sm sm:ml-auto sm:w-auto"
+        />
       </div>
 
       {isLoading ? (
-        <Skeleton className="h-64 w-full" />
+        <LoadingRows rows={6} />
       ) : tickets.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">
-          Nothing here. {tab === "mine" ? "You are clear — check the team queue for unassigned work." : "Nothing matches."}
-        </p>
+        <EmptyState
+          title={tab === "mine" ? "You are clear." : "No tickets match this view."}
+          hint={
+            tab === "mine"
+              ? "Nothing is assigned to you right now — check the team queue for unassigned work."
+              : "Try a different queue, priority or search term."
+          }
+        />
       ) : (
         <div className="space-y-2">
           {tickets.map((t) => {
@@ -168,10 +185,11 @@ function TicketsPage() {
                 key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
-                className="block rounded-lg border border-border bg-card p-4 transition-colors hover:bg-secondary"
+                className="surface-row relative block py-3 pl-5 pr-4"
               >
+                <PriorityRail priority={t.priority} />
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-muted-foreground">#{t.ref}</span>
+                  <span className="numeric text-xs text-muted-foreground">#{t.ref}</span>
                   <span className="font-medium">{t.title}</span>
                   <Badge variant="outline" className={priorityTone(t.priority)}>
                     {priorityMeta(t.priority).short}
@@ -194,7 +212,7 @@ function TicketsPage() {
                       Demo
                     </Badge>
                   )}
-                  <span className="ml-auto text-sm text-muted-foreground">
+                  <span className="numeric ml-auto text-sm text-muted-foreground">
                     {live ? (
                       <span className={live.breached ? "font-medium text-danger" : ""}>{live.label}</span>
                     ) : (
@@ -202,10 +220,10 @@ function TicketsPage() {
                     )}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
                   {t.work_types?.name ?? t.category} ·{" "}
-                  <span className={ownerId ? "" : "text-danger"}>
+                  <span className={ownerId ? "" : "font-medium text-danger"}>
                     {ownerId ? displayName(people.get(ownerId)) : "Unassigned"}
                   </span>
                   {" · "}
@@ -223,3 +241,4 @@ function TicketsPage() {
     </div>
   );
 }
+

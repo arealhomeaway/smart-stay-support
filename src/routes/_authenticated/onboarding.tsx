@@ -1,3 +1,4 @@
+import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -147,7 +148,7 @@ function OnboardingWorkspace() {
     return data.properties.find((p) => p.id === id) ?? null;
   }, [data, selected, pipeline]);
 
-  if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
+  if (isLoading || !data) return <LoadingPage />;
 
   const tasks = current ? data.tasks.filter((t) => t.property_id === current.id) : [];
   const readiness = current
@@ -166,16 +167,13 @@ function OnboardingWorkspace() {
     : [];
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Onboarding</p>
-        <h1 className="font-display text-3xl font-semibold">Onboarding workspace</h1>
-        <p className="max-w-3xl text-sm text-muted-foreground">
-          Homes stay on their existing Property ID from day one. Pre-handoff work lives here and never
-          mixes with operational tickets. A home only becomes an active operation after the two documented
-          reviews and an Operations acceptance.
-        </p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Onboarding"
+        title="Onboarding workspace"
+        description="Homes stay on their existing Property ID from day one. Pre-handoff work lives here and never mixes with operational tickets. A home only becomes an active operation after the two documented reviews and an Operations acceptance."
+      />
+
 
       <Tabs defaultValue="pipeline" className="space-y-6">
         <TabsList>

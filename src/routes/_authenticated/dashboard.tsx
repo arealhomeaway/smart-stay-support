@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState, LoadingPage, PageHeader, PriorityRail, SectionCard, StatTile } from "@/components/ui/page";
+
 import {
   OPEN_STATUSES,
   STATUSES,
@@ -54,12 +54,7 @@ function Dashboard() {
   });
 
   if (isLoading || !data) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-40 w-full" />
-      </div>
-    );
+    return <LoadingPage tiles={4} />;
   }
 
   const open = data.tickets.filter((t) => OPEN_STATUSES.includes(t.status));
@@ -71,104 +66,116 @@ function Dashboard() {
   );
 
   const stats = [
-    { label: "Open tickets", value: open.length, tone: "text-foreground" },
-    { label: "SLA breached", value: breached.length, tone: "text-danger" },
-    { label: "Not yet acknowledged", value: unacked.length, tone: "text-warning-foreground" },
-    { label: "Closed this week", value: resolvedWeek.length, tone: "text-success" },
+    { label: "Open tickets", value: open.length, tone: "neutral" as const, hint: "Live across the portfolio" },
+    { label: "Past its clock", value: breached.length, tone: "critical" as const, hint: "Response or action overdue" },
+    { label: "Not acknowledged", value: unacked.length, tone: "attention" as const, hint: "Nobody has picked these up" },
+    { label: "Closed this week", value: resolvedWeek.length, tone: "positive" as const, hint: "Last seven days" },
   ];
 
+  const attention = open
+    .slice()
+    .sort((a, b) =>
+      (a.response_due_at ?? a.action_due_at ?? "").localeCompare(b.response_due_at ?? b.action_due_at ?? ""),
+    )
+    .slice(0, 10);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold">Operations dashboard</h1>
-        <p className="mt-1 text-muted-foreground">
-          {data.propertyCount} properties · {open.length} live issues
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Keep calm. Check Resolve."
+        title="Operations dashboard"
+        description={`Your new favourite place to find things — ${data.propertyCount} properties, ${open.length} live issues.`}
+        actions={
+          <Link
+            to="/tickets/new"
+            className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Log a ticket
+          </Link>
+        }
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <Card key={s.label}>
-            <CardContent className="pt-6">
-              <p className={`text-3xl font-semibold ${s.tone}`}>{s.value}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{s.label}</p>
-            </CardContent>
-          </Card>
+          <StatTile key={s.label} label={s.label} value={s.value} tone={s.tone} hint={s.hint} />
         ))}
       </div>
 
       {escalated.length > 0 && (
-        <Card className="border-danger/40 bg-danger/5">
-          <CardHeader>
-            <CardTitle className="text-danger">Escalated right now</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {escalated.map((t) => (
+        <SectionCard
+          tone="critical"
+          title="Escalated right now"
+          description="These have passed their escalation point and someone senior is expected to step in."
+          bodyClassName="space-y-2"
+        >
+          {escalated.map((t) => (
+            <Link
+              key={t.id}
+              to="/tickets/$ticketId"
+              params={{ ticketId: t.id }}
+              className="surface-row relative flex flex-wrap items-center gap-3 border-danger/30 py-2.5 pl-5 pr-3"
+            >
+              <PriorityRail priority={t.priority} />
+              <Badge variant="outline" className={priorityTone(t.priority)}>
+                {priorityMeta(t.priority).short}
+              </Badge>
+              <span className="min-w-0 truncate font-medium">{t.title}</span>
+              <span className="ml-auto shrink-0 text-sm font-medium text-danger">{slaState(t).escalation?.who}</span>
+            </Link>
+          ))}
+        </SectionCard>
+      )}
+
+      <SectionCard
+        title="Needs attention now"
+        description="Open tickets, soonest clock first."
+        bodyClassName="space-y-2"
+      >
+        {attention.length === 0 ? (
+          <EmptyState
+            title="Nothing open right now."
+            hint="Every ticket in the portfolio is resolved or waiting on someone outside the team."
+            action={
+              <Link to="/tickets/new" className="text-sm font-medium text-primary hover:underline">
+                Log a ticket
+              </Link>
+            }
+          />
+        ) : (
+          attention.map((t) => {
+            const sla = slaState(t);
+            const live = sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
+            return (
               <Link
                 key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
-                className="flex flex-wrap items-center gap-3 rounded-lg border border-danger/30 bg-card p-3 transition-colors hover:bg-secondary"
+                className="surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2.5 pl-5 pr-3"
               >
+                <PriorityRail priority={t.priority} />
                 <Badge variant="outline" className={priorityTone(t.priority)}>
                   {priorityMeta(t.priority).short}
                 </Badge>
-                <span className="font-medium">{t.title}</span>
-                <span className="ml-auto text-sm text-danger">{slaState(t).escalation?.who}</span>
+                <span className="min-w-0 flex-1 truncate font-medium">{t.title}</span>
+                <span className="truncate text-sm text-muted-foreground">
+                  {t.properties?.nickname ?? t.properties?.name ?? "Unassigned property"}
+                </span>
+                <Badge variant="outline" className={statusTone(t.status)}>
+                  {labelFor(STATUSES, t.status)}
+                </Badge>
+                <span className="numeric ml-auto shrink-0 text-sm text-muted-foreground">
+                  {live ? (
+                    <span className={live.breached ? "font-medium text-danger" : ""}>{live.label}</span>
+                  ) : (
+                    relativeTime(t.reported_at)
+                  )}
+                </span>
               </Link>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Needs attention now</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {open.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Nothing open. <Link to="/tickets/new" className="text-primary hover:underline">Log a ticket</Link>.
-            </p>
-          )}
-          {open
-            .slice()
-            .sort((a, b) => (a.response_due_at ?? a.action_due_at ?? "").localeCompare(b.response_due_at ?? b.action_due_at ?? ""))
-            .slice(0, 10)
-            .map((t) => {
-              const sla = slaState(t);
-              const live = sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
-              return (
-                <Link
-                  key={t.id}
-                  to="/tickets/$ticketId"
-                  params={{ ticketId: t.id }}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-secondary"
-                >
-                  <Badge variant="outline" className={priorityTone(t.priority)}>
-                    {priorityMeta(t.priority).short}
-                  </Badge>
-                  <span className="font-medium">{t.title}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t.properties?.nickname ?? t.properties?.name ?? "Unassigned property"}
-                  </span>
-                  <Badge variant="outline" className={statusTone(t.status)}>
-                    {labelFor(STATUSES, t.status)}
-                  </Badge>
-                  <span className="ml-auto text-sm text-muted-foreground">
-                    {live ? (
-                      <span className={live.breached ? "font-medium text-danger" : ""}>{live.label}</span>
-                    ) : (
-                      relativeTime(t.reported_at)
-                    )}
-                  </span>
-                </Link>
-              );
-            })}
-        </CardContent>
-      </Card>
-
+            );
+          })
+        )}
+      </SectionCard>
     </div>
   );
 }
+

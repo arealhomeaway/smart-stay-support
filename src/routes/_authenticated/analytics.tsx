@@ -1,3 +1,4 @@
+import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -289,7 +290,7 @@ function Analytics() {
     },
   });
 
-  if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
+  if (isLoading || !data) return <LoadingPage />;
 
   const cutoff = Date.now() - days * 864e5;
   const rows = data.filter((t) => new Date(t.reported_at).getTime() >= cutoff);
@@ -475,15 +476,17 @@ function Analytics() {
     }));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">Analytics &amp; KPIs</h1>
-          <p className="mt-1 text-muted-foreground">
-            Whether guests were protected, whether work stayed fixed, and which homes and handoffs keep costing us.
-          </p>
+          <PageHeader
+            eyebrow="Insight"
+            title="Analytics & KPIs"
+            description="Whether guests were protected, whether work stayed fixed, and which homes and handoffs keep costing us."
+          />
           <ReportingBaselineNote className="mt-3 max-w-2xl" />
         </div>
+
         <div className="flex flex-wrap gap-2">
           {RANGES.map((r) => (
             <Button
