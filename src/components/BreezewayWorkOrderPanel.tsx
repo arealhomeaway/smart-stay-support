@@ -6,10 +6,10 @@
  * and closing one here closes the Breezeway work order only. A Resolve Ticket
  * keeps its own closure requirements.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, Camera, MessageSquare, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { CalendarClock, Camera, MessageSquare, RefreshCw, Send, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   workOrderComments,
   workOrderLifecycle,
   workOrderPhotos,
+  uploadWorkOrderPhotoFn,
 } from "@/lib/breezeway-workorders.functions";
 import { EvidenceQualityGate } from "@/components/EvidenceQualityGate";
 import type { BreezewayWorkOrder } from "@/lib/breezeway-workorders";
@@ -333,7 +334,7 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
         )}
       </div>
 
-      {showPhotos && <PhotoStrip workOrderId={order.id} />}
+      {showPhotos && <PhotoStrip workOrderId={order.id} writable={writable} />}
       {showEvidence && order.propertyId && (
         <EvidenceQualityGate
           subjectType="work_order"
