@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS public.breezeway_work_order_photos_photo_id_key;
+ALTER TABLE public.breezeway_work_order_photos
+  ADD CONSTRAINT breezeway_work_order_photos_photo_id_key UNIQUE (breezeway_photo_id);
