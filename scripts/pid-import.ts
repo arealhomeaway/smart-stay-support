@@ -118,20 +118,27 @@ const MONTHS = [
   "july", "august", "september", "october", "november", "december",
 ];
 
-/** Parses free-text expiration copy without ever guessing an ambiguous date. */
-function parseExpiry(raw: string): { date: string; precision: "day" | "month" } | null {
+/**
+ * Parses free-text expiration copy without ever guessing an ambiguous date.
+ * Source precision is preserved: a month/year source yields the last day of
+ * that month, a year-only source the last day of that year, and anything
+ * narrative stays unparsed for manual review.
+ */
+function parseExpiry(raw: string): { date: string; precision: "day" | "month" | "year" } | null {
   const s = raw.trim();
-  // 03.28.2036 / 07/19/2036 / 2036-03-28
+  // 2036-03-28
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (m) return { date: `${m[1]}-${pad(m[2])}-${pad(m[3])}`, precision: "day" };
+  // 03.28.2036 / 07/19/2036
   m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
   if (m) return { date: `${m[3]}-${pad(m[1])}-${pad(m[2])}`, precision: "day" };
-  // July 19, 2036 / 2035 June 9
-  const mon = MONTHS.findIndex((x) => new RegExp(`\\b${x}\\b`, "i").test(s));
+  // July 19, 2036 / 2035 June 9 / Jul 5 2034 / Feb 4, 2035
+  const mon = MONTHS.findIndex((x) => new RegExp(`\\b${x.slice(0, 3)}\\w*\\b`, "i").test(s));
   const yr = s.match(/\b(20\d{2})\b/);
   const day = s.replace(/\b20\d{2}\b/, "").match(/\b(\d{1,2})\b/);
   if (mon >= 0 && yr) {
-    if (day) return { date: `${yr[1]}-${pad(mon + 1)}-${pad(day[1])}`, precision: "day" };
+    if (day && Number(day[1]) >= 1 && Number(day[1]) <= 31)
+      return { date: `${yr[1]}-${pad(mon + 1)}-${pad(day[1])}`, precision: "day" };
     return { date: lastDayOfMonth(Number(yr[1]), mon + 1), precision: "month" };
   }
   // 07/2035 or 2035/07
@@ -139,8 +146,20 @@ function parseExpiry(raw: string): { date: string; precision: "day" | "month" } 
   if (m) return { date: lastDayOfMonth(Number(m[2]), Number(m[1])), precision: "month" };
   m = s.match(/^(\d{4})[./-](\d{1,2})$/);
   if (m) return { date: lastDayOfMonth(Number(m[1]), Number(m[2])), precision: "month" };
+  // "01 2021" (month year)
+  m = s.match(/^(\d{1,2})\s+(20\d{2})$/);
+  if (m && Number(m[1]) >= 1 && Number(m[1]) <= 12)
+    return { date: lastDayOfMonth(Number(m[2]), Number(m[1])), precision: "month" };
+  // MM/YY
+  m = s.match(/^(\d{1,2})[./-](\d{2})$/);
+  if (m && Number(m[1]) >= 1 && Number(m[1]) <= 12)
+    return { date: lastDayOfMonth(2000 + Number(m[2]), Number(m[1])), precision: "month" };
+  // Year only — precision preserved, never coerced to January.
+  m = s.match(/^(19|20)(\d{2})$/);
+  if (m) return { date: `${m[1]}${m[2]}-12-31`, precision: "year" };
   return null;
 }
+
 
 function pad(n: string | number) {
   return String(n).padStart(2, "0");
