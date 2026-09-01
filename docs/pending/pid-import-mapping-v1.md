@@ -1,12 +1,15 @@
-# PID → Resolve field-by-field import mapping (v1) — FOR APPROVAL
+# PID → Resolve field-by-field import mapping (v1, decision-updated 2026-09-01) — FOR APPROVAL
 
 Planning artifact only. Nothing imported, no schema created or altered, Notion untouched.
+All 12 open business decisions were approved by Emily on 2026-09-01 and are recorded in
+"Approved decisions" at the end of this document; the mapping rows below reflect them.
 
 ## Candidate population
-- **156 PID rows** matched to Resolve properties by OwnerRez Internal ID — the only import set.
-- **Held for manual confirmation:** 21036 Owens Rd (OwnerRez 410153, Live, absent from Resolve) and 1399 Foxtail Ln (OwnerRez 494863, In Preparation).
+- **157 PID rows** in the import set: the 156 matched by OwnerRez Internal ID **plus 1399 Foxtail Ln** (OwnerRez 494863), which is now approved for inclusion as **In Preparation**.
+- **21036 Owens Rd (OwnerRez 410153): EXCLUDED.** Not created in Resolve, Notion row untouched.
 - **Excluded:** the Aziz test row (no OwnerRez ID). Not deleted, not modified.
 - No Resolve property is ever auto-created from an unmatched PID row. Join key is `ownerrez_property_id` only; address and name matching are prohibited.
+
 
 ## Ownership model applied
 | Domain | Owner |
@@ -29,21 +32,21 @@ Coverage is against the 156-property candidate set.
 | 6 | State | rich_text | 159 | 100% | — | Exclude | OwnerRez | — | — | None | Same as above |
 | 7 | Zip | rich_text | 158 | 100% | — | Exclude | OwnerRez | — | — | None | Same as above |
 | 8 | GPS Coordinates | rich_text | 159 | 100% | properties.latitude / longitude | Manual Review | OwnerRez | parse 'lat, lng' decimal pair | abs(lat)<=90, abs(lng)<=180; only fill when OwnerRez geocode missing | None | Fill gaps only; OwnerRez geocode preferred |
-| 9 | Greater Area | select | 159 | 100% | properties.market | Manual Review | Resolve | map to existing market values | must match Resolve market enum | None | Reconcile PID areas with Resolve markets before import |
+| 9 | Greater Area | select | 159 | 100% | properties.market (typed column) + properties.neighborhood | Import | Resolve | map PID Greater Area onto existing Resolve market values; never create a market to mirror Notion; neighborhood kept separately | must resolve to an existing Resolve market; unmappable values → review list, not a new market | None | APPROVED: map onto existing Resolve market structure; only genuinely unmappable values are flagged |
 | 10 | Neighborhood Name | rich_text | 151 | 97% | properties.neighborhood | Import | Notion transition-only | trim | <=120 chars | None | Operationally used for routing/context |
 | 11 | OwnerRez Internal ID | rich_text | 158 | 100% | join key only | Exclude | OwnerRez | strip 'ORP' prefix | must equal existing properties.ownerrez_property_id | None | Join key; not stored again |
 | 12 | OwnerRez Order | number | 157 | 100% | — | Exclude | OwnerRez | — | — | None | Notion sort artifact |
 | 13 | OR Property Link | rich_text | 158 | 100% | properties.external_refs.ownerrez_url | External Link | OwnerRez | validate host app.ownerrez.com | https URL | None | Derivable from OwnerRez ID; stored as reference link |
 | 14 | BW Property Link | rich_text | 158 | 100% | properties.external_refs.breezeway_url | External Link | Resolve | validate host app.breezeway.io | https URL | None | Breezeway is transitional; link kept until retirement |
 | 15 | Home ID | formula | 159 | 100% | — | Exclude | Notion transition-only | — | — | None | Notion formula; Resolve property id supersedes |
-| 16 | Status | select | 158 | 100% | properties.lifecycle_status | Manual Review | Resolve | map Live / Live_12M / In Preparation / Live - Onboarding in Progress | must map to Resolve lifecycle enum | None | Resolve owns lifecycle; needs enum decision (esp. Live_12M) |
+| 16 | Status | select | 158 | 100% | properties.lifecycle_status + properties.min_stay_nights / rental_policy.min_stay_months | Import | Resolve | Live → Live; **Live_12M → Live** plus minimum-stay attribute `12 months`; In Preparation → onboarding; Live - Onboarding in Progress → live_onboarding | must map to an existing Resolve lifecycle value; no new Live_12M lifecycle | None | APPROVED: Live_12M means 12-month minimum stay; lifecycle collapses to Live and the 12-month rule is preserved as a separate rental-policy attribute |
 | 17 | Status_ | select | 1 | 1% | — | Exclude | Notion transition-only | — | — | None | 1 row populated; abandoned field |
 | 18 | Property Tier | select | 155 | 99% | properties.tier | Import | Notion transition-only | uppercase enum | one of PID tier values | None | ARHA-only classification |
-| 19 | Handoff Date | date | 153 | 98% | properties.handoff_accepted_at (reference) | Manual Review | Resolve | date only | <= today | None | Resolve handoff workflow is authoritative; import only where Resolve is blank |
+| 19 | Handoff Date | date | 153 | 98% | properties.legacy_handoff_date (reference) | Import | Resolve | date only; write **only** where Resolve has no handoff date; tag legacy/reference with `as_of` provenance | <= today; never written when properties.handoff_accepted_at is present | None | APPROVED: fill-only, never overwrites a Resolve-generated handoff date |
 | 20 | Active Projects Sheet | relation | 0 | 0% | — | Exclude | Resolve | — | — | None | Obsolete Notion relation id; Resolve onboarding projects supersede |
-| 21 | Bedrooms | number | 154 | 99% | properties.bedrooms | Manual Review | OwnerRez | numeric | 0 < n < 30; report mismatch vs OwnerRez | None | OwnerRez authoritative; PID value only fills gaps, differences logged as conflicts |
-| 22 | Bathrooms | number | 154 | 99% | properties.bathrooms | Manual Review | OwnerRez | numeric | 0 < n < 30; report mismatch vs OwnerRez | None | OwnerRez authoritative; PID value only fills gaps, differences logged as conflicts |
-| 23 | Occupancy Limit | number | 157 | 100% | properties.max_occupancy | Manual Review | OwnerRez | numeric | 0 < n < 30; report mismatch vs OwnerRez | None | OwnerRez authoritative; PID value only fills gaps, differences logged as conflicts |
+| 21 | Bedrooms | number | 154 | 99% | properties.bedrooms | Import | OwnerRez | numeric; gap-fill only | 0 < n < 30; difference vs OwnerRez → `field_conflicts`, never written | None | APPROVED: OwnerRez always wins; PID differences logged as conflicts for review |
+| 22 | Bathrooms | number | 154 | 99% | properties.bathrooms | Import | OwnerRez | numeric; gap-fill only | 0 < n < 30; difference vs OwnerRez → `field_conflicts`, never written | None | APPROVED: OwnerRez always wins; PID differences logged as conflicts for review |
+| 23 | Occupancy Limit | number | 157 | 100% | properties.max_occupancy | Import | OwnerRez | numeric; gap-fill only | 0 < n < 30; difference vs OwnerRez → `field_conflicts`, never written | None | APPROVED: OwnerRez always wins; PID differences logged as conflicts for review |
 | 24 | Square Footage | rich_text | 153 | 98% | properties.square_feet | Import | Notion transition-only | strip commas/'sqft' to integer | 100 < n < 20000 | None | Not held in OwnerRez |
 | 25 | Property Built Year | number | 158 | 100% | properties.year_built | Import | Notion transition-only | integer | 1900 <= y <= current year | None | Used for warranty/maintenance context |
 | 26 | Base Price | number | 152 | 97% | — | Exclude | OwnerRez | — | — | None | Pricing is PMS-controlled and volatile |
@@ -74,7 +77,7 @@ Coverage is against the 156-property candidate set.
 | 51 | Storage Closet/Cabinet Code | rich_text | 150 | 96% | — | Exclude | External | — | never read into Resolve | SECRET - excluded, value never read or displayed | Credential; replaced by a 'which system holds it / who to ask' reference |
 | 52 | WiFi Password | rich_text | 154 | 99% | — | Exclude | External | — | never read into Resolve | SECRET - excluded, value never read or displayed | Credential; replaced by a 'which system holds it / who to ask' reference |
 | 53 | Neighborhood Pool Access Key/Fob | rich_text | 70 | 45% | — | Exclude | External | — | never read into Resolve | SECRET - excluded, value never read or displayed | Credential; replaced by a 'which system holds it / who to ask' reference |
-| 54 | Security Camera Feed | rich_text | 152 | 97% | properties.security.feed_ref (link only) | Manual Review | External | strip any embedded login; keep host + account reference | https URL, no query credentials | Sensitive - portal link, staff-only | Ring/Blink/Alarm.com portal links; destination decision required (see decisions) |
+| 54 | Security Camera Feed | rich_text | 152 | 97% | property_external_links (kind = camera_portal, staff-only) | External Link | External | keep `{ system, portal_url, who_to_ask }`; strip any embedded login, query-string credential, code or token | https URL; reject any URL carrying credentials | Sensitive - staff-only operational link, no credentials | APPROVED: staff-only operational external link, portal/system reference only |
 | 55 | WiFi Network Name | rich_text | 154 | 99% | properties.utilities.wifi_ssid | Import | Notion transition-only | trim | <=64 chars | Low - staff-only | SSID only; password excluded |
 | 56 | Confirmed Wifi has a split network | checkbox | 159 | 100% | properties.utilities.wifi_split_confirmed | Import | Notion transition-only | boolean | true/false | None | Smart-device troubleshooting |
 | 57 | Router Location | rich_text | 153 | 98% | properties.utilities.router_location | Import | Notion transition-only | trim | <=200 chars | None | Troubleshooting reference |
@@ -86,7 +89,7 @@ Coverage is against the 156-property candidate set.
 | 63 | House has a 5 Year Old Fridge Water Filter | select | 147 | 94% | properties.systems.fridge_filter_5yr | Import | Notion transition-only | boolean from select | true/false | None | Service interval driver |
 | 64 | Smoke Detector Brand | rich_text | 149 | 96% | properties.systems.smoke.brand | Import | Notion transition-only | trim | <=80 chars | None | Life-safety maintenance |
 | 65 | Smoke Detector Notes | rich_text | 150 | 96% | properties.systems.smoke.notes | Import | Notion transition-only | trim | <=500 chars | None | Life-safety maintenance |
-| 66 | Smoke Detector Expiration | rich_text | 150 | 96% | properties.systems.smoke.expires_on | Manual Review | Notion transition-only | free text to date where parseable | valid date or null | None | Mixed free text; unparseable values go to review list |
+| 66 | Smoke Detector Expiration | rich_text | 150 | 96% | properties.systems.smoke.expires_on (seeded, dated) | Import | Resolve | free text to date where parseable; one-time seed carrying `as_of` | valid date or null; unparseable → review list | None | APPROVED seasonal/dated seed: reference value only; Resolve Work Orders / Assessments authoritative afterwards |
 | 67 | Smoke Detectors Battery Type | select | 150 | 96% | properties.systems.smoke.battery_type | Import | Notion transition-only | enum | enum | None | Supply planning |
 | 68 | Smoke Detectors Power Type | select | 150 | 96% | properties.systems.smoke.power_type | Import | Notion transition-only | enum | enum | None | Life-safety maintenance |
 | 69 | Detectors Batteries Change Date | date | 150 | 96% | properties.systems.smoke.batteries_changed_on | Import | Resolve | date | <= today | None | Seed only; Resolve work orders become authoritative after import |
@@ -104,7 +107,7 @@ Coverage is against the 156-property candidate set.
 | 81 | Sprinkler System Status | select | 151 | 97% | properties.sprinklers.status | Import | Notion transition-only | enum | enum | None | Seasonal service |
 | 82 | Sprinkler System Brand | rich_text | 140 | 90% | properties.sprinklers.brand | Import | Notion transition-only | trim | <=80 chars | None | Parts/repair |
 | 83 | Sprinkler System Location | rich_text | 141 | 90% | properties.sprinklers.controller_location | Import | Notion transition-only | trim | <=200 chars | None | Service access |
-| 84 | Sprinkler System Set for Season? | select | 140 | 90% | properties.sprinklers.set_for_season | Manual Review | Resolve | boolean from select | true/false | None | Seasonal state goes stale; Resolve seasonal task should own it after import |
+| 84 | Sprinkler System Set for Season? | select | 140 | 90% | properties.sprinklers.set_for_season (seeded, dated) | Import | Resolve | boolean from select; one-time seed stamped with `as_of`, displayed as dated reference | true/false + required `as_of` | None | APPROVED: temporary state flag seeded as a clearly dated reference value; Resolve seasonal Work Order owns it going forward |
 | 85 | Mowing | select | 153 | 98% | properties.grounds.mowing_cadence | Import | Notion transition-only | enum | enum | None | Recurring service |
 | 86 | Mowing Day | multi_select | 148 | 95% | properties.grounds.mowing_days | Import | Notion transition-only | multi-select to weekday array | valid weekday names | None | Recurring service |
 | 87 | Trash Day | multi_select | 153 | 98% | properties.waste.trash_days | Import | Notion transition-only | multi-select to weekday array | valid weekday names | None | Turnover ops |
@@ -121,13 +124,13 @@ Coverage is against the 156-property candidate set.
 | 98 | Backyard Pool Season | rich_text | 6 | 4% | properties.pool_spa.season | Import | Notion transition-only | trim | <=120 chars | None | Seasonal service |
 | 99 | Backyard Pool Service Schedule | rich_text | 6 | 4% | properties.pool_spa.service_schedule | Import | Notion transition-only | trim | <=200 chars | None | Recurring service |
 | 100 | Hot Tub Control Panel Location | rich_text | 4 | 3% | properties.pool_spa.control_panel_location | Import | Notion transition-only | trim | <=200 chars | None | Service access |
-| 101 | Pool & Hot Tub Technician Form | formula | 159 | 100% | external_links (fillout) | Manual Review | External | host arha.fillout.com | https URL | None | Fillout form — decide keep-temporarily vs replace with Resolve work order |
+| 101 | Pool & Hot Tub Technician Form | formula | 159 | 100% | property_external_links (kind = fillout_form, flagged for replacement) | External Link | External | host arha.fillout.com | https URL | None | APPROVED: keep temporarily as an external link, flagged for later replacement by a native Resolve workflow; not recreated one-for-one now |
 | 102 | HOA? | select | 148 | 95% | properties.hoa.present | Import | Notion transition-only | boolean from select | true/false | None | Compliance/fines |
 | 103 | HOA Notes (General) | rich_text | 67 | 43% | properties.hoa.notes + external_links | Import | Notion transition-only | trim; split HOA site URLs into external links | <=1000 chars | None | Compliance/fines |
 | 104 | Neighborhood Amenities? | multi_select | 153 | 98% | properties.amenities.list | Import | Notion transition-only | multi-select to string[] | array | None | Guest context |
 | 105 | Neighborhood Amenities Access Information | rich_text | 147 | 94% | properties.amenities.access_notes | Import | Notion transition-only | trim; strip any code/fob values | <=500 chars | Low - access reference, codes stripped | Guest context; credentials excluded |
-| 106 | Rental Restriction Notes | rollup | 33 | 21% | properties.compliance.rental_restrictions (reference) | Manual Review | Resolve | rollup to text snapshot with as_of | <=1000 chars | None | Rollup from another database; snapshot only, source stays Notion until compliance record exists |
-| 107 | Permit Review Status & Notes | rollup | 35 | 22% | properties.compliance.permit_status (reference) | Manual Review | Resolve | rollup to text snapshot with as_of | <=1000 chars | None | Same as above |
+| 106 | Rental Restriction Notes | rollup | 33 | 21% | properties.compliance.rental_restrictions (dated snapshot) | Import | Resolve | rollup to text snapshot with mandatory `as_of`; rendered as "as of <date>, reference only" | <=1000 chars; `as_of` required | None | APPROVED: reference-only dated snapshot; `gatekeeper_requirements` / `documents` remain authoritative |
+| 107 | Permit Review Status & Notes | rollup | 35 | 22% | properties.compliance.permit_status (dated snapshot) | Import | Resolve | rollup to text snapshot with mandatory `as_of`; rendered as "as of <date>, reference only" | <=1000 chars; `as_of` required | None | APPROVED: reference-only dated snapshot; never treated as authoritative compliance status |
 | 108 | Security Cameras | multi_select | 153 | 98% | properties.security.devices | Import | Notion transition-only | multi-select to string[] | array | None | Guest disclosure + maintenance |
 | 109 | Camera Battery Type | multi_select | 153 | 98% | properties.security.battery_type | Import | Notion transition-only | multi-select to string[] | array | None | Supply planning |
 | 110 | Cameras Monitoring Plan | multi_select | 152 | 97% | properties.security.monitoring_plan | Import | Notion transition-only | multi-select to string[] | array | None | Renewal tracking |
@@ -138,7 +141,7 @@ Coverage is against the 156-property candidate set.
 | 115 | Builder Warranty Claim Info | rich_text | 108 | 69% | properties.warranty.claim_process + external_links (builder) | Import | Notion transition-only | trim; split builder URLs into external links | <=1000 chars | None | Claim process |
 | 116 | Furniture Warranty Expiration Date | date | 114 | 73% | properties.warranty.furniture_expires_on | Import | Notion transition-only | date | valid date | None | Claim eligibility |
 | 117 | Furniture Warranty (Backend) | formula | 159 | 100% | — | Exclude | Resolve | — | — | None | Notion formula derived from the expiration date |
-| 118 | Furniture Pick List Link | url | 75 | 48% | external_links (onedrive) | Manual Review | SharePoint | inventory host; do not treat as canonical | https URL | Low | Personal OneDrive links; migrate to ARHA Resolve SharePoint at item 7 |
+| 118 | Furniture Pick List Link | url | 75 | 48% | property_external_links (kind = legacy_onedrive, labelled non-canonical) | External Link | SharePoint | inventory host; label "legacy / non-canonical"; underlying documents migrate during the SharePoint/Documents workstream | https URL | Low | APPROVED: inventory now, never the document source of truth |
 | 119 | Listing Photos | url | 142 | 91% | external_links (listing media) | Manual Review | OwnerRez | host inventory | https URL | None | OwnerRez photos already imported; keep as reference only |
 | 120 | Special Handling | rich_text | 60 | 38% | properties.operating_notes | Import | Notion transition-only | trim | <=1000 chars | Low - may contain owner-sensitive notes; staff-only | High-value operating context |
 | 121 | Pending Issues | formula | 0 | 0% | — | Derive in Resolve | Resolve | — | — | None | Notion formula; replacement: Resolve open tickets |
@@ -188,15 +191,15 @@ Coverage is against the 156-property candidate set.
 | 165 | Internal Verification Link | formula | 159 | 100% | — | Derive in Resolve | Resolve | — | — | None | Notion formula; replacement: Resolve Property Hub |
 | 166 | Field Verification Link | formula | 159 | 100% | — | Derive in Resolve | Resolve | — | — | None | Notion formula; replacement: Resolve Property Hub |
 
-## Disposition totals
-| Action | Fields |
-|---|---|
-| Import | 81 |
-| Exclude | 47 |
-| Derive in Resolve | 21 |
-| Manual Review | 15 |
-| External Link | 2 |
-| **Total** | **166** |
+## Disposition totals (after the 2026-09-01 decisions)
+| Action | Fields | Change |
+|---|---|---|
+| Import | 91 | +10 (Greater Area, Status, Handoff Date, Bedrooms, Bathrooms, Occupancy, Smoke Detector Expiration, Sprinkler Season, Rental Restriction Notes, Permit Review Status) |
+| Exclude | 47 | — |
+| Derive in Resolve | 21 | — |
+| Manual Review | 2 | −13 (only GPS Coordinates and Listing Photos remain) |
+| External Link | 5 | +3 (Security Camera Feed, Pool & Hot Tub Fillout, Furniture Pick List / OneDrive) |
+| **Total** | **166** | |
 
 ## Document and media link inventory (by destination decision)
 
@@ -231,31 +234,55 @@ Front Photo, Covenants, Breaker Box Photo, both Water Shutoff photos, Sprinkler 
 ## Dry-run summary (no writes performed)
 | Measure | Projected |
 |---|---|
-| Properties in scope | 156 |
-| Properties expected to receive at least one value | 156 (100%) |
-| Fields written per property | up to 81 |
-| Populated values projected | ~10,759 |
-| Blank source cells skipped | ~1,877 |
+| Properties in scope | 157 (156 matched + 1399 Foxtail Ln) |
+| Properties expected to receive at least one value | 157 (100%) |
+| Fields written per property | up to 91 |
+| Populated values projected | ~11,600 |
+| Blank source cells skipped | ~1,890 |
 | Sensitive values excluded (never read into Resolve) | ~1,282 across 9 credential fields |
-| Provenance rows created | one per written value, ~10,759 (`property_field_provenance`: field, source `notion_pid`, `as_of`, updated_by) |
-| Conflicts expected | only on Bedrooms / Bathrooms / Occupancy Limit / GPS / Status vs OwnerRez-or-Resolve values — logged to `field_conflicts`, never auto-overwritten |
-| Unresolved mappings | 15 Manual Review fields |
-| Rows held out | 2 (Owens Rd, Foxtail Ln) + 1 excluded test row |
+| Provenance rows created | one per written value (`property_field_provenance`: field, source `notion_pid`, `as_of`, updated_by) |
+| Conflicts expected | Bedrooms / Bathrooms / Occupancy Limit / GPS vs OwnerRez — logged to `field_conflicts`, never auto-overwritten |
+| Unresolved mappings | 2 Manual Review fields (GPS Coordinates, Listing Photos) |
+| Rows held out | 1 excluded property (21036 Owens Rd) + 1 excluded test row (Aziz) |
 
 Identity fields (`name`, address, city, state, zip, `ownerrez_property_id`, lat/lng where OwnerRez supplied it) are write-protected in the planned importer: PID values for those fields cannot be written under any condition.
 
-## Decisions needed from Emily
-1. **21036 Owens Rd** — Live in the PID and OwnerRez (410153) but absent from Resolve. Add it to Resolve, or confirm it is out of scope?
-2. **1399 Foxtail Ln** — pre-launch (OwnerRez 494863). Bring into Resolve now as In Preparation, or wait for handoff?
-3. **`Live_12M` status (4 properties)** — is this MTR? Which Resolve lifecycle value should it map to?
-4. **Greater Area vs Resolve market** — approve mapping PID areas onto existing Resolve markets, or create markets to match the PID?
-5. **Handoff Date (153)** — import only where Resolve has no handoff date, or never import (Resolve handoff workflow authoritative)?
-6. **Fact conflicts (Bedrooms/Bathrooms/Occupancy)** — confirm OwnerRez always wins and PID differences are logged as conflicts for review.
-7. **Seasonal state fields** (Sprinkler Set for Season, Detector battery dates, filter dates) — import as a one-time seed with an `as_of` date, or leave to Resolve work orders only?
-8. **Ring/camera portal links** — approve storing the portal URL as a staff-only operational link with no credentials.
-9. **Pool & Hot Tub Technician Fillout form** — keep as a temporary external link, or schedule replacement by a Resolve work-order form now?
-10. **Personal OneDrive links (169)** — approve inventory-now / migrate-at-item-7, with legacy links labelled non-canonical in the interim.
-11. **Compliance rollups (permits, rental restrictions)** — approve dated snapshots surfaced as reference, source of truth staying outside the Hub.
-12. **Storage shape** — approve grouped JSONB blocks on `properties` (per the v2 field map) rather than ~81 flat columns.
+## Approved decisions — Emily, 2026-09-01
+1. **21036 Owens Rd** — EXCLUDED from the import. Not created in Resolve; Notion row untouched.
+2. **1399 Foxtail Ln** — INCLUDED now as **In Preparation**, business identifier OwnerRez ID 494863.
+3. **`Live_12M`** — means a 12-month minimum stay. Lifecycle maps to **Live**; no separate Live_12M lifecycle. The 12-month minimum is preserved as a distinct rental-policy / minimum-stay attribute.
+4. **Greater Area vs Resolve market** — map PID values onto the existing Resolve market structure; no new markets created to mirror Notion; neighborhood preserved separately; only genuinely unmappable values flagged for review.
+5. **Handoff Date** — imported only where Resolve has none; a Resolve-generated handoff date is never overwritten; imported values are marked legacy/reference with provenance.
+6. **Bedrooms / Bathrooms / Occupancy** — OwnerRez always wins; PID differences logged as conflicts; authoritative values never overwritten.
+7. **Seasonal state** — useful historical dates imported as one-time seeded values with `as_of` provenance; temporary state flags seeded only as clearly dated reference values; Resolve Work Orders / Assessments authoritative going forward.
+8. **Ring / camera portal links** — APPROVED as staff-only operational external links; portal/system reference only; no usernames, passwords, query-string credentials, codes or secrets.
+9. **Pool & Hot Tub Technician Fillout** — kept temporarily as an external link, flagged for later replacement by a native Resolve workflow; not recreated one-for-one now.
+10. **Personal OneDrive links** — inventoried now, labelled legacy / non-canonical; underlying documents migrate during the SharePoint/Documents workstream; never the final document source of truth.
+11. **Compliance rollups** — imported as dated, reference-only snapshots with `as_of` clearly displayed; never treated as authoritative compliance status.
+12. **Storage shape** — grouped JSONB approved for coherent descriptive property domains; typed columns / related tables used for fields that drive filtering, analytics, routing, joins, automation or lifecycle logic. Neither all-flat nor all-JSONB.
 
-Nothing proceeds to schema or import until these are answered.
+### Guardrails carried forward (unchanged)
+- OwnerRez Property ID is the universal business identifier; Resolve keeps its own internal UUID.
+- OwnerRez authoritative for PMS/current listing data; Resolve authoritative for workflow, onboarding, approvals, exceptions and activity.
+- SharePoint is the intended document-storage system.
+- Credentials and security codes are permanently excluded.
+- Aziz test row excluded and untouched.
+- No address or name matching. No duplicate source-of-truth creation.
+
+## Schema implications introduced by these decisions
+Typed / structured (not JSONB) because they drive logic:
+- `properties.min_stay_months` (or `rental_policy` typed field) — preserves the 12-month minimum released from `Live_12M`.
+- `properties.neighborhood` — kept separate from `market`.
+- `properties.legacy_handoff_date` + provenance — distinct from Resolve's `handoff_accepted_at`, never merged.
+- `property_external_links` (kind: camera_portal | fillout_form | legacy_onedrive | builder | hoa | system) with a staff-only visibility flag.
+- `property_field_provenance` rows carrying `as_of` for every seeded/snapshot value.
+
+Grouped JSONB domains: systems, sprinklers, pool_spa, grounds/trash, hoa, amenities, parking/access (reference only), utilities (no credentials), compliance snapshots.
+
+## Remaining ambiguity
+- **GPS Coordinates** — still gap-fill only where the OwnerRez geocode is missing (Manual Review).
+- **Listing Photos URLs** — OwnerRez photos already populate 156/156; whether to keep PID listing-photo links as secondary references is open (Manual Review).
+- **Unmappable Greater Area values** — the review list can only be produced during the import dry run.
+- **Unparseable Smoke Detector Expiration text** — routed to a review list rather than guessed.
+
+**Status: ready for final implementation approval.** No schema change, import, Notion change or publish has been performed.
