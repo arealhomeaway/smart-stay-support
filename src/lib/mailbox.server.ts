@@ -219,16 +219,34 @@ async function writeCheckpoint(db: Db, iso: string) {
 }
 
 /**
- * Reads new Inbox mail from the one authorised mailbox.
- * The path is built by the allowlist, so an unauthorised mailbox throws before
- * any network call is made.
+ * The recovery sweep: trigger-tagged mail only, from anywhere in the mailbox.
+ *
+ * Change notifications do the real work. This is the safety net, so it asks
+ * Microsoft the narrowest possible question — "which messages carry a Resolve
+ * trigger category?" — instead of downloading whole folders. One query per
+ * trigger category, because Graph does not reliably combine two
+ * `categories/any(...)` clauses with a sort.
+ *
+ * Mail received before the activation checkpoint is never eligible, so no
+ * history is imported. Within that window the sweep is deliberately not
+ * time-bounded beyond it: a message received yesterday and categorised this
+ * morning must still be found. Re-seeing an already-handled message is free —
+ * the durable per-message mapping settles it.
  */
-async function fetchInbox(limit: number, since: string) {
-  const query =
-    `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
-  const res = await graph(mailboxMessagesPath(query));
-  return ((await res.json()).value ?? []) as GraphMessage[];
+async function fetchTriggerMail(limit: number, since: string) {
+  const seen = new Map<string, GraphMessage>();
+  for (const tag of [CREATE_TICKET_TAG, CREATE_LEAD_TAG]) {
+    const filter = `receivedDateTime gt ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
+    const query =
+      `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
+    const res = await graph(mailboxMessagesPath(query));
+    for (const m of ((await res.json())?.value ?? []) as GraphMessage[]) {
+      if (m?.id && !seen.has(m.id)) seen.set(m.id, m);
+    }
+  }
+  return Array.from(seen.values()).slice(0, limit);
 }
+
 
 export type SkipReason =
   | "not categorised"
