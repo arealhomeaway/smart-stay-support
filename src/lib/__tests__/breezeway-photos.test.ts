@@ -100,8 +100,8 @@ describe("Breezeway task photo upload", () => {
     // Non-idempotent: Breezeway exposes no photo delete, so never auto-retry.
     expect(captured?.options.retry).toBe(false);
     const form = captured?.options.form as FormData;
-    expect(form).toBeInstanceOf(FormData);
-    expect(form.get("file")).toBeInstanceOf(Blob);
+    expect(form instanceof FormData).toBe(true);
+    expect(form.get("file") instanceof Blob).toBe(true);
   });
 
   it("defaults the owner/client report flag to false", async () => {
@@ -144,12 +144,12 @@ describe("Breezeway task photo upload", () => {
     };
     const res = await uploadWorkOrderPhoto(WO, png(), false, "Tester");
     expect(res.ok).toBe(false);
-    expect(photoRows).toHaveLength(0);
+    expect(photoRows.length).toBe(0);
   });
 
   it("mirrors a successful upload so the existing photo view shows it", async () => {
     await uploadWorkOrderPhoto(WO, png(), false, "Tester");
-    expect(photoRows).toHaveLength(1);
+    expect(photoRows.length).toBe(1);
     expect(photoRows[0]!["source"]).toBe("resolve");
     expect(photoRows[0]!["breezeway_task_id"]).toBe(166182176);
   });
