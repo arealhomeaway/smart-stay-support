@@ -131,6 +131,18 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
     }
   }
 
+  // Retire an Inbox-only subscription before replacing it, so Graph is not
+  // left posting duplicate notifications from two overlapping watches.
+  if (existing?.external_id && wrongResource) {
+    try {
+      await graph(`/subscriptions/${encodeURIComponent(existing.external_id)}`, { method: "DELETE" });
+    } catch (err) {
+      console.error("Could not remove the old mailbox subscription:", err instanceof Error ? err.message : err);
+    }
+    await db.from("integration_events").update({ status: "expired" }).eq("id", existing.id);
+  }
+
+
   try {
     const res = await graph(`/subscriptions`, {
       method: "POST",
