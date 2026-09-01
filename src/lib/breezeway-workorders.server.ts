@@ -416,6 +416,180 @@ export async function replyToWorkOrder(
 }
 
 /* ------------------------------------------------------------------ */
+/* Photos                                                             */
+/* ------------------------------------------------------------------ */
+
+type RawPhoto = {
+  id?: number;
+  url?: string | null;
+  photo_url?: string | null;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
+  caption?: string | null;
+  description?: string | null;
+  type?: string | null;
+  photo_type?: string | null;
+  created_by?: string | null;
+  uploaded_by?: string | null;
+  created_at?: string | null;
+};
+
+function photoUrl(p: RawPhoto) {
+  return p.url ?? p.photo_url ?? p.image_url ?? p.thumbnail_url ?? null;
+}
+
+/**
+ * Mirrors the photos on one work order. Breezeway returns them on the task
+ * payload (`GET /task/{id}`), so this is the per-task read rather than a
+ * portfolio sweep — Operations opens a work order, and its photos are there.
+ *
+ * Uploading INTO Breezeway is not available: the public API exposes photos as
+ * read-only on the task, and `POST /task/{id}/photos` is refused. Evidence
+ * captured in Resolve therefore stays in Resolve and is referenced in the
+ * Breezeway comment thread instead.
+ */
+export async function syncWorkOrderPhotos(
+  workOrderId: string,
+): Promise<{ ok: boolean; message?: string; photos: number }> {
+  const wo = await getWorkOrder(workOrderId);
+  if (!wo) return { ok: false, message: "That work order is not in Resolve.", photos: 0 };
+
+  let raw: RawPhoto[] = [];
+  try {
+    const task = await breezewayRequest<{ photos?: RawPhoto[] | null }>(`/task/${wo.breezewayTaskId}`);
+    raw = (task.photos ?? []).filter((p): p is RawPhoto => Boolean(p));
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        error instanceof BreezewayError
+          ? `Breezeway refused the photo read (${error.status}).`
+          : "Could not reach Breezeway.",
+      photos: 0,
+    };
+  }
+
+  const db = await admin();
+  const now = new Date().toISOString();
+  let kept = 0;
+  for (const p of raw) {
+    const url = photoUrl(p);
+    if (!url) continue;
+    kept += 1;
+    if (typeof p.id === "number") {
+      await db.from("breezeway_work_order_photos").upsert(
+        {
+          work_order_id: wo.id,
+          breezeway_task_id: wo.breezewayTaskId,
+          breezeway_photo_id: p.id,
+          property_id: wo.propertyId,
+          url,
+          caption: p.caption ?? p.description ?? null,
+          photo_type: p.photo_type ?? p.type ?? null,
+          uploader: p.created_by ?? p.uploaded_by ?? null,
+          breezeway_created_at: normalizeDate(p.created_at),
+          source: "breezeway",
+          last_synced_at: now,
+        } as never,
+        { onConflict: "breezeway_photo_id" },
+      );
+    } else {
+      const existing = await db
+        .from("breezeway_work_order_photos")
+        .select("id")
+        .eq("work_order_id", wo.id)
+        .eq("url", url)
+        .maybeSingle();
+      if (!existing.data) {
+        await db.from("breezeway_work_order_photos").insert({
+          work_order_id: wo.id,
+          breezeway_task_id: wo.breezewayTaskId,
+          property_id: wo.propertyId,
+          url,
+          caption: p.caption ?? p.description ?? null,
+          photo_type: p.photo_type ?? p.type ?? null,
+          uploader: p.created_by ?? p.uploaded_by ?? null,
+          breezeway_created_at: normalizeDate(p.created_at),
+          source: "breezeway",
+          last_synced_at: now,
+        } as never);
+      }
+    }
+  }
+
+  await db.from("breezeway_work_orders").update({ photo_count: kept } as never).eq("id", wo.id);
+  return { ok: true, photos: kept };
+}
+
+export async function listWorkOrderPhotos(workOrderId: string): Promise<BreezewayWorkOrderPhoto[]> {
+  const db = await admin();
+  const { data } = await db
+    .from("breezeway_work_order_photos")
+    .select("id, breezeway_photo_id, url, caption, photo_type, uploader, breezeway_created_at, source, evidence_item_id")
+    .eq("work_order_id", workOrderId)
+    .order("breezeway_created_at", { ascending: true, nullsFirst: true });
+  return ((data ?? []) as unknown as {
+    id: string;
+    breezeway_photo_id: number | null;
+    url: string;
+    caption: string | null;
+    photo_type: string | null;
+    uploader: string | null;
+    breezeway_created_at: string | null;
+    source: "breezeway" | "resolve";
+    evidence_item_id: string | null;
+  }[]).map((p) => ({
+    id: p.id,
+    breezewayPhotoId: p.breezeway_photo_id,
+    url: p.url,
+    caption: p.caption,
+    photoType: p.photo_type,
+    uploader: p.uploader,
+    takenAt: p.breezeway_created_at,
+    source: p.source,
+    evidenceItemId: p.evidence_item_id,
+  }));
+}
+
+/**
+ * Sends one mirrored Breezeway photo through the Evidence Quality Gate. An
+ * incoming photo does not satisfy a Resolve requirement just because Breezeway
+ * accepted it — it clears the same bar as anything captured in Resolve.
+ */
+export async function checkBreezewayPhotoAsEvidence(
+  actor: { userId: string; name: string; isSupervisor: boolean },
+  photoId: string,
+  requirementId: string,
+) {
+  const db = await admin();
+  const { data } = await db
+    .from("breezeway_work_order_photos")
+    .select("id, url, breezeway_photo_id, breezeway_task_id")
+    .eq("id", photoId)
+    .maybeSingle();
+  const photo = data as
+    | { id: string; url: string; breezeway_photo_id: number | null; breezeway_task_id: number }
+    | null;
+  if (!photo) return { ok: false as const, message: "That photo is no longer mirrored." };
+
+  const { submitEvidence } = await import("./evidence.server");
+  const res = await submitEvidence(actor, {
+    requirementId,
+    externalUrl: photo.url,
+    breezewayPhotoId: photo.breezeway_photo_id,
+    breezewayTaskId: photo.breezeway_task_id,
+    source: "breezeway_photo",
+  });
+  if (res.ok && res.itemId) {
+    await db
+      .from("breezeway_work_order_photos")
+      .update({ evidence_item_id: res.itemId } as never)
+      .eq("id", photo.id);
+  }
+  return res;
+}
+
+/* ------------------------------------------------------------------ */
 /* Lifecycle                                                           */
 /* ------------------------------------------------------------------ */
 
