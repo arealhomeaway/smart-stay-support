@@ -327,6 +327,17 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
             </Button>
           </>
         )}
+        {!order.linkedTicketId && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={escalate.isPending}
+            onClick={() => escalate.mutate()}
+          >
+            <TicketIcon className="mr-1 size-3" />
+            {escalate.isPending ? "Creating Ticket…" : "Create Resolve Ticket"}
+          </Button>
+        )}
         {order.needsAttention && (
           <Button variant="ghost" size="sm" onClick={() => lifecycle.mutate("acknowledge")}>
             Mark read
