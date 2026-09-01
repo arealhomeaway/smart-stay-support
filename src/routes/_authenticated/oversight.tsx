@@ -17,6 +17,7 @@ import {
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { OnCallNowCard } from "@/components/OnCallNowCard";
+import { OvernightHandoffPanel } from "@/components/OvernightHandoffPanel";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -154,6 +155,8 @@ function Oversight() {
       </div>
 
       <OnCallNowCard className="max-w-2xl" />
+
+      <OvernightHandoffPanel />
 
 
       {sections.map((section) => (

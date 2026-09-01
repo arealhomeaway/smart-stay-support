@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRole } from "@/hooks/useRole";
+import { windowLabel, type CoverageConfig } from "@/lib/coverage";
 
 /**
  * Machine-readable coverage: the weekly shift windows each seat is on duty
@@ -84,12 +85,17 @@ export function CoverageSchedulePanel() {
         supabase.from("oncall_roster").select("*").order("starts_on"),
         supabase.from("profiles").select("id, full_name, email").eq("oncall_eligible", true).order("full_name"),
       ]);
+      const { data: cfg } = await supabase
+        .from("coverage_config")
+        .select("after_hours_start_minute, after_hours_end_minute, timezone")
+        .maybeSingle();
       if (shifts.error) throw shifts.error;
       return {
         shifts: shifts.data ?? [],
         roles: roles.data ?? [],
         roster: roster.data ?? [],
         eligible: eligible.data ?? [],
+        coverage: (cfg ?? null) as CoverageConfig | null,
       };
     },
   });
@@ -97,6 +103,7 @@ export function CoverageSchedulePanel() {
   if (isLoading || !data) return <Skeleton className="h-72 w-full" />;
 
   const today = chicagoToday();
+  const coverageWindow = windowLabel(data.coverage);
   const onCallToday = data.roster.find((r) => r.starts_on <= today && r.ends_on >= today);
   const coveredToday = Boolean(onCallToday);
   const nameOf = (id: string) => {
@@ -114,7 +121,7 @@ export function CoverageSchedulePanel() {
       starts_on: startsOn,
       ends_on: endsOn,
       user_id: person,
-      label: "On-call — coverage window pending business input",
+      label: "On-call",
     });
     setSaving(false);
     if (error) {
@@ -162,7 +169,14 @@ export function CoverageSchedulePanel() {
                       <span className="text-danger">Seat unfilled — work cannot route here</span>
                     )}
                   </p>
+                  {role.current_seat_name && !role.current_seat_holder && (
+                    <p className="text-warning">
+                      Assignment held as pending — this person has not redeemed their invitation yet, so work
+                      cannot route to the seat until their account is active.
+                    </p>
+                  )}
                 </div>
+
                 <div className="text-right">
                   {rows.length === 0 ? (
                     <span className="text-muted-foreground">No schedule — available by exception</span>
@@ -187,8 +201,8 @@ export function CoverageSchedulePanel() {
           </CardTitle>
           <CardDescription>
             One named person per date. Guests reach the on-call person on the ARHA Grasshopper number; the work
-            itself is recorded and managed here in Resolve. The after-hours start and end times are not yet
-            defined, so nothing routes automatically on this roster yet.
+            itself is recorded and managed here in Resolve. Inside the after-hours window the rostered person is
+            the active escalation owner; when it closes, normal Operations routing resumes.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
@@ -199,12 +213,13 @@ export function CoverageSchedulePanel() {
             </p>
           </div>
 
-          <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <p>
-              <strong>Coverage window: not configured.</strong> The imported schedule is date-based only and does
-              not define after-hours start/end times. Until those hours are set by the business, after-hours
-              auto-routing and the overnight handoff view stay off and existing escalation procedures apply.
+          <div className="rounded-lg border border-border bg-secondary/40 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">After-hours coverage window</p>
+            <p className="font-medium">{coverageWindow ?? "Not configured"}</p>
+            <p className="mt-1 text-muted-foreground">
+              Held in Central time and adjusted automatically for daylight saving. Work created inside the window
+              routes to the rostered on-call person; priority is still judged on impact, so overnight is not
+              automatically P1.
             </p>
           </div>
 

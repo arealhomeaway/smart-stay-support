@@ -392,3 +392,20 @@ mismatches). System-health data only — never employee performance.
 - [x] Active Owner polish: returned-entry copy, report footer "Figures as of"
 - [ ] SharePoint site-level write grant — outstanding with tenant admin
 - [ ] September on-call roster — business input, not a development blocker
+
+## Operations beta go-live (Sept 1, approved)
+- [x] After-hours coverage window configured: 22:00–08:00 America/Chicago,
+      stored in `coverage_config` (business configuration, not code constants);
+      `auto_assign_ticket()` reads it and stays DST-safe.
+- [x] After-hours routing: rostered on-call person owns escalation inside the
+      window; normal seat routing resumes at 08:00. Priority is never forced to
+      P1 by the time of day.
+- [x] Overnight handoff view enabled — `OvernightHandoffPanel` on /oversight.
+      Reads the Ticket record itself; no duplicate written overnight report.
+- [x] Operations functional-seat assignments (configurable, name-independent):
+      ops_supervisor=James Almario, ge_day=Romeo Canales, ge_evening=Mike
+      Cacatain, po_day=Avy Vergara, po_evening=Christine Sendico. Seats without
+      a redeemed account are held as pending and surfaced as an access blocker.
+- [ ] Avy Vergara, Mike Cacatain, Christine Sendico invitations outstanding —
+      evening + property-ops routing is pending until redeemed.
+- Telegram unchanged and in scope (communication/alerts); Resolve owns tickets.
