@@ -500,3 +500,15 @@ is now doable from Resolve.
   nothing posted. Once the person exists, a people sync auto-detects it by name; the
   BREEZEWAY_COMMENT_PEOPLE_ID secret is only a manual override.
 - Publish held per COO instruction until the fallback comment test passes.
+
+## Operations usability + Property Hub refinement release (in progress)
+- [x] 1. Ticket detail — Close Ticket moved to end of workflow (no duplicate close actions)
+- [x] 2. Launch-state gating for Quarterly Reviews + Vendor Portal (architecture kept, nav hidden)
+- [x] 3a. Breezeway Work Order: template selector (GET /companies/templates), assignee selector (validated Breezeway person ids), corrected department enum, Resolve-evidence labelling
+- [ ] 3b. Breezeway task photo upload (POST /task/{id}/photos is supported by the API — multipart client not built yet)
+- [ ] 4. Notion PID import into Property Hub (read-only source audit first, match on ownerrez_property_id)
+- [ ] 5. Property primary photos (PID/OwnerRez sources, graceful fallback)
+- [ ] 6. Owner records + property relationships (dedupe owners, report cross-source conflicts)
+- [ ] 7. Documents & Media category redesign + quick links
+- [ ] 8. Property Hub retrieval/IA improvements across the eight tabs
+- [ ] 9. Full regression + publish + release report
