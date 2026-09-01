@@ -201,19 +201,22 @@ function TeamPage() {
         );
       })}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Single-PC coverage rule</CardTitle>
-          <CardDescription>
-            When only one coordinator is working, that person monitors both queues: acknowledge urgent messages,
-            begin action on urgent tasks, prevent guest-service failures, document incomplete work, and hand
-            unresolved tasks to the next responsible seat. Routine admin never delays urgent guest, access,
-            maintenance, booking or cleaning action.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Single-PC coverage rule</CardTitle>
+              <CardDescription>
+                When only one coordinator is working, that person monitors both queues: acknowledge urgent messages,
+                begin action on urgent tasks, prevent guest-service failures, document incomplete work, and hand
+                unresolved tasks to the next responsible seat. Routine admin never delays urgent guest, access,
+                maintenance, booking or cleaning action.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
+
 }
 
 function SeatEditor({
