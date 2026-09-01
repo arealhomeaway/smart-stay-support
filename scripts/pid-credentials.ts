@@ -53,7 +53,7 @@ function plain(v: any): string | null {
 }
 
 const PLACEHOLDER =
-  /^(n\/?a\.?|none\.?|no\.?|no code|none needed|not applicable|unknown|tbd|todo|pending|-+|—+|\?+|x+)$/i;
+  /^(n\/?a\.?|none\.?|no\.?|yes\.?|no code|none needed|not applicable|not listed|not mentioned|not provided|not specified|not available|unknown|tbd|todo|pending|null|-+|—+|\?+|x+)$/i;
 
 function isPlaceholder(s: string) {
   const t = s.trim();
