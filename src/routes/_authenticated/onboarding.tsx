@@ -150,7 +150,9 @@ function OnboardingWorkspace() {
   if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
 
   const tasks = current ? data.tasks.filter((t) => t.property_id === current.id) : [];
-  const readiness = current ? validateHandoff(current, tasks) : null;
+  const readiness = current
+    ? validateHandoff(current, tasks, { includeQuarterlyReview: enabled("quarterly_reviews") })
+    : null;
   const openHandoff = current
     ? data.handoffs.find((h) => h.property_id === current.id && (h.status === "requested" || h.status === "accepted_pending_live"))
     : undefined;
