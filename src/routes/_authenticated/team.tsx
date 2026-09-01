@@ -85,22 +85,36 @@ function TeamPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Operations"
-        title="Seats & coverage"
+        title="Team & coverage"
         description="Work routes to a permanent seat, never to a name. When someone changes role, update the seat holder here — the routing rules, queues and playbooks stay exactly as they are."
       />
 
+      {/* Four jobs, four tabs — instead of ten stacked panels. */}
+      <Tabs defaultValue="coverage" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="coverage">Coverage</TabsTrigger>
+          <TabsTrigger value="people">People & access</TabsTrigger>
+          <TabsTrigger value="seats">Seats</TabsTrigger>
+          <TabsTrigger value="partners">Owners & vendors</TabsTrigger>
+        </TabsList>
 
-      <TeamInvitePanel />
+        <TabsContent value="coverage" className="space-y-4">
+          <CoverageSchedulePanel />
+          <AssignmentExceptionQueue />
+        </TabsContent>
 
-      <TeamAccessPanel />
+        <TabsContent value="people" className="space-y-4">
+          <TeamInvitePanel />
+          <TeamAccessPanel />
+        </TabsContent>
 
-      <CoverageSchedulePanel />
+        <TabsContent value="partners" className="space-y-4">
+          <OwnerDirectoryPanel />
+          <VendorScoreboardPanel />
+        </TabsContent>
 
-      <AssignmentExceptionQueue />
+        <TabsContent value="seats" className="space-y-6">
 
-      <OwnerDirectoryPanel />
-
-      <VendorScoreboardPanel />
 
 
       {TEAMS.map((team) => {
