@@ -17,6 +17,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { buildPropertyDetailGroups } from "@/lib/property-details";
 
 type Client = SupabaseClient<Database>;
 
@@ -79,7 +80,9 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   if (property.error || !property.data) throw new Error("That property could not be found.");
   const p = property.data;
 
-  const [tasks, tickets, contacts, docs, approvals, handoff, programLink, activity, outbound] = await Promise.all([
+  const [tasks, tickets, contacts, docs, approvals, handoff, programLink, activity, outbound, links, conflicts] =
+    await Promise.all([
+
     supabaseAdmin
       .from("onboarding_tasks")
       .select(
@@ -101,7 +104,10 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .eq("property_id", propertyId),
     supabaseAdmin
       .from("documents")
-      .select("id, title, kind, visibility, upload_status, uploaded_at, entity_type, entity_id, mime_type, size_bytes, category")
+      .select(
+        "id, title, kind, visibility, upload_status, uploaded_at, uploaded_by, entity_type, entity_id, mime_type, size_bytes, category, original_filename, note",
+      )
+
       .eq("property_id", propertyId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -138,7 +144,18 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .eq("property_id", propertyId)
       .order("created_at", { ascending: false })
       .limit(15),
+    supabaseAdmin
+      .from("property_external_links")
+      .select("id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of")
+      .eq("property_id", propertyId),
+    supabaseAdmin
+      .from("field_conflicts")
+      .select("id, field_label, field_key, resolve_value, external_value, system, status")
+      .eq("entity_type", "property")
+      .eq("entity_id", propertyId)
+      .eq("status", "open"),
   ]);
+
 
   const taskRows = tasks.data ?? [];
   const top = taskRows.filter((t) => !t.parent_task_id);
@@ -298,11 +315,72 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     }
   }
 
+  // Who uploaded each file — shown in the document library.
+  const uploaderIds = Array.from(
+    new Set((docs.data ?? []).map((d) => d.uploaded_by).filter((x): x is string => Boolean(x))),
+  );
+  const uploaderNames = new Map<string, string>();
+  if (uploaderIds.length > 0) {
+    const { data: people } = await supabaseAdmin.from("profiles").select("id, full_name").in("id", uploaderIds);
+    for (const person of people ?? []) uploaderNames.set(person.id, person.full_name ?? "ARHA staff");
+  }
+
+  // Real PID operating information, grouped the way staff ask for it.
+  const detailGroups = staff ? buildPropertyDetailGroups(p as unknown as Record<string, unknown>) : [];
+
+  const linkRows = staff ? (links.data ?? []) : [];
+  const externalLinks = linkRows.map((l) => ({
+    id: l.id,
+    kind: l.kind,
+    label: l.label ?? defaultLinkLabel(l.kind),
+    url: l.url,
+    context: l.context,
+    staffOnly: l.staff_only,
+    canonical: l.canonical,
+    needsReplacement: l.needs_replacement,
+    legacy: l.kind === "legacy_onedrive",
+    source: l.source,
+    note: l.note,
+    asOf: l.as_of,
+  }));
+
+  // Things a person should see before they start work on this home.
+  const alerts: { id: string; tone: "danger" | "warn" | "info"; text: string }[] = [];
+  if (staff) {
+    const p1 = openTickets.filter((t) => t.priority === "p1").length;
+    if (p1 > 0) alerts.push({ id: "p1", tone: "danger", text: `${p1} open P1 ticket${p1 === 1 ? "" : "s"} on this home.` });
+    if (blocked.length > 0)
+      alerts.push({ id: "blocked", tone: "danger", text: `${blocked.length} onboarding task${blocked.length === 1 ? " is" : "s are"} blocked.` });
+    if (gates.length > 0)
+      alerts.push({ id: "gates", tone: "warn", text: `${gates.length} handoff gate${gates.length === 1 ? "" : "s"} still open.` });
+    const openConflicts = (conflicts.data ?? []).length;
+    if (openConflicts > 0)
+      alerts.push({
+        id: "conflicts",
+        tone: "warn",
+        text: `${openConflicts} imported field${openConflicts === 1 ? "" : "s"} disagree with the system of record and need review.`,
+      });
+    const quarterly = fmtDate(p.quarterly_review_due_on);
+    if (quarterly && quarterly < new Date().toISOString().slice(0, 10))
+      alerts.push({ id: "quarterly", tone: "warn", text: `Quarterly review was due ${quarterly}.` });
+    if (p.lifecycle_status && p.lifecycle_status !== "active_operations")
+      alerts.push({ id: "lifecycle", tone: "info", text: `Lifecycle: ${String(p.lifecycle_status).replace(/_/g, " ")}.` });
+    if (!p.primary_photo_url) alerts.push({ id: "photo", tone: "info", text: "No listing photo has synced from OwnerRez yet." });
+    const replacements = externalLinks.filter((l) => l.needsReplacement).length;
+    if (replacements > 0)
+      alerts.push({
+        id: "temp-links",
+        tone: "info",
+        text: `${replacements} temporary external link${replacements === 1 ? "" : "s"} still in use pending a native workflow.`,
+      });
+  }
+
   return {
     viewer: { staff, supervisor: isSupervisor(viewer), owner: owns },
     property: {
       id: p.id,
       name: p.name,
+
       nickname: p.nickname,
       address: [p.address_line1, p.unit, p.city, p.state, p.postal_code].filter(Boolean).join(", "),
       market: p.market,
@@ -316,8 +394,19 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       bedrooms: p.bedrooms,
       bathrooms: p.bathrooms,
       maxGuests: p.max_guests,
+      neighborhood: p.neighborhood,
+      tier: staff ? p.tier : null,
+      minStayMonths: p.min_stay_months,
+      propertyType: p.property_type,
+      operatingNotes: staff ? p.operating_notes : null,
+      internalNotes: staff ? p.notes : null,
+      listingUrl: p.listing_public_url,
+      checkInTime: p.check_in_time,
+      checkOutTime: p.check_out_time,
     },
     ownerRecord,
+    alerts,
+    externalLinks,
     overview: {
       openTickets: openTickets.length,
       p1Tickets: openTickets.filter((t) => t.priority === "p1").length,
@@ -335,7 +424,9 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     },
     details: {
       sections: staff ? sections : sections.filter((s) => ownerVisibleSections.includes(s.id)).map(ownerFilter),
+      groups: detailGroups,
     },
+
     contacts: staff
       ? (contacts.data ?? []).map((c) => ({
           id: c.id,
@@ -392,10 +483,14 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         visibility: d.visibility,
         status: d.upload_status,
         uploadedAt: d.uploaded_at,
+        uploadedByName: d.uploaded_by ? (uploaderNames.get(d.uploaded_by) ?? "ARHA staff") : null,
         entityType: d.entity_type,
         entityId: d.entity_id,
         category: d.category,
+        filename: d.original_filename,
+        note: d.note,
       })),
+
     approvals: {
       ownerActions: ownerActions.map((t) => ({
         id: t.id,
@@ -444,6 +539,19 @@ function f(
 
 function pending(label: string, key: string, source: string): HubField {
   return { label, key, value: null, source, asOf: null, ownerVisible: false, pending: true };
+}
+
+function defaultLinkLabel(kind: string): string {
+  const map: Record<string, string> = {
+    system: "System link",
+    camera_portal: "Camera portal",
+    legacy_onedrive: "Legacy OneDrive file",
+    hoa: "HOA link",
+    fillout_form: "Fillout form",
+    builder: "Builder / warranty link",
+    reference: "Reference link",
+  };
+  return map[kind] ?? kind.replace(/_/g, " ");
 }
 
 function ownerFilter(section: HubSection): HubSection {

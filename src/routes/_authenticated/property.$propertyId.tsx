@@ -25,10 +25,10 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
-import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
 import { PropertyCredentialsPanel } from "@/components/PropertyCredentialsPanel";
-import { documentCategoryLabel } from "@/lib/attachments";
+import { PropertyDetailSections } from "@/components/PropertyDetailSections";
+import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
@@ -91,7 +91,33 @@ function PropertyHubPage() {
     <div className="space-y-6">
       <HubHeader hub={hub} />
 
-      {hub.viewer.staff && <PropertyCredentialsPanel propertyId={propertyId} />}
+      {hub.alerts.length > 0 && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {hub.alerts.map((a) => (
+            <div
+              key={a.id}
+              className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
+                a.tone === "danger"
+                  ? "border-danger/40 bg-danger/5"
+                  : a.tone === "warn"
+                    ? "border-warning/40 bg-warning/5"
+                    : "border-border bg-muted/30"
+              }`}
+            >
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <span>{a.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hub.viewer.staff && (
+        <div id="credentials">
+          <PropertyCredentialsPanel propertyId={propertyId} />
+        </div>
+      )}
+
+
 
 
       <Tabs defaultValue="overview">
@@ -188,10 +214,21 @@ function HubHeader({ hub }: { hub: Hub }) {
             )}
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               {p.market && <Badge variant="secondary">{p.market}</Badge>}
+              {p.neighborhood && <Badge variant="outline">{p.neighborhood}</Badge>}
               {p.lifecycleStatus && <Badge variant="outline">{label(p.lifecycleStatus)}</Badge>}
+              {p.minStayMonths ? <Badge variant="outline">{p.minStayMonths}-month minimum</Badge> : null}
               {p.onboardingStage && <Badge variant="outline">Stage: {label(p.onboardingStage)}</Badge>}
               <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Active" : "Inactive"}</Badge>
             </div>
+            {hub.viewer.staff && p.operatingNotes && (
+              <div className="mt-4 rounded-lg border border-warning/40 bg-warning/5 p-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Special handling
+                </div>
+                <p className="mt-1 whitespace-pre-line text-sm">{p.operatingNotes}</p>
+              </div>
+            )}
+
           </div>
           {hub.viewer.staff && (
             <Link to="/properties" className="text-sm text-primary underline">
@@ -273,40 +310,56 @@ function OverviewTab({ hub }: { hub: Hub }) {
 }
 
 function DetailsTab({ hub }: { hub: Hub }) {
-  if (hub.details.sections.length === 0) {
+  const groups = hub.details.groups ?? [];
+  const legacy = hub.details.sections;
+  if (groups.length === 0 && legacy.length === 0) {
     return <Empty text="No property details have been shared for this home yet." />;
   }
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {hub.details.sections.map((s) => (
-        <Card key={s.id}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{s.title}</CardTitle>
-            {s.blurb && <CardDescription>{s.blurb}</CardDescription>}
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {s.fields.length === 0 && <p className="text-muted-foreground">Nothing recorded yet.</p>}
-            {s.fields.map((fld) => (
-              <div key={fld.key} className="flex items-start justify-between gap-4 border-b border-border/50 pb-2 last:border-0">
-                <div>
-                  <div className="font-medium">{fld.label}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {fld.source}
-                    {fld.asOf ? ` · as of ${fld.asOf.slice(0, 10)}` : ""}
+    <div className="space-y-6">
+      {groups.length > 0 && (
+        <PropertyDetailSections
+          groups={groups}
+          onGoToCredentials={() => document.getElementById("credentials")?.scrollIntoView({ behavior: "smooth" })}
+        />
+      )}
+
+      {legacy.length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {legacy.map((s) => (
+            <Card key={s.id}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{s.title}</CardTitle>
+                {s.blurb && <CardDescription>{s.blurb}</CardDescription>}
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {s.fields.length === 0 && <p className="text-muted-foreground">Nothing recorded yet.</p>}
+                {s.fields.map((fld) => (
+                  <div
+                    key={fld.key}
+                    className="flex items-start justify-between gap-4 border-b border-border/50 pb-2 last:border-0"
+                  >
+                    <div>
+                      <div className="font-medium">{fld.label}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {fld.source}
+                        {fld.asOf ? ` · as of ${fld.asOf.slice(0, 10)}` : ""}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {fld.pending ? (
+                        <Badge variant="outline">Awaiting field map</Badge>
+                      ) : (
+                        <span className={fld.value ? "" : "text-muted-foreground"}>{fld.value ?? "Not recorded"}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  {fld.pending ? (
-                    <Badge variant="outline">Awaiting field map</Badge>
-                  ) : (
-                    <span className={fld.value ? "" : "text-muted-foreground"}>{fld.value ?? "Not recorded"}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ))}
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -510,75 +563,13 @@ function OperationsTab({ hub }: { hub: Hub }) {
 }
 
 function DocumentsTab({ hub }: { hub: Hub }) {
-  const propertyPanel = hub.viewer.staff ? (
-    <AttachmentsPanel
-      entityType="property"
-      entityId={hub.property.id}
-      title="Property records"
-      description="Files whose home is the record itself — insurance, HOA, permits and licences, warranties, manuals and reference documents. Anything belonging to a ticket or an onboarding task is uploaded there and appears below; never upload it twice."
-    />
-  ) : null;
-
-  if (hub.documents.length === 0) {
-    return (
-      <div className="space-y-4">
-        {propertyPanel}
-        <Empty
-          text={
-            hub.viewer.staff
-              ? "Nothing is filed against a ticket or onboarding task for this home yet. Those files are uploaded on the record they belong to."
-              : "No documents have been shared with you for this home yet."
-          }
-        />
-      </div>
-    );
-  }
   return (
-    <div className="space-y-4">
-    {propertyPanel}
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <FileText className="size-4 text-primary" /> Documents &amp; media
-        </CardTitle>
-        <CardDescription>
-          {hub.viewer.staff
-            ? "Everything filed against this home. Open the record to download, replace or share a file."
-            : "Files ARHA has shared with you for this home."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        {hub.documents.map((d) => (
-          <div key={d.id} className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0">
-            <div>
-              <div className="font-medium">{d.title}</div>
-              <div className="text-xs text-muted-foreground">
-                {label(d.kind)} · {d.entityType === "property" ? "Property record" : label(d.entityType)}
-                {d.category ? ` · ${documentCategoryLabel(d.category) ?? label(d.category)}` : ""}
-                {d.uploadedAt ? ` · ${d.uploadedAt.slice(0, 10)}` : ""}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {hub.viewer.staff && (
-                <Badge variant={d.visibility === "owner_shared" ? "secondary" : "outline"}>
-                  {d.visibility === "owner_shared" ? "Shared with owner" : "Internal"}
-                </Badge>
-              )}
-              {d.entityType === "ticket" ? (
-                <Link to="/tickets/$ticketId" params={{ ticketId: d.entityId }} className="text-primary underline">
-                  Open
-                </Link>
-              ) : d.entityType === "onboarding_task" ? (
-                <Link to="/onboarding" className="text-primary underline">
-                  Open
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-    </div>
+    <PropertyDocumentLibrary
+      propertyId={hub.property.id}
+      documents={hub.documents}
+      links={hub.externalLinks ?? []}
+      staff={hub.viewer.staff}
+    />
   );
 }
 
