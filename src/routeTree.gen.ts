@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AwaitingAccessRouteImport } from './routes/awaiting-access'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
@@ -68,6 +69,11 @@ const AuthRoute = AuthRouteImport.update({
 const AwaitingAccessRoute = AwaitingAccessRouteImport.update({
   id: '/awaiting-access',
   path: '/awaiting-access',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/coach': typeof AuthenticatedCoachRoute
@@ -317,6 +324,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/coach': typeof AuthenticatedCoachRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/awaiting-access'
+    | '/reset-password'
     | '/analytics'
     | '/audit'
     | '/coach'
@@ -447,6 +457,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/awaiting-access'
+    | '/reset-password'
     | '/analytics'
     | '/audit'
     | '/coach'
@@ -490,6 +501,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/awaiting-access'
+    | '/reset-password'
     | '/_authenticated/analytics'
     | '/_authenticated/audit'
     | '/_authenticated/coach'
@@ -534,6 +546,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   AwaitingAccessRoute: typeof AwaitingAccessRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicBzProbeRoute: typeof ApiPublicBzProbeRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
@@ -573,6 +586,13 @@ declare module '@tanstack/react-router' {
       path: '/awaiting-access'
       fullPath: '/awaiting-access'
       preLoaderRoute: typeof AwaitingAccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/analytics': {
@@ -907,6 +927,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   AwaitingAccessRoute: AwaitingAccessRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicBzProbeRoute: ApiPublicBzProbeRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,
   ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,

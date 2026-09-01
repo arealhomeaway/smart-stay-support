@@ -70,11 +70,13 @@ function AuthPage() {
   const router = useRouter();
   const { next } = Route.useSearch();
   const requested = next ? portalByRoute(next) : undefined;
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
 
   async function go() {
     let intended = next;
