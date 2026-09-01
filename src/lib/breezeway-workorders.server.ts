@@ -17,6 +17,7 @@ import {
   isCurrentWorkOrder,
   type BreezewayWorkOrder,
   type BreezewayWorkOrderComment,
+  type BreezewayWorkOrderPhoto,
 } from "./breezeway-workorders";
 import { BREEZEWAY_OUTBOUND_FLAG } from "./breezeway-outbound";
 
