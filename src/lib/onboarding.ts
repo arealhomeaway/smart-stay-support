@@ -143,7 +143,14 @@ export function validateHandoff(
     evidence_note: string | null;
     blocker: string | null;
   }[],
+  /**
+   * Quarterly reviews sit behind a launch-state flag. While it is OFF the
+   * readiness checklist must not show a review warning; the stored review
+   * dates and the paused scheduler are untouched.
+   */
+  opts: { includeQuarterlyReview?: boolean } = {},
 ): { checks: HandoffCheck[]; openBlocking: string[]; ready: boolean } {
+  const includeQuarterlyReview = opts.includeQuarterlyReview !== false;
   const open = tasks.filter((t) => t.status !== "complete" && t.status !== "carryover");
   const openBlocking = open.filter((t) => t.blocks_handoff).map((t) => t.id);
   const missingApproval = tasks.filter(
@@ -176,13 +183,17 @@ export function validateHandoff(
       blocking: true,
       detail: "Operations cannot dispatch a vendor to a home with no access path.",
     },
-    {
-      key: "review_due",
-      label: "Quarterly review date set",
-      passed: Boolean(property.quarterly_review_due_on),
-      blocking: false,
-      detail: "The first cleaning-supervisor review must be scheduled.",
-    },
+    ...(includeQuarterlyReview
+      ? [
+          {
+            key: "review_due",
+            label: "Quarterly review date set",
+            passed: Boolean(property.quarterly_review_due_on),
+            blocking: false,
+            detail: "The first cleaning-supervisor review must be scheduled.",
+          } as HandoffCheck,
+        ]
+      : []),
     {
       key: "tasks",
       label: "Blocking onboarding tasks complete",
