@@ -149,7 +149,7 @@ function Oversight() {
       <div>
         <h1 className="text-3xl font-semibold">Oversight queue</h1>
         <p className="mt-1 text-muted-foreground">
-          Exceptions only. {totalExceptions === 0 ? "Nothing is slipping right now." : `${totalExceptions} tickets need attention.`}
+          Exceptions only. {totalExceptions === 0 ? "Nothing is slipping right now." : `${totalExceptions} ticket${totalExceptions === 1 ? "" : "s"} need${totalExceptions === 1 ? "s" : ""} attention.`}
         </p>
         <ReportingBaselineNote className="mt-3 max-w-2xl" />
       </div>

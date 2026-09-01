@@ -59,7 +59,7 @@ export function canEditMatter(
 export type QueueTab = "mine" | "team" | "unassigned" | "escalated" | "closed" | "all";
 
 export const QUEUE_TABS: { value: QueueTab; label: string; hint: string }[] = [
-  { value: "mine", label: "My work", hint: "Matters you own or must act on next." },
+  { value: "mine", label: "My work", hint: "Tickets you own or must act on next." },
   { value: "team", label: "Team queue", hint: "Every open matter across the portfolio." },
   { value: "unassigned", label: "Unassigned", hint: "Open matters nobody has picked up." },
   { value: "escalated", label: "Escalated & breached", hint: "Past a response standard or escalated." },
