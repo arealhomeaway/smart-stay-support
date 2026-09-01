@@ -421,6 +421,19 @@ export async function verifyAndFinalizeTask(
   return { outcome: "processed", reason: "Verified pilot task update", taskId };
 }
 
+async function refreshMirroredWorkOrder(taskId: number) {
+  try {
+    const { refreshWorkOrder, syncWorkOrderComments, getWorkOrder } = await import(
+      "./breezeway-workorders.server"
+    );
+    const mirrored = await refreshWorkOrder(taskId);
+    if (mirrored) await syncWorkOrderComments(mirrored.id);
+    void getWorkOrder;
+  } catch {
+    /* mirror refresh is best-effort; delivery must still succeed */
+  }
+}
+
 async function noteOutboundAcknowledgement(taskId: number) {
   try {
     const { noteOutboundWebhook } = await import("./breezeway-outbound.server");
