@@ -90,6 +90,9 @@ function PropertyHubPage() {
     <div className="space-y-6">
       <HubHeader hub={hub} />
 
+      {hub.viewer.staff && <PropertyCredentialsPanel propertyId={propertyId} />}
+
+
       <Tabs defaultValue="overview">
         <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
