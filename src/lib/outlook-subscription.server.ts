@@ -91,7 +91,7 @@ export function isTrustedNotification(state: string | null | undefined) {
  * Creates the subscription if there is none, renews it when it is close to
  * expiring, and records the result either way. Safe to call on every cron run.
  */
-export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action: string; expiresAt?: string; error?: string }> {
+export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action: string; expiresAt?: string | undefined; error?: string | undefined }> {
   if (!config()) return { ok: false, action: "skipped", error: "The Microsoft mailbox is not connected." };
   if (!clientState()) return { ok: false, action: "skipped", error: "No notification secret is configured." };
 
