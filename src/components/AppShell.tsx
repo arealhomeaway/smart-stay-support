@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useParams, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
@@ -156,10 +156,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   // The global "Log a ticket" action: capability-gated, hidden where the page
   // already owns that action, demoted where the page has its own primary, and
   // carrying whatever property context the current route already knows about.
-  const routeParams = (router.state.matches.at(-1)?.params ?? {}) as Record<string, string | undefined>;
+  const routeParams = useParams({ strict: false }) as { propertyId?: string };
   const onProperty = pathname.startsWith("/property/");
   const onOnboardingProperty = /^\/onboarding\/[^/]+$/.test(pathname) && !pathname.startsWith("/onboarding/my-work");
-  const contextPropertyId = routeParams["propertyId"];
+  const contextPropertyId = routeParams?.propertyId;
   const ticketContext: { property?: string; from?: string } =
     contextPropertyId && (onProperty || onOnboardingProperty)
       ? { property: contextPropertyId, from: onProperty ? "property_hub" : "onboarding" }
