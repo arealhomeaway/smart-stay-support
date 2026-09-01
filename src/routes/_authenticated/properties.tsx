@@ -217,7 +217,19 @@ function PropertiesPage() {
             const all = data.tickets.filter((t) => t.property_id === p.id);
             const openCount = all.filter((t) => OPEN_STATUSES.includes(t.status)).length;
             return (
-              <Card key={p.id}>
+              <Card key={p.id} className="overflow-hidden">
+                {p.primary_photo_url ? (
+                  <img
+                    src={p.primary_photo_url}
+                    alt={`${p.nickname ?? p.name} — listing photo`}
+                    className="h-40 w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-40 w-full items-center justify-center bg-muted text-xs text-muted-foreground">
+                    No listing photo on file
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle>
                     <Link
