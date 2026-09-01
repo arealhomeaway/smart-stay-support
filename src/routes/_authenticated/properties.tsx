@@ -160,6 +160,9 @@ function PropertiesPage() {
         <Button variant="outline" onClick={importAll} disabled={importing}>
           {importing ? "Importing…" : "Import from OwnerRez"}
         </Button>
+        <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
+          {enriching ? "Refreshing…" : "Refresh property info & photos"}
+        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>Add property</Button>
