@@ -420,13 +420,20 @@ export async function processMessage(db: Db, msg: GraphMessage, dryRun = false):
   const action = nextActionFor(prior);
   if (action !== "create") {
     if (action === "retag" && !dryRun && prior) {
-      const done = await retryCategory(db, msg, prior);
+      const retry = await retryCategory(db, msg, prior);
+      const settledNow = retry !== "failed";
       return {
         subject,
         from,
         outcome: "skipped",
-        retried: done,
-        reason: done ? "already processed · category retag retried" : "already processed · retag still failing",
+        // Reported as retried whenever the message ends up correctly tagged —
+        // including the case where the Graph write had already succeeded.
+        retried: settledNow,
+        reason: settledNow
+          ? retry === "retagged"
+            ? "already processed · category retag retried"
+            : "already processed · category already correct"
+          : "already processed · retag still failing",
       };
     }
     return { subject, from, outcome: "skipped", reason: "already processed" };
@@ -673,6 +680,9 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
   return { closed, reopened };
 }
 
+/** Whether a retag retry settled the message, and how. */
+export type RetryOutcome = "retagged" | "cleared" | "failed";
+
 export type MailboxRecord = {
   id: string;
   status: string;
@@ -827,12 +837,15 @@ async function settleClaim(
  * No record is created or touched here — the row's `entity_id` proves one was
  * already saved, which is precisely why this path is a retag and nothing more.
  */
-export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRecord) {
-  if (!prior.entity_id) return false;
+export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRecord): Promise<RetryOutcome> {
+  if (!prior.entity_id) return "failed";
   if (!requestsRecord(msg.categories)) {
-    // Someone re-tagged it by hand; nothing left to retry.
+    // The trigger category is already gone — either a person re-tagged it by
+    // hand, or an earlier write landed after we recorded it as pending. Either
+    // way the message is in its correct state, so the pending marker is
+    // cleared and this counts as a resolved retry, not a failure.
     await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
-    return false;
+    return "cleared";
   }
   const done = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
   if (done) {
@@ -843,7 +856,7 @@ export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRec
       .eq("operation", OPERATION)
       .in("external_id", [msg.id, msg.internetMessageId ?? ""].filter(Boolean));
   }
-  return done;
+  return done ? "retagged" : "failed";
 }
 
 async function recordEvent(
