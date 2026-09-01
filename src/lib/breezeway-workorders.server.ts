@@ -444,10 +444,9 @@ function photoUrl(p: RawPhoto) {
  * payload (`GET /task/{id}`), so this is the per-task read rather than a
  * portfolio sweep — Operations opens a work order, and its photos are there.
  *
- * Uploading INTO Breezeway is not available: the public API exposes photos as
- * read-only on the task, and `POST /task/{id}/photos` is refused. Evidence
- * captured in Resolve therefore stays in Resolve and is referenced in the
- * Breezeway comment thread instead.
+ * Uploading INTO Breezeway IS available and implemented below in
+ * `uploadWorkOrderPhoto` (multipart POST /task/{id}/photos). An earlier audit
+ * concluded otherwise only because the shared helper could send JSON alone.
  */
 export async function syncWorkOrderPhotos(
   workOrderId: string,
@@ -526,6 +525,112 @@ export async function syncWorkOrderPhotos(
   }
   return { ok: true, photos: kept };
 }
+
+/* ------------------------------------------------------------------ */
+/* Photo upload (Resolve -> Breezeway)                                 */
+/* ------------------------------------------------------------------ */
+
+export const BREEZEWAY_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
+export const BREEZEWAY_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+
+type UploadResult =
+  | { ok: true; photoId: number | null; url: string | null; includeInTaskReport: boolean }
+  | { ok: false; message: string };
+
+/**
+ * Uploads ONE photo to the Breezeway task behind a mirrored work order.
+ *
+ * Confirmed by Breezeway and verified live against our own account:
+ *   POST /public/inventory/v1/task/{task_id}/photos
+ *   multipart/form-data, field `file`, optional `include_in_task_report`
+ *   -> 2xx { id, url, include_in_task_report }
+ *
+ * The Breezeway task id is never taken from the client: the caller passes a
+ * Resolve work-order UUID, and the task id, property and write eligibility are
+ * all read server-side. `include_in_task_report` defaults to false — it is only
+ * ever true when a staff member explicitly ticks the box.
+ *
+ * Non-idempotent (Breezeway exposes no photo delete), so `retry: false`: a
+ * retried 5xx would leave two copies on a real task with no way to remove one.
+ */
+export async function uploadWorkOrderPhoto(
+  workOrderId: string,
+  file: { name: string; type: string; bytes: ArrayBuffer },
+  includeInTaskReport: boolean,
+  actorLabel: string,
+): Promise<UploadResult> {
+  const wo = await getWorkOrder(workOrderId);
+  if (!wo) return { ok: false, message: "That work order is not in Resolve." };
+  if (!(await outboundEnabled())) return { ok: false, message: "Breezeway writes are switched off." };
+  if (!wo.propertyId) return { ok: false, message: "That work order has no Resolve property." };
+  if (!wo.breezewayTaskId) return { ok: false, message: "That work order has no Breezeway task." };
+  const gate = await propertyWriteEligibility(wo.propertyId);
+  if (!gate.eligible) return { ok: false, message: gate.reason ?? "Property not eligible for Breezeway writes." };
+
+  const size = file.bytes.byteLength;
+  if (size === 0) return { ok: false, message: "That file is empty." };
+  if (size > BREEZEWAY_PHOTO_MAX_BYTES) {
+    return { ok: false, message: "That photo is larger than 15 MB. Resize it and try again." };
+  }
+  if (!BREEZEWAY_PHOTO_TYPES.includes(file.type)) {
+    return { ok: false, message: "Breezeway accepts JPEG, PNG, WebP and HEIC photos only." };
+  }
+
+  const form = new FormData();
+  form.append("file", new Blob([file.bytes], { type: file.type }), file.name || "photo.jpg");
+  // Only ever "true" on an explicit staff choice; the API takes the string form.
+  form.append("include_in_task_report", includeInTaskReport ? "true" : "false");
+
+  let created: { id?: number; url?: string | null; include_in_task_report?: boolean };
+  try {
+    created = await breezewayRequest<{ id?: number; url?: string | null; include_in_task_report?: boolean }>(
+      `/task/${wo.breezewayTaskId}/photos`,
+      { method: "POST", allowWrite: true, retry: false, form },
+    );
+  } catch (error) {
+    const message =
+      error instanceof BreezewayError
+        ? error.status === 422
+          ? "Breezeway rejected that image. Use a standard JPEG or PNG photo."
+          : `Breezeway refused the upload (${error.status}).`
+        : "Could not reach Breezeway. The photo was not uploaded.";
+    return { ok: false, message };
+  }
+
+  const photoId = typeof created?.id === "number" ? created.id : null;
+  const url = created?.url ?? null;
+  const included = created?.include_in_task_report === true;
+
+  // Mirror straight away so the existing photo view shows it without a refresh.
+  if (url) {
+    const db = await admin();
+    await db.from("breezeway_work_order_photos").upsert(
+      {
+        work_order_id: wo.id,
+        breezeway_task_id: wo.breezewayTaskId,
+        breezeway_photo_id: photoId,
+        property_id: wo.propertyId,
+        url,
+        caption: null,
+        photo_type: file.type,
+        uploader: actorLabel,
+        breezeway_created_at: new Date().toISOString(),
+        source: "resolve",
+        last_synced_at: new Date().toISOString(),
+      } as never,
+      photoId ? { onConflict: "breezeway_photo_id" } : undefined,
+    );
+    const { count } = await db
+      .from("breezeway_work_order_photos")
+      .select("id", { count: "exact", head: true })
+      .eq("work_order_id", wo.id);
+    await db.from("breezeway_work_orders").update({ photo_count: count ?? 0 } as never).eq("id", wo.id);
+  }
+
+  return { ok: true, photoId, url, includeInTaskReport: included };
+}
+
+
 
 export async function listWorkOrderPhotos(workOrderId: string): Promise<BreezewayWorkOrderPhoto[]> {
   const db = await admin();
