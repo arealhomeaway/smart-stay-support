@@ -17,7 +17,7 @@ const first = { id: "graph-001", internetMessageId: "<net-001@arha>", conversati
 const reply = { id: "graph-002", internetMessageId: "<net-002@arha>", conversationId: CONV };
 
 async function settle(ids: string[], patch: Record<string, unknown>) {
-  await store.db
+  await (store.db as unknown as { from: (t: string) => any })
     .from("integration_events")
     .update(patch)
     .eq("system", "outlook_inbox")
