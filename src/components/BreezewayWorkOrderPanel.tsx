@@ -9,7 +9,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, Camera, MessageSquare, RefreshCw, Send, ShieldCheck, Upload } from "lucide-react";
+import { CalendarClock, Camera, MessageSquare, RefreshCw, Send, ShieldCheck, Ticket as TicketIcon, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   workOrderLifecycle,
   workOrderPhotos,
   uploadWorkOrderPhotoFn,
+  escalateWorkOrderToTicketFn,
 } from "@/lib/breezeway-workorders.functions";
 import { EvidenceQualityGate } from "@/components/EvidenceQualityGate";
 import type { BreezewayWorkOrder } from "@/lib/breezeway-workorders";
@@ -274,6 +275,22 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
       void qc.invalidateQueries({ queryKey: ["bw-work-orders"] });
     },
     onError: () => toast.error("Could not reach Breezeway."),
+  });
+
+  // Deliberate escalation: a mirrored work order is not a Ticket until someone
+  // says so. The new Ticket is auto-routed to the Property Operations queue.
+  const promote = useServerFn(escalateWorkOrderToTicketFn);
+  const escalate = useMutation({
+    mutationFn: () => promote({ data: { workOrderId: order.id, priority: "p3" } }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error(res.message ?? "Could not create the Ticket.");
+        return;
+      }
+      toast.success(res.ref ? `Ticket #${res.ref} created. ${res.note}` : res.note);
+      void qc.invalidateQueries({ queryKey: ["bw-work-orders"] });
+    },
+    onError: () => toast.error("Could not create the Ticket."),
   });
 
   return (
