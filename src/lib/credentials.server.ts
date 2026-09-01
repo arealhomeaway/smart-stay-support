@@ -274,7 +274,7 @@ export async function saveCredential(viewer: Viewer, input: CredentialInput) {
   patch["source"] = "staff_entry";
   const { data, error } = await supabaseAdmin
     .from("property_credentials")
-    .insert(patch as never)
+    .insert(patch as any)
     .select("id")
     .single();
   if (error) throw new Error("That credential could not be saved.");
