@@ -1936,6 +1936,7 @@ export type Database = {
       integration_events: {
         Row: {
           attempts: number
+          conversation_id: string | null
           created_at: string
           direction: string
           entity_id: string | null
@@ -1956,6 +1957,7 @@ export type Database = {
         }
         Insert: {
           attempts?: number
+          conversation_id?: string | null
           created_at?: string
           direction: string
           entity_id?: string | null
@@ -1976,6 +1978,7 @@ export type Database = {
         }
         Update: {
           attempts?: number
+          conversation_id?: string | null
           created_at?: string
           direction?: string
           entity_id?: string | null
