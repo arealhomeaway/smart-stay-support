@@ -151,6 +151,14 @@ function PropertyWorkspace() {
         {roll.blocked > 0 && <Chip className={stateChip("blocked")}>{roll.blocked} blocked</Chip>}
         {roll.overdue > 0 && <Chip className={stateChip("blocked")}>{roll.overdue} overdue</Chip>}
         {openHandoff && <Chip className={stateChip("waiting")}>Handoff — {gateLabel(openHandoff.gate_step)}</Chip>}
+        <Button asChild size="sm" variant="outline" className="ml-auto">
+          <Link
+            to="/tickets/new"
+            search={{ property: current.id, project: current.id, from: "onboarding" }}
+          >
+            Log a ticket
+          </Link>
+        </Button>
       </div>
 
       <Tabs defaultValue="workflow" className="space-y-5">

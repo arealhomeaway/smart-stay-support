@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useParams, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
@@ -153,6 +153,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   const vendorMode = !rolesLoading && isVendor;
   const ownerMode = !rolesLoading && isOwner;
 
+  // The global "Log a ticket" action: capability-gated, hidden where the page
+  // already owns that action, demoted where the page has its own primary, and
+  // carrying whatever property context the current route already knows about.
+  const routeParams = useParams({ strict: false }) as { propertyId?: string };
+  const onProperty = pathname.startsWith("/property/");
+  const onOnboardingProperty = /^\/onboarding\/[^/]+$/.test(pathname) && !pathname.startsWith("/onboarding/my-work");
+  const contextPropertyId = routeParams?.propertyId;
+  const ticketContext: { property?: string; from?: string } =
+    contextPropertyId && (onProperty || onOnboardingProperty)
+      ? { property: contextPropertyId, from: onProperty ? "property_hub" : "onboarding" }
+      : {};
+  const showLogTicket =
+    !vendorMode && !ownerMode && !readOnly && can("ticket_create") && !pathname.startsWith("/tickets");
+  const quietLogTicket = [
+    "/leads",
+    "/onboarding",
+    "/command-center",
+    "/analytics",
+    "/ops-analytics",
+    "/owner-analytics",
+    "/audit",
+    "/oversight",
+    "/map",
+    "/playbooks",
+  ].some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
+
   const groups: NavGroup[] = vendorMode
     ? vendorGroups
     : ownerMode
@@ -257,9 +284,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               <div className="ml-auto flex flex-1 flex-wrap items-center justify-end gap-2">
                 <GlobalSearch targets={searchTargets} />
-                {!vendorMode && !ownerMode && !readOnly && (
-                  <Button asChild data-tour="log" size="sm" className="min-h-11 md:min-h-9">
-                    <Link to="/tickets/new">
+                {showLogTicket && (
+                  <Button
+                    asChild
+                    data-tour="log"
+                    size="sm"
+                    variant={quietLogTicket ? "outline" : "default"}
+                    className="min-h-11 md:min-h-9"
+                  >
+                    <Link to="/tickets/new" search={ticketContext}>
                       <Plus className="size-4" aria-hidden="true" /> Log a ticket
                     </Link>
                   </Button>

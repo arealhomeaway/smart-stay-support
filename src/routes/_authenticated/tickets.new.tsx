@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Clock, Users, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +43,32 @@ import {
 } from "@/lib/situations";
 
 
+/**
+ * Context handed in by whichever surface launched this form. It only
+ * pre-populates fields and records where the ticket came from — every
+ * classification choice stays with the person logging the work.
+ */
+type NewTicketSearch = {
+  property?: string;
+  lead?: string;
+  project?: string;
+  from?: string;
+};
+
 export const Route = createFileRoute("/_authenticated/tickets/new")({
+  validateSearch: (search: Record<string, unknown>): NewTicketSearch => {
+    const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
+    const out: NewTicketSearch = {};
+    const property = str(search["property"]);
+    const lead = str(search["lead"]);
+    const project = str(search["project"]);
+    const from = str(search["from"]);
+    if (property) out.property = property;
+    if (lead) out.lead = lead;
+    if (project) out.project = project;
+    if (from) out.from = from;
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "Log work — Resolve Operations" },
@@ -67,6 +93,8 @@ type Mode = "one_touch" | "ticket";
 
 function NewMatter() {
   const router = useRouter();
+  const context = Route.useSearch();
+  const { can, readOnly, isLoading: rolesLoading } = useRole();
   const [mode, setMode] = useState<Mode>("ticket");
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
@@ -75,7 +103,7 @@ function NewMatter() {
   const [form, setForm] = useState({
     title: "",
     description: "",
-    property_id: "",
+    property_id: context.property ?? "",
     situation_id: "",
     work_type_id: "",
 
@@ -116,6 +144,28 @@ function NewMatter() {
     enabled: Boolean(form.property_id),
     retry: false,
   });
+
+  // A lead only carries context: name for the banner, and the property it is
+  // already linked to so the form can start there when nothing else says otherwise.
+  const { data: leadContext } = useQuery({
+    queryKey: ["lead-ticket-context", context.lead],
+    enabled: Boolean(context.lead),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id, contact_name, lead_properties(property_id)")
+        .eq("id", context.lead!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    const linked = leadContext?.lead_properties?.[0]?.property_id;
+    if (!linked) return;
+    setForm((f) => (f.property_id ? f : { ...f, property_id: linked }));
+  }, [leadContext]);
 
   const { data: workTypes } = useQuery({
     queryKey: ["work-types"],
@@ -243,6 +293,16 @@ function NewMatter() {
 
     setSaving(true);
     try {
+      // Provenance only — where the person was standing when they logged it.
+      const sourceReference = context.lead
+        ? `resolve:lead:${context.lead}`
+        : context.project
+          ? `resolve:onboarding:${context.project}`
+          : context.from === "property_hub" && context.property
+            ? `resolve:property_hub:${context.property}`
+            : context.from
+              ? `resolve:${context.from}`
+              : null;
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id ?? null;
       const now = new Date();
@@ -271,6 +331,7 @@ function NewMatter() {
           priority: form.priority,
           priority_override_reason: overridden ? form.priority_override_reason.trim() : null,
           source_channel: form.source_channel,
+          source_reference: sourceReference,
           ownerrez_booking_id: stay?.ok ? stay.data.booking_id : null,
           guest_name: form.guest_name || null,
           guest_contact: form.guest_contact || null,
@@ -299,6 +360,15 @@ function NewMatter() {
         .select("id")
         .single();
       if (error) throw error;
+
+      if (context.lead) {
+        const { error: linkError } = await supabase.from("lead_tickets").insert({
+          lead_id: context.lead,
+          ticket_id: ticket.id,
+          linked_by: userId,
+        });
+        if (linkError) toast.error("Ticket saved, but linking it to the lead failed.");
+      }
 
       if (!oneTouch && resolvedPlaybookId) {
         const { data: steps, error: stepsError } = await supabase
@@ -340,6 +410,19 @@ function NewMatter() {
     }
   }
 
+  // The capability is enforced in the database too; this stops someone
+  // reaching the form by typing the URL.
+  if (!rolesLoading && (readOnly || !can("ticket_create"))) {
+    return (
+      <div className="mx-auto max-w-lg space-y-3 py-16 text-center">
+        <h1 className="text-2xl font-semibold">Logging work is not part of your access</h1>
+        <p className="text-muted-foreground">
+          Ask a supervisor if you need to open tickets in Resolve.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
@@ -348,6 +431,20 @@ function NewMatter() {
           Every meaningful operational interaction gets recorded. Already handled it? Log it and move on.
         </p>
       </div>
+
+      {(leadContext || context.property || context.project || context.from) && (
+        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+          <span className="font-medium">Started from </span>
+          {leadContext
+            ? `the lead ${leadContext.contact_name}`
+            : context.from === "onboarding"
+              ? "an onboarding workspace"
+              : context.from === "property_hub"
+                ? "a property hub"
+                : "another Resolve workspace"}
+          . We have filled in what we know — change anything that is not right.
+        </div>
+      )}
 
       <Link
         to="/coach"
