@@ -74,32 +74,28 @@ instruction line when present.
   query key, or a log line.
 - A "Nothing recorded — add" affordance for supervisors keeps gaps visible.
 
-## 3. RBAC
+## 3. RBAC (approved correction — internal vs external, not Operations-only)
 
-Access is by operational need, evaluated against the seats currently in
-`functional_roles`:
+The distinction is internal ARHA user vs owner/vendor/external, using the
+existing ARHA role model.
 
-| Group | Seats today | Reveal / Copy | Edit |
-| --- | --- | --- | --- |
-| Team A — Guest Experience | `ge_day`, `ge_evening` | Yes | No |
-| Team B — Property Operations | `po_day`, `po_evening` | Yes | No |
-| After-hours / on-call | anyone in `oncall_roster` (30 rows loaded through 30 Sep) | Yes | No |
-| Operations Supervisor | `ops_supervisor` | Yes | Yes |
-| Director of Operations | `director_ops` | Yes | Yes |
-| Admin | `admin` role | Yes | Yes |
-| Owners | — | No | No |
-| Vendors | — | No | No |
+| Group | Reveal / Copy | Create / Edit / Verify |
+| --- | --- | --- |
+| Onboarding staff | Yes | Yes |
+| Operations Supervisor (`manager`) | Yes | Yes |
+| Director-level / Admin | Yes | Yes |
+| Operations staff — Team A Guest Experience, Team B Property Operations (`tech`/Staff) | Yes | No |
+| After-hours / on-call staff | Yes (no extra grant) | No |
+| Finance, leadership, internal support with a Resolve staff account | Yes | Per role above |
+| Homeowners | No | No |
+| Vendors | No | No |
 
-Implementation: reveal is gated by the existing `is_staff()` (admin, manager,
-tech — the internal `tech` key behind the Staff label), which already covers
-every Team A/Team B seat and everyone on the on-call roster, with no extra
-grant needed after hours. Edit/verify is gated by `is_supervisor()`. Owners
-and vendors fall outside both, and `property_credentials` carries no owner or
-vendor policy at all.
-
-Alarm/security credentials carry an optional `restricted` flag for the rare
-case where the client wants supervisor-and-above only. Default is off — a
-guest-support agent at 2 a.m. should not hit a wall.
+Implemented as two database helpers over `user_roles`:
+`is_internal_staff()` = admin, manager, tech, onboarding — read/reveal/copy;
+`can_manage_credentials()` = admin, manager, onboarding — create/edit/verify.
+Onboarding has full maintenance rights because collecting and keeping these
+values current is part of the onboarding workflow. No credential-specific role
+was invented, and no additional grant is needed after hours.
 
 ## 4. Account-level MFA
 
