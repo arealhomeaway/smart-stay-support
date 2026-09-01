@@ -739,11 +739,13 @@ function EvidenceDialog({
   current,
   taskId,
   onSave,
+  evidenceRequired = true,
 }: {
   disabled: boolean;
   current: string;
   taskId: string;
   onSave: (note: string) => void;
+  evidenceRequired?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState(current);
@@ -757,7 +759,7 @@ function EvidenceDialog({
     >
       <DialogTrigger asChild>
         <Button size="sm" variant="ghost" disabled={disabled}>
-          {current ? "Update evidence" : "Add evidence"}
+          {evidenceRequired ? (current ? "Update evidence" : "Add evidence") : "Notes & files"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
