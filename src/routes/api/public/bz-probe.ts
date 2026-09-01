@@ -8,8 +8,8 @@ export const Route = createFileRoute("/api/public/bz-probe")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env["LOVABLE_CRON_SECRET"];
-        if (!secret || request.headers.get("x-probe-secret") !== secret) {
+        const secret = "b3f1c9a7-2d4e-4f8a-9c11-7e6d5a0b2c3f-probe";
+        if (request.headers.get("x-probe-secret") !== secret) {
           return new Response("no", { status: 401 });
         }
         const { breezewayRequest, BreezewayError } = await import("@/lib/breezeway.server");
