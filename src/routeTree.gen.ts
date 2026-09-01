@@ -22,6 +22,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
+import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedOpsAnalyticsRouteImport } from './routes/_authenticated/ops-analytics'
@@ -35,6 +36,11 @@ import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
+import { Route as AuthenticatedLeadsManagerRouteImport } from './routes/_authenticated/leads.manager'
+import { Route as AuthenticatedLeadsMyLeadsRouteImport } from './routes/_authenticated/leads.my-leads'
+import { Route as AuthenticatedLeadsNewRouteImport } from './routes/_authenticated/leads.new'
+import { Route as AuthenticatedLeadsPipelineRouteImport } from './routes/_authenticated/leads.pipeline'
 import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated/onboarding.index'
 import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/_authenticated/onboarding.$propertyId'
 import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
@@ -121,6 +127,11 @@ const AuthenticatedJoinRoute = AuthenticatedJoinRouteImport.update({
   path: '/join',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
   id: '/map',
   path: '/map',
@@ -189,6 +200,34 @@ const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedLeadsRoute,
+} as any)
+const AuthenticatedLeadsManagerRoute =
+  AuthenticatedLeadsManagerRouteImport.update({
+    id: '/manager',
+    path: '/manager',
+    getParentRoute: () => AuthenticatedLeadsRoute,
+  } as any)
+const AuthenticatedLeadsMyLeadsRoute =
+  AuthenticatedLeadsMyLeadsRouteImport.update({
+    id: '/my-leads',
+    path: '/my-leads',
+    getParentRoute: () => AuthenticatedLeadsRoute,
+  } as any)
+const AuthenticatedLeadsNewRoute = AuthenticatedLeadsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedLeadsRoute,
+} as any)
+const AuthenticatedLeadsPipelineRoute =
+  AuthenticatedLeadsPipelineRouteImport.update({
+    id: '/pipeline',
+    path: '/pipeline',
+    getParentRoute: () => AuthenticatedLeadsRoute,
+  } as any)
 const AuthenticatedOnboardingIndexRoute =
   AuthenticatedOnboardingIndexRouteImport.update({
     id: '/',
@@ -311,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/hub': typeof AuthenticatedHubRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
+  '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/map': typeof AuthenticatedMapRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
@@ -324,6 +364,10 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/leads/manager': typeof AuthenticatedLeadsManagerRoute
+  '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
+  '/leads/new': typeof AuthenticatedLeadsNewRoute
+  '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
@@ -333,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
@@ -369,6 +414,10 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/leads/manager': typeof AuthenticatedLeadsManagerRoute
+  '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
+  '/leads/new': typeof AuthenticatedLeadsNewRoute
+  '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
@@ -378,6 +427,7 @@ export interface FileRoutesByTo {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/leads': typeof AuthenticatedLeadsIndexRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
@@ -404,6 +454,7 @@ export interface FileRoutesById {
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/join': typeof AuthenticatedJoinRoute
+  '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/_authenticated/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
@@ -417,6 +468,10 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
+  '/_authenticated/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
+  '/_authenticated/leads/new': typeof AuthenticatedLeadsNewRoute
+  '/_authenticated/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
@@ -426,6 +481,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
@@ -452,6 +508,7 @@ export interface FileRouteTypes {
     | '/hub'
     | '/integrations'
     | '/join'
+    | '/leads'
     | '/map'
     | '/onboarding'
     | '/ops-analytics'
@@ -465,6 +522,10 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/leads/manager'
+    | '/leads/my-leads'
+    | '/leads/new'
+    | '/leads/pipeline'
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/property/$propertyId'
@@ -474,6 +535,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/leads/'
     | '/onboarding/'
     | '/tickets/'
     | '/vendor/'
@@ -510,6 +572,10 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/leads/manager'
+    | '/leads/my-leads'
+    | '/leads/new'
+    | '/leads/pipeline'
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/property/$propertyId'
@@ -519,6 +585,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/leads'
     | '/onboarding'
     | '/tickets'
     | '/vendor'
@@ -544,6 +611,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hub'
     | '/_authenticated/integrations'
     | '/_authenticated/join'
+    | '/_authenticated/leads'
     | '/_authenticated/map'
     | '/_authenticated/onboarding'
     | '/_authenticated/ops-analytics'
@@ -557,6 +625,10 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
+    | '/_authenticated/leads/manager'
+    | '/_authenticated/leads/my-leads'
+    | '/_authenticated/leads/new'
+    | '/_authenticated/leads/pipeline'
     | '/_authenticated/onboarding/$propertyId'
     | '/_authenticated/onboarding/my-work'
     | '/_authenticated/property/$propertyId'
@@ -566,6 +638,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/_authenticated/leads/'
     | '/_authenticated/onboarding/'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
@@ -688,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJoinRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leads': {
+      id: '/_authenticated/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AuthenticatedLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/map': {
       id: '/_authenticated/map'
       path: '/map'
@@ -778,6 +858,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/welcome'
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leads/': {
+      id: '/_authenticated/leads/'
+      path: '/'
+      fullPath: '/leads/'
+      preLoaderRoute: typeof AuthenticatedLeadsIndexRouteImport
+      parentRoute: typeof AuthenticatedLeadsRoute
+    }
+    '/_authenticated/leads/manager': {
+      id: '/_authenticated/leads/manager'
+      path: '/manager'
+      fullPath: '/leads/manager'
+      preLoaderRoute: typeof AuthenticatedLeadsManagerRouteImport
+      parentRoute: typeof AuthenticatedLeadsRoute
+    }
+    '/_authenticated/leads/my-leads': {
+      id: '/_authenticated/leads/my-leads'
+      path: '/my-leads'
+      fullPath: '/leads/my-leads'
+      preLoaderRoute: typeof AuthenticatedLeadsMyLeadsRouteImport
+      parentRoute: typeof AuthenticatedLeadsRoute
+    }
+    '/_authenticated/leads/new': {
+      id: '/_authenticated/leads/new'
+      path: '/new'
+      fullPath: '/leads/new'
+      preLoaderRoute: typeof AuthenticatedLeadsNewRouteImport
+      parentRoute: typeof AuthenticatedLeadsRoute
+    }
+    '/_authenticated/leads/pipeline': {
+      id: '/_authenticated/leads/pipeline'
+      path: '/pipeline'
+      fullPath: '/leads/pipeline'
+      preLoaderRoute: typeof AuthenticatedLeadsPipelineRouteImport
+      parentRoute: typeof AuthenticatedLeadsRoute
     }
     '/_authenticated/onboarding/': {
       id: '/_authenticated/onboarding/'
@@ -915,6 +1030,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedLeadsRouteChildren {
+  AuthenticatedLeadsManagerRoute: typeof AuthenticatedLeadsManagerRoute
+  AuthenticatedLeadsMyLeadsRoute: typeof AuthenticatedLeadsMyLeadsRoute
+  AuthenticatedLeadsNewRoute: typeof AuthenticatedLeadsNewRoute
+  AuthenticatedLeadsPipelineRoute: typeof AuthenticatedLeadsPipelineRoute
+  AuthenticatedLeadsIndexRoute: typeof AuthenticatedLeadsIndexRoute
+}
+
+const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
+  AuthenticatedLeadsManagerRoute: AuthenticatedLeadsManagerRoute,
+  AuthenticatedLeadsMyLeadsRoute: AuthenticatedLeadsMyLeadsRoute,
+  AuthenticatedLeadsNewRoute: AuthenticatedLeadsNewRoute,
+  AuthenticatedLeadsPipelineRoute: AuthenticatedLeadsPipelineRoute,
+  AuthenticatedLeadsIndexRoute: AuthenticatedLeadsIndexRoute,
+}
+
+const AuthenticatedLeadsRouteWithChildren =
+  AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
+
 interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingPropertyIdRoute: typeof AuthenticatedOnboardingPropertyIdRoute
   AuthenticatedOnboardingMyWorkRoute: typeof AuthenticatedOnboardingMyWorkRoute
@@ -943,6 +1077,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
+  AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRouteWithChildren
   AuthenticatedOpsAnalyticsRoute: typeof AuthenticatedOpsAnalyticsRoute
@@ -974,6 +1109,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
+  AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRouteWithChildren,
   AuthenticatedOpsAnalyticsRoute: AuthenticatedOpsAnalyticsRoute,

@@ -20,6 +20,7 @@ import {
   PlugZap,
   ShieldAlert,
   Sparkles,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -87,6 +88,7 @@ const navGroups: NavGroup[] = [
     label: "Work",
     items: [
       { to: "/tickets", label: "Tickets", icon: ClipboardList, tour: "tickets" },
+      { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads" },
       { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
       { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
       { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
