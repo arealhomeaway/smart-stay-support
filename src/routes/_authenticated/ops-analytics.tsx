@@ -11,6 +11,7 @@ import { useDemo } from "@/components/DemoProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EvidenceQualityCard } from "@/components/EvidenceQualityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/ops-analytics")({
@@ -305,6 +306,8 @@ function OpsAnalyticsPage() {
               )}
             </CardContent>
           </Card>
+
+          <EvidenceQualityCard />
 
           <ReportingBaselineNote />
         </>
