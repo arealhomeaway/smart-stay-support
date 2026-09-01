@@ -33,6 +33,14 @@ import {
   priorityTone,
   slaDueDates,
 } from "@/lib/tickets";
+import {
+  SITUATIONS,
+  SITUATION_GROUPS,
+  priorityReason,
+  resolveWorkType,
+  situationById,
+} from "@/lib/situations";
+
 
 export const Route = createFileRoute("/_authenticated/tickets/new")({
   head: () => ({
