@@ -29,7 +29,7 @@ describe("where Resolve is allowed to read", () => {
       } catch (err) {
         caught = err;
       }
-      expect(caught).toBeInstanceOf(UnauthorizedMailboxError);
+      expect((caught as Error)?.name).toBe(new UnauthorizedMailboxError(bad).name);
     }
   });
 
