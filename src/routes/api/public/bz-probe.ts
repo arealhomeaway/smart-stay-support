@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/public/bz-probe")({
         const body = (await request.json().catch(() => ({}))) as {
           paths?: string[];
           scanHomes?: number[];
-          op?: "people" | "mirror";
+          op?: "people" | "mirror" | "photos";
           limit?: number;
         };
         const out: Record<string, unknown> = {};
@@ -24,6 +24,20 @@ export const Route = createFileRoute("/api/public/bz-probe")({
           const mod = await import("@/lib/breezeway-people.server");
           out["people:sync"] = await mod.syncBreezewayPeople();
           out["people:audit"] = await mod.breezewayPeopleAudit();
+        }
+        if (body.op === "photos") {
+          const mod = await import("@/lib/breezeway-workorders.server");
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data } = await supabaseAdmin
+            .from("breezeway_work_orders")
+            .select("id, name, photo_count")
+            .gt("photo_count", 0)
+            .limit(body.limit ?? 5);
+          const results: unknown[] = [];
+          for (const wo of (data ?? []) as { id: string; name: string | null }[]) {
+            results.push({ name: wo.name, ...(await mod.syncWorkOrderPhotos(wo.id)) });
+          }
+          out["photos"] = results;
         }
         if (body.op === "mirror") {
           const mod = await import("@/lib/breezeway-workorders.server");
