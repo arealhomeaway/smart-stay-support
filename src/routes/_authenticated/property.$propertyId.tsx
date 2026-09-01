@@ -439,6 +439,8 @@ function OperationsTab({ hub }: { hub: Hub }) {
           )}
         </CardContent>
       </Card>
+
+      {hub.viewer.staff && <BreezewayWorkOrderPanel propertyId={hub.property.id} />}
     </div>
   );
 }
