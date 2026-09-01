@@ -433,7 +433,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       ownerActions: ownerActions.length,
       handoffGatesOpen: gates.length,
       unassignedTasks: staff ? unassigned : null,
-      quarterlyDue: fmtDate(p.quarterly_review_due_on),
+      quarterlyDue: quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null,
       documents: (docs.data ?? []).filter((d) => staff || d.visibility === "owner_shared").length,
       program: program
         ? { id: program.id, ownerName: program.owner_name, status: program.status, startedOn: program.started_on, endsOn: program.ends_on }
