@@ -25,6 +25,7 @@ import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
+import { SEAT_LABELS, type SeatCode } from "@/lib/onboarding-ownership";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import {
   addOnboardingNoteFn,
@@ -459,6 +460,19 @@ function OnboardingWorkspace() {
                               {t.due_on ? ` · due ${t.due_on}` : ""}
                               {t.blocks_handoff ? " · blocks handoff" : ""}
                               {t.parent_task_id ? " · subtask" : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Owner:{" "}
+                              {t.assigned_to
+                                ? (data.people.find((p) => p.id === t.assigned_to)?.full_name ??
+                                   data.people.find((p) => p.id === t.assigned_to)?.email ??
+                                   "Teammate")
+                                : t.assigned_seat
+                                  ? `Unstaffed — ${SEAT_LABELS[t.assigned_seat as SeatCode] ?? t.assigned_seat}`
+                                  : "Unassigned"}
+                              {t.assigned_to && t.assigned_seat
+                                ? ` · ${SEAT_LABELS[t.assigned_seat as SeatCode] ?? t.assigned_seat}`
+                                : ""}
                             </p>
                             {t.blocker && <p className="text-xs text-destructive">Blocker: {t.blocker}</p>}
                             {waiting.length > 0 && (
