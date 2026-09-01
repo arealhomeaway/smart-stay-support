@@ -264,7 +264,7 @@ export async function saveCredential(viewer: Viewer, input: CredentialInput) {
   if (input.id) {
     const { error } = await supabaseAdmin
       .from("property_credentials")
-      .update(patch)
+      .update(patch as any)
       .eq("id", input.id);
     if (error) throw new Error("That credential could not be saved.");
     return { id: input.id };
