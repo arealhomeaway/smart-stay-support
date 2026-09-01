@@ -30,3 +30,46 @@ describe("where Resolve is allowed to read", () => {
     expect(inboxMessagesPath()).toContain("/mailFolders/Inbox/messages");
   });
 });
+
+describe("retry reporting", () => {
+  it("a message already carrying the created category counts as settled, not as a failed retry", async () => {
+    const { retryCategory } = await import("@/lib/mailbox.server");
+    const updates: unknown[] = [];
+    const db = {
+      from: () => ({
+        update: (v: unknown) => {
+          updates.push(v);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as never;
+    const outcome = await retryCategory(
+      db,
+      { id: "AAMk1", categories: ["Resolve: ticket created", "P1"] },
+      {
+        id: "row-1",
+        status: "created",
+        error_message: "recategorise_pending",
+        entity_id: "ticket-1",
+        external_id: "AAMk1",
+        created_at: new Date().toISOString(),
+      },
+    );
+    // The Graph write had already landed — reporting this as `false` was the QA defect.
+    expect(outcome).toBe("cleared");
+    expect(updates).toEqual([{ error_message: null }]);
+  });
+
+  it("a retry with no record on file is still a failure", async () => {
+    const { retryCategory } = await import("@/lib/mailbox.server");
+    const outcome = await retryCategory({} as never, { id: "AAMk2" }, {
+      id: "row-2",
+      status: "created",
+      error_message: "recategorise_pending",
+      entity_id: null,
+      external_id: "AAMk2",
+      created_at: new Date().toISOString(),
+    });
+    expect(outcome).toBe("failed");
+  });
+});
