@@ -3229,11 +3229,13 @@ export type Database = {
       }
       properties: {
         Row: {
+          access: Json
           access_notes: string | null
           active: boolean
           actual_access_on: string | null
           actual_closing_on: string | null
           address_line1: string | null
+          amenities: Json
           archive_reason: string | null
           archived_at: string | null
           bathrooms: number | null
@@ -3246,33 +3248,54 @@ export type Database = {
           check_in_time: string | null
           check_out_time: string | null
           city: string | null
+          compliance: Json
+          coords_overridden_at: string | null
+          coords_overridden_by: string | null
+          coords_override_reason: string | null
           created_at: string
           created_by: string | null
+          external_refs: Json
+          facts: Json
+          fireplace: Json
           formatted_address: string | null
+          furniture_package: string | null
+          geocode_address_fingerprint: string | null
+          geocode_source: string | null
           geocode_status: string | null
           geocoded_at: string | null
+          grounds: Json
           handoff_accepted_at: string | null
+          hoa: Json
+          hvac: Json
           id: string
+          instant_book: boolean | null
           is_demo: boolean
           last_quarterly_review_at: string | null
           latitude: number | null
+          legacy_handoff_date: string | null
           lifecycle_status: string
+          listing_alias: string | null
           listing_public_url: string | null
           living_area_sqft: number | null
           longitude: number | null
           market: string | null
           max_guests: number | null
+          min_stay_months: number | null
           name: string
+          neighborhood: string | null
           nickname: string | null
           notes: string | null
           onboarding_owner: string | null
           onboarding_stage: string | null
           onboarding_started_at: string | null
+          operating_notes: string | null
           owner_record_id: string | null
           ownerrez_owner_id: string | null
           ownerrez_property_id: string | null
           ownerrez_synced_at: string | null
+          parking: Json
           planned_closing_on: string | null
+          pool_spa: Json
           postal_code: string | null
           primary_photo_medium_url: string | null
           primary_photo_source: string | null
@@ -3281,18 +3304,29 @@ export type Database = {
           primary_photo_url: string | null
           property_type: string | null
           quarterly_review_due_on: string
+          security: Json
+          sprinklers: Json
           state: string | null
+          storm_shelter: Json
+          systems: Json
+          tier: string | null
           time_zone: string | null
           unit: string | null
           updated_at: string
+          utilities: Json
+          warranty: Json
+          waste: Json
           wifi_notes: string | null
+          year_built: number | null
         }
         Insert: {
+          access?: Json
           access_notes?: string | null
           active?: boolean
           actual_access_on?: string | null
           actual_closing_on?: string | null
           address_line1?: string | null
+          amenities?: Json
           archive_reason?: string | null
           archived_at?: string | null
           bathrooms?: number | null
@@ -3305,33 +3339,54 @@ export type Database = {
           check_in_time?: string | null
           check_out_time?: string | null
           city?: string | null
+          compliance?: Json
+          coords_overridden_at?: string | null
+          coords_overridden_by?: string | null
+          coords_override_reason?: string | null
           created_at?: string
           created_by?: string | null
+          external_refs?: Json
+          facts?: Json
+          fireplace?: Json
           formatted_address?: string | null
+          furniture_package?: string | null
+          geocode_address_fingerprint?: string | null
+          geocode_source?: string | null
           geocode_status?: string | null
           geocoded_at?: string | null
+          grounds?: Json
           handoff_accepted_at?: string | null
+          hoa?: Json
+          hvac?: Json
           id?: string
+          instant_book?: boolean | null
           is_demo?: boolean
           last_quarterly_review_at?: string | null
           latitude?: number | null
+          legacy_handoff_date?: string | null
           lifecycle_status?: string
+          listing_alias?: string | null
           listing_public_url?: string | null
           living_area_sqft?: number | null
           longitude?: number | null
           market?: string | null
           max_guests?: number | null
+          min_stay_months?: number | null
           name: string
+          neighborhood?: string | null
           nickname?: string | null
           notes?: string | null
           onboarding_owner?: string | null
           onboarding_stage?: string | null
           onboarding_started_at?: string | null
+          operating_notes?: string | null
           owner_record_id?: string | null
           ownerrez_owner_id?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
+          parking?: Json
           planned_closing_on?: string | null
+          pool_spa?: Json
           postal_code?: string | null
           primary_photo_medium_url?: string | null
           primary_photo_source?: string | null
@@ -3340,18 +3395,29 @@ export type Database = {
           primary_photo_url?: string | null
           property_type?: string | null
           quarterly_review_due_on?: string
+          security?: Json
+          sprinklers?: Json
           state?: string | null
+          storm_shelter?: Json
+          systems?: Json
+          tier?: string | null
           time_zone?: string | null
           unit?: string | null
           updated_at?: string
+          utilities?: Json
+          warranty?: Json
+          waste?: Json
           wifi_notes?: string | null
+          year_built?: number | null
         }
         Update: {
+          access?: Json
           access_notes?: string | null
           active?: boolean
           actual_access_on?: string | null
           actual_closing_on?: string | null
           address_line1?: string | null
+          amenities?: Json
           archive_reason?: string | null
           archived_at?: string | null
           bathrooms?: number | null
@@ -3364,33 +3430,54 @@ export type Database = {
           check_in_time?: string | null
           check_out_time?: string | null
           city?: string | null
+          compliance?: Json
+          coords_overridden_at?: string | null
+          coords_overridden_by?: string | null
+          coords_override_reason?: string | null
           created_at?: string
           created_by?: string | null
+          external_refs?: Json
+          facts?: Json
+          fireplace?: Json
           formatted_address?: string | null
+          furniture_package?: string | null
+          geocode_address_fingerprint?: string | null
+          geocode_source?: string | null
           geocode_status?: string | null
           geocoded_at?: string | null
+          grounds?: Json
           handoff_accepted_at?: string | null
+          hoa?: Json
+          hvac?: Json
           id?: string
+          instant_book?: boolean | null
           is_demo?: boolean
           last_quarterly_review_at?: string | null
           latitude?: number | null
+          legacy_handoff_date?: string | null
           lifecycle_status?: string
+          listing_alias?: string | null
           listing_public_url?: string | null
           living_area_sqft?: number | null
           longitude?: number | null
           market?: string | null
           max_guests?: number | null
+          min_stay_months?: number | null
           name?: string
+          neighborhood?: string | null
           nickname?: string | null
           notes?: string | null
           onboarding_owner?: string | null
           onboarding_stage?: string | null
           onboarding_started_at?: string | null
+          operating_notes?: string | null
           owner_record_id?: string | null
           ownerrez_owner_id?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
+          parking?: Json
           planned_closing_on?: string | null
+          pool_spa?: Json
           postal_code?: string | null
           primary_photo_medium_url?: string | null
           primary_photo_source?: string | null
@@ -3399,11 +3486,20 @@ export type Database = {
           primary_photo_url?: string | null
           property_type?: string | null
           quarterly_review_due_on?: string
+          security?: Json
+          sprinklers?: Json
           state?: string | null
+          storm_shelter?: Json
+          systems?: Json
+          tier?: string | null
           time_zone?: string | null
           unit?: string | null
           updated_at?: string
+          utilities?: Json
+          warranty?: Json
+          waste?: Json
           wifi_notes?: string | null
+          year_built?: number | null
         }
         Relationships: [
           {
@@ -3411,6 +3507,68 @@ export type Database = {
             columns: ["owner_record_id"]
             isOneToOne: false
             referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_external_links: {
+        Row: {
+          as_of: string | null
+          canonical: boolean
+          context: string | null
+          created_at: string
+          id: string
+          kind: string
+          label: string | null
+          needs_replacement: boolean
+          note: string | null
+          property_id: string
+          source: string
+          source_field: string | null
+          staff_only: boolean
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          as_of?: string | null
+          canonical?: boolean
+          context?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          label?: string | null
+          needs_replacement?: boolean
+          note?: string | null
+          property_id: string
+          source?: string
+          source_field?: string | null
+          staff_only?: boolean
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          as_of?: string | null
+          canonical?: boolean
+          context?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string | null
+          needs_replacement?: boolean
+          note?: string | null
+          property_id?: string
+          source?: string
+          source_field?: string | null
+          staff_only?: boolean
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_external_links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
