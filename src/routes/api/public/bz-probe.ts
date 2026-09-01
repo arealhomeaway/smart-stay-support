@@ -16,8 +16,19 @@ export const Route = createFileRoute("/api/public/bz-probe")({
         const body = (await request.json().catch(() => ({}))) as {
           paths?: string[];
           scanHomes?: number[];
+          op?: "people" | "mirror";
+          limit?: number;
         };
         const out: Record<string, unknown> = {};
+        if (body.op === "people") {
+          const mod = await import("@/lib/breezeway-people.server");
+          out["people:sync"] = await mod.syncBreezewayPeople();
+          out["people:audit"] = await mod.breezewayPeopleAudit();
+        }
+        if (body.op === "mirror") {
+          const mod = await import("@/lib/breezeway-workorders.server");
+          out["mirror"] = await mod.syncPortfolioWorkOrders({ limitProperties: body.limit ?? 25 });
+        }
         for (const home of body.scanHomes ?? []) {
           try {
             const data = await breezewayRequest<{ results?: { id: number; photos?: unknown[] }[] }>(
