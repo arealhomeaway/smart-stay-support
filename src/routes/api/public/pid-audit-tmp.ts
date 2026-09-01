@@ -73,7 +73,7 @@ export const Route = createFileRoute("/api/public/pid-audit-tmp")({
             fieldsWithLinks,
             hosts,
             related,
-            sample: rows.slice(0, 2),
+            ids: rows.map((r) => ({ name: r["Property"], orid: r["OwnerRez Internal ID"], orlink: r["OR Property Link"], nickname: r["Property Nickname"], status: r["Status"] })),
           }),
           { headers: { "content-type": "application/json" } },
         );
