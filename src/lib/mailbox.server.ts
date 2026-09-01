@@ -14,9 +14,13 @@
  *
  * Hard rules:
  *
- *  1. Only `/users/<authorised mailbox>/mailFolders/Inbox/messages` is read.
- *     No user enumeration, no /me/*, no dynamic mailbox selection, and no
- *     sent items, drafts, deleted items or archive folders.
+ *  1. Only the one authorised mailbox is ever read, through
+ *     `/users/<authorised mailbox>/messages`. No user enumeration, no /me/*,
+ *     and no dynamic mailbox selection. Folder location is deliberately not
+ *     part of the decision: Outlook rules route mail into Team A, Team B,
+ *     Accounting, Direct Bookings / Mid Term Leads, Deliveries and Needs
+ *     Triage to say who owns it, and Resolve never moves a message.
+
  *  2. No record is ever created without a trigger category. Uncategorised mail
  *     is left completely alone.
  *  3. No historical import. A checkpoint is stamped the first time the reader
@@ -30,7 +34,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { createIntakeMatter, REF_TAG, type IntakeResult } from "./intake.server";
-import { authorizedMailbox, inboxMessagesPath } from "./mailbox-allowlist.server";
+import { authorizedMailbox, mailboxMessagesPath } from "./mailbox-allowlist.server";
 import { createLeadFromEmail } from "./outlook-lead.server";
 import { plainTextBody, type OutlookSource } from "./outlook-email";
 import {
@@ -116,7 +120,7 @@ async function graph(path: string, init?: RequestInit) {
  */
 async function setCategories(messageId: string, categories: string[]) {
   try {
-    await graph(inboxMessagesPath(`/${messageId}`), {
+    await graph(mailboxMessagesPath(`/${messageId}`), {
       method: "PATCH",
       body: JSON.stringify({ categories }),
     });
@@ -127,21 +131,44 @@ async function setCategories(messageId: string, categories: string[]) {
   }
 }
 
-/** Reads one message by id — used by the change-notification handler. */
-export async function fetchMessage(messageId: string): Promise<GraphMessage | null> {
+/**
+ * Reads one message by id from the mailbox, whatever folder holds it.
+ *
+ * A Graph message id changes when Outlook moves a message between folders, so
+ * a notification that arrives just before a rule fires can point at an id that
+ * no longer resolves. In that case the message is found again by its stable
+ * internetMessageId, which survives the move.
+ */
+export async function fetchMessage(messageId: string, internetMessageId?: string | null): Promise<GraphMessage | null> {
   try {
-    const res = await graph(inboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`));
+    const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`));
     return (await res.json()) as GraphMessage;
+  } catch {
+    if (!internetMessageId) return null;
+    return findByInternetMessageId(internetMessageId);
+  }
+}
+
+/** Mailbox-wide lookup by the id that survives a folder move. */
+export async function findByInternetMessageId(internetMessageId: string): Promise<GraphMessage | null> {
+  try {
+    const filter = `internetMessageId eq '${internetMessageId.replace(/'/g, "''")}'`;
+    const res = await graph(
+      mailboxMessagesPath(`?$filter=${encodeURIComponent(filter)}&$top=1&$select=${SELECT_FIELDS}`),
+    );
+    const rows = ((await res.json())?.value ?? []) as GraphMessage[];
+    return rows[0] ?? null;
   } catch {
     return null;
   }
 }
 
+
 /** Attachment metadata only — no file bytes are copied into Resolve. */
 async function attachmentMeta(messageId: string) {
   try {
     const res = await graph(
-      inboxMessagesPath(`/${encodeURIComponent(messageId)}/attachments?$select=name,contentType,size`),
+      mailboxMessagesPath(`/${encodeURIComponent(messageId)}/attachments?$select=name,contentType,size`),
     );
     const rows = ((await res.json())?.value ?? []) as { name?: string; contentType?: string; size?: number }[];
     return rows.slice(0, 20).map((a) => ({
@@ -192,16 +219,34 @@ async function writeCheckpoint(db: Db, iso: string) {
 }
 
 /**
- * Reads new Inbox mail from the one authorised mailbox.
- * The path is built by the allowlist, so an unauthorised mailbox throws before
- * any network call is made.
+ * The recovery sweep: trigger-tagged mail only, from anywhere in the mailbox.
+ *
+ * Change notifications do the real work. This is the safety net, so it asks
+ * Microsoft the narrowest possible question — "which messages carry a Resolve
+ * trigger category?" — instead of downloading whole folders. One query per
+ * trigger category, because Graph does not reliably combine two
+ * `categories/any(...)` clauses with a sort.
+ *
+ * Mail received before the activation checkpoint is never eligible, so no
+ * history is imported. Within that window the sweep is deliberately not
+ * time-bounded beyond it: a message received yesterday and categorised this
+ * morning must still be found. Re-seeing an already-handled message is free —
+ * the durable per-message mapping settles it.
  */
-async function fetchInbox(limit: number, since: string) {
-  const query =
-    `?$filter=receivedDateTime gt ${since}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
-  const res = await graph(inboxMessagesPath(query));
-  return ((await res.json()).value ?? []) as GraphMessage[];
+async function fetchTriggerMail(limit: number, since: string) {
+  const seen = new Map<string, GraphMessage>();
+  for (const tag of [CREATE_TICKET_TAG, CREATE_LEAD_TAG]) {
+    const filter = `receivedDateTime gt ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
+    const query =
+      `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
+    const res = await graph(mailboxMessagesPath(query));
+    for (const m of ((await res.json())?.value ?? []) as GraphMessage[]) {
+      if (m?.id && !seen.has(m.id)) seen.set(m.id, m);
+    }
+  }
+  return Array.from(seen.values()).slice(0, limit);
 }
+
 
 export type SkipReason =
   | "not categorised"
@@ -320,25 +365,21 @@ export async function syncMailbox(
 
   let messages: GraphMessage[] = [];
   try {
-    messages = await fetchInbox(limit, checkpoint);
+    messages = await fetchTriggerMail(limit, checkpoint);
   } catch (err) {
-    return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the inbox." };
+    return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the mailbox." };
   }
 
   base.scanned = messages.length;
-  let highWater = checkpoint;
 
   for (const msg of messages) {
-    if (msg.receivedDateTime && new Date(msg.receivedDateTime) > new Date(highWater)) {
-      highWater = msg.receivedDateTime;
-    }
     const outcome = await processMessage(db, msg, dryRun);
     applyOutcome(base, outcome);
   }
 
-  // Advance the checkpoint only for mail we actually looked at, so a failure
-  // never silently skips the next run past unread work.
-  if (!dryRun && highWater !== checkpoint) await writeCheckpoint(db, highWater);
+  // The checkpoint is the activation line, not a read cursor: it stays where
+  // it is so a message categorised days after it arrived is still eligible.
+
 
   if (!dryRun) {
     const settled = await syncTerminalStates(db);
@@ -379,13 +420,20 @@ export async function processMessage(db: Db, msg: GraphMessage, dryRun = false):
   const action = nextActionFor(prior);
   if (action !== "create") {
     if (action === "retag" && !dryRun && prior) {
-      const done = await retryCategory(db, msg, prior);
+      const retry = await retryCategory(db, msg, prior);
+      const settledNow = retry !== "failed";
       return {
         subject,
         from,
         outcome: "skipped",
-        retried: done,
-        reason: done ? "already processed · category retag retried" : "already processed · retag still failing",
+        // Reported as retried whenever the message ends up correctly tagged —
+        // including the case where the Graph write had already succeeded.
+        retried: settledNow,
+        reason: settledNow
+          ? retry === "retagged"
+            ? "already processed · category retag retried"
+            : "already processed · category already correct"
+          : "already processed · retag still failing",
       };
     }
     return { subject, from, outcome: "skipped", reason: "already processed" };
@@ -592,17 +640,27 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
     const alreadyClosed = event.status === "closed";
     if (settled === alreadyClosed) continue;
 
-    const messageId = event.external_id as string | null;
+    const storedId = event.external_id as string | null;
     // Only the Graph id addresses a message; the internetMessageId row is a
     // duplicate guard, not something we can PATCH.
-    if (!messageId || messageId.startsWith("<")) continue;
+    if (!storedId || storedId.startsWith("<")) continue;
 
+    let messageId = storedId;
     let current: string[] = [];
     try {
-      const res = await graph(inboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`));
+      const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`));
       current = ((await res.json())?.categories ?? []) as string[];
     } catch {
-      continue; // Message moved or deleted — nothing to re-categorise.
+      // The id no longer resolves — almost always because an Outlook rule moved
+      // the message into a team folder. Find it again by the id that survives
+      // the move rather than abandoning the category lifecycle.
+      const twin = events.find(
+        (e) => e.entity_id === event.entity_id && typeof e.external_id === "string" && e.external_id.startsWith("<"),
+      );
+      const relocated = twin?.external_id ? await findByInternetMessageId(twin.external_id as string) : null;
+      if (!relocated) continue;
+      messageId = relocated.id;
+      current = (relocated.categories ?? []) as string[];
     }
 
     if (settled) {
@@ -617,9 +675,13 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
       await db.from("integration_events").update({ status: "created" }).eq("id", event.id);
       reopened++;
     }
+
   }
   return { closed, reopened };
 }
+
+/** Whether a retag retry settled the message, and how. */
+export type RetryOutcome = "retagged" | "cleared" | "failed";
 
 export type MailboxRecord = {
   id: string;
@@ -775,12 +837,15 @@ async function settleClaim(
  * No record is created or touched here — the row's `entity_id` proves one was
  * already saved, which is precisely why this path is a retag and nothing more.
  */
-export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRecord) {
-  if (!prior.entity_id) return false;
+export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRecord): Promise<RetryOutcome> {
+  if (!prior.entity_id) return "failed";
   if (!requestsRecord(msg.categories)) {
-    // Someone re-tagged it by hand; nothing left to retry.
+    // The trigger category is already gone — either a person re-tagged it by
+    // hand, or an earlier write landed after we recorded it as pending. Either
+    // way the message is in its correct state, so the pending marker is
+    // cleared and this counts as a resolved retry, not a failure.
     await db.from("integration_events").update({ error_message: null }).eq("id", prior.id);
-    return false;
+    return "cleared";
   }
   const done = await setCategories(msg.id, categoriesAfterCreate(msg.categories));
   if (done) {
@@ -791,7 +856,7 @@ export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRec
       .eq("operation", OPERATION)
       .in("external_id", [msg.id, msg.internetMessageId ?? ""].filter(Boolean));
   }
-  return done;
+  return done ? "retagged" : "failed";
 }
 
 async function recordEvent(

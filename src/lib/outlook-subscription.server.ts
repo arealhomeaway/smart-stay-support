@@ -68,6 +68,7 @@ export type SubscriptionRecord = {
   status: string;
   next_attempt_at: string | null;
   error_message: string | null;
+  request_payload?: { resource?: string; mailbox?: string; notificationUrl?: string } | null;
 };
 
 export async function currentSubscription(db: Db): Promise<SubscriptionRecord | null> {
@@ -99,13 +100,19 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
   const expiry = existing?.next_attempt_at ? new Date(existing.next_attempt_at).getTime() : 0;
   const expiresSoon = expiry - Date.now() < RENEW_WINDOW_MS;
 
-  if (existing?.external_id && existing.status === "active" && !expiresSoon) {
+  // A subscription created against the old Inbox-only resource must be
+  // replaced, not renewed, or folder-routed mail stays invisible.
+  const existingResource =
+    ((existing as { request_payload?: { resource?: string } } | null)?.request_payload?.resource ?? "") || "";
+  const wrongResource = Boolean(existing?.external_id) && existingResource !== `${mailboxRoot()}/messages`;
+
+  if (existing?.external_id && existing.status === "active" && !expiresSoon && !wrongResource) {
     return { ok: true, action: "healthy", expiresAt: existing.next_attempt_at ?? undefined };
   }
 
   const expirationDateTime = new Date(Date.now() + LIFETIME_MS).toISOString();
 
-  if (existing?.external_id && existing.status === "active") {
+  if (existing?.external_id && existing.status === "active" && !wrongResource) {
     try {
       await graph(`/subscriptions/${encodeURIComponent(existing.external_id)}`, {
         method: "PATCH",
@@ -124,13 +131,28 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
     }
   }
 
+  // Retire an Inbox-only subscription before replacing it, so Graph is not
+  // left posting duplicate notifications from two overlapping watches.
+  if (existing?.external_id && wrongResource) {
+    try {
+      await graph(`/subscriptions/${encodeURIComponent(existing.external_id)}`, { method: "DELETE" });
+    } catch (err) {
+      console.error("Could not remove the old mailbox subscription:", err instanceof Error ? err.message : err);
+    }
+    await db.from("integration_events").update({ status: "expired" }).eq("id", existing.id);
+  }
+
+
   try {
     const res = await graph(`/subscriptions`, {
       method: "POST",
       body: JSON.stringify({
         changeType: "created,updated",
         notificationUrl: notificationUrl(),
-        resource: `${mailboxRoot()}/mailFolders('Inbox')/messages`,
+        // The whole mailbox, not one folder: Outlook rules move a message
+        // into its owning team folder, and a category applied there must
+        // still reach Resolve.
+        resource: `${mailboxRoot()}/messages`,
         expirationDateTime,
         clientState: clientState(),
       }),
@@ -144,7 +166,11 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
       status: "active",
       next_attempt_at: expirationDateTime,
       resolved_at: new Date().toISOString(),
-      request_payload: { mailbox: authorizedMailbox(), notificationUrl: notificationUrl() },
+      request_payload: {
+        mailbox: authorizedMailbox(),
+        notificationUrl: notificationUrl(),
+        resource: `${mailboxRoot()}/messages`,
+      },
     });
     return { ok: true, action: "created", expiresAt: expirationDateTime };
   } catch (err) {
