@@ -585,7 +585,12 @@ function NewMatter() {
                 </Select>
                 {role && (
                   <p className="text-xs text-muted-foreground">
-                    Currently held by {role.current_seat_name ?? "an unassigned seat"} · {role.coverage_window}
+                    {role.current_seat_holder
+                      ? `Currently held by ${role.current_seat_name ?? "an unassigned seat"}`
+                      : role.current_seat_name
+                        ? `${role.current_seat_name} — invitation pending, so this seat is not yet routable`
+                        : "This seat is unassigned"}{" "}
+                    · {role.coverage_window}
                   </p>
                 )}
               </div>

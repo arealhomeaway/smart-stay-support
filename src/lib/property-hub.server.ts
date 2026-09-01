@@ -156,6 +156,18 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .eq("status", "open"),
   ]);
 
+  // Quarterly reviews ship behind a launch-state flag. While the flag is OFF
+  // the records and scheduler stay untouched, but the Hub must not surface a
+  // review field, warning or dead-end action anywhere in the interface.
+  const quarterlyFlag = await supabaseAdmin
+    .from("feature_flags")
+    .select("enabled")
+    .eq("key", "quarterly_reviews")
+    .maybeSingle();
+  const quarterlyLive = quarterlyFlag.data?.enabled === true;
+
+
+
 
   const taskRows = tasks.data ?? [];
   const top = taskRows.filter((t) => !t.parent_task_id);
@@ -242,8 +254,13 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       id: "operations",
       title: "Operations",
       fields: [
-        f("Quarterly review due", "quarterly_review_due_on", fmtDate(p.quarterly_review_due_on), "Resolve", p.last_quarterly_review_at, false),
-        f("Last quarterly review", "last_quarterly_review_at", fmtDate(p.last_quarterly_review_at), "Resolve", p.last_quarterly_review_at, false),
+        ...(quarterlyLive
+          ? [
+              f("Quarterly review due", "quarterly_review_due_on", fmtDate(p.quarterly_review_due_on), "Resolve", p.last_quarterly_review_at, false),
+              f("Last quarterly review", "last_quarterly_review_at", fmtDate(p.last_quarterly_review_at), "Resolve", p.last_quarterly_review_at, false),
+            ]
+          : []),
+
         f("Active", "active", p.active ? "Yes" : "No", "Resolve", p.updated_at, false),
       ],
     },
@@ -360,7 +377,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         tone: "warn",
         text: `${openConflicts} imported field${openConflicts === 1 ? "" : "s"} disagree with the system of record and need review.`,
       });
-    const quarterly = fmtDate(p.quarterly_review_due_on);
+    const quarterly = quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null;
     if (quarterly && quarterly < new Date().toISOString().slice(0, 10))
       alerts.push({ id: "quarterly", tone: "warn", text: `Quarterly review was due ${quarterly}.` });
     if (p.lifecycle_status && p.lifecycle_status !== "active_operations")
@@ -416,7 +433,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       ownerActions: ownerActions.length,
       handoffGatesOpen: gates.length,
       unassignedTasks: staff ? unassigned : null,
-      quarterlyDue: fmtDate(p.quarterly_review_due_on),
+      quarterlyDue: quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null,
       documents: (docs.data ?? []).filter((d) => staff || d.visibility === "owner_shared").length,
       program: program
         ? { id: program.id, ownerName: program.owner_name, status: program.status, startedOn: program.started_on, endsOn: program.ends_on }

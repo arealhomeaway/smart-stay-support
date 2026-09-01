@@ -137,9 +137,13 @@ function TeamPage() {
                         icon={<UserCheck className="size-4" />}
                         label="Current seat holder"
                         value={
-                          role.current_seat_name ??
-                          data.people.find((p) => p.id === role.current_seat_holder)?.full_name ??
-                          "Unassigned"
+                          role.current_seat_holder
+                            ? (role.current_seat_name ??
+                              data.people.find((p) => p.id === role.current_seat_holder)?.full_name ??
+                              "Unassigned")
+                            : role.current_seat_name
+                              ? `${role.current_seat_name} — invitation pending`
+                              : "Unassigned"
                         }
                       />
                       <Row
