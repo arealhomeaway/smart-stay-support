@@ -225,7 +225,7 @@ export function reportCsv(report: OwnerReport) {
     `# ARHA Hours & Participation Report (${report.kind === "final" ? "end of period" : "progress"})`,
     `# Owner,${report.program.ownerName}`,
     `# Program period,${report.program.startedOn ?? "not started"} to ${report.program.endsOn ?? "n/a"}`,
-    `# Generated,${report.generatedAt}`,
+    `# Figures as of,${report.generatedAt}`,
     `# Reported hours,${report.totals.reportedHours}`,
     `# ARHA-approved hours,${report.totals.approvedHours}`,
     `# Awaiting review hours,${report.totals.pendingHours}`,
@@ -334,7 +334,7 @@ export async function reportPdf(report: OwnerReport) {
     { size: 9, color: MUTED },
   );
   space(13);
-  text(`Report generated: ${report.generatedAt.replace("T", " ").slice(0, 16)} UTC`, {
+  text(`Figures as of: ${report.generatedAt.replace("T", " ").slice(0, 16)} UTC`, {
     size: 9,
     color: MUTED,
   });

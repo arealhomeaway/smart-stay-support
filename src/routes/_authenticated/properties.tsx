@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -219,7 +219,15 @@ function PropertiesPage() {
             return (
               <Card key={p.id}>
                 <CardHeader>
-                  <CardTitle>{p.nickname ?? p.name}</CardTitle>
+                  <CardTitle>
+                    <Link
+                      to="/property/$propertyId"
+                      params={{ propertyId: p.id }}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {p.nickname ?? p.name}
+                    </Link>
+                  </CardTitle>
                   <CardDescription>
                     {[p.address_line1, p.unit, p.city, p.state].filter(Boolean).join(", ") || "No address on file"}
                   </CardDescription>

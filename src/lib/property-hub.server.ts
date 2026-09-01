@@ -1,0 +1,393 @@
+/**
+ * Property Hub — one property, eight tabs, one contract (server-only).
+ *
+ * The Hub is deliberately a *reader*. Every write still happens in the
+ * workspace that owns the record (Operations, Onboarding, Approvals, Files),
+ * so nothing here can drift from the system of record.
+ *
+ * Two audiences read the same function:
+ *   - staff      see the operational snapshot
+ *   - homeowner  see only their own enrolled home, and only the parts of it
+ *                Resolve has explicitly shared with them
+ *
+ * The shape below is the data contract the approved PID field map will slot
+ * into: `details.sections` is section-based, so approved fields land in an
+ * existing section without the interface being rebuilt.
+ */
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+type Client = SupabaseClient<Database>;
+
+export type Viewer = { userId: string; roles: string[] };
+
+const STAFF_ROLES = ["admin", "manager", "onboarding", "tech"];
+
+export function isStaff(v: Viewer) {
+  return v.roles.some((r) => STAFF_ROLES.includes(r));
+}
+export function isSupervisor(v: Viewer) {
+  return v.roles.some((r) => r === "admin" || r === "manager");
+}
+
+export const DENY = "This home is not one of yours.";
+
+export type HubField = {
+  label: string;
+  /** Resolve key, so the approved field map maps 1:1 onto the interface. */
+  key: string;
+  value: string | null;
+  /** Where the value came from, and when — shown as provenance. */
+  source: string;
+  asOf: string | null;
+  ownerVisible: boolean;
+  /** Not yet mapped/imported. Rendered as a labelled gap, never as blank. */
+  pending?: boolean;
+};
+
+export type HubSection = { id: string; title: string; blurb?: string; fields: HubField[] };
+
+async function ownerOwnsProperty(userId: string, propertyId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("owner_program_properties")
+    .select("property_id, inclusion_status, archived_at, owner_programs!inner(owner_user_id)")
+    .eq("property_id", propertyId)
+    .eq("owner_programs.owner_user_id", userId);
+  return (data ?? []).some((r) => r.inclusion_status === "included" && r.archived_at == null);
+}
+
+export async function loadViewer(supabase: Client, userId: string): Promise<Viewer> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return { userId, roles: (data ?? []).map((r) => r.role as string) };
+}
+
+function fmtDate(v: string | null | undefined) {
+  if (!v) return null;
+  return new Date(v).toISOString().slice(0, 10);
+}
+
+/** The whole Hub in one round trip. Access is decided here, not in the UI. */
+export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const staff = isStaff(viewer);
+  const owns = staff ? false : await ownerOwnsProperty(viewer.userId, propertyId);
+  if (!staff && !owns) throw new Error(DENY);
+
+  const property = await supabaseAdmin.from("properties").select("*").eq("id", propertyId).maybeSingle();
+  if (property.error || !property.data) throw new Error("That property could not be found.");
+  const p = property.data;
+
+  const [tasks, tickets, contacts, docs, approvals, handoff, programLink, activity, outbound] = await Promise.all([
+    supabaseAdmin
+      .from("onboarding_tasks")
+      .select(
+        "id, title, stage, status, due_on, blocks_handoff, blocker, requires_owner_approval, owner_approval_status, assigned_to, parent_task_id, sort_order, archived_at",
+      )
+      .eq("property_id", propertyId)
+      .is("archived_at", null)
+      .order("sort_order"),
+    supabaseAdmin
+      .from("tickets")
+      .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
+      .eq("property_id", propertyId)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false })
+      .limit(25),
+    supabaseAdmin
+      .from("property_owner_contacts")
+      .select("id, owner_name, owner_email, owner_phone, source, match_status, synced_at")
+      .eq("property_id", propertyId),
+    supabaseAdmin
+      .from("documents")
+      .select("id, title, kind, visibility, upload_status, uploaded_at, entity_type, entity_id, mime_type, size_bytes")
+      .eq("property_id", propertyId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabaseAdmin
+      .from("approvals")
+      .select("id, title, kind, status, due_on, decided_at, decision_note, created_at")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false })
+      .limit(25),
+    supabaseAdmin
+      .from("property_handoffs")
+      .select(
+        "id, status, gate_step, requested_at, kati_decision, kati_at, micah_decision, micah_at, accepted_at, live_confirmed_at",
+      )
+      .eq("property_id", propertyId)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabaseAdmin
+      .from("owner_program_properties")
+      .select("program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)")
+      .eq("property_id", propertyId)
+      .is("archived_at", null)
+      .limit(1),
+    supabaseAdmin
+      .from("audit_log")
+      .select("id, action, entity_type, entity_label, actor_label, reason, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabaseAdmin
+      .from("breezeway_outbound_tasks")
+      .select("id, title, status, source_type, created_at, breezeway_task_id, last_synced_at")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false })
+      .limit(15),
+  ]);
+
+  const taskRows = tasks.data ?? [];
+  const top = taskRows.filter((t) => !t.parent_task_id);
+  const complete = top.filter((t) => t.status === "complete").length;
+  const blocked = top.filter((t) => Boolean(t.blocker) || t.status === "blocked");
+  const ownerActions = top.filter(
+    (t) => t.requires_owner_approval && (t.owner_approval_status ?? "pending") === "pending",
+  );
+  const gates = top.filter((t) => t.blocks_handoff && t.status !== "complete");
+  const unassigned = top.filter((t) => !t.assigned_to).length;
+
+  const openTickets = (tickets.data ?? []).filter((t) => t.status !== "closed");
+  const program = (programLink.data ?? [])[0]?.owner_programs as unknown as
+    | { id: string; owner_name: string | null; status: string; started_on: string | null; ends_on: string | null; target_hours: number | null }
+    | null;
+
+  const sections: HubSection[] = [
+    {
+      id: "identity",
+      title: "Property identity",
+      fields: [
+        f("Property name", "name", p.name, "Resolve", p.updated_at, true),
+        f("Nickname", "nickname", p.nickname, "Resolve", p.updated_at, true),
+        f("Market", "market", p.market, "Resolve", p.updated_at, true),
+        f("Lifecycle", "lifecycle_status", p.lifecycle_status, "Resolve", p.updated_at, true),
+      ],
+    },
+    {
+      id: "location",
+      title: "Address & location",
+      fields: [
+        f("Street", "address_line1", p.address_line1, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
+        f("Unit", "unit", p.unit, "Resolve", p.updated_at, true),
+        f("City", "city", p.city, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
+        f("State", "state", p.state, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
+        f("Postal code", "postal_code", p.postal_code, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
+        f("Geocoded address", "formatted_address", p.formatted_address, "Google Maps", p.geocoded_at, false),
+      ],
+    },
+    {
+      id: "facts",
+      title: "Property facts",
+      blurb: "Bedrooms, occupancy, stay type and building systems arrive with the approved PID field map.",
+      fields: [
+        pending("Bedrooms / bathrooms / sleeps", "bedrooms", "OwnerRez"),
+        pending("Maximum occupancy", "max_occupancy", "OwnerRez"),
+        pending("Stay type (STR / MTR)", "stay_type", "ARHA"),
+        pending("HVAC, water heater, appliances", "building_systems", "ARHA PID"),
+      ],
+    },
+    {
+      id: "access",
+      title: "Access",
+      blurb: "Resolve records where access is held and who to ask. It never stores a live code or password.",
+      fields: [
+        f("Access notes", "access_notes", p.access_notes, "Resolve", p.updated_at, false),
+        pending("Access method & credential holder", "access_credential_ref", "ARHA PID"),
+        pending("Parking & garage", "parking", "ARHA PID"),
+      ],
+    },
+    {
+      id: "utilities",
+      title: "Utilities",
+      fields: [pending("Utility providers & billing responsibility", "utilities", "ARHA PID")],
+    },
+    {
+      id: "safety",
+      title: "Safety & amenities",
+      fields: [
+        f("Wi-Fi notes", "wifi_notes", p.wifi_notes, "Resolve", p.updated_at, false),
+        pending("Shutoffs, breaker panel, storm shelter", "safety_locations", "ARHA PID"),
+        pending("Pool / spa, community amenities", "amenities", "ARHA PID"),
+      ],
+    },
+    {
+      id: "operations",
+      title: "Operations",
+      fields: [
+        f("Quarterly review due", "quarterly_review_due_on", fmtDate(p.quarterly_review_due_on), "Resolve", p.last_quarterly_review_at, false),
+        f("Last quarterly review", "last_quarterly_review_at", fmtDate(p.last_quarterly_review_at), "Resolve", p.last_quarterly_review_at, false),
+        f("Active", "active", p.active ? "Yes" : "No", "Resolve", p.updated_at, false),
+      ],
+    },
+    {
+      id: "onboarding",
+      title: "Onboarding status",
+      fields: [
+        f("Stage", "onboarding_stage", p.onboarding_stage, "Resolve", p.updated_at, true),
+        f("Planned closing", "planned_closing_on", fmtDate(p.planned_closing_on), "Resolve", p.updated_at, true),
+        f("Actual closing", "actual_closing_on", fmtDate(p.actual_closing_on), "Resolve", p.updated_at, true),
+        f("Access date", "actual_access_on", fmtDate(p.actual_access_on), "Resolve", p.updated_at, true),
+        f("Handoff accepted", "handoff_accepted_at", fmtDate(p.handoff_accepted_at), "Resolve", p.handoff_accepted_at, true),
+      ],
+    },
+    {
+      id: "external",
+      title: "External system identifiers",
+      fields: [
+        f("OwnerRez id", "ownerrez_property_id", p.ownerrez_property_id, "OwnerRez", p.ownerrez_synced_at, false),
+        f("Breezeway home id", "breezeway_property_id", p.breezeway_property_id, "Breezeway", p.breezeway_synced_at, false),
+      ],
+    },
+    {
+      id: "compliance",
+      title: "Compliance & reference",
+      fields: [pending("Permit, licence, insurance and registration status", "compliance_ref", "ARHA compliance record")],
+    },
+  ];
+
+  const ownerVisibleSections = ["identity", "location", "facts", "onboarding"];
+
+  return {
+    viewer: { staff, supervisor: isSupervisor(viewer), owner: owns },
+    property: {
+      id: p.id,
+      name: p.name,
+      nickname: p.nickname,
+      address: [p.address_line1, p.unit, p.city, p.state, p.postal_code].filter(Boolean).join(", "),
+      market: p.market,
+      lifecycleStatus: p.lifecycle_status,
+      onboardingStage: p.onboarding_stage,
+      isDemo: p.is_demo,
+      active: p.active,
+    },
+    overview: {
+      openTickets: openTickets.length,
+      p1Tickets: openTickets.filter((t) => t.priority === "p1").length,
+      onboardingComplete: complete,
+      onboardingTotal: top.length,
+      blockers: blocked.length,
+      ownerActions: ownerActions.length,
+      handoffGatesOpen: gates.length,
+      unassignedTasks: staff ? unassigned : null,
+      quarterlyDue: fmtDate(p.quarterly_review_due_on),
+      documents: (docs.data ?? []).filter((d) => staff || d.visibility === "owner_shared").length,
+      program: program
+        ? { id: program.id, ownerName: program.owner_name, status: program.status, startedOn: program.started_on, endsOn: program.ends_on }
+        : null,
+    },
+    details: {
+      sections: staff ? sections : sections.filter((s) => ownerVisibleSections.includes(s.id)).map(ownerFilter),
+    },
+    contacts: staff
+      ? (contacts.data ?? []).map((c) => ({
+          id: c.id,
+          name: c.owner_name,
+          email: c.owner_email,
+          phone: c.owner_phone,
+          source: c.source,
+          matchStatus: c.match_status,
+          syncedAt: c.synced_at,
+        }))
+      : [],
+    onboarding: {
+      stage: p.onboarding_stage,
+      total: top.length,
+      complete,
+      percent: top.length ? Math.round((complete / top.length) * 100) : 0,
+      blockers: blocked.slice(0, 10).map((t) => ({ id: t.id, title: t.title, blocker: t.blocker, stage: t.stage })),
+      ownerActions: ownerActions.slice(0, 10).map((t) => ({ id: t.id, title: t.title, stage: t.stage, dueOn: t.due_on })),
+      current: top
+        .filter((t) => t.status !== "complete")
+        .slice(0, staff ? 15 : 5)
+        .map((t) => ({ id: t.id, title: t.title, stage: t.stage, status: t.status, dueOn: t.due_on, assigned: Boolean(t.assigned_to) })),
+      handoff: (handoff.data ?? [])[0] ?? null,
+    },
+    operations: staff
+      ? {
+          tickets: (tickets.data ?? []).map((t) => ({
+            id: t.id,
+            ref: t.ref,
+            title: t.title,
+            status: t.status,
+            priority: t.priority,
+            createdAt: t.created_at,
+            assigned: Boolean(t.assigned_to),
+          })),
+          workOrders: (outbound.data ?? []).map((o) => ({
+            id: o.id,
+            title: o.title,
+            status: o.status,
+            source: o.source_type,
+            createdAt: o.created_at,
+            externalId: o.breezeway_task_id,
+          })),
+        }
+      : { tickets: [], workOrders: [] },
+    documents: (docs.data ?? [])
+      .filter((d) => staff || d.visibility === "owner_shared")
+      .map((d) => ({
+        id: d.id,
+        title: d.title,
+        kind: d.kind,
+        visibility: d.visibility,
+        status: d.upload_status,
+        uploadedAt: d.uploaded_at,
+        entityType: d.entity_type,
+        entityId: d.entity_id,
+      })),
+    approvals: {
+      ownerActions: ownerActions.map((t) => ({
+        id: t.id,
+        title: t.title,
+        stage: t.stage,
+        status: t.owner_approval_status ?? "pending",
+      })),
+      decided: top
+        .filter((t) => t.requires_owner_approval && (t.owner_approval_status ?? "pending") !== "pending")
+        .map((t) => ({ id: t.id, title: t.title, stage: t.stage, status: t.owner_approval_status ?? "pending" })),
+      records: staff
+        ? (approvals.data ?? []).map((a) => ({
+            id: a.id,
+            title: a.title,
+            kind: a.kind,
+            status: a.status,
+            decidedAt: a.decided_at,
+            note: a.decision_note,
+          }))
+        : [],
+    },
+    activity: (activity.data ?? [])
+      .filter((a) => (a.entity_label ?? "").includes(p.name) || (a.entity_type === "property" && a.entity_label === p.name))
+      .slice(0, 25)
+      .map((a) => ({
+        id: a.id,
+        action: a.action,
+        label: a.entity_label,
+        actor: staff ? a.actor_label : "ARHA",
+        reason: staff ? a.reason : null,
+        at: a.created_at,
+      })),
+  };
+}
+
+function f(
+  label: string,
+  key: string,
+  value: string | null | undefined,
+  source: string,
+  asOf: string | null | undefined,
+  ownerVisible: boolean,
+): HubField {
+  return { label, key, value: value ?? null, source, asOf: asOf ?? null, ownerVisible };
+}
+
+function pending(label: string, key: string, source: string): HubField {
+  return { label, key, value: null, source, asOf: null, ownerVisible: false, pending: true };
+}
+
+function ownerFilter(section: HubSection): HubSection {
+  return { ...section, fields: section.fields.filter((x) => x.ownerVisible && !x.pending) };
+}

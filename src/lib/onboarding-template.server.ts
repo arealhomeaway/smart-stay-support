@@ -18,6 +18,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { FULL_FURNISHING_TEMPLATE, TEMPLATE_KEY, type TemplateTask } from "./onboarding-template";
 import { writeAudit } from "./audit.server";
+import { seatForTask, type SeatCode } from "./onboarding-ownership";
 
 type Client = SupabaseClient<Database>;
 
@@ -40,6 +41,19 @@ function detailFor(t: TemplateTask) {
   }
   if (t.detail) bits.push(t.detail);
   return bits.join("\n\n");
+}
+
+/** seat code -> current holder's user id (null when the seat is vacant). */
+export async function loadSeatHolders(supabase: Client) {
+  const { data } = await supabase.from("functional_roles").select("code, current_seat_holder");
+  const map = new Map<string, string | null>();
+  for (const r of data ?? []) map.set(r.code, r.current_seat_holder ?? null);
+  return map;
+}
+
+function seatFields(role: string | null | undefined, stage: string, holders: Map<string, string | null>) {
+  const seat: SeatCode = seatForTask({ role: role ?? null, stage });
+  return { assigned_seat: seat, assigned_to: holders.get(seat) ?? null };
 }
 
 export type TemplatePreview = {
@@ -145,6 +159,10 @@ export async function applyOnboardingTemplate(
 
   const pending = FULL_FURNISHING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
+  // Ownership: every task opens owned by a SEAT, and by the person holding
+  // that seat today. Nothing is created unassigned.
+  const seatHolders = await loadSeatHolders(supabase);
+
   // Active Owner Program participation for THIS home only (existing owner
   // enrollment is the source of truth — never the generic owner role).
   const { activeOwnerFor } = await import("./active-owner.server");
@@ -169,6 +187,7 @@ export async function applyOnboardingTemplate(
     sort_order: t.sortOrder,
     created_by: userId,
     is_demo: property.is_demo,
+    ...seatFields(t.role, t.stage, seatHolders),
   }));
 
   if (rows.length) {
@@ -218,6 +237,7 @@ export async function applyOnboardingTemplate(
         evidence_required: false,
         parent_task_id: parentId,
         sort_order: t.sortOrder + i + 1,
+        ...seatFields(t.role, t.stage, seatHolders),
         created_by: userId,
         is_demo: property.is_demo,
       });

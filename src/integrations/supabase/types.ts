@@ -1464,6 +1464,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           archived_by: string | null
+          assigned_seat: string | null
           assigned_to: string | null
           blocker: string | null
           blocks_handoff: boolean
@@ -1501,6 +1502,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           archived_by?: string | null
+          assigned_seat?: string | null
           assigned_to?: string | null
           blocker?: string | null
           blocks_handoff?: boolean
@@ -1538,6 +1540,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           archived_by?: string | null
+          assigned_seat?: string | null
           assigned_to?: string | null
           blocker?: string | null
           blocks_handoff?: boolean

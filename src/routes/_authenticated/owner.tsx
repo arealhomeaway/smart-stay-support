@@ -586,8 +586,8 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                 <div className="mt-1 flex flex-wrap items-center gap-2 rounded-md bg-muted/60 px-2 py-1.5">
                   <span className="text-xs text-muted-foreground">
                     {e.review_note
-                      ? `Returned with a note: ${e.review_note}`
-                      : "Returned for a correction."}
+                      ? `Sent back for a small correction — ${e.review_note}`
+                      : "Sent back for a small correction. Your hours are not lost; adjust the entry and resubmit."}
                   </span>
                   {!readOnly && !e.superseded && (
                     <Button size="sm" variant="outline" className="ml-auto" onClick={() => setCorrecting(e)}>
@@ -676,8 +676,8 @@ function CorrectEntryDialog({
           <DialogTitle>Correct and resubmit</DialogTitle>
           <DialogDescription>
             {entry.review_note
-              ? `Your ARHA contact wrote: ${entry.review_note}`
-              : "Your ARHA contact returned this entry for a correction."}
+              ? `Your ARHA contact asked for one change — ${entry.review_note}. Nothing is lost: update the entry below and resubmit it.`
+              : "Your ARHA contact asked for a small correction. Nothing is lost — update the entry below and resubmit it."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

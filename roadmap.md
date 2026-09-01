@@ -381,3 +381,14 @@ mismatches). System-health data only — never employee performance.
 - Sept 10–11 Internal QA with production-equivalent roles
 - Sept 12  Homeowner-ready release candidate
 - Sept 14  First real-owner production use
+
+## Sept 7–12 critical path (in progress)
+- [x] Property Hub functional beta shell — all 8 tabs at /property/$propertyId
+- [x] Onboarding ownership: seat model (`onboarding_tasks.assigned_seat`), new projects open owned
+- [ ] Backfill unassigned tasks on existing projects — AWAITING APPROVAL of ownership rules
+- [x] Fillout removed: mid-project review + handoff now native Resolve
+- [ ] Notion/Asana/Smartsheet reference links still inside ~30 task instruction bodies (content decision needed)
+- [x] PID field map v2 review table — docs/pending/property-hub-field-map-v2-review.md (awaiting approval)
+- [x] Active Owner polish: returned-entry copy, report footer "Figures as of"
+- [ ] SharePoint site-level write grant — outstanding with tenant admin
+- [ ] September on-call roster — business input, not a development blocker
