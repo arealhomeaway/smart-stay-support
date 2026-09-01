@@ -70,11 +70,13 @@ function AuthPage() {
   const router = useRouter();
   const { next } = Route.useSearch();
   const requested = next ? portalByRoute(next) : undefined;
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
 
   async function go() {
     let intended = next;
@@ -111,7 +113,14 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
+      if (mode === "forgot") {
+        // Never reveal whether the address has an account: the same
+        // confirmation shows either way.
+        await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        setResetSent(true);
+      } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -128,6 +137,7 @@ function AuthPage() {
         if (error) throw error;
         await go();
       }
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -168,63 +178,131 @@ function AuthPage() {
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-2xl">
-              {mode === "signin" ? "Team sign in" : "Create your team account"}
+              {mode === "signin"
+                ? "Team sign in"
+                : mode === "signup"
+                  ? "Create your team account"
+                  : "Reset your password"}
             </CardTitle>
-            {requested && (
+            {requested && mode === "signin" && (
               <p className="text-sm font-medium text-primary">
                 Signing in to {requested.name}
               </p>
             )}
             <CardDescription>
-              One account for every ARHA portal. Sign in and Resolve takes you to the workspaces you are authorised for.
+              {mode === "forgot"
+                ? "Enter your work email and we'll send you a secure link to set a new password. The link expires shortly and can only be used once."
+                : "One account for every ARHA portal. Sign in and Resolve takes you to the workspaces you are authorised for."}
             </CardDescription>
           </CardHeader>
 
         <CardContent className="space-y-4">
-          <Button variant="outline" className="w-full" onClick={signInWithGoogle} disabled={loading}>
-            Continue with Google
-          </Button>
-          <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            or
-            <span className="h-px flex-1 bg-border" />
-          </div>
-          <form onSubmit={submit} className="space-y-4">
-            {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full name</Label>
-                <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+          {mode === "forgot" ? (
+            resetSent ? (
+              <div className="space-y-4">
+                <p className="rounded-md border border-border bg-secondary p-4 text-sm text-muted-foreground">
+                  If an account exists for that email, a password reset link is on its way.
+                  Check your inbox (and junk folder), then follow the link to choose a new
+                  password.
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setResetSent(false);
+                    setMode("signin");
+                  }}
+                >
+                  Back to sign in
+                </Button>
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Work email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
-            </Button>
-          </form>
-          <p className="text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "New teammate?" : "Already have an account?"}{" "}
-            <button
-              type="button"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            >
-              {mode === "signin" ? "Create an account" : "Sign in"}
-            </button>
-          </p>
+            ) : (
+              <form onSubmit={submit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Work email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Sending…" : "Send reset link"}
+                </Button>
+                <button
+                  type="button"
+                  className="w-full text-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() => setMode("signin")}
+                >
+                  Back to sign in
+                </button>
+              </form>
+            )
+          ) : (
+            <>
+              <Button variant="outline" className="w-full" onClick={signInWithGoogle} disabled={loading}>
+                Continue with Google
+              </Button>
+              <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                or
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <form onSubmit={submit} className="space-y-4">
+                {mode === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full name</Label>
+                    <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Work email</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {mode === "signin" && (
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                        onClick={() => {
+                          setResetSent(false);
+                          setMode("forgot");
+                        }}
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+                </Button>
+              </form>
+              <p className="text-center text-sm text-muted-foreground">
+                {mode === "signin" ? "New teammate?" : "Already have an account?"}{" "}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                >
+                  {mode === "signin" ? "Create an account" : "Sign in"}
+                </button>
+              </p>
+            </>
+          )}
+
           <p className="text-center text-xs text-muted-foreground">
             <Link to="/" className="hover:underline">
               Back to overview
