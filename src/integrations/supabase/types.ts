@@ -796,6 +796,107 @@ export type Database = {
           },
         ]
       }
+      credential_access_log: {
+        Row: {
+          action: string
+          credential_id: string | null
+          id: string
+          occurred_at: string
+          property_id: string | null
+          ticket_id: string | null
+          user_agent_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          credential_id?: string | null
+          id?: string
+          occurred_at?: string
+          property_id?: string | null
+          ticket_id?: string | null
+          user_agent_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          credential_id?: string | null
+          id?: string
+          occurred_at?: string
+          property_id?: string | null
+          ticket_id?: string | null
+          user_agent_hash?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_access_log_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "property_credentials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credential_access_log_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credential_intake_queue: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          secret_ciphertext: string
+          secret_nonce: string
+          source_field: string
+          status: string
+          suggested_category: Database["public"]["Enums"]["credential_category"]
+          suggested_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          secret_ciphertext: string
+          secret_nonce: string
+          source_field: string
+          status?: string
+          suggested_category?: Database["public"]["Enums"]["credential_category"]
+          suggested_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          secret_ciphertext?: string
+          secret_nonce?: string
+          source_field?: string
+          status?: string
+          suggested_category?: Database["public"]["Enums"]["credential_category"]
+          suggested_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_intake_queue_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_environment: {
         Row: {
           active: boolean
@@ -3511,6 +3612,71 @@ export type Database = {
           },
         ]
       }
+      property_credentials: {
+        Row: {
+          active: boolean
+          category: Database["public"]["Enums"]["credential_category"]
+          created_at: string
+          created_by: string | null
+          id: string
+          instructions: string | null
+          label: string
+          last_verified_on: string | null
+          property_id: string
+          secret_ciphertext: string | null
+          secret_nonce: string | null
+          sort_order: number
+          source: string
+          updated_at: string
+          username: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["credential_category"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instructions?: string | null
+          label: string
+          last_verified_on?: string | null
+          property_id: string
+          secret_ciphertext?: string | null
+          secret_nonce?: string | null
+          sort_order?: number
+          source?: string
+          updated_at?: string
+          username?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["credential_category"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instructions?: string | null
+          label?: string
+          last_verified_on?: string | null
+          property_id?: string
+          secret_ciphertext?: string | null
+          secret_nonce?: string | null
+          sort_order?: number
+          source?: string
+          updated_at?: string
+          username?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_credentials_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_external_links: {
         Row: {
           as_of: string | null
@@ -5325,6 +5491,7 @@ export type Database = {
         Args: { _actor?: string }
         Returns: undefined
       }
+      can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5332,6 +5499,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_internal_staff: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
@@ -5351,6 +5519,16 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
+      credential_category:
+        | "wifi"
+        | "gate_community"
+        | "property_access"
+        | "garage"
+        | "lockbox"
+        | "streaming"
+        | "supply_storage"
+        | "alarm_security"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5479,6 +5657,17 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "tech", "vendor", "owner", "onboarding"],
+      credential_category: [
+        "wifi",
+        "gate_community",
+        "property_access",
+        "garage",
+        "lockbox",
+        "streaming",
+        "supply_storage",
+        "alarm_security",
+        "other",
+      ],
     },
   },
 } as const
