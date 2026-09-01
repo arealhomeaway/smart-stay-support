@@ -309,15 +309,17 @@ export async function createOutboundTask(
       message: error instanceof Error ? error.message : "That record cannot be sent to Breezeway.",
     };
   }
-  const { propertyId, property, defaults } = resolved;
-  const homeId = property?.breezeway_property_id ?? null;
-  if (!isOutboundAllowedHome(homeId)) {
+  const { propertyId, defaults } = resolved;
+  // Single write gate: the persisted, deterministic mapping state.
+  const { propertyWriteEligibility } = await import("./breezeway-mapping.server");
+  const gate = await propertyWriteEligibility(propertyId!);
+  if (!gate.eligible || !gate.homeId) {
     return {
       ok: false,
-      message: "Outbound task creation is limited to the approved beta properties.",
+      message: gate.reason ?? "This property is not eligible for Breezeway writes.",
     };
   }
-  const allowedHomeId: string = String(homeId);
+  const allowedHomeId: string = gate.homeId;
 
   const title = clean(input.title, 200) ?? defaults?.title ?? "Resolve task";
   const description = clean(input.description, 4000) ?? defaults?.description ?? null;
