@@ -1,77 +1,76 @@
-# Resolve — Build History and Remaining Work
+# Onboarding Portal — Asana Familiarity, Resolve Automation
 
-A single narrative of how this app was built, where it stands today, and what is left. Written to be shared with a collaborator.
+Read-only plan. No code changed yet.
 
-## Part 1 — How we built it
+## A. Current onboarding UI architecture
 
-### Stage A: The core idea (Matter Model)
-Started from your Notion ticketing setup and the SOP PDFs. Established the Golden Rule that still governs routing: **the property determines the Pod; priority and time determine who gets the task.** Built the ticket ("matter") model with priorities P1–P4, a work-type catalog that drives SLA minutes, required closure evidence and playbook (never hardcoded in components), a waiting state, and an immutable activity log. Added ARHA branding, an onboarding tour, RBAC, analytics scaffolding, and the first Notion / OwnerRez / Breezeway integrations.
+One route, `/onboarding`, renders everything in a single 1,060-line page with three tabs: **Pipeline**, **Handoff gate**, **Source records**. Pipeline is a left property list plus a stacked column of Cards for the selected property: lifecycle controls, participation mismatch confirmation, readiness checklist, homeowner decisions, and a flat "Onboarding tasks" list of every task for the home ordered by `sort_order` (no sections). Task editing happens in a modal `TaskDialog`, with separate dialogs for evidence, exception, approval submit, handoff request and return. There is no per-property page, no My Work view, and no portfolio manager table.
 
-### Stage B: Quarterly reviews and the Active Owner program
-Ported the Notion quarterly cleaning-supervisor checklists into a real work type with due-date rollover and a /quarterly page. Built the 90-day Active Owner participation program for the STR tax-exception project, with the hard rule you set: **all participation time is manually entered by the homeowner, never prefilled.** Added the portal switcher, admin read-only "View As", and the unified invite system.
+## B. What already exists and gets reused (no rebuild)
 
-### Stage C: Roles, command center, handoff
-Replaced ad-hoc roles with a scalable model: admin (Platform Owner), manager (Supervisor), onboarding, tech (**displayed as Staff**), vendor, owner — kept deliberately separate from functional seat/team. Built the Executive Command Center, the gated Onboarding workspace, the formal property handoff workflow (**a handoff is not complete until accepted; the original owner stays responsible**), and the vendor platform with masking, screening and compliance. Vendor scorecards are private points/tiers with anonymous percentile — never a public leaderboard, and no timers/points/leaderboards for internal staff.
+Data (`onboarding_tasks`, 36 columns) already carries nearly everything the new UI needs: `stage`, `sort_order`, `assigned_to`, `assigned_seat`, `due_on`, `due_on_source`, `due_on_overridden`, `schedule_anchor`, `schedule_offset_days`, `depends_on[]`, `parent_task_id`, `blocker`, `blocks_handoff`, `evidence_required`, `evidence_note`, `requires_owner_approval`, `owner_approval_status`, `carryover_of`, `carryover_reason`, `exception_reason`, `linked_ticket_id`, `status`, `archived_at`.
 
-### Stage D: Microsoft, mail intake, workspace move
-Built email intake through Microsoft Graph from info@arealhomeaway.com with category routing and a claim-first mechanism so retries can't duplicate tickets. Project moved workspaces; reconnected Google Maps, Outlook and Notion. Audited Microsoft file access and confirmed the app path is narrow (delegated `Sites.Selected`, resolve.integration@) and points only at the ARHA Resolve site.
+Logic to reuse as-is:
+- `src/lib/onboarding.ts` — `ONBOARDING_STAGES` (the six real ARHA phases + post-contract), `dependencyBlocked()`, `isOverdue()`, `validateHandoff()`, `GATE_STEPS`/`nextGateStep()`.
+- `src/lib/onboarding-template.ts` — the canonical Full Furnishing template (stage, role, detail, anchor/offset, evidence, owner-approval-when-Active-Owner, Breezeway template id, subtasks). This is the section source of truth; no section names get hard-coded.
+- `src/lib/onboarding-schedule.server.ts` — anchors, preview/apply recalculation, `setTaskSchedule`.
+- `src/lib/onboarding.server.ts` / `.functions.ts` — all 18 server functions, including approval, exception, archive, handoff review.
+- `src/lib/onboarding-ownership.ts` — seat mapping for assignee display.
+- `src/lib/evidence.ts` + evidence server/functions, `HandoffGatePanel`, `OperationsContextPanel`, `ExternalRecordsPanel`, `OnboardingNotes`, `TemplatePanel`.
+- Design system from the UI rebuild: `Chip`, `StageRail`, `SegmentedControl`, `SectionBand`, semantic tokens in `src/lib/semantic.ts`.
 
-### Stage E: Launch stages 1–3
-Stage 1 Operations MVP (queues, SLA clocks, oversight), Stage 1.1 guest matching plus an isolated demo environment, Stage 2 Onboarding portal with handoff gates, Stage 3 Active Owner portal. Registered the Breezeway pilot webhook scoped to 9211 Fitzgerald Dr.
+## C. Proposed screen hierarchy
 
-### Stage F: Onboarding template and owner approvals
-Extracted the real 150-task Full Furnishing template from your exports. Split owner requirements into **evidence-only** versus **explicit owner approval** (mood boards etc.). Fixed task-dialog state leaks and the evidence capture UI. Produced executive and onboarding walkthrough videos (including the 8:25 Kati Hand onboarding walkthrough on the Bluestem Way demo property).
+```text
+/onboarding                     Manager Hub (portfolio table) + Handoff gate + Source records tabs
+/onboarding/my-work             My Work across all assigned properties
+/onboarding/$propertyId         Property workspace
+    Overview | Workflow (default) | Timeline | Calendar | Files | Activity
+```
+The existing `/onboarding` pipeline UI is not deleted; its property-detail body moves into the property route, and the list becomes the Manager Hub table.
 
-### Stage G: Active Owner hardening and the participation report
-Tested the whole owner journey end-to-end with Playwright: invite redemption by a fresh account, sign-out/sign-in persistence, submit → approve, return → correct → approve with no double counting, duplicate correction blocked. Settled the labels: **"Reported hours"** (pending + approved) vs **"ARHA-approved hours."** Then built the self-serve Hours & Participation Report — server-generated branded PDF plus detail CSV, owner-scoped, no public links, in-progress and automatic end-of-window versions, shared-property entries counted once, out-of-period entries listed separately.
+## D. Workflow table
 
-### Stage H: Breezeway webhook correctness (PRs, review, release)
-Diagnosed the "signature verification" failures as **verify_failed** — transient Breezeway re-fetch errors (HTTP 500), not auth rejections. Reviewed Claude's PR across three rounds in an isolated scratch copy, fixed a regression where Bun test types leaked globally, verified the migration on a disposable Postgres, then applied it live, merged (57c1b27) and published. Closed a concurrent-duplicate-delivery gap with a unique index plus conflict-aware insert. 46+ tests, clean typecheck, passing build, and an 8/8 fixture-only self-test after publish.
+Columns: **Task · Assignee · Due Date · Status**. Nothing else in the row except small inline markers beside the task name: Auto, Auto-date, Dependency, Owner, Evidence, BW, Blocked, Overdue. Sections come from `stage` grouped in `ONBOARDING_STAGES` order, each with `done/total`, a state of complete / active / blocked / not ready, collapsed by default when complete, active section expanded. Incomplete tasks are never hidden. Row click opens the drawer; status and assignee are editable inline.
 
-### Stage I: Real file storage and the Operations release
-Built the private `resolve-attachments` bucket with documents metadata and RLS, staff upload/view/remove, owners seeing only shared files, wired into ticket detail and onboarding evidence. Integrated PR #2 (operations assignment + contact context) into main while preserving branding and file storage: schedule-aware auto-assignment via an `auto_assign_ticket()` trigger (Central time, DST-safe) with an exception queue, an admin-managed overnight on-call roster, and a read-only primary-owner directory from OwnerRez.
+Derived status shown (mapped from stored `status` + computed state, no schema change):
+Not Ready (dependency-blocked) · Ready · In Progress · Blocked (+ reason) · Needs Review (owner approval pending / evidence awaiting) · Complete.
+Blocker reasons are system-derived where possible: waiting on owner, waiting on dependency, missing evidence, waiting on closing anchor; the free-text `blocker` field supplies vendor/other reasons.
 
-### Stage J: Vocabulary, invitations, meeting alignment
-Renamed **Inspection → Assessment** in every user-facing label (internal keys unchanged) and made `tech` display as **Staff**. Created five email-bound single-use invites and emailed the codes. From the Aug 31 meeting with Kati: single 90-day owner review (no 30/60), owner goal 100+ hours with a 105 internal operating target, assessment report is save-only with bids only when the Realtor asks, handoff gate steps read by job title, and carryover work belongs to Operations after handoff with a named owner and due date.
+## E. Task drawer
 
-### Stage K: SharePoint architecture audit (read-only, complete)
-Confirmed the intended split — **OwnerRez owns identity, Resolve owns PID/onboarding/ops records, SharePoint owns file bytes.** Site and Documents library identified and empty (clean slate). Found the one real conflict: a separate, unlinked workspace connection holding tenant-wide `Sites.ReadWrite.All` / `Sites.Manage.All`. Nothing was changed, moved, granted or published.
+Header (task, property, section, status), then: assignee/seat, due date with its explanation, description, subtasks (`parent_task_id`), dependencies with live state, evidence requirements + files, owner approval status, Breezeway linkage/action, activity, notes, completion criteria — and a plain-language **Why this task exists** block generated from real fields: template anchor/offset ("Due date = Actual Closing + 4 business days"), `depends_on` titles, `ownerApprovalWhenActiveOwner`, `evidenceRequired`, `breezewayTemplateId`, and downstream tasks that list this one in `depends_on`. Completion is refused while an evidence requirement is unsatisfied. Manual due-date edits prompt for an override reason (stored in the existing `exception_reason` path).
 
-## Part 2 — Where it stands right now
+## F. My Work
 
-162 properties (156 OwnerRez-keyed, 6 demo) · 444 tickets (437 of them the unassigned pre-launch Notion import from Aug 21–25) · 21 work types · 724 onboarding tasks · 4 owner programs, 26 time entries · 11 approvals, 5 handoffs · 25 coverage shifts · 3,999 Breezeway webhook events (2 processed, 15 verify_failed) · 0 documents, 0 vendor orgs, 0 on-call roster rows, 0 owner-contact rows.
+Tasks assigned to the signed-in user across pipeline properties, grouped Today / Overdue / Upcoming / Blocked / Needs Review, sortable by due date, property, section, status. Row shows Property · Task · Due · Status and opens the same drawer.
 
-**Open blockers**
-1. Four of five staff seats still vacant — only **James Almario has redeemed** (Aug 31). Romeo, Avy, Mike and Christine are pending; Micah Sinor and Josh Dunham invites also unredeemed.
-2. September overnight roster is empty, so overnight routing has no target person.
-3. No SharePoint write grant yet; the tenant-wide connection still needs narrowing.
-4. No natural Breezeway event has processed — fixtures only.
-5. The 437 imported pre-launch tickets will distort beta analytics unless archived or excluded.
-6. Property Hub, current-PID import, and Operations ticket analytics are not started.
+## G. Manager Hub
 
-## Part 3 — What we still need to complete
+Table: Property · Current Stage · Progress · Next Milestone · Blocker · Project Manager · Target Handoff, with quick filters for behind schedule, overdue owner decisions, vendor delays, missing evidence, handoff blockers, ready for review, no recent activity, and workload by PM. Row opens the property Workflow view.
 
-**Explicitly out of scope for beta:** all historical migration (old and archived tickets, Asana/Notion history, legacy documents, old SharePoint/OneDrive folders, historical Breezeway work, productivity backfill). Analytics start from clean non-demo beta activity with a visible start-date label.
+## H. Automation already available
 
-**By Sep 4**
-- Import and map the current authoritative PID field set (facts, contacts, external identifiers, operating instructions, onboarding status) so nobody opens Notion again
-- Property Hub tabs 1–5 polished as one application: Overview, Property Details, Contacts, Onboarding, Operations — shared header, consistent status, real empty/loading/permission/error states, no fake data
-- Active Owner analytics completed: owner-facing view plus staff/exec program view with filters and CSV
-- Analytics start-date label; exclude demo and imported pre-launch records from live reporting
-- Enter the September overnight roster (needs your input)
+Anchor-driven due dates with preview/apply and completed-task protection; dependency release via `depends_on`; evidence requirements and gating; Active-Owner-conditional approvals with mismatch confirmation; Breezeway template ids on template tasks plus the existing work-order/photo integration; the four-step handoff gate with carryover; audit logging on task save, approvals and handoff.
 
-**Week of Sep 7**
-- SharePoint-backed uploads once the site-level write grant lands, then Documents & Media
-- Approvals with versioned owner-visible files (every package carries at least one file), then Activity
-- Operations ticket analytics: volume, median **and** average response/resolution, SLA met/breach/at-risk, assignment and handoff credit derived from the immutable activity log rather than crediting the closer, team filters, CSV export in America/Chicago with timezone included and PII/credentials excluded
-- Accuracy tests: demo and archived excluded, shared owner activity counted once, superseded and returned entries excluded, pending vs approved distinguished, correct SLA timestamps, no handoff double-count, Central-time date boundaries, CSV totals equal dashboard totals
-- My Active Projects and handoff review by job title; five-account demo validation
+## I. Gaps that would need backend work (not in this pass)
 
-**Then (deferred past beta):** Property Hub tabs 6–8 depth, read-only Notion PID inventory and reconciliation report, advanced analytics, retention rules.
+1. **Section ordering metadata** — sections are inferred from `stage`; fine today, but a template-driven section label table would be cleaner later. Not required.
+2. **Automatic status transition Not Ready → Ready** — currently derived at read time in the UI. Persisting it would need a trigger. Recommend keeping it derived.
+3. **Structured blocker reason code** — today `blocker` is free text. A small enum column would make reasons reportable. Deferred; UI derives reasons meanwhile.
+4. **Breezeway task creation from an onboarding task** — the work-order integration exists but is wired to tickets, not onboarding tasks. Needs a thin server function later.
+5. **Milestone set beyond the three anchors** (Design Complete, Staging Complete, Target/Actual Go Live, Handoff Date) — only planned closing, actual closing, actual access exist today. Timeline will show what exists and mark the rest as not yet tracked.
 
-## Part 4 — Decisions I need from you
+Each of these is additive; none touches production rows.
 
-- Archive or just exclude the 437 imported pre-launch tickets?
-- Chase the four unredeemed staff invites, or reissue them?
-- Request the tenant-admin SharePoint site-level write grant now, and narrow or retire the tenant-wide connection?
-- Approve a controlled live Breezeway test on 9211 Fitzgerald?
+## J. Risks
+
+Low. This pass is presentation plus read-time derivation over existing server functions. No changes to OwnerRez, Breezeway, SharePoint, Active Owner, evidence, handoff, RLS or permissions. The main risk is route churn — mitigated by keeping `/onboarding` working and adding child routes.
+
+## K. Build order
+
+C1 Property route shell + tabs → C2 sectioned Workflow table → D drawer → G Manager Hub → E My Work → Overview/Timeline/Calendar/Files tabs → automation-explanation verification pass.
+
+## L. Scope
+
+UI-only: roughly 90% of this request — all of sections 1–7, 9, 10, 13–19, 21 display behavior. Backend: the five items in I, small and deferrable, to be raised individually before any schema change.
