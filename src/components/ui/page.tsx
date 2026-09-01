@@ -213,3 +213,201 @@ export function PriorityRail({ priority }: { priority: string | null | undefined
     />
   );
 }
+
+/**
+ * A labelled status chip. The word is required; the colour only reinforces it,
+ * so the meaning survives greyscale, print and colour-blind vision.
+ */
+export function Chip({
+  children,
+  className,
+  icon,
+  title,
+}: {
+  children: ReactNode;
+  className?: string;
+  icon?: ReactNode;
+  title?: string;
+}) {
+  return (
+    <span className={cn("chip", className)} title={title}>
+      {icon ? <span aria-hidden="true" className="[&>svg]:size-3">{icon}</span> : null}
+      {children}
+    </span>
+  );
+}
+
+export type Stage = {
+  key: string;
+  label: string;
+  /** Short caption under the step, e.g. a count or a date. */
+  hint?: string;
+};
+
+/**
+ * A horizontal process rail: what is done, where the work is now, what is next.
+ * Position is shown with a filled bar and a "Current" word, never with colour
+ * alone.
+ */
+export function StageRail({
+  stages,
+  currentIndex,
+  tone = "primary",
+  className,
+}: {
+  stages: Stage[];
+  currentIndex: number;
+  tone?: "primary" | "onboarding" | "owner";
+  className?: string;
+}) {
+  const bar =
+    tone === "onboarding" ? "bg-module-onboarding" : tone === "owner" ? "bg-module-owner" : "bg-primary";
+  const text =
+    tone === "onboarding" ? "text-module-onboarding" : tone === "owner" ? "text-module-owner" : "text-primary";
+  return (
+    <ol className={cn("flex w-full min-w-0 gap-1.5", className)} aria-label="Process stage">
+      {stages.map((s, i) => {
+        const done = i < currentIndex;
+        const current = i === currentIndex;
+        return (
+          <li key={s.key} className="min-w-0 flex-1" aria-current={current ? "step" : undefined}>
+            <div
+              className={cn("h-1.5 rounded-full", done ? cn(bar, "opacity-45") : current ? bar : "bg-border")}
+            />
+            <p
+              className={cn(
+                "mt-1.5 truncate text-xs",
+                current ? cn("font-semibold", text) : done ? "text-foreground/70" : "text-muted-foreground",
+              )}
+              title={s.label}
+            >
+              {s.label}
+            </p>
+            {current ? (
+              <p className="eyebrow">Current</p>
+            ) : s.hint ? (
+              <p className="truncate text-[0.6875rem] text-muted-foreground">{s.hint}</p>
+            ) : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** A circular percentage indicator. The number is always written inside it. */
+export function ProgressRing({
+  value,
+  size = 96,
+  label,
+  tone = "primary",
+}: {
+  value: number;
+  size?: number;
+  label?: string;
+  tone?: "primary" | "owner" | "onboarding";
+}) {
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  const stroke =
+    tone === "owner" ? "var(--module-owner)" : tone === "onboarding" ? "var(--module-onboarding)" : "var(--primary)";
+  const r = (size - 10) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <div
+      className="relative shrink-0"
+      style={{ width: size, height: size }}
+      role="img"
+      aria-label={`${pct}% ${label ?? "complete"}`}
+    >
+      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth="8" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - pct / 100)}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="numeric text-xl font-semibold leading-none">{pct}%</span>
+        {label ? <span className="mt-0.5 text-[0.625rem] uppercase tracking-wide text-muted-foreground">{label}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+/** A heading strip that separates one region of a page from the next. */
+export function SectionBand({
+  title,
+  hint,
+  actions,
+  className,
+}: {
+  title: string;
+  hint?: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("band justify-between", className)}>
+      <div className="flex flex-wrap items-baseline gap-2.5">
+        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+      </div>
+      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+    </div>
+  );
+}
+
+/**
+ * The one segmented control used for in-page views (queues, filters). Replaces
+ * the hand-rolled button rows that had drifted apart across modules.
+ */
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  ariaLabel,
+  className,
+}: {
+  options: { value: T; label: string; count?: number }[];
+  value: T;
+  onChange: (v: T) => void;
+  ariaLabel: string;
+  className?: string;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className={cn("inline-flex flex-wrap gap-0.5 rounded-lg border border-border bg-sunken p-1", className)}
+    >
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "rounded-md px-3 py-1.5 text-sm transition-colors",
+              active
+                ? "bg-card font-semibold text-foreground shadow-card"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {o.label}
+            {o.count != null ? <span className="numeric ml-1.5 text-xs opacity-70">{o.count}</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

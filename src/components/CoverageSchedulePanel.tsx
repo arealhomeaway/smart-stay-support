@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { windowLabel, type CoverageConfig } from "@/lib/coverage";
 import { SEAT_LABELS } from "@/lib/coverage-model";
+import type { Ownership } from "@/lib/semantic";
 import {
   coverageModel,
   deleteOnCall,
@@ -110,25 +111,225 @@ export function CoverageSchedulePanel() {
 
   return (
     <div className="space-y-4">
-      <SeatsCard
+      {/* Read the week first. Everything below it is the editing surface for
+          what the calendar shows. */}
+      <WeekCalendar
         roles={roles}
         shifts={data.shifts as Shift[]}
+        triage={data.triage as Triage[]}
         overrides={data.overrides as Override[]}
         people={people}
-        canEdit={canEdit}
-        onChanged={refresh}
-      />
-      <TriageCard windows={data.triage as Triage[]} roles={roles} />
-      <OnCallCard
-        roster={data.roster as Roster[]}
-        people={people}
         config={(data.config ?? null) as CoverageConfig | null}
-        canEdit={canEdit}
-        onChanged={refresh}
       />
+
+      <details className="group surface">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
+          <span>
+            <span className="font-semibold">Manage seats, schedules and on-call</span>
+            <span className="block text-sm text-muted-foreground">
+              {canEdit
+                ? "Change a seat holder, a recurring shift, a temporary override or the overnight roster."
+                : "View the seat holders, recurring shifts and the overnight roster."}
+            </span>
+          </span>
+          <span className="text-sm text-primary group-open:hidden">Open</span>
+          <span className="hidden text-sm text-primary group-open:inline">Close</span>
+        </summary>
+        <div className="space-y-4 border-t border-border p-4">
+          <SeatsCard
+            roles={roles}
+            shifts={data.shifts as Shift[]}
+            overrides={data.overrides as Override[]}
+            people={people}
+            canEdit={canEdit}
+            onChanged={refresh}
+          />
+          <TriageCard windows={data.triage as Triage[]} roles={roles} />
+          <OnCallCard
+            roster={data.roster as Roster[]}
+            people={people}
+            config={(data.config ?? null) as CoverageConfig | null}
+            canEdit={canEdit}
+            onChanged={refresh}
+          />
+        </div>
+      </details>
     </div>
   );
 }
+
+/** Which colour a seat carries in the calendar: Team A, Team B or leadership. */
+function seatOwnership(code: string): Ownership {
+  if (code.startsWith("ge_")) return "team_a";
+  if (code.startsWith("po_")) return "team_b";
+  return "leadership";
+}
+
+const CAL_START = 6 * 60; // 6 a.m.
+const CAL_END = 24 * 60;
+const CAL_SPAN = CAL_END - CAL_START;
+
+const BLOCK_FILL: Record<Ownership, string> = {
+  team_a: "bg-team-a/15 border-team-a/45 text-team-a",
+  team_b: "bg-team-b/15 border-team-b/45 text-team-b",
+  leadership: "bg-leadership/15 border-leadership/45 text-leadership",
+  vendor: "bg-module-override/15 border-module-override/45 text-module-override",
+  owner: "bg-module-owner/15 border-module-owner/45 text-module-owner",
+  unassigned: "bg-muted border-border text-muted-foreground",
+};
+
+/**
+ * The whole operating week on one screen: who is on duty, when a seat is
+ * covered by the other team, and who carries the overnight phone.
+ *
+ * Purely a view of the same rows the routing engine reads — editing stays in
+ * the panels below.
+ */
+function WeekCalendar({
+  roles,
+  shifts,
+  triage,
+  overrides,
+  people,
+  config,
+}: {
+  roles: Role[];
+  shifts: Shift[];
+  triage: Triage[];
+  overrides: Override[];
+  people: Person[];
+  config: CoverageConfig | null;
+}) {
+  const roleByCode = new Map(roles.map((r) => [r.code, r]));
+  const activeOverrides = overrides.filter((o) => new Date(o.ends_at) > new Date());
+  const nightStart = config?.after_hours_start_minute ?? 22 * 60;
+  const nightEnd = config?.after_hours_end_minute ?? 8 * 60;
+
+  // Only seats that actually carry hours belong on the week grid; the rest are
+  // named underneath so nothing disappears.
+  const scheduled = roles.filter(
+    (r) => shifts.some((s) => s.role_code === r.code) || triage.some((t) => t.role_code === r.code),
+  );
+  const unscheduled = roles.filter((r) => !scheduled.includes(r));
+
+  return (
+    <section className="surface overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
+        <div>
+          <h3 className="flex items-center gap-2 font-semibold">
+            <CalendarClock className="size-4" /> The operating week
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Central time, daylight-saving safe. New work routes to whoever is on duty here.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className={`chip ${BLOCK_FILL["team_a"]}`}>Team A — Guest Experience</span>
+          <span className={`chip ${BLOCK_FILL["team_b"]}`}>Team B — Property Operations</span>
+          <span className={`chip ${BLOCK_FILL["leadership"]}`}>Supervisor</span>
+          <span className="chip border-dashed border-module-coverage/50 bg-module-coverage/10 text-module-coverage">
+            Cross-team triage
+          </span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto p-4">
+        <div className="min-w-[52rem] space-y-1.5">
+          <div className="grid grid-cols-[16rem_repeat(7,1fr)] gap-1.5">
+            <div className="eyebrow self-end">Seat</div>
+            {DAYS.map((d) => (
+              <div key={d} className="pb-1 text-center text-xs font-semibold">
+                {d.slice(0, 3)}
+              </div>
+            ))}
+          </div>
+
+          {scheduled.map((role) => {
+            const kind = seatOwnership(role.code);
+            const holder = role.current_seat_name ?? nameFor(people, role.current_seat_holder);
+            const pending = Boolean(role.current_seat_name && !role.current_seat_holder);
+            const covered = activeOverrides.filter((o) => o.role_code === role.code);
+            return (
+              <div key={role.code} className="grid grid-cols-[16rem_repeat(7,1fr)] items-stretch gap-1.5">
+                <div className="flex flex-col justify-center rounded-md border border-border bg-sunken px-3 py-2">
+                  <span className="truncate text-xs font-semibold">
+                    {SEAT_LABELS[role.code] ?? role.name}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {holder ?? <span className="text-danger">Seat unfilled</span>}
+                    {pending && <span className="text-warning"> · invite pending</span>}
+                    {role.available === false && <span className="text-warning"> · unavailable</span>}
+                  </span>
+                  {covered.length > 0 && (
+                    <span className="truncate text-xs text-module-override">
+                      {covered.length} temporary override{covered.length > 1 ? "s" : ""} in force
+                    </span>
+                  )}
+                </div>
+
+                {DAYS.map((day, weekday) => {
+                  const rows = shifts
+                    .filter((s) => s.role_code === role.code && s.weekday === weekday)
+                    .sort((a, b) => a.start_minute - b.start_minute);
+                  const cover = triage.filter(
+                    (t) => t.role_code === role.code && t.weekday === weekday,
+                  );
+                  if (rows.length === 0 && cover.length === 0) {
+                    return (
+                      <div
+                        key={day}
+                        className="rounded-md border border-dashed border-border/70 bg-sunken/40"
+                      />
+                    );
+                  }
+                  return (
+                    <div key={day} className="flex flex-col gap-1">
+                      {rows.map((s) => (
+                        <div
+                          key={s.id}
+                          className={`rounded-md border px-1.5 py-1.5 text-center text-[0.6875rem] font-medium leading-tight ${BLOCK_FILL[kind]}`}
+                        >
+                          {clock(s.start_minute)}–{clock(s.end_minute)}
+                        </div>
+                      ))}
+                      {cover.map((t) => (
+                        <div
+                          key={t.id}
+                          title="Approved cross-team triage cover"
+                          className="rounded-md border border-dashed border-module-coverage/60 bg-module-coverage/10 px-1.5 py-1.5 text-center text-[0.6875rem] leading-tight text-module-coverage"
+                        >
+                          triage {clock(t.start_minute)}–{clock(t.end_minute)}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          {unscheduled.length > 0 && (
+            <p className="pt-1 text-xs text-muted-foreground">
+              No recurring hours, available by exception:{" "}
+              {unscheduled.map((r) => SEAT_LABELS[r.code] ?? r.name).join(" · ")}
+            </p>
+          )}
+
+          {/* Overnight is one continuous band, not seven separate shifts. */}
+          <div className="mt-3 flex items-center gap-3 rounded-md border border-module-override/40 bg-module-override/10 px-3 py-2 text-xs text-module-override">
+            <Moon className="size-3.5 shrink-0" />
+            <span>
+              <span className="font-semibold">On-call, every night {clock(nightStart)}–{clock(nightEnd)} Central.</span>{" "}
+              The overnight roster takes precedence over every seat schedule above.
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  );
+}
+
 
 function nameFor(people: Person[], id: string | null) {
   if (!id) return null;

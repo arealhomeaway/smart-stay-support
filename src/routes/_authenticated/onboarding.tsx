@@ -1,4 +1,4 @@
-import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
+import { EmptyState, LoadingPage, PageHeader, StageRail } from "@/components/ui/page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -263,7 +263,30 @@ function OnboardingWorkspace() {
                       Property ID {current.id.slice(0, 8)} · stage {stageLabel(current.onboarding_stage)}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex flex-wrap items-end gap-3">
+                  <CardContent className="space-y-5">
+                    {/* Where this home is in the six ARHA phases, and how much
+                        of the current phase is done. */}
+                    <StageRail
+                      tone="onboarding"
+                      stages={ONBOARDING_STAGES.map((s) => ({
+                        key: s.value,
+                        label: s.label,
+                        ...(() => {
+                          const inStage = tasks.filter((t) => t.stage === s.value);
+                          if (inStage.length === 0) return {};
+                          const done = inStage.filter((t) => t.status === "complete").length;
+                          return { hint: `${done}/${inStage.length} done` };
+                        })(),
+                      }))}
+                      currentIndex={Math.max(
+                        0,
+                        ONBOARDING_STAGES.findIndex(
+                          (s) => s.value === (current.onboarding_stage ?? "intake"),
+                        ),
+                      )}
+                    />
+                    <div className="flex flex-wrap items-end gap-3">
+
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs uppercase tracking-wide text-muted-foreground">Lifecycle</Label>
                       <Select
@@ -314,7 +337,9 @@ function OnboardingWorkspace() {
                       disabled={readOnly || !can("handoff_request")}
                       onSave={(values) => saveTask.mutate({ data: values })}
                     />
+                    </div>
                   </CardContent>
+
                 </Card>
 
                 <SchedulePanel

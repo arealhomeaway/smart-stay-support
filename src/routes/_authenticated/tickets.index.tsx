@@ -7,7 +7,8 @@ import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTea
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { EmptyState, LoadingRows, PageHeader, PriorityRail } from "@/components/ui/page";
+import { Chip, EmptyState, LoadingRows, PageHeader, PriorityRail, SegmentedControl } from "@/components/ui/page";
+import { ownershipChip, stateChip, ticketState } from "@/lib/semantic";
 
 import {
   OPEN_STATUSES,
@@ -116,43 +117,22 @@ function TicketsPage() {
       )}
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex flex-wrap gap-1 rounded-md border border-border bg-card p-1" role="tablist">
-          {QUEUE_TABS.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.value}
-              onClick={() => setTab(t.value)}
-              className={`rounded px-3 py-1.5 text-sm transition-colors ${
-                tab === t.value
-                  ? "bg-primary font-medium text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
-            >
-              {t.label}
-              <span className="numeric ml-2 text-xs opacity-70">{counts[t.value] ?? 0}</span>
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          ariaLabel="Ticket queue"
+          value={tab}
+          onChange={setTab}
+          options={QUEUE_TABS.map((t) => ({ value: t.value, label: t.label, count: counts[t.value] ?? 0 }))}
+        />
 
-        <div className="flex gap-1 rounded-md border border-border bg-card p-1">
-          {["all", ...PRIORITIES.map((p) => p.value)].map((p) => (
-            <button
-              key={p}
-              type="button"
-              aria-pressed={priority === p}
-              onClick={() => setPriority(p)}
-              className={`rounded px-3 py-1 text-sm uppercase transition-colors ${
-                priority === p
-                  ? "bg-primary font-medium text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          ariaLabel="Filter by priority"
+          value={priority}
+          onChange={setPriority}
+          options={["all", ...PRIORITIES.map((p) => p.value)].map((p) => ({
+            value: p,
+            label: p === "all" ? "All" : p.toUpperCase(),
+          }))}
+        />
 
         <Input
           placeholder="Search reference, title, guest, property, work type, owner…"
@@ -162,6 +142,7 @@ function TicketsPage() {
           className="w-full max-w-sm sm:ml-auto sm:w-auto"
         />
       </div>
+
 
       {isLoading ? (
         <LoadingRows rows={6} />
@@ -194,9 +175,9 @@ function TicketsPage() {
                   <Badge variant="outline" className={priorityTone(t.priority)}>
                     {priorityMeta(t.priority).short}
                   </Badge>
-                  <Badge variant="outline" className={statusTone(t.status)}>
+                  <Chip className={stateChip(ticketState(t.status))}>
                     {labelFor(STATUSES, t.status)}
-                  </Badge>
+                  </Chip>
                   {sla.escalation && (
                     <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
                       Escalated
@@ -223,9 +204,11 @@ function TicketsPage() {
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
                   {t.work_types?.name ?? t.category} ·{" "}
-                  <span className={ownerId ? "" : "font-medium text-danger"}>
-                    {ownerId ? displayName(people.get(ownerId)) : "Unassigned"}
-                  </span>
+                  {ownerId ? (
+                    <span className="font-medium text-foreground">{displayName(people.get(ownerId))}</span>
+                  ) : (
+                    <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
+                  )}
                   {" · "}
                   {labelFor(SOURCE_CHANNELS, t.source_channel)}
                   {t.guest_name ? ` · Guest: ${t.guest_name}` : ""}

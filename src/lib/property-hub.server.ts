@@ -212,7 +212,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     {
       id: "facts",
       title: "Property facts",
-      blurb: "Bedrooms, occupancy and stay posture come from OwnerRez. Building systems arrive with the PID field map.",
+      blurb: "Bedrooms, occupancy and stay posture come from OwnerRez. Building systems and utilities are in Property details.",
       fields: [
         f("Bedrooms", "bedrooms", p.bedrooms == null ? null : String(p.bedrooms), "OwnerRez", p.ownerrez_synced_at, true),
         f("Bathrooms", "bathrooms", p.bathrooms == null ? null : String(p.bathrooms), "OwnerRez", p.ownerrez_synced_at, true),
@@ -222,8 +222,6 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         f("Check-in / check-out", "check_times", p.check_in_time || p.check_out_time ? `${p.check_in_time ?? "—"} / ${p.check_out_time ?? "—"}` : null, "OwnerRez", p.ownerrez_synced_at, true),
         f("Time zone", "time_zone", p.time_zone, "OwnerRez", p.ownerrez_synced_at, false),
         f("Public listing", "listing_public_url", p.listing_public_url, "OwnerRez", p.ownerrez_synced_at, true),
-        pending("Stay type (STR / MTR)", "stay_type", "ARHA"),
-        pending("HVAC, water heater, appliances", "building_systems", "ARHA PID"),
       ],
     },
     {
@@ -232,22 +230,13 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       blurb: "Resolve records where access is held and who to ask. It never stores a live code or password.",
       fields: [
         f("Access notes", "access_notes", p.access_notes, "Resolve", p.updated_at, false),
-        pending("Access method & credential holder", "access_credential_ref", "ARHA PID"),
-        pending("Parking & garage", "parking", "ARHA PID"),
       ],
-    },
-    {
-      id: "utilities",
-      title: "Utilities",
-      fields: [pending("Utility providers & billing responsibility", "utilities", "ARHA PID")],
     },
     {
       id: "safety",
       title: "Safety & amenities",
       fields: [
         f("Wi-Fi notes", "wifi_notes", p.wifi_notes, "Resolve", p.updated_at, false),
-        pending("Shutoffs, breaker panel, storm shelter", "safety_locations", "ARHA PID"),
-        pending("Pool / spa, community amenities", "amenities", "ARHA PID"),
       ],
     },
     {
@@ -282,11 +271,6 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         f("OwnerRez id", "ownerrez_property_id", p.ownerrez_property_id, "OwnerRez", p.ownerrez_synced_at, false),
         f("Breezeway home id", "breezeway_property_id", p.breezeway_property_id, "Breezeway", p.breezeway_synced_at, false),
       ],
-    },
-    {
-      id: "compliance",
-      title: "Compliance & reference",
-      fields: [pending("Permit, licence, insurance and registration status", "compliance_ref", "ARHA compliance record")],
     },
   ];
 
@@ -554,9 +538,6 @@ function f(
   return { label, key, value: value ?? null, source, asOf: asOf ?? null, ownerVisible };
 }
 
-function pending(label: string, key: string, source: string): HubField {
-  return { label, key, value: null, source, asOf: null, ownerVisible: false, pending: true };
-}
 
 function defaultLinkLabel(kind: string): string {
   const map: Record<string, string> = {

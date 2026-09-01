@@ -12,7 +12,6 @@ import {
   History,
   Home,
   KeyRound,
-  LayoutGrid,
   ListChecks,
   MapPinned,
   LogOut,
@@ -72,58 +71,64 @@ type NavItem = {
 
 type NavGroup = { label: string; items: NavItem[] };
 
-// One list, grouped for scanning. Visibility is still driven by capability —
-// never by hand-maintained copies of the menu.
+// One list, grouped the way the business is run: the work itself, the
+// operation that staffs it, the programmes we run for owners, then the
+// administrative surfaces. Visibility is still driven by capability — never by
+// a hand-maintained copy of the menu.
 const navGroups: NavGroup[] = [
   {
-    label: "Overview",
+    label: "Today",
     items: [
-      { to: "/command-center", label: "Executive Administration", icon: Gauge, tour: "command-center", capability: "command_center" },
       { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
-      { to: "/hub", label: "All my portals", icon: LayoutGrid, tour: "hub" },
+      { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", capability: "oversight" },
     ],
   },
   {
     label: "Work",
     items: [
-      { to: "/tickets", label: "Work queue", icon: ClipboardList, tour: "tickets" },
-      { to: "/map", label: "Work map", icon: MapPinned, tour: "map", capability: "matters_all" },
-      { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach", capability: "coaching" },
-      { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
+      { to: "/tickets", label: "Tickets", icon: ClipboardList, tour: "tickets" },
+      { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
+      { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
+      { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
     ],
   },
   {
-    label: "Portfolio",
+    label: "Operations",
     items: [
-      { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
+      { to: "/team", label: "Team & coverage", icon: Users, tour: "team", capability: "user_management" },
+      { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
+      { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach", capability: "coaching" },
+    ],
+  },
+  {
+    label: "Programs",
+    items: [
+      { to: "/owner-programs", label: "Active Owner", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
       { to: "/vendors", label: "Vendor Hub", icon: Handshake, tour: "vendors", capability: "vendor_admin", flag: "vendor_portal" },
       // Quarterly property reviews are vendor management work — cleaning
       // supervisors run them — so they sit with the Vendor Hub, not the
       // operations queue. The records and the paused scheduler are unchanged.
       { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly", capability: "vendor_admin", flag: "quarterly_reviews" },
-      { to: "/owner-programs", label: "Property owners", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
-      { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
     ],
   },
   {
     label: "Insight",
     items: [
+      { to: "/command-center", label: "Executive view", icon: Gauge, tour: "command-center", capability: "command_center" },
       { to: "/analytics", label: "Analytics", icon: BarChart3, tour: "analytics", capability: "analytics" },
-      { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", capability: "oversight" },
       { to: "/owner-analytics", label: "Owner participation", icon: KeyRound, tour: "owner-analytics", capability: "owner_programs" },
-      { to: "/ops-analytics", label: "Operations performance", icon: BarChart3, tour: "ops-analytics", capability: "analytics" },
     ],
   },
   {
     label: "Administration",
     items: [
-      { to: "/team", label: "Seats & access", icon: Users, tour: "team", capability: "user_management" },
       { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", capability: "integrations" },
       { to: "/audit", label: "Audit history", icon: History, tour: "audit", capability: "audit_history" },
       { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
     ],
   },
 ];
+
 
 const vendorGroups: NavGroup[] = [
   { label: "My company", items: [{ to: "/vendor", label: "My work orders", icon: HardHat, tour: "vendor" }] },
@@ -217,7 +222,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           asChild
                           isActive={active}
                           tooltip={item.label}
-                          className="relative data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:left-0 data-[active=true]:before:w-0.5 data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:[&>svg]:text-sidebar-primary"
+                          className="relative data-[active=true]:before:absolute data-[active=true]:before:inset-y-1 data-[active=true]:before:left-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:[&>svg]:text-sidebar-primary"
                         >
                           <Link to={item.to} data-tour={item.tour} aria-current={active ? "page" : undefined}>
                             <item.icon aria-hidden="true" />
