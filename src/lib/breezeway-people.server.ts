@@ -28,6 +28,7 @@ type RawPerson = {
   email?: string | null;
   emails?: (string | { email?: string | null })[] | null;
   is_active?: boolean | null;
+  active?: boolean | null;
   status?: string | null;
 };
 
@@ -64,7 +65,8 @@ export async function syncBreezewayPeople(): Promise<{
     let pages = 1;
     do {
       const data = await breezewayRequest<RawPerson[] | { results?: RawPerson[]; total_pages?: number }>(
-        "/people/",
+        // Breezeway serves this list at "/people" exactly; "/people/" 404s.
+        "/people",
         { params: { limit: 100, page } },
       );
       if (Array.isArray(data)) {
@@ -116,7 +118,8 @@ export async function syncBreezewayPeople(): Promise<{
         first_name: first,
         last_name: last,
         email,
-        active: person.is_active !== false && person.status !== "inactive",
+        active:
+          person.is_active !== false && person.active !== false && person.status !== "inactive",
         resolve_user_id: resolveUserId,
         mapping_state: resolveUserId ? "matched" : "unmatched",
         is_integration_identity: isIntegration,
