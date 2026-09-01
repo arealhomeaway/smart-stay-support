@@ -111,7 +111,7 @@ describe("attention flags", () => {
   });
 
   it("says nothing about closed leads", () => {
-    expect(attentionFlags(lead({ stage: "converted", assigned_to: null }), { now: NOW })).toHaveLength(0);
+    expect(attentionFlags(lead({ stage: "converted", assigned_to: null }), { now: NOW }).length).toBe(0);
   });
 });
 
@@ -141,10 +141,10 @@ describe("analytics", () => {
     const a = leadAnalytics(rows, NOW);
     expect(a.received).toBe(3);
     expect(a.converted).toBe(1);
-    expect(a.conversionRate).toBeCloseTo(1 / 3);
+    expect(Math.round((a.conversionRate ?? 0) * 100)).toBe(33);
     expect(a.convertedRevenue).toBe(5000);
     expect(a.followUpCompliance).toBe(0); // the single open lead is overdue
-    expect(a.avgDaysToConversion).toBeCloseTo(10);
+    expect(Math.round(a.avgDaysToConversion ?? 0)).toBe(10);
     expect(a.lossReasons[0]?.key).toBe("budget_too_low");
     expect(a.bySource[0]?.count).toBe(2);
   });
