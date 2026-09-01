@@ -219,7 +219,15 @@ function PropertiesPage() {
             return (
               <Card key={p.id}>
                 <CardHeader>
-                  <CardTitle>{p.nickname ?? p.name}</CardTitle>
+                  <CardTitle>
+                    <Link
+                      to="/property/$propertyId"
+                      params={{ propertyId: p.id }}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {p.nickname ?? p.name}
+                    </Link>
+                  </CardTitle>
                   <CardDescription>
                     {[p.address_line1, p.unit, p.city, p.state].filter(Boolean).join(", ") || "No address on file"}
                   </CardDescription>
