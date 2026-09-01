@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
 import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
 import { PropertyCredentialsPanel } from "@/components/PropertyCredentialsPanel";
+import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 
@@ -507,10 +508,42 @@ function OnboardingTab({ hub }: { hub: Hub }) {
   );
 }
 
+// The groups a coordinator needs while a job is running: what is broken, how
+// to get in, and where the shutoffs are. Same data as Property details — read
+// once, shown where the work happens.
+const OPERATIONAL_GROUPS = [
+  "utilities_shutoffs",
+  "hvac",
+  "waste",
+  "safety",
+  "sprinklers_grounds",
+  "pool_spa",
+  "equipment",
+  "other_systems",
+  "special_handling",
+];
+
 function OperationsTab({ hub }: { hub: Hub }) {
   const ops = hub.operations;
+  const opsGroups = (hub.details.groups ?? []).filter((g) => OPERATIONAL_GROUPS.includes(g.id));
   return (
     <div className="space-y-4">
+      {opsGroups.length > 0 && (
+        <section className="space-y-3">
+          <SectionBand
+            title="Utilities & building systems"
+            hint="Providers, shutoffs, filters and equipment for this home."
+          />
+          <PropertyDetailSections
+            groups={opsGroups}
+            onGoToCredentials={() =>
+              document.getElementById("credentials")?.scrollIntoView({ behavior: "smooth" })
+            }
+          />
+        </section>
+      )}
+
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
