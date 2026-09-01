@@ -47,6 +47,7 @@ import {
   type LeadStage,
 } from "@/lib/leads";
 import type { LeadRow, LeadUpdate } from "@/lib/lead-types";
+import { rankProperties } from "@/lib/property-search";
 
 const CONTACT_CHANNELS: LeadChannel[] = ["call", "email", "text", "other"];
 
@@ -113,11 +114,38 @@ export function LeadDrawer({
     queryKey: ["lead-property-search", propertySearch],
     enabled: Boolean(leadId) && propertySearch.trim().length > 1,
     queryFn: async () => {
+      const q = propertySearch.trim();
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname, city, bedrooms, lifecycle_status")
-        .or(`name.ilike.%${propertySearch}%,nickname.ilike.%${propertySearch}%,city.ilike.%${propertySearch}%`)
-        .limit(8);
+        .select(
+          "id, name, nickname, city, market, neighborhood, address_line1, ownerrez_property_id, bedrooms, lifecycle_status",
+        )
+        .or(
+          [
+            `name.ilike.%${q}%`,
+            `nickname.ilike.%${q}%`,
+            `city.ilike.%${q}%`,
+            `market.ilike.%${q}%`,
+            `neighborhood.ilike.%${q}%`,
+            `address_line1.ilike.%${q}%`,
+            `ownerrez_property_id.ilike.%${q}%`,
+          ].join(","),
+        )
+        .limit(40);
+      if (error) throw error;
+      return rankProperties(q, data ?? []);
+    },
+  });
+
+  const convertedProperty = useQuery({
+    queryKey: ["lead-converted-property", lead?.converted_property_id],
+    enabled: Boolean(lead?.converted_property_id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id, name, nickname, city")
+        .eq("id", lead!.converted_property_id!)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -327,6 +355,37 @@ export function LeadDrawer({
               ["Dates flexible", lead.date_flexible === null ? "—" : lead.date_flexible ? "Yes" : "No"],
             ]}
           />
+
+          {lead.stage === "converted" ? (
+            <section className="resolve-rise space-y-1.5 rounded-lg border border-success/40 bg-success/10 px-4 py-3">
+              <p className="eyebrow">Conversion</p>
+              <p className="text-sm font-semibold">Booking confirmed</p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                <dt className="text-muted-foreground">Converted</dt>
+                <dd className="text-right font-medium">{formatDate(lead.converted_at)}</dd>
+                <dt className="text-muted-foreground">Property</dt>
+                <dd className="text-right font-medium">
+                  {convertedProperty.data ? (
+                    <Link
+                      to="/property/$propertyId"
+                      params={{ propertyId: convertedProperty.data.id }}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {convertedProperty.data.nickname ?? convertedProperty.data.name}
+                    </Link>
+                  ) : (
+                    "Not recorded"
+                  )}
+                </dd>
+                <dt className="text-muted-foreground">Reservation ref</dt>
+                <dd className="text-right font-medium">{lead.reservation_ref ?? "Not recorded"}</dd>
+                <dt className="text-muted-foreground">Converted by</dt>
+                <dd className="text-right font-medium">
+                  {lead.converted_by ? displayName(people.find((p) => p.id === lead.converted_by)) : "Not recorded"}
+                </dd>
+              </dl>
+            </section>
+          ) : null}
 
           {lead.requirements ? (
             <p className="text-sm leading-relaxed text-muted-foreground">{lead.requirements}</p>
