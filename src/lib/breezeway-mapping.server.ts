@@ -27,7 +27,8 @@ import {
 type PropertyRow = {
   id: string;
   name: string | null;
-  status: string | null;
+  active: boolean | null;
+  lifecycle_status: string | null;
   is_demo: boolean | null;
   archived_at: string | null;
   ownerrez_property_id: string | null;
@@ -41,7 +42,7 @@ async function admin() {
 }
 
 function isActiveResolve(p: PropertyRow) {
-  return !p.is_demo && !p.archived_at && (p.status ?? "active") !== "archived";
+  return !p.is_demo && !p.archived_at && p.active !== false;
 }
 
 /**
@@ -57,7 +58,7 @@ export async function auditPortfolioMapping(
   const { data, error } = await db
     .from("properties")
     .select(
-      "id, name, status, is_demo, archived_at, ownerrez_property_id, breezeway_property_id, breezeway_mapping_state",
+      "id, name, active, lifecycle_status, is_demo, archived_at, ownerrez_property_id, breezeway_property_id, breezeway_mapping_state",
     );
   if (error) throw new Error(`Could not read the property portfolio: ${error.message}`);
   const properties = ((data ?? []) as unknown as PropertyRow[]).filter(isActiveResolve);
@@ -193,7 +194,7 @@ export async function propertyWriteEligibility(propertyId: string): Promise<{
   const { data, error } = await db
     .from("properties")
     .select(
-      "id, name, status, is_demo, archived_at, breezeway_property_id, breezeway_mapping_state",
+      "id, name, active, lifecycle_status, is_demo, archived_at, breezeway_property_id, breezeway_mapping_state",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -208,7 +209,7 @@ export async function propertyWriteEligibility(propertyId: string): Promise<{
   if (p.is_demo) {
     return { eligible: false, reason: "Demo properties are never sent to Breezeway.", homeId, propertyName: name, state };
   }
-  if (p.archived_at || (p.status ?? "active") === "archived") {
+  if (p.archived_at || p.active === false) {
     return { eligible: false, reason: "Archived properties are never sent to Breezeway.", homeId, propertyName: name, state };
   }
   if (state !== "verified") {
