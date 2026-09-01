@@ -466,7 +466,12 @@ for (const c of candidates) {
 
   const put = (path: string[], value: any, sourceField: string) => {
     if (value === null || value === undefined || value === "") return;
+    if (typeof value === "string") {
+      if (value.trim() === "" || value.trim() === "undefined") return;
+      value = scrub(value);
+    }
     const key = path.join(".");
+
     if (WRITE_PROTECTED.has(path[0]!)) {
       report.failures.push({ property: label, field: sourceField, error: `write-protected target ${key}` });
       return;
