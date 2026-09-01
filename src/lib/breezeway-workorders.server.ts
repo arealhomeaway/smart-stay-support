@@ -291,7 +291,9 @@ export async function listWorkOrderComments(workOrderId: string): Promise<Breeze
   const db = await admin();
   const { data } = await db
     .from("breezeway_work_order_comments")
-    .select("id, breezeway_comment_id, author, body, commented_at, direction")
+    .select(
+      "id, breezeway_comment_id, author, body, commented_at, direction, resolve_author_name, identity_mode, delivery_state, delivery_error, posted_at",
+    )
     .eq("work_order_id", workOrderId)
     .order("commented_at", { ascending: true, nullsFirst: true });
   return ((data ?? []) as unknown as {
@@ -301,6 +303,11 @@ export async function listWorkOrderComments(workOrderId: string): Promise<Breeze
     body: string;
     commented_at: string | null;
     direction: "inbound" | "outbound";
+    resolve_author_name: string | null;
+    identity_mode: string | null;
+    delivery_state: "mirrored" | "sending" | "delivered" | "failed";
+    delivery_error: string | null;
+    posted_at: string | null;
   }[]).map((c) => ({
     id: c.id,
     breezewayCommentId: c.breezeway_comment_id,
@@ -308,20 +315,33 @@ export async function listWorkOrderComments(workOrderId: string): Promise<Breeze
     body: c.body,
     commentedAt: c.commented_at,
     direction: c.direction,
+    resolveAuthorName: c.resolve_author_name,
+    identityMode: (c.identity_mode as "staff" | "integration" | null) ?? null,
+    deliveryState: c.delivery_state,
+    deliveryError: c.delivery_error,
+    postedAt: c.posted_at,
   }));
 }
 
 /**
  * Posts a reply as a Breezeway task comment. Documented endpoint:
  *   POST /task/{task_id}/comments  { comment, company_people_id }
- * The returning webhook reconciles through the same external-id dedupe, so a
- * reply is never mirrored twice.
+ *
+ * Identity is deterministic (see breezeway-people.server): the staff member's
+ * own Breezeway person when one exists, otherwise the shared ARHA Resolve
+ * integration identity with their name in the body. Resolve never posts under
+ * an unrelated colleague's account.
+ *
+ * The row is written BEFORE the call, in `sending`, and settled afterwards, so
+ * a reply that half-succeeded is visible rather than lost. The returning
+ * webhook reconciles on the external comment id, so nothing is mirrored twice.
  */
 export async function replyToWorkOrder(
   workOrderId: string,
   body: string,
   authorLabel: string,
-): Promise<{ ok: boolean; message?: string }> {
+  authorUserId: string,
+): Promise<{ ok: boolean; message?: string; identityMode?: "staff" | "integration" }> {
   const wo = await getWorkOrder(workOrderId);
   if (!wo) return { ok: false, message: "That work order is not in Resolve." };
   if (!(await outboundEnabled())) return { ok: false, message: "Breezeway writes are switched off." };
@@ -331,41 +351,67 @@ export async function replyToWorkOrder(
 
   const text = body.trim().slice(0, 4000);
   if (!text) return { ok: false, message: "Write something first." };
-  const peopleId = Number(process.env["BREEZEWAY_COMMENT_PEOPLE_ID"] ?? "");
-  if (!Number.isInteger(peopleId) || peopleId <= 0) {
-    return {
-      ok: false,
-      message:
-        "Replying needs the Breezeway person id Resolve posts as (BREEZEWAY_COMMENT_PEOPLE_ID).",
-    };
-  }
+
+  const { commentIdentityFor } = await import("./breezeway-people.server");
+  const identity = await commentIdentityFor(authorUserId);
+  if (!identity.ok) return { ok: false, message: identity.message };
+
+  // Under the shared identity the person's name has to be in the text, or the
+  // Breezeway thread cannot tell who is speaking.
+  const outbound = identity.mode === "staff" ? text : `${authorLabel} (ARHA Resolve): ${text}`;
+
+  const db = await admin();
+  const startedAt = new Date().toISOString();
+  const pending = await db
+    .from("breezeway_work_order_comments")
+    .insert({
+      work_order_id: wo.id,
+      breezeway_task_id: wo.breezewayTaskId,
+      author: authorLabel,
+      body: text,
+      commented_at: startedAt,
+      direction: "outbound",
+      source: "resolve",
+      resolve_author_id: authorUserId,
+      resolve_author_name: authorLabel,
+      breezeway_person_id: identity.peopleId,
+      identity_mode: identity.mode,
+      delivery_state: "sending",
+    } as never)
+    .select("id")
+    .single();
+  const rowId = (pending.data as { id: string } | null)?.id ?? null;
 
   try {
     const created = await breezewayRequest<{ id?: number }>(`/task/${wo.breezewayTaskId}/comments`, {
       method: "POST",
       allowWrite: true,
       retry: false,
-      body: { comment: `${authorLabel} (Resolve): ${text}`, company_people_id: peopleId },
+      body: { comment: outbound, company_people_id: identity.peopleId },
     });
-    const db = await admin();
-    await db.from("breezeway_work_order_comments").insert({
-      work_order_id: wo.id,
-      breezeway_task_id: wo.breezewayTaskId,
-      breezeway_comment_id: typeof created?.id === "number" ? created.id : null,
-      author: authorLabel,
-      body: text,
-      commented_at: new Date().toISOString(),
-      direction: "outbound",
-    } as never);
-    return { ok: true };
+    if (rowId) {
+      await db
+        .from("breezeway_work_order_comments")
+        .update({
+          breezeway_comment_id: typeof created?.id === "number" ? created.id : null,
+          delivery_state: "delivered",
+          posted_at: new Date().toISOString(),
+        } as never)
+        .eq("id", rowId);
+    }
+    return { ok: true, identityMode: identity.mode };
   } catch (error) {
-    return {
-      ok: false,
-      message:
-        error instanceof BreezewayError
-          ? `Breezeway refused the comment (${error.status}).`
-          : "Could not reach Breezeway.",
-    };
+    const message =
+      error instanceof BreezewayError
+        ? `Breezeway refused the comment (${error.status}).`
+        : "Could not reach Breezeway.";
+    if (rowId) {
+      await db
+        .from("breezeway_work_order_comments")
+        .update({ delivery_state: "failed", delivery_error: message } as never)
+        .eq("id", rowId);
+    }
+    return { ok: false, message };
   }
 }
 
