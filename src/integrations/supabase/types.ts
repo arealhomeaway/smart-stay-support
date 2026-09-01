@@ -2038,6 +2038,259 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_activity: {
+        Row: {
+          actor_id: string | null
+          channel: Database["public"]["Enums"]["lead_channel"]
+          created_at: string
+          from_stage: Database["public"]["Enums"]["lead_stage"] | null
+          id: string
+          lead_id: string
+          note: string | null
+          occurred_at: string
+          outcome: string | null
+          to_stage: Database["public"]["Enums"]["lead_stage"] | null
+        }
+        Insert: {
+          actor_id?: string | null
+          channel: Database["public"]["Enums"]["lead_channel"]
+          created_at?: string
+          from_stage?: Database["public"]["Enums"]["lead_stage"] | null
+          id?: string
+          lead_id: string
+          note?: string | null
+          occurred_at?: string
+          outcome?: string | null
+          to_stage?: Database["public"]["Enums"]["lead_stage"] | null
+        }
+        Update: {
+          actor_id?: string | null
+          channel?: Database["public"]["Enums"]["lead_channel"]
+          created_at?: string
+          from_stage?: Database["public"]["Enums"]["lead_stage"] | null
+          id?: string
+          lead_id?: string
+          note?: string | null
+          occurred_at?: string
+          outcome?: string | null
+          to_stage?: Database["public"]["Enums"]["lead_stage"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activity_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_properties: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          note: string | null
+          presented_at: string | null
+          property_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          note?: string | null
+          presented_at?: string | null
+          property_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          note?: string | null
+          presented_at?: string | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_properties_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_tickets: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          linked_by: string | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          linked_by?: string | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          linked_by?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_tickets_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_tickets_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          bedrooms: number | null
+          budget_monthly: number | null
+          company: string | null
+          contact_name: string
+          converted_at: string | null
+          converted_by: string | null
+          converted_property_id: string | null
+          created_at: string
+          created_by: string | null
+          date_flexible: boolean | null
+          desired_move_in: string | null
+          email: string | null
+          id: string
+          is_demo: boolean
+          keep_open_reason: string | null
+          last_contact_at: string | null
+          length_of_stay_days: number | null
+          lost_at: string | null
+          lost_note: string | null
+          lost_reason: Database["public"]["Enums"]["lead_loss_reason"] | null
+          market: string | null
+          notes: string | null
+          pets: boolean | null
+          phone: string | null
+          preferred_channel: Database["public"]["Enums"]["lead_channel"] | null
+          quote_amount: number | null
+          quote_note: string | null
+          quote_sent_at: string | null
+          requirements: string | null
+          reservation_ref: string | null
+          source: Database["public"]["Enums"]["lead_source"]
+          source_detail: Json
+          stage: Database["public"]["Enums"]["lead_stage"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          bedrooms?: number | null
+          budget_monthly?: number | null
+          company?: string | null
+          contact_name: string
+          converted_at?: string | null
+          converted_by?: string | null
+          converted_property_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_flexible?: boolean | null
+          desired_move_in?: string | null
+          email?: string | null
+          id?: string
+          is_demo?: boolean
+          keep_open_reason?: string | null
+          last_contact_at?: string | null
+          length_of_stay_days?: number | null
+          lost_at?: string | null
+          lost_note?: string | null
+          lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
+          market?: string | null
+          notes?: string | null
+          pets?: boolean | null
+          phone?: string | null
+          preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
+          quote_amount?: number | null
+          quote_note?: string | null
+          quote_sent_at?: string | null
+          requirements?: string | null
+          reservation_ref?: string | null
+          source?: Database["public"]["Enums"]["lead_source"]
+          source_detail?: Json
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          bedrooms?: number | null
+          budget_monthly?: number | null
+          company?: string | null
+          contact_name?: string
+          converted_at?: string | null
+          converted_by?: string | null
+          converted_property_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_flexible?: boolean | null
+          desired_move_in?: string | null
+          email?: string | null
+          id?: string
+          is_demo?: boolean
+          keep_open_reason?: string | null
+          last_contact_at?: string | null
+          length_of_stay_days?: number | null
+          lost_at?: string | null
+          lost_note?: string | null
+          lost_reason?: Database["public"]["Enums"]["lead_loss_reason"] | null
+          market?: string | null
+          notes?: string | null
+          pets?: boolean | null
+          phone?: string | null
+          preferred_channel?: Database["public"]["Enums"]["lead_channel"] | null
+          quote_amount?: number | null
+          quote_note?: string | null
+          quote_sent_at?: string | null
+          requirements?: string | null
+          reservation_ref?: string | null
+          source?: Database["public"]["Enums"]["lead_source"]
+          source_detail?: Json
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_converted_property_id_fkey"
+            columns: ["converted_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metric_definitions: {
         Row: {
           business_definition: string
@@ -5637,6 +5890,45 @@ export type Database = {
         | "supply_storage"
         | "alarm_security"
         | "other"
+      lead_channel:
+        | "call"
+        | "email"
+        | "text"
+        | "other"
+        | "note"
+        | "stage_change"
+        | "system"
+      lead_loss_reason:
+        | "unresponsive"
+        | "other_option"
+        | "budget_too_low"
+        | "no_properties_available"
+        | "outside_coverage"
+        | "requirements_not_met"
+        | "expired"
+        | "dates_did_not_work"
+        | "other"
+      lead_source:
+        | "insurance"
+        | "relocation"
+        | "corporate"
+        | "direct"
+        | "referral"
+        | "realtor"
+        | "website"
+        | "phone"
+        | "email"
+        | "social"
+        | "other"
+      lead_stage:
+        | "new"
+        | "first_contact"
+        | "follow_up_1"
+        | "final_follow_up"
+        | "engaged"
+        | "booking_pending"
+        | "converted"
+        | "lost"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5775,6 +6067,49 @@ export const Constants = {
         "supply_storage",
         "alarm_security",
         "other",
+      ],
+      lead_channel: [
+        "call",
+        "email",
+        "text",
+        "other",
+        "note",
+        "stage_change",
+        "system",
+      ],
+      lead_loss_reason: [
+        "unresponsive",
+        "other_option",
+        "budget_too_low",
+        "no_properties_available",
+        "outside_coverage",
+        "requirements_not_met",
+        "expired",
+        "dates_did_not_work",
+        "other",
+      ],
+      lead_source: [
+        "insurance",
+        "relocation",
+        "corporate",
+        "direct",
+        "referral",
+        "realtor",
+        "website",
+        "phone",
+        "email",
+        "social",
+        "other",
+      ],
+      lead_stage: [
+        "new",
+        "first_contact",
+        "follow_up_1",
+        "final_follow_up",
+        "engaged",
+        "booking_pending",
+        "converted",
+        "lost",
       ],
     },
   },
