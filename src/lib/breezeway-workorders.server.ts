@@ -473,12 +473,13 @@ export async function syncWorkOrderPhotos(
   const db = await admin();
   const now = new Date().toISOString();
   let kept = 0;
+  let writeError: string | null = null;
   for (const p of raw) {
     const url = photoUrl(p);
     if (!url) continue;
     kept += 1;
     if (typeof p.id === "number") {
-      await db.from("breezeway_work_order_photos").upsert(
+      const up = await db.from("breezeway_work_order_photos").upsert(
         {
           work_order_id: wo.id,
           breezeway_task_id: wo.breezewayTaskId,
@@ -494,6 +495,7 @@ export async function syncWorkOrderPhotos(
         } as never,
         { onConflict: "breezeway_photo_id" },
       );
+      if (up.error && !writeError) writeError = up.error.message;
     } else {
       const existing = await db
         .from("breezeway_work_order_photos")
@@ -519,6 +521,9 @@ export async function syncWorkOrderPhotos(
   }
 
   await db.from("breezeway_work_orders").update({ photo_count: kept } as never).eq("id", wo.id);
+  if (writeError) {
+    return { ok: false, message: `Photos could not be stored: ${writeError}`, photos: 0 };
+  }
   return { ok: true, photos: kept };
 }
 
