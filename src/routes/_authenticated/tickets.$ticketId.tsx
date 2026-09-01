@@ -576,6 +576,50 @@ function TicketDetail() {
             </Card>
           )}
 
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Textarea
+                  rows={3}
+                  placeholder="Add an update: who you called, what the vendor found, what the guest said…"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+                <Button onClick={addNote} size="sm" variant="secondary">
+                  Add note
+                </Button>
+              </div>
+              <div className="space-y-3 border-t border-border pt-4">
+                {activity.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
+                {activity.map((a) => (
+                  <div key={a.id} className="text-sm">
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {a.author?.full_name ?? a.author?.email ?? "Team member"}
+                      </span>{" "}
+                      · {relativeTime(a.event_at ?? a.created_at)}
+                    </p>
+                    <p className="mt-0.5">{a.body}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Photos, video & documents" />
+
+          <BreezewayTaskPanel
+            sourceType="ticket"
+            sourceId={ticketId}
+            defaultTitle={ticket.title}
+            defaultDescription={ticket.description}
+          />
+
+          {/* Close is the end of the workflow: context, activity, evidence and related work come first. */}
           {!closed && (
             <Card>
               <CardHeader>
@@ -668,48 +712,6 @@ function TicketDetail() {
               Reopen this ticket
             </Button>
           )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Activity</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Textarea
-                  rows={3}
-                  placeholder="Add an update: who you called, what the vendor found, what the guest said…"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-                <Button onClick={addNote} size="sm" variant="secondary">
-                  Add note
-                </Button>
-              </div>
-              <div className="space-y-3 border-t border-border pt-4">
-                {activity.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
-                {activity.map((a) => (
-                  <div key={a.id} className="text-sm">
-                    <p className="text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {a.author?.full_name ?? a.author?.email ?? "Team member"}
-                      </span>{" "}
-                      · {relativeTime(a.event_at ?? a.created_at)}
-                    </p>
-                    <p className="mt-0.5">{a.body}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Photos, video & documents" />
-
-          <BreezewayTaskPanel
-            sourceType="ticket"
-            sourceId={ticketId}
-            defaultTitle={ticket.title}
-            defaultDescription={ticket.description}
-          />
 
         </div>
 

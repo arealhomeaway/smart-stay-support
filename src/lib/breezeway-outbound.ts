@@ -22,14 +22,33 @@ export const BREEZEWAY_OUTBOUND_FLAG = "breezeway_outbound";
 /** The original single pilot home; kept for fixtures and the webhook baseline. */
 export const OUTBOUND_PILOT_HOME_ID = "1473933";
 
+/**
+ * Breezeway's own department enum, exactly as the create-task API accepts it.
+ * Sending anything else (the old "cleaning"/"other") is silently dropped by
+ * Breezeway, so the work order arrives with no department at all.
+ */
 export const BREEZEWAY_DEPARTMENTS = [
-  "maintenance",
-  "cleaning",
+  "housekeeping",
   "inspection",
-  "other",
+  "maintenance",
+  "safety",
 ] as const;
 
-export const BREEZEWAY_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
+export const BREEZEWAY_PRIORITIES = ["low", "normal", "high", "urgent", "watch"] as const;
+
+/** One selectable Breezeway checklist template (from GET /companies/templates). */
+export type BreezewayTemplate = {
+  id: number;
+  name: string;
+  department: string | null;
+};
+
+/** One person Breezeway will accept as an assignee on a task. */
+export type BreezewayAssignee = {
+  id: number;
+  name: string;
+  email: string | null;
+};
 
 /**
  * Lifecycle of one outbound link.
@@ -78,6 +97,11 @@ export type BreezewayOutboundLink = {
   createdAt: string;
   lastSyncedAt: string | null;
   lastWebhookAt: string | null;
+  templateId: number | null;
+  templateName: string | null;
+  assigneeIds: number[];
+  assigneeNames: string[];
+  resolveEvidenceNote: string | null;
 };
 
 export type BreezewayOutboundEligibility = {

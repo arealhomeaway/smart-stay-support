@@ -179,6 +179,8 @@ export type Database = {
       breezeway_outbound_tasks: {
         Row: {
           assignee: string | null
+          assignee_ids: number[]
+          assignee_names: string[]
           attempts: number
           breezeway_home_id: string
           breezeway_task_id: number | null
@@ -194,6 +196,7 @@ export type Database = {
           priority: string | null
           property_id: string | null
           request_key: string
+          resolve_evidence_note: string | null
           review_note: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -203,12 +206,15 @@ export type Database = {
           status: string
           tags: string[] | null
           template_id: string | null
+          template_name: string | null
           ticket_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
           assignee?: string | null
+          assignee_ids?: number[]
+          assignee_names?: string[]
           attempts?: number
           breezeway_home_id: string
           breezeway_task_id?: number | null
@@ -224,6 +230,7 @@ export type Database = {
           priority?: string | null
           property_id?: string | null
           request_key: string
+          resolve_evidence_note?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -233,12 +240,15 @@ export type Database = {
           status?: string
           tags?: string[] | null
           template_id?: string | null
+          template_name?: string | null
           ticket_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           assignee?: string | null
+          assignee_ids?: number[]
+          assignee_names?: string[]
           attempts?: number
           breezeway_home_id?: string
           breezeway_task_id?: number | null
@@ -254,6 +264,7 @@ export type Database = {
           priority?: string | null
           property_id?: string | null
           request_key?: string
+          resolve_evidence_note?: string | null
           review_note?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -263,6 +274,7 @@ export type Database = {
           status?: string
           tags?: string[] | null
           template_id?: string | null
+          template_name?: string | null
           ticket_id?: string | null
           title?: string
           updated_at?: string

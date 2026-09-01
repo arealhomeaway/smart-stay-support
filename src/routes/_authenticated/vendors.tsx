@@ -1,3 +1,4 @@
+import { LaunchStateGate } from "@/components/LaunchStateGate";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/vendors")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: VendorsPage,
+  component: GatedVendorsPage,
 });
 
 const STATUS_TONE: Record<VendorStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -68,6 +69,14 @@ const STATUS_TONE: Record<VendorStatus, "default" | "secondary" | "destructive" 
   removed: "outline",
   legacy: "outline",
 };
+
+function GatedVendorsPage() {
+  return (
+    <LaunchStateGate flag="vendor_portal" title="Vendor management is not part of the Operations beta" description="Vendor sourcing, screening and compliance launch as the Vendor Portal workstream. Vendor context on Tickets and Breezeway Work Orders is unaffected.">
+      <VendorsPage />
+    </LaunchStateGate>
+  );
+}
 
 function VendorsPage() {
   const qc = useQueryClient();

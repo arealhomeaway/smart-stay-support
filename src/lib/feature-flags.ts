@@ -29,6 +29,9 @@ export const FLAG_KEYS = [
   "onboarding_portal_v2",
   "onboarding_sharepoint_docs",
   "onboarding_external_sync",
+  // Launch-state gates for workstreams that ship after the Operations beta.
+  "vendor_portal",
+  "quarterly_reviews",
 ] as const;
 
 export type FlagKey = (typeof FLAG_KEYS)[number];

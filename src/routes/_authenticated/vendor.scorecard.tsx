@@ -1,3 +1,4 @@
+import { LaunchStateGate } from "@/components/LaunchStateGate";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/vendor/scorecard")({
-  component: Scorecard,
+  component: GatedScorecard,
   head: () => ({
     meta: [
       { title: "My scorecard | Resolve vendor portal" },
@@ -27,6 +28,14 @@ export const Route = createFileRoute("/_authenticated/vendor/scorecard")({
     ],
   }),
 });
+
+function GatedScorecard() {
+  return (
+    <LaunchStateGate flag="vendor_portal" title="Scorecards are not part of the Operations beta" description="Vendor scoring launches with the Vendor Portal workstream.">
+      <Scorecard />
+    </LaunchStateGate>
+  );
+}
 
 function Scorecard() {
   const load = useServerFn(myScorecard);

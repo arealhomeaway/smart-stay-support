@@ -54,6 +54,7 @@ import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { ROLE_LABELS, type Capability } from "@/lib/permissions";
 
 type NavItem = {
@@ -65,6 +66,8 @@ type NavItem = {
   capability?: Capability;
   /** The page itself is supervisor-gated — never show a dead-end link. */
   supervisorOnly?: boolean;
+  /** Launch-state gate: hidden while the workstream is not part of the beta. */
+  flag?: string;
 };
 
 type NavGroup = { label: string; items: NavItem[] };
@@ -93,11 +96,11 @@ const navGroups: NavGroup[] = [
     label: "Portfolio",
     items: [
       { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
-      { to: "/vendors", label: "Vendor Hub", icon: Handshake, tour: "vendors", capability: "vendor_admin" },
+      { to: "/vendors", label: "Vendor Hub", icon: Handshake, tour: "vendors", capability: "vendor_admin", flag: "vendor_portal" },
       // Quarterly property reviews are vendor management work — cleaning
       // supervisors run them — so they sit with the Vendor Hub, not the
       // operations queue. The records and the paused scheduler are unchanged.
-      { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly", capability: "vendor_admin" },
+      { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly", capability: "vendor_admin", flag: "quarterly_reviews" },
       { to: "/owner-programs", label: "Property owners", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
       { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
     ],
@@ -137,6 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
+  const { enabled: flagEnabled } = useFeatureFlags();
   const { can, isVendor, isOwner, isSupervisor, readOnly, primary, isLoading: rolesLoading } = useRole();
   const pathname = router.state.location.pathname;
   const vendorMode = !rolesLoading && isVendor;
@@ -148,7 +152,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       ? ownerGroups
       : navGroups
           .map((g) => ({ ...g, items: g.items.filter(
-            (i) => (!i.capability || can(i.capability)) && (!i.supervisorOnly || isSupervisor),
+            (i) =>
+              (!i.capability || can(i.capability)) &&
+              (!i.supervisorOnly || isSupervisor) &&
+              (!i.flag || flagEnabled(i.flag)),
           ) }))
           .filter((g) => g.items.length > 0);
 
