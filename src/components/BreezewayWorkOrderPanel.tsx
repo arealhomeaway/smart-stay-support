@@ -56,7 +56,10 @@ function CommentThread({ workOrderId }: { workOrderId: string }) {
   const send = useMutation({
     mutationFn: () => reply({ data: { workOrderId, body: draft } }),
     onSuccess: (res) => {
-      if (!res.ok) return toast.error(res.message ?? "Could not send that comment.");
+      if (!res.ok) {
+        toast.error(res.message ?? "Could not send that comment.");
+        return;
+      }
       setDraft("");
       toast.success("Comment sent to Breezeway.");
       void qc.invalidateQueries({ queryKey: ["bw-wo-comments", workOrderId] });
@@ -115,7 +118,10 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
   const lifecycle = useMutation({
     mutationFn: (action: string) => act({ data: { workOrderId: order.id, action } }),
     onSuccess: (res) => {
-      if (!res.ok) return toast.error(res.message ?? "Breezeway refused that change.");
+      if (!res.ok) {
+        toast.error(res.message ?? "Breezeway refused that change.");
+        return;
+      }
       toast.success("Breezeway updated.");
       void qc.invalidateQueries({ queryKey: ["bw-work-orders"] });
     },
