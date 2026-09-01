@@ -74,7 +74,7 @@ export type SubscriptionRecord = {
 export async function currentSubscription(db: Db): Promise<SubscriptionRecord | null> {
   const { data } = await db
     .from("integration_events")
-    .select("id, external_id, status, next_attempt_at, error_message")
+    .select("id, external_id, status, next_attempt_at, error_message, request_payload")
     .eq("system", SYSTEM)
     .eq("operation", OPERATION)
     .order("created_at", { ascending: false })
@@ -102,8 +102,7 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
 
   // A subscription created against the old Inbox-only resource must be
   // replaced, not renewed, or folder-routed mail stays invisible.
-  const existingResource =
-    ((existing as { request_payload?: { resource?: string } } | null)?.request_payload?.resource ?? "") || "";
+  const existingResource = existing?.request_payload?.resource ?? "";
   const wrongResource = Boolean(existing?.external_id) && existingResource !== `${mailboxRoot()}/messages`;
 
   if (existing?.external_id && existing.status === "active" && !expiresSoon && !wrongResource) {
