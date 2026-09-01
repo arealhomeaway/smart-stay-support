@@ -102,11 +102,30 @@ function plain(v: any): any {
 }
 
 function yesNo(v: any): boolean | string | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "boolean") return v;
   const s = String(v).trim().toLowerCase();
   if (["yes", "true", "y"].includes(s)) return true;
   if (["no", "false", "n"].includes(s)) return false;
   return String(v).trim() || null;
 }
+
+/**
+ * Free-text safety net. Operators occasionally typed a password or door code
+ * into a descriptive field (e.g. TV Specs). Those never enter Resolve: the
+ * secret itself is replaced before the value is planned, written or logged.
+ */
+const SECRET_PATTERN =
+  /\b(passwords?|passcodes?|pass\s?code|pwd|wifi\s*pass\w*|login\s*(?:info\w*|details)?|credentials?|access\s*code|gate\s*code|alarm\s*code|keypad\s*code|lockbox\s*code|door\s*code|profile\s*code|pin)\b\s*(?:is|are|:|=|-)?\s*[^\s,;\n]{2,}/gi;
+
+let secretsRedacted = 0;
+function scrub(text: string): string {
+  return text.replace(SECRET_PATTERN, (_m, label) => {
+    secretsRedacted += 1;
+    return `${label}: [removed — credentials are not stored in Resolve]`;
+  });
+}
+
 
 function toInt(v: any): number | null {
   const m = String(v).replace(/,/g, "").match(/-?\d+/);
