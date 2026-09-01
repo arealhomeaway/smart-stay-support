@@ -357,6 +357,7 @@ function ContactsTab({ hub }: { hub: Hub }) {
           </CardContent>
         </Card>
       ))}
+      </div>
     </div>
   );
 }
