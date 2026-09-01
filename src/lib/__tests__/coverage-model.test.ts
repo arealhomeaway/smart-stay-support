@@ -151,10 +151,10 @@ describe("Central-time windows", () => {
   });
 
   it("reads weekday and minute in Central regardless of server time", () => {
-    // 2026-03-09T02:30:00Z is Sunday 8:30 p.m. Central on 2026-03-08.
+    // DST has already started, so 2026-03-09T02:30:00Z is Sunday 9:30 p.m. CDT.
     const { weekday, minutes } = localWeekdayMinutes(new Date("2026-03-09T02:30:00Z"), "America/Chicago");
     expect(weekday).toBe(0);
-    expect(minutes).toBe(20 * 60 + 30);
+    expect(minutes).toBe(21 * 60 + 30);
   });
 
   it("treats midnight Central as minute 0, not 1440", () => {
