@@ -18,25 +18,6 @@ export const Route = createFileRoute("/api/public/bz-probe")({
           scanHomes?: number[];
         };
         const out: Record<string, unknown> = {};
-        if (body.op === "people") {
-          const mod = await import("@/lib/breezeway-people.server");
-          out["people:sync"] = await mod.syncBreezewayPeople();
-          out["people:audit"] = await mod.breezewayPeopleAudit();
-        }
-        if (body.op === "photos") {
-          const mod = await import("@/lib/breezeway-workorders.server");
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data } = await supabaseAdmin
-            .from("breezeway_work_orders")
-            .select("id, name, photo_count")
-            .gt("photo_count", 0)
-            .limit(body.limit ?? 5);
-          const results: unknown[] = [];
-          for (const wo of (data ?? []) as { id: string; name: string | null }[]) {
-            results.push({ name: wo.name, ...(await mod.syncWorkOrderPhotos(wo.id)) });
-          }
-          out["photos"] = results;
-        }
         for (const home of body.scanHomes ?? []) {
           try {
             const data = await breezewayRequest<{ results?: { id: number; photos?: unknown[] }[] }>(
