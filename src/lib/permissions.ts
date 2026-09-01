@@ -62,6 +62,7 @@ export type Capability =
   | "playbooks_view"
   | "coaching"
   | "coaching_manage"
+  | "ticket_create"
   | "matters_all"
   | "matters_assigned"
   | "guest_contact"
@@ -79,7 +80,8 @@ export type Capability =
   | "vendor_admin"
   | "view_as";
 
-const STAFF_BASE: Capability[] = ["matters_assigned", "playbooks_view", "coaching"];
+// Creating a ticket is internal-staff work. Vendors and homeowners never get it.
+const STAFF_BASE: Capability[] = ["matters_assigned", "playbooks_view", "coaching", "ticket_create"];
 
 const SUPERVISOR_CAPS: Capability[] = [
   ...STAFF_BASE,

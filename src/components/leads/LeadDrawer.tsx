@@ -264,6 +264,17 @@ export function LeadDrawer({
         </SheetHeader>
 
         <div className="space-y-5 pb-10">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Something operational to handle for this lead?
+            </p>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/tickets/new" search={{ lead: lead.id, from: "lead" }}>
+                Log a ticket
+              </Link>
+            </Button>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <Chip className={stateChip(stageState(lead.stage))}>{STAGE_LABELS[lead.stage]}</Chip>
             <Chip>{SOURCE_LABELS[lead.source]}</Chip>
