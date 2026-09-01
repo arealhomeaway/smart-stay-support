@@ -365,25 +365,21 @@ export async function syncMailbox(
 
   let messages: GraphMessage[] = [];
   try {
-    messages = await fetchInbox(limit, checkpoint);
+    messages = await fetchTriggerMail(limit, checkpoint);
   } catch (err) {
-    return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the inbox." };
+    return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the mailbox." };
   }
 
   base.scanned = messages.length;
-  let highWater = checkpoint;
 
   for (const msg of messages) {
-    if (msg.receivedDateTime && new Date(msg.receivedDateTime) > new Date(highWater)) {
-      highWater = msg.receivedDateTime;
-    }
     const outcome = await processMessage(db, msg, dryRun);
     applyOutcome(base, outcome);
   }
 
-  // Advance the checkpoint only for mail we actually looked at, so a failure
-  // never silently skips the next run past unread work.
-  if (!dryRun && highWater !== checkpoint) await writeCheckpoint(db, highWater);
+  // The checkpoint is the activation line, not a read cursor: it stays where
+  // it is so a message categorised days after it arrived is still eligible.
+
 
   if (!dryRun) {
     const settled = await syncTerminalStates(db);
