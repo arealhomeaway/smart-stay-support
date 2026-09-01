@@ -163,7 +163,7 @@ function HubHeader({ hub }: { hub: Hub }) {
   );
 }
 
-function Stat({ label: l, value, tone }: { label: string; value: string | number; tone?: "danger" | "ok" }) {
+function Stat({ label: l, value, tone }: { label: string; value: string | number; tone?: "danger" | "ok" | undefined }) {
   return (
     <div className="rounded-lg border border-border p-4">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{l}</div>
