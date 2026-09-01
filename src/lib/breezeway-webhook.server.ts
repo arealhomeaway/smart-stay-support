@@ -414,6 +414,10 @@ export async function verifyAndFinalizeTask(
   // exactly the same way. Never changes Resolve state, never fails delivery.
   if (!isFixture) await noteOutboundAcknowledgement(taskId);
 
+  // Refresh the mirrored Work Order so Operations sees the change in Resolve.
+  // Mirror only: it never rewrites a Resolve Ticket or its status.
+  if (!isFixture) await refreshMirroredWorkOrder(taskId);
+
   return { outcome: "processed", reason: "Verified pilot task update", taskId };
 }
 
