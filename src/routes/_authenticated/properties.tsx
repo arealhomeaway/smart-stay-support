@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
 import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
+import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/properties")({
@@ -64,6 +65,7 @@ function PropertiesPage() {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [enriching, setEnriching] = useState(false);
 
   const fetchListings = useServerFn(listOwnerRezListings);
   const { data: ownerRez } = useQuery({
