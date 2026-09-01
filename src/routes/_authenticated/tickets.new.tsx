@@ -33,6 +33,14 @@ import {
   priorityTone,
   slaDueDates,
 } from "@/lib/tickets";
+import {
+  SITUATIONS,
+  SITUATION_GROUPS,
+  priorityReason,
+  resolveWorkType,
+  situationById,
+} from "@/lib/situations";
+
 
 export const Route = createFileRoute("/_authenticated/tickets/new")({
   head: () => ({
@@ -62,12 +70,15 @@ function NewMatter() {
   const [mode, setMode] = useState<Mode>("ticket");
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
     description: "",
     property_id: "",
+    situation_id: "",
     work_type_id: "",
+
     guest_impact: "none",
     occupancy_status: "vacant",
     priority: "p3",
@@ -149,6 +160,25 @@ function NewMatter() {
     () => workTypes?.find((w) => w.id === form.work_type_id) ?? null,
     [workTypes, form.work_type_id],
   );
+
+  /**
+   * Situation → work type. Presentation only: it fills the same work_type_id
+   * the select always filled, plus sensible starting answers for the two
+   * contextual questions. The rubric still decides priority.
+   */
+  function pickSituation(id: string) {
+    const situation = situationById(id);
+    const resolved = resolveWorkType(situation, workTypes);
+    setShowCatalog(Boolean(situation?.openCatalog) || (Boolean(situation) && !resolved));
+    setForm((f) => ({
+      ...f,
+      situation_id: id,
+      work_type_id: resolved?.id ?? "",
+      guest_impact: situation?.guestImpact ?? f.guest_impact,
+      occupancy_status: situation?.occupancy ?? f.occupancy_status,
+    }));
+  }
+
 
   const role = useMemo(
     () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
@@ -416,23 +446,88 @@ function NewMatter() {
 
             {form.property_id && <PropertyContactPanel propertyId={form.property_id} />}
 
-            <div className="space-y-2">
-              <Label>Work type</Label>
-              <Select
-                value={form.work_type_id}
-                onValueChange={(v) => setForm({ ...form, work_type_id: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pick the closest match" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(workTypes ?? []).map((w) => (
-                    <SelectItem key={w.id} value={w.id}>
-                      {w.name} · suggests {w.default_priority.toUpperCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div>
+                <Label>What is happening?</Label>
+                <p className="text-xs text-muted-foreground">
+                  Pick the situation. Resolve sets the work type, the owning seat and the clocks.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {SITUATION_GROUPS.map((g) => (
+                  <div key={g.key} className="space-y-2">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {g.label}
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {SITUATIONS.filter((s) => s.group === g.key).map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => pickSituation(s.id)}
+                          className={`resolve-press rounded-lg border p-3 text-left transition ${
+                            form.situation_id === s.id
+                              ? "border-primary bg-primary/5 shadow-sm"
+                              : "border-border hover:border-primary/40 hover:bg-secondary"
+                          }`}
+                        >
+                          <span className="block text-sm font-medium">{s.label}</span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">{s.hint}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {workType && mode === "ticket" && !showCatalog && (
+                <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className={priorityTone(form.priority)}>
+                      {meta.short}
+                    </Badge>
+                    <span className="font-medium">{workType.name}</span>
+                    {role && <span className="text-muted-foreground">· {role.name}</span>}
+                  </div>
+                  <p className="mt-2 text-muted-foreground">
+                    {meta.short} because{" "}
+                    {priorityReason(form.guest_impact, form.occupancy_status, workType.default_priority)}.
+                  </p>
+                </div>
+              )}
+
+              {(showCatalog || !workType) && (
+                <div className="space-y-2">
+                  <Label>Work type</Label>
+                  <Select
+                    value={form.work_type_id}
+                    onValueChange={(v) => setForm({ ...form, work_type_id: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pick the closest match" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(workTypes ?? []).map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.name} · suggests {w.default_priority.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {workType && !showCatalog && (
+                <button
+                  type="button"
+                  onClick={() => setShowCatalog(true)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Not right? Change classification
+                </button>
+              )}
+
               {workType && mode === "ticket" && (
                 <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
                   <p className="font-medium">Operating standard</p>
@@ -456,6 +551,7 @@ function NewMatter() {
                 </div>
               )}
             </div>
+
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
