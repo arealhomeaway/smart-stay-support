@@ -271,11 +271,11 @@ function OnboardingWorkspace() {
                       stages={ONBOARDING_STAGES.map((s) => ({
                         key: s.value,
                         label: s.label,
-                        hint: (() => {
+                        ...(() => {
                           const inStage = tasks.filter((t) => t.stage === s.value);
-                          if (inStage.length === 0) return undefined;
+                          if (inStage.length === 0) return {};
                           const done = inStage.filter((t) => t.status === "complete").length;
-                          return `${done}/${inStage.length} done`;
+                          return { hint: `${done}/${inStage.length} done` };
                         })(),
                       }))}
                       currentIndex={Math.max(
