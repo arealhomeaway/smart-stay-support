@@ -239,7 +239,22 @@
   --module-approval: oklch(0.72 0.1 315);
   --module-coverage: oklch(0.72 0.11 268);
   --module-override: oklch(0.72 0.13 48.4);
+  --triage: oklch(0.79 0.022 250);
 }
+
+/**
+ * Cross-team triage blocks: slate colour plus a diagonal hatch, so they are
+ * distinguishable from a solid team block without relying on colour alone.
+ */
+@utility triage-block {
+  background-color: color-mix(in oklab, var(--triage) 12%, transparent);
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--triage) 30%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+}
+
 
 
 @layer base {
