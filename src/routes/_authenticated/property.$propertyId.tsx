@@ -139,28 +139,62 @@ function PropertyHubPage() {
 
 function HubHeader({ hub }: { hub: Hub }) {
   const p = hub.property;
+  const facts = [
+    p.bedrooms == null ? null : `${p.bedrooms} bd`,
+    p.bathrooms == null ? null : `${p.bathrooms} ba`,
+    p.maxGuests == null ? null : `sleeps ${p.maxGuests}`,
+  ].filter(Boolean) as string[];
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Building2 className="size-5 text-primary" />
-            <h1 className="text-2xl font-semibold">{p.nickname || p.name}</h1>
-            {p.isDemo && <Badge variant="outline">Demo</Badge>}
-          </div>
-          <p className="mt-1 text-muted-foreground">{p.address || "No address on file"}</p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            {p.market && <Badge variant="secondary">{p.market}</Badge>}
-            {p.lifecycleStatus && <Badge variant="outline">{label(p.lifecycleStatus)}</Badge>}
-            {p.onboardingStage && <Badge variant="outline">Stage: {label(p.onboardingStage)}</Badge>}
-            <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Active" : "Inactive"}</Badge>
-          </div>
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="grid gap-0 md:grid-cols-[320px_1fr]">
+        <div className="relative aspect-[4/3] bg-muted md:aspect-auto md:min-h-[220px]">
+          {p.photoUrl ? (
+            <img
+              src={p.photoUrl}
+              alt={`${p.nickname || p.name} — primary listing photo`}
+              className="absolute inset-0 size-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+              <Building2 className="size-8" />
+              <span className="text-xs">No listing photo on file</span>
+            </div>
+          )}
         </div>
-        {hub.viewer.staff && (
-          <Link to="/properties" className="text-sm text-primary underline">
-            All properties
-          </Link>
-        )}
+        <div className="flex flex-wrap items-start justify-between gap-4 p-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <Building2 className="size-5 text-primary" />
+              <h1 className="text-2xl font-semibold">{p.nickname || p.name}</h1>
+              {p.isDemo && <Badge variant="outline">Demo</Badge>}
+            </div>
+            <p className="mt-1 text-muted-foreground">{p.address || "No address on file"}</p>
+            {facts.length > 0 && (
+              <p className="mt-1 text-sm text-muted-foreground">{facts.join(" · ")}</p>
+            )}
+            {hub.viewer.staff && hub.ownerRecord && (
+              <p className="mt-2 text-sm">
+                <span className="text-muted-foreground">Owner: </span>
+                <span className="font-medium">{hub.ownerRecord.name ?? "Unnamed owner record"}</span>
+                {hub.ownerRecord.propertyCount > 1 && (
+                  <span className="text-muted-foreground"> · {hub.ownerRecord.propertyCount} homes</span>
+                )}
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              {p.market && <Badge variant="secondary">{p.market}</Badge>}
+              {p.lifecycleStatus && <Badge variant="outline">{label(p.lifecycleStatus)}</Badge>}
+              {p.onboardingStage && <Badge variant="outline">Stage: {label(p.onboardingStage)}</Badge>}
+              <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Active" : "Inactive"}</Badge>
+            </div>
+          </div>
+          {hub.viewer.staff && (
+            <Link to="/properties" className="text-sm text-primary underline">
+              All properties
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -274,11 +308,36 @@ function DetailsTab({ hub }: { hub: Hub }) {
 }
 
 function ContactsTab({ hub }: { hub: Hub }) {
-  if (hub.contacts.length === 0) {
+  const owner = hub.ownerRecord;
+  if (!owner && hub.contacts.length === 0) {
     return <Empty text="No structured contact records for this home yet. Contacts come from the owner record, not free text." />;
   }
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="space-y-4">
+      {owner && (
+        <Card className="border-primary/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="size-4 text-primary" />
+              {owner.name ?? "Unnamed owner record"}
+              <Badge variant="secondary">Owner of record</Badge>
+            </CardTitle>
+            <CardDescription>
+              {owner.source === "ownerrez" ? "OwnerRez owner record" : owner.source}
+              {owner.propertyCount > 1 ? ` · owns ${owner.propertyCount} homes with ARHA` : " · single home"}
+              {` · as of ${owner.syncedAt.slice(0, 10)}`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-1 text-sm sm:grid-cols-2">
+            <p>{owner.email ?? "No email on file"}</p>
+            <p>{owner.phone ?? "No phone on file"}</p>
+            <p className="text-muted-foreground">
+              {[owner.city, owner.state].filter(Boolean).join(", ") || "No mailing city on file"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+      <div className="grid gap-3 md:grid-cols-2">
       {hub.contacts.map((c) => (
         <Card key={c.id}>
           <CardHeader className="pb-2">
@@ -298,6 +357,7 @@ function ContactsTab({ hub }: { hub: Hub }) {
           </CardContent>
         </Card>
       ))}
+      </div>
     </div>
   );
 }

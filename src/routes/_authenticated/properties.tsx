@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
 import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
+import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 
 export const Route = createFileRoute("/_authenticated/properties")({
@@ -64,6 +65,7 @@ function PropertiesPage() {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [enriching, setEnriching] = useState(false);
 
   const fetchListings = useServerFn(listOwnerRezListings);
   const { data: ownerRez } = useQuery({
@@ -95,6 +97,25 @@ function PropertiesPage() {
       toast.error(err instanceof Error ? err.message : "Import failed");
     } finally {
       setImporting(false);
+    }
+  }
+
+  const runEnrichment = useServerFn(syncPropertyEnrichment);
+
+  async function refreshInfo() {
+    setEnriching(true);
+    try {
+      const res = await runEnrichment();
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
+      toast.success(res.message);
+      await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Refresh failed");
+    } finally {
+      setEnriching(false);
     }
   }
 
@@ -160,6 +181,9 @@ function PropertiesPage() {
         <Button variant="outline" onClick={importAll} disabled={importing}>
           {importing ? "Importing…" : "Import from OwnerRez"}
         </Button>
+        <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
+          {enriching ? "Refreshing…" : "Refresh property info & photos"}
+        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>Add property</Button>
@@ -217,7 +241,19 @@ function PropertiesPage() {
             const all = data.tickets.filter((t) => t.property_id === p.id);
             const openCount = all.filter((t) => OPEN_STATUSES.includes(t.status)).length;
             return (
-              <Card key={p.id}>
+              <Card key={p.id} className="overflow-hidden">
+                {p.primary_photo_url ? (
+                  <img
+                    src={p.primary_photo_url}
+                    alt={`${p.nickname ?? p.name} — listing photo`}
+                    className="h-40 w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-40 w-full items-center justify-center bg-muted text-xs text-muted-foreground">
+                    No listing photo on file
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle>
                     <Link

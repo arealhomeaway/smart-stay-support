@@ -3236,11 +3236,15 @@ export type Database = {
           address_line1: string | null
           archive_reason: string | null
           archived_at: string | null
+          bathrooms: number | null
+          bedrooms: number | null
           breezeway_mapping_note: string | null
           breezeway_mapping_state: string
           breezeway_mapping_verified_at: string | null
           breezeway_property_id: string | null
           breezeway_synced_at: string | null
+          check_in_time: string | null
+          check_out_time: string | null
           city: string | null
           created_at: string
           created_by: string | null
@@ -3253,20 +3257,32 @@ export type Database = {
           last_quarterly_review_at: string | null
           latitude: number | null
           lifecycle_status: string
+          listing_public_url: string | null
+          living_area_sqft: number | null
           longitude: number | null
           market: string | null
+          max_guests: number | null
           name: string
           nickname: string | null
           notes: string | null
           onboarding_owner: string | null
           onboarding_stage: string | null
           onboarding_started_at: string | null
+          owner_record_id: string | null
+          ownerrez_owner_id: string | null
           ownerrez_property_id: string | null
           ownerrez_synced_at: string | null
           planned_closing_on: string | null
           postal_code: string | null
+          primary_photo_medium_url: string | null
+          primary_photo_source: string | null
+          primary_photo_synced_at: string | null
+          primary_photo_thumb_url: string | null
+          primary_photo_url: string | null
+          property_type: string | null
           quarterly_review_due_on: string
           state: string | null
+          time_zone: string | null
           unit: string | null
           updated_at: string
           wifi_notes: string | null
@@ -3279,11 +3295,15 @@ export type Database = {
           address_line1?: string | null
           archive_reason?: string | null
           archived_at?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           breezeway_mapping_note?: string | null
           breezeway_mapping_state?: string
           breezeway_mapping_verified_at?: string | null
           breezeway_property_id?: string | null
           breezeway_synced_at?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
@@ -3296,20 +3316,32 @@ export type Database = {
           last_quarterly_review_at?: string | null
           latitude?: number | null
           lifecycle_status?: string
+          listing_public_url?: string | null
+          living_area_sqft?: number | null
           longitude?: number | null
           market?: string | null
+          max_guests?: number | null
           name: string
           nickname?: string | null
           notes?: string | null
           onboarding_owner?: string | null
           onboarding_stage?: string | null
           onboarding_started_at?: string | null
+          owner_record_id?: string | null
+          ownerrez_owner_id?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
           planned_closing_on?: string | null
           postal_code?: string | null
+          primary_photo_medium_url?: string | null
+          primary_photo_source?: string | null
+          primary_photo_synced_at?: string | null
+          primary_photo_thumb_url?: string | null
+          primary_photo_url?: string | null
+          property_type?: string | null
           quarterly_review_due_on?: string
           state?: string | null
+          time_zone?: string | null
           unit?: string | null
           updated_at?: string
           wifi_notes?: string | null
@@ -3322,11 +3354,15 @@ export type Database = {
           address_line1?: string | null
           archive_reason?: string | null
           archived_at?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           breezeway_mapping_note?: string | null
           breezeway_mapping_state?: string
           breezeway_mapping_verified_at?: string | null
           breezeway_property_id?: string | null
           breezeway_synced_at?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
@@ -3339,25 +3375,89 @@ export type Database = {
           last_quarterly_review_at?: string | null
           latitude?: number | null
           lifecycle_status?: string
+          listing_public_url?: string | null
+          living_area_sqft?: number | null
           longitude?: number | null
           market?: string | null
+          max_guests?: number | null
           name?: string
           nickname?: string | null
           notes?: string | null
           onboarding_owner?: string | null
           onboarding_stage?: string | null
           onboarding_started_at?: string | null
+          owner_record_id?: string | null
+          ownerrez_owner_id?: string | null
           ownerrez_property_id?: string | null
           ownerrez_synced_at?: string | null
           planned_closing_on?: string | null
           postal_code?: string | null
+          primary_photo_medium_url?: string | null
+          primary_photo_source?: string | null
+          primary_photo_synced_at?: string | null
+          primary_photo_thumb_url?: string | null
+          primary_photo_url?: string | null
+          property_type?: string | null
           quarterly_review_due_on?: string
           state?: string | null
+          time_zone?: string | null
           unit?: string | null
           updated_at?: string
           wifi_notes?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_owner_record_id_fkey"
+            columns: ["owner_record_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_field_provenance: {
+        Row: {
+          as_of: string
+          created_at: string
+          field_key: string
+          id: string
+          note: string | null
+          property_id: string
+          source_record_id: string | null
+          updated_at: string
+          value_source: string
+        }
+        Insert: {
+          as_of?: string
+          created_at?: string
+          field_key: string
+          id?: string
+          note?: string | null
+          property_id: string
+          source_record_id?: string | null
+          updated_at?: string
+          value_source: string
+        }
+        Update: {
+          as_of?: string
+          created_at?: string
+          field_key?: string
+          id?: string
+          note?: string | null
+          property_id?: string
+          source_record_id?: string | null
+          updated_at?: string
+          value_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_field_provenance_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       property_handoffs: {
         Row: {
@@ -3524,6 +3624,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      property_owners: {
+        Row: {
+          active: boolean
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          source: string
+          source_owner_id: string
+          state: string | null
+          synced_at: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          source?: string
+          source_owner_id: string
+          state?: string | null
+          synced_at?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          source?: string
+          source_owner_id?: string
+          state?: string | null
+          synced_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       property_vendor_coverage: {
         Row: {

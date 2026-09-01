@@ -183,10 +183,16 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     {
       id: "facts",
       title: "Property facts",
-      blurb: "Bedrooms, occupancy, stay type and building systems arrive with the approved PID field map.",
+      blurb: "Bedrooms, occupancy and stay posture come from OwnerRez. Building systems arrive with the PID field map.",
       fields: [
-        pending("Bedrooms / bathrooms / sleeps", "bedrooms", "OwnerRez"),
-        pending("Maximum occupancy", "max_occupancy", "OwnerRez"),
+        f("Bedrooms", "bedrooms", p.bedrooms == null ? null : String(p.bedrooms), "OwnerRez", p.ownerrez_synced_at, true),
+        f("Bathrooms", "bathrooms", p.bathrooms == null ? null : String(p.bathrooms), "OwnerRez", p.ownerrez_synced_at, true),
+        f("Sleeps", "max_guests", p.max_guests == null ? null : String(p.max_guests), "OwnerRez", p.ownerrez_synced_at, true),
+        f("Living area", "living_area_sqft", p.living_area_sqft == null ? null : `${p.living_area_sqft} sq ft`, "OwnerRez", p.ownerrez_synced_at, true),
+        f("Property type", "property_type", p.property_type, "OwnerRez", p.ownerrez_synced_at, true),
+        f("Check-in / check-out", "check_times", p.check_in_time || p.check_out_time ? `${p.check_in_time ?? "—"} / ${p.check_out_time ?? "—"}` : null, "OwnerRez", p.ownerrez_synced_at, true),
+        f("Time zone", "time_zone", p.time_zone, "OwnerRez", p.ownerrez_synced_at, false),
+        f("Public listing", "listing_public_url", p.listing_public_url, "OwnerRez", p.ownerrez_synced_at, true),
         pending("Stay type (STR / MTR)", "stay_type", "ARHA"),
         pending("HVAC, water heater, appliances", "building_systems", "ARHA PID"),
       ],
@@ -252,6 +258,46 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
 
   const ownerVisibleSections = ["identity", "location", "facts", "onboarding"];
 
+  // Structured owner record (deduplicated, one per real owner). Staff only.
+  let ownerRecord: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    city: string | null;
+    state: string | null;
+    source: string;
+    syncedAt: string;
+    propertyCount: number;
+  } | null = null;
+  if (staff && p.owner_record_id) {
+    const [{ data: rec }, { count }] = await Promise.all([
+      supabaseAdmin
+        .from("property_owners")
+        .select("id, name, email, phone, city, state, source, synced_at")
+        .eq("id", p.owner_record_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("properties")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_record_id", p.owner_record_id)
+        .is("archived_at", null),
+    ]);
+    if (rec) {
+      ownerRecord = {
+        id: rec.id,
+        name: rec.name,
+        email: rec.email,
+        phone: rec.phone,
+        city: rec.city,
+        state: rec.state,
+        source: rec.source,
+        syncedAt: rec.synced_at,
+        propertyCount: count ?? 1,
+      };
+    }
+  }
+
   return {
     viewer: { staff, supervisor: isSupervisor(viewer), owner: owns },
     property: {
@@ -264,7 +310,14 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       onboardingStage: p.onboarding_stage,
       isDemo: p.is_demo,
       active: p.active,
+      photoUrl: p.primary_photo_url,
+      photoThumbUrl: p.primary_photo_thumb_url ?? p.primary_photo_url,
+      photoSource: p.primary_photo_source,
+      bedrooms: p.bedrooms,
+      bathrooms: p.bathrooms,
+      maxGuests: p.max_guests,
     },
+    ownerRecord,
     overview: {
       openTickets: openTickets.length,
       p1Tickets: openTickets.filter((t) => t.priority === "p1").length,
