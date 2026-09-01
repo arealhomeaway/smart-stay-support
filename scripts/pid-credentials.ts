@@ -132,7 +132,13 @@ function classifyNarrative(
   const c = context.toLowerCase();
 
   // Owner-held personal streaming accounts stay with the owner.
-  if (/do not share|owner'?s (own|personal)|personal account/.test(c) && /netflix|hulu|disney|prime|roku/.test(c)) {
+  // Only the account itself is owner-held; a guest profile code beside it is
+  // ARHA-managed and staff need it.
+  if (
+    /login|password|email|account/.test(l) &&
+    /do not share|owner'?s (own|personal)|personal account/.test(c) &&
+    /netflix|hulu|disney|prime|roku/.test(c)
+  ) {
     return "exclude";
   }
   if (/roku|netflix|hulu|disney|prime video|streaming/.test(c)) {
