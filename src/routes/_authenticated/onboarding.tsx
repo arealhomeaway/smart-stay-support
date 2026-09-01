@@ -337,7 +337,9 @@ function OnboardingWorkspace() {
                       disabled={readOnly || !can("handoff_request")}
                       onSave={(values) => saveTask.mutate({ data: values })}
                     />
+                    </div>
                   </CardContent>
+
                 </Card>
 
                 <SchedulePanel
