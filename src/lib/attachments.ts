@@ -13,12 +13,40 @@ export const ATTACHMENT_BUCKET = "resolve-attachments";
 /** 50 MB — a phone video clip fits; anything larger fails fast on site. */
 export const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
-export type AttachmentEntity = "ticket" | "onboarding_task";
+export type AttachmentEntity = "ticket" | "onboarding_task" | "property";
 
-export const ATTACHMENT_ENTITIES: AttachmentEntity[] = ["ticket", "onboarding_task"];
+export const ATTACHMENT_ENTITIES: AttachmentEntity[] = ["ticket", "onboarding_task", "property"];
 
 /** Visibility of a stored file. */
 export type AttachmentVisibility = "internal" | "owner_shared";
+
+/**
+ * How a property-level record is filed. Ticket and task files keep their
+ * record as their context and leave this empty.
+ */
+export type DocumentCategory =
+  | "insurance"
+  | "hoa"
+  | "permit_license"
+  | "warranty"
+  | "manual"
+  | "reference"
+  | "other";
+
+export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string }[] = [
+  { value: "insurance", label: "Insurance declaration" },
+  { value: "hoa", label: "HOA document" },
+  { value: "permit_license", label: "Permit or licence" },
+  { value: "warranty", label: "Warranty" },
+  { value: "manual", label: "Manual" },
+  { value: "reference", label: "Property reference" },
+  { value: "other", label: "Other property record" },
+];
+
+export function documentCategoryLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return DOCUMENT_CATEGORIES.find((c) => c.value === value)?.label ?? null;
+}
 
 /** Exactly what staff and owners may attach. Anything else is refused. */
 export const ALLOWED_MIME_TYPES = [

@@ -42,6 +42,7 @@ export type AttachmentRow = {
   entity_id: string;
   property_id: string | null;
   note: string | null;
+  category?: string | null;
   created_at: string;
 };
 
@@ -116,6 +117,16 @@ type RecordInfo = { propertyId: string | null; closed: boolean; label: string; i
 
 async function loadRecord(entityType: AttachmentEntity, entityId: string): Promise<RecordInfo> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  if (entityType === "property") {
+    const { data, error } = await supabaseAdmin
+      .from("properties")
+      .select("id, name, is_demo")
+      .eq("id", entityId)
+      .maybeSingle();
+    if (error || !data) throw new Error("That property could not be found.");
+    // A home is never "closed" — property records stay open for the life of the home.
+    return { propertyId: data.id, closed: false, label: data.name, isDemo: data.is_demo };
+  }
   if (entityType === "ticket") {
     const { data, error } = await supabaseAdmin
       .from("tickets")
@@ -168,7 +179,7 @@ export async function listAttachments(viewer: Viewer, entityType: AttachmentEnti
   const { data, error } = await supabaseAdmin
     .from("documents")
     .select(
-      "id, title, original_filename, mime_type, size_bytes, kind, visibility, requested_from, upload_status, uploaded_by, uploaded_at, entity_type, entity_id, property_id, note, created_at",
+      "id, title, original_filename, mime_type, size_bytes, kind, visibility, requested_from, upload_status, uploaded_by, uploaded_at, entity_type, entity_id, property_id, note, category, created_at",
     )
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
@@ -220,6 +231,7 @@ export async function beginUpload(
     sizeBytes: number;
     visibility?: AttachmentVisibility;
     note?: string | null;
+    category?: string | null;
     fulfilsRequestId?: string | null;
   },
 ) {
@@ -281,6 +293,7 @@ export async function beginUpload(
         upload_status: "pending",
         uploaded_by: viewer.userId,
         note: input.note ?? null,
+        category: input.entityType === "property" ? (input.category ?? "other") : null,
         is_demo: record.isDemo,
       })
       .select("id")

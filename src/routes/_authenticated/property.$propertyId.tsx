@@ -25,6 +25,8 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { documentCategoryLabel } from "@/lib/attachments";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
@@ -310,7 +312,10 @@ function OnboardingTab({ hub }: { hub: Hub }) {
             <ListChecks className="size-4 text-primary" /> Project progress
           </CardTitle>
           <CardDescription>
-            {o.complete} of {o.total} tasks complete{o.stage ? ` · stage ${label(o.stage)}` : ""}
+            {o.complete} of {o.total} steps complete{o.stage ? ` · stage ${label(o.stage)}` : ""}
+            {o.subtaskTotal
+              ? ` · ${o.subtaskComplete} of ${o.subtaskTotal} subtasks complete`
+              : ""}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -438,18 +443,32 @@ function OperationsTab({ hub }: { hub: Hub }) {
 }
 
 function DocumentsTab({ hub }: { hub: Hub }) {
+  const propertyPanel = hub.viewer.staff ? (
+    <AttachmentsPanel
+      entityType="property"
+      entityId={hub.property.id}
+      title="Property records"
+      description="Files whose home is the record itself — insurance, HOA, permits and licences, warranties, manuals and reference documents. Anything belonging to a ticket or an onboarding task is uploaded there and appears below; never upload it twice."
+    />
+  ) : null;
+
   if (hub.documents.length === 0) {
     return (
-      <Empty
-        text={
-          hub.viewer.staff
-            ? "No files are attached to this home yet. Files are uploaded on the ticket or onboarding task they belong to."
-            : "No documents have been shared with you for this home yet."
-        }
-      />
+      <div className="space-y-4">
+        {propertyPanel}
+        <Empty
+          text={
+            hub.viewer.staff
+              ? "Nothing is filed against a ticket or onboarding task for this home yet. Those files are uploaded on the record they belong to."
+              : "No documents have been shared with you for this home yet."
+          }
+        />
+      </div>
     );
   }
   return (
+    <div className="space-y-4">
+    {propertyPanel}
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
@@ -467,7 +486,8 @@ function DocumentsTab({ hub }: { hub: Hub }) {
             <div>
               <div className="font-medium">{d.title}</div>
               <div className="text-xs text-muted-foreground">
-                {label(d.kind)} · {label(d.entityType)}
+                {label(d.kind)} · {d.entityType === "property" ? "Property record" : label(d.entityType)}
+                {d.category ? ` · ${documentCategoryLabel(d.category) ?? label(d.category)}` : ""}
                 {d.uploadedAt ? ` · ${d.uploadedAt.slice(0, 10)}` : ""}
               </div>
             </div>
@@ -481,16 +501,17 @@ function DocumentsTab({ hub }: { hub: Hub }) {
                 <Link to="/tickets/$ticketId" params={{ ticketId: d.entityId }} className="text-primary underline">
                   Open
                 </Link>
-              ) : (
+              ) : d.entityType === "onboarding_task" ? (
                 <Link to="/onboarding" className="text-primary underline">
                   Open
                 </Link>
-              )}
+              ) : null}
             </div>
           </div>
         ))}
       </CardContent>
     </Card>
+    </div>
   );
 }
 

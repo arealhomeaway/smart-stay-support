@@ -592,6 +592,7 @@ export type Database = {
       documents: {
         Row: {
           archived_at: string | null
+          category: string | null
           created_at: string
           delete_reason: string | null
           deleted_at: string | null
@@ -621,6 +622,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          category?: string | null
           created_at?: string
           delete_reason?: string | null
           deleted_at?: string | null
@@ -650,6 +652,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          category?: string | null
           created_at?: string
           delete_reason?: string | null
           deleted_at?: string | null
