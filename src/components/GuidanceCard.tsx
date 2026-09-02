@@ -45,7 +45,9 @@ function useActivePlaybooks() {
       const { data, error } = await supabase
         .from("playbooks")
         .select("*")
-        .eq("status", "active");
+        // `active` is the legacy stored value for an approved Playbook.
+        .in("status", ["approved", "active"]);
+
       if (error) throw error;
       return (data as PlaybookRow[]).map(parsePlaybook);
     },
