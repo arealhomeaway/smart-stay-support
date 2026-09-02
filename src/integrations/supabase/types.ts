@@ -6179,6 +6179,301 @@ export type Database = {
           },
         ]
       }
+      work_order_events: {
+        Row: {
+          author_id: string | null
+          body: string | null
+          created_at: string
+          detail: Json
+          event_type: string
+          id: string
+          is_demo: boolean
+          work_order_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body?: string | null
+          created_at?: string
+          detail?: Json
+          event_type: string
+          id?: string
+          is_demo?: boolean
+          work_order_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string | null
+          created_at?: string
+          detail?: Json
+          event_type?: string
+          id?: string
+          is_demo?: boolean
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_events_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          approval_decided_at: string | null
+          approval_id: string | null
+          approval_note: string | null
+          approval_requested_at: string | null
+          approval_requested_by: string | null
+          approval_status: string
+          approved_amount: number | null
+          assigned_to: string | null
+          authority_level: string | null
+          claim_id: string | null
+          closed_at: string | null
+          closed_by: string | null
+          closure_note: string | null
+          contractual_exception: boolean
+          created_at: string
+          created_by: string | null
+          diagnosis_uncertain: boolean
+          emergency_reason: string | null
+          evidence_complete: boolean
+          final_cost: number | null
+          follow_up_ticket_id: string | null
+          guest_notified_at: string | null
+          id: string
+          invoice_reference: string | null
+          is_demo: boolean
+          missed_commitments: number
+          occupied_now: boolean
+          owner_requested_comparison: boolean
+          permanent_repair_needed: boolean
+          phase: string
+          policy_version: string
+          priority: string
+          property_id: string | null
+          quote_amount: number | null
+          quote_received_at: string | null
+          quote_requested_at: string | null
+          recovery_id: string | null
+          reopen_reason: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          replacement_cost: number | null
+          scheduled_for: string | null
+          scope: string | null
+          second_quote_amount: number | null
+          service_category: string | null
+          temporary_mitigation: string | null
+          ticket_id: string | null
+          title: string
+          updated_at: string
+          vendor_acknowledged_at: string | null
+          vendor_arrived_at: string | null
+          vendor_completed_at: string | null
+          vendor_contacted_at: string | null
+          vendor_eta_at: string | null
+          vendor_name: string | null
+          vendor_org_id: string | null
+          vendor_report: string | null
+          warranty_contact: string | null
+          warranty_contacted_at: string | null
+          warranty_eta_at: string | null
+          warranty_kind: string | null
+          warranty_may_apply: boolean
+          warranty_override_at: string | null
+          warranty_override_by: string | null
+          warranty_override_reason: string | null
+        }
+        Insert: {
+          approval_decided_at?: string | null
+          approval_id?: string | null
+          approval_note?: string | null
+          approval_requested_at?: string | null
+          approval_requested_by?: string | null
+          approval_status?: string
+          approved_amount?: number | null
+          assigned_to?: string | null
+          authority_level?: string | null
+          claim_id?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_note?: string | null
+          contractual_exception?: boolean
+          created_at?: string
+          created_by?: string | null
+          diagnosis_uncertain?: boolean
+          emergency_reason?: string | null
+          evidence_complete?: boolean
+          final_cost?: number | null
+          follow_up_ticket_id?: string | null
+          guest_notified_at?: string | null
+          id?: string
+          invoice_reference?: string | null
+          is_demo?: boolean
+          missed_commitments?: number
+          occupied_now?: boolean
+          owner_requested_comparison?: boolean
+          permanent_repair_needed?: boolean
+          phase?: string
+          policy_version?: string
+          priority?: string
+          property_id?: string | null
+          quote_amount?: number | null
+          quote_received_at?: string | null
+          quote_requested_at?: string | null
+          recovery_id?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          replacement_cost?: number | null
+          scheduled_for?: string | null
+          scope?: string | null
+          second_quote_amount?: number | null
+          service_category?: string | null
+          temporary_mitigation?: string | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+          vendor_acknowledged_at?: string | null
+          vendor_arrived_at?: string | null
+          vendor_completed_at?: string | null
+          vendor_contacted_at?: string | null
+          vendor_eta_at?: string | null
+          vendor_name?: string | null
+          vendor_org_id?: string | null
+          vendor_report?: string | null
+          warranty_contact?: string | null
+          warranty_contacted_at?: string | null
+          warranty_eta_at?: string | null
+          warranty_kind?: string | null
+          warranty_may_apply?: boolean
+          warranty_override_at?: string | null
+          warranty_override_by?: string | null
+          warranty_override_reason?: string | null
+        }
+        Update: {
+          approval_decided_at?: string | null
+          approval_id?: string | null
+          approval_note?: string | null
+          approval_requested_at?: string | null
+          approval_requested_by?: string | null
+          approval_status?: string
+          approved_amount?: number | null
+          assigned_to?: string | null
+          authority_level?: string | null
+          claim_id?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_note?: string | null
+          contractual_exception?: boolean
+          created_at?: string
+          created_by?: string | null
+          diagnosis_uncertain?: boolean
+          emergency_reason?: string | null
+          evidence_complete?: boolean
+          final_cost?: number | null
+          follow_up_ticket_id?: string | null
+          guest_notified_at?: string | null
+          id?: string
+          invoice_reference?: string | null
+          is_demo?: boolean
+          missed_commitments?: number
+          occupied_now?: boolean
+          owner_requested_comparison?: boolean
+          permanent_repair_needed?: boolean
+          phase?: string
+          policy_version?: string
+          priority?: string
+          property_id?: string | null
+          quote_amount?: number | null
+          quote_received_at?: string | null
+          quote_requested_at?: string | null
+          recovery_id?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          replacement_cost?: number | null
+          scheduled_for?: string | null
+          scope?: string | null
+          second_quote_amount?: number | null
+          service_category?: string | null
+          temporary_mitigation?: string | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+          vendor_acknowledged_at?: string | null
+          vendor_arrived_at?: string | null
+          vendor_completed_at?: string | null
+          vendor_contacted_at?: string | null
+          vendor_eta_at?: string | null
+          vendor_name?: string | null
+          vendor_org_id?: string | null
+          vendor_report?: string | null
+          warranty_contact?: string | null
+          warranty_contacted_at?: string | null
+          warranty_eta_at?: string | null
+          warranty_kind?: string | null
+          warranty_may_apply?: boolean
+          warranty_override_at?: string | null
+          warranty_override_by?: string | null
+          warranty_override_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_follow_up_ticket_id_fkey"
+            columns: ["follow_up_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_recovery_id_fkey"
+            columns: ["recovery_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_vendor_org_id_fkey"
+            columns: ["vendor_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_projects: {
         Row: {
           archived_at: string | null

@@ -1,0 +1,232 @@
+import { describe, expect, it } from "bun:test";
+import {
+  canClose,
+  closureBlockers,
+  commitmentStatus,
+  derivedStage,
+  evaluateAuthority,
+  nextAction,
+  nextCheckpoint,
+  secondQuoteAdvice,
+  waitingOn,
+  warrantyHint,
+  workOrderBucket,
+} from "@/lib/work-orders";
+
+const NOW = new Date("2026-09-02T12:00:00Z");
+const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60000).toISOString();
+const ahead = (minutes: number) => new Date(NOW.getTime() + minutes * 60000).toISOString();
+
+describe("maintenance authority", () => {
+  it("A — a $225 routine repair stays with James, no owner and no Micah", () => {
+    const v = evaluateAuthority({ phase: "permanent", quote_amount: 225 });
+    expect(v.level).toBe("supervisor");
+    expect(v.ownerApprovalRequired).toBe(false);
+    expect(v.reason).toContain("within ARHA's established authority");
+  });
+
+  it("B — $340 is still within the owner-authorised threshold", () => {
+    expect(evaluateAuthority({ phase: "permanent", quote_amount: 340 }).ownerApprovalRequired).toBe(false);
+  });
+
+  it("C — a $650 permanent repair needs the owner, and says why", () => {
+    const v = evaluateAuthority({ phase: "permanent", quote_amount: 650 });
+    expect(v.level).toBe("owner");
+    expect(v.reason).toContain("exceeds $350");
+  });
+
+  it("a recorded contractual exception keeps a large repair with James", () => {
+    const v = evaluateAuthority({ phase: "permanent", quote_amount: 650, contractual_exception: true });
+    expect(v.ownerApprovalRequired).toBe(false);
+    expect(v.reason).toContain("contractual exception");
+  });
+
+  it("without an amount, a coordinator may still get the quote", () => {
+    expect(evaluateAuthority({ phase: "permanent" }).level).toBe("self");
+  });
+
+  it("D — emergency mitigation proceeds but never carries the permanent repair", () => {
+    const v = evaluateAuthority({ phase: "mitigation", emergency_reason: "water_intrusion", quote_amount: 1500 });
+    expect(v.level).toBe("emergency");
+    expect(v.mitigationOnly).toBe(true);
+    expect(v.ownerApprovalRequired).toBe(false);
+    const permanent = evaluateAuthority({ phase: "permanent", quote_amount: 1500 });
+    expect(permanent.ownerApprovalRequired).toBe(true);
+  });
+});
+
+describe("warranty", () => {
+  const builder = {
+    builder_present: true,
+    builder_expires_on: "2027-01-01",
+    "claim_process + external_links": "Zac — 405-555-0100",
+  };
+
+  it("E — an unexpired builder warranty may apply, with contact and expiry", () => {
+    const hint = warrantyHint(builder, "HVAC", NOW);
+    expect(hint.mayApply).toBe(true);
+    expect(hint.kind).toBe("builder");
+    expect(hint.contact).toContain("Zac");
+    expect(hint.reason).toContain("Confirm coverage");
+  });
+
+  it("never assumes coverage when the warranty has expired", () => {
+    const hint = warrantyHint({ ...builder, builder_expires_on: "2025-01-01" }, "HVAC", NOW);
+    expect(hint.mayApply).toBe(false);
+  });
+
+  it("stays silent when the home has no warranty on file", () => {
+    expect(warrantyHint(null, "HVAC", NOW).mayApply).toBe(false);
+    expect(warrantyHint({ builder_present: false }, "Plumbing", NOW).mayApply).toBe(false);
+  });
+
+  it("a furniture warranty applies to furniture work, not plumbing", () => {
+    const w = { furniture_expires_on: "2029-04-17", "claim_process + external_links": "none" };
+    expect(warrantyHint(w, "Mattress replacement", NOW).mayApply).toBe(true);
+    expect(warrantyHint(w, "Plumbing", NOW).mayApply).toBe(false);
+    expect(warrantyHint(w, "Furniture", NOW).contact).toBeNull();
+  });
+
+  it("F — an override records the reason and stops the warranty wait", () => {
+    const wo = {
+      warranty_may_apply: true,
+      warranty_contacted_at: ago(600),
+      warranty_eta_at: ahead(20000),
+      warranty_override_reason: "next_reservation_affected",
+      vendor_contacted_at: ago(10),
+      vendor_acknowledged_at: ago(9),
+    };
+    expect(waitingOn(wo)).toBe("vendor");
+  });
+
+  it("warranty work waits on the provider until a human decides otherwise", () => {
+    const wo = { warranty_may_apply: true, warranty_contacted_at: ago(60), warranty_eta_at: ahead(2880) };
+    expect(waitingOn(wo)).toBe("warranty");
+    expect(workOrderBucket(wo, NOW)).toBe("warranty_pending");
+  });
+
+  it("asks for the provider call before a paid repair is committed", () => {
+    expect(nextAction({ warranty_may_apply: true }, NOW)).toContain("contact the warranty provider");
+  });
+});
+
+describe("second quote", () => {
+  it("G — dramatically different quotes prompt a comparison, not a block", () => {
+    const advice = secondQuoteAdvice({ quote_amount: 500, second_quote_amount: 1800 });
+    expect(advice.recommended).toBe(true);
+    expect(advice.signals).toContain("quotes_differ");
+  });
+
+  it("an estimate approaching replacement cost is a signal", () => {
+    expect(secondQuoteAdvice({ quote_amount: 900, replacement_cost: 1200 }).recommended).toBe(true);
+  });
+
+  it("an ordinary quote needs no comparison", () => {
+    expect(secondQuoteAdvice({ quote_amount: 225 }).recommended).toBe(false);
+  });
+});
+
+describe("vendor commitments and checkpoints", () => {
+  it("H — two missed commitments recommend a backup vendor and notify James", () => {
+    const status = commitmentStatus({ missed_commitments: 2 }, NOW);
+    expect(status.action).toContain("Backup vendor");
+    expect(status.action).toContain("James");
+  });
+
+  it("a first miss is a coordinator follow-up, not an escalation", () => {
+    expect(commitmentStatus({ missed_commitments: 1 }, NOW).action).toContain("follow up");
+  });
+
+  it("a repeated pattern goes to a performance review", () => {
+    expect(commitmentStatus({ missed_commitments: 3 }, NOW).action).toContain("Micah");
+  });
+
+  it("a P1 without acknowledgment inside ten minutes moves to the backup", () => {
+    const status = commitmentStatus({ priority: "p1", vendor_contacted_at: ago(15) }, NOW);
+    expect(status.acknowledgeOverdue).toBe(true);
+    expect(status.action).toContain("backup vendor");
+  });
+
+  it("a P2 acknowledged inside thirty minutes is fine", () => {
+    expect(
+      commitmentStatus({ priority: "p2", vendor_contacted_at: ago(20) }, NOW).acknowledgeOverdue,
+    ).toBe(false);
+  });
+
+  it("a passed ETA with no arrival is a missed ETA", () => {
+    expect(commitmentStatus({ vendor_eta_at: ago(30) }, NOW).etaMissed).toBe(true);
+  });
+
+  it("checkpoints derive in order", () => {
+    expect(nextCheckpoint({}, NOW)).toBe("contact_vendor");
+    expect(nextCheckpoint({ vendor_name: "Ace", vendor_contacted_at: ago(5) }, NOW)).toBe("await_acknowledgment");
+    expect(
+      nextCheckpoint({ vendor_name: "Ace", vendor_contacted_at: ago(5), vendor_acknowledged_at: ago(4) }, NOW),
+    ).toBe("confirm_eta");
+    expect(
+      nextCheckpoint(
+        {
+          vendor_name: "Ace",
+          vendor_contacted_at: ago(5),
+          vendor_acknowledged_at: ago(4),
+          vendor_eta_at: ahead(60),
+        },
+        NOW,
+      ),
+    ).toBe("await_arrival");
+  });
+});
+
+describe("stage, queue and closure", () => {
+  it("stage is derived from what actually happened", () => {
+    expect(derivedStage({})).toBe("needs_diagnosis");
+    expect(derivedStage({ quote_requested_at: ago(60) })).toBe("quote_requested");
+    expect(derivedStage({ quote_amount: 200 })).toBe("quote_received");
+    expect(derivedStage({ quote_amount: 900 })).toBe("awaiting_approval");
+    expect(derivedStage({ quote_amount: 900, approval_status: "approved" })).toBe("approved");
+    expect(derivedStage({ vendor_arrived_at: ago(30) })).toBe("in_progress");
+    expect(derivedStage({ closed_at: ago(1) })).toBe("closed");
+  });
+
+  it("owner notified is never owner approved", () => {
+    const wo = { quote_amount: 900, approval_status: "pending" };
+    expect(nextAction(wo, NOW)).toContain("not owner approved");
+    expect(workOrderBucket(wo, NOW)).toBe("waiting_owner");
+    expect(closureBlockers({ ...wo, vendor_completed_at: ago(1), evidence_complete: true, final_cost: 900 })).toContain(
+      "Owner approval for this repair is not documented.",
+    );
+  });
+
+  it("I — vendor saying done with no evidence cannot close", () => {
+    const wo = { vendor_completed_at: ago(10), final_cost: 220 };
+    expect(canClose(wo)).toBe(false);
+    expect(closureBlockers(wo)).toContain("Completion photo or video evidence is missing.");
+    expect(workOrderBucket(wo, NOW)).toBe("evidence_missing");
+  });
+
+  it("an occupied home needs the guest update before closure", () => {
+    const wo = { vendor_completed_at: ago(10), evidence_complete: true, final_cost: 220, occupied_now: true };
+    expect(closureBlockers(wo)).toContain("The guest in the home has not been updated.");
+  });
+
+  it("J — mitigation alone does not close work when the permanent repair is outstanding", () => {
+    const wo = {
+      phase: "mitigation" as const,
+      emergency_reason: "essential_utility_loss",
+      temporary_mitigation: "Mini fridge delivered",
+      vendor_completed_at: ago(60),
+      evidence_complete: true,
+      final_cost: 120,
+      permanent_repair_needed: true,
+    };
+    expect(canClose(wo)).toBe(false);
+    expect(workOrderBucket(wo, NOW)).toBe("permanent_pending");
+    expect(nextAction(wo, NOW)).toContain("permanent repair");
+  });
+
+  it("a fully evidenced repair closes", () => {
+    const wo = { quote_amount: 225, vendor_completed_at: ago(10), evidence_complete: true, final_cost: 225 };
+    expect(canClose(wo)).toBe(true);
+    expect(nextAction(wo, NOW)).toBe("Ready to close.");
+  });
+});
