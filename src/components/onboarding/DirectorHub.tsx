@@ -24,14 +24,7 @@ import {
 } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
 
-type Lens =
-  | "attention"
-  | "at_risk"
-  | "blocked"
-  | "review"
-  | "corrections"
-  | "handoffs"
-  | "all";
+type Lens = "attention" | "at_risk" | "blocked" | "review" | "corrections" | "handoffs" | "all";
 
 const LENSES: { key: Lens; label: string; hint: string }[] = [
   { key: "attention", label: "Needs attention", hint: "Something an ARHA person must do today." },
@@ -68,10 +61,9 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
 
   const counts = useMemo(
     () =>
-      Object.fromEntries(LENSES.map((l) => [l.key, projects.filter((p) => matches(p, l.key)).length])) as Record<
-        Lens,
-        number
-      >,
+      Object.fromEntries(
+        LENSES.map((l) => [l.key, projects.filter((p) => matches(p, l.key)).length]),
+      ) as Record<Lens, number>,
     [projects],
   );
 
@@ -91,10 +83,16 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
     <div className="space-y-5">
       {/* ------------------------------------------------------- rollups */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Active projects" value={active.length} hint="Homes not yet live with Operations." />
+        <Stat
+          label="Active projects"
+          value={active.length}
+          hint="Homes not yet live with Operations."
+        />
         <Stat
           label="At risk or blocked"
-          value={active.filter((p) => p.risk.level === "at_risk" || p.risk.level === "blocked").length}
+          value={
+            active.filter((p) => p.risk.level === "at_risk" || p.risk.level === "blocked").length
+          }
           hint="Derived, not self-reported."
           tone="blocked"
         />
@@ -194,13 +192,17 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
       <section className="surface p-4">
         <p className="eyebrow">Workload by project manager</p>
         <div className="mt-2 space-y-1.5">
-          {workload.length === 0 && <p className="text-sm text-muted-foreground">No active projects.</p>}
+          {workload.length === 0 && (
+            <p className="text-sm text-muted-foreground">No active projects.</p>
+          )}
           {workload.map((w) => (
             <div key={w.owner} className="flex items-center gap-3 text-sm">
               <span className="w-48 truncate">{w.owner}</span>
               <span className="numeric w-24 text-muted-foreground">{w.projects} project(s)</span>
               {w.atRisk > 0 && <Chip className={stateChip("blocked")}>{w.atRisk} at risk</Chip>}
-              {w.blockers > 0 && <Chip className={stateChip("waiting")}>{w.blockers} blocker(s)</Chip>}
+              {w.blockers > 0 && (
+                <Chip className={stateChip("waiting")}>{w.blockers} blocker(s)</Chip>
+              )}
             </div>
           ))}
         </div>
@@ -258,14 +260,18 @@ function ProjectRow({ project: p }: { project: ProjectSummary }) {
           {p.next.headline}
         </span>
         {p.risk.reasons.length > 0 && (
-          <span className="block truncate text-xs text-state-blocked">{p.risk.reasons.join(" · ")}</span>
+          <span className="block truncate text-xs text-state-blocked">
+            {p.risk.reasons.join(" · ")}
+          </span>
         )}
       </span>
 
       <span className="flex items-center gap-3 lg:w-72 lg:justify-end">
         <span className="text-right text-xs text-muted-foreground">
           <span className="block truncate">{p.owner ?? "Unassigned"}</span>
-          <span className="numeric block">{p.target ? `Handoff ${p.target}` : "No target date"}</span>
+          <span className="numeric block">
+            {p.target ? `Handoff ${p.target}` : "No target date"}
+          </span>
         </span>
         {p.hasProject && <ProgressRing value={p.progress} size={44} tone="onboarding" />}
       </span>

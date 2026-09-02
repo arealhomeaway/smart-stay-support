@@ -69,7 +69,10 @@ describe("stage derivation", () => {
   });
 
   it("moves to the earliest phase with unfinished work once access is confirmed", () => {
-    const tasks = [task({ id: "a", status: "complete" }), task({ id: "b", stage: "phase4_purchasing" })];
+    const tasks = [
+      task({ id: "a", status: "complete" }),
+      task({ id: "b", stage: "phase4_purchasing" }),
+    ];
     expect(deriveStage({ property: property(), tasks, handoff: null })).toBe("furnishing_repairs");
   });
 
@@ -86,7 +89,11 @@ describe("stage derivation", () => {
 
 describe("next action", () => {
   it("says no team action is available before access", () => {
-    const p = property({ access_notes: null, actual_access_on: null, planned_closing_on: "2026-02-01" });
+    const p = property({
+      access_notes: null,
+      actual_access_on: null,
+      planned_closing_on: "2026-02-01",
+    });
     const next = deriveNextAction({ property: p, tasks: [task()], handoff: null });
     expect(next.waiting).toBe(true);
     expect(next.headline).toBe("Waiting for closing and access");
@@ -113,7 +120,9 @@ describe("next action", () => {
   });
 
   it("explains the wait when nothing is actionable", () => {
-    const tasks = [task({ id: "a", requires_owner_approval: true, owner_approval_status: "awaiting_owner" })];
+    const tasks = [
+      task({ id: "a", requires_owner_approval: true, owner_approval_status: "awaiting_owner" }),
+    ];
     const next = deriveNextAction({ property: property(), tasks, handoff: null });
     expect(next.waiting).toBe(true);
     expect(next.detail).toContain("Homeowner");
@@ -123,7 +132,12 @@ describe("next action", () => {
 describe("blockers are first class", () => {
   it("names what, who owns the next step and follow-up timing", () => {
     const tasks = [
-      task({ id: "a", requires_owner_approval: true, owner_approval_status: "awaiting_owner", due_on: "2026-01-09" }),
+      task({
+        id: "a",
+        requires_owner_approval: true,
+        owner_approval_status: "awaiting_owner",
+        due_on: "2026-01-09",
+      }),
     ];
     const [b] = deriveBlockers({ property: property(), tasks, handoff: null });
     expect(b?.kind).toBe("owner");

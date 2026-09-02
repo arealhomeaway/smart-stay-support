@@ -118,7 +118,9 @@ export function CurrentWork({
               </button>
             ))}
             {blockers.length > 6 && (
-              <p className="text-xs text-muted-foreground">+{blockers.length - 6} more in the workflow.</p>
+              <p className="text-xs text-muted-foreground">
+                +{blockers.length - 6} more in the workflow.
+              </p>
             )}
           </div>
         </section>

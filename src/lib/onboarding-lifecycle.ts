@@ -147,7 +147,8 @@ export type ProjectInput = {
 export function deriveStage(input: ProjectInput): LifecycleStage {
   const { property, handoff, tasks } = input;
 
-  if (property.lifecycle_status === "active_operations" || property.handoff_accepted_at) return "live";
+  if (property.lifecycle_status === "active_operations" || property.handoff_accepted_at)
+    return "live";
 
   if (handoff) {
     const step = handoff.gate_step ?? "kati_review";
@@ -159,7 +160,8 @@ export function deriveStage(input: ProjectInput): LifecycleStage {
   if (property.lifecycle_status === "handoff_corrections") return "director_review";
 
   // Access is the hard gate: nothing onsite is real before it.
-  const hasAccess = Boolean(property.actual_access_on) || Boolean((property.access_notes ?? "").trim());
+  const hasAccess =
+    Boolean(property.actual_access_on) || Boolean((property.access_notes ?? "").trim());
   if (!hasAccess) return "pre_close";
 
   // Otherwise the stage is the earliest phase with unfinished work.
@@ -221,7 +223,8 @@ export function deriveNextAction(input: ProjectInput): NextAction {
   if (tasks.length === 0)
     return {
       headline: "Create the onboarding project",
-      detail: "Apply the standard ARHA workflow so this home gets its stages, dates and dependencies.",
+      detail:
+        "Apply the standard ARHA workflow so this home gets its stages, dates and dependencies.",
       taskId: null,
       waiting: false,
     };
@@ -276,18 +279,14 @@ export type Blocker = {
   /** When follow-up is due, when a date exists. */
   followUp: string | null;
   kind:
-    | "owner"
-    | "dependency"
-    | "evidence"
-    | "review"
-    | "access"
-    | "field"
-    | "correction"
-    | "other";
+    "owner" | "dependency" | "evidence" | "review" | "access" | "field" | "correction" | "other";
 };
 
 function blockerKind(v: TaskView): Blocker["kind"] {
-  if (v.reason === "Blocked — Waiting on Owner" || v.reason === "Blocked — Homeowner requested changes")
+  if (
+    v.reason === "Blocked — Waiting on Owner" ||
+    v.reason === "Blocked — Homeowner requested changes"
+  )
     return "owner";
   if (v.status === "not_ready") return "dependency";
   if (v.reason === "Blocked — Missing Evidence") return "evidence";
@@ -315,7 +314,8 @@ export function deriveBlockers(input: ProjectInput): Blocker[] {
   const { property, tasks } = input;
   const out: Blocker[] = [];
 
-  const hasAccess = Boolean(property.actual_access_on) || Boolean((property.access_notes ?? "").trim());
+  const hasAccess =
+    Boolean(property.actual_access_on) || Boolean((property.access_notes ?? "").trim());
   if (!hasAccess)
     out.push({
       taskId: "",
@@ -393,19 +393,31 @@ export function deriveRisk(input: ProjectInput): Risk {
   const target = targetHandoff(input);
   const runway = daysUntil(target);
 
-  if (roll.overdue > 0) reasons.push(`${roll.overdue} overdue step${roll.overdue === 1 ? "" : "s"}`);
+  if (roll.overdue > 0)
+    reasons.push(`${roll.overdue} overdue step${roll.overdue === 1 ? "" : "s"}`);
   if (roll.ownerPending > 0)
-    reasons.push(`${roll.ownerPending} homeowner decision${roll.ownerPending === 1 ? "" : "s"} outstanding`);
+    reasons.push(
+      `${roll.ownerPending} homeowner decision${roll.ownerPending === 1 ? "" : "s"} outstanding`,
+    );
   if (roll.missingEvidence > 0)
-    reasons.push(`${roll.missingEvidence} step${roll.missingEvidence === 1 ? "" : "s"} missing required evidence`);
-  if (roll.blocked > 0) reasons.push(`${roll.blocked} blocked step${roll.blocked === 1 ? "" : "s"}`);
+    reasons.push(
+      `${roll.missingEvidence} step${roll.missingEvidence === 1 ? "" : "s"} missing required evidence`,
+    );
+  if (roll.blocked > 0)
+    reasons.push(`${roll.blocked} blocked step${roll.blocked === 1 ? "" : "s"}`);
   if (input.property.lifecycle_status === "handoff_corrections")
     reasons.push("returned from review with corrections");
   if (runway != null && runway <= 7 && roll.total > 0 && roll.done < roll.total)
-    reasons.push(`handoff in ${runway} day${runway === 1 ? "" : "s"} with ${roll.total - roll.done} step(s) open`);
+    reasons.push(
+      `handoff in ${runway} day${runway === 1 ? "" : "s"} with ${roll.total - roll.done} step(s) open`,
+    );
 
   if (reasons.length > 0) level = "watch";
-  if (roll.blocked > 0 || roll.overdue > 1 || input.property.lifecycle_status === "handoff_corrections")
+  if (
+    roll.blocked > 0 ||
+    roll.overdue > 1 ||
+    input.property.lifecycle_status === "handoff_corrections"
+  )
     level = "at_risk";
   if (runway != null && runway <= 2 && roll.done < roll.total) level = "at_risk";
 
@@ -413,7 +425,10 @@ export function deriveRisk(input: ProjectInput): Risk {
   const stopped =
     blockers.length > 0 &&
     input.tasks.every(
-      (t) => t.status === "complete" || t.status === "carryover" || blockers.some((b) => b.taskId === t.id),
+      (t) =>
+        t.status === "complete" ||
+        t.status === "carryover" ||
+        blockers.some((b) => b.taskId === t.id),
     );
   if (stopped && input.tasks.length > 0) {
     level = "blocked";
@@ -440,19 +455,29 @@ export function targetHandoff(input: ProjectInput): string | null {
  * template application decided that already; the UI must not render N/A rows.
  */
 export const BRANCHES = [
-  { key: "furnishing", label: "Furnishing & purchasing", match: /furnish|purchas|deliver|assembl|stag|decor/i },
+  {
+    key: "furnishing",
+    label: "Furnishing & purchasing",
+    match: /furnish|purchas|deliver|assembl|stag|decor/i,
+  },
   { key: "repairs", label: "Repairs", match: /repair|estimate|punch/i },
   { key: "cleaning", label: "Cleaning", match: /clean/i },
   { key: "photography", label: "Photography", match: /photo/i },
   { key: "access_devices", label: "Access & devices", match: /lock|device|garage|access|keypad/i },
   { key: "landscaping", label: "Landscaping & pest", match: /landscap|lawn|pest|trash/i },
   { key: "permits", label: "Permits", match: /permit|licen/i },
-  { key: "utilities", label: "Utilities & internet", match: /utilit|internet|wifi|wi-fi|power|water/i },
+  {
+    key: "utilities",
+    label: "Utilities & internet",
+    match: /utilit|internet|wifi|wi-fi|power|water/i,
+  },
 ] as const;
 
 export type BranchKey = (typeof BRANCHES)[number]["key"];
 
-export function activeBranches(tasks: WorkflowTask[]): { key: BranchKey; label: string; done: number; total: number }[] {
+export function activeBranches(
+  tasks: WorkflowTask[],
+): { key: BranchKey; label: string; done: number; total: number }[] {
   return BRANCHES.map((b) => {
     const inBranch = tasks.filter((t) => b.match.test(t.title));
     return {
@@ -474,7 +499,14 @@ export function gateProgress(handoff: OpenHandoff, accepted: boolean) {
     value: s.value,
     label: s.label,
     blurb: s.blurb,
-    state: index < 0 ? ("upcoming" as const) : i < index ? ("done" as const) : i === index ? ("current" as const) : ("upcoming" as const),
+    state:
+      index < 0
+        ? ("upcoming" as const)
+        : i < index
+          ? ("done" as const)
+          : i === index
+            ? ("current" as const)
+            : ("upcoming" as const),
   }));
 }
 
@@ -526,7 +558,10 @@ export function bottleneckStage(projects: ProjectSummary[]): LifecycleStage | nu
 }
 
 export function workloadByOwner(projects: ProjectSummary[]) {
-  const map = new Map<string, { owner: string; projects: number; atRisk: number; blockers: number }>();
+  const map = new Map<
+    string,
+    { owner: string; projects: number; atRisk: number; blockers: number }
+  >();
   for (const p of projects) {
     const key = p.owner ?? "Unassigned";
     const row = map.get(key) ?? { owner: key, projects: 0, atRisk: 0, blockers: 0 };

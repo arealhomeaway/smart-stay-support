@@ -30,7 +30,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
       { property: "og:title", content: "Director onboarding hub — Resolve" },
       {
         property: "og:description",
-        content: "Exception-first view of the whole onboarding pipeline, without opening every property.",
+        content:
+          "Exception-first view of the whole onboarding pipeline, without opening every property.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -46,7 +47,10 @@ function Hub() {
   const { can, readOnly, userId } = useRole();
   const { enabled } = useFeatureFlags();
 
-  const { data, isLoading } = useQuery({ queryKey: ["onboarding-workspace"], queryFn: () => load() });
+  const { data, isLoading } = useQuery({
+    queryKey: ["onboarding-workspace"],
+    queryFn: () => load(),
+  });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 
   const reviewHandoff = useMutation({
@@ -74,7 +78,9 @@ function Hub() {
         const tasks = data.tasks.filter((t) => t.property_id === p.id) as unknown as WorkflowTask[];
         const handoff =
           data.handoffs.find(
-            (h) => h.property_id === p.id && (h.status === "requested" || h.status === "accepted_pending_live"),
+            (h) =>
+              h.property_id === p.id &&
+              (h.status === "requested" || h.status === "accepted_pending_live"),
           ) ?? null;
         const pm = data.people.find((x) => x.id === p.onboarding_owner);
         return summarizeProject(
