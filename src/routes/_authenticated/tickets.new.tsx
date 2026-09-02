@@ -528,7 +528,7 @@ function NewMatter() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{mode === "one_touch" ? "What happened?" : "What needs to happen?"}</CardTitle>
+          <CardTitle>{mode === "one_touch" ? "Log what you handled" : "Log a ticket"}</CardTitle>
           <CardDescription>Write it the way it was reported to you.</CardDescription>
         </CardHeader>
         <CardContent>
