@@ -727,7 +727,9 @@ function TicketDetail() {
             ticket={ticket}
             ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
           />
+          <TicketWorkOrderPanel ticket={ticket} />
           <TicketRecoveryPanel ticket={ticket} />
+
           <TicketClaimPanel ticket={ticket} />
           <Card>
             <CardHeader>
