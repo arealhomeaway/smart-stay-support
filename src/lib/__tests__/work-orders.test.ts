@@ -249,7 +249,7 @@ describe("owner approval, evidence and oversight", () => {
     title: "Water heater replacement",
   };
 
-  test("the owner approval request carries the decision context", () => {
+  it("the owner approval request carries the decision context", () => {
     const req = ownerApprovalRequest({ ...base, emergency_reason: "no_hot_water" });
     expect(req.kind).toBe(OWNER_APPROVAL_KIND);
     expect(req.amount).toBe(900);
@@ -257,19 +257,19 @@ describe("owner approval, evidence and oversight", () => {
     expect(req.detail.policy_version).toBe(MAINTENANCE_POLICY_VERSION);
   });
 
-  test("a declined approval keeps the consequence visible", () => {
+  it("a declined approval keeps the consequence visible", () => {
     expect(declineConsequence({ ...base, approval_status: "declined", occupied_now: true })).toContain("guest");
     expect(declineConsequence({ ...base, approval_status: "approved" })).toBeNull();
   });
 
-  test("permanent work adds the quote evidence slot; warranty adds correspondence", () => {
+  it("permanent work adds the quote evidence slot; warranty adds correspondence", () => {
     const slots = workOrderEvidenceSlots("permanent", true).map((s) => s.key);
     expect(slots).toContain("vendor_quote");
     expect(slots).toContain("warranty_correspondence");
     expect(workOrderEvidenceSlots("mitigation").map((s) => s.key)).not.toContain("vendor_quote");
   });
 
-  test("the queue puts the most urgent, oldest work first", () => {
+  it("the queue puts the most urgent, oldest work first", () => {
     const rows = [
       { ...base, priority: "p3", created_at: "2026-01-01" },
       { ...base, priority: "p1", created_at: "2026-02-01" },
@@ -277,13 +277,13 @@ describe("owner approval, evidence and oversight", () => {
     expect([...rows].sort(workOrderSort)[0].priority).toBe("p1");
   });
 
-  test("recently completed work stays visible for thirty days only", () => {
+  it("recently completed work stays visible for thirty days only", () => {
     const now = new Date("2026-03-01T00:00:00Z");
     expect(recentlyCompleted({ ...base, closed_at: "2026-02-20T00:00:00Z" }, 30, now)).toBe(true);
     expect(recentlyCompleted({ ...base, closed_at: "2025-12-01T00:00:00Z" }, 30, now)).toBe(false);
   });
 
-  test("manager filters surface outstanding approvals and unrepaired homes", () => {
+  it("manager filters surface outstanding approvals and unrepaired homes", () => {
     expect(matchesManagerFilter({ ...base, approval_status: "pending" }, "owner_approval_pending")).toBe(true);
     expect(
       matchesManagerFilter({ ...base, phase: "mitigation", permanent_repair_needed: true }, "mitigated_not_repaired"),
@@ -291,7 +291,7 @@ describe("owner approval, evidence and oversight", () => {
     expect(matchesManagerFilter({ ...base, closed_at: "2026-01-01" }, "owner_approval_pending")).toBe(false);
   });
 
-  test("repeat maintenance is counted per home inside the window", () => {
+  it("repeat maintenance is counted per home inside the window", () => {
     const now = new Date("2026-03-01T00:00:00Z");
     const repeats = repeatMaintenanceProperties(
       [
