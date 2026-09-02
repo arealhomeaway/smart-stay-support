@@ -28,7 +28,11 @@ export function PortalCard({
 
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all duration-200 focus-within:shadow-lg hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg">
+    <article
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all duration-200 focus-within:shadow-lg hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg${
+        wholeCardLink ? " cursor-pointer" : ""
+      }`}
+    >
       <span
         aria-hidden="true"
         className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary/60 to-accent"
