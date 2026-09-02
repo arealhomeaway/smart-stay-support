@@ -58,7 +58,7 @@ function WorkOrdersHome() {
     for (const b of BUCKET_ORDER) map.set(b, []);
     for (const row of rows) {
       if (row.closed_at && !recentlyCompleted(row)) continue;
-      const bucket = workOrderBucket(row, reqMap.get(row.id) ?? []);
+      const bucket = workOrderBucket(row);
       map.get(bucket)?.push(row);
     }
     return map;
