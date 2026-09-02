@@ -38,6 +38,7 @@ import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/t
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated/claims.index'
+import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsManagerRouteImport } from './routes/_authenticated/leads.manager'
@@ -214,6 +215,12 @@ const AuthenticatedClaimsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedClaimsManagerRoute =
+  AuthenticatedClaimsManagerRouteImport.update({
+    id: '/manager',
+    path: '/manager',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedClaimsMyClaimsRoute =
   AuthenticatedClaimsMyClaimsRouteImport.update({
     id: '/my-claims',
@@ -386,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -438,6 +446,7 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -495,6 +504,7 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/_authenticated/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/claims/manager'
     | '/claims/my-claims'
     | '/leads/manager'
     | '/leads/my-leads'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/claims/manager'
     | '/claims/my-claims'
     | '/leads/manager'
     | '/leads/my-leads'
@@ -660,6 +672,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
+    | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
     | '/_authenticated/leads/manager'
     | '/_authenticated/leads/my-leads'
@@ -910,6 +923,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsIndexRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/manager': {
+      id: '/_authenticated/claims/manager'
+      path: '/manager'
+      fullPath: '/claims/manager'
+      preLoaderRoute: typeof AuthenticatedClaimsManagerRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/my-claims': {
       id: '/_authenticated/claims/my-claims'
       path: '/my-claims'
@@ -1089,11 +1109,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedClaimsRouteChildren {
+  AuthenticatedClaimsManagerRoute: typeof AuthenticatedClaimsManagerRoute
   AuthenticatedClaimsMyClaimsRoute: typeof AuthenticatedClaimsMyClaimsRoute
   AuthenticatedClaimsIndexRoute: typeof AuthenticatedClaimsIndexRoute
 }
 
 const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
+  AuthenticatedClaimsManagerRoute: AuthenticatedClaimsManagerRoute,
   AuthenticatedClaimsMyClaimsRoute: AuthenticatedClaimsMyClaimsRoute,
   AuthenticatedClaimsIndexRoute: AuthenticatedClaimsIndexRoute,
 }
