@@ -120,3 +120,19 @@ export const importOwnerRezProperties = createServerFn({ method: "POST" })
 
     return { ok: true as const, created, matched, total: listings.length };
   });
+
+/**
+ * Freezes the OwnerRez reservation context onto a ticket after it is created.
+ * Safe to call from every ticket-creation path — it no-ops when the home is
+ * not linked, no single stay is in residence, or a snapshot already exists.
+ */
+export const captureTicketReservation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { ticketId: string }) => {
+    if (!input?.ticketId) throw new Error("ticketId is required");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { applyReservationSnapshot } = await import("./reservation-snapshot.server");
+    return applyReservationSnapshot(context.supabase, data.ticketId);
+  });
