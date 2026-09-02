@@ -552,10 +552,12 @@ function TicketDetail() {
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-secondary/40 p-4">
           <PauseCircle className="size-5 shrink-0" />
           <div className="flex-1">
-            <p className="font-medium">Waiting on {labelFor(WAITING_ON, ticket.waiting_on)}</p>
+            <p className="font-medium">Parked with {labelFor(WAITING_ON, ticket.waiting_on).toLowerCase()}</p>
             <p className="text-sm text-muted-foreground">
               {ticket.waiting_reason}
-              {ticket.next_review_at ? ` · review ${new Date(ticket.next_review_at).toLocaleString()}` : ""}
+              {ticket.next_review_at
+                ? ` · comes back to you ${new Date(ticket.next_review_at).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}`
+                : ""}
             </p>
           </div>
           <Button size="sm" variant="secondary" onClick={clearWaiting}>
