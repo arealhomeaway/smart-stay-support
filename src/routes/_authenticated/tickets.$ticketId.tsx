@@ -655,39 +655,43 @@ function TicketDetail() {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-semibold">
-          {closureReady ? "Ready to close" : "Finish this ticket"}
+          {closureReady ? "Ready to close" : "Before this ticket can close"}
         </h2>
         <p className="text-sm text-muted-foreground">
           {closureReady
-            ? "Everything required for this ticket is complete."
-            : `${remaining} thing${remaining === 1 ? "" : "s"} left before this ticket can close.`}
+            ? "Everything Resolve requires on this ticket is satisfied."
+            : `Resolve checks these automatically. ${remaining} still outstanding.`}
         </p>
       </div>
-      <ul className="space-y-2 text-sm">
+      <ul className="divide-y divide-border rounded-lg border border-border text-sm">
         {closureChecklist.map((c, i) => (
-          <li key={i} className="flex items-start gap-2">
-            {c.done ? (
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-            ) : (
-              <Circle className="mt-0.5 size-4 shrink-0 text-warning" />
-            )}
-            <div className="min-w-0">
-              <p className={c.done ? "text-muted-foreground line-through" : "font-medium"}>
-                {c.label}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {c.done ? "Complete" : `Needs you${c.hint ? ` — ${c.hint}` : ""}`}
-              </p>
+          <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{c.label}</p>
+              {!c.done && c.hint && <p className="text-xs text-muted-foreground">{c.hint}</p>}
             </div>
+            {c.state === "complete" ? (
+              <Chip className={stateChip("resolved")}>Complete ✓</Chip>
+            ) : c.state === "waiting" ? (
+              <Chip className={stateChip("waiting")}>{c.waitingOn ?? "Waiting"}</Chip>
+            ) : (
+              <Chip className={stateChip("blocked")}>Needs you</Chip>
+            )}
+            {c.state === "needs_you" && c.action && !closeOpen && (
+              <Button size="sm" variant="outline" onClick={() => setCloseOpen(true)}>
+                {c.action}
+              </Button>
+            )}
           </li>
         ))}
       </ul>
 
       {!closeOpen ? (
         <Button onClick={() => setCloseOpen(true)} size="lg">
-          {closureReady ? "Close ticket" : "Finish the remaining items"}
+          {closureReady ? "Close ticket" : "Work through what is missing"}
         </Button>
       ) : (
+
         <div className="space-y-4 border-t border-border pt-4">
           <div className="space-y-2">
             <Label>Outcome</Label>
