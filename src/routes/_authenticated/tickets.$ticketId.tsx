@@ -673,7 +673,7 @@ function TicketDetail() {
               {!c.done && c.hint && <p className="text-xs text-muted-foreground">{c.hint}</p>}
             </div>
             {c.state === "complete" ? (
-              <Chip className={stateChip("resolved")}>Complete ✓</Chip>
+              <Chip className={stateChip("done")}>Complete ✓</Chip>
             ) : c.state === "waiting" ? (
               <Chip className={stateChip("waiting")}>{c.waitingOn ?? "Waiting"}</Chip>
             ) : (
