@@ -22,6 +22,7 @@ import {
   slaState,
   statusTone,
 } from "@/lib/tickets";
+import { useRole } from "@/hooks/useRole";
 import { QUEUE_TABS, currentOwnerId, matchesTab, queueSort, type QueueTab } from "@/lib/matters";
 
 export const Route = createFileRoute("/_authenticated/tickets/")({
@@ -48,6 +49,7 @@ function TicketsPage() {
   const [priority, setPriority] = useState<string>("all");
   const { demoMode } = useDemo();
   const userId = useCurrentUserId();
+  const { isSupervisor } = useRole();
   const { data: staff } = useStaffDirectory();
 
   const people = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s])), [staff]);
