@@ -6,11 +6,14 @@
  * wiring live here once.
  */
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
-import { displayName, useStaffDirectory } from "@/hooks/useTeam";
+import { displayName, useCurrentUserId, useStaffDirectory } from "@/hooks/useTeam";
 import { ClaimDrawer } from "@/components/claims/ClaimDrawer";
 import {
   CLAIM_STAGE_LABELS,
