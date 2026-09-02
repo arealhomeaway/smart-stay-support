@@ -63,6 +63,8 @@ export type Capability =
   | "coaching"
   | "coaching_manage"
   | "ticket_create"
+  | "claims_work"
+  | "claims_oversight"
   | "matters_all"
   | "matters_assigned"
   | "guest_contact"
@@ -81,7 +83,14 @@ export type Capability =
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
-const STAFF_BASE: Capability[] = ["matters_assigned", "playbooks_view", "coaching", "ticket_create"];
+const STAFF_BASE: Capability[] = [
+  "matters_assigned",
+  "playbooks_view",
+  "coaching",
+  "ticket_create",
+  // Recovery work belongs to whoever handled the incident.
+  "claims_work",
+];
 
 const SUPERVISOR_CAPS: Capability[] = [
   ...STAFF_BASE,
@@ -94,6 +103,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "coaching_manage",
   "records_archive",
   "handoff_review",
+  "claims_oversight",
   "onboarding_workspace",
   "owner_programs",
   "vendor_admin",
