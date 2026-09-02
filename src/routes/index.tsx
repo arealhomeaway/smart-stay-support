@@ -6,6 +6,8 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { PortalCard } from "@/components/PortalCard";
 import { publicPortals } from "@/lib/portals";
 import { supabase } from "@/integrations/supabase/client";
+import heroImage from "@/assets/overview-hero.jpg";
+
 
 const TITLE = "Resolve — ARHA's Central Operating Hub";
 const DESCRIPTION =
