@@ -199,7 +199,7 @@ export function TicketWorkOrderPanel({ ticket }: { ticket: TicketContext }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Work order</CardTitle>
+        <CardTitle>Send for repair</CardTitle>
         <CardDescription>
           The execution and cost record for this repair — authority, warranty and vendor commitments in one place.
         </CardDescription>

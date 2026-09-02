@@ -223,7 +223,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Guest recovery</CardTitle>
+        <CardTitle>Make it right for the guest</CardTitle>
         <CardDescription>
           What the guest is owed after this failure — separate from recovering the cost from anyone else.
         </CardDescription>
