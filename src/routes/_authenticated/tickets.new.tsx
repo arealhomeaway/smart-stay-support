@@ -533,123 +533,185 @@ function NewMatter() {
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-5">
+            {/* One question. Resolve works out the classification. */}
             <div className="space-y-2">
-              <Label htmlFor="title">Summary</Label>
-              <Input
-                id="title"
+              <Label htmlFor="description">What happened?</Label>
+              <Textarea
+                id="description"
+                rows={3}
                 required
-                placeholder="Leak under the kitchen sink"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Fridge is not cooling, guest reported it"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
+              <p className="text-xs text-muted-foreground">
+                Plain words are fine. Resolve sets the work type, the priority and who owns it.
+              </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Property</Label>
-                <Select
-                  value={form.property_id}
-                  onValueChange={(v) => setForm({ ...form, property_id: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(properties ?? []).map((p) => (
+            <div className="space-y-2">
+              <Label>Property</Label>
+              <Select
+                value={form.property_id}
+                onValueChange={(v) => setForm({ ...form, property_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a property" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="p-2">
+                    <Input
+                      placeholder="Search properties"
+                      value={propertyQuery}
+                      onChange={(e) => setPropertyQuery(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {(properties ?? [])
+                    .filter((p) =>
+                      `${p.nickname ?? ""} ${p.name}`.toLowerCase().includes(propertyQuery.toLowerCase()),
+                    )
+                    .map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nickname ?? p.name}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-                {properties?.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    <Link to="/properties" className="text-primary hover:underline">
-                      Add your first property
-                    </Link>
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>How did it come in?</Label>
-                <Select
-                  value={form.source_channel}
-                  onValueChange={(v) => setForm({ ...form, source_channel: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SOURCE_CHANNELS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                </SelectContent>
+              </Select>
+              {properties?.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  <Link to="/properties" className="text-primary hover:underline">
+                    Add your first property
+                  </Link>
+                </p>
+              )}
+              {form.property_id && (
+                <p className="text-xs text-muted-foreground">
+                  {stayLoading
+                    ? "Checking OwnerRez for the current reservation\u2026"
+                    : stay?.ok
+                      ? stay.data.occupancy_status === "vacant"
+                        ? `No one in the home${stay.data.next_arrival ? ` \u00b7 next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
+                        : `${stay.data.guest_name ?? "Guest"} in the home \u00b7 ${stay.data.arrival?.slice(0, 10)} \u2192 ${stay.data.departure?.slice(0, 10)}`
+                      : (stay?.error ?? "")}
+                </p>
+              )}
             </div>
 
             {form.property_id && <PropertyContactPanel propertyId={form.property_id} />}
 
-            <div className="space-y-3">
-              <div>
-                <Label>What is happening?</Label>
-                <p className="text-xs text-muted-foreground">
-                  Pick the situation. Resolve sets the work type, the owning seat and the clocks.
+            {workType && mode === "ticket" && (
+              <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Looks like
                 </p>
-              </div>
-
-              <div className="space-y-3">
-                {SITUATION_GROUPS.map((g) => (
-                  <div key={g.key} className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      {g.label}
-                    </p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {SITUATIONS.filter((s) => s.group === g.key).map((s) => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => pickSituation(s.id)}
-                          className={`resolve-press rounded-lg border p-3 text-left transition ${
-                            form.situation_id === s.id
-                              ? "border-primary bg-primary/5 shadow-sm"
-                              : "border-border hover:border-primary/40 hover:bg-secondary"
-                          }`}
-                        >
-                          <span className="block text-sm font-medium">{s.label}</span>
-                          <span className="mt-0.5 block text-xs text-muted-foreground">{s.hint}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {workType && mode === "ticket" && !showCatalog && (
-                <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className={priorityTone(form.priority)}>
-                      {meta.short}
-                    </Badge>
-                    <span className="font-medium">{workType.name}</span>
-                    {role && <span className="text-muted-foreground">· {role.name}</span>}
-                  </div>
-                  <p className="mt-2 text-muted-foreground">
-                    {meta.short} because{" "}
-                    {priorityReason(form.guest_impact, form.occupancy_status, workType.default_priority)}.
-                  </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className={priorityTone(form.priority)}>
+                    {meta.short}
+                  </Badge>
+                  <span className="font-medium">{situation?.label ?? workType.name}</span>
+                  <span className="text-muted-foreground">\u00b7 {workType.name}</span>
                 </div>
-              )}
+                <p className="mt-2 text-muted-foreground">
+                  {meta.short} because{" "}
+                  {priorityReason(form.guest_impact, form.occupancy_status, workType.default_priority)}.
+                  {role ? ` Owned by ${role.name}.` : ""}
+                </p>
+                {!advanced && (
+                  <button
+                    type="button"
+                    onClick={() => setAdvanced(true)}
+                    className="mt-2 text-xs text-primary hover:underline"
+                  >
+                    Not right? Change
+                  </button>
+                )}
+              </div>
+            )}
 
-              {(showCatalog || !workType) && (
+            {!workType && (
+              <button
+                type="button"
+                onClick={() => setAdvanced(true)}
+                className="text-xs text-primary hover:underline"
+              >
+                Pick the situation yourself
+              </button>
+            )}
+
+            {advanced && (
+              <div className="space-y-5 rounded-lg border border-border p-3">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Summary</Label>
+                  <Input
+                    id="title"
+                    placeholder={derivedTitle || "Leak under the kitchen sink"}
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>How did it come in?</Label>
+                  <Select
+                    value={form.source_channel}
+                    onValueChange={(v) => setForm({ ...form, source_channel: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOURCE_CHANNELS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label>What is happening?</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Pick the situation. Resolve sets the work type, the owning seat and the clocks.
+                    </p>
+                  </div>
+                  {SITUATION_GROUPS.map((g) => (
+                    <div key={g.key} className="space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {g.label}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {SITUATIONS.filter((s) => s.group === g.key).map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => pickSituation(s.id)}
+                            className={`resolve-press rounded-lg border p-3 text-left transition ${
+                              form.situation_id === s.id
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-border hover:border-primary/40 hover:bg-secondary"
+                            }`}
+                          >
+                            <span className="block text-sm font-medium">{s.label}</span>
+                            <span className="mt-0.5 block text-xs text-muted-foreground">{s.hint}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 <div className="space-y-2">
                   <Label>Work type</Label>
                   <Select
                     value={form.work_type_id}
-                    onValueChange={(v) => setForm({ ...form, work_type_id: v })}
+                    onValueChange={(v) => {
+                      setSituationTouched(true);
+                      setShowCatalog(true);
+                      setForm({ ...form, work_type_id: v });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pick the closest match" />
@@ -657,49 +719,35 @@ function NewMatter() {
                     <SelectContent>
                       {(workTypes ?? []).map((w) => (
                         <SelectItem key={w.id} value={w.id}>
-                          {w.name} · suggests {w.default_priority.toUpperCase()}
+                          {w.name} \u00b7 suggests {w.default_priority.toUpperCase()}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+              </div>
+            )}
 
-              {workType && !showCatalog && (
-                <button
-                  type="button"
-                  onClick={() => setShowCatalog(true)}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Not right? Change classification
-                </button>
-              )}
-
-              {workType && mode === "ticket" && (
-                <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
-                  <p className="font-medium">Operating standard</p>
-                  <p className="mt-1 text-muted-foreground">{workType.operating_standard}</p>
+            {workType && mode === "ticket" && (
+              <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
+                <p className="font-medium">Operating standard</p>
+                <p className="mt-1 text-muted-foreground">{workType.operating_standard}</p>
+                <p className="mt-1 text-muted-foreground">
+                  Acknowledge within {workType.response_minutes}m \u00b7 start within{" "}
+                  {workType.action_start_minutes === 0 ? "immediately" : `${workType.action_start_minutes}m`}
+                  {workType.completion_target ? ` \u00b7 target ${workType.completion_target.toLowerCase()}` : ""}
+                </p>
+                {workType.required_closure_evidence && (
                   <p className="mt-1 text-muted-foreground">
-                    Acknowledge within {workType.response_minutes}m · start within{" "}
-                    {workType.action_start_minutes === 0 ? "immediately" : `${workType.action_start_minutes}m`}
-                    {workType.completion_target ? ` · target ${workType.completion_target.toLowerCase()}` : ""}
+                    <span className="font-medium text-foreground">To close:</span>{" "}
+                    {workType.required_closure_evidence}
                   </p>
-                  {workType.backup_coverage && (
-                    <p className="mt-1 text-muted-foreground">
-                      <span className="font-medium text-foreground">Backup:</span> {workType.backup_coverage}
-                    </p>
-                  )}
-                  {workType.required_closure_evidence && (
-                    <p className="mt-1 text-muted-foreground">
-                      <span className="font-medium text-foreground">To close:</span>{" "}
-                      {workType.required_closure_evidence}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
-
+            {advanced && (
+              <>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Guest impact</Label>
@@ -853,51 +901,6 @@ function NewMatter() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Details</Label>
-              <Textarea
-                id="description"
-                rows={3}
-                placeholder="What the guest said, what they've tried, anything the vendor should know."
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-            </div>
-
-            {mode === "one_touch" && (
-              <>
-                <div className="space-y-2">
-                  <Label>Outcome</Label>
-                  <Select
-                    value={form.outcome_type}
-                    onValueChange={(v) => setForm({ ...form, outcome_type: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {OUTCOME_TYPES.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="resolution">What did you do?</Label>
-                  <Textarea
-                    id="resolution"
-                    rows={3}
-                    required
-                    placeholder="Sent the guest the parking instructions and confirmed they found the spot."
-                    value={form.resolution_notes}
-                    onChange={(e) => setForm({ ...form, resolution_notes: e.target.value })}
-                  />
-                </div>
-              </>
-            )}
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="guest_name">Guest name</Label>
@@ -945,6 +948,43 @@ function NewMatter() {
                 />
               </div>
             )}
+              </>
+            )}
+
+            {mode === "one_touch" && (
+              <>
+                <div className="space-y-2">
+                  <Label>Outcome</Label>
+                  <Select
+                    value={form.outcome_type}
+                    onValueChange={(v) => setForm({ ...form, outcome_type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {OUTCOME_TYPES.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="resolution">What did you do?</Label>
+                  <Textarea
+                    id="resolution"
+                    rows={3}
+                    required
+                    placeholder="Sent the guest the parking instructions and confirmed they found the spot."
+                    value={form.resolution_notes}
+                    onChange={(e) => setForm({ ...form, resolution_notes: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+
 
             {mode === "ticket" && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
