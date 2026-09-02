@@ -83,9 +83,9 @@ function Overview() {
           {!signedIn && (
             <Link
               to="/auth"
-              className="min-h-11 self-center text-sm font-medium text-sidebar-foreground/80 underline-offset-4 hover:text-sidebar-foreground hover:underline"
+              className="inline-flex min-h-11 items-center rounded-md border border-sidebar-foreground/30 px-4 text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-foreground/10"
             >
-              Sign in to Resolve
+              Sign in
             </Link>
           )}
         </div>
