@@ -424,17 +424,24 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       groups: detailGroups,
     },
 
-    contacts: staff
-      ? (contacts.data ?? []).map((c) => ({
-          id: c.id,
-          name: c.owner_name,
-          email: c.owner_email,
-          phone: c.owner_phone,
-          source: c.source,
-          matchStatus: c.match_status,
-          syncedAt: c.synced_at,
-        }))
-      : [],
+    // Owner contact comes from the canonical, deduplicated property_owners
+    // record the home is bound to (properties.owner_record_id). The old
+    // per-property contact table was transitional and is no longer read.
+    contacts:
+      staff && ownerRecord
+        ? [
+            {
+              id: ownerRecord.id,
+              name: ownerRecord.name,
+              email: ownerRecord.email,
+              phone: ownerRecord.phone,
+              source: ownerRecord.source,
+              matchStatus: "linked",
+              syncedAt: ownerRecord.syncedAt,
+            },
+          ]
+        : [],
+
     onboarding: {
       stage: p.onboarding_stage,
       total: top.length,
