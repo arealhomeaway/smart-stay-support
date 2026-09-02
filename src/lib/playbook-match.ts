@@ -30,6 +30,8 @@ export type MatchContext = {
   category?: string | null;
   /** Situation id chosen at intake, from `src/lib/situations.ts`. */
   situationId?: string | null;
+  /** What the reporter actually wrote — title and description, joined. */
+  text?: string | null;
   priority?: "p1" | "p2" | "p3" | null;
   /** A guest is currently in the home. */
   guestInHome?: boolean;
@@ -125,24 +127,49 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
   const reasons: string[] = [];
   let score = 0;
 
+  /*
+   * Identity facets answer "is this the same kind of problem?". They are an
+   * any-of group on purpose: a Playbook written for appliances declared both a
+   * category and a work-type name, and an otherwise identical refrigerator
+   * ticket was rejected because its work type was named differently. One
+   * recognisable signal is enough; priority and conditions below still gate.
+   */
+  const identityDeclared =
+    Boolean(m.situations?.length) ||
+    Boolean(m.work_types?.length) ||
+    Boolean(m.categories?.length) ||
+    Boolean(m.keywords?.length);
+  let identityMatched = false;
 
-  if (m.situations?.length) {
-    if (!ctx.situationId || !m.situations.map(norm).includes(norm(ctx.situationId))) return null;
+  if (m.situations?.length && ctx.situationId && m.situations.map(norm).includes(norm(ctx.situationId))) {
+    identityMatched = true;
     score += 5;
     reasons.push("the situation selected at intake");
   }
 
-  if (m.work_types?.length) {
-    if (!ctx.workTypeName || !m.work_types.map(norm).includes(norm(ctx.workTypeName))) return null;
+  if (m.work_types?.length && ctx.workTypeName && m.work_types.map(norm).includes(norm(ctx.workTypeName))) {
+    identityMatched = true;
     score += 4;
     reasons.push(`the work type "${ctx.workTypeName}"`);
   }
 
-  if (m.categories?.length) {
-    if (!ctx.category || !m.categories.map(norm).includes(norm(ctx.category))) return null;
+  if (m.keywords?.length) {
+    const haystack = norm([ctx.text, ctx.workTypeName].filter(Boolean).join(" "));
+    const hit = m.keywords.map(norm).find((k) => k.length > 2 && haystack.includes(k));
+    if (hit) {
+      identityMatched = true;
+      score += 3;
+      reasons.push(`what was reported ("${hit}")`);
+    }
+  }
+
+  if (m.categories?.length && ctx.category && m.categories.map(norm).includes(norm(ctx.category))) {
+    identityMatched = true;
     score += 2;
     reasons.push("the ticket category");
   }
+
+  if (identityDeclared && !identityMatched) return null;
 
   if (m.priorities?.length) {
     if (!ctx.priority || !m.priorities.includes(ctx.priority)) return null;

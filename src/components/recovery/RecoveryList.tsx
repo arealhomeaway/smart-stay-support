@@ -181,13 +181,23 @@ export function RecoveryListSection({
   requirements,
   propertyNames,
   canEdit,
+  initialOpenId,
 }: {
   recoveries: RecoveryRow[];
   requirements: Map<string, RequirementLike[]>;
   propertyNames: Map<string, string>;
   canEdit: boolean;
+  /** Deep link from an approval notification — opens the exact recovery once. */
+  initialOpenId?: string | null;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const deepLinked = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialOpenId || deepLinked.current === initialOpenId) return;
+    if (!recoveries.some((r) => r.id === initialOpenId)) return;
+    deepLinked.current = initialOpenId;
+    setOpenId(initialOpenId);
+  }, [initialOpenId, recoveries]);
   const people = useStaffDirectory().data ?? [];
   // Advancing a stage can move a recovery out of the section it was opened
   // from; the workspace stays on the case being worked.

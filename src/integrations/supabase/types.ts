@@ -4137,17 +4137,20 @@ export type Database = {
           created_at: string
           effective_on: string | null
           escalate_if: string[]
+          generated_at: string | null
           id: string
           immediate_actions: string[]
           matcher: Json
           playbook_key: string | null
           priority_reason: string | null
+          required_evidence: string[]
           requires_director: boolean
           retired_at: string | null
           review_note: string | null
           risk_flags: Json
           source: string
           source_refs: string[]
+          source_version: string | null
           status: string
           submitted_at: string | null
           submitted_by: string | null
@@ -4167,17 +4170,20 @@ export type Database = {
           created_at?: string
           effective_on?: string | null
           escalate_if?: string[]
+          generated_at?: string | null
           id?: string
           immediate_actions?: string[]
           matcher?: Json
           playbook_key?: string | null
           priority_reason?: string | null
+          required_evidence?: string[]
           requires_director?: boolean
           retired_at?: string | null
           review_note?: string | null
           risk_flags?: Json
           source?: string
           source_refs?: string[]
+          source_version?: string | null
           status?: string
           submitted_at?: string | null
           submitted_by?: string | null
@@ -4197,17 +4203,20 @@ export type Database = {
           created_at?: string
           effective_on?: string | null
           escalate_if?: string[]
+          generated_at?: string | null
           id?: string
           immediate_actions?: string[]
           matcher?: Json
           playbook_key?: string | null
           priority_reason?: string | null
+          required_evidence?: string[]
           requires_director?: boolean
           retired_at?: string | null
           review_note?: string | null
           risk_flags?: Json
           source?: string
           source_refs?: string[]
+          source_version?: string | null
           status?: string
           submitted_at?: string | null
           submitted_by?: string | null

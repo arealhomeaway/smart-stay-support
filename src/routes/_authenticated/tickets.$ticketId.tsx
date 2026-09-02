@@ -21,6 +21,7 @@ import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPan
 import { useRole } from "@/hooks/useRole";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
+import { classifyTicketText } from "@/lib/ticket-classify";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,6 +120,22 @@ function TicketDetail() {
           ...a,
           author: a.author_id ? (authorMap.get(a.author_id) ?? null) : null,
         })),
+      };
+    },
+  });
+
+  // One incident, several lanes. Resolve knows which lanes are actually live,
+  // so the ones that are not stay out of the way instead of shouting.
+  const { data: branches } = useQuery({
+    queryKey: ["ticket-branches", ticketId],
+    queryFn: async () => {
+      const [claims, recoveries] = await Promise.all([
+        supabase.from("claims").select("id").eq("ticket_id", ticketId),
+        supabase.from("guest_recovery").select("id").eq("ticket_id", ticketId),
+      ]);
+      return {
+        claim: (claims.data ?? []).length > 0,
+        recovery: (recoveries.data ?? []).length > 0,
       };
     },
   });
@@ -516,6 +533,10 @@ function TicketDetail() {
             objectType: "ticket",
             workTypeName: workType?.name ?? null,
             category: ticket.category ?? null,
+            text: [ticket.title, ticket.description].filter(Boolean).join(" — "),
+            situationId:
+              classifyTicketText([ticket.title, ticket.description].filter(Boolean).join(". "))
+                ?.situation.id ?? null,
             priority: (ticket.priority as "p1" | "p2" | "p3" | null) ?? null,
             escalationFlags: sla.escalation ? ["p1_escalated"] : [],
             propertySpecialHandling: [ticket.properties?.access_notes, ticket.properties?.notes].filter(
@@ -710,7 +731,8 @@ function TicketDetail() {
                 {activity.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
                 {activity.map((a) => (
                   <div key={a.id} className="text-sm">
-                    <p className="text-muted-foreground">
+                    <p className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                      <LaneChip lane={laneOf(a.kind, a.event_type, a.body)} />
                       <span className="font-medium text-foreground">
                         {a.author?.full_name ?? a.author?.email ?? "Team member"}
                       </span>{" "}
@@ -732,6 +754,12 @@ function TicketDetail() {
             sourceId={ticketId}
             defaultTitle={ticket.title}
             defaultDescription={ticket.description}
+            propertyId={ticket.property_id}
+            authorityNote={
+              ticket.guest_in_residence
+                ? "A guest is in the home. Emergency mitigation comes before the permanent repair, and owner approval follows the maintenance authority policy."
+                : "Owner approval follows the maintenance authority policy — Resolve applies the threshold, you do not have to remember it."
+            }
           />
 
           {/* Close is the end of the workflow: context, activity, evidence and related work come first. */}
@@ -875,9 +903,23 @@ function TicketDetail() {
           {/* Internal Work Orders are not part of the beta — Breezeway is the
               only visible repair path. Kept for platform owners only. */}
           {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} />}
-          <TicketRecoveryPanel ticket={ticket} />
+          {/* The incident is one ticket. Repair is the default lane; the guest
+              and cost lanes only open out when they are actually in play. */}
+          <IncidentBranch
+            open={Boolean(branches?.recovery)}
+            label="Make it right for the guest"
+            hint="Credit, refund, a gesture — and who has to approve it."
+          >
+            <TicketRecoveryPanel ticket={ticket} />
+          </IncidentBranch>
 
-          <TicketClaimPanel ticket={ticket} />
+          <IncidentBranch
+            open={Boolean(branches?.claim)}
+            label="Recover the cost"
+            hint="Damage, deposit or a channel claim on the same incident."
+          >
+            <TicketClaimPanel ticket={ticket} />
+          </IncidentBranch>
           <Card>
             <CardHeader>
               <CardTitle>Details</CardTitle>
@@ -1015,5 +1057,68 @@ function Field({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="text-right font-medium">{value}</span>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* One incident, several lanes                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Which lane a piece of history belongs to, read from what was recorded.
+ * The order of the incident never changes — only the label beside it.
+ */
+type Lane = "repair" | "claim" | "guest";
+
+function laneOf(kind: string | null, eventType: string | null, body: string | null): Lane {
+  const text = `${kind ?? ""} ${eventType ?? ""} ${body ?? ""}`.toLowerCase();
+  if (text.includes("claim") || text.includes("deposit") || text.includes("aircover")) return "claim";
+  if (
+    text.includes("guest") ||
+    text.includes("recovery") ||
+    text.includes("refund") ||
+    text.includes("credit") ||
+    text.includes("compensat")
+  )
+    return "guest";
+  return "repair";
+}
+
+const LANE_STYLE: Record<Lane, { label: string; className: string }> = {
+  repair: { label: "Repair", className: "border-border" },
+  claim: { label: "Claim", className: "border-warning/40 bg-warning/10" },
+  guest: { label: "Guest", className: "border-primary/30 bg-primary/10 text-primary" },
+};
+
+function LaneChip({ lane }: { lane: Lane }) {
+  const style = LANE_STYLE[lane];
+  return (
+    <Badge variant="outline" className={`text-[10px] uppercase tracking-wide ${style.className}`}>
+      {style.label}
+    </Badge>
+  );
+}
+
+/** An inactive lane is one quiet line until somebody opens it. */
+function IncidentBranch({
+  open,
+  label,
+  hint,
+  children,
+}: {
+  open: boolean;
+  label: string;
+  hint: string;
+  children: React.ReactNode;
+}) {
+  if (open) return <>{children}</>;
+  return (
+    <details className="group rounded-lg border border-border bg-card px-3 py-2">
+      <summary className="cursor-pointer text-sm font-medium">
+        {label}
+        <span className="block text-xs font-normal text-muted-foreground">{hint}</span>
+      </summary>
+      <div className="pt-3">{children}</div>
+    </details>
   );
 }
