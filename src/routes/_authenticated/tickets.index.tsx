@@ -42,13 +42,17 @@ export const Route = createFileRoute("/_authenticated/tickets/")({
   }),
   // Queue tab, priority filter and search live in the URL: the workspace is
   // shareable, survives a reload, and is exactly what Back restores.
-  validateSearch: (raw: Record<string, unknown>) => ({
-    tab: typeof raw.tab === "string" ? raw.tab : undefined,
-    priority: typeof raw.priority === "string" ? raw.priority : undefined,
-    q: typeof raw.q === "string" && raw.q ? raw.q : undefined,
-  }),
+  validateSearch: (raw: Record<string, unknown>): TicketQueueSearch => {
+    const out: TicketQueueSearch = {};
+    if (typeof raw["tab"] === "string" && raw["tab"]) out.tab = raw["tab"];
+    if (typeof raw["priority"] === "string" && raw["priority"]) out.priority = raw["priority"];
+    if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
+    return out;
+  },
   component: TicketsPage,
 });
+
+type TicketQueueSearch = { tab?: string; priority?: string; q?: string };
 
 function TicketsPage() {
   const navigate = Route.useNavigate();
@@ -56,18 +60,21 @@ function TicketsPage() {
   const search = params.q ?? "";
   const tab = (params.tab ?? "mine") as QueueTab;
   const priority = params.priority ?? "all";
-  const setParam = (patch: Record<string, string | undefined>) =>
+  const setParam = (patch: TicketQueueSearch) =>
     void navigate({
-      search: (prev: Record<string, unknown>) => {
-        const next = { ...prev, ...patch };
-        for (const k of Object.keys(next)) if (!next[k] || next[k] === "all") delete next[k];
+      search: (prev: TicketQueueSearch) => {
+        const next: TicketQueueSearch = { ...prev, ...patch };
+        if (!next.tab || next.tab === "mine") delete next.tab;
+        if (!next.priority || next.priority === "all") delete next.priority;
+        if (!next.q) delete next.q;
         return next;
       },
       replace: true,
     });
   const setSearch = (v: string) => setParam({ q: v || undefined });
-  const setTab = (v: string) => setParam({ tab: v === "mine" ? undefined : v });
+  const setTab = (v: string) => setParam({ tab: v });
   const setPriority = (v: string) => setParam({ priority: v });
+
   const { demoMode } = useDemo();
   const userId = useCurrentUserId();
   const { isSupervisor } = useRole();
