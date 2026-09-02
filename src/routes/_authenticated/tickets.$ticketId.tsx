@@ -636,38 +636,51 @@ function TicketDetail() {
           {!closed && ticket.status !== "waiting" && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Blocked on someone else?</CardTitle>
-                <CardDescription>Waiting is fine. Waiting without a review date is not.</CardDescription>
+                <CardTitle className="text-base">Waiting on someone?</CardTitle>
+                <CardDescription>
+                  Park it here and it comes back to you at the time you set. Nothing is forgotten and nobody
+                  has to remember it.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-3">
-                <Select value={waitOn} onValueChange={setWaitOn}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WAITING_ON.map((w) => (
-                      <SelectItem key={w.value} value={w.value}>
-                        {w.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="Waiting for what?"
-                  value={waitReason}
-                  onChange={(e) => setWaitReason(e.target.value)}
-                />
-                <Input
-                  type="datetime-local"
-                  value={waitReview}
-                  onChange={(e) => setWaitReview(e.target.value)}
-                />
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Who are we waiting on?</Label>
+                  <Select value={waitOn} onValueChange={setWaitOn}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WAITING_ON.map((w) => (
+                        <SelectItem key={w.value} value={w.value}>
+                          {w.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">What are we waiting for?</Label>
+                  <Input
+                    placeholder="e.g. vendor confirming a Thursday window"
+                    value={waitReason}
+                    onChange={(e) => setWaitReason(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Bring it back to me</Label>
+                  <Input
+                    type="datetime-local"
+                    value={waitReview}
+                    onChange={(e) => setWaitReview(e.target.value)}
+                  />
+                </div>
                 <Button variant="secondary" onClick={setWaiting} className="sm:col-span-3">
-                  Mark as waiting
+                  Park this and remind me
                 </Button>
               </CardContent>
             </Card>
           )}
+
 
 
           <Card>
