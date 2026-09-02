@@ -353,7 +353,6 @@ export function secondQuoteAdvice(input: {
 /* ------------------------------------------------------------------ */
 
 export type CommitmentStatus = {
-  contactOverdue: boolean;
   acknowledgeOverdue: boolean;
   etaMissed: boolean;
   misses: number;
@@ -365,15 +364,14 @@ export function commitmentStatus(wo: WorkOrderLike, now = new Date()): Commitmen
   const priority: Priority = normalisePriority(wo.priority);
   const misses = wo.missed_commitments ?? 0;
 
-  const sinceDispatch = minutesSince(wo.vendor_contacted_at, now);
-  const contactOverdue =
-    !wo.vendor_contacted_at && Boolean(wo.vendor_org_id || wo.vendor_name) === false ? false : false;
+  const sinceContact = minutesSince(wo.vendor_contacted_at, now);
 
   const acknowledgeOverdue =
     Boolean(wo.vendor_contacted_at) &&
     !wo.vendor_acknowledged_at &&
-    sinceDispatch != null &&
-    sinceDispatch > MAINTENANCE_POLICY.vendorAcknowledgeMinutes[priority];
+    sinceContact != null &&
+    sinceContact > MAINTENANCE_POLICY.vendorAcknowledgeMinutes[priority];
+
 
   const etaMissed =
     Boolean(wo.vendor_eta_at) &&
