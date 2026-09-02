@@ -274,7 +274,7 @@ describe("owner approval, evidence and oversight", () => {
       { ...base, priority: "p3", created_at: "2026-01-01" },
       { ...base, priority: "p1", created_at: "2026-02-01" },
     ];
-    expect([...rows].sort(workOrderSort)[0].priority).toBe("p1");
+    expect([...rows].sort(workOrderSort)[0]?.priority).toBe("p1");
   });
 
   it("recently completed work stays visible for thirty days only", () => {
