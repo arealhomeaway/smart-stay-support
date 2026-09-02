@@ -187,6 +187,28 @@ function TicketDetail() {
     },
   });
 
+  // Repair state at page level so the workspace knows which stage it is in.
+  // Same query key as the repair panel, so there is one fetch and one truth.
+  const repairStateFn = useServerFn(breezewayOutboundState);
+  const { data: repairState } = useQuery({
+    queryKey: ["breezeway-outbound", "ticket", ticketId],
+    queryFn: () => repairStateFn({ data: { sourceType: "ticket", sourceId: ticketId } }),
+  });
+
+  const ownerId = data?.ticket.current_action_owner ?? null;
+  const { data: assignee } = useQuery({
+    queryKey: ["ticket-assignee", ownerId],
+    enabled: Boolean(ownerId),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", ownerId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+
   if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
 
   const { ticket, steps, activity } = data;
