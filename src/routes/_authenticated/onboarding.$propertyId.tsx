@@ -133,23 +133,33 @@ function PropertyWorkspace() {
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
   const canEdit = !readOnly && can("handoff_request");
 
+  const project = {
+    property: current as unknown as ProjectProperty,
+    tasks,
+    handoff: (openHandoff ?? null) as OpenHandoff,
+  };
+  const stage = deriveStage(project);
+  const nextAction = deriveNextAction(project);
+  const risk = deriveRisk(project);
+  const blockers = deriveBlockers(project);
+  const target = targetHandoff(project);
+
   return (
     <div className="space-y-5">
       <Link to="/onboarding" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ChevronLeft className="size-4" /> Pipeline
+        <ChevronLeft className="size-4" /> Director hub
       </Link>
 
       <PageHeader
         eyebrow="Onboarding"
         title={current.name}
-        description={`${stageLabel(current.onboarding_stage)} · ${roll.done}/${roll.total} standard workflow tasks complete`}
+        description={`${lifecycleStageMeta(stage).label} · ${roll.done}/${roll.total} standard workflow steps complete`}
       />
 
       <div className="flex flex-wrap items-center gap-2">
         <Chip className={stateChip("info")}>{lifecycleMeta(current.lifecycle_status).label}</Chip>
         {activeOwner && <Chip className={stateChip("waiting")}>Active Owner Program</Chip>}
-        {roll.blocked > 0 && <Chip className={stateChip("blocked")}>{roll.blocked} blocked</Chip>}
-        {roll.overdue > 0 && <Chip className={stateChip("blocked")}>{roll.overdue} overdue</Chip>}
+        {pm && <Chip className={stateChip("info")}>{pm.full_name ?? pm.email}</Chip>}
         {openHandoff && <Chip className={stateChip("waiting")}>Handoff — {gateLabel(openHandoff.gate_step)}</Chip>}
         <Button asChild size="sm" variant="outline" className="ml-auto">
           <Link
@@ -161,7 +171,20 @@ function PropertyWorkspace() {
         </Button>
       </div>
 
+      <CurrentWork
+        stage={stage}
+        next={nextAction}
+        risk={risk}
+        blockers={blockers}
+        tasks={tasks}
+        handoff={(openHandoff ?? null) as OpenHandoff}
+        accepted={Boolean(current.handoff_accepted_at)}
+        target={target}
+        onOpenTask={setOpenTaskId}
+      />
+
       <Tabs defaultValue="workflow" className="space-y-5">
+
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="workflow">Workflow</TabsTrigger>
