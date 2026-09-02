@@ -25,13 +25,18 @@ export function PortalCard({
 
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-border bg-card p-6 transition-shadow focus-within:shadow-md hover:shadow-md">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all duration-200 focus-within:shadow-lg hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg">
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary/60 to-accent"
+      />
       <div className="flex items-start justify-between gap-3">
-        <span className="rounded-lg bg-primary/10 p-2.5 text-primary">
+        <span className="rounded-xl bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
           <Icon className="size-5" aria-hidden="true" />
         </span>
         {recent && <Badge variant="secondary">Last used</Badge>}
       </div>
+
       <h3 className="mt-4 text-lg font-semibold">{portal.name}</h3>
       <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
         {portal.audience}

@@ -6,6 +6,8 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { PortalCard } from "@/components/PortalCard";
 import { publicPortals } from "@/lib/portals";
 import { supabase } from "@/integrations/supabase/client";
+import heroImage from "@/assets/overview-hero.jpg";
+
 
 const TITLE = "Resolve — ARHA's Central Operating Hub";
 const DESCRIPTION =
@@ -90,32 +92,62 @@ function Overview() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4">
-        <section className="py-16 md:py-24">
-          <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-            A Real Home Away · Internal system
-          </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight md:text-6xl">
-            ARHA&rsquo;s Central Operating Hub
-          </h1>
-          <p className="mt-6 max-w-3xl text-lg text-muted-foreground">
-            Resolve connects ARHA&rsquo;s properties, people, partners, workflows, communications and
-            performance data in one coordinated operating system. Select the portal that applies to
-            your role to securely access your work.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="min-h-11">
-              <a href="#portals">
-                Choose your portal
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </a>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="min-h-11">
-              <Link to={signedIn ? "/hub" : "/auth"}>
-                {signedIn ? "Go to my portals" : "Sign in"}
-              </Link>
-            </Button>
+        <section className="py-10 md:py-14">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-sidebar text-sidebar-foreground shadow-lg">
+            <img
+              src={heroImage}
+              alt="A warmly lit A Real Home Away property at dusk"
+              width={1600}
+              height={1104}
+              className="absolute inset-0 size-full object-cover"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-r from-sidebar via-sidebar/90 to-sidebar/40"
+            />
+            <div className="relative grid gap-8 p-8 md:p-14">
+              <div className="max-w-2xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sidebar-primary">
+                  Resolve Overview
+                </p>
+                <h1 className="mt-5 text-4xl font-semibold leading-[1.05] md:text-6xl">
+                  Keep calm. Check Resolve.
+                </h1>
+                <p className="mt-4 text-lg text-sidebar-foreground/85 md:text-xl">
+                  Your new favorite place to find things.
+                </p>
+                <p className="mt-5 max-w-xl text-sm leading-relaxed text-sidebar-foreground/70 md:text-base">
+                  Resolve connects ARHA&rsquo;s properties, people, partners, workflows and
+                  performance data in one operating system. Choose the portal that matches your
+                  role and you&rsquo;ll land exactly where your work lives.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="min-h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                  >
+                    <a href="#portals">
+                      Choose your portal
+                      <ArrowRight className="size-4" aria-hidden="true" />
+                    </a>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="min-h-11 border-sidebar-foreground/30 bg-transparent text-sidebar-foreground hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
+                  >
+                    <Link to={signedIn ? "/hub" : "/auth"}>
+                      {signedIn ? "Go to my portals" : "Sign in"}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
+
 
         <section aria-labelledby="why" className="border-t border-border py-14">
           <h2 id="why" className="text-2xl font-semibold">
