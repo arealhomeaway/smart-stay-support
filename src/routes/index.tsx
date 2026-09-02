@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Building2, LineChart, Repeat, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Building2, LineChart, Repeat, ShieldCheck } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { PortalCard } from "@/components/PortalCard";
 import { publicPortals } from "@/lib/portals";
