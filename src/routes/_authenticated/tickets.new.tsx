@@ -45,7 +45,6 @@ import { classifyTicketText } from "@/lib/ticket-classify";
 import { BackControl } from "@/components/nav/NavContext";
 import { resolveOrigin } from "@/lib/nav-context";
 
-
 /**
  * Context handed in by whichever surface launched this form. It only
  * pre-populates fields and records where the ticket came from — every
@@ -241,7 +240,6 @@ function NewMatter() {
     }));
   }
 
-
   /**
    * "Looks like…" — deterministic reading of what the coordinator typed.
    * It only preselects the same situation they could have picked by hand,
@@ -322,7 +320,10 @@ function NewMatter() {
   }, [form.playbook_id, workType]);
 
   // The first line of what happened is the summary — nobody types it twice.
-  const derivedTitle = (form.title.trim() || form.description.trim().split("\n")[0] || "").slice(0, 140);
+  const derivedTitle = (form.title.trim() || form.description.trim().split("\n")[0] || "").slice(
+    0,
+    140,
+  );
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -457,7 +458,9 @@ function NewMatter() {
         });
       }
 
-      toast.success(oneTouch ? "One-touch resolution logged." : "Ticket opened with its clocks running.");
+      toast.success(
+        oneTouch ? "One-touch resolution logged." : "Ticket opened with its clocks running.",
+      );
       router.navigate({ to: "/tickets/$ticketId", params: { ticketId: ticket.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save this record");
@@ -486,7 +489,8 @@ function NewMatter() {
       <div>
         <h1 className="text-3xl font-semibold">Log work</h1>
         <p className="mt-1 text-muted-foreground">
-          Every meaningful operational interaction gets recorded. Already handled it? Log it and move on.
+          Every meaningful operational interaction gets recorded. Already handled it? Log it and
+          move on.
         </p>
       </div>
 
@@ -510,12 +514,11 @@ function NewMatter() {
       >
         <span>
           <span className="font-medium">Not sure how to handle it? </span>
-          Describe it to the Coach and it will set the priority, build the checklist and write the vendor brief.
+          Describe it to the Coach and it will set the priority, build the checklist and write the
+          vendor brief.
         </span>
         <span className="ml-3 whitespace-nowrap font-medium text-primary">Ask the Coach →</span>
       </Link>
-
-
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ModeCard
@@ -577,7 +580,9 @@ function NewMatter() {
                   </div>
                   {(properties ?? [])
                     .filter((p) =>
-                      `${p.nickname ?? ""} ${p.name}`.toLowerCase().includes(propertyQuery.toLowerCase()),
+                      `${p.nickname ?? ""} ${p.name}`
+                        .toLowerCase()
+                        .includes(propertyQuery.toLowerCase()),
                     )
                     .map((p) => (
                       <SelectItem key={p.id} value={p.id}>
@@ -622,8 +627,12 @@ function NewMatter() {
                 </div>
                 <p className="mt-2 text-muted-foreground">
                   {meta.short} because{" "}
-                  {priorityReason(form.guest_impact, form.occupancy_status, workType.default_priority)}.
-                  {role ? ` Owned by ${role.name}.` : ""}
+                  {priorityReason(
+                    form.guest_impact,
+                    form.occupancy_status,
+                    workType.default_priority,
+                  )}
+                  .{role ? ` Owned by ${role.name}.` : ""}
                 </p>
                 {!advanced && (
                   <button
@@ -682,7 +691,8 @@ function NewMatter() {
                   <div>
                     <Label>What is happening?</Label>
                     <p className="text-xs text-muted-foreground">
-                      Pick the situation. Resolve sets the work type, the owning seat and the clocks.
+                      Pick the situation. Resolve sets the work type, the owning seat and the
+                      clocks.
                     </p>
                   </div>
                   {SITUATION_GROUPS.map((g) => (
@@ -703,7 +713,9 @@ function NewMatter() {
                             }`}
                           >
                             <span className="block text-sm font-medium">{s.label}</span>
-                            <span className="mt-0.5 block text-xs text-muted-foreground">{s.hint}</span>
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {s.hint}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -744,8 +756,12 @@ function NewMatter() {
                 )}
                 <p className="mt-1 text-muted-foreground">
                   Acknowledge within {workType.response_minutes}m · start within{" "}
-                  {workType.action_start_minutes === 0 ? "immediately" : `${workType.action_start_minutes}m`}
-                  {workType.completion_target ? ` · target ${workType.completion_target.toLowerCase()}` : ""}
+                  {workType.action_start_minutes === 0
+                    ? "immediately"
+                    : `${workType.action_start_minutes}m`}
+                  {workType.completion_target
+                    ? ` · target ${workType.completion_target.toLowerCase()}`
+                    : ""}
                 </p>
                 {workType.required_closure_evidence && (
                   <p className="mt-1 text-muted-foreground">
@@ -758,206 +774,212 @@ function NewMatter() {
 
             {advanced && (
               <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Guest impact</Label>
-                <Select
-                  value={form.guest_impact}
-                  onValueChange={(v) =>
-                    setForm({
-                      ...form,
-                      guest_impact: v,
-                      guest_in_residence:
-                        v === "active_guest_affected" || v === "safety_security" ? true : form.guest_in_residence,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GUEST_IMPACT.map((g) => (
-                      <SelectItem key={g.value} value={g.value}>
-                        {g.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Occupancy status</Label>
-                <Select
-                  value={form.occupancy_status}
-                  onValueChange={(v) => setForm({ ...form, occupancy_status: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OCCUPANCY_STATUS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.property_id && (
-                  <p className="text-xs text-muted-foreground">
-                    {stayLoading
-                      ? "Checking OwnerRez for the current reservation…"
-                      : stay?.ok
-                        ? stay.data.occupancy_status === "vacant"
-                          ? `OwnerRez: vacant${stay.data.next_arrival ? ` · next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
-                          : `OwnerRez: ${stay.data.guest_name ?? "guest"} · ${stay.data.arrival?.slice(0, 10)} → ${stay.data.departure?.slice(0, 10)}`
-                        : (stay?.error ?? "")}
-                  </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Guest impact</Label>
+                    <Select
+                      value={form.guest_impact}
+                      onValueChange={(v) =>
+                        setForm({
+                          ...form,
+                          guest_impact: v,
+                          guest_in_residence:
+                            v === "active_guest_affected" || v === "safety_security"
+                              ? true
+                              : form.guest_in_residence,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GUEST_IMPACT.map((g) => (
+                          <SelectItem key={g.value} value={g.value}>
+                            {g.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Occupancy status</Label>
+                    <Select
+                      value={form.occupancy_status}
+                      onValueChange={(v) => setForm({ ...form, occupancy_status: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {OCCUPANCY_STATUS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {form.property_id && (
+                      <p className="text-xs text-muted-foreground">
+                        {stayLoading
+                          ? "Checking OwnerRez for the current reservation…"
+                          : stay?.ok
+                            ? stay.data.occupancy_status === "vacant"
+                              ? `OwnerRez: vacant${stay.data.next_arrival ? ` · next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
+                              : `OwnerRez: ${stay.data.guest_name ?? "guest"} · ${stay.data.arrival?.slice(0, 10)} → ${stay.data.departure?.slice(0, 10)}`
+                            : (stay?.error ?? "")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {mode === "ticket" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select
+                        value={form.priority}
+                        onValueChange={(v) => {
+                          setPriorityTouched(true);
+                          setForm({ ...form, priority: v });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRIORITIES.map((p) => (
+                            <SelectItem key={p.value} value={p.value}>
+                              {p.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Rubric says <span className="font-medium">{mechanical.toUpperCase()}</span>{" "}
+                        · {meta.summary}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Playbook</Label>
+                      <Select
+                        value={form.playbook_id}
+                        onValueChange={(v) => setForm({ ...form, playbook_id: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Use the work type&apos;s playbook</SelectItem>
+                          <SelectItem value="none">No playbook</SelectItem>
+                          {(playbooks ?? []).map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
 
-            {mode === "ticket" && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Priority</Label>
-                  <Select
-                    value={form.priority}
-                    onValueChange={(v) => {
-                      setPriorityTouched(true);
-                      setForm({ ...form, priority: v });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRIORITIES.map((p) => (
-                        <SelectItem key={p.value} value={p.value}>
-                          {p.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Rubric says <span className="font-medium">{mechanical.toUpperCase()}</span> ·{" "}
-                    {meta.summary}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Playbook</Label>
-                  <Select
-                    value={form.playbook_id}
-                    onValueChange={(v) => setForm({ ...form, playbook_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="auto">Use the work type&apos;s playbook</SelectItem>
-                      <SelectItem value="none">No playbook</SelectItem>
-                      {(playbooks ?? []).map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {mode === "ticket" && (
-              <div className="space-y-2">
-                <Label>Owning functional role</Label>
-                <Select
-                  value={form.functional_role_code}
-                  onValueChange={(v) => setForm({ ...form, functional_role_code: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Which seat owns this process?" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(roles ?? []).map((r) => (
-                      <SelectItem key={r.code} value={r.code}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {role && (
-                  <p className="text-xs text-muted-foreground">
-                    {role.current_seat_holder
-                      ? `Currently held by ${role.current_seat_name ?? "an unassigned seat"}`
-                      : role.current_seat_name
-                        ? `${role.current_seat_name} — invitation pending, so this seat is not yet routable`
-                        : "This seat is unassigned"}{" "}
-                    · {role.coverage_window}
-                  </p>
+                {mode === "ticket" && (
+                  <div className="space-y-2">
+                    <Label>Owning functional role</Label>
+                    <Select
+                      value={form.functional_role_code}
+                      onValueChange={(v) => setForm({ ...form, functional_role_code: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Which seat owns this process?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(roles ?? []).map((r) => (
+                          <SelectItem key={r.code} value={r.code}>
+                            {r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {role && (
+                      <p className="text-xs text-muted-foreground">
+                        {role.current_seat_holder
+                          ? `Currently held by ${role.current_seat_name ?? "an unassigned seat"}`
+                          : role.current_seat_name
+                            ? `${role.current_seat_name} — invitation pending, so this seat is not yet routable`
+                            : "This seat is unassigned"}{" "}
+                        · {role.coverage_window}
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            {mode === "ticket" && overridden && (
-              <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
-                <Label htmlFor="override">
-                  Why {form.priority.toUpperCase()} instead of {mechanical.toUpperCase()}?
-                </Label>
-                <Input
-                  id="override"
-                  placeholder="Guest is elderly and alone in the home"
-                  value={form.priority_override_reason}
-                  onChange={(e) => setForm({ ...form, priority_override_reason: e.target.value })}
-                />
-              </div>
-            )}
+                {mode === "ticket" && overridden && (
+                  <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
+                    <Label htmlFor="override">
+                      Why {form.priority.toUpperCase()} instead of {mechanical.toUpperCase()}?
+                    </Label>
+                    <Input
+                      id="override"
+                      placeholder="Guest is elderly and alone in the home"
+                      value={form.priority_override_reason}
+                      onChange={(e) =>
+                        setForm({ ...form, priority_override_reason: e.target.value })
+                      }
+                    />
+                  </div>
+                )}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="guest_name">Guest name</Label>
-                <Input
-                  id="guest_name"
-                  value={form.guest_name}
-                  onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="guest_contact">Guest contact</Label>
-                <Input
-                  id="guest_contact"
-                  placeholder="Phone, email or platform thread"
-                  value={form.guest_contact}
-                  onChange={(e) => setForm({ ...form, guest_contact: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <div>
-                <p className="text-sm font-medium">Guest currently in the home</p>
-                <p className="text-xs text-muted-foreground">Drives required guest communication before closure.</p>
-              </div>
-              <Switch
-                checked={form.guest_in_residence}
-                onCheckedChange={(v) => setForm({ ...form, guest_in_residence: v })}
-              />
-            </div>
-
-            {mode === "ticket" && (
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                <div>
-                  <p className="flex items-center gap-2 text-sm font-medium">
-                    <Users className="size-4" /> Cross-team
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    More than one role, department or vendor has to act on this.
-                  </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="guest_name">Guest name</Label>
+                    <Input
+                      id="guest_name"
+                      value={form.guest_name}
+                      onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="guest_contact">Guest contact</Label>
+                    <Input
+                      id="guest_contact"
+                      placeholder="Phone, email or platform thread"
+                      value={form.guest_contact}
+                      onChange={(e) => setForm({ ...form, guest_contact: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <Switch
-                  checked={form.cross_team}
-                  onCheckedChange={(v) => setForm({ ...form, cross_team: v })}
-                />
-              </div>
-            )}
+
+                <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                  <div>
+                    <p className="text-sm font-medium">Guest currently in the home</p>
+                    <p className="text-xs text-muted-foreground">
+                      Drives required guest communication before closure.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={form.guest_in_residence}
+                    onCheckedChange={(v) => setForm({ ...form, guest_in_residence: v })}
+                  />
+                </div>
+
+                {mode === "ticket" && (
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                    <div>
+                      <p className="flex items-center gap-2 text-sm font-medium">
+                        <Users className="size-4" /> Cross-team
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        More than one role, department or vendor has to act on this.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.cross_team}
+                      onCheckedChange={(v) => setForm({ ...form, cross_team: v })}
+                    />
+                  </div>
+                )}
               </>
             )}
 
@@ -994,7 +1016,6 @@ function NewMatter() {
                 </div>
               </>
             )}
-
 
             {mode === "ticket" && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">

@@ -27,7 +27,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { title: "Home — Resolve Operations" },
       {
         name: "description",
-        content: "What needs you now, what you have started, what you are waiting on, and routine work due today.",
+        content:
+          "What needs you now, what you have started, what you are waiting on, and routine work due today.",
       },
       { property: "og:title", content: "Home — Resolve Operations" },
       { property: "og:description", content: "Your working day in Resolve, in one screen." },
@@ -116,14 +117,17 @@ function Dashboard() {
   const needsMe = mine
     .filter(
       (t) =>
-        (t.status !== "waiting" && (!t.acknowledged_at || !t.action_started_at || slaState(t).breached)) ||
+        (t.status !== "waiting" &&
+          (!t.acknowledged_at || !t.action_started_at || slaState(t).breached)) ||
         (t.status === "waiting" && dueBack(t)),
     )
     .sort((a, b) => {
       const rank: Record<string, number> = { p1: 3, p2: 2, p3: 1 };
       return (
         (rank[b.priority] ?? 0) - (rank[a.priority] ?? 0) ||
-        (a.response_due_at ?? a.action_due_at ?? "").localeCompare(b.response_due_at ?? b.action_due_at ?? "")
+        (a.response_due_at ?? a.action_due_at ?? "").localeCompare(
+          b.response_due_at ?? b.action_due_at ?? "",
+        )
       );
     });
 
@@ -134,11 +138,14 @@ function Dashboard() {
   const unclaimed = open.filter((t) => !t.current_action_owner && !t.assigned_to);
 
   // Home is a workspace too: a ticket opened from here comes back to here.
-  const { originSearch } = useWorkspaceOrigin("Home", [
-    ...needsMe,
-    ...inProgress,
-    ...waiting,
-  ].map((t) => ({ id: t.id, label: t.title, sub: t.properties?.nickname ?? t.properties?.name ?? undefined })));
+  const { originSearch } = useWorkspaceOrigin(
+    "Home",
+    [...needsMe, ...inProgress, ...waiting].map((t) => ({
+      id: t.id,
+      label: t.title,
+      sub: t.properties?.nickname ?? t.properties?.name ?? undefined,
+    })),
+  );
 
   return (
     <div className="space-y-6">
@@ -190,15 +197,25 @@ function Dashboard() {
         bodyClassName="space-y-1.5"
       >
         {needsMe.length === 0 ? (
-          <EmptyState title="Nothing needs you right now." hint="Everything you own is moving or parked with a follow-up time." />
+          <EmptyState
+            title="Nothing needs you right now."
+            hint="Everything you own is moving or parked with a follow-up time."
+          />
         ) : (
           needsMe.map((t) => <WorkRow key={t.id} t={t} emphasis origin={originSearch} />)
         )}
       </SectionCard>
 
-      <SectionCard title="In progress" description="Work you own and have already started." bodyClassName="space-y-1.5">
+      <SectionCard
+        title="In progress"
+        description="Work you own and have already started."
+        bodyClassName="space-y-1.5"
+      >
         {inProgress.length === 0 ? (
-          <EmptyState title="Nothing started yet." hint="Work you begin will appear here until it is closed or parked." />
+          <EmptyState
+            title="Nothing started yet."
+            hint="Work you begin will appear here until it is closed or parked."
+          />
         ) : (
           inProgress.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
         )}
@@ -210,7 +227,10 @@ function Dashboard() {
         bodyClassName="space-y-1.5"
       >
         {waiting.length === 0 ? (
-          <EmptyState title="Nothing is parked." hint="Waiting work always carries a follow-up time so it comes back to you." />
+          <EmptyState
+            title="Nothing is parked."
+            hint="Waiting work always carries a follow-up time so it comes back to you."
+          />
         ) : (
           waiting.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
         )}
@@ -234,13 +254,20 @@ function Dashboard() {
           ))}
         </SectionCard>
       )}
-
     </div>
   );
 }
 
 /** One compact line of work: what it is, where, what to do next, and by when. */
-function WorkRow({ t, emphasis = false, origin }: { t: Row; emphasis?: boolean; origin: { from: string } }) {
+function WorkRow({
+  t,
+  emphasis = false,
+  origin,
+}: {
+  t: Row;
+  emphasis?: boolean;
+  origin: { from: string };
+}) {
   const sla = slaState(t);
   const overdue = Boolean(sla.breached);
   const next = ticketNextAction({
@@ -253,7 +280,8 @@ function WorkRow({ t, emphasis = false, origin }: { t: Row; emphasis?: boolean; 
     vendor_status: t.vendor_status,
   });
   const followUp = t.status === "waiting" ? clockTime(t.next_review_at) : null;
-  const waitingLate = t.status === "waiting" && t.next_review_at && new Date(t.next_review_at) <= new Date();
+  const waitingLate =
+    t.status === "waiting" && t.next_review_at && new Date(t.next_review_at) <= new Date();
 
   return (
     <Link
@@ -270,7 +298,9 @@ function WorkRow({ t, emphasis = false, origin }: { t: Row; emphasis?: boolean; 
       </Badge>
 
       <span className="min-w-0 flex-1 basis-full sm:basis-auto">
-        <span className={`block truncate ${emphasis ? "text-base font-semibold" : "text-base font-medium"}`}>
+        <span
+          className={`block truncate ${emphasis ? "text-base font-semibold" : "text-base font-medium"}`}
+        >
           {t.title}
         </span>
         <span className="block truncate text-sm text-muted-foreground">

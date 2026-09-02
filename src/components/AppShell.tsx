@@ -45,12 +45,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
@@ -93,10 +88,28 @@ const frontlineGroup: NavGroup = {
   items: [
     { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
     { to: "/tickets", label: "My work", icon: ClipboardList, tour: "tickets" },
-    { to: "/routines", label: "Routine work", icon: ClipboardCheck, tour: "routines", capability: "routines" },
+    {
+      to: "/routines",
+      label: "Routine work",
+      icon: ClipboardCheck,
+      tour: "routines",
+      capability: "routines",
+    },
 
-    { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties" },
-    { to: "/tickets/new", label: "Report an issue", icon: Plus, tour: "report", capability: "ticket_create" },
+    {
+      to: "/properties",
+      label: "Properties",
+      icon: Building2,
+      tour: "properties",
+      capability: "properties",
+    },
+    {
+      to: "/tickets/new",
+      label: "Report an issue",
+      icon: Plus,
+      tour: "report",
+      capability: "ticket_create",
+    },
   ],
 };
 
@@ -111,45 +124,143 @@ const navGroups: NavGroup[] = [
   {
     label: "Supervision",
     items: [
-      { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", capability: "oversight" },
-      { to: "/claims", label: "Claims", icon: ReceiptText, tour: "claims", capability: "claims_oversight" },
-      { to: "/recovery", label: "Guest recovery", icon: HeartHandshake, tour: "recovery", capability: "claims_oversight" },
-      { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
+      {
+        to: "/oversight",
+        label: "Oversight",
+        icon: ShieldAlert,
+        tour: "oversight",
+        capability: "oversight",
+      },
+      {
+        to: "/claims",
+        label: "Claims",
+        icon: ReceiptText,
+        tour: "claims",
+        capability: "claims_oversight",
+      },
+      {
+        to: "/recovery",
+        label: "Guest recovery",
+        icon: HeartHandshake,
+        tour: "recovery",
+        capability: "claims_oversight",
+      },
+      {
+        to: "/onboarding",
+        label: "Onboarding",
+        icon: PackageCheck,
+        tour: "onboarding",
+        capability: "onboarding_workspace",
+      },
       { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
       // Internal Work Orders / Vendor Portal are not live for the beta.
       // Breezeway is the only visible field-execution path.
-      { to: "/work-orders", label: "Work orders", icon: Wrench, tour: "work-orders", capability: "work_orders_internal" },
+      {
+        to: "/work-orders",
+        label: "Work orders",
+        icon: Wrench,
+        tour: "work-orders",
+        capability: "work_orders_internal",
+      },
     ],
   },
   {
     label: "Operations",
     items: [
-      { to: "/team", label: "Team & coverage", icon: Users, tour: "team", capability: "user_management" },
-      { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks", capability: "playbooks_edit" },
-      { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach", capability: "coaching" },
+      {
+        to: "/team",
+        label: "Team & coverage",
+        icon: Users,
+        tour: "team",
+        capability: "user_management",
+      },
+      {
+        to: "/playbooks",
+        label: "Playbooks",
+        icon: ListChecks,
+        tour: "playbooks",
+        capability: "playbooks_edit",
+      },
+      {
+        to: "/coach",
+        label: "Ask the Coach",
+        icon: Sparkles,
+        tour: "coach",
+        capability: "coaching",
+      },
     ],
   },
   {
     label: "Programs",
     items: [
-      { to: "/owner-programs", label: "Active Owner", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
-      { to: "/vendors", label: "Vendor Hub", icon: Handshake, tour: "vendors", capability: "vendor_admin", flag: "vendor_portal" },
-      { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly", capability: "vendor_admin", flag: "quarterly_reviews" },
+      {
+        to: "/owner-programs",
+        label: "Active Owner",
+        icon: KeyRound,
+        tour: "owner-programs",
+        capability: "owner_programs",
+      },
+      {
+        to: "/vendors",
+        label: "Vendor Hub",
+        icon: Handshake,
+        tour: "vendors",
+        capability: "vendor_admin",
+        flag: "vendor_portal",
+      },
+      {
+        to: "/quarterly",
+        label: "Quarterly reviews",
+        icon: CalendarCheck,
+        tour: "quarterly",
+        capability: "vendor_admin",
+        flag: "quarterly_reviews",
+      },
     ],
   },
   {
     label: "Insight",
     items: [
-      { to: "/command-center", label: "Executive view", icon: Gauge, tour: "command-center", capability: "command_center" },
-      { to: "/analytics", label: "Analytics", icon: BarChart3, tour: "analytics", capability: "analytics" },
-      { to: "/owner-analytics", label: "Owner participation", icon: KeyRound, tour: "owner-analytics", capability: "owner_programs" },
+      {
+        to: "/command-center",
+        label: "Executive view",
+        icon: Gauge,
+        tour: "command-center",
+        capability: "command_center",
+      },
+      {
+        to: "/analytics",
+        label: "Analytics",
+        icon: BarChart3,
+        tour: "analytics",
+        capability: "analytics",
+      },
+      {
+        to: "/owner-analytics",
+        label: "Owner participation",
+        icon: KeyRound,
+        tour: "owner-analytics",
+        capability: "owner_programs",
+      },
     ],
   },
   {
     label: "Administration",
     items: [
-      { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", capability: "integrations" },
-      { to: "/audit", label: "Audit history", icon: History, tour: "audit", capability: "audit_history" },
+      {
+        to: "/integrations",
+        label: "Integrations",
+        icon: PlugZap,
+        tour: "integrations",
+        capability: "integrations",
+      },
+      {
+        to: "/audit",
+        label: "Audit history",
+        icon: History,
+        tour: "audit",
+        capability: "audit_history",
+      },
     ],
   },
   {
@@ -158,9 +269,11 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-
 const vendorGroups: NavGroup[] = [
-  { label: "My company", items: [{ to: "/vendor", label: "My work orders", icon: HardHat, tour: "vendor" }] },
+  {
+    label: "My company",
+    items: [{ to: "/vendor", label: "My work orders", icon: HardHat, tour: "vendor" }],
+  },
 ];
 const ownerGroups: NavGroup[] = [
   { label: "My home", items: [{ to: "/owner", label: "My home", icon: KeyRound, tour: "owner" }] },
@@ -170,12 +283,19 @@ const ownerGroups: NavGroup[] = [
 const SHOW_GENERAL_TOUR = false;
 
 export function AppShell({ children }: { children: ReactNode }) {
-
   const router = useRouter();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
   const { enabled: flagEnabled } = useFeatureFlags();
-  const { can, isVendor, isOwner, isSupervisor, readOnly, primary, isLoading: rolesLoading } = useRole();
+  const {
+    can,
+    isVendor,
+    isOwner,
+    isSupervisor,
+    readOnly,
+    primary,
+    isLoading: rolesLoading,
+  } = useRole();
   // Guest Experience & Reservations seats work leads; Property Operations
   // seats do not. Seat, not permission role, decides this.
   const seat = useSeat();
@@ -188,7 +308,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // carrying whatever property context the current route already knows about.
   const routeParams = useParams({ strict: false }) as { propertyId?: string };
   const onProperty = pathname.startsWith("/property/");
-  const onOnboardingProperty = /^\/onboarding\/[^/]+$/.test(pathname) && !pathname.startsWith("/onboarding/my-work");
+  const onOnboardingProperty =
+    /^\/onboarding\/[^/]+$/.test(pathname) && !pathname.startsWith("/onboarding/my-work");
   const contextPropertyId = routeParams?.propertyId;
   // Whatever page they are on is a named place to come back to, so a detour
   // into Log work never strands anyone.
@@ -207,7 +328,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         }
       : { origin: originHere };
   const showLogTicket =
-    !vendorMode && !ownerMode && !readOnly && can("ticket_create") && !pathname.startsWith("/tickets");
+    !vendorMode &&
+    !ownerMode &&
+    !readOnly &&
+    can("ticket_create") &&
+    !pathname.startsWith("/tickets");
   const quietLogTicket = [
     "/leads",
     "/onboarding",
@@ -221,19 +346,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/playbooks",
   ].some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-
   const groups: NavGroup[] = vendorMode
     ? vendorGroups
     : ownerMode
       ? ownerGroups
       : navGroups
-          .map((g) => ({ ...g, items: g.items.filter(
-            (i) =>
-              (!i.capability || can(i.capability) ||
-                (i.capability === "leads_work" && seat.isGuestExperience)) &&
-              (!i.supervisorOnly || isSupervisor) &&
-              (!i.flag || flagEnabled(i.flag)),
-          ) }))
+          .map((g) => ({
+            ...g,
+            items: g.items.filter(
+              (i) =>
+                (!i.capability ||
+                  can(i.capability) ||
+                  (i.capability === "leads_work" && seat.isGuestExperience)) &&
+                (!i.supervisorOnly || isSupervisor) &&
+                (!i.flag || flagEnabled(i.flag)),
+            ),
+          }))
           .filter((g) => g.items.length > 0);
 
   const workspace = vendorMode
@@ -296,7 +424,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                           tooltip={item.label}
                           className="relative data-[active=true]:before:absolute data-[active=true]:before:inset-y-1 data-[active=true]:before:left-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:[&>svg]:text-sidebar-primary"
                         >
-                          <Link to={item.to} data-tour={item.tour} aria-current={active ? "page" : undefined}>
+                          <Link
+                            to={item.to}
+                            data-tour={item.tour}
+                            aria-current={active ? "page" : undefined}
+                          >
                             <item.icon aria-hidden="true" />
                             <span>{item.label}</span>
                           </Link>
@@ -308,7 +440,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SidebarGroupContent>
             </SidebarGroup>
           ))}
-
         </SidebarContent>
         <SidebarFooter>
           <p className="px-2 pb-1 text-[0.65rem] leading-relaxed text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
@@ -347,7 +478,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <ShieldAlert className="size-4" aria-hidden="true" />
                   </IconAction>
                 )}
-                <IconAction to={vendorMode || ownerMode ? home : "/welcome"} label="Help and guidance">
+                <IconAction
+                  to={vendorMode || ownerMode ? home : "/welcome"}
+                  label="Help and guidance"
+                >
                   <CircleHelp className="size-4" aria-hidden="true" />
                 </IconAction>
                 <PortalSwitcher />
@@ -373,7 +507,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="min-h-[70vh] px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto w-full max-w-[1400px]">{children}</div>
-
         </main>
 
         {/*
@@ -384,10 +517,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         {SHOW_GENERAL_TOUR && !vendorMode && !ownerMode && (
           <>
             <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
-            <WelcomeDialog open={welcomeOpen} onDismiss={dismissWelcome} onStartTour={() => setTourOpen(true)} />
+            <WelcomeDialog
+              open={welcomeOpen}
+              onDismiss={dismissWelcome}
+              onStartTour={() => setTourOpen(true)}
+            />
           </>
         )}
-
       </SidebarInset>
     </SidebarProvider>
   );

@@ -87,13 +87,7 @@ export function useGoBack(origin: OriginSnapshot) {
 }
 
 /** "← Back to My work" — the destination is always named. */
-export function BackControl({
-  origin,
-  className,
-}: {
-  origin: OriginSnapshot;
-  className?: string;
-}) {
+export function BackControl({ origin, className }: { origin: OriginSnapshot; className?: string }) {
   const back = useGoBack(origin);
   return (
     <button
@@ -257,12 +251,16 @@ export function QueueRail({
                 search={(token ? { from: token } : undefined) as never}
                 className={cn(
                   "block rounded-md px-2 py-1.5 text-sm transition-colors",
-                  active ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:bg-secondary/60",
+                  active
+                    ? "bg-secondary font-medium text-foreground"
+                    : "text-muted-foreground hover:bg-secondary/60",
                 )}
                 aria-current={active ? "true" : undefined}
               >
                 <span className="block truncate">{item.label}</span>
-                {item.sub && <span className="block truncate text-xs text-muted-foreground">{item.sub}</span>}
+                {item.sub && (
+                  <span className="block truncate text-xs text-muted-foreground">{item.sub}</span>
+                )}
               </Link>
             </li>
           );
