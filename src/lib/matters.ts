@@ -58,13 +58,19 @@ export function canEditMatter(
 
 export type QueueTab = "mine" | "team" | "unassigned" | "escalated" | "closed" | "all";
 
-export const QUEUE_TABS: { value: QueueTab; label: string; hint: string }[] = [
+/**
+ * Queue views, in the order a coordinator thinks about their day.
+ *
+ * `supervisory` views are the exception board — useful to whoever oversees the
+ * work, noise to whoever is doing it.
+ */
+export const QUEUE_TABS: { value: QueueTab; label: string; hint: string; supervisory?: boolean }[] = [
   { value: "mine", label: "My work", hint: "Tickets you own or must act on next." },
-  { value: "team", label: "Team queue", hint: "Every open matter across the portfolio." },
-  { value: "unassigned", label: "Unassigned", hint: "Open matters nobody has picked up." },
-  { value: "escalated", label: "Escalated & breached", hint: "Past a response standard or escalated." },
-  { value: "closed", label: "Closed", hint: "Resolved and closed matters." },
-  { value: "all", label: "All", hint: "Everything not archived." },
+  { value: "unassigned", label: "Unclaimed", hint: "Open tickets nobody has picked up." },
+  { value: "team", label: "Everyone's work", hint: "Every open ticket across the portfolio." },
+  { value: "closed", label: "Closed", hint: "Resolved and closed tickets." },
+  { value: "escalated", label: "Overdue & escalated", hint: "Past a response standard or escalated.", supervisory: true },
+  { value: "all", label: "All", hint: "Everything not archived.", supervisory: true },
 ];
 
 type QueueTicket = MatterOwnership & {

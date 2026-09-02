@@ -96,6 +96,9 @@ function TicketsPage() {
     .sort(queueSort);
 
   const activeTab = QUEUE_TABS.find((t) => t.value === tab);
+  // The exception views belong to whoever oversees the work, not to the person
+  // doing it — a coordinator should never have to filter their day.
+  const visibleTabs = QUEUE_TABS.filter((t) => !t.supervisory || isSupervisor);
 
   return (
     <div className="space-y-6">
@@ -121,7 +124,7 @@ function TicketsPage() {
           ariaLabel="Ticket queue"
           value={tab}
           onChange={setTab}
-          options={QUEUE_TABS.map((t) => ({ value: t.value, label: t.label, count: counts[t.value] ?? 0 }))}
+          options={visibleTabs.map((t) => ({ value: t.value, label: t.label, count: counts[t.value] ?? 0 }))}
         />
 
         <SegmentedControl
