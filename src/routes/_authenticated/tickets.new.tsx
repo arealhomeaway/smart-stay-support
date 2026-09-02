@@ -42,6 +42,8 @@ import {
   situationById,
 } from "@/lib/situations";
 import { classifyTicketText } from "@/lib/ticket-classify";
+import { BackControl } from "@/components/nav/NavContext";
+import { resolveOrigin } from "@/lib/nav-context";
 
 
 /**
@@ -479,6 +481,8 @@ function NewMatter() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Logging work is a detour, never a destination — the way back is named. */}
+      <BackControl origin={resolveOrigin(context.origin, "ticket")} />
       <div>
         <h1 className="text-3xl font-semibold">Log work</h1>
         <p className="mt-1 text-muted-foreground">
