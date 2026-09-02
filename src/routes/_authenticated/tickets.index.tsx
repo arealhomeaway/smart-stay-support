@@ -40,13 +40,34 @@ export const Route = createFileRoute("/_authenticated/tickets/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  // Queue tab, priority filter and search live in the URL: the workspace is
+  // shareable, survives a reload, and is exactly what Back restores.
+  validateSearch: (raw: Record<string, unknown>) => ({
+    tab: typeof raw.tab === "string" ? raw.tab : undefined,
+    priority: typeof raw.priority === "string" ? raw.priority : undefined,
+    q: typeof raw.q === "string" && raw.q ? raw.q : undefined,
+  }),
   component: TicketsPage,
 });
 
 function TicketsPage() {
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<QueueTab>("mine");
-  const [priority, setPriority] = useState<string>("all");
+  const navigate = Route.useNavigate();
+  const params = Route.useSearch();
+  const search = params.q ?? "";
+  const tab = (params.tab ?? "mine") as QueueTab;
+  const priority = params.priority ?? "all";
+  const setParam = (patch: Record<string, string | undefined>) =>
+    void navigate({
+      search: (prev: Record<string, unknown>) => {
+        const next = { ...prev, ...patch };
+        for (const k of Object.keys(next)) if (!next[k] || next[k] === "all") delete next[k];
+        return next;
+      },
+      replace: true,
+    });
+  const setSearch = (v: string) => setParam({ q: v || undefined });
+  const setTab = (v: string) => setParam({ tab: v === "mine" ? undefined : v });
+  const setPriority = (v: string) => setParam({ priority: v });
   const { demoMode } = useDemo();
   const userId = useCurrentUserId();
   const { isSupervisor } = useRole();
