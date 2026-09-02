@@ -1,0 +1,1 @@
+REVOKE ALL ON public.staff_notifications FROM anon;
