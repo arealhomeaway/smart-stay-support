@@ -102,7 +102,10 @@ function ManagerHub() {
         return {
           property: p,
           roll,
-          pm: pm?.full_name ?? pm?.email ?? "Unassigned",
+          // A home in the pipeline with no tasks has no onboarding project yet:
+          // that is a real state, not a zero-progress project.
+          hasProject: tasks.length > 0,
+          pm: pm?.full_name ?? pm?.email ?? null,
           target: target ?? null,
           inReview: pending.has(p.id),
         };
