@@ -16,6 +16,8 @@ import {
   usePropertyNames,
 } from "@/components/claims/ClaimList";
 import { useRole } from "@/hooks/useRole";
+import { RequireCapability } from "@/components/RequireCapability";
+
 import {
   MANAGER_FILTER_LABELS,
   amountAtRisk,
@@ -28,8 +30,13 @@ import {
 } from "@/lib/claims";
 
 export const Route = createFileRoute("/_authenticated/claims/manager")({
-  component: ClaimsManager,
+  component: () => (
+    <RequireCapability capability="claims_oversight" title="Manager view">
+      <ClaimsManager />
+    </RequireCapability>
+  ),
 });
+
 
 const FILTERS: ManagerFilter[] = [
   "unsubmitted",
