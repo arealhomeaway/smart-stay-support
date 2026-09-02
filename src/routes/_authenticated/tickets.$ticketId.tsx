@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -44,6 +44,19 @@ import {
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { classifyTicketText } from "@/lib/ticket-classify";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Chip } from "@/components/ui/page";
+import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,6 +116,7 @@ function TicketDetail() {
   const { ticketId } = Route.useParams();
   const qc = useQueryClient();
   const role = useRole();
+  const navigate = useNavigate();
   const [note, setNote] = useState("");
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
@@ -225,47 +239,72 @@ function TicketDetail() {
   const guestCommsRequired = workType?.guest_communication_required ?? false;
   // Readiness is a read of the same gates the close action enforces — no new
   // rules. Anything Resolve already recorded counts as done automatically.
-  const closureChecklist: { label: string; done: boolean; hint?: string }[] = [
+  // These are evaluated by Resolve, never ticked off by hand: each row states
+  // whether it is satisfied, needs the coordinator, or is waiting on someone.
+  const closureChecklist: {
+    label: string;
+    done: boolean;
+    state: "complete" | "needs_you" | "waiting";
+    waitingOn?: string;
+    hint?: string;
+    action?: string;
+  }[] = [
     ...requiredOpen.map((s) => ({
       label: s.instruction,
       done: false,
-      hint: "Tick it off in the playbook above.",
+      state: "needs_you" as const,
+      hint: "A required step on this ticket is still open.",
     })),
     {
-      label: "What was wrong and what was done",
+      label: "Closing summary",
       done: resolution.trim().length > 0 || Boolean(ticket.resolution_notes),
-      hint: "One line in the closing summary.",
+      state:
+        resolution.trim().length > 0 || Boolean(ticket.resolution_notes)
+          ? ("complete" as const)
+          : ("needs_you" as const),
+      hint: "Add what was wrong and what was done.",
+      action: "Add summary",
     },
     ...(workType?.required_closure_evidence
       ? [
           {
             label: workType.required_closure_evidence,
             done: evidence.trim().length > 0 || Boolean(ticket.closure_evidence),
+            state:
+              evidence.trim().length > 0 || Boolean(ticket.closure_evidence)
+                ? ("complete" as const)
+                : ("needs_you" as const),
             hint: "Add the photo or confirmation this work needs.",
+            action: "Add evidence",
           },
         ]
       : []),
     ...(guestCommsRequired
       ? [
           {
-            label: "Final message sent to the guest",
+            label: "Final message to the guest",
             done: finalComms,
-            hint: "Confirm it when you close.",
+            state: finalComms ? ("complete" as const) : ("needs_you" as const),
+            hint: "Confirm the closing message when you close.",
+            action: "Confirm",
           },
         ]
       : []),
     ...(ticket.guest_in_residence
       ? [
           {
-            label: "Guest confirmed it is fixed",
+            label: "Guest confirmation",
             done: guestConfirmed,
-            hint: "Get it in writing first.",
+            state: guestConfirmed ? ("complete" as const) : ("waiting" as const),
+            waitingOn: "Waiting on guest",
+            hint: "Resolve will mark this complete when confirmation is recorded.",
           },
         ]
       : []),
   ];
   const closureReady = closureChecklist.every((c) => c.done);
   const remaining = closureChecklist.filter((c) => !c.done).length;
+
   // Evidence appears when the work actually calls for it — never as an empty
   // upload box on an ordinary ticket.
   const needsEvidence = Boolean(
@@ -441,6 +480,17 @@ function TicketDetail() {
     toast.success("Status updated.");
   }
 
+  /** Supervisor cleanup for duplicates, tests and junk — never a frontline action. */
+  async function deleteTicket() {
+    const { error } = await supabase.from("tickets").delete().eq("id", ticketId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Ticket deleted.");
+    void navigate({ to: "/tickets" });
+  }
+
   async function addNote() {
     if (!note.trim()) return;
     await log("note", note.trim(), "note");
@@ -554,6 +604,12 @@ function TicketDetail() {
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
   const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
+  // One active upload path: while an evidence requirement is live the uploader
+  // lives in Current Work, and the Evidence tab shows history only.
+  const evidenceRequirementActive =
+    !closed &&
+    ((stage === "verify" && needsEvidence) ||
+      Boolean(workType?.required_closure_evidence && !ticket.closure_evidence));
 
   const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
@@ -630,39 +686,43 @@ function TicketDetail() {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-semibold">
-          {closureReady ? "Ready to close" : "Finish this ticket"}
+          {closureReady ? "Ready to close" : "Before this ticket can close"}
         </h2>
         <p className="text-sm text-muted-foreground">
           {closureReady
-            ? "Everything required for this ticket is complete."
-            : `${remaining} thing${remaining === 1 ? "" : "s"} left before this ticket can close.`}
+            ? "Everything Resolve requires on this ticket is satisfied."
+            : `Resolve checks these automatically. ${remaining} still outstanding.`}
         </p>
       </div>
-      <ul className="space-y-2 text-sm">
+      <ul className="divide-y divide-border rounded-lg border border-border text-sm">
         {closureChecklist.map((c, i) => (
-          <li key={i} className="flex items-start gap-2">
-            {c.done ? (
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-            ) : (
-              <Circle className="mt-0.5 size-4 shrink-0 text-warning" />
-            )}
-            <div className="min-w-0">
-              <p className={c.done ? "text-muted-foreground line-through" : "font-medium"}>
-                {c.label}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {c.done ? "Complete" : `Needs you${c.hint ? ` — ${c.hint}` : ""}`}
-              </p>
+          <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{c.label}</p>
+              {!c.done && c.hint && <p className="text-xs text-muted-foreground">{c.hint}</p>}
             </div>
+            {c.state === "complete" ? (
+              <Chip className={stateChip("done")}>Complete ✓</Chip>
+            ) : c.state === "waiting" ? (
+              <Chip className={stateChip("waiting")}>{c.waitingOn ?? "Waiting"}</Chip>
+            ) : (
+              <Chip className={stateChip("blocked")}>Needs you</Chip>
+            )}
+            {c.state === "needs_you" && c.action && !closeOpen && (
+              <Button size="sm" variant="outline" onClick={() => setCloseOpen(true)}>
+                {c.action}
+              </Button>
+            )}
           </li>
         ))}
       </ul>
 
       {!closeOpen ? (
         <Button onClick={() => setCloseOpen(true)} size="lg">
-          {closureReady ? "Close ticket" : "Finish the remaining items"}
+          {closureReady ? "Close ticket" : "Work through what is missing"}
         </Button>
       ) : (
+
         <div className="space-y-4 border-t border-border pt-4">
           <div className="space-y-2">
             <Label>Outcome</Label>
@@ -782,6 +842,7 @@ function TicketDetail() {
             branches={activeBranch}
             onChanged={refresh}
             onStatus={changeStatus}
+            onDelete={deleteTicket}
           />
         </div>
 
@@ -1062,7 +1123,18 @@ function TicketDetail() {
           </TabsContent>
 
           <TabsContent value="evidence" className="pt-4">
-            <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Evidence on file" />
+            <AttachmentsPanel
+              entityType="ticket"
+              entityId={ticketId}
+              title="Evidence on file"
+              readOnly={evidenceRequirementActive}
+              {...(evidenceRequirementActive
+                ? {
+                    description:
+                      "An upload is required for the current step — add it in Current Work so Resolve credits the requirement.",
+                  }
+                : {})}
+            />
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 pt-4">
@@ -1116,7 +1188,7 @@ function TicketDetail() {
               <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
             )}
             {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-            {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} />}
+            {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} readOnly />}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-2 pt-4">
@@ -1162,6 +1234,7 @@ function MoreActions({
   branches,
   onChanged,
   onStatus,
+  onDelete,
 }: {
   ticket: Record<string, unknown> & { id: string; status: string; record_type?: string | null };
   closed: boolean;
@@ -1169,6 +1242,7 @@ function MoreActions({
   branches: { claim: boolean; recovery: boolean };
   onChanged: () => Promise<void> | void;
   onStatus: (status: string) => void;
+  onDelete: () => void;
 }) {
   return (
     <Sheet>
@@ -1212,7 +1286,7 @@ function MoreActions({
           {role.isSupervisor && (
             <div className="space-y-1.5 border-t border-border pt-4">
               <Label className="text-xs text-muted-foreground">Status (supervisor)</Label>
-              <Select value={ticket.status} onValueChange={onStatus}>
+              <Select value={ticket.status} onValueChange={onStatus} disabled={closed}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -1224,8 +1298,40 @@ function MoreActions({
                   ))}
                 </SelectContent>
               </Select>
+              {closed && (
+                // Reopening has one home: the explicit action in Current Work.
+                <p className="text-xs text-muted-foreground">
+                  This ticket is closed. Use “Reopen this ticket” to put it back into work.
+                </p>
+              )}
             </div>
           )}
+          {role.isSupervisor && (
+            <div className="space-y-2 border-t border-border pt-4">
+              <Label className="text-xs text-muted-foreground">Danger zone</Label>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="w-full text-danger">
+                    Delete ticket
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete ticket #{String(ticket["ref"] ?? "")}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action permanently removes this ticket from normal Resolve records. Use it
+                      for duplicates, accidental tickets, tests and junk records.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDelete}>Delete ticket</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
         </div>
       </SheetContent>
     </Sheet>

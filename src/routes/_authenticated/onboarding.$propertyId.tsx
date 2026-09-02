@@ -156,7 +156,7 @@ function PropertyWorkspace() {
             to="/tickets/new"
             search={{ property: current.id, project: current.id, from: "onboarding" }}
           >
-            Log a ticket
+            Report an issue
           </Link>
         </Button>
       </div>

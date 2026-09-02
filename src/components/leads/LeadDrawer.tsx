@@ -299,7 +299,7 @@ export function LeadDrawer({
             </p>
             <Button asChild size="sm" variant="outline">
               <Link to="/tickets/new" search={{ lead: lead.id, from: "lead" }}>
-                Log a ticket
+                Report an issue
               </Link>
             </Button>
           </div>

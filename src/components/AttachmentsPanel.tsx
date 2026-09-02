@@ -43,6 +43,8 @@ type Props = {
   fulfilsRequestId?: string | null;
   title?: string;
   description?: string;
+  /** History view: show what is on file, but never a second uploader. */
+  readOnly?: boolean;
 };
 
 function iconFor(kind: string) {
@@ -57,6 +59,7 @@ export function AttachmentsPanel({
   fulfilsRequestId = null,
   title = "Files",
   description,
+  readOnly = false,
 }: Props) {
   const propertyLevel = entityType === "property";
   const [category, setCategory] = useState<string>("reference");
@@ -179,7 +182,7 @@ export function AttachmentsPanel({
               </SelectContent>
             </Select>
           ) : null}
-          {data?.canUpload ? (
+          {data?.canUpload && !readOnly ? (
             <Button size="sm" disabled={upload.isPending} onClick={() => inputRef.current?.click()}>
               {upload.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />} Add file
             </Button>

@@ -28,7 +28,7 @@ const steps: TourStep[] = [
   {
     target: '[data-tour="log"]',
     route: "/dashboard",
-    title: "Log a ticket",
+    title: "Report an issue",
     body: "Every guest message or property issue becomes one ticket. Pick the property and Resolve pulls live occupancy from OwnerRez, which sets the priority floor automatically.",
   },
   {

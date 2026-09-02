@@ -166,7 +166,7 @@ function TicketsPage() {
         actions={
           <Button asChild>
             <Link to="/tickets/new" search={{ origin: token }}>
-              Log a ticket
+              Report an issue
             </Link>
           </Button>
         }

@@ -77,13 +77,13 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
   },
   head: () => ({
     meta: [
-      { title: "Log work — Resolve Operations" },
+      { title: "Report an issue — Resolve Operations" },
       {
         name: "description",
         content:
           "Log a one-touch resolution in seconds or open a ticket with its owning role, response standard and playbook attached.",
       },
-      { property: "og:title", content: "Log work — Resolve Operations" },
+      { property: "og:title", content: "Report an issue — Resolve Operations" },
       {
         property: "og:description",
         content: "Log a one-touch resolution or open a ticket with its response standard attached.",
@@ -487,7 +487,7 @@ function NewMatter() {
       {/* Logging work is a detour, never a destination — the way back is named. */}
       <BackControl origin={resolveOrigin(context.origin, "ticket")} />
       <div>
-        <h1 className="text-3xl font-semibold">Log work</h1>
+        <h1 className="text-3xl font-semibold">Report an issue</h1>
         <p className="mt-1 text-muted-foreground">
           Every meaningful operational interaction gets recorded. Already handled it? Log it and
           move on.
@@ -539,7 +539,7 @@ function NewMatter() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{mode === "one_touch" ? "Log what you handled" : "Log a ticket"}</CardTitle>
+          <CardTitle>{mode === "one_touch" ? "What you handled" : "What happened?"}</CardTitle>
           <CardDescription>Write it the way it was reported to you.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -652,7 +652,7 @@ function NewMatter() {
                 onClick={() => setAdvanced(true)}
                 className="text-xs text-primary hover:underline"
               >
-                Pick the situation yourself
+                Choose what happened
               </button>
             )}
 
