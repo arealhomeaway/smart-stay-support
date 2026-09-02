@@ -265,7 +265,7 @@ export function ClaimDrawer({
             ) : null}
             {claim.property_id ? (
               <Link
-                to="/properties/$propertyId"
+                to="/property/$propertyId"
                 params={{ propertyId: claim.property_id }}
                 className="text-primary underline"
               >
