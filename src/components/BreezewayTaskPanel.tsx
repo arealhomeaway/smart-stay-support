@@ -214,7 +214,11 @@ export function BreezewayTaskPanel({
         ) : null}
 
         {eligibility.eligible && !unresolved ? (
-          <div className="grid gap-3">
+          <details className="group rounded-lg border border-border p-3">
+            <summary className="cursor-pointer text-sm font-medium">
+              Send this to Breezeway
+            </summary>
+            <div className="mt-3 grid gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="bz-title">Task title</Label>
               <Input id="bz-title" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -351,7 +355,8 @@ export function BreezewayTaskPanel({
                 {send.isPending ? "Sending…" : "Send to Breezeway"}
               </Button>
             </div>
-          </div>
+            </div>
+          </details>
         ) : null}
 
         {eligibility.eligible && unresolved ? (
