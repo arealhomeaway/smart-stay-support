@@ -183,7 +183,7 @@ function Dashboard() {
         {needsMe.length === 0 ? (
           <EmptyState title="Nothing needs you right now." hint="Everything you own is moving or parked with a follow-up time." />
         ) : (
-          needsMe.map((t) => <WorkRow key={t.id} t={t} emphasis />)
+          needsMe.map((t) => <WorkRow key={t.id} t={t} emphasis origin={originSearch} />)
         )}
       </SectionCard>
 
@@ -191,7 +191,7 @@ function Dashboard() {
         {inProgress.length === 0 ? (
           <EmptyState title="Nothing started yet." hint="Work you begin will appear here until it is closed or parked." />
         ) : (
-          inProgress.map((t) => <WorkRow key={t.id} t={t} />)
+          inProgress.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
         )}
       </SectionCard>
 
@@ -203,7 +203,7 @@ function Dashboard() {
         {waiting.length === 0 ? (
           <EmptyState title="Nothing is parked." hint="Waiting work always carries a follow-up time so it comes back to you." />
         ) : (
-          waiting.map((t) => <WorkRow key={t.id} t={t} />)
+          waiting.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
         )}
       </SectionCard>
 
@@ -221,7 +221,7 @@ function Dashboard() {
           }
         >
           {unclaimed.slice(0, 5).map((t) => (
-            <WorkRow key={t.id} t={t} />
+            <WorkRow key={t.id} t={t} origin={originSearch} />
           ))}
         </SectionCard>
       )}
@@ -231,7 +231,7 @@ function Dashboard() {
 }
 
 /** One compact line of work: what it is, where, what to do next, and by when. */
-function WorkRow({ t, emphasis = false }: { t: Row; emphasis?: boolean }) {
+function WorkRow({ t, emphasis = false, origin }: { t: Row; emphasis?: boolean; origin?: { from: string } }) {
   const sla = slaState(t);
   const overdue = Boolean(sla.breached);
   const next = ticketNextAction({
@@ -250,6 +250,7 @@ function WorkRow({ t, emphasis = false }: { t: Row; emphasis?: boolean }) {
     <Link
       to="/tickets/$ticketId"
       params={{ ticketId: t.id }}
+      search={origin}
       className={`surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1 py-3 pl-5 pr-3 ${
         overdue ? "border-danger/30" : ""
       }`}
