@@ -717,87 +717,114 @@ function TicketDetail() {
           {/* Close is the end of the workflow: context, activity, evidence and related work come first. */}
           {!closed && (
             <Card>
-              <CardHeader>
-                <CardTitle>Close it out properly</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{closureReady ? "Ready to close" : "Almost done"}</CardTitle>
                 <CardDescription>
                   This work type sets what evidence is required before the ticket can close.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {requiredOpen.length > 0 && (
-                  <div className="flex gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                    <div>
-                      <p className="font-medium">{requiredOpen.length} required step(s) still open</p>
-                      <ul className="mt-1 list-disc pl-4 text-muted-foreground">
-                        {requiredOpen.map((s) => (
-                          <li key={s.id}>{s.instruction}</li>
-                        ))}
-                      </ul>
+                <ul className="space-y-1 text-sm">
+                  {closureChecklist.map((c, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      {c.done ? (
+                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+                      ) : (
+                        <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className={c.done ? "text-muted-foreground" : ""}>{c.label}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {!closeOpen && (
+                  <Button
+                    onClick={() => setCloseOpen(true)}
+                    variant={closureReady ? "default" : "secondary"}
+                    className="w-full"
+                  >
+                    Close issue
+                  </Button>
+                )}
+
+                {closeOpen && (
+                  <div className="space-y-4 border-t border-border pt-4">
+                    {requiredOpen.length > 0 && (
+                      <div className="flex gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                        <div>
+                          <p className="font-medium">{requiredOpen.length} required step(s) still open</p>
+                          <ul className="mt-1 list-disc pl-4 text-muted-foreground">
+                            {requiredOpen.map((s) => (
+                              <li key={s.id}>{s.instruction}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>Outcome</Label>
+                      <Select value={outcome} onValueChange={setOutcome}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {OUTCOME_TYPES.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Resolution summary</Label>
+                      <Textarea
+                        rows={3}
+                        placeholder="What was actually wrong and what was done to fix it?"
+                        value={resolution}
+                        onChange={(e) => setResolution(e.target.value)}
+                      />
+                    </div>
+
+                    {workType?.required_closure_evidence && (
+                      <div className="space-y-2">
+                        <Label>Required evidence</Label>
+                        <p className="text-xs text-muted-foreground">{workType.required_closure_evidence}</p>
+                        <Textarea
+                          rows={2}
+                          placeholder="Describe or link the evidence (photo, invoice, serial number, vendor confirmation)."
+                          value={evidence}
+                          onChange={(e) => setEvidence(e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    {guestCommsRequired && (
+                      <ToggleRow
+                        title="Final message sent to the guest"
+                        hint="This work type requires closing the loop in writing."
+                        checked={finalComms}
+                        onChange={setFinalComms}
+                      />
+                    )}
+
+                    {ticket.guest_in_residence && (
+                      <ToggleRow
+                        title="Guest confirmed the issue is fully resolved"
+                        hint="Get it in writing before you check this."
+                        checked={guestConfirmed}
+                        onChange={setGuestConfirmed}
+                      />
+                    )}
+
+                    <Button onClick={resolveTicket} className="w-full">
+                      <CheckCircle2 className="size-4" /> Close ticket
+                    </Button>
                   </div>
                 )}
-
-                <div className="space-y-2">
-                  <Label>Outcome</Label>
-                  <Select value={outcome} onValueChange={setOutcome}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {OUTCOME_TYPES.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Resolution summary</Label>
-                  <Textarea
-                    rows={3}
-                    placeholder="What was actually wrong and what was done to fix it?"
-                    value={resolution}
-                    onChange={(e) => setResolution(e.target.value)}
-                  />
-                </div>
-
-                {workType?.required_closure_evidence && (
-                  <div className="space-y-2">
-                    <Label>Required evidence</Label>
-                    <p className="text-xs text-muted-foreground">{workType.required_closure_evidence}</p>
-                    <Textarea
-                      rows={2}
-                      placeholder="Describe or link the evidence (photo, invoice, serial number, vendor confirmation)."
-                      value={evidence}
-                      onChange={(e) => setEvidence(e.target.value)}
-                    />
-                  </div>
-                )}
-
-                {guestCommsRequired && (
-                  <ToggleRow
-                    title="Final message sent to the guest"
-                    hint="This work type requires closing the loop in writing."
-                    checked={finalComms}
-                    onChange={setFinalComms}
-                  />
-                )}
-
-                {ticket.guest_in_residence && (
-                  <ToggleRow
-                    title="Guest confirmed the issue is fully resolved"
-                    hint="Get it in writing before you check this."
-                    checked={guestConfirmed}
-                    onChange={setGuestConfirmed}
-                  />
-                )}
-
-                <Button onClick={resolveTicket} className="w-full">
-                  <CheckCircle2 className="size-4" /> Close ticket
-                </Button>
               </CardContent>
             </Card>
           )}
