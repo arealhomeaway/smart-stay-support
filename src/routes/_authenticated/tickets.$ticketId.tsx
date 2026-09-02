@@ -621,15 +621,8 @@ function TicketDetail() {
           )}
 
 
-          {!closed && (
-            <VendorDispatchPanel
-              ticketId={ticket.id}
-              vendorUserId={ticket.vendor_user_id ?? null}
-              vendorBrief={ticket.vendor_brief ?? null}
-              vendorStatus={ticket.vendor_status ?? null}
-              onChanged={refresh}
-            />
-          )}
+          {/* Vendor dispatch is hidden from the frontline until the Vendor Portal is live.
+              "Send for repair" (Work Order) is the single repair path. Backend fields stay. */}
 
           {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
             <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
