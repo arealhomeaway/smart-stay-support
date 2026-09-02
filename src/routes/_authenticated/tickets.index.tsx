@@ -150,7 +150,9 @@ function TicketsPage() {
         description={activeTab?.hint}
         actions={
           <Button asChild>
-            <Link to="/tickets/new">Log a ticket</Link>
+            <Link to="/tickets/new" search={{ origin: token }}>
+              Log a ticket
+            </Link>
           </Button>
         }
       />

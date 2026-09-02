@@ -160,6 +160,7 @@ function Dashboard() {
           {role.can("ticket_create") && (
             <Link
               to="/tickets/new"
+              search={{ origin: originSearch.from }}
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
             >
               <Plus className="size-4" /> Report an issue
