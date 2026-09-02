@@ -581,6 +581,12 @@ function TicketDetail() {
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
   const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
+  // One active upload path: while an evidence requirement is live the uploader
+  // lives in Current Work, and the Evidence tab shows history only.
+  const evidenceRequirementActive =
+    !closed &&
+    ((stage === "verify" && needsEvidence) ||
+      Boolean(workType?.required_closure_evidence && !ticket.closure_evidence));
 
   const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
@@ -1093,7 +1099,18 @@ function TicketDetail() {
           </TabsContent>
 
           <TabsContent value="evidence" className="pt-4">
-            <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Evidence on file" />
+            <AttachmentsPanel
+              entityType="ticket"
+              entityId={ticketId}
+              title="Evidence on file"
+              readOnly={evidenceRequirementActive}
+              {...(evidenceRequirementActive
+                ? {
+                    description:
+                      "An upload is required for the current step — add it in Current Work so Resolve credits the requirement.",
+                  }
+                : {})}
+            />
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 pt-4">
@@ -1147,7 +1164,7 @@ function TicketDetail() {
               <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
             )}
             {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-            {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} />}
+            {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} readOnly />}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-2 pt-4">
