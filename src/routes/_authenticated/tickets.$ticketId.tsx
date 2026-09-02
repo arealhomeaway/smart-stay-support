@@ -17,6 +17,7 @@ import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
+import { useRole } from "@/hooks/useRole";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { Badge } from "@/components/ui/badge";
@@ -425,8 +426,11 @@ function TicketDetail() {
             )}
           </div>
         </div>
+        {/* Status is a supervisory correction, not the way work moves. Frontline
+            staff move the ticket through the Next Action, never a dropdown. */}
+        {role.isSupervisor && (
         <div className="w-56">
-          <Label className="text-xs text-muted-foreground">Status</Label>
+          <Label className="text-xs text-muted-foreground">Status (supervisor)</Label>
           <Select value={ticket.status} onValueChange={changeStatus}>
             <SelectTrigger>
               <SelectValue />
@@ -440,6 +444,7 @@ function TicketDetail() {
             </SelectContent>
           </Select>
         </div>
+        )}
       </div>
 
       {sla.escalation && (
@@ -486,17 +491,9 @@ function TicketDetail() {
             <CardDescription>{meta.summary}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-3">
-            <ClockChip
-              state={sla.response}
-              actionLabel="Acknowledge"
-              onAction={ticket.acknowledged_at ? undefined : acknowledge}
-            />
-            <ClockChip
-              state={sla.action}
-              actionLabel="Start action"
-              icon={<PlayCircle className="size-4" />}
-              onAction={ticket.action_started_at ? undefined : startAction}
-            />
+            {/* Read-only clocks: the only place to act is the Next Action card. */}
+            <ClockChip state={sla.response} />
+            <ClockChip state={sla.action} icon={<PlayCircle className="size-4" />} />
             {workType?.completion_target && (
               <span className="text-sm text-muted-foreground">
                 Complete: {workType.completion_target}
@@ -851,7 +848,9 @@ function TicketDetail() {
               />
             </div>
           </details>
-          <TicketWorkOrderPanel ticket={ticket} />
+          {/* Internal Work Orders are not part of the beta — Breezeway is the
+              only visible repair path. Kept for platform owners only. */}
+          {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} />}
           <TicketRecoveryPanel ticket={ticket} />
 
           <TicketClaimPanel ticket={ticket} />
