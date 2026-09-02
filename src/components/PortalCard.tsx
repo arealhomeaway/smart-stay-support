@@ -53,23 +53,55 @@ export function PortalCard({
       {attention && (
         <p className="mt-3 text-sm font-medium text-foreground">{attention}</p>
       )}
-      <Button asChild className="mt-5 min-h-11 w-full justify-between">
-        {authenticated ? (
-          <Link to={portal.route} onClick={() => rememberPortal(portal.id)}>
-            {portal.action}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        ) : (
-          <Link
-            to="/auth"
-            search={{ next: portal.route }}
-            onClick={() => rememberPortal(portal.id)}
+      {wholeCardLink ? (
+        <>
+          <span
+            aria-hidden="true"
+            className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-primary"
           >
-            {portal.action}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        )}
-      </Button>
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
+          {authenticated ? (
+            <Link
+              to={portal.route}
+              onClick={() => rememberPortal(portal.id)}
+              aria-label={portal.action}
+              className="absolute inset-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <span className="sr-only">{portal.action}</span>
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              search={{ next: portal.route }}
+              onClick={() => rememberPortal(portal.id)}
+              aria-label={portal.action}
+              className="absolute inset-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <span className="sr-only">{portal.action}</span>
+            </Link>
+          )}
+        </>
+      ) : (
+        <Button asChild className="mt-5 min-h-11 w-full justify-between">
+          {authenticated ? (
+            <Link to={portal.route} onClick={() => rememberPortal(portal.id)}>
+              {portal.action}
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              search={{ next: portal.route }}
+              onClick={() => rememberPortal(portal.id)}
+            >
+              {portal.action}
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          )}
+        </Button>
+      )}
+
 
     </article>
   );
