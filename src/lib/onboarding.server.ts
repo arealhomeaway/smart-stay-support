@@ -17,7 +17,7 @@ import { writeAudit } from "./audit.server";
 type Client = SupabaseClient<Database>;
 
 const PROPERTY_FIELDS =
-  "id, name, nickname, address_line1, city, state, postal_code, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, handoff_accepted_at, quarterly_review_due_on, active, is_demo";
+  "id, name, nickname, address_line1, city, state, postal_code, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, planned_closing_on, actual_closing_on, actual_access_on, handoff_accepted_at, quarterly_review_due_on, active, is_demo";
 
 async function assertCap(supabase: Client, userId: string, fn: "is_supervisor" | "is_onboarding_staff") {
   const { data, error } = await supabase.rpc(fn, { _user_id: userId });
