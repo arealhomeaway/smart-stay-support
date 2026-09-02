@@ -78,6 +78,8 @@ function TicketDetail() {
   const [evidence, setEvidence] = useState("");
   const [guestConfirmed, setGuestConfirmed] = useState(false);
   const [finalComms, setFinalComms] = useState(false);
+  // Closure stays compact until the coordinator is actually closing the ticket.
+  const [closeOpen, setCloseOpen] = useState(false);
   const [waitOn, setWaitOn] = useState("vendor");
   const [waitReason, setWaitReason] = useState("");
   const [waitReview, setWaitReview] = useState("");
