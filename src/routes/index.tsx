@@ -11,7 +11,7 @@ import heroImage from "@/assets/hero-arha-property.jpg";
 
 const TITLE = "Resolve — ARHA's Central Operating Hub";
 const DESCRIPTION =
-  "Keep calm. Check Resolve. Tickets, properties, approvals and answers for the A Real Home Away team — finally in one place.";
+  "Keep Calm. Check Resolve. Tickets, properties, approvals and answers for the A Real Home Away team — finally in one place.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -99,14 +99,13 @@ function Overview() {
                 Resolve Overview
               </p>
               <h1 className="mt-5 text-4xl font-semibold leading-[1.05] md:text-5xl">
-                Keep calm. Check Resolve.
+                Keep Calm. Check Resolve.
               </h1>
               <p className="mt-4 text-lg text-sidebar-foreground/90 md:text-xl">
-                Tickets, properties, approvals, answers &mdash; finally in one place.
+                Your new favorite place to find things.
               </p>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-sidebar-foreground/70 md:text-base">
-                Less digging. Less guessing. If it matters at ARHA, it probably lives here. Pick the
-                portal that matches your day and you&rsquo;ll land right where your work is.
+                Because &ldquo;where is that?&rdquo; is not a workflow.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button
@@ -202,7 +201,7 @@ function Overview() {
 
         <section id="portals" aria-labelledby="portals-heading" className="border-t border-border py-14">
           <h2 id="portals-heading" className="text-2xl font-semibold">
-            Pick your portal
+            Pick your lane.
           </h2>
           <p className="mt-3 max-w-3xl text-muted-foreground">
             One account, every portal you&rsquo;re cleared for. Choose yours and Resolve drops you
@@ -223,6 +222,7 @@ function Overview() {
       <footer className="mt-6 border-t border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-10 text-center">
           <BrandLogo className="h-14 sm:h-16" />
+          <p className="text-base font-semibold">Fewer tabs. Fewer mysteries. Better Mondays.</p>
           <p className="text-xs uppercase tracking-[0.2em] text-sidebar-foreground/60">
             Every home. Every guest. Every time.
           </p>

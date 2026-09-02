@@ -47,7 +47,7 @@ export const PORTAL_REGISTRY: PortalDefinition[] = [
     id: "operations",
     name: "ARHA Operations Hub",
     audience: "Property coordinators, supervisors and internal staff",
-    tagline: "Where the day actually happens.",
+    tagline: "Keep the wheels on.",
     description:
       "Manage property tickets, guest and homeowner requests, assignments, escalations, communications, follow-ups, and property history.",
     icon: Building2,
@@ -62,7 +62,7 @@ export const PORTAL_REGISTRY: PortalDefinition[] = [
     id: "vendor",
     name: "Vendor Portal",
     audience: "Service partners and their crews",
-    tagline: "Job in. Evidence out.",
+    tagline: "Get in. Get it done.",
     description:
       "View scheduled work, manage assignments, complete property checklists, upload evidence, manage your company's team, and review performance.",
     icon: HardHat,
@@ -77,7 +77,7 @@ export const PORTAL_REGISTRY: PortalDefinition[] = [
     id: "onboarding",
     name: "Onboarding Portal",
     audience: "Onboarding team and homeowners bringing a new property on",
-    tagline: "From signed to ready.",
+    tagline: "From keys to kickoff.",
     description:
       "Coordinate new-property onboarding, complete required steps, submit information, manage decisions, and track progress from contract through launch.",
     icon: PackageCheck,
@@ -92,7 +92,7 @@ export const PORTAL_REGISTRY: PortalDefinition[] = [
     id: "homeowner",
     name: "Active Homeowner Portal",
     audience: "Homeowners with a live property under management",
-    tagline: "Track the work. Track the hours.",
+    tagline: "Stay in the loop without living in the weeds.",
     description:
       "Access active property information, requests, decisions, reports, participation activities, documentation, and important updates.",
     icon: KeyRound,
@@ -107,7 +107,6 @@ export const PORTAL_REGISTRY: PortalDefinition[] = [
     id: "executive",
     name: "Executive Oversight",
     audience: "Platform Owners",
-    tagline: "See everything. Break nothing.",
     description:
       "Monitor company health, departmental performance, operational risks, vendor performance, homeowner experience, financial indicators, and cross-department accountability.",
     icon: Gauge,
