@@ -168,7 +168,6 @@ function TicketDetail() {
   const nextAction = ticketNextAction({
     status: ticket.status,
     resolved_at: ticket.resolved_at,
-    closed_at: ticket.closed_at,
     next_review_at: ticket.next_review_at,
     waiting_reason: ticket.waiting_reason,
     acknowledged_at: ticket.acknowledged_at,
