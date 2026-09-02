@@ -821,6 +821,10 @@ function LogTimeDialog({
   const totalMinutes = (Number.parseInt(hours || "0", 10) || 0) * 60 + (Number.parseInt(minutes || "0", 10) || 0);
   const minutesValid = totalMinutes >= 1 && totalMinutes <= 1440;
 
+  // Warning only — never a block. The homeowner always decides.
+  const [duplicate, setDuplicate] = useState<ExistingEntry | null>(null);
+  const [dupAcknowledged, setDupAcknowledged] = useState(false);
+
   const mutation = useMutation({
     mutationFn: () =>
       log({
