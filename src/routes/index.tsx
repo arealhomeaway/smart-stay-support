@@ -143,7 +143,7 @@ function Overview() {
                 aria-hidden="true"
                 className="absolute inset-0 bg-gradient-to-r from-sidebar via-sidebar/35 to-transparent lg:from-sidebar lg:via-sidebar/20"
               />
-              <p className="absolute bottom-3 right-4 text-[0.65rem] uppercase tracking-[0.18em] text-white/70">
+              <p className="absolute bottom-3 right-4 rounded-full bg-sidebar/70 px-3 py-1 text-[0.65rem] uppercase tracking-[0.18em] text-sidebar-foreground/80">
                 1039 Swinton Way &middot; Westfield, IN
               </p>
             </div>
