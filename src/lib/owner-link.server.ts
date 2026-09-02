@@ -128,9 +128,13 @@ export async function linkPropertyOwner(viewer: Viewer, input: LinkOwnerInput) {
       .select("id, name, email")
       .eq("active", true);
     if (existing.error) throw existing.error;
-    const match =
-      (email && (existing.data ?? []).find((o) => norm(o.email) === email)) ||
-      (existing.data ?? []).find((o) => norm(o.name) === norm(name));
+    // Match on name, not email alone: ARHA owners routinely hold several
+    // distinct LLC entities under one personal email, so an email-only match
+    // would fold real, separate owner records together. An email hit only
+    // counts as the same owner when the name matches too.
+    const match = (existing.data ?? []).find(
+      (o) => norm(o.name) === norm(name) && (!email || !o.email || norm(o.email) === email),
+    );
 
     if (match) {
       ownerId = match.id;
