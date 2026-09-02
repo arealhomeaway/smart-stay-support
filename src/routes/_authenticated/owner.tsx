@@ -792,12 +792,14 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
 function LogTimeDialog({
   programId,
   properties,
+  existingEntries,
   target,
   onClose,
   onSaved,
 }: {
   programId: string;
   properties: { id: string; name: string; closingDate: string | null }[];
+  existingEntries: ExistingEntry[];
   target: TimeTarget;
   onClose: () => void;
   onSaved: () => void;
