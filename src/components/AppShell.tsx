@@ -1,7 +1,6 @@
 import { Link, useParams, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
-  Bell,
   Building2,
   CalendarCheck,
   CircleHelp,
@@ -54,6 +53,7 @@ import {
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
+import { NotificationBell } from "@/components/NotificationBell";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
@@ -303,9 +303,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </Link>
                   </Button>
                 )}
+                {!vendorMode && !ownerMode && <NotificationBell />}
                 {!vendorMode && !ownerMode && can("oversight") && (
                   <IconAction to="/oversight" label="Alerts and escalations">
-                    <Bell className="size-4" aria-hidden="true" />
+                    <ShieldAlert className="size-4" aria-hidden="true" />
                   </IconAction>
                 )}
                 <IconAction to={vendorMode || ownerMode ? home : "/welcome"} label="Help and guidance">

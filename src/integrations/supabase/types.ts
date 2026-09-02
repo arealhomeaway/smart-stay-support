@@ -4936,6 +4936,66 @@ export type Database = {
           },
         ]
       }
+      staff_notifications: {
+        Row: {
+          actor_id: string | null
+          body: string
+          created_at: string
+          delivered_at: string | null
+          email_attempts: number
+          email_error: string | null
+          email_status: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_demo: boolean
+          kind: string
+          link_path: string | null
+          priority: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          body?: string
+          created_at?: string
+          delivered_at?: string | null
+          email_attempts?: number
+          email_error?: string | null
+          email_status?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_demo?: boolean
+          kind: string
+          link_path?: string | null
+          priority?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          body?: string
+          created_at?: string
+          delivered_at?: string | null
+          email_attempts?: number
+          email_error?: string | null
+          email_status?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          link_path?: string | null
+          priority?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       team_invites: {
         Row: {
           code: string
@@ -6679,6 +6739,22 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      notify_staff: {
+        Args: {
+          _actor_id: string
+          _body: string
+          _email: boolean
+          _entity_id: string
+          _entity_type: string
+          _is_demo: boolean
+          _kind: string
+          _link_path: string
+          _priority: string
+          _title: string
+          _user_id: string
+        }
+        Returns: string
+      }
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
