@@ -51,6 +51,7 @@ import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/
 import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
 import { Route as AuthenticatedPropertyPropertyIdRouteImport } from './routes/_authenticated/property.$propertyId'
 import { Route as AuthenticatedRecoveryIndexRouteImport } from './routes/_authenticated/recovery.index'
+import { Route as AuthenticatedRecoveryManagerRouteImport } from './routes/_authenticated/recovery.manager'
 import { Route as AuthenticatedRecoveryMyRecoveriesRouteImport } from './routes/_authenticated/recovery.my-recoveries'
 import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
 import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
@@ -293,6 +294,12 @@ const AuthenticatedRecoveryIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedRecoveryRoute,
   } as any)
+const AuthenticatedRecoveryManagerRoute =
+  AuthenticatedRecoveryManagerRouteImport.update({
+    id: '/manager',
+    path: '/manager',
+    getParentRoute: () => AuthenticatedRecoveryRoute,
+  } as any)
 const AuthenticatedRecoveryMyRecoveriesRoute =
   AuthenticatedRecoveryMyRecoveriesRouteImport.update({
     id: '/my-recoveries',
@@ -423,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
+  '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
@@ -478,6 +486,7 @@ export interface FileRoutesByTo {
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
+  '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
@@ -539,6 +548,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
+  '/_authenticated/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/_authenticated/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/property/$propertyId'
+    | '/recovery/manager'
     | '/recovery/my-recoveries'
     | '/tickets/$ticketId'
     | '/tickets/new'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/property/$propertyId'
+    | '/recovery/manager'
     | '/recovery/my-recoveries'
     | '/tickets/$ticketId'
     | '/tickets/new'
@@ -715,6 +727,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/$propertyId'
     | '/_authenticated/onboarding/my-work'
     | '/_authenticated/property/$propertyId'
+    | '/_authenticated/recovery/manager'
     | '/_authenticated/recovery/my-recoveries'
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/tickets/new'
@@ -1050,6 +1063,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecoveryIndexRouteImport
       parentRoute: typeof AuthenticatedRecoveryRoute
     }
+    '/_authenticated/recovery/manager': {
+      id: '/_authenticated/recovery/manager'
+      path: '/manager'
+      fullPath: '/recovery/manager'
+      preLoaderRoute: typeof AuthenticatedRecoveryManagerRouteImport
+      parentRoute: typeof AuthenticatedRecoveryRoute
+    }
     '/_authenticated/recovery/my-recoveries': {
       id: '/_authenticated/recovery/my-recoveries'
       path: '/my-recoveries'
@@ -1219,11 +1239,13 @@ const AuthenticatedOnboardingRouteWithChildren =
   )
 
 interface AuthenticatedRecoveryRouteChildren {
+  AuthenticatedRecoveryManagerRoute: typeof AuthenticatedRecoveryManagerRoute
   AuthenticatedRecoveryMyRecoveriesRoute: typeof AuthenticatedRecoveryMyRecoveriesRoute
   AuthenticatedRecoveryIndexRoute: typeof AuthenticatedRecoveryIndexRoute
 }
 
 const AuthenticatedRecoveryRouteChildren: AuthenticatedRecoveryRouteChildren = {
+  AuthenticatedRecoveryManagerRoute: AuthenticatedRecoveryManagerRoute,
   AuthenticatedRecoveryMyRecoveriesRoute:
     AuthenticatedRecoveryMyRecoveriesRoute,
   AuthenticatedRecoveryIndexRoute: AuthenticatedRecoveryIndexRoute,
