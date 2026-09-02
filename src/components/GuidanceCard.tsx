@@ -17,8 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { matchPlaybook, NO_APPROVED_GUIDANCE, type MatchContext } from "@/lib/playbook-match";
-import { parsePlaybook, type PlaybookRow } from "@/lib/playbooks";
+import { isTestPlaybook, parsePlaybook, type PlaybookRow } from "@/lib/playbooks";
 import { recordGuidanceEvent } from "@/lib/guidance.functions";
+import { useRole } from "@/hooks/useRole";
 
 export type GuidanceCardProps = {
   subjectType: "ticket" | "work_order" | "recovery" | "claim";
@@ -49,7 +50,8 @@ function useActivePlaybooks() {
         .in("status", ["approved", "active"]);
 
       if (error) throw error;
-      return (data as PlaybookRow[]).map(parsePlaybook);
+      // Scratch entries somebody made while learning the editor never guide work.
+      return (data as PlaybookRow[]).map(parsePlaybook).filter((pb) => !isTestPlaybook(pb));
     },
   });
 }
@@ -84,6 +86,7 @@ export function GuidanceCard({
   vendorEngaged = false,
 }: GuidanceCardProps) {
   const playbooks = useActivePlaybooks();
+  const canEdit = useRole().can("playbooks_edit");
   const [expanded, setExpanded] = useState(false);
 
   const result = useMemo(
@@ -229,7 +232,8 @@ export function GuidanceCard({
           </>
         )}
 
-        {primary && (
+        {/* Administration is not frontline work — only editors get the link. */}
+        {primary && canEdit && (
           <Link
             to="/playbooks"
             className="inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"

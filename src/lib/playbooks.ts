@@ -73,6 +73,13 @@ export type PlaybookMatcher = {
   categories?: string[];
   /** Situation ids from `src/lib/situations.ts`. */
   situations?: string[];
+  /**
+   * Plain words the reporter is likely to use ("fridge", "refrigerator",
+   * "not cooling"). Matched against the ticket title and description so a
+   * Playbook written for appliances still surfaces when the work type on the
+   * ticket happens to be named something else.
+   */
+  keywords?: string[];
   /** Priorities this Playbook speaks to. */
   priorities?: Array<"p1" | "p2" | "p3">;
   /** Operational conditions that must all hold. */
@@ -175,6 +182,8 @@ function asMatcher(value: unknown): PlaybookMatcher {
   if (categories.length) matcher.categories = categories;
   const situations = asStringList(row['situations']);
   if (situations.length) matcher.situations = situations;
+  const keywords = asStringList(row['keywords']);
+  if (keywords.length) matcher.keywords = keywords;
   const priorities = asStringList(row['priorities']).filter(
     (p): p is "p1" | "p2" | "p3" => p === "p1" || p === "p2" || p === "p3",
   );
@@ -361,4 +370,15 @@ export function driftWarnings(pb: AuthoredPlaybook): string[] {
   return texts
     .filter((t) => THRESHOLD_PATTERN.test(t))
     .map((t) => `Authored guidance states a threshold, which the policy engine owns: "${t}"`);
+}
+
+/**
+ * Scratch content people create while learning the editor. It is never
+ * guidance, so it stays out of frontline matching and out of the working
+ * administration list (it is still reachable by filtering to Drafts).
+ */
+const TEST_PATTERN = /\b(test|testing|sample|demo|dummy|placeholder|asdf|lorem)\b/i;
+
+export function isTestPlaybook(pb: { title: string; playbook_key?: string | null }): boolean {
+  return TEST_PATTERN.test(pb.title) || TEST_PATTERN.test(pb.playbook_key ?? "");
 }
