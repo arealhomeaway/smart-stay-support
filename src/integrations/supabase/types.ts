@@ -644,6 +644,186 @@ export type Database = {
           },
         ]
       }
+      claim_activity: {
+        Row: {
+          author_id: string | null
+          body: string | null
+          claim_id: string
+          created_at: string
+          detail: Json | null
+          event_type: string
+          id: string
+          is_demo: boolean
+        }
+        Insert: {
+          author_id?: string | null
+          body?: string | null
+          claim_id: string
+          created_at?: string
+          detail?: Json | null
+          event_type?: string
+          id?: string
+          is_demo?: boolean
+        }
+        Update: {
+          author_id?: string | null
+          body?: string | null
+          claim_id?: string
+          created_at?: string
+          detail?: Json | null
+          event_type?: string
+          id?: string
+          is_demo?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_activity_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          actual_cost: number | null
+          approved_amount: number | null
+          assigned_to: string | null
+          claim_type: string
+          closed_at: string | null
+          cost_snapshot: Json | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deadline_on: string | null
+          decided_on: string | null
+          disposition: string | null
+          disposition_reason: string | null
+          estimated_amount: number | null
+          external_reference: string | null
+          follow_up_on: string | null
+          guest_name: string | null
+          id: string
+          incident_description: string | null
+          incident_on: string | null
+          is_demo: boolean
+          ownerrez_booking_id: string | null
+          property_id: string | null
+          recovered_amount: number | null
+          recovered_on: string | null
+          reservation_channel: string | null
+          reservation_confirmation: string | null
+          stage: string
+          stay_arrival: string | null
+          stay_departure: string | null
+          submitted_amount: number | null
+          submitted_on: string | null
+          ticket_id: string | null
+          title: string
+          updated_at: string
+          work_order_id: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          approved_amount?: number | null
+          assigned_to?: string | null
+          claim_type: string
+          closed_at?: string | null
+          cost_snapshot?: Json | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deadline_on?: string | null
+          decided_on?: string | null
+          disposition?: string | null
+          disposition_reason?: string | null
+          estimated_amount?: number | null
+          external_reference?: string | null
+          follow_up_on?: string | null
+          guest_name?: string | null
+          id?: string
+          incident_description?: string | null
+          incident_on?: string | null
+          is_demo?: boolean
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          recovered_amount?: number | null
+          recovered_on?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          stage?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          submitted_amount?: number | null
+          submitted_on?: string | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          approved_amount?: number | null
+          assigned_to?: string | null
+          claim_type?: string
+          closed_at?: string | null
+          cost_snapshot?: Json | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deadline_on?: string | null
+          decided_on?: string | null
+          disposition?: string | null
+          disposition_reason?: string | null
+          estimated_amount?: number | null
+          external_reference?: string | null
+          follow_up_on?: string | null
+          guest_name?: string | null
+          id?: string
+          incident_description?: string | null
+          incident_on?: string | null
+          is_demo?: boolean
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          recovered_amount?: number | null
+          recovered_on?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          stage?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          submitted_amount?: number | null
+          submitted_on?: string | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "breezeway_work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaning_regions: {
         Row: {
           created_at: string

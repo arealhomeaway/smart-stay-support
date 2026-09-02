@@ -16,6 +16,7 @@ import { Route as AwaitingAccessRouteImport } from './routes/awaiting-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
+import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -36,6 +37,9 @@ import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated/claims.index'
+import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
+import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsManagerRouteImport } from './routes/_authenticated/leads.manager'
 import { Route as AuthenticatedLeadsMyLeadsRouteImport } from './routes/_authenticated/leads.my-leads'
@@ -93,6 +97,11 @@ const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
 const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
+  id: '/claims',
+  path: '/claims',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
@@ -200,6 +209,24 @@ const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClaimsIndexRoute =
+  AuthenticatedClaimsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsManagerRoute =
+  AuthenticatedClaimsManagerRouteImport.update({
+    id: '/manager',
+    path: '/manager',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsMyClaimsRoute =
+  AuthenticatedClaimsMyClaimsRouteImport.update({
+    id: '/my-claims',
+    path: '/my-claims',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -345,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -365,6 +393,8 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/claims/manager': typeof AuthenticatedClaimsManagerRoute
+  '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -378,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/claims/': typeof AuthenticatedClaimsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
@@ -415,6 +446,8 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/claims/manager': typeof AuthenticatedClaimsManagerRoute
+  '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -428,6 +461,7 @@ export interface FileRoutesByTo {
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/claims': typeof AuthenticatedClaimsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
@@ -449,6 +483,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
+  '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -469,6 +504,8 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
+  '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
   '/_authenticated/leads/my-leads': typeof AuthenticatedLeadsMyLeadsRoute
   '/_authenticated/leads/new': typeof AuthenticatedLeadsNewRoute
@@ -482,6 +519,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
+  '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
@@ -503,6 +541,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/analytics'
     | '/audit'
+    | '/claims'
     | '/coach'
     | '/command-center'
     | '/dashboard'
@@ -523,6 +562,8 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/claims/manager'
+    | '/claims/my-claims'
     | '/leads/manager'
     | '/leads/my-leads'
     | '/leads/new'
@@ -536,6 +577,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/claims/'
     | '/leads/'
     | '/onboarding/'
     | '/tickets/'
@@ -573,6 +615,8 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/claims/manager'
+    | '/claims/my-claims'
     | '/leads/manager'
     | '/leads/my-leads'
     | '/leads/new'
@@ -586,6 +630,7 @@ export interface FileRouteTypes {
     | '/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/claims'
     | '/leads'
     | '/onboarding'
     | '/tickets'
@@ -606,6 +651,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/analytics'
     | '/_authenticated/audit'
+    | '/_authenticated/claims'
     | '/_authenticated/coach'
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
@@ -626,6 +672,8 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
+    | '/_authenticated/claims/manager'
+    | '/_authenticated/claims/my-claims'
     | '/_authenticated/leads/manager'
     | '/_authenticated/leads/my-leads'
     | '/_authenticated/leads/new'
@@ -639,6 +687,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/scorecard'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
+    | '/_authenticated/claims/'
     | '/_authenticated/leads/'
     | '/_authenticated/onboarding/'
     | '/_authenticated/tickets/'
@@ -718,6 +767,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/audit'
       preLoaderRoute: typeof AuthenticatedAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/claims': {
+      id: '/_authenticated/claims'
+      path: '/claims'
+      fullPath: '/claims'
+      preLoaderRoute: typeof AuthenticatedClaimsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/coach': {
@@ -859,6 +915,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/welcome'
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/claims/': {
+      id: '/_authenticated/claims/'
+      path: '/'
+      fullPath: '/claims/'
+      preLoaderRoute: typeof AuthenticatedClaimsIndexRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/manager': {
+      id: '/_authenticated/claims/manager'
+      path: '/manager'
+      fullPath: '/claims/manager'
+      preLoaderRoute: typeof AuthenticatedClaimsManagerRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/my-claims': {
+      id: '/_authenticated/claims/my-claims'
+      path: '/my-claims'
+      fullPath: '/claims/my-claims'
+      preLoaderRoute: typeof AuthenticatedClaimsMyClaimsRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
     }
     '/_authenticated/leads/': {
       id: '/_authenticated/leads/'
@@ -1031,6 +1108,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedClaimsRouteChildren {
+  AuthenticatedClaimsManagerRoute: typeof AuthenticatedClaimsManagerRoute
+  AuthenticatedClaimsMyClaimsRoute: typeof AuthenticatedClaimsMyClaimsRoute
+  AuthenticatedClaimsIndexRoute: typeof AuthenticatedClaimsIndexRoute
+}
+
+const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
+  AuthenticatedClaimsManagerRoute: AuthenticatedClaimsManagerRoute,
+  AuthenticatedClaimsMyClaimsRoute: AuthenticatedClaimsMyClaimsRoute,
+  AuthenticatedClaimsIndexRoute: AuthenticatedClaimsIndexRoute,
+}
+
+const AuthenticatedClaimsRouteWithChildren =
+  AuthenticatedClaimsRoute._addFileChildren(AuthenticatedClaimsRouteChildren)
+
 interface AuthenticatedLeadsRouteChildren {
   AuthenticatedLeadsManagerRoute: typeof AuthenticatedLeadsManagerRoute
   AuthenticatedLeadsMyLeadsRoute: typeof AuthenticatedLeadsMyLeadsRoute
@@ -1072,6 +1164,7 @@ const AuthenticatedOnboardingRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1104,6 +1197,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
