@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { RefreshCw, Download, PlugZap, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
+import { PlugZap, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,7 +53,6 @@ function timeAgo(iso: string | null) {
 }
 
 function IntegrationsPage() {
-  const queryClient = useQueryClient();
   const statusFn = useServerFn(getInboundStatus);
   const importedFn = useServerFn(listImportedMatters);
 
