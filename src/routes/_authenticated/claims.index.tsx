@@ -84,7 +84,7 @@ function ClaimsHome() {
       ) : open.length === 0 && (buckets.get("recently_recovered")?.length ?? 0) === 0 ? (
         <EmptyState
           title="No claims yet"
-          description="Open a claim from a ticket whenever damage, extra cleaning or a loss looks recoverable from a guest, platform, insurer or owner."
+          hint="Open a claim from a ticket whenever damage, extra cleaning or a loss looks recoverable from a guest, platform, insurer or owner."
         />
       ) : (
         BUCKET_ORDER.map((bucket) => {
