@@ -62,7 +62,7 @@ describe("money", () => {
   });
 
   it("derives unrecovered without inventing figures", () => {
-    expect(unrecovered(claim({ submitted_amount: 300, recovered_amount: 120 }))).toBe(200 + 100 - 120 + 0 - 0);
+    expect(unrecovered(claim({ submitted_amount: 300, recovered_amount: 120 }))).toBe(180);
     expect(unrecovered(claim({ submitted_amount: 300, recovered_amount: 400 }))).toBe(0);
     expect(unrecovered(claim({}))).toBeNull();
   });
