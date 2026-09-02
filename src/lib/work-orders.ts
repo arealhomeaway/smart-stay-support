@@ -512,9 +512,18 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
 /* ------------------------------------------------------------------ */
 
 /** What still stands between this Work Order and closure. */
-export function closureBlockers(wo: WorkOrderLike): string[] {
+export function closureBlockers(
+  wo: WorkOrderLike,
+  requirements?: { required?: boolean | null; status?: string | null; label?: string | null }[],
+): string[] {
   const blockers: string[] = [];
   if (!wo.vendor_completed_at) blockers.push("Vendor completion has not been confirmed.");
+  const outstanding = (requirements ?? []).filter(
+    (r) => r.required !== false && r.status !== "verified" && r.status !== "accepted_exception",
+  );
+  if (outstanding.length) {
+    blockers.push(`Evidence outstanding: ${outstanding[0]?.label ?? "required item"}.`);
+  }
   if (!wo.evidence_complete) blockers.push("Completion photo or video evidence is missing.");
   if (num(wo.final_cost) == null) blockers.push("Final cost has not been recorded.");
   if (wo.occupied_now && !wo.guest_notified_at) blockers.push("The guest in the home has not been updated.");
@@ -529,8 +538,11 @@ export function closureBlockers(wo: WorkOrderLike): string[] {
   return blockers;
 }
 
-export function canClose(wo: WorkOrderLike) {
-  return closureBlockers(wo).length === 0;
+export function canClose(
+  wo: WorkOrderLike,
+  requirements?: { required?: boolean | null; status?: string | null; label?: string | null }[],
+) {
+  return closureBlockers(wo, requirements).length === 0;
 }
 
 /* ------------------------------------------------------------------ */
