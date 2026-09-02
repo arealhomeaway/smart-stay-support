@@ -65,6 +65,7 @@ type WorkOrderRow = WorkOrderLike & {
   title: string;
   service_category: string | null;
   scope: string | null;
+  warranty_contact: string | null;
 };
 
 const EMERGENCY_OPTIONS = Object.keys(EMERGENCY_REASON_LABELS) as EmergencyReason[];
