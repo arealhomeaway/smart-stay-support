@@ -23,6 +23,7 @@ import {
   statusTone,
 } from "@/lib/tickets";
 import { useRole } from "@/hooks/useRole";
+import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { QUEUE_TABS, currentOwnerId, matchesTab, queueSort, type QueueTab } from "@/lib/matters";
 
 export const Route = createFileRoute("/_authenticated/tickets/")({
@@ -211,6 +212,7 @@ function TicketsPage() {
                 key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
+                search={originSearch}
                 className="surface-row relative block py-3 pl-5 pr-4"
               >
                 <PriorityRail priority={t.priority} />
