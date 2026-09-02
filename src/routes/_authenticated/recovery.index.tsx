@@ -29,6 +29,10 @@ import {
 import type { RecoveryRow } from "@/lib/recovery-types";
 
 export const Route = createFileRoute("/_authenticated/recovery/")({
+  // Approval notifications deep-link straight to the recovery being decided.
+  validateSearch: (search: Record<string, unknown>) => ({
+    open: typeof search['open'] === "string" ? (search['open'] as string) : undefined,
+  }),
   component: RecoveryHome,
 });
 
@@ -43,6 +47,7 @@ const BUCKET_HELP: Record<RecoveryBucket, string> = {
 };
 
 function RecoveryHome() {
+  const { open: deepLinkId } = Route.useSearch();
   const recoveries = useRecoveries();
   const requirements = useRecoveryRequirements();
   const propertyNames = useRecoveryPropertyNames();
@@ -98,6 +103,7 @@ function RecoveryHome() {
                 requirements={reqMap}
                 propertyNames={propertyNames.data ?? new Map()}
                 canEdit={!readOnly}
+                initialOpenId={deepLinkId ?? null}
               />
             </SectionCard>
           );
