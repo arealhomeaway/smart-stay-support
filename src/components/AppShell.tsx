@@ -79,7 +79,6 @@ type NavGroup = { label: string; items: NavItem[] };
 // operation that staffs it, the programmes we run for owners, then the
 // administrative surfaces. Visibility is still driven by capability — never by
 // a hand-maintained copy of the menu.
-type NavGroup = { label: string; items: NavItem[] };
 
 // Frontline navigation follows the working day, not the data model: what needs
 // me, my work, the properties I look after, and how to report something.
