@@ -89,10 +89,18 @@ function bucketState(bucket: ReturnType<typeof workOrderBucket>) {
   return "waiting" as const;
 }
 
-export function TicketWorkOrderPanel({ ticket }: { ticket: TicketContext }) {
+export function TicketWorkOrderPanel({
+  ticket,
+  readOnly: forceReadOnly = false,
+}: {
+  ticket: TicketContext;
+  /** Creation lives with the current work — history stays read-only. */
+  readOnly?: boolean;
+}) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
-  const { can, readOnly } = useRole();
+  const { can, readOnly: roleReadOnly } = useRole();
+  const readOnly = roleReadOnly || forceReadOnly;
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<WorkOrderPhase>("permanent");
   const [category, setCategory] = useState("");

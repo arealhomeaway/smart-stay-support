@@ -474,7 +474,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     className="min-h-11 md:min-h-9"
                   >
                     <Link to="/tickets/new" search={ticketContext}>
-                      <Plus className="size-4" aria-hidden="true" /> Log a ticket
+                      <Plus className="size-4" aria-hidden="true" /> Report an issue
                     </Link>
                   </Button>
                 )}

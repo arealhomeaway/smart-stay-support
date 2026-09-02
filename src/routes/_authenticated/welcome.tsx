@@ -31,7 +31,7 @@ const basics = [
     title: "One ticket per issue",
     body: "Log it once. Resolve pulls live occupancy from OwnerRez and sets the priority floor, so nobody has to guess how urgent it is.",
     to: "/tickets/new" as const,
-    cta: "Log a ticket",
+    cta: "Report an issue",
   },
   {
     icon: ListChecks,
