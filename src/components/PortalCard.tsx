@@ -14,12 +14,15 @@ export function PortalCard({
   authenticated,
   attention,
   recent,
+  wholeCardLink = false,
 }: {
   portal: PortalDefinition;
   authenticated: boolean;
   /** Short "needs you" line, only when the portal can truthfully report one. */
   attention?: string | undefined;
   recent?: boolean | undefined;
+  /** Overview variant: the whole card is the action, no CTA button inside. */
+  wholeCardLink?: boolean;
 }) {
   const Icon = portal.icon;
 
