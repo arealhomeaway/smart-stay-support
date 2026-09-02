@@ -38,6 +38,7 @@ import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authenticated/work-orders'
 import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated/claims.index'
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
@@ -59,6 +60,9 @@ import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenticated/vendor.index'
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
+import { Route as AuthenticatedWorkOrdersIndexRouteImport } from './routes/_authenticated/work-orders.index'
+import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_authenticated/work-orders.manager'
+import { Route as AuthenticatedWorkOrdersMyWorkOrdersRouteImport } from './routes/_authenticated/work-orders.my-work-orders'
 import { Route as ApiPublicBzProbeRouteImport } from './routes/api/public/bz-probe'
 import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
 import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
@@ -218,6 +222,11 @@ const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWorkOrdersRoute = AuthenticatedWorkOrdersRouteImport.update({
+  id: '/work-orders',
+  path: '/work-orders',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedClaimsIndexRoute =
   AuthenticatedClaimsIndexRouteImport.update({
     id: '/',
@@ -341,6 +350,24 @@ const AuthenticatedVendorScorecardRoute =
     path: '/vendor/scorecard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkOrdersIndexRoute =
+  AuthenticatedWorkOrdersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedWorkOrdersRoute,
+  } as any)
+const AuthenticatedWorkOrdersManagerRoute =
+  AuthenticatedWorkOrdersManagerRouteImport.update({
+    id: '/manager',
+    path: '/manager',
+    getParentRoute: () => AuthenticatedWorkOrdersRoute,
+  } as any)
+const AuthenticatedWorkOrdersMyWorkOrdersRoute =
+  AuthenticatedWorkOrdersMyWorkOrdersRouteImport.update({
+    id: '/my-work-orders',
+    path: '/my-work-orders',
+    getParentRoute: () => AuthenticatedWorkOrdersRoute,
+  } as any)
 const ApiPublicBzProbeRoute = ApiPublicBzProbeRouteImport.update({
   id: '/api/public/bz-probe',
   path: '/api/public/bz-probe',
@@ -421,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -436,6 +464,8 @@ export interface FileRoutesByFullPath {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
+  '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
@@ -444,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/recovery/': typeof AuthenticatedRecoveryIndexRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -492,6 +523,8 @@ export interface FileRoutesByTo {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
+  '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
@@ -500,6 +533,7 @@ export interface FileRoutesByTo {
   '/recovery': typeof AuthenticatedRecoveryIndexRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
+  '/work-orders': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -539,6 +573,7 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -554,6 +589,8 @@ export interface FileRoutesById {
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/_authenticated/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
+  '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
@@ -562,6 +599,7 @@ export interface FileRoutesById {
   '/_authenticated/recovery/': typeof AuthenticatedRecoveryIndexRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/_authenticated/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -601,6 +639,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/vendors'
     | '/welcome'
+    | '/work-orders'
     | '/claims/manager'
     | '/claims/my-claims'
     | '/leads/manager'
@@ -616,6 +655,8 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/work-orders/manager'
+    | '/work-orders/my-work-orders'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/claims/'
@@ -624,6 +665,7 @@ export interface FileRouteTypes {
     | '/recovery/'
     | '/tickets/'
     | '/vendor/'
+    | '/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -672,6 +714,8 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/work-orders/manager'
+    | '/work-orders/my-work-orders'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/claims'
@@ -680,6 +724,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/tickets'
     | '/vendor'
+    | '/work-orders'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -718,6 +763,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
+    | '/_authenticated/work-orders'
     | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
     | '/_authenticated/leads/manager'
@@ -733,6 +779,8 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/new'
     | '/_authenticated/vendor/$ticketId'
     | '/_authenticated/vendor/scorecard'
+    | '/_authenticated/work-orders/manager'
+    | '/_authenticated/work-orders/my-work-orders'
     | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/_authenticated/claims/'
@@ -741,6 +789,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recovery/'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
+    | '/_authenticated/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -972,6 +1021,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/work-orders': {
+      id: '/_authenticated/work-orders'
+      path: '/work-orders'
+      fullPath: '/work-orders'
+      preLoaderRoute: typeof AuthenticatedWorkOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/claims/': {
       id: '/_authenticated/claims/'
       path: '/'
@@ -1119,6 +1175,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/work-orders/': {
+      id: '/_authenticated/work-orders/'
+      path: '/'
+      fullPath: '/work-orders/'
+      preLoaderRoute: typeof AuthenticatedWorkOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedWorkOrdersRoute
+    }
+    '/_authenticated/work-orders/manager': {
+      id: '/_authenticated/work-orders/manager'
+      path: '/manager'
+      fullPath: '/work-orders/manager'
+      preLoaderRoute: typeof AuthenticatedWorkOrdersManagerRouteImport
+      parentRoute: typeof AuthenticatedWorkOrdersRoute
+    }
+    '/_authenticated/work-orders/my-work-orders': {
+      id: '/_authenticated/work-orders/my-work-orders'
+      path: '/my-work-orders'
+      fullPath: '/work-orders/my-work-orders'
+      preLoaderRoute: typeof AuthenticatedWorkOrdersMyWorkOrdersRouteImport
+      parentRoute: typeof AuthenticatedWorkOrdersRoute
+    }
     '/api/public/bz-probe': {
       id: '/api/public/bz-probe'
       path: '/api/public/bz-probe'
@@ -1256,6 +1333,25 @@ const AuthenticatedRecoveryRouteWithChildren =
     AuthenticatedRecoveryRouteChildren,
   )
 
+interface AuthenticatedWorkOrdersRouteChildren {
+  AuthenticatedWorkOrdersManagerRoute: typeof AuthenticatedWorkOrdersManagerRoute
+  AuthenticatedWorkOrdersMyWorkOrdersRoute: typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
+  AuthenticatedWorkOrdersIndexRoute: typeof AuthenticatedWorkOrdersIndexRoute
+}
+
+const AuthenticatedWorkOrdersRouteChildren: AuthenticatedWorkOrdersRouteChildren =
+  {
+    AuthenticatedWorkOrdersManagerRoute: AuthenticatedWorkOrdersManagerRoute,
+    AuthenticatedWorkOrdersMyWorkOrdersRoute:
+      AuthenticatedWorkOrdersMyWorkOrdersRoute,
+    AuthenticatedWorkOrdersIndexRoute: AuthenticatedWorkOrdersIndexRoute,
+  }
+
+const AuthenticatedWorkOrdersRouteWithChildren =
+  AuthenticatedWorkOrdersRoute._addFileChildren(
+    AuthenticatedWorkOrdersRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
@@ -1281,6 +1377,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
+  AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
   AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
   AuthenticatedTicketsNewRoute: typeof AuthenticatedTicketsNewRoute
@@ -1315,6 +1412,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
+  AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,
   AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
   AuthenticatedTicketsNewRoute: AuthenticatedTicketsNewRoute,

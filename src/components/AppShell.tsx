@@ -23,6 +23,7 @@ import {
   UserPlus,
   Users,
   HeartHandshake,
+  Wrench,
   ReceiptText,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -92,6 +93,7 @@ const navGroups: NavGroup[] = [
       { to: "/tickets", label: "Tickets", icon: ClipboardList, tour: "tickets" },
       { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads" },
       { to: "/claims", label: "Claims", icon: ReceiptText, tour: "claims", capability: "claims_work" },
+      { to: "/work-orders", label: "Work orders", icon: Wrench, tour: "work-orders", capability: "claims_work" },
       { to: "/recovery", label: "Guest recovery", icon: HeartHandshake, tour: "recovery", capability: "claims_work" },
       { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
       { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },

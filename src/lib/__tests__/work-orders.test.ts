@@ -11,6 +11,15 @@ import {
   waitingOn,
   warrantyHint,
   workOrderBucket,
+  MAINTENANCE_POLICY_VERSION,
+  OWNER_APPROVAL_KIND,
+  declineConsequence,
+  matchesManagerFilter,
+  ownerApprovalRequest,
+  recentlyCompleted,
+  repeatMaintenanceProperties,
+  workOrderEvidenceSlots,
+  workOrderSort,
 } from "@/lib/work-orders";
 
 const NOW = new Date("2026-09-02T12:00:00Z");
@@ -228,5 +237,71 @@ describe("stage, queue and closure", () => {
     const wo = { quote_amount: 225, vendor_completed_at: ago(10), evidence_complete: true, final_cost: 225 };
     expect(canClose(wo)).toBe(true);
     expect(nextAction(wo, NOW)).toBe("Ready to close.");
+  });
+});
+
+describe("owner approval, evidence and oversight", () => {
+  const base = {
+    phase: "permanent" as const,
+    priority: "p2",
+    approval_status: "not_required" as const,
+    quote_amount: 900,
+    title: "Water heater replacement",
+  };
+
+  it("the owner approval request carries the decision context", () => {
+    const req = ownerApprovalRequest({ ...base, emergency_reason: "no_hot_water" });
+    expect(req.kind).toBe(OWNER_APPROVAL_KIND);
+    expect(req.amount).toBe(900);
+    expect(req.detail.emergency_mitigation_performed).toBe(true);
+    expect(req.detail.policy_version).toBe(MAINTENANCE_POLICY_VERSION);
+  });
+
+  it("a declined approval keeps the consequence visible", () => {
+    expect(declineConsequence({ ...base, approval_status: "declined", occupied_now: true })).toContain("guest");
+    expect(declineConsequence({ ...base, approval_status: "approved" })).toBeNull();
+  });
+
+  it("permanent work adds the quote evidence slot; warranty adds correspondence", () => {
+    const slots = workOrderEvidenceSlots("permanent", true).map((s) => s.key);
+    expect(slots).toContain("vendor_quote");
+    expect(slots).toContain("warranty_correspondence");
+    expect(workOrderEvidenceSlots("mitigation").map((s) => s.key)).not.toContain("vendor_quote");
+  });
+
+  it("the queue puts the most urgent, oldest work first", () => {
+    const rows = [
+      { ...base, priority: "p3", created_at: "2026-01-01" },
+      { ...base, priority: "p1", created_at: "2026-02-01" },
+    ];
+    expect([...rows].sort(workOrderSort)[0]?.priority).toBe("p1");
+  });
+
+  it("recently completed work stays visible for thirty days only", () => {
+    const now = new Date("2026-03-01T00:00:00Z");
+    expect(recentlyCompleted({ ...base, closed_at: "2026-02-20T00:00:00Z" }, 30, now)).toBe(true);
+    expect(recentlyCompleted({ ...base, closed_at: "2025-12-01T00:00:00Z" }, 30, now)).toBe(false);
+  });
+
+  it("manager filters surface outstanding approvals and unrepaired homes", () => {
+    expect(matchesManagerFilter({ ...base, approval_status: "pending" }, "owner_approval_pending")).toBe(true);
+    expect(
+      matchesManagerFilter({ ...base, phase: "mitigation", permanent_repair_needed: true }, "mitigated_not_repaired"),
+    ).toBe(true);
+    expect(matchesManagerFilter({ ...base, closed_at: "2026-01-01" }, "owner_approval_pending")).toBe(false);
+  });
+
+  it("repeat maintenance is counted per home inside the window", () => {
+    const now = new Date("2026-03-01T00:00:00Z");
+    const repeats = repeatMaintenanceProperties(
+      [
+        { property_id: "a", created_at: "2026-02-01" },
+        { property_id: "a", created_at: "2026-02-20" },
+        { property_id: "b", created_at: "2026-02-20" },
+      ],
+      90,
+      now,
+    );
+    expect(repeats).toEqual([{ property_id: "a", count: 2 }]);
   });
 });
