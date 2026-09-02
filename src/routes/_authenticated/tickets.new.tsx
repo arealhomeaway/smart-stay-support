@@ -41,6 +41,7 @@ import {
   resolveWorkType,
   situationById,
 } from "@/lib/situations";
+import { classifyTicketText } from "@/lib/ticket-classify";
 
 
 /**
@@ -99,6 +100,10 @@ function NewMatter() {
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
+  // Everything Resolve can decide for itself stays folded away until asked for.
+  const [advanced, setAdvanced] = useState(false);
+  const [situationTouched, setSituationTouched] = useState(false);
+  const [propertyQuery, setPropertyQuery] = useState("");
 
   const [form, setForm] = useState({
     title: "",
@@ -217,6 +222,7 @@ function NewMatter() {
    * contextual questions. The rubric still decides priority.
    */
   function pickSituation(id: string) {
+    setSituationTouched(true);
     const situation = situationById(id);
     const resolved = resolveWorkType(situation, workTypes);
     setShowCatalog(Boolean(situation?.openCatalog) || (Boolean(situation) && !resolved));
@@ -230,15 +236,48 @@ function NewMatter() {
   }
 
 
+  /**
+   * "Looks like…" — deterministic reading of what the coordinator typed.
+   * It only preselects the same situation they could have picked by hand,
+   * and it stops as soon as they choose one themselves.
+   */
+  const guess = useMemo(
+    () => (situationTouched ? null : classifyTicketText(form.description)),
+    [form.description, situationTouched],
+  );
+
+  useEffect(() => {
+    if (!guess || situationTouched) return;
+    const resolved = resolveWorkType(guess.situation, workTypes);
+    setForm((f) =>
+      f.situation_id === guess.situation.id
+        ? f
+        : {
+            ...f,
+            situation_id: guess.situation.id,
+            work_type_id: resolved?.id ?? f.work_type_id,
+            guest_impact: guess.situation.guestImpact ?? f.guest_impact,
+          },
+    );
+  }, [guess, situationTouched, workTypes]);
+
   const role = useMemo(
     () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
     [roles, form.functional_role_code],
   );
 
   // Mechanical priority model: work type suggests, guest impact and occupancy decide.
+  const situation = useMemo(() => situationById(form.situation_id), [form.situation_id]);
+
   const mechanical = useMemo(
-    () => mechanicalPriority(workType?.default_priority, form.guest_impact, form.occupancy_status),
-    [workType, form.guest_impact, form.occupancy_status],
+    () =>
+      mechanicalPriority(
+        workType?.default_priority,
+        form.guest_impact,
+        form.occupancy_status,
+        situation?.priorityCeiling ?? null,
+      ),
+    [workType, form.guest_impact, form.occupancy_status, situation],
   );
 
   useEffect(() => {
@@ -276,8 +315,15 @@ function NewMatter() {
     return workType?.playbook_id ?? null;
   }, [form.playbook_id, workType]);
 
+  // The first line of what happened is the summary — nobody types it twice.
+  const derivedTitle = (form.title.trim() || form.description.trim().split("\n")[0] || "").slice(0, 140);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!derivedTitle) {
+      toast.error("Tell us what happened first.");
+      return;
+    }
     if (!form.work_type_id) {
       toast.error("Pick a work type — it sets the owning role and the response standard.");
       return;
@@ -317,7 +363,7 @@ function NewMatter() {
             : form.cross_team
               ? "collaborative_matter"
               : "active_task",
-          title: form.title,
+          title: derivedTitle,
           description: form.description || null,
           property_id: form.property_id || null,
           work_type_id: form.work_type_id,
