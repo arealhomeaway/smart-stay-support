@@ -75,6 +75,6 @@ describe("owner near-duplicate detection", () => {
     expect(minutesAreSimilar(60, 66)).toBe(true);
     expect(minutesAreSimilar(60, 90)).toBe(false);
     expect(textSimilarity("walk through the home", "walk through the home")).toBe(1);
-    expect(textSimilarity("walk through the home", "call the insurance adjuster")).toBeLessThan(0.3);
+    expect(textSimilarity("walk through the home", "call the insurance adjuster") < 0.3).toBe(true);
   });
 });
