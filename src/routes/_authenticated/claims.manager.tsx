@@ -16,6 +16,8 @@ import {
   usePropertyNames,
 } from "@/components/claims/ClaimList";
 import { useRole } from "@/hooks/useRole";
+import { RequireCapability } from "@/components/RequireCapability";
+
 import {
   MANAGER_FILTER_LABELS,
   amountAtRisk,
