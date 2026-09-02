@@ -80,7 +80,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   if (property.error || !property.data) throw new Error("That property could not be found.");
   const p = property.data;
 
-  const [tasks, tickets, contacts, docs, approvals, handoff, programLink, activity, outbound, links, conflicts] =
+  const [tasks, tickets, docs, approvals, handoff, programLink, activity, outbound, links, conflicts] =
     await Promise.all([
 
     supabaseAdmin
@@ -98,10 +98,6 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .is("archived_at", null)
       .order("created_at", { ascending: false })
       .limit(25),
-    supabaseAdmin
-      .from("property_owner_contacts")
-      .select("id, owner_name, owner_email, owner_phone, source, match_status, synced_at")
-      .eq("property_id", propertyId),
     supabaseAdmin
       .from("documents")
       .select(
