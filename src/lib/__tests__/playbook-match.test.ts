@@ -134,8 +134,8 @@ describe("authored content rules", () => {
       matcher: { categories: ["guest"] },
       immediate_actions: ["Approve up to $50 yourself."],
     });
-    expect(driftWarnings(drifted)).toHaveLength(1);
-    expect(driftWarnings(leak)).toHaveLength(0);
+    expect(driftWarnings(drifted).length).toBe(1);
+    expect(driftWarnings(leak).length).toBe(0);
   });
 
   it("treats steps-only playbooks as having no authored judgment", () => {
