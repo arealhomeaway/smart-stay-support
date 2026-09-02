@@ -165,48 +165,6 @@ export async function stayForListing(ownerRezPropertyId: string): Promise<StaySn
   };
 }
 
-export type OwnerRezTask = {
-  id: number | string;
-  title?: string | null;
-  description?: string | null;
-  property_id?: number | string | null;
-  status?: string | null;
-  priority?: string | null;
-  due_date?: string | null;
-  is_completed?: boolean;
-};
-
-/**
- * Lists maintenance tasks from OwnerRez for inbound sync. Not every OwnerRez
- * plan exposes the tasks endpoint, so a 404 is surfaced as a clear message
- * rather than a hard failure.
- */
-export async function listOwnerRezTasks(): Promise<OwnerRezTask[]> {
-  const out: OwnerRezTask[] = [];
-  let offset = 0;
-  try {
-    for (let page = 0; page < 10; page++) {
-      const data = await ownerRezGet<{ items?: OwnerRezTask[] }>("/tasks", {
-        limit: "50",
-        offset: String(offset),
-      });
-      const items = data.items ?? [];
-      out.push(...items);
-      if (items.length < 50) break;
-      offset += 50;
-    }
-  } catch (err) {
-    if (err instanceof OwnerRezError && err.status === 404) {
-      throw new OwnerRezError(
-        404,
-        "This OwnerRez account does not expose maintenance tasks through the API. Property and stay sync still work.",
-      );
-    }
-    throw err;
-  }
-  return out;
-}
-
 /* ------------------------------------------------------------------ *
  * Current guest / tenant contact (read-only).
  *
