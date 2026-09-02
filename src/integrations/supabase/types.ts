@@ -1987,7 +1987,9 @@ export type Database = {
       }
       guest_recovery: {
         Row: {
+          approval_authority: string | null
           approval_id: string | null
+          approval_status: string
           approved_amount: number | null
           approved_at: string | null
           approved_by: string | null
@@ -1995,37 +1997,72 @@ export type Database = {
           authority_level: string | null
           claim_id: string | null
           closed_at: string | null
+          corrective_action: string | null
           created_at: string
           created_by: string | null
           currency: string
+          decision_at: string | null
+          decision_note: string | null
+          decision_reason: string | null
           delivered_amount: number | null
           delivered_on: string | null
           delivery_method: string | null
+          escalation_flags: string[]
+          escalation_reason: string | null
+          final_communication_at: string | null
           follow_up_on: string | null
           guest_name: string | null
           guest_notified_on: string | null
+          guest_requested_amount: number | null
+          guest_requested_supervisor: boolean
+          handoff_accepted_at: string | null
+          handoff_due: string | null
+          handoff_next_action: string | null
+          handoff_reason: string | null
+          handoff_status: string | null
+          handoff_to: string | null
           id: string
           impact_detail: string | null
           impacted_nights: number | null
           is_demo: boolean
           issue_summary: string | null
+          issued_by: string | null
+          issued_on: string | null
+          last_guest_update_at: string | null
+          mitigation_at: string | null
           nightly_rate: number | null
           outcome: string | null
           ownerrez_booking_id: string | null
+          policy_version: string
+          priority: string
+          promised_update_at: string | null
           property_id: string | null
           proposed_amount: number | null
           recovery_action: string | null
+          reopen_reason: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          requested_at: string | null
+          requested_by: string | null
           reservation_channel: string | null
           reservation_confirmation: string | null
+          resolution_attempts: number
           stage: string
           stay_arrival: string | null
           stay_departure: string | null
+          supervisor_engaged_at: string | null
+          supervisor_escalation_reason: string | null
+          temporary_mitigation: string | null
           ticket_id: string
           title: string
+          unresolved_concern: string | null
           updated_at: string
+          within_airbnb_policy: boolean | null
         }
         Insert: {
+          approval_authority?: string | null
           approval_id?: string | null
+          approval_status?: string
           approved_amount?: number | null
           approved_at?: string | null
           approved_by?: string | null
@@ -2033,37 +2070,72 @@ export type Database = {
           authority_level?: string | null
           claim_id?: string | null
           closed_at?: string | null
+          corrective_action?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          decision_at?: string | null
+          decision_note?: string | null
+          decision_reason?: string | null
           delivered_amount?: number | null
           delivered_on?: string | null
           delivery_method?: string | null
+          escalation_flags?: string[]
+          escalation_reason?: string | null
+          final_communication_at?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
           guest_notified_on?: string | null
+          guest_requested_amount?: number | null
+          guest_requested_supervisor?: boolean
+          handoff_accepted_at?: string | null
+          handoff_due?: string | null
+          handoff_next_action?: string | null
+          handoff_reason?: string | null
+          handoff_status?: string | null
+          handoff_to?: string | null
           id?: string
           impact_detail?: string | null
           impacted_nights?: number | null
           is_demo?: boolean
           issue_summary?: string | null
+          issued_by?: string | null
+          issued_on?: string | null
+          last_guest_update_at?: string | null
+          mitigation_at?: string | null
           nightly_rate?: number | null
           outcome?: string | null
           ownerrez_booking_id?: string | null
+          policy_version?: string
+          priority?: string
+          promised_update_at?: string | null
           property_id?: string | null
           proposed_amount?: number | null
           recovery_action?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
           reservation_channel?: string | null
           reservation_confirmation?: string | null
+          resolution_attempts?: number
           stage?: string
           stay_arrival?: string | null
           stay_departure?: string | null
+          supervisor_engaged_at?: string | null
+          supervisor_escalation_reason?: string | null
+          temporary_mitigation?: string | null
           ticket_id: string
           title: string
+          unresolved_concern?: string | null
           updated_at?: string
+          within_airbnb_policy?: boolean | null
         }
         Update: {
+          approval_authority?: string | null
           approval_id?: string | null
+          approval_status?: string
           approved_amount?: number | null
           approved_at?: string | null
           approved_by?: string | null
@@ -2071,34 +2143,67 @@ export type Database = {
           authority_level?: string | null
           claim_id?: string | null
           closed_at?: string | null
+          corrective_action?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          decision_at?: string | null
+          decision_note?: string | null
+          decision_reason?: string | null
           delivered_amount?: number | null
           delivered_on?: string | null
           delivery_method?: string | null
+          escalation_flags?: string[]
+          escalation_reason?: string | null
+          final_communication_at?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
           guest_notified_on?: string | null
+          guest_requested_amount?: number | null
+          guest_requested_supervisor?: boolean
+          handoff_accepted_at?: string | null
+          handoff_due?: string | null
+          handoff_next_action?: string | null
+          handoff_reason?: string | null
+          handoff_status?: string | null
+          handoff_to?: string | null
           id?: string
           impact_detail?: string | null
           impacted_nights?: number | null
           is_demo?: boolean
           issue_summary?: string | null
+          issued_by?: string | null
+          issued_on?: string | null
+          last_guest_update_at?: string | null
+          mitigation_at?: string | null
           nightly_rate?: number | null
           outcome?: string | null
           ownerrez_booking_id?: string | null
+          policy_version?: string
+          priority?: string
+          promised_update_at?: string | null
           property_id?: string | null
           proposed_amount?: number | null
           recovery_action?: string | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
           reservation_channel?: string | null
           reservation_confirmation?: string | null
+          resolution_attempts?: number
           stage?: string
           stay_arrival?: string | null
           stay_departure?: string | null
+          supervisor_engaged_at?: string | null
+          supervisor_escalation_reason?: string | null
+          temporary_mitigation?: string | null
           ticket_id?: string
           title?: string
+          unresolved_concern?: string | null
           updated_at?: string
+          within_airbnb_policy?: boolean | null
         }
         Relationships: [
           {

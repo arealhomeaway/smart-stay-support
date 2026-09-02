@@ -34,6 +34,7 @@ import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authen
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authenticated/quarterly'
+import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticated/recovery'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
@@ -49,6 +50,9 @@ import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/_authenticated/onboarding.$propertyId'
 import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
 import { Route as AuthenticatedPropertyPropertyIdRouteImport } from './routes/_authenticated/property.$propertyId'
+import { Route as AuthenticatedRecoveryIndexRouteImport } from './routes/_authenticated/recovery.index'
+import { Route as AuthenticatedRecoveryManagerRouteImport } from './routes/_authenticated/recovery.manager'
+import { Route as AuthenticatedRecoveryMyRecoveriesRouteImport } from './routes/_authenticated/recovery.my-recoveries'
 import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
 import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
 import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authenticated/tickets.new'
@@ -194,6 +198,11 @@ const AuthenticatedQuarterlyRoute = AuthenticatedQuarterlyRouteImport.update({
   path: '/quarterly',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRecoveryRoute = AuthenticatedRecoveryRouteImport.update({
+  id: '/recovery',
+  path: '/recovery',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -278,6 +287,24 @@ const AuthenticatedPropertyPropertyIdRoute =
     id: '/property/$propertyId',
     path: '/property/$propertyId',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecoveryIndexRoute =
+  AuthenticatedRecoveryIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedRecoveryRoute,
+  } as any)
+const AuthenticatedRecoveryManagerRoute =
+  AuthenticatedRecoveryManagerRouteImport.update({
+    id: '/manager',
+    path: '/manager',
+    getParentRoute: () => AuthenticatedRecoveryRoute,
+  } as any)
+const AuthenticatedRecoveryMyRecoveriesRoute =
+  AuthenticatedRecoveryMyRecoveriesRouteImport.update({
+    id: '/my-recoveries',
+    path: '/my-recoveries',
+    getParentRoute: () => AuthenticatedRecoveryRoute,
   } as any)
 const AuthenticatedTicketsIndexRoute =
   AuthenticatedTicketsIndexRouteImport.update({
@@ -390,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
   '/quarterly': typeof AuthenticatedQuarterlyRoute
+  '/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/team': typeof AuthenticatedTeamRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
@@ -402,6 +430,8 @@ export interface FileRoutesByFullPath {
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
+  '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
+  '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
@@ -411,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/claims/': typeof AuthenticatedClaimsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
+  '/recovery/': typeof AuthenticatedRecoveryIndexRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
@@ -455,6 +486,8 @@ export interface FileRoutesByTo {
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
+  '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
+  '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
   '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
@@ -464,6 +497,7 @@ export interface FileRoutesByTo {
   '/claims': typeof AuthenticatedClaimsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
+  '/recovery': typeof AuthenticatedRecoveryIndexRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
@@ -501,6 +535,7 @@ export interface FileRoutesById {
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
   '/_authenticated/quarterly': typeof AuthenticatedQuarterlyRoute
+  '/_authenticated/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
@@ -513,6 +548,8 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
+  '/_authenticated/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
+  '/_authenticated/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
   '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
@@ -522,6 +559,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
+  '/_authenticated/recovery/': typeof AuthenticatedRecoveryIndexRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
@@ -559,6 +597,7 @@ export interface FileRouteTypes {
     | '/playbooks'
     | '/properties'
     | '/quarterly'
+    | '/recovery'
     | '/team'
     | '/vendors'
     | '/welcome'
@@ -571,6 +610,8 @@ export interface FileRouteTypes {
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/property/$propertyId'
+    | '/recovery/manager'
+    | '/recovery/my-recoveries'
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/vendor/$ticketId'
@@ -580,6 +621,7 @@ export interface FileRouteTypes {
     | '/claims/'
     | '/leads/'
     | '/onboarding/'
+    | '/recovery/'
     | '/tickets/'
     | '/vendor/'
     | '/api/public/hooks/breezeway-mirror'
@@ -624,6 +666,8 @@ export interface FileRouteTypes {
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/property/$propertyId'
+    | '/recovery/manager'
+    | '/recovery/my-recoveries'
     | '/tickets/$ticketId'
     | '/tickets/new'
     | '/vendor/$ticketId'
@@ -633,6 +677,7 @@ export interface FileRouteTypes {
     | '/claims'
     | '/leads'
     | '/onboarding'
+    | '/recovery'
     | '/tickets'
     | '/vendor'
     | '/api/public/hooks/breezeway-mirror'
@@ -669,6 +714,7 @@ export interface FileRouteTypes {
     | '/_authenticated/playbooks'
     | '/_authenticated/properties'
     | '/_authenticated/quarterly'
+    | '/_authenticated/recovery'
     | '/_authenticated/team'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
@@ -681,6 +727,8 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/$propertyId'
     | '/_authenticated/onboarding/my-work'
     | '/_authenticated/property/$propertyId'
+    | '/_authenticated/recovery/manager'
+    | '/_authenticated/recovery/my-recoveries'
     | '/_authenticated/tickets/$ticketId'
     | '/_authenticated/tickets/new'
     | '/_authenticated/vendor/$ticketId'
@@ -690,6 +738,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/'
     | '/_authenticated/leads/'
     | '/_authenticated/onboarding/'
+    | '/_authenticated/recovery/'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
     | '/api/public/hooks/breezeway-mirror'
@@ -895,6 +944,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuarterlyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/recovery': {
+      id: '/_authenticated/recovery'
+      path: '/recovery'
+      fullPath: '/recovery'
+      preLoaderRoute: typeof AuthenticatedRecoveryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/team': {
       id: '/_authenticated/team'
       path: '/team'
@@ -999,6 +1055,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/property/$propertyId'
       preLoaderRoute: typeof AuthenticatedPropertyPropertyIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recovery/': {
+      id: '/_authenticated/recovery/'
+      path: '/'
+      fullPath: '/recovery/'
+      preLoaderRoute: typeof AuthenticatedRecoveryIndexRouteImport
+      parentRoute: typeof AuthenticatedRecoveryRoute
+    }
+    '/_authenticated/recovery/manager': {
+      id: '/_authenticated/recovery/manager'
+      path: '/manager'
+      fullPath: '/recovery/manager'
+      preLoaderRoute: typeof AuthenticatedRecoveryManagerRouteImport
+      parentRoute: typeof AuthenticatedRecoveryRoute
+    }
+    '/_authenticated/recovery/my-recoveries': {
+      id: '/_authenticated/recovery/my-recoveries'
+      path: '/my-recoveries'
+      fullPath: '/recovery/my-recoveries'
+      preLoaderRoute: typeof AuthenticatedRecoveryMyRecoveriesRouteImport
+      parentRoute: typeof AuthenticatedRecoveryRoute
     }
     '/_authenticated/tickets/': {
       id: '/_authenticated/tickets/'
@@ -1161,6 +1238,24 @@ const AuthenticatedOnboardingRouteWithChildren =
     AuthenticatedOnboardingRouteChildren,
   )
 
+interface AuthenticatedRecoveryRouteChildren {
+  AuthenticatedRecoveryManagerRoute: typeof AuthenticatedRecoveryManagerRoute
+  AuthenticatedRecoveryMyRecoveriesRoute: typeof AuthenticatedRecoveryMyRecoveriesRoute
+  AuthenticatedRecoveryIndexRoute: typeof AuthenticatedRecoveryIndexRoute
+}
+
+const AuthenticatedRecoveryRouteChildren: AuthenticatedRecoveryRouteChildren = {
+  AuthenticatedRecoveryManagerRoute: AuthenticatedRecoveryManagerRoute,
+  AuthenticatedRecoveryMyRecoveriesRoute:
+    AuthenticatedRecoveryMyRecoveriesRoute,
+  AuthenticatedRecoveryIndexRoute: AuthenticatedRecoveryIndexRoute,
+}
+
+const AuthenticatedRecoveryRouteWithChildren =
+  AuthenticatedRecoveryRoute._addFileChildren(
+    AuthenticatedRecoveryRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
@@ -1182,6 +1277,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
   AuthenticatedQuarterlyRoute: typeof AuthenticatedQuarterlyRoute
+  AuthenticatedRecoveryRoute: typeof AuthenticatedRecoveryRouteWithChildren
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
@@ -1215,6 +1311,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
   AuthenticatedQuarterlyRoute: AuthenticatedQuarterlyRoute,
+  AuthenticatedRecoveryRoute: AuthenticatedRecoveryRouteWithChildren,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
