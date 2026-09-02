@@ -189,10 +189,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   const onProperty = pathname.startsWith("/property/");
   const onOnboardingProperty = /^\/onboarding\/[^/]+$/.test(pathname) && !pathname.startsWith("/onboarding/my-work");
   const contextPropertyId = routeParams?.propertyId;
-  const ticketContext: { property?: string; from?: string } =
+  // Whatever page they are on is a named place to come back to, so a detour
+  // into Log work never strands anyone.
+  const hereLabel =
+    navGroups
+      .flatMap((g) => g.items)
+      .find((i) => i.to !== "/dashboard" && pathname.startsWith(i.to))?.label ??
+    (pathname.startsWith("/tickets/") ? "the ticket" : "Home");
+  const originHere = useAmbientOrigin(hereLabel);
+  const ticketContext: { property?: string; from?: string; origin?: string } =
     contextPropertyId && (onProperty || onOnboardingProperty)
-      ? { property: contextPropertyId, from: onProperty ? "property_hub" : "onboarding" }
-      : {};
+      ? {
+          property: contextPropertyId,
+          from: onProperty ? "property_hub" : "onboarding",
+          origin: originHere,
+        }
+      : { origin: originHere };
   const showLogTicket =
     !vendorMode && !ownerMode && !readOnly && can("ticket_create") && !pathname.startsWith("/tickets");
   const quietLogTicket = [
