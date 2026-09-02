@@ -132,25 +132,19 @@ export function NotificationBell() {
                 );
                 return (
                   <li key={row.id} className="px-4 py-3 hover:bg-muted/50">
-                    {row.link_path ? (
-                      <Link
-                        to={row.link_path}
-                        onClick={() => {
-                          setOpen(false);
-                          void markRead([row.id]);
-                        }}
-                      >
-                        {content}
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        className="w-full text-left"
-                        onClick={() => void markRead([row.id])}
-                      >
-                        {content}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => {
+                        setOpen(false);
+                        void markRead([row.id]);
+                        if (row.link_path) {
+                          void router.navigate({ to: row.link_path as never });
+                        }
+                      }}
+                    >
+                      {content}
+                    </button>
                   </li>
                 );
               })}
