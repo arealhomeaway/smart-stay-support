@@ -108,28 +108,6 @@ function Overview() {
               <p className="mt-4 max-w-md text-sm leading-relaxed text-sidebar-foreground/70 md:text-base">
                 Because &ldquo;where is that?&rdquo; is not a workflow.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  size="lg"
-                  className="min-h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
-                >
-                  <a href="#portals">
-                    Choose your portal
-                    <ArrowRight className="size-4" aria-hidden="true" />
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="min-h-11 border-sidebar-foreground/30 bg-transparent text-sidebar-foreground hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
-                >
-                  <Link to={signedIn ? "/hub" : "/auth"}>
-                    {signedIn ? "Go to my portals" : "Sign in"}
-                  </Link>
-                </Button>
-              </div>
             </div>
             <div className="relative min-h-64 lg:min-h-[30rem]">
               <img
