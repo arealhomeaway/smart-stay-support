@@ -194,7 +194,7 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recovery</CardTitle>
+        <CardTitle>Cost recovery (claim)</CardTitle>
         <CardDescription>
           Open a claim when the cost of this ticket should come back from a guest, platform, insurer or owner.
         </CardDescription>

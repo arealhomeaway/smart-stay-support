@@ -102,7 +102,9 @@ export const P1_ESCALATION = [
 export const GUEST_IMPACT = [
   { value: "none", label: "None", floor: "p3" },
   { value: "minor", label: "Minor inconvenience", floor: "p3" },
-  { value: "active_guest_affected", label: "Active guest affected", floor: "p1" },
+  // An affected guest makes the work time-sensitive, not an emergency.
+  // Only a real threat to safety, security or habitability is P1.
+  { value: "active_guest_affected", label: "Active guest affected", floor: "p2" },
   { value: "safety_security", label: "Safety or security", floor: "p1" },
 ] as const;
 
@@ -113,11 +115,18 @@ export const OCCUPANCY_STATUS = [
   { value: "same_day_departure", label: "Same-day departure", floor: "p2" },
 ] as const;
 
-/** The priority the rubric produces before any manual override. */
+/**
+ * The priority the rubric produces before any manual override.
+ *
+ * `ceiling` lets a situation say "this class of work is time-sensitive, not an
+ * emergency" — e.g. an appliance failure during a stay. A safety or security
+ * impact always wins over the ceiling.
+ */
 export function mechanicalPriority(
   suggested: string | null | undefined,
   guestImpact: string,
   occupancy: string,
+  ceiling?: string | null,
 ) {
   const base = suggested ?? "p3";
   const impactFloor = GUEST_IMPACT.find((g) => g.value === guestImpact)?.floor ?? "p3";
@@ -125,8 +134,11 @@ export function mechanicalPriority(
   // Occupancy alone never forces P1 unless the guest is actually affected.
   const occupancyEffective =
     occupancyFloor === "p1" && impactFloor === "p3" && guestImpact === "none" ? "p2" : occupancyFloor;
-  return mostUrgent(mostUrgent(base, impactFloor), occupancyEffective);
+  const result = mostUrgent(mostUrgent(base, impactFloor), occupancyEffective);
+  if (!ceiling || guestImpact === "safety_security") return result;
+  return (PRIORITY_RANK[result] ?? 0) > (PRIORITY_RANK[ceiling] ?? 0) ? ceiling : result;
 }
+
 
 export function priorityDrivers(guestImpact: string, occupancy: string) {
   return [

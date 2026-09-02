@@ -19,6 +19,7 @@ import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
+import { ticketNextAction } from "@/lib/ticket-next-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,6 +148,20 @@ function TicketDetail() {
   const meta = priorityMeta(ticket.priority);
   const sla = slaState(ticket);
   const guestCommsRequired = workType?.guest_communication_required ?? false;
+  // Derived, never stored: the one thing to do next.
+  const nextAction = ticketNextAction({
+    status: ticket.status,
+    acknowledged_at: ticket.acknowledged_at,
+    action_started_at: ticket.action_started_at,
+    waiting_on: ticket.waiting_on,
+    guest_in_residence: ticket.guest_in_residence,
+    vendor_name: ticket.vendor_name,
+    vendor_status: ticket.vendor_status,
+    requiredOpenSteps: requiredOpen.length,
+    missingClosureEvidence: Boolean(
+      workType?.required_closure_evidence && !ticket.closure_evidence,
+    ),
+  });
 
   async function refresh() {
     await qc.invalidateQueries({ queryKey: ["ticket", ticketId] });
@@ -427,7 +442,30 @@ function TicketDetail() {
         </div>
       )}
 
+      {/* Derived Next Action — one thing to do, in plain words. */}
+      {nextAction && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-wrap items-start justify-between gap-4 pt-6">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Next</p>
+              <p className="mt-1 text-lg font-semibold">{nextAction.label}</p>
+              <p className="text-sm text-muted-foreground">{nextAction.because}</p>
+              {nextAction.then && (
+                <p className="mt-1 text-sm text-muted-foreground">{nextAction.then}</p>
+              )}
+            </div>
+            {!ticket.acknowledged_at && (
+              <Button onClick={acknowledge}>Acknowledge</Button>
+            )}
+            {ticket.acknowledged_at && !ticket.action_started_at && (
+              <Button onClick={startAction}>Start action</Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {!closed && ticket.record_type !== "completed_interaction" && (
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Response standard</CardTitle>
@@ -765,11 +803,20 @@ function TicketDetail() {
         </div>
 
         <div className="space-y-6">
+          {/* One live guest & stay block. The frozen snapshot stays available,
+              clearly labelled, instead of competing with the live read. */}
           <GuestContextPanel ticketId={ticketId} />
-          <ReservationContextPanel
-            ticket={ticket}
-            ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
-          />
+          <details className="rounded-lg border border-border px-3 py-2 text-sm">
+            <summary className="cursor-pointer text-muted-foreground">
+              View the reservation snapshot from when this ticket opened
+            </summary>
+            <div className="pt-3">
+              <ReservationContextPanel
+                ticket={ticket}
+                ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
+              />
+            </div>
+          </details>
           <TicketWorkOrderPanel ticket={ticket} />
           <TicketRecoveryPanel ticket={ticket} />
 
@@ -784,9 +831,7 @@ function TicketDetail() {
                 label="Address"
                 value={[ticket.properties?.address_line1, ticket.properties?.city].filter(Boolean).join(", ") || "—"}
               />
-              <Field label="Guest" value={ticket.guest_name ?? "—"} />
-              <Field label="Guest contact" value={ticket.guest_contact ?? "—"} />
-              <Field label="Guest in home" value={ticket.guest_in_residence ? "Yes" : "No"} />
+
               <Field label="Received" value={relativeTime(ticket.reported_at)} />
               <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
               <Field label="Action started" value={relativeTime(ticket.action_started_at)} />

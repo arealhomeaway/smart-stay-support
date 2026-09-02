@@ -515,5 +515,5 @@ is now doable from Resolve.
 
 ## Frontline ticket experience simplification (audit approved 2026-09-02)
 - [x] Read-only audit of ticket intake + open-ticket page (this pass)
-- [ ] Implement approved simplification (awaiting approval)
+- [x] Implement approved frontline simplification: priority ceilings, deterministic classifier, simplified intake, derived Next Action hero, guest/stay consolidation, panel vocabulary
 - [ ] Silent Operations training video (paused by request until simplification ships)
