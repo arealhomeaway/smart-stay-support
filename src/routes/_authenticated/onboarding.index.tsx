@@ -198,7 +198,7 @@ function ManagerHub() {
                     <Chip className={stateChip(r.inReview ? "waiting" : "info")}>
                       {r.inReview ? "At review gate" : lifecycleMeta(r.property.lifecycle_status).label}
                     </Chip>
-                    {!r.hasProject && <Chip className={stateChip("neutral")}>No onboarding project</Chip>}
+                    {!r.hasProject && <Chip className={stateChip("new")}>No onboarding project</Chip>}
                     {r.roll.carryover > 0 && <Chip className={stateChip("info")}>{r.roll.carryover} carryover</Chip>}
                   </span>
                 </span>
