@@ -1260,7 +1260,7 @@ function MoreActions({
           {role.isSupervisor && (
             <div className="space-y-1.5 border-t border-border pt-4">
               <Label className="text-xs text-muted-foreground">Status (supervisor)</Label>
-              <Select value={ticket.status} onValueChange={onStatus}>
+              <Select value={ticket.status} onValueChange={onStatus} disabled={closed}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -1272,8 +1272,40 @@ function MoreActions({
                   ))}
                 </SelectContent>
               </Select>
+              {closed && (
+                // Reopening has one home: the explicit action in Current Work.
+                <p className="text-xs text-muted-foreground">
+                  This ticket is closed. Use “Reopen this ticket” to put it back into work.
+                </p>
+              )}
             </div>
           )}
+          {role.isSupervisor && (
+            <div className="space-y-2 border-t border-border pt-4">
+              <Label className="text-xs text-muted-foreground">Danger zone</Label>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="w-full text-danger">
+                    Delete ticket
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete ticket #{String(ticket["ref"] ?? "")}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action permanently removes this ticket from normal Resolve records. Use it
+                      for duplicates, accidental tickets, tests and junk records.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDelete}>Delete ticket</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
         </div>
       </SheetContent>
     </Sheet>
