@@ -112,7 +112,9 @@ const CONDITION_LABEL: Record<PlaybookCondition, string> = {
  * matcher facet fails — a Playbook never applies "partly".
  */
 function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | null {
-  if (pb.status !== "active") return null;
+  // Only approved guidance ever reaches the frontline, and never before the
+  // day leadership said it takes effect.
+  if (!isApproved(pb)) return null;
 
   const subjects = pb.matcher.objects ?? pb.applies_to;
   if (!subjects.includes(ctx.objectType)) return null;
@@ -120,6 +122,7 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
   const m = pb.matcher;
   const reasons: string[] = [];
   let score = 0;
+
 
   if (m.situations?.length) {
     if (!ctx.situationId || !m.situations.map(norm).includes(norm(ctx.situationId))) return null;
