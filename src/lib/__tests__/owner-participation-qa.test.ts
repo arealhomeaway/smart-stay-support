@@ -75,7 +75,7 @@ describe("progress state", () => {
   });
 
   it("computes remaining hours to the goal and never goes negative", () => {
-    expect(snap(50, 60).hoursToGoal).toBeCloseTo(40.1, 1);
+    expect(Math.round(snap(50, 60).hoursToGoal * 10) / 10).toBe(40.1);
     expect(snap(50, 130).hoursToGoal).toBe(0);
   });
 

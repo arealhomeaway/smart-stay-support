@@ -85,9 +85,9 @@ describe("handoff gate order cannot be skipped", () => {
   it("advances one gate at a time in the approved sequence", () => {
     const order = GATE_STEPS.map((s) => s.value);
     expect(order[0]).toBe("kati_review");
-    const seen: string[] = [order[0]];
+    const seen: string[] = [order[0]!];
     while (seen[seen.length - 1] !== "complete") {
-      seen.push(nextGateStep(seen[seen.length - 1]));
+      seen.push(nextGateStep(seen[seen.length - 1]!));
       if (seen.length > 10) break;
     }
     expect(seen).toEqual([...order]);
