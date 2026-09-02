@@ -809,7 +809,12 @@ export function matchesManagerFilter(
   if (wo.closed_at) return false;
   switch (filter) {
     case "owner_approval_pending":
-      return wo.approval_status === "pending";
+      // Outstanding means "the owner has not decided yet" — including the
+      // repair that needs their decision but was never sent to them.
+      return (
+        wo.approval_status === "pending" ||
+        (wo.approval_status === "not_required" && evaluateAuthority(wo).ownerApprovalRequired)
+      );
     case "owner_declined":
       return wo.approval_status === "declined";
     case "missed_commitments":

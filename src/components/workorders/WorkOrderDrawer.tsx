@@ -286,7 +286,11 @@ export function WorkOrderDrawer({
             </Chip>
             <Chip>{PHASE_LABELS[workOrder.phase]}</Chip>
             <Chip>{workOrder.priority.toUpperCase()}</Chip>
-            <Chip>{APPROVAL_STATUS_LABELS[workOrder.approval_status]}</Chip>
+            <Chip>
+              {workOrder.approval_status === "not_required" && verdict.ownerApprovalRequired
+                ? "Owner approval not requested yet"
+                : APPROVAL_STATUS_LABELS[workOrder.approval_status]}
+            </Chip>
             <span className="text-xs text-muted-foreground">
               {propertyName} · {BUCKET_LABELS[workOrderBucket(workOrder)]} · owned by{" "}
               {owner ? displayName(people.find((p) => p.id === owner)) : "nobody yet"}
