@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "bun:test";
 import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
-import { GATE_STEPS, dependencyBlocked, isOverdue, nextGate } from "@/lib/onboarding";
+import { GATE_STEPS, dependencyBlocked, isOverdue, nextGateStep } from "@/lib/onboarding";
 
 const past = "2020-01-01";
 
@@ -83,13 +83,13 @@ describe("overdue is only claimed for workable tasks", () => {
 
 describe("handoff gate order cannot be skipped", () => {
   it("advances one gate at a time in the approved sequence", () => {
-    expect(GATE_STEPS[0]).toBe("kati_review");
-    let step: string | null = GATE_STEPS[0];
-    const seen: string[] = [];
-    while (step) {
-      seen.push(step);
-      step = nextGate(step as never);
+    const order = GATE_STEPS.map((s) => s.value);
+    expect(order[0]).toBe("kati_review");
+    const seen: string[] = [order[0]];
+    while (seen[seen.length - 1] !== "complete") {
+      seen.push(nextGateStep(seen[seen.length - 1]));
+      if (seen.length > 10) break;
     }
-    expect(seen).toEqual([...GATE_STEPS]);
+    expect(seen).toEqual([...order]);
   });
 });
