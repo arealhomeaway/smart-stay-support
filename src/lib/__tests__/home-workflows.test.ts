@@ -15,8 +15,8 @@ describe("home workflows", () => {
   });
 
   it("shows nothing to vendors and homeowners", () => {
-    expect(forRoles(["vendor"])).toHaveLength(0);
-    expect(forRoles(["owner"])).toHaveLength(0);
+    expect(forRoles(["vendor"]).length).toBe(0);
+    expect(forRoles(["owner"]).length).toBe(0);
   });
 
   it("orders onboarding work first for onboarding staff", () => {
@@ -30,8 +30,8 @@ describe("home workflows", () => {
 
 describe("attention items", () => {
   it("stays empty when there is nothing real to report", () => {
-    expect(attentionItems({})).toHaveLength(0);
-    expect(attentionItems({ ticketsOpen: 4, ticketsP1: 0 })).toHaveLength(0);
+    expect(attentionItems({}).length).toBe(0);
+    expect(attentionItems({ ticketsOpen: 4, ticketsP1: 0 }).length).toBe(0);
   });
 
   it("puts urgent counts first", () => {
@@ -43,8 +43,8 @@ describe("attention items", () => {
 
 describe("workflow cues", () => {
   it("says nothing when the count is unknown", () => {
-    expect(workflowCue("tickets", {})).toBeUndefined();
-    expect(workflowCue("onboarding", { ticketsOpen: 3 })).toBeUndefined();
+    expect(workflowCue("tickets", {})).toBe(undefined);
+    expect(workflowCue("onboarding", { ticketsOpen: 3 })).toBe(undefined);
   });
 
   it("reports real counts", () => {
