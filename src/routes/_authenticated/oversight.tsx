@@ -27,6 +27,7 @@ import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { OnCallNowCard } from "@/components/OnCallNowCard";
 import { OvernightHandoffPanel } from "@/components/OvernightHandoffPanel";
+import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -317,6 +318,19 @@ function Oversight() {
     (t) => t.resolved_at && now - new Date(t.resolved_at).getTime() < 7 * DAY,
   ).length;
 
+  // Supervisors work exceptions in sequence: remember the board, and the
+  // order of the exceptions on it, so each ticket comes back to the same spot.
+  const { originSearch } = useWorkspaceOrigin(
+    "Oversight",
+    sections.flatMap((section) =>
+      section.rows.slice(0, 12).map((t) => ({
+        id: t.id,
+        label: t.title,
+        sub: section.title,
+      })),
+    ),
+  );
+
   return (
     <div className="space-y-8">
       <div>
@@ -367,7 +381,7 @@ function Oversight() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {section.rows.slice(0, 12).map((t) => (
-                  <ExceptionRow key={t.id} ticket={t as Row} />
+                  <ExceptionRow key={t.id} ticket={t as Row} origin={originSearch} />
                 ))}
                 {section.rows.length > 12 && (
                   <p className="text-xs text-muted-foreground">
@@ -468,11 +482,12 @@ function TrendList({ title, rows }: { title: string; rows: [string, number][] })
   );
 }
 
-function ExceptionRow({ ticket }: { ticket: Row }) {
+function ExceptionRow({ ticket, origin }: { ticket: Row; origin: { from: string } }) {
   return (
     <Link
       to="/tickets/$ticketId"
       params={{ ticketId: ticket.id }}
+      search={origin}
       className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-secondary"
     >
       <Badge variant="outline" className={priorityTone(ticket.priority)}>
