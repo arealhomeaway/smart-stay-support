@@ -125,6 +125,18 @@ function TicketsPage() {
     })
     .sort(queueSort);
 
+  // The queue the employee is actually looking at, remembered so a ticket can
+  // be opened, worked and left without rebuilding this page.
+  const { token, originSearch } = useWorkspaceOrigin(
+    "My work",
+    tickets.map((t) => ({
+      id: t.id,
+      label: t.title,
+      sub: t.properties?.nickname ?? t.properties?.name ?? undefined,
+    })),
+  );
+  void token;
+
   const activeTab = QUEUE_TABS.find((t) => t.value === tab);
   // The exception views belong to whoever oversees the work, not to the person
   // doing it — a coordinator should never have to filter their day.
