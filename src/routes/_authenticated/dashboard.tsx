@@ -148,7 +148,6 @@ function Dashboard() {
 
   if (isLoading || !data) return <LoadingPage tiles={0} />;
 
-
   return (
     <div className="space-y-6">
       <header className="space-y-4">
