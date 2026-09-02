@@ -55,6 +55,7 @@ import { OnboardingTour } from "@/components/OnboardingTour";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
 import { RouteProgress } from "@/components/nav/RouteProgress";
+import { useAmbientOrigin } from "@/components/nav/NavContext";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
