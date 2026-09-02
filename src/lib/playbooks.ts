@@ -122,6 +122,12 @@ export type AuthoredPlaybook = {
   /** Lineage and governance. */
   source: PlaybookSource;
   source_refs: string[];
+  /** Version label of the material this was written from, e.g. "beta-1". */
+  source_version: string | null;
+  /** When a generated draft was produced. */
+  generated_at: string | null;
+  /** Evidence the guidance expects before the work can close. */
+  required_evidence: string[];
   supersedes_id: string | null;
   requires_director: boolean;
   submitted_at: string | null;
@@ -213,6 +219,9 @@ export type PlaybookRow = {
   vendor_brief?: unknown;
   source?: string | null;
   source_refs?: string[] | null;
+  source_version?: string | null;
+  generated_at?: string | null;
+  required_evidence?: string[] | null;
   supersedes_id?: string | null;
   requires_director?: boolean | null;
   submitted_at?: string | null;
@@ -264,6 +273,9 @@ export function parsePlaybook(row: PlaybookRow): AuthoredPlaybook {
     vendor_brief: asVendorBrief(row.vendor_brief),
     source,
     source_refs: asStringList(row.source_refs),
+    source_version: row.source_version?.trim() || null,
+    generated_at: row.generated_at ?? null,
+    required_evidence: asStringList(row.required_evidence),
     supersedes_id: row.supersedes_id ?? null,
     requires_director: Boolean(row.requires_director),
     submitted_at: row.submitted_at ?? null,

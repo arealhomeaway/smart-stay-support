@@ -348,6 +348,12 @@ function PlaybookDetail({
         <Row label="Version" value={`v${pb.version}`} />
         <Row label="Source" value={SOURCE_LABELS[pb.source]} />
         <Row label="Source refs" value={pb.source_refs.join(", ")} />
+        <Row label="Source version" value={pb.source_version} />
+        <Row
+          label="Generated"
+          value={pb.generated_at ? new Date(pb.generated_at).toLocaleDateString() : null}
+        />
+        <Row label="Required evidence" value={pb.required_evidence.join(", ")} />
         <Row label="Effective" value={pb.effective_on} />
         <Row label="Submitted" value={pb.submitted_at ? new Date(pb.submitted_at).toLocaleString() : null} />
         <Row label="Approved" value={pb.approved_at ? new Date(pb.approved_at).toLocaleString() : null} />
