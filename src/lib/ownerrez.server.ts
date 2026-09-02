@@ -224,9 +224,15 @@ export type GuestContact = {
   departure: string | null;
   reservation_id: string | null;
   booking_channel: string | null;
+  /** The channel's own confirmation code (Airbnb/Vrbo), when OwnerRez has one. */
+  confirmation_number: string | null;
+  /** Adults + children + infants as reported by OwnerRez, when present. */
+  guest_count: number | null;
+  guest_id: string | null;
   stay_kind: "short_term" | "mid_term" | null;
   note?: string;
 };
+
 
 type OwnerRezGuest = {
   first_name?: string;
