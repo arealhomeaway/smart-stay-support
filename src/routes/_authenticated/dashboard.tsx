@@ -4,42 +4,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
-import { BrandLogo } from "@/components/BrandLogo";
-import heroImage from "@/assets/home-hero.jpg";
-import {
-  EmptyState,
-  LoadingPage,
-  PriorityRail,
-  SectionCard,
-  StatTile,
-} from "@/components/ui/page";
-import { ArrowRight, Building2, ClipboardList, PackageCheck, Users } from "lucide-react";
-
-import {
-  OPEN_STATUSES,
-  STATUSES,
-  labelFor,
-  priorityMeta,
-  priorityTone,
-  relativeTime,
-  slaState,
-  statusTone,
-} from "@/lib/tickets";
-
+import { EmptyState, LoadingPage, PriorityRail, SectionCard } from "@/components/ui/page";
+import { AlertTriangle, ArrowRight, ClipboardList, PauseCircle, PlayCircle, Plus, ShieldAlert } from "lucide-react";
+import { ticketNextAction } from "@/lib/ticket-next-action";
+import { OPEN_STATUSES, priorityMeta, priorityTone, relativeTime, slaState } from "@/lib/tickets";
+import { isMine } from "@/lib/matters";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Home — Resolve Operations" },
-      { name: "description", content: "Open guest issues, overdue tickets, and today's workload at a glance." },
+      {
+        name: "description",
+        content: "What needs you now, what you have started, what you are waiting on, and routine work due today.",
+      },
       { property: "og:title", content: "Home — Resolve Operations" },
-      { property: "og:description", content: "Open guest issues and overdue tickets at a glance." },
+      { property: "og:description", content: "Your working day in Resolve, in one screen." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Dashboard,
 });
 
-/** Morning / afternoon / evening in the reader's own clock. */
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -47,239 +34,250 @@ function greeting() {
   return "Good evening";
 }
 
+/** Human time: 4:00 PM, never 16:00. */
+function clockTime(value: string | null | undefined) {
+  if (!value) return null;
+  return new Date(value).toLocaleString(undefined, {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+type Row = {
+  id: string;
+  ref: number | null;
+  title: string;
+  priority: string;
+  status: string;
+  acknowledged_at: string | null;
+  action_started_at: string | null;
+  next_review_at: string | null;
+  response_due_at: string | null;
+  action_due_at: string | null;
+  waiting_on: string | null;
+  waiting_reason: string | null;
+  guest_in_residence: boolean | null;
+  vendor_name: string | null;
+  vendor_status: string | null;
+  reported_at: string | null;
+  current_action_owner: string | null;
+  assigned_to: string | null;
+  record_owner: string | null;
+  accountable_owner: string | null;
+  created_by: string | null;
+  pending_handoff_to: string | null;
+  properties: { name: string | null; nickname: string | null } | null;
+};
+
 function Dashboard() {
   const { demoMode } = useDemo();
   const role = useRole();
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", demoMode],
     queryFn: async () => {
-      const [tickets, properties] = await Promise.all([
-        supabase
-          .from("tickets")
-          .select("*, properties(name, nickname)")
-          .eq("is_demo", demoMode)
-          .is("archived_at", null)
-          .order("reported_at", { ascending: false })
-          .limit(200),
-
-        supabase
-          .from("properties")
-          .select("id", { count: "exact", head: true })
-          .eq("is_demo", demoMode),
-      ]);
-      if (tickets.error) throw tickets.error;
-      return { tickets: tickets.data ?? [], propertyCount: properties.count ?? 0 };
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("*, properties(name, nickname)")
+        .eq("is_demo", demoMode)
+        .is("archived_at", null)
+        .order("reported_at", { ascending: false })
+        .limit(300);
+      if (error) throw error;
+      return (data ?? []) as unknown as Row[];
     },
   });
 
-  if (isLoading || !data) {
-    return <LoadingPage tiles={4} />;
-  }
+  if (isLoading || !data) return <LoadingPage tiles={0} />;
 
-  const open = data.tickets.filter((t) => OPEN_STATUSES.includes(t.status));
-  const breached = open.filter((t) => slaState(t).breached);
-  const escalated = open.filter((t) => slaState(t).escalation);
-  const unacked = open.filter((t) => !t.acknowledged_at);
-  const resolvedWeek = data.tickets.filter(
-    (t) => t.resolved_at && Date.now() - new Date(t.resolved_at).getTime() < 7 * 864e5,
-  );
-  const mine = role.userId
-    ? open.filter((t) => t.current_action_owner === role.userId || t.assigned_to === role.userId)
-    : [];
+  const open = data.filter((t) => OPEN_STATUSES.includes(t.status));
+  const mine = role.userId ? open.filter((t) => isMine(t, role.userId)) : [];
 
-  // Leadership sees the whole portfolio's health first. A coordinator sees
-  // their own workload first. Same data, ordered for the person reading it.
-  const stats = role.isSupervisor
-    ? [
-        { label: "Open tickets", value: open.length, tone: "neutral" as const, hint: "Live across the portfolio" },
-        { label: "Past its clock", value: breached.length, tone: "critical" as const, hint: "Response or action overdue" },
-        { label: "Not acknowledged", value: unacked.length, tone: "attention" as const, hint: "Nobody has picked these up" },
-        { label: "Closed this week", value: resolvedWeek.length, tone: "positive" as const, hint: "Last seven days" },
-      ]
-    : [
-        { label: "Assigned to you", value: mine.length, tone: "neutral" as const, hint: "Your open tickets" },
-        { label: "Past its clock", value: breached.length, tone: "critical" as const, hint: "Response or action overdue" },
-        { label: "Waiting to be claimed", value: unacked.length, tone: "attention" as const, hint: "Nobody has picked these up" },
-        { label: "Closed this week", value: resolvedWeek.length, tone: "positive" as const, hint: "Last seven days" },
-      ];
+  const waiting = mine
+    .filter((t) => t.status === "waiting")
+    .sort((a, b) => (a.next_review_at ?? "").localeCompare(b.next_review_at ?? ""));
 
-  const attention = open
-    .slice()
-    .sort((a, b) =>
-      (a.response_due_at ?? a.action_due_at ?? "").localeCompare(b.response_due_at ?? b.action_due_at ?? ""),
+  const dueBack = (t: Row) => Boolean(t.next_review_at && new Date(t.next_review_at) <= new Date());
+
+  // "Needs me now" is work that is actionable this minute: not started, past a
+  // clock, or a Waiting item whose follow-up time has arrived.
+  const needsMe = mine
+    .filter(
+      (t) =>
+        (t.status !== "waiting" && (!t.acknowledged_at || !t.action_started_at || slaState(t).breached)) ||
+        (t.status === "waiting" && dueBack(t)),
     )
-    .slice(0, 10);
+    .sort((a, b) => {
+      const rank: Record<string, number> = { p1: 3, p2: 2, p3: 1 };
+      return (
+        (rank[b.priority] ?? 0) - (rank[a.priority] ?? 0) ||
+        (a.response_due_at ?? a.action_due_at ?? "").localeCompare(b.response_due_at ?? b.action_due_at ?? "")
+      );
+    });
+
+  const needsMeIds = new Set(needsMe.map((t) => t.id));
+  const inProgress = mine.filter(
+    (t) => !needsMeIds.has(t.id) && t.status !== "waiting" && t.action_started_at,
+  );
+  const unclaimed = open.filter((t) => !t.current_action_owner && !t.assigned_to);
 
   return (
     <div className="space-y-6">
-      {/* Branded entry point: who you are, what today looks like, and the two
-          or three things you actually came here to do. */}
-      <section className="plate relative overflow-hidden">
-        <img
-          src={heroImage}
-          alt=""
-          aria-hidden="true"
-          width={1920}
-          height={720}
-          className="pointer-events-none absolute inset-0 size-full object-cover opacity-20"
-        />
-        <div className="relative grid gap-6 p-6 lg:grid-cols-[1.4fr_1fr] lg:p-8">
-          <div className="min-w-0 space-y-4">
-            <div className="flex items-center gap-3">
-              <BrandLogo className="h-9" />
-              <span className="eyebrow text-sidebar-foreground/70">Resolve Operations</span>
-            </div>
-            <div className="space-y-1.5">
-              <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">
-                {greeting()}. Keep calm — check Resolve.
-              </h1>
-              <p className="max-w-xl text-sm text-sidebar-foreground/75">
-                {role.isSupervisor
-                  ? `${data.propertyCount} properties, ${open.length} live tickets and ${escalated.length} escalated right now.`
-                  : `You have ${mine.length} open ${mine.length === 1 ? "ticket" : "tickets"}. ${unacked.length} more are waiting to be claimed.`}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                to="/tickets/new"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-sidebar-primary px-4 text-sm font-semibold text-sidebar-primary-foreground transition-opacity hover:opacity-90"
-              >
-                Log a ticket
-              </Link>
-              <Link
-                to="/tickets"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-sidebar-border px-4 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-              >
-                Open the queue <ArrowRight className="size-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid content-start gap-2 sm:grid-cols-2 lg:grid-cols-1">
-            <HeroLink to="/tickets" icon={<ClipboardList className="size-4" />} label="Tickets" hint={`${open.length} open`} />
-            {role.can("properties") && (
-              <HeroLink to="/properties" icon={<Building2 className="size-4" />} label="Properties" hint={`${data.propertyCount} in the portfolio`} />
-            )}
-            {role.can("onboarding_workspace") && (
-              <HeroLink to="/onboarding" icon={<PackageCheck className="size-4" />} label="Onboarding" hint="Projects and tasks" />
-            )}
-            {role.can("user_management") && (
-              <HeroLink to="/team" icon={<Users className="size-4" />} label="Team & coverage" hint="Seats, shifts, on-call" />
-            )}
-          </div>
+      <header className="space-y-4">
+        <div className="space-y-1">
+          <p className="eyebrow text-muted-foreground">{greeting()}</p>
+          <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">
+            {needsMe.length === 0
+              ? "Nothing needs you right this minute."
+              : `${needsMe.length} ${needsMe.length === 1 ? "thing needs" : "things need"} you now.`}
+          </h1>
+          <p className="text-base text-muted-foreground">
+            {inProgress.length} in progress · {waiting.length} waiting
+            {unclaimed.length > 0 ? ` · ${unclaimed.length} unclaimed in the team queue` : ""}
+          </p>
         </div>
-      </section>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <StatTile key={s.label} label={s.label} value={s.value} tone={s.tone} hint={s.hint} />
-        ))}
-      </div>
-
-
-      {escalated.length > 0 && (
-        <SectionCard
-          tone="critical"
-          title="Escalated right now"
-          description="These have passed their escalation point and someone senior is expected to step in."
-          bodyClassName="space-y-2"
-        >
-          {escalated.map((t) => (
+        <div className="flex flex-wrap gap-2">
+          {role.can("ticket_create") && (
             <Link
-              key={t.id}
-              to="/tickets/$ticketId"
-              params={{ ticketId: t.id }}
-              className="surface-row relative flex flex-wrap items-center gap-3 border-danger/30 py-2.5 pl-5 pr-3"
+              to="/tickets/new"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
             >
-              <PriorityRail priority={t.priority} />
-              <Badge variant="outline" className={priorityTone(t.priority)}>
-                {priorityMeta(t.priority).short}
-              </Badge>
-              <span className="min-w-0 truncate font-medium">{t.title}</span>
-              <span className="ml-auto shrink-0 text-sm font-medium text-danger">{slaState(t).escalation?.who}</span>
+              <Plus className="size-4" /> Report an issue
             </Link>
+          )}
+          <Link
+            to="/tickets"
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-border px-5 text-base font-medium transition-colors hover:bg-secondary"
+          >
+            <ClipboardList className="size-4" /> My work
+          </Link>
+          {role.can("oversight") && (
+            <Link
+              to="/oversight"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border px-5 text-base font-medium transition-colors hover:bg-secondary"
+            >
+              <ShieldAlert className="size-4" /> Oversight
+            </Link>
+          )}
+        </div>
+      </header>
+
+      <SectionCard
+        tone={needsMe.length > 0 ? "critical" : "default"}
+        title="Needs me now"
+        description="Actionable this minute — unacknowledged, not started, past a clock, or back from waiting."
+        bodyClassName="space-y-1.5"
+      >
+        {needsMe.length === 0 ? (
+          <EmptyState title="Nothing needs you right now." hint="Everything you own is moving or parked with a follow-up time." />
+        ) : (
+          needsMe.map((t) => <WorkRow key={t.id} t={t} emphasis />)
+        )}
+      </SectionCard>
+
+      <SectionCard title="In progress" description="Work you own and have already started." bodyClassName="space-y-1.5">
+        {inProgress.length === 0 ? (
+          <EmptyState title="Nothing started yet." hint="Work you begin will appear here until it is closed or parked." />
+        ) : (
+          inProgress.map((t) => <WorkRow key={t.id} t={t} />)
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Waiting"
+        description="Parked on someone else, soonest follow-up first. The clock is paused, not finished."
+        bodyClassName="space-y-1.5"
+      >
+        {waiting.length === 0 ? (
+          <EmptyState title="Nothing is parked." hint="Waiting work always carries a follow-up time so it comes back to you." />
+        ) : (
+          waiting.map((t) => <WorkRow key={t.id} t={t} />)
+        )}
+      </SectionCard>
+
+      {unclaimed.length > 0 && role.can("matters_all") && (
+        <SectionCard
+          title="Unclaimed in the team queue"
+          description="Nobody has picked these up yet."
+          bodyClassName="space-y-1.5"
+          actions={
+            <Link to="/tickets" className="text-sm font-medium text-primary hover:underline">
+              Open the queue
+            </Link>
+          }
+        >
+          {unclaimed.slice(0, 5).map((t) => (
+            <WorkRow key={t.id} t={t} />
           ))}
         </SectionCard>
       )}
-
-      <SectionCard
-        title="Needs attention now"
-        description="Open tickets, soonest clock first."
-        bodyClassName="space-y-2"
-      >
-        {attention.length === 0 ? (
-          <EmptyState
-            title="Nothing open right now."
-            hint="Every ticket in the portfolio is resolved or waiting on someone outside the team."
-            action={
-              <Link to="/tickets/new" className="text-sm font-medium text-primary hover:underline">
-                Log a ticket
-              </Link>
-            }
-          />
-        ) : (
-          attention.map((t) => {
-            const sla = slaState(t);
-            const live = sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
-            return (
-              <Link
-                key={t.id}
-                to="/tickets/$ticketId"
-                params={{ ticketId: t.id }}
-                className="surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2.5 pl-5 pr-3"
-              >
-                <PriorityRail priority={t.priority} />
-                <Badge variant="outline" className={priorityTone(t.priority)}>
-                  {priorityMeta(t.priority).short}
-                </Badge>
-                <span className="min-w-0 flex-1 truncate font-medium">{t.title}</span>
-                <span className="truncate text-sm text-muted-foreground">
-                  {t.properties?.nickname ?? t.properties?.name ?? "Unassigned property"}
-                </span>
-                <Badge variant="outline" className={statusTone(t.status)}>
-                  {labelFor(STATUSES, t.status)}
-                </Badge>
-                <span className="numeric ml-auto shrink-0 text-sm text-muted-foreground">
-                  {live ? (
-                    <span className={live.breached ? "font-medium text-danger" : ""}>{live.label}</span>
-                  ) : (
-                    relativeTime(t.reported_at)
-                  )}
-                </span>
-              </Link>
-            );
-          })
-        )}
-      </SectionCard>
     </div>
   );
 }
 
+/** One compact line of work: what it is, where, what to do next, and by when. */
+function WorkRow({ t, emphasis = false }: { t: Row; emphasis?: boolean }) {
+  const sla = slaState(t);
+  const overdue = Boolean(sla.breached);
+  const next = ticketNextAction({
+    status: t.status,
+    acknowledged_at: t.acknowledged_at,
+    action_started_at: t.action_started_at,
+    waiting_on: t.waiting_on,
+    guest_in_residence: t.guest_in_residence,
+    vendor_name: t.vendor_name,
+    vendor_status: t.vendor_status,
+  });
+  const followUp = t.status === "waiting" ? clockTime(t.next_review_at) : null;
+  const waitingLate = t.status === "waiting" && t.next_review_at && new Date(t.next_review_at) <= new Date();
 
-/** One shortcut tile in the hero: where to go, and why you would. */
-function HeroLink({
-  to,
-  icon,
-  label,
-  hint,
-}: {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  hint: string;
-}) {
   return (
     <Link
-      // Static destinations only; all of these routes exist in the nav.
-      to={to as never}
-      className="group flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-3.5 py-2.5 transition-colors hover:bg-sidebar-accent"
+      to="/tickets/$ticketId"
+      params={{ ticketId: t.id }}
+      className={`surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1 py-3 pl-5 pr-3 ${
+        overdue ? "border-danger/30" : ""
+      }`}
     >
-      <span className="text-sidebar-primary">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{label}</span>
-        <span className="block truncate text-xs text-sidebar-foreground/65">{hint}</span>
+      <PriorityRail priority={t.priority} />
+      <Badge variant="outline" className={priorityTone(t.priority)}>
+        {priorityMeta(t.priority).short}
+      </Badge>
+
+      <span className="min-w-0 flex-1 basis-full sm:basis-auto">
+        <span className={`block truncate ${emphasis ? "text-base font-semibold" : "text-base font-medium"}`}>
+          {t.title}
+        </span>
+        <span className="block truncate text-sm text-muted-foreground">
+          {t.properties?.nickname ?? t.properties?.name ?? "No property"}
+          {next ? ` · ${next.label}` : ""}
+        </span>
       </span>
-      <ArrowRight className="size-4 shrink-0 text-sidebar-foreground/50 transition-transform group-hover:translate-x-0.5" />
+
+      {t.status === "waiting" ? (
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium ${
+            waitingLate ? "bg-danger/10 text-danger" : "bg-info/10 text-info"
+          }`}
+        >
+          <PauseCircle className="size-3.5" />
+          {waitingLate ? "Follow up now" : `Follow up ${followUp ?? "—"}`}
+        </span>
+      ) : overdue ? (
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-danger/10 px-2 py-1 text-sm font-medium text-danger">
+          <AlertTriangle className="size-3.5" /> Overdue
+        </span>
+      ) : t.action_started_at ? (
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-info/10 px-2 py-1 text-sm font-medium text-info">
+          <PlayCircle className="size-3.5" /> In progress
+        </span>
+      ) : (
+        <span className="numeric text-sm text-muted-foreground">{relativeTime(t.reported_at)}</span>
+      )}
+
+      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
     </Link>
   );
 }

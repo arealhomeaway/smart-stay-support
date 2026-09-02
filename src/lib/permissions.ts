@@ -65,6 +65,8 @@ export type Capability =
   | "ticket_create"
   | "claims_work"
   | "claims_oversight"
+  | "leads_work"
+  | "work_orders_internal"
   | "matters_all"
   | "matters_assigned"
   | "guest_contact"
@@ -90,12 +92,16 @@ const STAFF_BASE: Capability[] = [
   "ticket_create",
   // Recovery work belongs to whoever handled the incident.
   "claims_work",
+  // Frontline coordinators need operational read access to Property Hub.
+  // Administrative property actions stay permission-controlled inside the page.
+  "properties",
 ];
 
 const SUPERVISOR_CAPS: Capability[] = [
   ...STAFF_BASE,
   "matters_all",
   "guest_contact",
+  "leads_work",
   "oversight",
   "analytics",
   "properties",
@@ -115,6 +121,9 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   admin: [
     ...SUPERVISOR_CAPS,
     "command_center",
+    // The internal Work Order / Vendor Portal system is not live for the beta.
+    // Kept reachable for platform owners only; frontline sees Breezeway repair.
+    "work_orders_internal",
     "role_management",
     "settings",
     "integrations",
@@ -122,7 +131,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "view_as",
   ],
   manager: SUPERVISOR_CAPS,
-  onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request", "properties"],
+  onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
   // Operations coordinators can see current guest/tenant contact details.
   tech: [...STAFF_BASE, "guest_contact"],
   vendor: [],

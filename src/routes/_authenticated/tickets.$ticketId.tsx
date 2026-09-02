@@ -17,6 +17,7 @@ import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
+import { useRole } from "@/hooks/useRole";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
 function TicketDetail() {
   const { ticketId } = Route.useParams();
   const qc = useQueryClient();
+  const role = useRole();
   const [note, setNote] = useState("");
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
@@ -165,6 +167,9 @@ function TicketDetail() {
   // Derived, never stored: the one thing to do next.
   const nextAction = ticketNextAction({
     status: ticket.status,
+    resolved_at: ticket.resolved_at,
+    next_review_at: ticket.next_review_at,
+    waiting_reason: ticket.waiting_reason,
     acknowledged_at: ticket.acknowledged_at,
     action_started_at: ticket.action_started_at,
     waiting_on: ticket.waiting_on,
@@ -425,8 +430,11 @@ function TicketDetail() {
             )}
           </div>
         </div>
+        {/* Status is a supervisory correction, not the way work moves. Frontline
+            staff move the ticket through the Next Action, never a dropdown. */}
+        {role.isSupervisor && (
         <div className="w-56">
-          <Label className="text-xs text-muted-foreground">Status</Label>
+          <Label className="text-xs text-muted-foreground">Status (supervisor)</Label>
           <Select value={ticket.status} onValueChange={changeStatus}>
             <SelectTrigger>
               <SelectValue />
@@ -440,6 +448,7 @@ function TicketDetail() {
             </SelectContent>
           </Select>
         </div>
+        )}
       </div>
 
       {sla.escalation && (
@@ -486,17 +495,9 @@ function TicketDetail() {
             <CardDescription>{meta.summary}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-3">
-            <ClockChip
-              state={sla.response}
-              actionLabel="Acknowledge"
-              onAction={ticket.acknowledged_at ? undefined : acknowledge}
-            />
-            <ClockChip
-              state={sla.action}
-              actionLabel="Start action"
-              icon={<PlayCircle className="size-4" />}
-              onAction={ticket.action_started_at ? undefined : startAction}
-            />
+            {/* Read-only clocks: the only place to act is the Next Action card. */}
+            <ClockChip state={sla.response} />
+            <ClockChip state={sla.action} icon={<PlayCircle className="size-4" />} />
             {workType?.completion_target && (
               <span className="text-sm text-muted-foreground">
                 Complete: {workType.completion_target}
@@ -551,10 +552,12 @@ function TicketDetail() {
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-secondary/40 p-4">
           <PauseCircle className="size-5 shrink-0" />
           <div className="flex-1">
-            <p className="font-medium">Waiting on {labelFor(WAITING_ON, ticket.waiting_on)}</p>
+            <p className="font-medium">Parked with {labelFor(WAITING_ON, ticket.waiting_on).toLowerCase()}</p>
             <p className="text-sm text-muted-foreground">
               {ticket.waiting_reason}
-              {ticket.next_review_at ? ` · review ${new Date(ticket.next_review_at).toLocaleString()}` : ""}
+              {ticket.next_review_at
+                ? ` · comes back to you ${new Date(ticket.next_review_at).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}`
+                : ""}
             </p>
           </div>
           <Button size="sm" variant="secondary" onClick={clearWaiting}>
@@ -635,38 +638,51 @@ function TicketDetail() {
           {!closed && ticket.status !== "waiting" && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Blocked on someone else?</CardTitle>
-                <CardDescription>Waiting is fine. Waiting without a review date is not.</CardDescription>
+                <CardTitle className="text-base">Waiting on someone?</CardTitle>
+                <CardDescription>
+                  Park it here and it comes back to you at the time you set. Nothing is forgotten and nobody
+                  has to remember it.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-3">
-                <Select value={waitOn} onValueChange={setWaitOn}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WAITING_ON.map((w) => (
-                      <SelectItem key={w.value} value={w.value}>
-                        {w.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="Waiting for what?"
-                  value={waitReason}
-                  onChange={(e) => setWaitReason(e.target.value)}
-                />
-                <Input
-                  type="datetime-local"
-                  value={waitReview}
-                  onChange={(e) => setWaitReview(e.target.value)}
-                />
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Who are we waiting on?</Label>
+                  <Select value={waitOn} onValueChange={setWaitOn}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WAITING_ON.map((w) => (
+                        <SelectItem key={w.value} value={w.value}>
+                          {w.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">What are we waiting for?</Label>
+                  <Input
+                    placeholder="e.g. vendor confirming a Thursday window"
+                    value={waitReason}
+                    onChange={(e) => setWaitReason(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Bring it back to me</Label>
+                  <Input
+                    type="datetime-local"
+                    value={waitReview}
+                    onChange={(e) => setWaitReview(e.target.value)}
+                  />
+                </div>
                 <Button variant="secondary" onClick={setWaiting} className="sm:col-span-3">
-                  Mark as waiting
+                  Park this and remind me
                 </Button>
               </CardContent>
             </Card>
           )}
+
 
 
           <Card>
@@ -851,7 +867,9 @@ function TicketDetail() {
               />
             </div>
           </details>
-          <TicketWorkOrderPanel ticket={ticket} />
+          {/* Internal Work Orders are not part of the beta — Breezeway is the
+              only visible repair path. Kept for platform owners only. */}
+          {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} />}
           <TicketRecoveryPanel ticket={ticket} />
 
           <TicketClaimPanel ticket={ticket} />
@@ -941,7 +959,7 @@ function ClockChip({
   icon,
 }: {
   state: ReturnType<typeof slaState>["response"];
-  actionLabel: string;
+  actionLabel?: string;
   onAction?: (() => void) | undefined;
   icon?: React.ReactNode | undefined;
 }) {

@@ -57,6 +57,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
+import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { ROLE_LABELS, type Capability } from "@/lib/permissions";
 
@@ -79,32 +80,47 @@ type NavGroup = { label: string; items: NavItem[] };
 // operation that staffs it, the programmes we run for owners, then the
 // administrative surfaces. Visibility is still driven by capability — never by
 // a hand-maintained copy of the menu.
+
+// Frontline navigation follows the working day, not the data model: what needs
+// me, my work, the properties I look after, and how to report something.
+// Everything supervisory or administrative is a separate, capability-gated
+// group so a coordinator never navigates the app's architecture.
+const frontlineGroup: NavGroup = {
+  label: "My day",
+  items: [
+    { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
+    { to: "/tickets", label: "My work", icon: ClipboardList, tour: "tickets" },
+    { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties" },
+    { to: "/tickets/new", label: "Report an issue", icon: Plus, tour: "report", capability: "ticket_create" },
+  ],
+};
+
 const navGroups: NavGroup[] = [
+  frontlineGroup,
   {
-    label: "Today",
+    label: "Guest & reservations",
     items: [
-      { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
-      { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", capability: "oversight" },
+      { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads", capability: "leads_work" },
     ],
   },
   {
-    label: "Work",
+    label: "Supervision",
     items: [
-      { to: "/tickets", label: "Tickets", icon: ClipboardList, tour: "tickets" },
-      { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads" },
-      { to: "/claims", label: "Claims", icon: ReceiptText, tour: "claims", capability: "claims_work" },
-      { to: "/work-orders", label: "Work orders", icon: Wrench, tour: "work-orders", capability: "claims_work" },
-      { to: "/recovery", label: "Guest recovery", icon: HeartHandshake, tour: "recovery", capability: "claims_work" },
-      { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
+      { to: "/oversight", label: "Oversight", icon: ShieldAlert, tour: "oversight", capability: "oversight" },
+      { to: "/claims", label: "Claims", icon: ReceiptText, tour: "claims", capability: "claims_oversight" },
+      { to: "/recovery", label: "Guest recovery", icon: HeartHandshake, tour: "recovery", capability: "claims_oversight" },
       { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
       { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
+      // Internal Work Orders / Vendor Portal are not live for the beta.
+      // Breezeway is the only visible field-execution path.
+      { to: "/work-orders", label: "Work orders", icon: Wrench, tour: "work-orders", capability: "work_orders_internal" },
     ],
   },
   {
     label: "Operations",
     items: [
       { to: "/team", label: "Team & coverage", icon: Users, tour: "team", capability: "user_management" },
-      { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks" },
+      { to: "/playbooks", label: "Playbooks", icon: ListChecks, tour: "playbooks", capability: "playbooks_edit" },
       { to: "/coach", label: "Ask the Coach", icon: Sparkles, tour: "coach", capability: "coaching" },
     ],
   },
@@ -113,9 +129,6 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/owner-programs", label: "Active Owner", icon: KeyRound, tour: "owner-programs", capability: "owner_programs" },
       { to: "/vendors", label: "Vendor Hub", icon: Handshake, tour: "vendors", capability: "vendor_admin", flag: "vendor_portal" },
-      // Quarterly property reviews are vendor management work — cleaning
-      // supervisors run them — so they sit with the Vendor Hub, not the
-      // operations queue. The records and the paused scheduler are unchanged.
       { to: "/quarterly", label: "Quarterly reviews", icon: CalendarCheck, tour: "quarterly", capability: "vendor_admin", flag: "quarterly_reviews" },
     ],
   },
@@ -132,8 +145,11 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/integrations", label: "Integrations", icon: PlugZap, tour: "integrations", capability: "integrations" },
       { to: "/audit", label: "Audit history", icon: History, tour: "audit", capability: "audit_history" },
-      { to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" },
     ],
+  },
+  {
+    label: "Support",
+    items: [{ to: "/welcome", label: "Help", icon: CircleHelp, tour: "help" }],
   },
 ];
 
@@ -155,6 +171,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
   const { enabled: flagEnabled } = useFeatureFlags();
   const { can, isVendor, isOwner, isSupervisor, readOnly, primary, isLoading: rolesLoading } = useRole();
+  // Guest Experience & Reservations seats work leads; Property Operations
+  // seats do not. Seat, not permission role, decides this.
+  const seat = useSeat();
   const pathname = router.state.location.pathname;
   const vendorMode = !rolesLoading && isVendor;
   const ownerMode = !rolesLoading && isOwner;
@@ -193,7 +212,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       : navGroups
           .map((g) => ({ ...g, items: g.items.filter(
             (i) =>
-              (!i.capability || can(i.capability)) &&
+              (!i.capability || can(i.capability) ||
+                (i.capability === "leads_work" && seat.isGuestExperience)) &&
               (!i.supervisorOnly || isSupervisor) &&
               (!i.flag || flagEnabled(i.flag)),
           ) }))

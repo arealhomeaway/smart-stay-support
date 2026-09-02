@@ -31,7 +31,7 @@ import {
 import { OPEN_STATUSES } from "@/lib/tickets";
 import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
 import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
-import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { RequireCapability } from "@/components/RequireCapability";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -43,9 +43,9 @@ export const Route = createFileRoute("/_authenticated/properties")({
     ],
   }),
   component: () => (
-    <SupervisorOnly>
+    <RequireCapability capability="properties" title="Properties">
       <PropertiesPage />
-    </SupervisorOnly>
+    </RequireCapability>
   ),
 });
 
