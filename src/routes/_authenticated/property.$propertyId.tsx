@@ -32,6 +32,7 @@ import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
+import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
@@ -47,6 +48,8 @@ export const Route = createFileRoute("/_authenticated/property/$propertyId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (raw: Record<string, unknown>): { from?: string | undefined } =>
+    typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {},
   component: PropertyHubPage,
 });
 
@@ -179,6 +182,7 @@ function PropertyHubPage() {
 /* ---------------------------------------------------------------- */
 
 function HubHeader({ hub }: { hub: Hub }) {
+  const { origin } = useRecordOrigin("property");
   const p = hub.property;
   const facts = [
     p.bedrooms == null ? null : `${p.bedrooms} bd`,
@@ -241,14 +245,7 @@ function HubHeader({ hub }: { hub: Hub }) {
               </div>
             )}
           </div>
-          {hub.viewer.staff && (
-            <Link
-              to="/properties"
-              className="shrink-0 text-sm font-medium text-primary hover:underline"
-            >
-              All properties
-            </Link>
-          )}
+          {hub.viewer.staff && <BackControl origin={origin} className="shrink-0" />}
         </div>
       </div>
     </div>

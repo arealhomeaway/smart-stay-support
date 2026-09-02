@@ -23,6 +23,7 @@ import {
   statusTone,
 } from "@/lib/tickets";
 import { useRole } from "@/hooks/useRole";
+import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { QUEUE_TABS, currentOwnerId, matchesTab, queueSort, type QueueTab } from "@/lib/matters";
 
 export const Route = createFileRoute("/_authenticated/tickets/")({
@@ -40,13 +41,41 @@ export const Route = createFileRoute("/_authenticated/tickets/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  // Queue tab, priority filter and search live in the URL: the workspace is
+  // shareable, survives a reload, and is exactly what Back restores.
+  validateSearch: (raw: Record<string, unknown>): TicketQueueSearch => {
+    const out: TicketQueueSearch = {};
+    if (typeof raw["tab"] === "string" && raw["tab"]) out.tab = raw["tab"];
+    if (typeof raw["priority"] === "string" && raw["priority"]) out.priority = raw["priority"];
+    if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
+    return out;
+  },
   component: TicketsPage,
 });
 
+type TicketQueueSearch = { tab?: string | undefined; priority?: string | undefined; q?: string | undefined };
+
 function TicketsPage() {
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<QueueTab>("mine");
-  const [priority, setPriority] = useState<string>("all");
+  const navigate = Route.useNavigate();
+  const params = Route.useSearch();
+  const search = params.q ?? "";
+  const tab = (params.tab ?? "mine") as QueueTab;
+  const priority = params.priority ?? "all";
+  const setParam = (patch: TicketQueueSearch) =>
+    void navigate({
+      search: (prev: TicketQueueSearch) => {
+        const next: TicketQueueSearch = { ...prev, ...patch };
+        if (!next.tab || next.tab === "mine") delete next.tab;
+        if (!next.priority || next.priority === "all") delete next.priority;
+        if (!next.q) delete next.q;
+        return next;
+      },
+      replace: true,
+    });
+  const setSearch = (v: string) => setParam({ q: v || undefined });
+  const setTab = (v: string) => setParam({ tab: v });
+  const setPriority = (v: string) => setParam({ priority: v });
+
   const { demoMode } = useDemo();
   const userId = useCurrentUserId();
   const { isSupervisor } = useRole();
@@ -96,6 +125,18 @@ function TicketsPage() {
         .some((v) => String(v).toLowerCase().includes(q));
     })
     .sort(queueSort);
+
+  // The queue the employee is actually looking at, remembered so a ticket can
+  // be opened, worked and left without rebuilding this page.
+  const { token, originSearch } = useWorkspaceOrigin(
+    "My work",
+    tickets.map((t) => ({
+      id: t.id,
+      label: t.title,
+      sub: t.properties?.nickname ?? t.properties?.name ?? undefined,
+    })),
+  );
+  void token;
 
   const activeTab = QUEUE_TABS.find((t) => t.value === tab);
   // The exception views belong to whoever oversees the work, not to the person
@@ -171,6 +212,7 @@ function TicketsPage() {
                 key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
+                search={originSearch}
                 className="surface-row relative block py-3 pl-5 pr-4"
               >
                 <PriorityRail priority={t.priority} />

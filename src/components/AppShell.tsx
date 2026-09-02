@@ -54,6 +54,7 @@ import {
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
+import { RouteProgress } from "@/components/nav/RouteProgress";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
@@ -305,6 +306,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Sidebar>
 
       <SidebarInset>
+        <RouteProgress />
         <TooltipProvider delayDuration={200}>
           <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
             <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 md:px-6">
