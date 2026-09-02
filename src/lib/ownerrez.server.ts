@@ -257,11 +257,14 @@ export async function currentGuestForListing(ownerRezPropertyId: string): Promis
     departure: null,
     reservation_id: null,
     booking_channel: null,
+    confirmation_number: null,
+    guest_count: null,
+    guest_id: null,
     stay_kind: null,
   };
 
   const today = new Date();
-  const data = await ownerRezGet<{ items?: (OwnerRezBooking & { listing_site?: string })[] }>(
+  const data = await ownerRezGet<{ items?: OwnerRezStayBooking[] }>(
     "/bookings",
     {
       property_ids: ownerRezPropertyId,
@@ -316,6 +319,25 @@ export async function currentGuestForListing(ownerRezPropertyId: string): Promis
     departure: stay.departure ?? null,
     reservation_id: String(stay.id),
     booking_channel: stay.listing_site ?? stay.type ?? null,
+    confirmation_number: stay.platform_reservation_number ?? null,
+    guest_count: guestCount(stay),
+    guest_id: stay.guest_id == null ? null : String(stay.guest_id),
     stay_kind: nights >= 28 ? "mid_term" : "short_term",
   };
 }
+
+/** Booking shape as returned when reading a stay, verified against the live account. */
+type OwnerRezStayBooking = OwnerRezBooking & {
+  listing_site?: string | null;
+  platform_reservation_number?: string | null;
+  adults?: number | null;
+  children?: number | null;
+  infants?: number | null;
+};
+
+/** Adults + children + infants, or null when OwnerRez reports none — never guessed. */
+function guestCount(stay: OwnerRezStayBooking): number | null {
+  const total = (stay.adults ?? 0) + (stay.children ?? 0) + (stay.infants ?? 0);
+  return total > 0 ? total : null;
+}
+
