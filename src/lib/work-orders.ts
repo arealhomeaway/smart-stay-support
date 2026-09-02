@@ -781,3 +781,65 @@ export function recentlyCompleted(wo: WorkOrderLike & { closed_at?: string | nul
   const closed = new Date(wo.closed_at).getTime();
   return Number.isFinite(closed) && now.getTime() - closed <= days * 86400000;
 }
+
+/* ------------------------------------------------------------------ */
+/* Manager oversight                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Operational oversight, not analytics: each filter is a list of jobs a
+ * supervisor may need to act on today.
+ */
+export const MANAGER_FILTER_LABELS = {
+  owner_approval_pending: "Owner approval outstanding",
+  owner_declined: "Owner declined",
+  missed_commitments: "Vendor missed a commitment",
+  mitigated_not_repaired: "Mitigated, not permanently repaired",
+  warranty_open: "Warranty route open",
+  evidence_missing: "Work done, record incomplete",
+} as const;
+
+export type WorkOrderManagerFilter = keyof typeof MANAGER_FILTER_LABELS;
+
+export function matchesManagerFilter(
+  wo: WorkOrderLike & { closed_at?: string | null },
+  filter: WorkOrderManagerFilter,
+  now = new Date(),
+): boolean {
+  if (wo.closed_at) return false;
+  switch (filter) {
+    case "owner_approval_pending":
+      return wo.approval_status === "pending";
+    case "owner_declined":
+      return wo.approval_status === "declined";
+    case "missed_commitments":
+      return Boolean(commitmentStatus(wo, now).action) || (wo.missed_commitments ?? 0) > 0;
+    case "mitigated_not_repaired":
+      return wo.phase === "mitigation" && Boolean(wo.permanent_repair_needed);
+    case "warranty_open":
+      return Boolean(wo.warranty_may_apply) && !wo.warranty_override_reason;
+    case "evidence_missing":
+      return Boolean(wo.vendor_completed_at) && !wo.evidence_complete;
+    default:
+      return false;
+  }
+}
+
+/** Homes with more than one work order inside the window. */
+export function repeatMaintenanceProperties(
+  rows: Array<{ property_id?: string | null; created_at?: string | null }>,
+  days = 90,
+  now = new Date(),
+): Array<{ property_id: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.property_id) continue;
+    const created = new Date(row.created_at ?? 0).getTime();
+    if (!Number.isFinite(created) || now.getTime() - created > days * 86400000) continue;
+    counts.set(row.property_id, (counts.get(row.property_id) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([property_id, count]) => ({ property_id, count }))
+    .sort((a, b) => b.count - a.count);
+}
