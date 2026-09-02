@@ -80,14 +80,34 @@ function Overview() {
             <span className="h-8 w-px bg-sidebar-foreground/25" />
             <span className="font-display text-lg font-semibold">Resolve</span>
           </div>
-          {!signedIn && (
+          {signedIn ? (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/hub"
+                className="inline-flex min-h-11 items-center rounded-md bg-sidebar-primary px-3 text-sm font-semibold text-sidebar-primary-foreground transition-opacity hover:opacity-90 sm:px-4"
+              >
+                Open Resolve
+              </Link>
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  setSignedIn(false);
+                }}
+                className="inline-flex min-h-11 items-center rounded-md border border-sidebar-foreground/30 px-3 text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-foreground/10 sm:px-4"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
             <Link
               to="/auth"
-              className="inline-flex min-h-11 items-center rounded-md border border-sidebar-foreground/30 px-4 text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-foreground/10"
+              className="inline-flex min-h-11 shrink-0 items-center rounded-md bg-sidebar-primary px-4 text-sm font-semibold text-sidebar-primary-foreground transition-opacity hover:opacity-90"
             >
               Sign in
             </Link>
           )}
+
         </div>
       </header>
 
