@@ -54,6 +54,8 @@ type NewTicketSearch = {
   lead?: string;
   project?: string;
   from?: string;
+  /** Navigation-context token for the workspace this was launched from. */
+  origin?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/tickets/new")({
@@ -64,10 +66,12 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
     const lead = str(search["lead"]);
     const project = str(search["project"]);
     const from = str(search["from"]);
+    const origin = str(search["origin"]);
     if (property) out.property = property;
     if (lead) out.lead = lead;
     if (project) out.project = project;
     if (from) out.from = from;
+    if (origin) out.origin = origin;
     return out;
   },
   head: () => ({
