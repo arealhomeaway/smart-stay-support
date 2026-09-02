@@ -445,3 +445,9 @@
     transform: none;
   }
 }
+
+/* Route transition feedback: a calm indeterminate sweep, never a blocking overlay. */
+@keyframes route-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
