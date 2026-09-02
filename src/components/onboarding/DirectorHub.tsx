@@ -98,7 +98,7 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
         />
         <Stat
           label="Awaiting review"
-          value={active.filter((p) => p.inReview).length}
+          value={projects.filter((p) => p.inReview).length}
           hint="Director or Operations gate."
           tone="waiting"
         />
