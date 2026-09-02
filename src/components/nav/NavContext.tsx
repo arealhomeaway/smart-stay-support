@@ -271,3 +271,15 @@ export function QueueRail({
     </aside>
   );
 }
+
+/**
+ * Register the page the employee is on as a plain "somewhere to come back to",
+ * without a queue. Used by the shell so short detours — Log work above all —
+ * always know the named place they were launched from.
+ */
+export function useAmbientOrigin(label: string) {
+  const router = useRouter();
+  const location = router.state.location;
+  const href = location.pathname + (location.searchStr ? location.searchStr : "");
+  return useMemo(() => rememberOrigin({ label, href }), [label, href]);
+}
