@@ -944,7 +944,7 @@ function ClockChip({
   icon,
 }: {
   state: ReturnType<typeof slaState>["response"];
-  actionLabel: string;
+  actionLabel?: string;
   onAction?: (() => void) | undefined;
   icon?: React.ReactNode | undefined;
 }) {
