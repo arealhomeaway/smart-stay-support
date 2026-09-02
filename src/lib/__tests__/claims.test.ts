@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import {
   amountAtRisk,
   claimBucket,
@@ -10,13 +10,14 @@ import {
   nextAction,
   proposeStage,
   unrecovered,
+  type DuplicateCandidate,
   type ClaimLike,
   type RequirementLike,
 } from "@/lib/claims";
 
 const NOW = new Date("2026-03-10T12:00:00Z");
 
-function claim(over: Partial<ClaimLike> = {}): ClaimLike {
+function claim(over: Partial<DuplicateCandidate> = {}): DuplicateCandidate {
   return { claim_type: "channel_aircover", stage: "gathering", ...over };
 }
 
