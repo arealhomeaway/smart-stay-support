@@ -116,7 +116,8 @@ export function OwnerTimeReviewQueue() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={act.isPending}
+                      disabled={act.isPending || (notes[e.id] ?? "").trim().length === 0}
+                      title="Add a reason the owner can read"
                       onClick={() => act.mutate({ entryId: e.id, decision: "returned" })}
                     >
                       <RotateCcw className="size-4" /> Return
@@ -124,7 +125,8 @@ export function OwnerTimeReviewQueue() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={act.isPending}
+                      disabled={act.isPending || (notes[e.id] ?? "").trim().length === 0}
+                      title="Add a reason the owner can read"
                       onClick={() => act.mutate({ entryId: e.id, decision: "flagged" })}
                     >
                       <Flag className="size-4" /> Flag
