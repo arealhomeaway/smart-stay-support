@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -116,6 +116,7 @@ function TicketDetail() {
   const { ticketId } = Route.useParams();
   const qc = useQueryClient();
   const role = useRole();
+  const navigate = useNavigate();
   const [note, setNote] = useState("");
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
@@ -477,6 +478,17 @@ function TicketDetail() {
     await log("status", `Status changed to ${labelFor(STATUSES, status)}.`, "status_changed");
     await refresh();
     toast.success("Status updated.");
+  }
+
+  /** Supervisor cleanup for duplicates, tests and junk — never a frontline action. */
+  async function deleteTicket() {
+    const { error } = await supabase.from("tickets").delete().eq("id", ticketId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Ticket deleted.");
+    void navigate({ to: "/tickets" });
   }
 
   async function addNote() {
