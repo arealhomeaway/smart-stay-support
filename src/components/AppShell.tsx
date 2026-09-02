@@ -90,6 +90,8 @@ const frontlineGroup: NavGroup = {
   items: [
     { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
     { to: "/tickets", label: "My work", icon: ClipboardList, tour: "tickets" },
+    { to: "/routines", label: "Routine work", icon: ClipboardCheck, tour: "routines", capability: "routines" },
+
     { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties" },
     { to: "/tickets/new", label: "Report an issue", icon: Plus, tour: "report", capability: "ticket_create" },
   ],
