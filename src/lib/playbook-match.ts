@@ -151,10 +151,20 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
   }
 
   for (const condition of m.requires ?? []) {
+    // A condition Resolve does not understand must not silently disqualify the
+    // whole Playbook — that hid good guidance for a single typo.
+    if (!(condition in CONDITION_LABEL)) continue;
     if (!conditionHolds(condition, ctx)) return null;
     score += 3;
     reasons.push(CONDITION_LABEL[condition] ?? condition);
   }
+
+  // An explicit object scope is itself a deliberate statement of relevance.
+  if (score === 0 && m.objects?.length) {
+    score += 1;
+    reasons.push("the kind of work this is");
+  }
+
 
   // A Playbook with no matcher at all is a library entry, not contextual.
   if (score === 0) return null;
