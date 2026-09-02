@@ -165,48 +165,6 @@ export async function stayForListing(ownerRezPropertyId: string): Promise<StaySn
   };
 }
 
-export type OwnerRezTask = {
-  id: number | string;
-  title?: string | null;
-  description?: string | null;
-  property_id?: number | string | null;
-  status?: string | null;
-  priority?: string | null;
-  due_date?: string | null;
-  is_completed?: boolean;
-};
-
-/**
- * Lists maintenance tasks from OwnerRez for inbound sync. Not every OwnerRez
- * plan exposes the tasks endpoint, so a 404 is surfaced as a clear message
- * rather than a hard failure.
- */
-export async function listOwnerRezTasks(): Promise<OwnerRezTask[]> {
-  const out: OwnerRezTask[] = [];
-  let offset = 0;
-  try {
-    for (let page = 0; page < 10; page++) {
-      const data = await ownerRezGet<{ items?: OwnerRezTask[] }>("/tasks", {
-        limit: "50",
-        offset: String(offset),
-      });
-      const items = data.items ?? [];
-      out.push(...items);
-      if (items.length < 50) break;
-      offset += 50;
-    }
-  } catch (err) {
-    if (err instanceof OwnerRezError && err.status === 404) {
-      throw new OwnerRezError(
-        404,
-        "This OwnerRez account does not expose maintenance tasks through the API. Property and stay sync still work.",
-      );
-    }
-    throw err;
-  }
-  return out;
-}
-
 /* ------------------------------------------------------------------ *
  * Current guest / tenant contact (read-only).
  *
@@ -224,9 +182,15 @@ export type GuestContact = {
   departure: string | null;
   reservation_id: string | null;
   booking_channel: string | null;
+  /** The channel's own confirmation code (Airbnb/Vrbo), when OwnerRez has one. */
+  confirmation_number: string | null;
+  /** Adults + children + infants as reported by OwnerRez, when present. */
+  guest_count: number | null;
+  guest_id: string | null;
   stay_kind: "short_term" | "mid_term" | null;
   note?: string;
 };
+
 
 type OwnerRezGuest = {
   first_name?: string;
@@ -251,11 +215,14 @@ export async function currentGuestForListing(ownerRezPropertyId: string): Promis
     departure: null,
     reservation_id: null,
     booking_channel: null,
+    confirmation_number: null,
+    guest_count: null,
+    guest_id: null,
     stay_kind: null,
   };
 
   const today = new Date();
-  const data = await ownerRezGet<{ items?: (OwnerRezBooking & { listing_site?: string })[] }>(
+  const data = await ownerRezGet<{ items?: OwnerRezStayBooking[] }>(
     "/bookings",
     {
       property_ids: ownerRezPropertyId,
@@ -310,6 +277,25 @@ export async function currentGuestForListing(ownerRezPropertyId: string): Promis
     departure: stay.departure ?? null,
     reservation_id: String(stay.id),
     booking_channel: stay.listing_site ?? stay.type ?? null,
+    confirmation_number: stay.platform_reservation_number ?? null,
+    guest_count: guestCount(stay),
+    guest_id: stay.guest_id == null ? null : String(stay.guest_id),
     stay_kind: nights >= 28 ? "mid_term" : "short_term",
   };
 }
+
+/** Booking shape as returned when reading a stay, verified against the live account. */
+type OwnerRezStayBooking = OwnerRezBooking & {
+  listing_site?: string | null;
+  platform_reservation_number?: string | null;
+  adults?: number | null;
+  children?: number | null;
+  infants?: number | null;
+};
+
+/** Adults + children + infants, or null when OwnerRez reports none — never guessed. */
+function guestCount(stay: OwnerRezStayBooking): number | null {
+  const total = (stay.adults ?? 0) + (stay.children ?? 0) + (stay.infants ?? 0);
+  return total > 0 ? total : null;
+}
+

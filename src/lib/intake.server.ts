@@ -168,6 +168,17 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
 
   if (error) throw new Error(error.message);
 
+  // Freeze the OwnerRez stay context for emailed-in work too. Best effort:
+  // OwnerRez remains authoritative and intake must not fail on its account.
+  try {
+    const { applyReservationSnapshot } = await import("./reservation-snapshot.server");
+    await applyReservationSnapshot(db, inserted.id);
+  } catch {
+    /* ignore */
+  }
+
+
+
   await db.from("ticket_activity").insert({
     ticket_id: inserted.id,
     kind: "created",

@@ -13,6 +13,7 @@ import { HandoffPanel } from "@/components/HandoffPanel";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
+import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,7 +84,7 @@ function TicketDetail() {
         supabase
           .from("tickets")
           .select(
-            "*, properties(id, name, nickname, address_line1, city, access_notes, notes), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
+            "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
           .single(),
@@ -720,6 +721,10 @@ function TicketDetail() {
 
         <div className="space-y-6">
           <GuestContextPanel ticketId={ticketId} />
+          <ReservationContextPanel
+            ticket={ticket}
+            ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
+          />
           <Card>
             <CardHeader>
               <CardTitle>Details</CardTitle>

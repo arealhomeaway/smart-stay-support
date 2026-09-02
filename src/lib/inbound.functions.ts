@@ -10,21 +10,6 @@ export const getInboundStatus = createServerFn({ method: "GET" })
     };
   });
 
-/**
- * Pulls tasks that were created in OwnerRez into the tickets
- * queue, and refreshes the status of ones already imported.
- */
-export const runInboundSync = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { source?: "ownerrez" | "all" }) => ({
-    source: input?.source ?? "all",
-  }))
-  .handler(async ({ context }) => {
-    const { syncOwnerRezInbound } = await import("./inbound.server");
-    const results = [await syncOwnerRezInbound(context.supabase, context.userId)];
-    return { results };
-  });
-
 /** The most recent tickets that arrived from an outside system. */
 export const listImportedMatters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

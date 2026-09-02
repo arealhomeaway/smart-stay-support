@@ -4755,6 +4755,14 @@ export type Database = {
           ref: number
           reopen_count: number
           reported_at: string
+          reservation_arrival: string | null
+          reservation_channel: string | null
+          reservation_confirmation: string | null
+          reservation_departure: string | null
+          reservation_guest_count: number | null
+          reservation_guest_name: string | null
+          reservation_snapshot_at: string | null
+          reservation_url: string | null
           resolution_notes: string | null
           resolved_at: string | null
           response_due_at: string | null
@@ -4852,6 +4860,14 @@ export type Database = {
           ref?: number
           reopen_count?: number
           reported_at?: string
+          reservation_arrival?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          reservation_departure?: string | null
+          reservation_guest_count?: number | null
+          reservation_guest_name?: string | null
+          reservation_snapshot_at?: string | null
+          reservation_url?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
           response_due_at?: string | null
@@ -4949,6 +4965,14 @@ export type Database = {
           ref?: number
           reopen_count?: number
           reported_at?: string
+          reservation_arrival?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          reservation_departure?: string | null
+          reservation_guest_count?: number | null
+          reservation_guest_name?: string | null
+          reservation_snapshot_at?: string | null
+          reservation_url?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
           response_due_at?: string | null

@@ -80,7 +80,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   if (property.error || !property.data) throw new Error("That property could not be found.");
   const p = property.data;
 
-  const [tasks, tickets, contacts, docs, approvals, handoff, programLink, activity, outbound, links, conflicts] =
+  const [tasks, tickets, docs, approvals, handoff, programLink, activity, outbound, links, conflicts] =
     await Promise.all([
 
     supabaseAdmin
@@ -98,10 +98,6 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .is("archived_at", null)
       .order("created_at", { ascending: false })
       .limit(25),
-    supabaseAdmin
-      .from("property_owner_contacts")
-      .select("id, owner_name, owner_email, owner_phone, source, match_status, synced_at")
-      .eq("property_id", propertyId),
     supabaseAdmin
       .from("documents")
       .select(
@@ -428,17 +424,24 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       groups: detailGroups,
     },
 
-    contacts: staff
-      ? (contacts.data ?? []).map((c) => ({
-          id: c.id,
-          name: c.owner_name,
-          email: c.owner_email,
-          phone: c.owner_phone,
-          source: c.source,
-          matchStatus: c.match_status,
-          syncedAt: c.synced_at,
-        }))
-      : [],
+    // Owner contact comes from the canonical, deduplicated property_owners
+    // record the home is bound to (properties.owner_record_id). The old
+    // per-property contact table was transitional and is no longer read.
+    contacts:
+      staff && ownerRecord
+        ? [
+            {
+              id: ownerRecord.id,
+              name: ownerRecord.name,
+              email: ownerRecord.email,
+              phone: ownerRecord.phone,
+              source: ownerRecord.source,
+              matchStatus: "linked",
+              syncedAt: ownerRecord.syncedAt,
+            },
+          ]
+        : [],
+
     onboarding: {
       stage: p.onboarding_stage,
       total: top.length,

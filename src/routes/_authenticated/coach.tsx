@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { askCoach, askCoachFollowUp, linkCoachSession } from "@/lib/coach.functions";
-import { getPropertyStay } from "@/lib/ownerrez.functions";
+import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
 import type { Guidance } from "@/lib/coach-schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -177,6 +177,10 @@ function CoachPage() {
         .select("id")
         .single();
       if (error) throw error;
+
+      // Freeze OwnerRez stay context onto the ticket. Best effort: OwnerRez
+      // stays authoritative and a failure here must not fail ticket creation.
+      void captureTicketReservation({ data: { ticketId: ticket.id } }).catch(() => {});
 
       if (g.steps.length) {
         const { error: stepError } = await supabase.from("ticket_steps").insert(
