@@ -196,12 +196,12 @@ export const PRECEDENT_LOSS_OF_USE_RATE = 0.3;
 export const PRECEDENT_SAFETY_NIGHT_RATE = 0.5;
 
 export type AuthorityInput = {
-  recovery_action?: RecoveryAction | null;
-  proposed_amount?: number | string | null;
-  nightly_rate?: number | string | null;
-  impacted_nights?: number | string | null;
-  safety_event?: boolean;
-  emergency?: boolean;
+  recovery_action?: RecoveryAction | null | undefined;
+  proposed_amount?: number | string | null | undefined;
+  nightly_rate?: number | string | null | undefined;
+  impacted_nights?: number | string | null | undefined;
+  safety_event?: boolean | undefined;
+  emergency?: boolean | undefined;
 };
 
 export type AuthorityVerdict = {
