@@ -10,7 +10,7 @@ import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { PORTAL_REGISTRY, portalsFor, recentPortalId } from "@/lib/portals";
-import { OPEN_STATUSES, PRIORITY_LABELS } from "@/lib/tickets";
+import { OPEN_STATUSES } from "@/lib/tickets";
 import { OPEN_STAGES as CLAIM_OPEN_STAGES } from "@/lib/claims";
 import { OPEN_STAGES as RECOVERY_OPEN_STAGES } from "@/lib/guest-recovery";
 import { OPEN_STAGES as LEAD_OPEN_STAGES } from "@/lib/leads";
@@ -81,9 +81,9 @@ function Hub() {
       if (!tickets.error && tickets.data) {
         out.ticketsOpen = tickets.data.length;
         out.ticketsP1 = tickets.data.filter((t) => t.priority === "p1").length;
-        out.ticketsMine = userId
-          ? tickets.data.filter((t) => t.assigned_to === userId).length
-          : undefined;
+        if (userId) {
+          out.ticketsMine = tickets.data.filter((t) => t.assigned_to === userId).length;
+        }
       }
 
       const wo = await supabase
@@ -109,7 +109,7 @@ function Hub() {
       }
 
       const recovery = await supabase
-        .from("guest_recoveries")
+        .from("guest_recovery")
         .select("id", { count: "exact", head: true })
         .eq("is_demo", demoMode)
         .in("stage", RECOVERY_OPEN_STAGES);
@@ -303,8 +303,7 @@ function Hub() {
                   >
                     <p className="line-clamp-1 text-sm font-medium">{t.title}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {PRIORITY_LABELS[t.priority as keyof typeof PRIORITY_LABELS] ?? t.priority} ·
-                      assigned to you
+                      {String(t.priority ?? "").toUpperCase()} · assigned to you
                     </p>
                   </Link>
                 </li>
