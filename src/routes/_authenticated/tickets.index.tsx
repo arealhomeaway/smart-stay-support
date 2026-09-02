@@ -7,7 +7,14 @@ import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTea
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Chip, EmptyState, LoadingRows, PageHeader, PriorityRail, SegmentedControl } from "@/components/ui/page";
+import {
+  Chip,
+  EmptyState,
+  LoadingRows,
+  PageHeader,
+  PriorityRail,
+  SegmentedControl,
+} from "@/components/ui/page";
 import { ownershipChip, stateChip, ticketState } from "@/lib/semantic";
 
 import {
@@ -36,7 +43,10 @@ export const Route = createFileRoute("/_authenticated/tickets/")({
           "One searchable queue for every guest, owner and maintenance ticket across the A Real Home Away portfolio, with live response clocks.",
       },
       { property: "og:title", content: "Tickets queue — Resolve Operations" },
-      { property: "og:description", content: "My work, team queue, unassigned and escalated tickets in one place." },
+      {
+        property: "og:description",
+        content: "My work, team queue, unassigned and escalated tickets in one place.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -53,7 +63,11 @@ export const Route = createFileRoute("/_authenticated/tickets/")({
   component: TicketsPage,
 });
 
-type TicketQueueSearch = { tab?: string | undefined; priority?: string | undefined; q?: string | undefined };
+type TicketQueueSearch = {
+  tab?: string | undefined;
+  priority?: string | undefined;
+  q?: string | undefined;
+};
 
 function TicketsPage() {
   const navigate = Route.useNavigate();
@@ -101,7 +115,8 @@ function TicketsPage() {
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
-    for (const t of QUEUE_TABS) c[t.value] = all.filter((x) => matchesTab(x, t.value, userId)).length;
+    for (const t of QUEUE_TABS)
+      c[t.value] = all.filter((x) => matchesTab(x, t.value, userId)).length;
     return c;
   }, [all, userId]);
 
@@ -150,15 +165,17 @@ function TicketsPage() {
         description={activeTab?.hint}
         actions={
           <Button asChild>
-            <Link to="/tickets/new">Log a ticket</Link>
+            <Link to="/tickets/new" search={{ origin: token }}>
+              Log a ticket
+            </Link>
           </Button>
         }
       />
 
       {demoMode && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">
-          <span className="font-medium">Demo data.</span> These tickets are seeded examples. They are excluded from
-          production analytics and never trigger emails, texts or integrations.
+          <span className="font-medium">Demo data.</span> These tickets are seeded examples. They
+          are excluded from production analytics and never trigger emails, texts or integrations.
         </div>
       )}
 
@@ -167,7 +184,11 @@ function TicketsPage() {
           ariaLabel="Ticket queue"
           value={tab}
           onChange={setTab}
-          options={visibleTabs.map((t) => ({ value: t.value, label: t.label, count: counts[t.value] ?? 0 }))}
+          options={visibleTabs.map((t) => ({
+            value: t.value,
+            label: t.label,
+            count: counts[t.value] ?? 0,
+          }))}
         />
 
         <SegmentedControl
@@ -189,7 +210,6 @@ function TicketsPage() {
         />
       </div>
 
-
       {isLoading ? (
         <LoadingRows rows={6} />
       ) : tickets.length === 0 ? (
@@ -205,7 +225,12 @@ function TicketsPage() {
         <div className="space-y-2">
           {tickets.map((t) => {
             const sla = slaState(t);
-            const live = sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
+            const live =
+              sla.response?.met === false
+                ? sla.response
+                : sla.action?.met === false
+                  ? sla.action
+                  : null;
             const ownerId = currentOwnerId(t);
             return (
               <Link
@@ -242,7 +267,9 @@ function TicketsPage() {
                   )}
                   <span className="numeric ml-auto text-sm text-muted-foreground">
                     {live ? (
-                      <span className={live.breached ? "font-medium text-danger" : ""}>{live.label}</span>
+                      <span className={live.breached ? "font-medium text-danger" : ""}>
+                        {live.label}
+                      </span>
                     ) : (
                       relativeTime(t.reported_at)
                     )}
@@ -252,7 +279,9 @@ function TicketsPage() {
                   {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
                   {t.work_types?.name ?? t.category} ·{" "}
                   {ownerId ? (
-                    <span className="font-medium text-foreground">{displayName(people.get(ownerId))}</span>
+                    <span className="font-medium text-foreground">
+                      {displayName(people.get(ownerId))}
+                    </span>
                   ) : (
                     <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
                   )}
@@ -271,4 +300,3 @@ function TicketsPage() {
     </div>
   );
 }
-
