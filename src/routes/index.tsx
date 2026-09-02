@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Building2, LineChart, Repeat, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Building2, LineChart, Repeat, ShieldCheck } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { PortalCard } from "@/components/PortalCard";
 import { publicPortals } from "@/lib/portals";
@@ -81,13 +80,14 @@ function Overview() {
             <span className="h-8 w-px bg-sidebar-foreground/25" />
             <span className="font-display text-lg font-semibold">Resolve</span>
           </div>
-          <Button
-            asChild
-            size="sm"
-            className="min-h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 md:min-h-9"
-          >
-            <Link to={signedIn ? "/hub" : "/auth"}>{signedIn ? "Go to my portals" : "Sign in"}</Link>
-          </Button>
+          {!signedIn && (
+            <Link
+              to="/auth"
+              className="min-h-11 self-center text-sm font-medium text-sidebar-foreground/80 underline-offset-4 hover:text-sidebar-foreground hover:underline"
+            >
+              Sign in to Resolve
+            </Link>
+          )}
         </div>
       </header>
 
@@ -107,28 +107,6 @@ function Overview() {
               <p className="mt-4 max-w-md text-sm leading-relaxed text-sidebar-foreground/70 md:text-base">
                 Because &ldquo;where is that?&rdquo; is not a workflow.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  size="lg"
-                  className="min-h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
-                >
-                  <a href="#portals">
-                    Choose your portal
-                    <ArrowRight className="size-4" aria-hidden="true" />
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="min-h-11 border-sidebar-foreground/30 bg-transparent text-sidebar-foreground hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
-                >
-                  <Link to={signedIn ? "/hub" : "/auth"}>
-                    {signedIn ? "Go to my portals" : "Sign in"}
-                  </Link>
-                </Button>
-              </div>
             </div>
             <div className="relative min-h-64 lg:min-h-[30rem]">
               <img
@@ -209,7 +187,7 @@ function Overview() {
           </p>
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {portals.map((portal) => (
-              <PortalCard key={portal.id} portal={portal} authenticated={false} />
+              <PortalCard key={portal.id} portal={portal} authenticated={signedIn} wholeCardLink />
             ))}
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
