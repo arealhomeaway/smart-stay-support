@@ -426,6 +426,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                         >
                           <Link
                             to={item.to}
+                            // Logging work is a detour: carry the page they left.
+                            search={
+                              (item.to === "/tickets/new"
+                                ? { ...ticketContext }
+                                : undefined) as never
+                            }
                             data-tour={item.tour}
                             aria-current={active ? "page" : undefined}
                           >
