@@ -427,7 +427,30 @@ function TicketDetail() {
         </div>
       )}
 
+      {/* Derived Next Action — one thing to do, in plain words. */}
+      {nextAction && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-wrap items-start justify-between gap-4 pt-6">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Next</p>
+              <p className="mt-1 text-lg font-semibold">{nextAction.label}</p>
+              <p className="text-sm text-muted-foreground">{nextAction.because}</p>
+              {nextAction.then && (
+                <p className="mt-1 text-sm text-muted-foreground">{nextAction.then}</p>
+              )}
+            </div>
+            {!ticket.acknowledged_at && (
+              <Button onClick={acknowledge}>Acknowledge</Button>
+            )}
+            {ticket.acknowledged_at && !ticket.action_started_at && (
+              <Button onClick={startAction}>Start action</Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {!closed && ticket.record_type !== "completed_interaction" && (
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Response standard</CardTitle>
