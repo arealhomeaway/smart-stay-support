@@ -239,7 +239,7 @@ function Dashboard() {
 }
 
 /** One compact line of work: what it is, where, what to do next, and by when. */
-function WorkRow({ t, emphasis = false, origin }: { t: Row; emphasis?: boolean; origin?: { from: string } }) {
+function WorkRow({ t, emphasis = false, origin }: { t: Row; emphasis?: boolean; origin: { from: string } }) {
   const sla = slaState(t);
   const overdue = Boolean(sla.breached);
   const next = ticketNextAction({
