@@ -85,7 +85,7 @@ function RecoveryHome() {
       ) : open.length === 0 && (buckets.get("recently_resolved")?.length ?? 0) === 0 ? (
         <EmptyState
           title="No guest recoveries open"
-          description="Recoveries start on the ticket where the guest situation is being handled."
+          hint="Recoveries start on the ticket where the guest situation is being handled."
         />
       ) : (
         BUCKET_ORDER.map((bucket) => {
