@@ -81,42 +81,93 @@ export function ClaimRowCard({
   requirements,
   propertyName,
   assigneeName,
+  canEdit,
   onOpen,
 }: {
   claim: ClaimRow;
   requirements: RequirementLike[];
   propertyName: string;
   assigneeName: string;
+  canEdit: boolean;
   onOpen: () => void;
 }) {
+  const qc = useQueryClient();
+  const userId = useCurrentUserId();
   const progress = evidenceProgress(requirements);
   const deadline = deadlineState(claim.deadline_on);
   const risk = amountAtRisk(claim);
+
+  // Same write the workspace performs: assignment plus its audit entry.
+  const assignToMe = useMutation({
+    mutationFn: async () => {
+      if (!userId) throw new Error("No signed-in user");
+      const { error } = await supabase.from("claims").update({ assigned_to: userId }).eq("id", claim.id);
+      if (error) throw error;
+      await supabase.from("claim_activity").insert({
+        claim_id: claim.id,
+        author_id: userId,
+        event_type: "assignment",
+        body: "Assigned to self from the claims queue",
+        detail: { assigned_to: userId } as never,
+        is_demo: claim.is_demo,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["claims"] });
+      qc.invalidateQueries({ queryKey: ["claim-activity", claim.id] });
+      toast.success("Claim assigned to you");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const canAssignToMe = canEdit && !claim.assigned_to && !!userId;
+
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="resolve-press w-full rounded-lg border bg-card px-4 py-3 text-left shadow-card transition-colors hover:bg-muted/50"
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold">{propertyName}</span>
-        <Chip className={stateChip(stageState(claim.stage))}>{CLAIM_STAGE_LABELS[claim.stage]}</Chip>
-        <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
-        {deadline === "overdue" ? (
-          <Chip className="border-danger/40 bg-danger/10 text-danger">Deadline passed</Chip>
-        ) : deadline === "today" || deadline === "approaching" ? (
-          <Chip className="border-warning/40 bg-warning/10 text-warning">{deadlineLabel(claim.deadline_on)}</Chip>
-        ) : null}
-        {progress.blocking.length > 0 ? (
-          <Chip className="border-border/60">{progress.blocking.length} evidence missing</Chip>
-        ) : null}
+    <div className="rounded-lg border bg-card shadow-card transition-colors hover:bg-muted/50">
+      <div className="flex items-start gap-2">
+        <button type="button" onClick={onOpen} className="resolve-press flex-1 px-4 py-3 text-left">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold">{propertyName}</span>
+            <Chip className={stateChip(stageState(claim.stage))}>{CLAIM_STAGE_LABELS[claim.stage]}</Chip>
+            <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
+            {deadline === "overdue" ? (
+              <Chip className="border-danger/40 bg-danger/10 text-danger">Deadline passed</Chip>
+            ) : deadline === "today" || deadline === "approaching" ? (
+              <Chip className="border-warning/40 bg-warning/10 text-warning">{deadlineLabel(claim.deadline_on)}</Chip>
+            ) : null}
+            {progress.blocking.length > 0 ? (
+              <Chip className="border-border/60">{progress.blocking.length} evidence missing</Chip>
+            ) : null}
+          </div>
+          <p className="mt-1 text-sm font-medium text-foreground/90">{nextAction(claim, { requirements })}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {claim.title} · {claim.guest_name ?? "Guest unrecorded"} · at risk {formatMoney(risk)} ·{" "}
+            {assigneeName} · {deadlineLabel(claim.deadline_on)}
+          </p>
+        </button>
+        <div className="flex shrink-0 flex-col items-end gap-1 py-3 pr-4 text-xs">
+          {canAssignToMe ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={assignToMe.isPending}
+              onClick={() => assignToMe.mutate()}
+            >
+              {assignToMe.isPending ? "Assigning…" : "Assign to me"}
+            </Button>
+          ) : null}
+          {claim.ticket_id ? (
+            <Link
+              to="/tickets/$ticketId"
+              params={{ ticketId: claim.ticket_id }}
+              className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              Originating ticket
+            </Link>
+          ) : null}
+        </div>
       </div>
-      <p className="mt-1 text-sm font-medium text-foreground/90">{nextAction(claim, { requirements })}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        {claim.title} · {claim.guest_name ?? "Guest unrecorded"} · at risk {formatMoney(risk)} ·{" "}
-        {assigneeName} · {deadlineLabel(claim.deadline_on)}
-      </p>
-    </button>
+    </div>
   );
 }
 
@@ -158,6 +209,7 @@ export function ClaimListSection({
                 ? displayName(people.find((p) => p.id === claim.assigned_to))
                 : "Unassigned"
             }
+            canEdit={canEdit}
             onOpen={() => setOpenId(claim.id)}
           />
         ))}
