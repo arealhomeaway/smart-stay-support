@@ -112,7 +112,17 @@ export type AuthoredPlaybook = {
   immediate_actions: string[];
   escalate_if: string[];
   vendor_brief: VendorBrief | null;
+  /** Lineage and governance. */
+  source: PlaybookSource;
+  source_refs: string[];
+  supersedes_id: string | null;
+  requires_director: boolean;
+  submitted_at: string | null;
+  approved_at: string | null;
+  retired_at: string | null;
+  review_note: string | null;
 };
+
 
 const SUBJECTS: PlaybookSubject[] = ["ticket", "work_order", "recovery", "claim"];
 
