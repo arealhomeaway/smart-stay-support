@@ -20,6 +20,17 @@ import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
+import { CurrentWork } from "@/components/onboarding/CurrentWork";
+import {
+  deriveBlockers,
+  deriveNextAction,
+  deriveRisk,
+  deriveStage,
+  lifecycleStageMeta,
+  targetHandoff,
+  type OpenHandoff,
+  type ProjectProperty,
+} from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
