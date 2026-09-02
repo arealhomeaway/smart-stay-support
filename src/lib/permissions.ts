@@ -68,6 +68,7 @@ export type Capability =
   | "leads_work"
   | "work_orders_internal"
   | "matters_all"
+  | "routines"
   | "matters_assigned"
   | "guest_contact"
   | "properties"
@@ -92,6 +93,8 @@ const STAFF_BASE: Capability[] = [
   "ticket_create",
   // Recovery work belongs to whoever handled the incident.
   "claims_work",
+  // The four routine controls are everyday frontline work.
+  "routines",
   // Frontline coordinators need operational read access to Property Hub.
   // Administrative property actions stay permission-controlled inside the page.
   "properties",

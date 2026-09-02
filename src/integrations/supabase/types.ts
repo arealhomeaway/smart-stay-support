@@ -4045,6 +4045,47 @@ export type Database = {
           },
         ]
       }
+      playbook_approvals: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          playbook_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          playbook_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          playbook_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_approvals_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_steps: {
         Row: {
           created_at: string
@@ -4090,6 +4131,7 @@ export type Database = {
         Row: {
           active: boolean
           applies_to: string[]
+          approved_at: string | null
           approved_by: string | null
           category: string
           created_at: string
@@ -4100,9 +4142,17 @@ export type Database = {
           matcher: Json
           playbook_key: string | null
           priority_reason: string | null
+          requires_director: boolean
+          retired_at: string | null
+          review_note: string | null
           risk_flags: Json
+          source: string
+          source_refs: string[]
           status: string
+          submitted_at: string | null
+          submitted_by: string | null
           summary: string | null
+          supersedes_id: string | null
           title: string
           updated_at: string
           vendor_brief: Json | null
@@ -4111,6 +4161,7 @@ export type Database = {
         Insert: {
           active?: boolean
           applies_to?: string[]
+          approved_at?: string | null
           approved_by?: string | null
           category: string
           created_at?: string
@@ -4121,9 +4172,17 @@ export type Database = {
           matcher?: Json
           playbook_key?: string | null
           priority_reason?: string | null
+          requires_director?: boolean
+          retired_at?: string | null
+          review_note?: string | null
           risk_flags?: Json
+          source?: string
+          source_refs?: string[]
           status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
           summary?: string | null
+          supersedes_id?: string | null
           title: string
           updated_at?: string
           vendor_brief?: Json | null
@@ -4132,6 +4191,7 @@ export type Database = {
         Update: {
           active?: boolean
           applies_to?: string[]
+          approved_at?: string | null
           approved_by?: string | null
           category?: string
           created_at?: string
@@ -4142,15 +4202,31 @@ export type Database = {
           matcher?: Json
           playbook_key?: string | null
           priority_reason?: string | null
+          requires_director?: boolean
+          retired_at?: string | null
+          review_note?: string | null
           risk_flags?: Json
+          source?: string
+          source_refs?: string[]
           status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
           summary?: string | null
+          supersedes_id?: string | null
           title?: string
           updated_at?: string
           vendor_brief?: Json | null
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "playbooks_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -4932,6 +5008,199 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routine_controls: {
+        Row: {
+          assigned_role_code: string | null
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          contact_result: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          event_key: string
+          evidence_urls: string[]
+          findings: string | null
+          follow_up_ticket_id: string | null
+          guest_name: string | null
+          id: string
+          is_demo: boolean
+          kind: string
+          notes: string | null
+          outcome: string | null
+          property_id: string | null
+          reservation_channel: string | null
+          reservation_confirmation: string | null
+          status: string
+          stay_arrival: string | null
+          stay_departure: string | null
+          team: string | null
+          ticket_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_role_code?: string | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          contact_result?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string
+          event_key: string
+          evidence_urls?: string[]
+          findings?: string | null
+          follow_up_ticket_id?: string | null
+          guest_name?: string | null
+          id?: string
+          is_demo?: boolean
+          kind: string
+          notes?: string | null
+          outcome?: string | null
+          property_id?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          status?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          team?: string | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_role_code?: string | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          contact_result?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string
+          event_key?: string
+          evidence_urls?: string[]
+          findings?: string | null
+          follow_up_ticket_id?: string | null
+          guest_name?: string | null
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          notes?: string | null
+          outcome?: string | null
+          property_id?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          status?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          team?: string | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_controls_follow_up_ticket_id_fkey"
+            columns: ["follow_up_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routine_controls_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routine_controls_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      special_handling: {
+        Row: {
+          active: boolean
+          applies_to: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          instruction: string
+          owner_notification_required: boolean
+          property_id: string
+          rule_type: string
+          severity: string
+          source: string | null
+          threshold_amount: number | null
+          title: string
+          trade: string | null
+          updated_at: string
+          updated_by: string | null
+          vendor_name: string | null
+          vendor_org_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          applies_to?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instruction: string
+          owner_notification_required?: boolean
+          property_id: string
+          rule_type: string
+          severity?: string
+          source?: string | null
+          threshold_amount?: number | null
+          title: string
+          trade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_name?: string | null
+          vendor_org_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          applies_to?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          instruction?: string
+          owner_notification_required?: boolean
+          property_id?: string
+          rule_type?: string
+          severity?: string
+          source?: string | null
+          threshold_amount?: number | null
+          title?: string
+          trade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_name?: string | null
+          vendor_org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_handling_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "special_handling_vendor_org_id_fkey"
+            columns: ["vendor_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
             referencedColumns: ["id"]
           },
         ]

@@ -11,6 +11,7 @@ import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { HandoffPanel } from "@/components/HandoffPanel";
+import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
@@ -615,6 +616,10 @@ function TicketDetail() {
               </CardContent>
             </Card>
           )}
+
+          {/* Special Handling is read live from the property, right before any
+              maintenance decision is made on this ticket. */}
+          <SpecialHandlingNotice propertyId={ticket.property_id} moment="maintenance" />
 
           <MatterOwnershipPanel ticket={ticket} closed={closed} onChanged={refresh} />
 

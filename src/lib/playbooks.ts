@@ -13,10 +13,38 @@
  * reviewed, approved and published without a second vocabulary.
  */
 
-export type PlaybookStatus = "draft" | "active" | "retired";
+/**
+ * Lifecycle. `active` is the legacy stored value for an approved Playbook and
+ * is normalised to `approved` on read, so nothing already published breaks.
+ */
+export type PlaybookStatus = "draft" | "in_review" | "approved" | "retired";
+
+export const STATUS_LABELS: Record<PlaybookStatus, string> = {
+  draft: "Draft",
+  in_review: "In review",
+  approved: "Approved",
+  retired: "Retired",
+};
+
+/** Only an approved Playbook may guide frontline work. */
+export function isApproved(pb: { status: PlaybookStatus; effective_on?: string | null }): boolean {
+  if (pb.status !== "approved") return false;
+  if (!pb.effective_on) return true;
+  return new Date(pb.effective_on).getTime() <= Date.now();
+}
+
+/** Where the authored text came from. */
+export type PlaybookSource = "authored" | "ai_draft" | "imported";
+
+export const SOURCE_LABELS: Record<PlaybookSource, string> = {
+  authored: "Written by the team",
+  ai_draft: "AI draft from existing policy",
+  imported: "Imported from an earlier system",
+};
 
 /** Operational objects a Playbook may attach to. */
 export type PlaybookSubject = "ticket" | "work_order" | "recovery" | "claim";
+
 
 /** A short "consider this" prompt. Same shape as the Coach's risk flags. */
 export type RiskFlag = { title: string; why: string | null };
@@ -84,7 +112,17 @@ export type AuthoredPlaybook = {
   immediate_actions: string[];
   escalate_if: string[];
   vendor_brief: VendorBrief | null;
+  /** Lineage and governance. */
+  source: PlaybookSource;
+  source_refs: string[];
+  supersedes_id: string | null;
+  requires_director: boolean;
+  submitted_at: string | null;
+  approved_at: string | null;
+  retired_at: string | null;
+  review_note: string | null;
 };
+
 
 const SUBJECTS: PlaybookSubject[] = ["ticket", "work_order", "recovery", "claim"];
 
@@ -164,19 +202,41 @@ export type PlaybookRow = {
   immediate_actions?: string[] | null;
   escalate_if?: string[] | null;
   vendor_brief?: unknown;
+  source?: string | null;
+  source_refs?: string[] | null;
+  supersedes_id?: string | null;
+  requires_director?: boolean | null;
+  submitted_at?: string | null;
+  approved_at?: string | null;
+  retired_at?: string | null;
+  review_note?: string | null;
 };
+
+function asStatus(row: PlaybookRow): PlaybookStatus {
+  switch (row.status) {
+    case "draft":
+      return "draft";
+    case "in_review":
+      return "in_review";
+    case "retired":
+      return "retired";
+    // `active` is the value earlier versions stored for a published Playbook.
+    case "active":
+    case "approved":
+      return "approved";
+    default:
+      return row.active === false ? "retired" : "approved";
+  }
+}
 
 /** Normalise a database row into the shape the resolver and card consume. */
 export function parsePlaybook(row: PlaybookRow): AuthoredPlaybook {
-  const status: PlaybookStatus =
-    row.status === "draft" || row.status === "retired" || row.status === "active"
-      ? row.status
-      : row.active === false
-        ? "retired"
-        : "active";
+  const status = asStatus(row);
   const applies = (row.applies_to ?? []).filter((s): s is PlaybookSubject =>
     (SUBJECTS as string[]).includes(s),
   );
+  const source: PlaybookSource =
+    row.source === "ai_draft" || row.source === "imported" ? row.source : "authored";
   return {
     id: row.id,
     playbook_key: row.playbook_key ?? row.id,
@@ -193,8 +253,85 @@ export function parsePlaybook(row: PlaybookRow): AuthoredPlaybook {
     immediate_actions: asStringList(row.immediate_actions),
     escalate_if: asStringList(row.escalate_if),
     vendor_brief: asVendorBrief(row.vendor_brief),
+    source,
+    source_refs: asStringList(row.source_refs),
+    supersedes_id: row.supersedes_id ?? null,
+    requires_director: Boolean(row.requires_director),
+    submitted_at: row.submitted_at ?? null,
+    approved_at: row.approved_at ?? null,
+    retired_at: row.retired_at ?? null,
+    review_note: row.review_note?.trim() || null,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Lifecycle transitions                                               */
+/* ------------------------------------------------------------------ */
+
+export type PlaybookTransition = {
+  to: PlaybookStatus;
+  label: string;
+  /** Plain-language consequence, shown next to the button. */
+  effect: string;
+  /** Director-level sign-off, not just supervisor. */
+  directorOnly: boolean;
+};
+
+/**
+ * What can happen next, from a given state. Draft and In review are authoring
+ * states; only Approved reaches the frontline; Retired stops guiding without
+ * erasing history.
+ */
+export function nextTransitions(pb: {
+  status: PlaybookStatus;
+  requires_director: boolean;
+}): PlaybookTransition[] {
+  switch (pb.status) {
+    case "draft":
+      return [
+        {
+          to: "in_review",
+          label: "Send for review",
+          effect: "Leadership is asked to read it. It still does not guide anyone.",
+          directorOnly: false,
+        },
+      ];
+    case "in_review":
+      return [
+        {
+          to: "approved",
+          label: "Approve",
+          effect: "It starts guiding frontline work immediately.",
+          directorOnly: pb.requires_director,
+        },
+        {
+          to: "draft",
+          label: "Send back to draft",
+          effect: "Returned to the author with your note.",
+          directorOnly: false,
+        },
+      ];
+    case "approved":
+      return [
+        {
+          to: "retired",
+          label: "Retire",
+          effect: "It stops guiding new work. Past guidance stays on the record.",
+          directorOnly: pb.requires_director,
+        },
+      ];
+    case "retired":
+      return [
+        {
+          to: "draft",
+          label: "Reopen as draft",
+          effect: "Brought back for editing. It does not guide anyone until approved again.",
+          directorOnly: false,
+        },
+      ];
+  }
+}
+
 
 /** True when a Playbook carries approved judgment content, not just steps. */
 export function hasAuthoredGuidance(pb: AuthoredPlaybook): boolean {

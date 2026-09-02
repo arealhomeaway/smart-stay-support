@@ -5,7 +5,17 @@ import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState, LoadingPage, PriorityRail, SectionCard } from "@/components/ui/page";
-import { AlertTriangle, ArrowRight, ClipboardList, PauseCircle, PlayCircle, Plus, ShieldAlert } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  ClipboardCheck,
+  ClipboardList,
+  PauseCircle,
+  PlayCircle,
+  Plus,
+  ShieldAlert,
+} from "lucide-react";
+import { routineConfig, routineDueLabel, routineDueState } from "@/lib/routine-controls";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { OPEN_STATUSES, priorityMeta, priorityTone, relativeTime, slaState } from "@/lib/tickets";
 import { isMine } from "@/lib/matters";
@@ -197,6 +207,8 @@ function Dashboard() {
         )}
       </SectionCard>
 
+      <RoutineWorkDue />
+
       {unclaimed.length > 0 && role.can("matters_all") && (
         <SectionCard
           title="Unclaimed in the team queue"
@@ -213,6 +225,7 @@ function Dashboard() {
           ))}
         </SectionCard>
       )}
+
     </div>
   );
 }
@@ -279,5 +292,87 @@ function WorkRow({ t, emphasis = false }: { t: Row; emphasis?: boolean }) {
 
       <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
     </Link>
+  );
+}
+
+/**
+ * Routine work due — the recurring controls, kept visually separate from
+ * tickets so nobody confuses scheduled quality work with a reported problem.
+ */
+function RoutineWorkDue() {
+  const { can } = useRole();
+  const { data } = useQuery({
+    queryKey: ["routine-due"],
+    enabled: can("routines"),
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("routine_controls")
+        .select("id, kind, title, status, due_at, properties(name, nickname)")
+        .in("status", ["due", "in_progress"])
+        .order("due_at", { ascending: true })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  if (!can("routines")) return null;
+
+  const rows = (data ?? []).filter((r) => routineDueState(r) !== "upcoming").slice(0, 6);
+  const late = rows.filter((r) => routineDueState(r) === "overdue").length;
+
+  return (
+    <SectionCard
+      title="Routine work due"
+      description="Cleaning Reviews, Guest Reviews, Checkouts and Guest Touch Bases. Scheduled work, not reported problems."
+      tone={late > 0 ? "attention" : "default"}
+      bodyClassName="space-y-1.5"
+      actions={
+        <Link
+          to="/routines"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          <ClipboardCheck className="size-4" /> Run a routine control
+        </Link>
+      }
+    >
+      {rows.length === 0 ? (
+        <EmptyState
+          title="No routine checks due right now."
+          hint="Cleaning Reviews appear here on their own once a departure clean is finished."
+        />
+      ) : (
+        rows.map((r) => {
+          const overdue = routineDueState(r) === "overdue";
+          return (
+            <Link
+              key={r.id}
+              to="/routines"
+              className="surface-row flex flex-wrap items-center gap-3 px-4 py-3"
+            >
+              <ClipboardCheck className="size-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-base font-medium">{r.title}</span>
+                <span className="block truncate text-sm text-muted-foreground">
+                  {routineConfig(r.kind).label}
+                  {r.properties?.nickname || r.properties?.name
+                    ? ` \u00b7 ${r.properties?.nickname ?? r.properties?.name}`
+                    : ""}
+                </span>
+              </span>
+              <span
+                className={`rounded-md px-2 py-1 text-sm font-medium ${
+                  overdue ? "bg-danger/10 text-danger" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {routineDueLabel(r)}
+              </span>
+              <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+            </Link>
+          );
+        })
+      )}
+    </SectionCard>
   );
 }

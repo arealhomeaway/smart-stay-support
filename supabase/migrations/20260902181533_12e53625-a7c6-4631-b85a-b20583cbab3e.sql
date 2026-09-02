@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.notify_recovery_approval() FROM PUBLIC, anon, authenticated;
