@@ -22,10 +22,27 @@ describe("ticket next action", () => {
     expect(ticketNextAction({ ...base, action_started_at: null })?.label).toBe("Start the work");
   });
 
-  it("chases the blocker while waiting", () => {
+  it("asks to follow up when a parked ticket is due back", () => {
     const a = ticketNextAction({ ...base, status: "waiting", waiting_on: "vendor" });
-    expect(a?.label).toContain("Chase");
-    expect(a?.because).toContain("vendor");
+    expect(a?.label).toBe("Follow up with the vendor");
+    expect(a?.because).toContain("paused");
+  });
+
+  it("says who we are waiting on, in plain words, before it is due back", () => {
+    const later = new Date(Date.now() + 6 * 3600_000).toISOString();
+    const a = ticketNextAction({
+      ...base,
+      status: "waiting",
+      waiting_on: "parts",
+      waiting_reason: "Compressor on order",
+      next_review_at: later,
+    });
+    expect(a?.label).toBe("Waiting on the parts or delivery");
+    expect(a?.because).toContain("Compressor on order");
+  });
+
+  it("never asks to close a ticket that is already signed off", () => {
+    expect(ticketNextAction({ ...base, status: "closed", resolved_at: new Date().toISOString() })).toBeNull();
   });
 
   it("checks in with an engaged vendor", () => {
