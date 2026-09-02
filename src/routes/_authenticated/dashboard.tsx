@@ -197,6 +197,8 @@ function Dashboard() {
         )}
       </SectionCard>
 
+      <RoutineWorkDue />
+
       {unclaimed.length > 0 && role.can("matters_all") && (
         <SectionCard
           title="Unclaimed in the team queue"
@@ -213,6 +215,7 @@ function Dashboard() {
           ))}
         </SectionCard>
       )}
+
     </div>
   );
 }
