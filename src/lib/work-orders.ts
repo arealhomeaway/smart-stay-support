@@ -391,7 +391,7 @@ export function commitmentStatus(wo: WorkOrderLike, now = new Date()): Commitmen
     action = "Vendor missed the ETA — get a new arrival time or dispatch a backup.";
   }
 
-  return { contactOverdue, acknowledgeOverdue, etaMissed, misses, action };
+  return { acknowledgeOverdue, etaMissed, misses, action };
 }
 
 export type Checkpoint =
