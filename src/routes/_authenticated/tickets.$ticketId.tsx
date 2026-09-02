@@ -14,6 +14,7 @@ import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorDispatchPanel } from "@/components/VendorDispatchPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
+import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -725,6 +726,7 @@ function TicketDetail() {
             ticket={ticket}
             ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
           />
+          <TicketClaimPanel ticket={ticket} />
           <Card>
             <CardHeader>
               <CardTitle>Details</CardTitle>
