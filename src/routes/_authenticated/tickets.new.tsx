@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getPropertyStay } from "@/lib/ownerrez.functions";
+import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
 import { PropertyContactPanel } from "@/components/PropertyContactPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -360,6 +360,10 @@ function NewMatter() {
         .select("id")
         .single();
       if (error) throw error;
+
+      // Freeze OwnerRez stay context onto the ticket. Best effort: OwnerRez
+      // stays authoritative and a failure here must not fail ticket creation.
+      void captureTicketReservation({ data: { ticketId: ticket.id } }).catch(() => {});
 
       if (context.lead) {
         const { error: linkError } = await supabase.from("lead_tickets").insert({
