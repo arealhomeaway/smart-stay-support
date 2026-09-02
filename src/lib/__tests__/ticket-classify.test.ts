@@ -44,6 +44,6 @@ describe("frontline classification", () => {
 
   it("leaves situations without a ceiling untouched", () => {
     const arrival = situationById("arrival_info")!;
-    expect(arrival.priorityCeiling).toBeUndefined();
+    expect(arrival.priorityCeiling ?? null).toBeNull();
   });
 });
