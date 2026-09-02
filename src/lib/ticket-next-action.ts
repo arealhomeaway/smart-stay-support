@@ -9,9 +9,15 @@
 
 export type TicketNextActionInput = {
   status: string | null | undefined;
+  /** Set once the work is finished — a finished ticket has no next action. */
+  resolved_at?: string | null;
+  closed_at?: string | null;
   acknowledged_at: string | null | undefined;
   action_started_at: string | null | undefined;
   waiting_on?: string | null;
+  waiting_reason?: string | null;
+  /** When the parked ticket is due to come back to us. */
+  next_review_at?: string | null;
   guest_in_residence?: boolean | null;
   vendor_name?: string | null;
   vendor_status?: string | null;
@@ -30,9 +36,34 @@ export type TicketNextAction = {
   then?: string;
 };
 
+/** Plain words for who we are waiting on — never the stored code. */
+function waitingWho(code: string | null | undefined) {
+  const map: Record<string, string> = {
+    guest: "the guest",
+    owner: "the owner",
+    vendor: "the vendor",
+    approval: "whoever has to approve it",
+    parts: "the parts or delivery",
+    delivery: "the delivery",
+    scheduled: "the scheduled date",
+    internal: "someone on the team",
+    other: "someone else",
+  };
+  if (!code) return "someone else";
+  return map[code] ?? code.replace(/_/g, " ");
+}
+
 export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | null {
   const status = t.status ?? "open";
-  if (status === "closed") return null;
+  // Nothing is "next" on work that is already finished. A resolved ticket that
+  // has been signed off must never ask to be closed again.
+  if (status === "closed" || t.closed_at) return null;
+  if (t.resolved_at && status === "resolved") {
+    return {
+      label: "Close it out",
+      because: "The work is done and signed off — closing it stops the clock for good.",
+    };
+  }
 
   if (!t.acknowledged_at) {
     return {
@@ -43,12 +74,19 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
   }
 
   if (status === "waiting") {
+    const who = waitingWho(t.waiting_on);
+    const due = t.next_review_at ? new Date(t.next_review_at) : null;
+    const dueNow = due ? due.getTime() <= Date.now() : true;
     return {
-      label: "Chase whoever we are waiting on",
-      because: t.waiting_on
-        ? `This is parked on ${t.waiting_on.replace(/_/g, " ")} — the clock is paused, not finished.`
-        : "This is parked on someone else — the clock is paused, not finished.",
-      then: "Then pick the work back up as soon as they answer.",
+      label: dueNow ? `Follow up with ${who}` : `Waiting on ${who}`,
+      because: t.waiting_reason
+        ? `${t.waiting_reason} — the clock is paused, not finished.`
+        : "This is parked with someone else — the clock is paused, not finished.",
+      then: dueNow
+        ? "Then pick the work back up, or park it again with a new follow-up time."
+        : due
+          ? `It comes back to you ${due.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}.`
+          : "Set a follow-up time so it comes back to you.",
     };
   }
 

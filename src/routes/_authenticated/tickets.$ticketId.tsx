@@ -72,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
 function TicketDetail() {
   const { ticketId } = Route.useParams();
   const qc = useQueryClient();
+  const role = useRole();
   const [note, setNote] = useState("");
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
@@ -166,6 +167,10 @@ function TicketDetail() {
   // Derived, never stored: the one thing to do next.
   const nextAction = ticketNextAction({
     status: ticket.status,
+    resolved_at: ticket.resolved_at,
+    closed_at: ticket.closed_at,
+    next_review_at: ticket.next_review_at,
+    waiting_reason: ticket.waiting_reason,
     acknowledged_at: ticket.acknowledged_at,
     action_started_at: ticket.action_started_at,
     waiting_on: ticket.waiting_on,
