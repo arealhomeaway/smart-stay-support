@@ -35,7 +35,7 @@ describe("evidence", () => {
     const p = evidenceProgress(
       reqs({ status: "verified" }, { status: "awaiting", required: false }, { status: "awaiting" }),
     );
-    expect(p.blocking).length).toBe(1);
+    expect(p.blocking.length).toBe(1);
     expect(p.complete).toBe(false);
   });
 
@@ -151,7 +151,7 @@ describe("duplicate protection", () => {
   ];
 
   it("warns about a second claim on the same ticket", () => {
-    expect(findDuplicates({ ticket_id: "t1" }, existing)).length).toBe(1);
+    expect(findDuplicates({ ticket_id: "t1" }, existing).length).toBe(1);
   });
 
   it("warns about the same claim type on the same stay", () => {
@@ -159,17 +159,17 @@ describe("duplicate protection", () => {
       findDuplicates(
         { claim_type: "channel_aircover", property_id: "p1", ownerrez_booking_id: "b1" },
         existing,
-      ),
-    ).length).toBe(1);
+      ).length,
+    ).toBe(1);
   });
 
   it("allows a different recovery path for the same stay", () => {
     expect(
-      findDuplicates({ claim_type: "insurance", property_id: "p1", ownerrez_booking_id: "b1" }, existing),
-    ).length).toBe(0);
+      findDuplicates({ claim_type: "insurance", property_id: "p1", ownerrez_booking_id: "b1" }, existing).length,
+    ).toBe(0);
   });
 
   it("ignores claims that are already finished", () => {
-    expect(findDuplicates({ ticket_id: "t1" }, [claim({ stage: "closed", ticket_id: "t1" })])).length).toBe(0);
+    expect(findDuplicates({ ticket_id: "t1" }, [claim({ stage: "closed", ticket_id: "t1" })]).length).toBe(0);
   });
 });
