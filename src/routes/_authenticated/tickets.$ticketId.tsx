@@ -259,26 +259,6 @@ function TicketDetail() {
     });
   }
 
-  async function acknowledge() {
-    const now = new Date().toISOString();
-    const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("tickets")
-      .update({
-        acknowledged_at: now,
-        current_action_owner: userData.user?.id ?? null,
-        assignment_source: "manual",
-        assignment_note: null,
-      })
-      .eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    await log("acknowledged", "Acknowledged — this ticket is being worked.", "acknowledged");
-    await refresh();
-    toast.success("Acknowledged.");
-  }
 
   /**
    * One start. Acknowledging and starting the clock are the same human moment,
