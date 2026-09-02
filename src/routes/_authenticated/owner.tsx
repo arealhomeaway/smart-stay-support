@@ -979,6 +979,41 @@ function LogTimeDialog({
             <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
             <span>{MANUAL_ENTRY_CONFIRMATION}</span>
           </label>
+
+          {duplicate && (
+            <div className="space-y-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+              <p className="text-sm font-medium text-amber-800">Possible duplicate</p>
+              <p className="text-xs text-amber-900/90">
+                A similar entry already exists for this date. Review before submitting.
+              </p>
+              <div className="rounded-md bg-background/70 p-2 text-xs text-muted-foreground">
+                <span className="numeric">{duplicate.entry_date}</span> · {duplicate.minutes} min
+                {duplicate.activity_category ? ` · ${duplicate.activity_category}` : ""}
+                <br />
+                {duplicate.activity}
+              </div>
+              <p className="text-xs text-amber-900/90">
+                If this is separate work you actually did, you can submit it anyway — your real hours are never
+                capped.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button size="sm" variant="outline" onClick={() => setDuplicate(null)}>
+                  Go back and edit
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    setDupAcknowledged(true);
+                    setDuplicate(null);
+                    mutation.mutate();
+                  }}
+                >
+                  Submit anyway
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
@@ -986,7 +1021,7 @@ function LogTimeDialog({
           </Button>
           <Button
             disabled={mutation.isPending || !minutesValid || !confirmed || activity.trim().length < 3}
-            onClick={() => mutation.mutate()}
+            onClick={attemptSave}
           >
             Save entry
           </Button>
