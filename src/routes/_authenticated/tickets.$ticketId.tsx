@@ -803,11 +803,20 @@ function TicketDetail() {
         </div>
 
         <div className="space-y-6">
+          {/* One live guest & stay block. The frozen snapshot stays available,
+              clearly labelled, instead of competing with the live read. */}
           <GuestContextPanel ticketId={ticketId} />
-          <ReservationContextPanel
-            ticket={ticket}
-            ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
-          />
+          <details className="rounded-lg border border-border px-3 py-2 text-sm">
+            <summary className="cursor-pointer text-muted-foreground">
+              View the reservation snapshot from when this ticket opened
+            </summary>
+            <div className="pt-3">
+              <ReservationContextPanel
+                ticket={ticket}
+                ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
+              />
+            </div>
+          </details>
           <TicketWorkOrderPanel ticket={ticket} />
           <TicketRecoveryPanel ticket={ticket} />
 
@@ -822,9 +831,7 @@ function TicketDetail() {
                 label="Address"
                 value={[ticket.properties?.address_line1, ticket.properties?.city].filter(Boolean).join(", ") || "—"}
               />
-              <Field label="Guest" value={ticket.guest_name ?? "—"} />
-              <Field label="Guest contact" value={ticket.guest_contact ?? "—"} />
-              <Field label="Guest in home" value={ticket.guest_in_residence ? "Yes" : "No"} />
+
               <Field label="Received" value={relativeTime(ticket.reported_at)} />
               <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
               <Field label="Action started" value={relativeTime(ticket.action_started_at)} />
