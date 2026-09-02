@@ -682,11 +682,7 @@ function TicketDetail() {
 
           <div className="space-y-2">
             <Label>What was wrong and what was done</Label>
-            <Textarea
-              rows={3}
-              value={resolution}
-              onChange={(e) => setResolution(e.target.value)}
-            />
+            <Textarea rows={3} value={resolution} onChange={(e) => setResolution(e.target.value)} />
           </div>
 
           {workType?.required_closure_evidence && (
@@ -1003,7 +999,10 @@ function TicketDetail() {
                 )}
                 <Field label="Assigned to" value={assigneeName} />
                 <Field label="Priority" value={meta.short} />
-                <Field label="Type" value={workType?.name ?? labelFor(CATEGORIES, ticket.category)} />
+                <Field
+                  label="Type"
+                  value={workType?.name ?? labelFor(CATEGORIES, ticket.category)}
+                />
                 <Field label="Received" value={relativeTime(ticket.reported_at)} />
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-muted-foreground">Property</span>
