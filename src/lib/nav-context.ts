@@ -123,8 +123,8 @@ export function queuePosition(snap: OriginSnapshot | null, id: string) {
   return {
     index,
     total: queue.length,
-    previous: index > 0 ? queue[index - 1] : null,
-    next: index < queue.length - 1 ? queue[index + 1] : null,
+    previous: index > 0 ? (queue[index - 1] ?? null) : null,
+    next: index < queue.length - 1 ? (queue[index + 1] ?? null) : null,
     queue,
   };
 }
