@@ -588,3 +588,184 @@ export function workOrderBucket(wo: WorkOrderLike, now = new Date()): WorkOrderB
 }
 
 export { EMERGENCY_REASON_LABELS, MAINTENANCE_POLICY_VERSION, money };
+
+/* ------------------------------------------------------------------ */
+/* Owner approval                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The owner approval request Resolve sends into the existing approvals
+ * architecture. There is no second approval system: `approvals` stays the
+ * record, and the Work Order keeps the mirror of the decision.
+ */
+export const OWNER_APPROVAL_KIND = "maintenance_owner_approval";
+
+export type OwnerApprovalOutcome = "approved" | "declined" | "info_requested";
+
+export const OWNER_APPROVAL_OUTCOME_LABELS: Record<OwnerApprovalOutcome, string> = {
+  approved: "Owner approved",
+  declined: "Owner declined",
+  info_requested: "Owner asked for more information",
+};
+
+/** Everything the owner needs to answer without a phone call back to us. */
+export function ownerApprovalRequest(
+  wo: WorkOrderLike & {
+    id?: string;
+    title?: string | null;
+    scope?: string | null;
+    property_id?: string | null;
+    ticket_id?: string | null;
+    service_category?: string | null;
+  },
+) {
+  const verdict = evaluateAuthority({ ...wo, phase: "permanent" });
+  const mitigationDone = Boolean(wo.temporary_mitigation || wo.emergency_reason);
+  return {
+    kind: OWNER_APPROVAL_KIND,
+    title: `Owner approval — ${wo.title ?? "maintenance repair"}`,
+    amount: num(wo.quote_amount),
+    detail: {
+      work_order_id: wo.id ?? null,
+      ticket_id: wo.ticket_id ?? null,
+      property_id: wo.property_id ?? null,
+      scope: wo.scope ?? null,
+      service_category: wo.service_category ?? null,
+      vendor: wo.vendor_name ?? null,
+      quote_amount: num(wo.quote_amount),
+      second_quote_amount: num(wo.second_quote_amount),
+      emergency_mitigation_performed: mitigationDone,
+      emergency_reason: wo.emergency_reason ?? null,
+      temporary_mitigation: wo.temporary_mitigation ?? null,
+      warranty_may_apply: Boolean(wo.warranty_may_apply),
+      warranty_kind: (wo as { warranty_kind?: string | null }).warranty_kind ?? null,
+      warranty_override_reason: wo.warranty_override_reason ?? null,
+      authority_reason: verdict.reason,
+      policy_version: MAINTENANCE_POLICY_VERSION,
+    },
+  };
+}
+
+/**
+ * A declined owner approval never quietly ends the operational problem. This
+ * is the sentence Resolve shows so the consequence stays visible.
+ */
+export function declineConsequence(wo: WorkOrderLike): string | null {
+  if (wo.approval_status !== "declined") return null;
+  if (wo.occupied_now) {
+    return "Owner declined the permanent repair — a guest is in the home and the impact is unresolved. Decide the alternative: temporary mitigation, guest recovery, or leadership follow-up.";
+  }
+  if (wo.permanent_repair_needed) {
+    return "Owner declined the permanent repair — the home still has an open defect. Record the alternative solution or escalate to leadership.";
+  }
+  return "Owner declined — record what happens instead before this Work Order is closed.";
+}
+
+/* ------------------------------------------------------------------ */
+/* Evidence                                                            */
+/* ------------------------------------------------------------------ */
+
+export type WorkOrderEvidenceSlot = {
+  key: string;
+  label: string;
+  kind: string;
+  required: boolean;
+  instruction: string;
+};
+
+/**
+ * Work Order evidence reuses the shared evidence architecture. Linked Claims
+ * and Guest Recovery reference these same items rather than re-uploading.
+ */
+export function workOrderEvidenceSlots(phase: WorkOrderPhase, warrantyMayApply = false): WorkOrderEvidenceSlot[] {
+  const slots: WorkOrderEvidenceSlot[] = [
+    {
+      key: "diagnostic_photos",
+      label: "Diagnostic photos",
+      kind: "photo",
+      required: true,
+      instruction: "What the problem looked like before anyone worked on it.",
+    },
+    {
+      key: "completion_photos",
+      label: "Completion photos",
+      kind: "photo",
+      required: true,
+      instruction: "The finished work, from the same angle where possible.",
+    },
+    {
+      key: "vendor_report",
+      label: "Vendor report",
+      kind: "general",
+      required: false,
+      instruction: "What the vendor found and did, in their words.",
+    },
+    {
+      key: "invoice",
+      label: "Invoice or receipt",
+      kind: "general",
+      required: true,
+      instruction: "The amount actually paid — this is the final cost of record.",
+    },
+  ];
+
+  if (phase === "permanent") {
+    slots.splice(1, 0, {
+      key: "vendor_quote",
+      label: "Vendor quote",
+      kind: "general",
+      required: false,
+      instruction: "The written estimate the approval decision was made on.",
+    });
+  }
+  if (warrantyMayApply) {
+    slots.push({
+      key: "warranty_correspondence",
+      label: "Warranty correspondence",
+      kind: "general",
+      required: false,
+      instruction: "What the warranty provider said — coverage, appointment or refusal.",
+    });
+  }
+  return slots;
+}
+
+/* ------------------------------------------------------------------ */
+/* Queue views                                                         */
+/* ------------------------------------------------------------------ */
+
+/** The default order of the queue: action first, completed work last. */
+export const BUCKET_ORDER: WorkOrderBucket[] = [
+  "needs_action",
+  "waiting_quote",
+  "waiting_owner",
+  "warranty_pending",
+  "waiting_vendor",
+  "evidence_missing",
+  "permanent_pending",
+  "closed",
+];
+
+const PRIORITY_RANK: Record<string, number> = { p1: 0, p2: 1, p3: 2 };
+
+/** Most urgent first, then the oldest work. */
+export function workOrderSort(
+  a: WorkOrderLike & { created_at?: string | null },
+  b: WorkOrderLike & { created_at?: string | null },
+) {
+  const pa = PRIORITY_RANK[normalisePriority(a.priority)] ?? 2;
+  const pb = PRIORITY_RANK[normalisePriority(b.priority)] ?? 2;
+  if (pa !== pb) return pa - pb;
+  return new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
+}
+
+export function isOpenWorkOrder(wo: WorkOrderLike) {
+  return !wo.closed_at;
+}
+
+/** Closed inside the window — visible, but never crowding out live work. */
+export function recentlyCompleted(wo: WorkOrderLike & { closed_at?: string | null }, days = 30, now = new Date()) {
+  if (!wo.closed_at) return false;
+  const closed = new Date(wo.closed_at).getTime();
+  return Number.isFinite(closed) && now.getTime() - closed <= days * 86400000;
+}
