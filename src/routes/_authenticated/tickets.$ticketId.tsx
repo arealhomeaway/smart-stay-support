@@ -731,13 +731,13 @@ function TicketDetail() {
                 {activity.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
                 {activity.map((a) => (
                   <div key={a.id} className="text-sm">
-                    <p className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
                       <LaneChip lane={laneOf(a.kind, a.event_type, a.body)} />
                       <span className="font-medium text-foreground">
                         {a.author?.full_name ?? a.author?.email ?? "Team member"}
                       </span>{" "}
                       · {relativeTime(a.event_at ?? a.created_at)}
-                    </p>
+                    </div>
                     <p className="mt-0.5">{a.body}</p>
                   </div>
                 ))}

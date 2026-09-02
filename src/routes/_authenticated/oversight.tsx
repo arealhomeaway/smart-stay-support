@@ -295,7 +295,7 @@ function Oversight() {
       return acc;
     }, {}),
   )
-    .map(([id, count]) => ({ who: id === "unassigned" ? "Unassigned" : nameFor(id), count }))
+    .map(([id, count]) => ({ id, who: id === "unassigned" ? "Unassigned" : nameFor(id), count }))
     .sort((a, b) => b.count - a.count);
 
   const trend = (pick: (t: (typeof open)[number]) => string) =>
@@ -417,7 +417,7 @@ function Oversight() {
           <CardContent className="space-y-1.5 text-sm">
             {workload.length === 0 && <p className="text-muted-foreground">Nothing open.</p>}
             {workload.map((w) => (
-              <div key={w.who} className="flex items-center gap-3">
+              <div key={w.id} className="flex items-center gap-3">
                 <span className="w-40 truncate">{w.who}</span>
                 <div className="h-2 flex-1 rounded-full bg-secondary">
                   <div
