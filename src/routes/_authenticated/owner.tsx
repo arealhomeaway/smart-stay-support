@@ -613,6 +613,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         <LogTimeDialog
           programId={program.id}
           properties={included.map((p) => ({ id: p.propertyId, name: p.name, closingDate: p.closingDate }))}
+          existingEntries={entries}
           target={timeTarget}
           onClose={() => setTimeTarget(null)}
           onSaved={onChange}
