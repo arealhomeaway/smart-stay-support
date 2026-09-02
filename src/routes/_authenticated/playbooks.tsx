@@ -108,18 +108,21 @@ function PlaybooksPage() {
                     </li>
                   ))}
                 </ol>
-                <AddStep
-                  playbookId={pb.id}
-                  nextPosition={(steps.at(-1)?.position ?? 0) + 1}
-                  onSaved={() => qc.invalidateQueries({ queryKey: ["playbooks-full"] })}
-                />
+                {canEdit && (
+                  <AddStep
+                    playbookId={pb.id}
+                    nextPosition={(steps.at(-1)?.position ?? 0) + 1}
+                    onSaved={() => qc.invalidateQueries({ queryKey: ["playbooks-full"] })}
+                  />
+                )}
               </AccordionContent>
             </AccordionItem>
           );
         })}
       </Accordion>
 
-      <NewPlaybook onSaved={() => qc.invalidateQueries({ queryKey: ["playbooks-full"] })} />
+      {canEdit && <NewPlaybook onSaved={() => qc.invalidateQueries({ queryKey: ["playbooks-full"] })} />}
+
     </div>
   );
 }
