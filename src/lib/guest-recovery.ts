@@ -104,11 +104,12 @@ export function isOpenRecovery(stage: RecoveryStage) {
   return OPEN_STAGES.includes(stage);
 }
 
-export function stageState(stage: RecoveryStage): "info" | "warning" | "success" | "neutral" {
-  if (stage === "awaiting_approval") return "warning";
-  if (stage === "completed" || stage === "guest_accepted" || stage === "approved") return "success";
-  if (stage === "closed") return "neutral";
-  return "info";
+export function stageState(stage: RecoveryStage): "new" | "active" | "waiting" | "done" | "info" {
+  if (stage === "awaiting_approval" || stage === "guest_offered") return "waiting";
+  if (stage === "completed" || stage === "guest_accepted" || stage === "approved") return "done";
+  if (stage === "closed") return "info";
+  if (stage === "reported") return "new";
+  return "active";
 }
 
 /* ------------------------------------------------------------------ */
