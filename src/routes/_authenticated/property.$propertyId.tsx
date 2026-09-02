@@ -116,7 +116,7 @@ function PropertyHubPage() {
 
       {hub.viewer.staff && (
         <div id="special-handling">
-          <SpecialHandlingPanel propertyId={propertyId} />
+          <SpecialHandlingPanel propertyId={propertyId} canEdit={hub.viewer.canEditProperty ?? false} />
         </div>
       )}
 
