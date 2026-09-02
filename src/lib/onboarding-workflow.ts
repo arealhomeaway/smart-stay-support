@@ -207,7 +207,26 @@ export function viewTask(task: WorkflowTask, all: WorkflowTask[]): TaskView {
     });
   }
 
-  return { task, status, reason, overdue: isOverdue(task), waitingOn, markers, template };
+  // Overdue describes work someone can actually do today. A task that is
+  // still waiting on a prerequisite, an internal blocker or a homeowner
+  // decision is legitimately not startable, so its date is not the team's
+  // failure and must not be reported as late.
+  const WORKABLE = !(
+    status === "not_ready" ||
+    status === "blocked" ||
+    status === "needs_review" ||
+    status === "complete" ||
+    status === "carryover"
+  );
+  return {
+    task,
+    status,
+    reason,
+    overdue: WORKABLE && isOverdue(task),
+    waitingOn,
+    markers,
+    template,
+  };
 }
 
 /* ---------------------------------------------------------------- sections */
