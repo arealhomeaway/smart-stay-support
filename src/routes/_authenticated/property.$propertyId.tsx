@@ -30,6 +30,7 @@ import { PropertyCredentialsPanel } from "@/components/PropertyCredentialsPanel"
 import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
+import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
@@ -141,7 +142,7 @@ function PropertyHubPage() {
         </TabsContent>
         {hub.viewer.staff && (
           <TabsContent value="contacts" className="mt-4">
-            <ContactsTab hub={hub} />
+            <ContactsTab hub={hub} propertyId={propertyId} />
           </TabsContent>
         )}
         <TabsContent value="onboarding" className="mt-4">
@@ -369,13 +370,24 @@ function DetailsTab({ hub }: { hub: Hub }) {
   );
 }
 
-function ContactsTab({ hub }: { hub: Hub }) {
+function ContactsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
   const owner = hub.ownerRecord;
+  const canLink = hub.viewer.staff;
   if (!owner && hub.contacts.length === 0) {
-    return <Empty text="No structured contact records for this home yet. Contacts come from the owner record, not free text." />;
+    return (
+      <div className="space-y-4">
+        <Empty text="No structured contact records for this home yet. Contacts come from the owner record, not free text." />
+        {canLink && <OwnerLinkPanel propertyId={propertyId} hasOwner={false} />}
+      </div>
+    );
   }
   return (
     <div className="space-y-4">
+      {canLink && (
+        <div className="flex justify-end">
+          <OwnerLinkPanel propertyId={propertyId} hasOwner={Boolean(owner)} />
+        </div>
+      )}
       {owner && (
         <Card className="border-primary/40">
           <CardHeader className="pb-2">
