@@ -187,7 +187,7 @@ function Overview() {
           </p>
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {portals.map((portal) => (
-              <PortalCard key={portal.id} portal={portal} authenticated={false} />
+              <PortalCard key={portal.id} portal={portal} authenticated={signedIn} wholeCardLink />
             ))}
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
