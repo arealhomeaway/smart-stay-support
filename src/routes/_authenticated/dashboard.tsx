@@ -19,6 +19,7 @@ import { routineConfig, routineDueLabel, routineDueState } from "@/lib/routine-c
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { OPEN_STATUSES, priorityMeta, priorityTone, relativeTime, slaState } from "@/lib/tickets";
 import { isMine } from "@/lib/matters";
+import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -131,6 +132,13 @@ function Dashboard() {
     (t) => !needsMeIds.has(t.id) && t.status !== "waiting" && t.action_started_at,
   );
   const unclaimed = open.filter((t) => !t.current_action_owner && !t.assigned_to);
+
+  // Home is a workspace too: a ticket opened from here comes back to here.
+  const { originSearch } = useWorkspaceOrigin("Home", [
+    ...needsMe,
+    ...inProgress,
+    ...waiting,
+  ].map((t) => ({ id: t.id, label: t.title, sub: t.properties?.nickname ?? t.properties?.name ?? undefined })));
 
   return (
     <div className="space-y-6">
