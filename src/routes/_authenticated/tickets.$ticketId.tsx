@@ -6,8 +6,9 @@ import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle 
 import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
-
+import { GuidanceCard } from "@/components/GuidanceCard";
 import { GuestContextPanel } from "@/components/GuestContextPanel";
+
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
