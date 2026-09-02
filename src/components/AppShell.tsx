@@ -303,6 +303,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </Link>
                   </Button>
                 )}
+                {!vendorMode && !ownerMode && <NotificationBell />}
                 {!vendorMode && !ownerMode && can("oversight") && (
                   <IconAction to="/oversight" label="Alerts and escalations">
                     <Bell className="size-4" aria-hidden="true" />
