@@ -454,6 +454,47 @@ function TicketDetail() {
         </Card>
       )}
 
+      {!closed && (
+        <GuidanceCard
+          subjectType="ticket"
+          subjectId={ticket.id}
+          context={{
+            objectType: "ticket",
+            workType: workType?.name ?? null,
+            category: ticket.category ?? null,
+            situation: ticket.situation ?? null,
+            priority: ticket.priority ?? null,
+            escalated: Boolean(sla.escalation),
+            vendorEngaged: Boolean(ticket.vendor_name),
+            specialHandling: Boolean(ticket.properties?.access_notes || ticket.properties?.notes),
+          }}
+          why={[
+            meta.summary,
+            ...(sla.escalation
+              ? [`P1 escalated to ${sla.escalation.who} — ${sla.escalation.minutes} minutes with no action started.`]
+              : []),
+            ...(ticket.status === "waiting"
+              ? [`Waiting on ${labelFor(WAITING_ON, ticket.waiting_on)} — this clock is paused, not finished.`]
+              : []),
+            ...(requiredOpen.length > 0
+              ? [`${requiredOpen.length} required playbook step(s) still open.`]
+              : []),
+          ]}
+          escalations={
+            sla.escalation ? [`Already escalated — ${sla.escalation.who} owns the next check-in.`] : []
+          }
+          requiredEvidence={
+            workType?.required_closure_evidence ? [workType.required_closure_evidence] : []
+          }
+          specialHandling={[ticket.properties?.access_notes, ticket.properties?.notes].filter(
+            (v): v is string => Boolean(v && v.trim()),
+          )}
+          vendorEngaged={Boolean(ticket.vendor_name)}
+        />
+      )}
+
+
+
       {ticket.status === "waiting" && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-secondary/40 p-4">
           <PauseCircle className="size-5 shrink-0" />
