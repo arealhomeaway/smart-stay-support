@@ -460,12 +460,13 @@ function TicketDetail() {
           subjectId={ticket.id}
           context={{
             objectType: "ticket",
-            workType: workType?.name ?? null,
+            workTypeName: workType?.name ?? null,
             category: ticket.category ?? null,
             priority: (ticket.priority as "p1" | "p2" | "p3" | null) ?? null,
-            escalated: Boolean(sla.escalation),
-            vendorEngaged: Boolean(ticket.vendor_name),
-            specialHandling: Boolean(ticket.properties?.access_notes || ticket.properties?.notes),
+            escalationFlags: sla.escalation ? ["p1_escalated"] : [],
+            propertySpecialHandling: [ticket.properties?.access_notes, ticket.properties?.notes].filter(
+              (v): v is string => Boolean(v && v.trim()),
+            ),
           }}
           why={[
             meta.summary,
