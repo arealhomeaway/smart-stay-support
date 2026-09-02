@@ -115,7 +115,10 @@ function ManagerHub() {
   const visible = useMemo(() => {
     const q = find.trim().toLowerCase();
     return rows.filter((r) => {
-      if (q && !`${r.property.name} ${r.pm} ${stageLabel(r.property.onboarding_stage)}`.toLowerCase().includes(q))
+      if (
+        q &&
+        !`${r.property.name} ${r.pm ?? ""} ${stageLabel(r.property.onboarding_stage)}`.toLowerCase().includes(q)
+      )
         return false;
       if (filter === "blocked") return r.roll.blocked > 0;
       if (filter === "owner") return r.roll.ownerPending > 0;
