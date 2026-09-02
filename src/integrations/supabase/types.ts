@@ -1985,6 +1985,193 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_recovery: {
+        Row: {
+          approval_id: string | null
+          approved_amount: number | null
+          approved_at: string | null
+          approved_by: string | null
+          assigned_to: string | null
+          authority_level: string | null
+          claim_id: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          delivered_amount: number | null
+          delivered_on: string | null
+          delivery_method: string | null
+          follow_up_on: string | null
+          guest_name: string | null
+          guest_notified_on: string | null
+          id: string
+          impact_detail: string | null
+          impacted_nights: number | null
+          is_demo: boolean
+          issue_summary: string | null
+          nightly_rate: number | null
+          outcome: string | null
+          ownerrez_booking_id: string | null
+          property_id: string | null
+          proposed_amount: number | null
+          recovery_action: string | null
+          reservation_channel: string | null
+          reservation_confirmation: string | null
+          stage: string
+          stay_arrival: string | null
+          stay_departure: string | null
+          ticket_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approval_id?: string | null
+          approved_amount?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_to?: string | null
+          authority_level?: string | null
+          claim_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          delivered_amount?: number | null
+          delivered_on?: string | null
+          delivery_method?: string | null
+          follow_up_on?: string | null
+          guest_name?: string | null
+          guest_notified_on?: string | null
+          id?: string
+          impact_detail?: string | null
+          impacted_nights?: number | null
+          is_demo?: boolean
+          issue_summary?: string | null
+          nightly_rate?: number | null
+          outcome?: string | null
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          proposed_amount?: number | null
+          recovery_action?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          stage?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          ticket_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approval_id?: string | null
+          approved_amount?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_to?: string | null
+          authority_level?: string | null
+          claim_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          delivered_amount?: number | null
+          delivered_on?: string | null
+          delivery_method?: string | null
+          follow_up_on?: string | null
+          guest_name?: string | null
+          guest_notified_on?: string | null
+          id?: string
+          impact_detail?: string | null
+          impacted_nights?: number | null
+          is_demo?: boolean
+          issue_summary?: string | null
+          nightly_rate?: number | null
+          outcome?: string | null
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          proposed_amount?: number | null
+          recovery_action?: string | null
+          reservation_channel?: string | null
+          reservation_confirmation?: string | null
+          stage?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          ticket_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_recovery_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_recovery_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_recovery_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_recovery_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_recovery_activity: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          detail: Json
+          event_type: string
+          id: string
+          is_demo: boolean
+          recovery_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          detail?: Json
+          event_type: string
+          id?: string
+          is_demo?: boolean
+          recovery_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          detail?: Json
+          event_type?: string
+          id?: string
+          is_demo?: boolean
+          recovery_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_recovery_activity_recovery_id_fkey"
+            columns: ["recovery_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       handoff_reviews: {
         Row: {
           created_at: string
