@@ -64,10 +64,12 @@ function PlaybooksPage() {
       <div>
         <h1 className="text-3xl font-semibold">Playbooks</h1>
         <p className="mt-1 text-muted-foreground">
-          These steps get copied onto a ticket the moment it is created. Edit them here and every future
-          ticket follows the new process.
+          {canEdit
+            ? "These steps get copied onto a ticket the moment it is created. Edit them here and every future ticket follows the new process."
+            : "These steps get copied onto a ticket the moment it is created. Editing playbooks is a supervisor responsibility."}
         </p>
       </div>
+
 
       <Accordion type="multiple" className="space-y-3">
         {data.map((pb) => {
