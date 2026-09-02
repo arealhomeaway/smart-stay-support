@@ -4,6 +4,7 @@ import {
   Building2,
   CalendarCheck,
   CircleHelp,
+  ClipboardCheck,
   ClipboardList,
   Gauge,
   HardHat,
