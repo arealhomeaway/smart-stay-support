@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, BellRing, Camera, CheckCircle2, Circle, PlayCircle, PauseCircle } from "lucide-react";
+import { AlertTriangle, BellRing, Building2, Camera, CheckCircle2, Circle, PlayCircle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
@@ -19,6 +19,9 @@ import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
 import { useRole } from "@/hooks/useRole";
+import { QueueRail, RecordHeaderNav, useRecordOrigin } from "@/components/nav/NavContext";
+import { PropertyContextDrawer } from "@/components/PropertyContextDrawer";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { classifyTicketText } from "@/lib/ticket-classify";
@@ -66,6 +69,8 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (raw: Record<string, unknown>): { from?: string | undefined } =>
+    typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {},
   component: TicketDetail,
   errorComponent: () => <p className="text-muted-foreground">This ticket could not be loaded.</p>,
   notFoundComponent: () => <p className="text-muted-foreground">Ticket not found.</p>,
@@ -86,6 +91,9 @@ function TicketDetail() {
   const [waitOn, setWaitOn] = useState("vendor");
   const [waitReason, setWaitReason] = useState("");
   const [waitReview, setWaitReview] = useState("");
+  // Where this ticket was opened from, so Back restores that workspace.
+  const { origin, token } = useRecordOrigin("ticket");
+  const [propertyOpen, setPropertyOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
@@ -421,10 +429,17 @@ function TicketDetail() {
   }
 
   return (
-    <div className="space-y-6">
-      <Link to="/tickets" className="text-sm text-muted-foreground hover:underline">
-        ← All tickets
-      </Link>
+    <div className="flex items-start gap-6">
+      <QueueRail origin={origin} token={token} currentId={ticketId} to="/tickets/$ticketId" paramKey="ticketId" />
+      <div className="min-w-0 flex-1 space-y-6">
+      <RecordHeaderNav
+        origin={origin}
+        token={token}
+        current={`Ticket #${ticket.ref}`}
+        recordId={ticketId}
+        to="/tickets/$ticketId"
+        paramKey="ticketId"
+      />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -441,6 +456,16 @@ function TicketDetail() {
               {labelFor(STATUSES, ticket.status)}
             </Badge>
             <Badge variant="outline">{workType?.name ?? labelFor(CATEGORIES, ticket.category)}</Badge>
+            {ticket.property_id && (
+              <button
+                type="button"
+                onClick={() => setPropertyOpen(true)}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium transition-colors hover:bg-secondary"
+              >
+                <Building2 className="size-3.5" aria-hidden="true" />
+                {ticket.properties?.nickname ?? ticket.properties?.name ?? "Property"}
+              </button>
+            )}
             {(ticket.reopen_count ?? 0) > 0 && (
               <Badge variant="outline" className="border-warning/40 bg-warning/10">
                 Reopened {ticket.reopen_count}×
@@ -925,7 +950,16 @@ function TicketDetail() {
               <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <Field label="Property" value={ticket.properties?.nickname ?? ticket.properties?.name ?? "—"} />
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">Property</span>
+                <button
+                  type="button"
+                  onClick={() => setPropertyOpen(true)}
+                  className="truncate text-right font-medium text-primary hover:underline"
+                >
+                  {ticket.properties?.nickname ?? ticket.properties?.name ?? "—"}
+                </button>
+              </div>
               <Field
                 label="Address"
                 value={[ticket.properties?.address_line1, ticket.properties?.city].filter(Boolean).join(", ") || "—"}
@@ -994,6 +1028,14 @@ function TicketDetail() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      <PropertyContextDrawer
+        propertyId={ticket.property_id}
+        open={propertyOpen}
+        onOpenChange={setPropertyOpen}
+        originToken={token}
+      />
       </div>
     </div>
   );
@@ -1111,14 +1153,29 @@ function IncidentBranch({
   hint: string;
   children: React.ReactNode;
 }) {
+  const [sheetOpen, setSheetOpen] = useState(false);
   if (open) return <>{children}</>;
+  // The lane is not in play yet: starting it is focused work that opens over
+  // the ticket, never a long form pushed into the ticket's vertical flow.
   return (
-    <details className="group rounded-lg border border-border bg-card px-3 py-2">
-      <summary className="cursor-pointer text-sm font-medium">
-        {label}
-        <span className="block text-xs font-normal text-muted-foreground">{hint}</span>
-      </summary>
-      <div className="pt-3">{children}</div>
-    </details>
+    <>
+      <button
+        type="button"
+        onClick={() => setSheetOpen(true)}
+        className="w-full rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-secondary/60"
+      >
+        <span className="text-sm font-medium">{label}</span>
+        <span className="block text-xs text-muted-foreground">{hint}</span>
+      </button>
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>{label}</SheetTitle>
+            <SheetDescription>{hint}</SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-6">{children}</div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
