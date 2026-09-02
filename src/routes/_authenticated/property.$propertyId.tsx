@@ -57,6 +57,7 @@ type Hub = Awaited<ReturnType<typeof getPropertyHubFn>>;
 
 function PropertyHubPage() {
   const { propertyId } = Route.useParams();
+  const { origin } = useRecordOrigin("property");
   const load = useServerFn(getPropertyHubFn);
   const q = useQuery({
     queryKey: ["property-hub", propertyId],
