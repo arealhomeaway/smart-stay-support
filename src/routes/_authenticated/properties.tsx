@@ -32,6 +32,7 @@ import { OPEN_STATUSES } from "@/lib/tickets";
 import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
 import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
 import { RequireCapability } from "@/components/RequireCapability";
+import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -42,12 +43,23 @@ export const Route = createFileRoute("/_authenticated/properties")({
       { property: "og:description", content: "Managed homes with access notes and live issue counts." },
     ],
   }),
+  // Search and filters live in the URL so the list a coordinator built is
+  // still there when they come back from a home.
+  validateSearch: (raw: Record<string, unknown>): PropertySearch => {
+    const out: PropertySearch = {};
+    if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
+    if (typeof raw["market"] === "string" && raw["market"]) out.market = raw["market"];
+    if (typeof raw["status"] === "string" && raw["status"]) out.status = raw["status"];
+    return out;
+  },
   component: () => (
     <RequireCapability capability="properties" title="Properties">
       <PropertiesPage />
     </RequireCapability>
   ),
 });
+
+type PropertySearch = { q?: string | undefined; market?: string | undefined; status?: string | undefined };
 
 const empty = {
   name: "",
@@ -154,9 +166,25 @@ function PropertiesPage() {
 
   // Page-local finding. Staff should never have to reach for the global
   // command bar just to open a home they already know the name of.
-  const [find, setFind] = useState("");
-  const [marketFilter, setMarketFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const navigate = Route.useNavigate();
+  const params = Route.useSearch();
+  const find = params.q ?? "";
+  const marketFilter = params.market ?? "all";
+  const statusFilter = params.status ?? "all";
+  const setParam = (patch: PropertySearch) =>
+    void navigate({
+      search: (prev: PropertySearch) => {
+        const next: PropertySearch = { ...prev, ...patch };
+        if (!next.q) delete next.q;
+        if (!next.market || next.market === "all") delete next.market;
+        if (!next.status || next.status === "all") delete next.status;
+        return next;
+      },
+      replace: true,
+    });
+  const setFind = (v: string) => setParam({ q: v || undefined });
+  const setMarketFilter = (v: string) => setParam({ market: v });
+  const setStatusFilter = (v: string) => setParam({ status: v });
 
   const markets = Array.from(
     new Set((data?.properties ?? []).map((p) => p.market).filter((m): m is string => Boolean(m))),
@@ -218,6 +246,11 @@ function PropertiesPage() {
       setSaving(false);
     }
   }
+
+  const { originSearch } = useWorkspaceOrigin(
+    "Properties",
+    visible.map((p) => ({ id: p.id, label: p.nickname ?? p.name, sub: p.market ?? undefined })),
+  );
 
   return (
     <div className="space-y-6">
@@ -374,6 +407,7 @@ function PropertiesPage() {
                     <Link
                       to="/property/$propertyId"
                       params={{ propertyId: p.id }}
+                      search={originSearch}
                       className="hover:text-primary hover:underline"
                     >
                       {p.nickname ?? p.name}
