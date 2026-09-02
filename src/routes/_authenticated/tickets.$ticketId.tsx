@@ -44,6 +44,17 @@ import {
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { classifyTicketText } from "@/lib/ticket-classify";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
@@ -819,6 +830,7 @@ function TicketDetail() {
             branches={activeBranch}
             onChanged={refresh}
             onStatus={changeStatus}
+            onDelete={deleteTicket}
           />
         </div>
 
@@ -1210,6 +1222,7 @@ function MoreActions({
   branches,
   onChanged,
   onStatus,
+  onDelete,
 }: {
   ticket: Record<string, unknown> & { id: string; status: string; record_type?: string | null };
   closed: boolean;
@@ -1217,6 +1230,7 @@ function MoreActions({
   branches: { claim: boolean; recovery: boolean };
   onChanged: () => Promise<void> | void;
   onStatus: (status: string) => void;
+  onDelete: () => void;
 }) {
   return (
     <Sheet>
