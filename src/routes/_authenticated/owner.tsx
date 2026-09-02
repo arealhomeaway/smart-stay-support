@@ -857,6 +857,20 @@ function LogTimeDialog({
   const toggle = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  function attemptSave() {
+    if (!dupAcknowledged) {
+      const match = findPossibleDuplicate(
+        { entryDate, minutes: totalMinutes, activity, activityCategory: category, comments },
+        existingEntries,
+      );
+      if (match) {
+        setDuplicate(match);
+        return;
+      }
+    }
+    mutation.mutate();
+  }
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
