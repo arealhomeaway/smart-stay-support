@@ -38,6 +38,7 @@ import {
   TASK_TYPE_META,
   type TaskType,
 } from "@/lib/owner-participation";
+import { findPossibleDuplicate, type ExistingEntry } from "@/lib/owner-duplicate";
 import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { Badge } from "@/components/ui/badge";
@@ -613,6 +614,7 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         <LogTimeDialog
           programId={program.id}
           properties={included.map((p) => ({ id: p.propertyId, name: p.name, closingDate: p.closingDate }))}
+          existingEntries={entries}
           target={timeTarget}
           onClose={() => setTimeTarget(null)}
           onSaved={onChange}
@@ -791,12 +793,14 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
 function LogTimeDialog({
   programId,
   properties,
+  existingEntries,
   target,
   onClose,
   onSaved,
 }: {
   programId: string;
   properties: { id: string; name: string; closingDate: string | null }[];
+  existingEntries: ExistingEntry[];
   target: TimeTarget;
   onClose: () => void;
   onSaved: () => void;
@@ -816,6 +820,10 @@ function LogTimeDialog({
 
   const totalMinutes = (Number.parseInt(hours || "0", 10) || 0) * 60 + (Number.parseInt(minutes || "0", 10) || 0);
   const minutesValid = totalMinutes >= 1 && totalMinutes <= 1440;
+
+  // Warning only — never a block. The homeowner always decides.
+  const [duplicate, setDuplicate] = useState<ExistingEntry | null>(null);
+  const [dupAcknowledged, setDupAcknowledged] = useState(false);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -848,6 +856,20 @@ function LogTimeDialog({
 
   const toggle = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  function attemptSave() {
+    if (!dupAcknowledged) {
+      const match = findPossibleDuplicate(
+        { entryDate, minutes: totalMinutes, activity, activityCategory: category, comments },
+        existingEntries,
+      );
+      if (match) {
+        setDuplicate(match);
+        return;
+      }
+    }
+    mutation.mutate();
+  }
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -957,6 +979,41 @@ function LogTimeDialog({
             <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
             <span>{MANUAL_ENTRY_CONFIRMATION}</span>
           </label>
+
+          {duplicate && (
+            <div className="space-y-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+              <p className="text-sm font-medium text-amber-800">Possible duplicate</p>
+              <p className="text-xs text-amber-900/90">
+                A similar entry already exists for this date. Review before submitting.
+              </p>
+              <div className="rounded-md bg-background/70 p-2 text-xs text-muted-foreground">
+                <span className="numeric">{duplicate.entry_date}</span> · {duplicate.minutes} min
+                {duplicate.activity_category ? ` · ${duplicate.activity_category}` : ""}
+                <br />
+                {duplicate.activity}
+              </div>
+              <p className="text-xs text-amber-900/90">
+                If this is separate work you actually did, you can submit it anyway — your real hours are never
+                capped.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button size="sm" variant="outline" onClick={() => setDuplicate(null)}>
+                  Go back and edit
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    setDupAcknowledged(true);
+                    setDuplicate(null);
+                    mutation.mutate();
+                  }}
+                >
+                  Submit anyway
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
@@ -964,7 +1021,7 @@ function LogTimeDialog({
           </Button>
           <Button
             disabled={mutation.isPending || !minutesValid || !confirmed || activity.trim().length < 3}
-            onClick={() => mutation.mutate()}
+            onClick={attemptSave}
           >
             Save entry
           </Button>

@@ -102,7 +102,10 @@ function ManagerHub() {
         return {
           property: p,
           roll,
-          pm: pm?.full_name ?? pm?.email ?? "Unassigned",
+          // A home in the pipeline with no tasks has no onboarding project yet:
+          // that is a real state, not a zero-progress project.
+          hasProject: tasks.length > 0,
+          pm: pm?.full_name ?? pm?.email ?? null,
           target: target ?? null,
           inReview: pending.has(p.id),
         };
@@ -112,7 +115,10 @@ function ManagerHub() {
   const visible = useMemo(() => {
     const q = find.trim().toLowerCase();
     return rows.filter((r) => {
-      if (q && !`${r.property.name} ${r.pm} ${stageLabel(r.property.onboarding_stage)}`.toLowerCase().includes(q))
+      if (
+        q &&
+        !`${r.property.name} ${r.pm ?? ""} ${stageLabel(r.property.onboarding_stage)}`.toLowerCase().includes(q)
+      )
         return false;
       if (filter === "blocked") return r.roll.blocked > 0;
       if (filter === "owner") return r.roll.ownerPending > 0;
@@ -192,29 +198,38 @@ function ManagerHub() {
                     <Chip className={stateChip(r.inReview ? "waiting" : "info")}>
                       {r.inReview ? "At review gate" : lifecycleMeta(r.property.lifecycle_status).label}
                     </Chip>
+                    {!r.hasProject && <Chip className={stateChip("new")}>No onboarding project</Chip>}
                     {r.roll.carryover > 0 && <Chip className={stateChip("info")}>{r.roll.carryover} carryover</Chip>}
                   </span>
                 </span>
                 <span className="truncate text-xs text-muted-foreground lg:text-sm">
                   {stageLabel(r.property.onboarding_stage)}
                 </span>
-                <span className="flex items-center gap-2">
-                  <ProgressRing value={r.roll.progress} size={44} tone="onboarding" />
-                  <span className="numeric text-xs text-muted-foreground">
-                    {r.roll.done}/{r.roll.total}
+                {r.hasProject ? (
+                  <span className="flex items-center gap-2">
+                    <ProgressRing value={r.roll.progress} size={44} tone="onboarding" />
+                    <span className="numeric text-xs text-muted-foreground">
+                      {r.roll.done}/{r.roll.total}
+                    </span>
                   </span>
-                </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Not started</span>
+                )}
                 <span className="truncate text-xs text-muted-foreground lg:text-sm">
-                  {r.roll.nextMilestone ?? "—"}
+                  {r.hasProject ? (r.roll.nextMilestone ?? "—") : "Create the onboarding project"}
                 </span>
                 <span className="truncate text-xs lg:text-sm">
-                  {r.roll.primaryBlocker ? (
+                  {!r.hasProject ? (
+                    <span className="text-state-blocked">No onboarding project yet</span>
+                  ) : r.roll.primaryBlocker ? (
                     <span className="text-state-blocked">{r.roll.primaryBlocker}</span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </span>
-                <span className="truncate text-xs text-muted-foreground lg:text-sm">{r.pm}</span>
+                <span className="truncate text-xs text-muted-foreground lg:text-sm">
+                  {r.pm ?? <span className="italic">Not yet assigned</span>}
+                </span>
                 <span className="numeric text-xs text-muted-foreground lg:text-sm">{r.target ?? "—"}</span>
               </button>
             ))}
