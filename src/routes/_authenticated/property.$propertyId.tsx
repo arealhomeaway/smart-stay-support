@@ -114,10 +114,18 @@ function PropertyHubPage() {
       )}
 
       {hub.viewer.staff && (
+        <div id="special-handling">
+          <SpecialHandlingPanel propertyId={propertyId} />
+        </div>
+      )}
+
+      {hub.viewer.staff && (
         <div id="credentials">
           <PropertyCredentialsPanel propertyId={propertyId} />
         </div>
       )}
+
+
 
 
 
