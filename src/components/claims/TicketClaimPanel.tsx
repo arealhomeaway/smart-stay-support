@@ -113,9 +113,9 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
     ? findDuplicates(
         {
           claim_type: type,
-          property_id: ticket.property_id,
+          property_id: ticket.property_id ?? null,
           ticket_id: ticket.id,
-          ownerrez_booking_id: ticket.ownerrez_booking_id,
+          ownerrez_booking_id: ticket.ownerrez_booking_id ?? null,
         },
         openClaims.data ?? [],
       )
@@ -253,7 +253,7 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
             {duplicates.length > 0 ? (
               <div className="rounded-md border border-warning/40 bg-warning/10 p-3">
                 <p className="text-sm font-medium">Possible duplicate</p>
-                <p className="text-xs text-muted-foreground">{duplicates[0].reason} Review before opening another.</p>
+                <p className="text-xs text-muted-foreground">{duplicates[0]?.reason} Review before opening another.</p>
                 <label className="mt-2 flex items-center gap-2 text-xs">
                   <input
                     type="checkbox"
