@@ -38,6 +38,7 @@ import {
   TASK_TYPE_META,
   type TaskType,
 } from "@/lib/owner-participation";
+import { findPossibleDuplicate, type ExistingEntry } from "@/lib/owner-duplicate";
 import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { Badge } from "@/components/ui/badge";
