@@ -19,7 +19,7 @@ export type QueueItem = {
   /** Record id, used for the route param. */
   id: string;
   label: string;
-  sub?: string;
+  sub?: string | undefined;
 };
 
 export type OriginSnapshot = {
