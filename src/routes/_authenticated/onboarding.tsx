@@ -31,7 +31,7 @@ function OnboardingLayout() {
   return (
     <div className="space-y-5">
       <nav className="flex flex-wrap items-center gap-1" aria-label="Onboarding views">
-        <SubLink to="/onboarding">Pipeline</SubLink>
+        <SubLink to="/onboarding">Director hub</SubLink>
         <SubLink to="/onboarding/my-work">My work</SubLink>
       </nav>
       <Outlet />

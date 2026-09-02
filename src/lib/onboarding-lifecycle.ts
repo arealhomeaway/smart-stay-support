@@ -386,6 +386,9 @@ function daysUntil(date: string | null | undefined): number | null {
  * "At risk — final cleaning unfinished · handoff in 2 days", not "Yellow".
  */
 export function deriveRisk(input: ProjectInput): Risk {
+  // A home already live with Operations carries no onboarding risk.
+  if (deriveStage(input) === "live") return { level: "on_track", reasons: [] };
+
   const roll = rollupProperty(input.tasks);
   const reasons: string[] = [];
   let level: RiskLevel = "on_track";
