@@ -81,13 +81,14 @@ function Overview() {
             <span className="h-8 w-px bg-sidebar-foreground/25" />
             <span className="font-display text-lg font-semibold">Resolve</span>
           </div>
-          <Button
-            asChild
-            size="sm"
-            className="min-h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 md:min-h-9"
-          >
-            <Link to={signedIn ? "/hub" : "/auth"}>{signedIn ? "Go to my portals" : "Sign in"}</Link>
-          </Button>
+          {!signedIn && (
+            <Link
+              to="/auth"
+              className="min-h-11 self-center text-sm font-medium text-sidebar-foreground/80 underline-offset-4 hover:text-sidebar-foreground hover:underline"
+            >
+              Sign in to Resolve
+            </Link>
+          )}
         </div>
       </header>
 
