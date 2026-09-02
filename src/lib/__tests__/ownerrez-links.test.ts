@@ -50,7 +50,7 @@ describe("reservation snapshot mapping", () => {
   it("never invents missing values", () => {
     const cols = reservationColumns(
       {
-        booking_id: 77,
+        booking_id: "77",
         guest_name: null,
         channel: null,
         confirmation: null,
