@@ -129,7 +129,7 @@ function TicketsPage() {
   // The queue the employee is actually looking at, remembered so a ticket can
   // be opened, worked and left without rebuilding this page.
   const { token, originSearch } = useWorkspaceOrigin(
-    "My work",
+    tab === "mine" ? "My work" : (QUEUE_TABS.find((x) => x.value === tab)?.label ?? "Tickets"),
     tickets.map((t) => ({
       id: t.id,
       label: t.title,
