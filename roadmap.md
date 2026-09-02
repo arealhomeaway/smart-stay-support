@@ -512,3 +512,8 @@ is now doable from Resolve.
 - [ ] 7. Documents & Media category redesign + quick links
 - [ ] 8. Property Hub retrieval/IA improvements across the eight tabs
 - [ ] 9. Full regression + publish + release report
+
+## Frontline ticket experience simplification (audit approved 2026-09-02)
+- [x] Read-only audit of ticket intake + open-ticket page (this pass)
+- [ ] Implement approved simplification (awaiting approval)
+- [ ] Silent Operations training video (paused by request until simplification ships)
