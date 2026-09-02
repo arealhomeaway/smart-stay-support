@@ -420,9 +420,8 @@ export function claimBucket(
   const deadline = deadlineState(claim.deadline_on, now);
 
   if (!isOpenClaim(claim.stage)) {
-    if (claim.stage === "recovered") {
-      const d = daysUntil(claim.recovered_on_iso ?? null, now);
-      void d;
+    // Recoveries stay visible for a month so the team can see the wins land.
+    if (claim.stage === "recovered" && isRecent(claim.recovered_on ?? claim.updated_at ?? null, now)) {
       return "recently_recovered";
     }
     return null;
