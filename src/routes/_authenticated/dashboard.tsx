@@ -61,8 +61,13 @@ type Row = {
   vendor_name: string | null;
   vendor_status: string | null;
   reported_at: string | null;
+  current_action_owner: string | null;
+  assigned_to: string | null;
+  record_owner: string | null;
+  accountable_owner: string | null;
+  created_by: string | null;
+  pending_handoff_to: string | null;
   properties: { name: string | null; nickname: string | null } | null;
-  [key: string]: unknown;
 };
 
 function Dashboard() {
