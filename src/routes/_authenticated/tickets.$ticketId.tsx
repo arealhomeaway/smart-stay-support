@@ -44,6 +44,8 @@ import {
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { classifyTicketText } from "@/lib/ticket-classify";
+import { Chip } from "@/components/ui/page";
+import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
