@@ -22,6 +22,14 @@ export type Situation = {
   /** Optional starting answers for the two contextual questions. */
   guestImpact?: string;
   occupancy?: string;
+  /**
+   * Highest priority this situation may reach on its own. Service failures
+   * during a stay are time-sensitive, not emergencies — a safety or security
+   * impact still overrides the ceiling.
+   */
+  priorityCeiling?: string;
+  /** Words a coordinator is likely to type for this situation. */
+  keywords?: string[];
   /** Internal situations open the full catalog instead of resolving one type. */
   openCatalog?: boolean;
 };
@@ -42,6 +50,8 @@ export const SITUATIONS: Situation[] = [
     workTypeNames: ["Current or past guest request"],
     guestImpact: "active_guest_affected",
     occupancy: "occupied",
+    priorityCeiling: "p2",
+    keywords: ["guest needs", "guest asked", "towels", "wifi", "parking", "supplies", "request"],
   },
   {
     id: "arrival_info",
@@ -50,6 +60,7 @@ export const SITUATIONS: Situation[] = [
     hint: "Codes, directions, parking, early access.",
     workTypeNames: ["Arrival information"],
     occupancy: "same_day_arrival",
+    keywords: ["check in", "check-in", "arrival", "code", "directions", "early access", "parking"],
   },
   {
     id: "new_booking",
@@ -57,6 +68,7 @@ export const SITUATIONS: Situation[] = [
     label: "New booking or inquiry",
     hint: "Someone wants to stay.",
     workTypeNames: ["New booking request", "Tenant lead tracker"],
+    keywords: ["booking", "inquiry", "wants to stay", "availability", "reservation request"],
   },
   {
     id: "review_log",
@@ -64,6 +76,7 @@ export const SITUATIONS: Situation[] = [
     label: "Review, survey or rating to log",
     hint: "After the stay.",
     workTypeNames: ["Guest review, survey and rating logs"],
+    keywords: ["review", "survey", "rating", "feedback"],
   },
   {
     id: "unsafe",
@@ -72,6 +85,7 @@ export const SITUATIONS: Situation[] = [
     hint: "Smoke, gas, water, fire or security.",
     workTypeNames: ["Immediate maintenance"],
     guestImpact: "safety_security",
+    keywords: ["smoke", "gas", "fire", "flood", "flooding", "sewage", "carbon monoxide", "break in", "break-in", "intruder", "unsafe", "electrical", "sparking", "burst"],
   },
   {
     id: "broken_now",
@@ -81,6 +95,8 @@ export const SITUATIONS: Situation[] = [
     workTypeNames: ["Immediate maintenance"],
     guestImpact: "active_guest_affected",
     occupancy: "occupied",
+    priorityCeiling: "p2",
+    keywords: ["not cooling", "not working", "broken", "no ac", "no a/c", "air conditioning", "hvac", "furnace", "heat", "no hot water", "refrigerator", "fridge", "freezer", "oven", "stove", "dishwasher", "washer", "dryer", "microwave", "leak", "clogged", "toilet", "won\u2019t", "wont", "stopped working"],
   },
   {
     id: "broken_later",
@@ -88,6 +104,7 @@ export const SITUATIONS: Situation[] = [
     label: "Something needs repair, but not today",
     hint: "Wear, small defects, scheduled work.",
     workTypeNames: ["Ongoing maintenance"],
+    keywords: ["repair", "replace", "worn", "loose", "scheduled", "touch up", "paint", "landscaping", "when convenient", "not urgent"],
   },
   {
     id: "clean_now",
@@ -96,6 +113,8 @@ export const SITUATIONS: Situation[] = [
     hint: "Missed turnover, dirty home on arrival.",
     workTypeNames: ["Immediate cleaning need"],
     guestImpact: "active_guest_affected",
+    priorityCeiling: "p2",
+    keywords: ["dirty", "not clean", "missed clean", "turnover", "trash left", "unclean", "cleaner did not"],
   },
   {
     id: "clean_ongoing",
@@ -103,6 +122,7 @@ export const SITUATIONS: Situation[] = [
     label: "Cleaning need, no guest waiting",
     hint: "Deep clean, linens, supplies, schedule change.",
     workTypeNames: ["Ongoing cleaning need"],
+    keywords: ["deep clean", "linens", "supplies", "restock", "schedule clean"],
   },
   {
     id: "access",
@@ -110,6 +130,7 @@ export const SITUATIONS: Situation[] = [
     label: "Can't get in — lock, code or access",
     hint: "Lockbox, smart lock, gate or garage.",
     workTypeNames: ["Lock offline or low-battery alert"],
+    keywords: ["lock", "lockbox", "code not working", "cannot get in", "can\u2019t get in", "gate", "garage", "smart lock", "keypad", "locked out"],
   },
   {
     id: "owner_issue",
@@ -117,6 +138,7 @@ export const SITUATIONS: Situation[] = [
     label: "Owner question, concern or complaint",
     hint: "Anything an owner raised that needs a reply.",
     workTypeNames: ["Escalated owner issue"],
+    keywords: ["owner", "homeowner complaint", "owner upset", "owner asked"],
   },
   {
     id: "owner_update",
@@ -124,6 +146,7 @@ export const SITUATIONS: Situation[] = [
     label: "Property or owner details need updating",
     hint: "Listing facts, contacts, preferences.",
     workTypeNames: ["Property or owner information update"],
+    keywords: ["update listing", "owner details", "contact change", "preferences"],
   },
   {
     id: "damage_claim",
@@ -131,6 +154,7 @@ export const SITUATIONS: Situation[] = [
     label: "Damage or a claim to file",
     hint: "Platform or insurance claim.",
     workTypeNames: ["Claims"],
+    keywords: ["damage", "claim", "broke it", "guest damaged", "insurance", "airbnb resolution"],
   },
   {
     id: "internal",
@@ -168,7 +192,7 @@ export function resolveWorkType<T extends NamedWorkType>(
 /** Plain-language reason for the priority Resolve landed on. */
 export function priorityReason(guestImpact: string, occupancy: string, fromWorkType: string) {
   if (guestImpact === "safety_security") return "a safety or security risk is involved";
-  if (guestImpact === "active_guest_affected") return "a guest in the home is affected";
+  if (guestImpact === "active_guest_affected") return "a guest in the home is affected right now";
   if (occupancy === "same_day_arrival") return "a guest arrives today";
   if (occupancy === "occupied") return "the home is occupied";
   return `this kind of work is normally ${fromWorkType.toUpperCase()}`;
