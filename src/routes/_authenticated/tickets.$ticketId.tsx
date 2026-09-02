@@ -16,6 +16,7 @@ import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
+import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
