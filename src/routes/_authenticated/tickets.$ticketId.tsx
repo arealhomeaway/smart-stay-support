@@ -225,47 +225,72 @@ function TicketDetail() {
   const guestCommsRequired = workType?.guest_communication_required ?? false;
   // Readiness is a read of the same gates the close action enforces — no new
   // rules. Anything Resolve already recorded counts as done automatically.
-  const closureChecklist: { label: string; done: boolean; hint?: string }[] = [
+  // These are evaluated by Resolve, never ticked off by hand: each row states
+  // whether it is satisfied, needs the coordinator, or is waiting on someone.
+  const closureChecklist: {
+    label: string;
+    done: boolean;
+    state: "complete" | "needs_you" | "waiting";
+    waitingOn?: string;
+    hint?: string;
+    action?: string;
+  }[] = [
     ...requiredOpen.map((s) => ({
       label: s.instruction,
       done: false,
-      hint: "Tick it off in the playbook above.",
+      state: "needs_you" as const,
+      hint: "A required step on this ticket is still open.",
     })),
     {
-      label: "What was wrong and what was done",
+      label: "Closing summary",
       done: resolution.trim().length > 0 || Boolean(ticket.resolution_notes),
-      hint: "One line in the closing summary.",
+      state:
+        resolution.trim().length > 0 || Boolean(ticket.resolution_notes)
+          ? ("complete" as const)
+          : ("needs_you" as const),
+      hint: "Add what was wrong and what was done.",
+      action: "Add summary",
     },
     ...(workType?.required_closure_evidence
       ? [
           {
             label: workType.required_closure_evidence,
             done: evidence.trim().length > 0 || Boolean(ticket.closure_evidence),
+            state:
+              evidence.trim().length > 0 || Boolean(ticket.closure_evidence)
+                ? ("complete" as const)
+                : ("needs_you" as const),
             hint: "Add the photo or confirmation this work needs.",
+            action: "Add evidence",
           },
         ]
       : []),
     ...(guestCommsRequired
       ? [
           {
-            label: "Final message sent to the guest",
+            label: "Final message to the guest",
             done: finalComms,
-            hint: "Confirm it when you close.",
+            state: finalComms ? ("complete" as const) : ("needs_you" as const),
+            hint: "Confirm the closing message when you close.",
+            action: "Confirm",
           },
         ]
       : []),
     ...(ticket.guest_in_residence
       ? [
           {
-            label: "Guest confirmed it is fixed",
+            label: "Guest confirmation",
             done: guestConfirmed,
-            hint: "Get it in writing first.",
+            state: guestConfirmed ? ("complete" as const) : ("waiting" as const),
+            waitingOn: "Waiting on guest",
+            hint: "Resolve will mark this complete when confirmation is recorded.",
           },
         ]
       : []),
   ];
   const closureReady = closureChecklist.every((c) => c.done);
   const remaining = closureChecklist.filter((c) => !c.done).length;
+
   // Evidence appears when the work actually calls for it — never as an empty
   // upload box on an ordinary ticket.
   const needsEvidence = Boolean(
