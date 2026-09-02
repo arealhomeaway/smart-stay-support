@@ -3,7 +3,8 @@
  *
  * The ticket says what broke. The recovery says what the guest is owed and who
  * has to approve it. Context comes across from the ticket by reference, so the
- * only thing an employee types is the decision itself.
+ * only thing an employee types is the decision itself. Every threshold shown
+ * here comes from the central ARHA policy — nothing is decided in this file.
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,16 +27,24 @@ import { useCurrentUserId } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
 import {
+  ESCALATION_FLAGS,
+  ESCALATION_FLAG_LABELS,
+  POLICY_VERSION,
+  RECOVERY_ACTIONS,
   RECOVERY_ACTION_LABELS,
   RECOVERY_STAGE_LABELS,
+  SITUATION_LABELS,
   evaluateAuthority,
   evidenceSlots,
   findDuplicates,
   formatMoney,
   isMonetary,
   nextAction,
+  policyBoundaryLabel,
   stageState,
+  type EscalationFlag,
   type RecoveryAction,
+  type RecoverySituation,
   type RecoveryStage,
 } from "@/lib/guest-recovery";
 
@@ -45,6 +54,7 @@ type TicketContext = {
   description?: string | null;
   property_id?: string | null;
   guest_name?: string | null;
+  priority?: string | null;
   is_demo?: boolean | null;
   ownerrez_booking_id?: string | null;
   ownerrez_channel?: string | null;
@@ -59,38 +69,30 @@ type RecoveryRow = {
   recovery_action: RecoveryAction | null;
   title: string;
   impact_detail: string | null;
-  nightly_rate: number | null;
-  impacted_nights: number | null;
   proposed_amount: number | null;
   approved_amount: number | null;
   delivered_amount: number | null;
   stay_departure: string | null;
   ticket_id: string | null;
   ownerrez_booking_id: string | null;
+  within_airbnb_policy?: boolean | null;
+  escalation_flags?: string[] | null;
 };
 
-const ACTIONS: RecoveryAction[] = [
-  "none",
-  "apology",
-  "mitigation",
-  "credit",
-  "partial_refund",
-  "full_refund",
-  "fee_waiver",
-  "shorten_stay",
-  "relocation",
-];
+const SITUATIONS = Object.keys(SITUATION_LABELS) as RecoverySituation[];
 
 export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
   const { can, readOnly } = useRole();
   const [open, setOpen] = useState(false);
+  const [situation, setSituation] = useState<RecoverySituation>("general");
   const [action, setAction] = useState<RecoveryAction | "">("");
   const [impact, setImpact] = useState("");
-  const [nightlyRate, setNightlyRate] = useState("");
-  const [nights, setNights] = useState("");
+  const [requested, setRequested] = useState("");
   const [amount, setAmount] = useState("");
+  const [policyFit, setPolicyFit] = useState<"unknown" | "within" | "outside">("unknown");
+  const [flags, setFlags] = useState<EscalationFlag[]>([]);
   const [acknowledged, setAcknowledged] = useState(false);
 
   const recoveries = useQuery({
@@ -106,37 +108,26 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
     },
   });
 
-  const stayRecoveries = useQuery({
-    queryKey: ["recovery-duplicate-check", ticket.ownerrez_booking_id, ticket.id],
-    enabled: open,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("guest_recovery")
-        .select("*")
-        .eq("ticket_id", ticket.id)
-        .limit(25);
-      if (error) throw error;
-      return (data ?? []) as unknown as RecoveryRow[];
-    },
-  });
-
   const duplicates = open
     ? findDuplicates(
         { ticket_id: ticket.id, ownerrez_booking_id: ticket.ownerrez_booking_id ?? null },
-        stayRecoveries.data ?? [],
+        recoveries.data ?? [],
       )
     : [];
+
+  const withinPolicy = policyFit === "unknown" ? null : policyFit === "within";
 
   const verdict = evaluateAuthority({
     recovery_action: action || null,
     proposed_amount: amount || null,
-    nightly_rate: nightlyRate || null,
-    impacted_nights: nights || null,
+    within_airbnb_policy: withinPolicy,
+    escalation_flags: flags,
   });
 
   const create = useMutation({
     mutationFn: async () => {
       const chosen = (action || null) as RecoveryAction | null;
+      const escalations = verdict.escalations;
       const { data, error } = await supabase
         .from("guest_recovery")
         .insert({
@@ -153,10 +144,14 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
           ownerrez_booking_id: ticket.ownerrez_booking_id ?? null,
           stay_arrival: ticket.ownerrez_arrival ?? null,
           stay_departure: ticket.ownerrez_departure ?? null,
-          nightly_rate: nightlyRate ? Number(nightlyRate) : null,
-          impacted_nights: nights ? Number(nights) : null,
+          priority: ticket.priority ?? "p3",
+          guest_requested_amount: requested ? Number(requested) : null,
           proposed_amount: amount ? Number(amount) : null,
+          within_airbnb_policy: withinPolicy,
+          escalation_flags: escalations,
           authority_level: verdict.level,
+          approval_status: verdict.level === "pc" ? "not_required" : "pending",
+          policy_version: POLICY_VERSION,
           assigned_to: userId,
           created_by: userId,
           is_demo: ticket.is_demo ?? false,
@@ -166,7 +161,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
       if (error) throw error;
       const recoveryId = (data as { id: string }).id;
 
-      const slots = evidenceSlots(chosen).map((slot) => ({
+      const slots = evidenceSlots(chosen, situation).map((slot) => ({
         subject_type: "guest_recovery",
         subject_id: recoveryId,
         property_id: ticket.property_id ?? null,
@@ -190,7 +185,12 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         body: chosen
           ? `Recovery opened from ticket — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
           : "Recovery opened from ticket",
-        detail: { authority: verdict.level, reason: verdict.reason },
+        detail: {
+          authority: verdict.level,
+          reason: verdict.reason,
+          escalations,
+          policy_version: POLICY_VERSION,
+        },
         is_demo: ticket.is_demo ?? false,
       } as never);
       return recoveryId;
@@ -200,6 +200,9 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
       setAcknowledged(false);
       setImpact("");
       setAmount("");
+      setRequested("");
+      setFlags([]);
+      setPolicyFit("unknown");
       qc.invalidateQueries({ queryKey: ["recovery-for-ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
       toast.success("Guest recovery opened");
@@ -211,6 +214,11 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
 
   const existing = recoveries.data ?? [];
   const blocked = duplicates.length > 0 && !acknowledged;
+
+  const toggleFlag = (flag: EscalationFlag) =>
+    setFlags((current) =>
+      current.includes(flag) ? current.filter((f) => f !== flag) : [...current, flag],
+    );
 
   return (
     <Card>
@@ -226,10 +234,13 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
             <div className="flex flex-wrap items-center gap-2">
               <Chip className={stateChip(stageState(row.stage))}>{RECOVERY_STAGE_LABELS[row.stage]}</Chip>
               {row.recovery_action ? <Chip>{RECOVERY_ACTION_LABELS[row.recovery_action]}</Chip> : null}
+              {row.within_airbnb_policy === false ? (
+                <Chip className={stateChip("blocked")}>Outside standard policy</Chip>
+              ) : null}
             </div>
             <p className="mt-1 font-medium">{nextAction(row)}</p>
             <p className="text-xs text-muted-foreground">
-              Proposed {formatMoney(row.proposed_amount)} · approved {formatMoney(row.approved_amount)} · delivered{" "}
+              Proposed {formatMoney(row.proposed_amount)} · approved {formatMoney(row.approved_amount)} · issued{" "}
               {formatMoney(row.delivered_amount)}
             </p>
           </div>
@@ -252,26 +263,36 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               />
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs">Proposed remedy</Label>
-              <Select value={action} onValueChange={(v) => setAction(v as RecoveryAction)}>
-                <SelectTrigger><SelectValue placeholder="Decide later" /></SelectTrigger>
-                <SelectContent>
-                  {ACTIONS.map((a) => (
-                    <SelectItem key={a} value={a}>{RECOVERY_ACTION_LABELS[a]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Situation</Label>
+                <Select value={situation} onValueChange={(v) => setSituation(v as RecoverySituation)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SITUATIONS.map((s) => (
+                      <SelectItem key={s} value={s}>{SITUATION_LABELS[s]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">Proposed remedy</Label>
+                <Select value={action} onValueChange={(v) => setAction(v as RecoveryAction)}>
+                  <SelectTrigger><SelectValue placeholder="Decide later" /></SelectTrigger>
+                  <SelectContent>
+                    {RECOVERY_ACTIONS.map((a) => (
+                      <SelectItem key={a} value={a}>{RECOVERY_ACTION_LABELS[a]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className="text-xs" htmlFor="rec-rate">Nightly rate</Label>
-                <Input id="rec-rate" type="number" value={nightlyRate} onChange={(e) => setNightlyRate(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs" htmlFor="rec-nights">Impacted nights</Label>
-                <Input id="rec-nights" type="number" value={nights} onChange={(e) => setNights(e.target.value)} />
+                <Label className="text-xs" htmlFor="rec-requested">Guest asked for</Label>
+                <Input id="rec-requested" type="number" value={requested} onChange={(e) => setRequested(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs" htmlFor="rec-amount">Proposed amount</Label>
@@ -283,11 +304,43 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
                   onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Airbnb policy fit</Label>
+                <Select value={policyFit} onValueChange={(v) => setPolicyFit(v as typeof policyFit)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unknown">Not confirmed yet</SelectItem>
+                    <SelectItem value="within">Within normal policy</SelectItem>
+                    <SelectItem value="outside">Outside normal policy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Anything that raises the stakes?</Label>
+              <div className="flex flex-wrap gap-2">
+                {ESCALATION_FLAGS.filter(
+                  (f) => f !== "outside_policy" && f !== "multi_night_refund" && f !== "relocation",
+                ).map((flag) => (
+                  <label key={flag} className="flex items-center gap-1 rounded border px-2 py-1 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={flags.includes(flag)}
+                      onChange={() => toggleFlag(flag)}
+                    />
+                    {ESCALATION_FLAG_LABELS[flag]}
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="rounded-md border bg-muted/40 p-3">
               <p className="text-sm font-medium">{verdict.label}</p>
               <p className="text-xs text-muted-foreground">{verdict.reason}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {policyBoundaryLabel(withinPolicy)} · {POLICY_VERSION}
+              </p>
             </div>
 
             {duplicates.length > 0 ? (
