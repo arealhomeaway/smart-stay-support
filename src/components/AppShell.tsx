@@ -22,6 +22,7 @@ import {
   Sparkles,
   UserPlus,
   Users,
+  ReceiptText,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,6 +90,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/tickets", label: "Tickets", icon: ClipboardList, tour: "tickets" },
       { to: "/leads", label: "Leads", icon: UserPlus, tour: "leads" },
+      { to: "/claims", label: "Claims", icon: ReceiptText, tour: "claims", capability: "claims_work" },
       { to: "/properties", label: "Properties", icon: Building2, tour: "properties", capability: "properties", supervisorOnly: true },
       { to: "/onboarding", label: "Onboarding", icon: PackageCheck, tour: "onboarding", capability: "onboarding_workspace" },
       { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
