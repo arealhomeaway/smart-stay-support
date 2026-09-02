@@ -38,6 +38,7 @@ function timeAgo(iso: string) {
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data } = useQuery({
     queryKey: ["staff-notifications"],
