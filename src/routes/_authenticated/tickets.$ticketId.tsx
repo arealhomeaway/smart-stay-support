@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, BellRing, Building2, Camera, CheckCircle2, Circle, PlayCircle, PauseCircle } from "lucide-react";
+import { AlertTriangle, BellRing, Building2, Camera, CheckCircle2, Circle, PauseCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
@@ -21,7 +21,14 @@ import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPan
 import { useRole } from "@/hooks/useRole";
 import { QueueRail, RecordHeaderNav, useRecordOrigin } from "@/components/nav/NavContext";
 import { PropertyContextDrawer } from "@/components/PropertyContextDrawer";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
 import { classifyTicketText } from "@/lib/ticket-classify";
@@ -177,19 +184,45 @@ function TicketDetail() {
   const meta = priorityMeta(ticket.priority);
   const sla = slaState(ticket);
   const guestCommsRequired = workType?.guest_communication_required ?? false;
-  // Readiness is a read of the same gates the close action enforces — no new rules.
-  const closureChecklist: { label: string; done: boolean }[] = [
-    ...requiredOpen.map((s) => ({ label: s.instruction, done: false })),
-    { label: "Record what was wrong and what was done", done: resolution.trim().length > 0 },
+  // Readiness is a read of the same gates the close action enforces — no new
+  // rules. Anything Resolve already recorded counts as done automatically.
+  const closureChecklist: { label: string; done: boolean; hint?: string }[] = [
+    ...requiredOpen.map((s) => ({
+      label: s.instruction,
+      done: false,
+      hint: "Tick it off in the playbook above.",
+    })),
+    {
+      label: "What was wrong and what was done",
+      done: resolution.trim().length > 0 || Boolean(ticket.resolution_notes),
+      hint: "One line in the closing summary.",
+    },
     ...(workType?.required_closure_evidence
-      ? [{ label: workType.required_closure_evidence, done: evidence.trim().length > 0 }]
+      ? [
+          {
+            label: workType.required_closure_evidence,
+            done: evidence.trim().length > 0 || Boolean(ticket.closure_evidence),
+            hint: "Add the photo or confirmation this work needs.",
+          },
+        ]
       : []),
-    ...(guestCommsRequired ? [{ label: "Final message sent to the guest", done: finalComms }] : []),
+    ...(guestCommsRequired
+      ? [{ label: "Final message sent to the guest", done: finalComms, hint: "Confirm it when you close." }]
+      : []),
     ...(ticket.guest_in_residence
-      ? [{ label: "Guest confirmed the issue is fully resolved", done: guestConfirmed }]
+      ? [{ label: "Guest confirmed it is fixed", done: guestConfirmed, hint: "Get it in writing first." }]
       : []),
   ];
   const closureReady = closureChecklist.every((c) => c.done);
+  const remaining = closureChecklist.filter((c) => !c.done).length;
+  // Evidence appears when the work actually calls for it — never as an empty
+  // upload box on an ordinary ticket.
+  const needsEvidence = Boolean(
+    workType?.required_closure_evidence ||
+      steps.some((s) => s.photo_required) ||
+      branches?.claim ||
+      ticket.vendor_name,
+  );
   // Derived, never stored: the one thing to do next.
   const nextAction = ticketNextAction({
     status: ticket.status,
@@ -247,23 +280,40 @@ function TicketDetail() {
     toast.success("Acknowledged.");
   }
 
-  async function startAction() {
+  /**
+   * One start. Acknowledging and starting the clock are the same human moment,
+   * so Resolve records both, moves the ticket into progress and writes the
+   * audit trail from a single click.
+   */
+  const canStart = !closed && (!ticket.acknowledged_at || !ticket.action_started_at);
+
+  async function startWorking() {
     const now = new Date().toISOString();
+    const { data: userData } = await supabase.auth.getUser();
+    const firstTouch = !ticket.acknowledged_at;
     const { error } = await supabase
       .from("tickets")
       .update({
-        action_started_at: now,
         acknowledged_at: ticket.acknowledged_at ?? now,
+        action_started_at: ticket.action_started_at ?? now,
         status: ticket.status === "open" ? "in_progress" : ticket.status,
+        ...(firstTouch
+          ? {
+              current_action_owner: userData.user?.id ?? null,
+              assignment_source: "manual",
+              assignment_note: null,
+            }
+          : {}),
       })
       .eq("id", ticketId);
     if (error) {
       toast.error(error.message);
       return;
     }
+    if (firstTouch) await log("acknowledged", "Acknowledged — this ticket is being worked.", "acknowledged");
     await log("action_started", "Work started on this ticket.", "action_started");
     await refresh();
-    toast.success("Action started.");
+    toast.success("You're working this ticket.");
   }
 
   async function setWaiting() {
@@ -508,46 +558,36 @@ function TicketDetail() {
         </div>
       )}
 
-      {/* Derived Next Action — one thing to do, in plain words. */}
+      {/* Derived Next Action — one instruction, one button, nothing competing. */}
       {nextAction && (
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="border-primary/40 bg-primary/5 shadow-sm">
           <CardContent className="flex flex-wrap items-start justify-between gap-4 pt-6">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Next</p>
-              <p className="mt-1 text-lg font-semibold">{nextAction.label}</p>
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Do this now</p>
+              <p className="mt-1 text-xl font-semibold">
+                {canStart ? "Start working" : nextAction.label}
+              </p>
               <p className="text-sm text-muted-foreground">{nextAction.because}</p>
-              {nextAction.then && (
-                <p className="mt-1 text-sm text-muted-foreground">{nextAction.then}</p>
-              )}
             </div>
-            {!ticket.acknowledged_at && (
-              <Button onClick={acknowledge}>Acknowledge</Button>
-            )}
-            {ticket.acknowledged_at && !ticket.action_started_at && (
-              <Button onClick={startAction}>Start action</Button>
+            {canStart && (
+              <Button size="lg" onClick={startWorking}>
+                Start working
+              </Button>
             )}
           </CardContent>
         </Card>
       )}
 
+      {/* The response standard is system context, read-only, never a workflow. */}
       {!closed && ticket.record_type !== "completed_interaction" && (
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Response standard</CardTitle>
-            <CardDescription>{meta.summary}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-3">
-            {/* Read-only clocks: the only place to act is the Next Action card. */}
-            <ClockChip state={sla.response} />
-            <ClockChip state={sla.action} icon={<PlayCircle className="size-4" />} />
-            {workType?.completion_target && (
-              <span className="text-sm text-muted-foreground">
-                Complete: {workType.completion_target}
-              </span>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Response</span>
+          <ClockText state={sla.response} />
+          <ClockText state={sla.action} />
+          {workType?.completion_target && (
+            <span className="text-muted-foreground">Complete: {workType.completion_target}</span>
+          )}
+        </div>
       )}
 
       {!closed && (
@@ -687,51 +727,15 @@ function TicketDetail() {
 
 
           {!closed && ticket.status !== "waiting" && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Waiting on someone?</CardTitle>
-                <CardDescription>
-                  Park it here and it comes back to you at the time you set. Nothing is forgotten and nobody
-                  has to remember it.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Who are we waiting on?</Label>
-                  <Select value={waitOn} onValueChange={setWaitOn}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WAITING_ON.map((w) => (
-                        <SelectItem key={w.value} value={w.value}>
-                          {w.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">What are we waiting for?</Label>
-                  <Input
-                    placeholder="e.g. vendor confirming a Thursday window"
-                    value={waitReason}
-                    onChange={(e) => setWaitReason(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Bring it back to me</Label>
-                  <Input
-                    type="datetime-local"
-                    value={waitReview}
-                    onChange={(e) => setWaitReview(e.target.value)}
-                  />
-                </div>
-                <Button variant="secondary" onClick={setWaiting} className="sm:col-span-3">
-                  Park this and remind me
-                </Button>
-              </CardContent>
-            </Card>
+            <WaitingControl
+              waitOn={waitOn}
+              setWaitOn={setWaitOn}
+              waitReason={waitReason}
+              setWaitReason={setWaitReason}
+              waitReview={waitReview}
+              setWaitReview={setWaitReview}
+              onPark={setWaiting}
+            />
           )}
 
 
@@ -772,7 +776,9 @@ function TicketDetail() {
 
           <OutlookSourceCard entityType="ticket" entityId={ticketId} />
 
-          <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Photos, video & documents" />
+          {needsEvidence && (
+            <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Evidence this work needs" />
+          )}
 
           <BreezewayTaskPanel
             sourceType="ticket"
@@ -793,19 +799,28 @@ function TicketDetail() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">{closureReady ? "Ready to close" : "Almost done"}</CardTitle>
                 <CardDescription>
-                  This work type sets what evidence is required before the ticket can close.
+                  {closureReady
+                    ? "Everything required for this ticket is complete."
+                    : `${remaining} thing${remaining === 1 ? "" : "s"} left before this ticket can close.`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ul className="space-y-1 text-sm">
+                <ul className="space-y-2 text-sm">
                   {closureChecklist.map((c, i) => (
                     <li key={i} className="flex items-start gap-2">
                       {c.done ? (
                         <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
                       ) : (
-                        <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <Circle className="mt-0.5 size-4 shrink-0 text-warning" />
                       )}
-                      <span className={c.done ? "text-muted-foreground" : ""}>{c.label}</span>
+                      <div className="min-w-0">
+                        <p className={c.done ? "text-muted-foreground line-through" : "font-medium"}>
+                          {c.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.done ? "Complete" : `Needs you${c.hint ? ` — ${c.hint}` : ""}`}
+                        </p>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -816,7 +831,7 @@ function TicketDetail() {
                     variant={closureReady ? "default" : "secondary"}
                     className="w-full"
                   >
-                    Close issue
+                    {closureReady ? "Close ticket" : "Finish the remaining items"}
                   </Button>
                 )}
 
@@ -1041,33 +1056,77 @@ function TicketDetail() {
   );
 }
 
-function ClockChip({
-  state,
-  actionLabel,
-  onAction,
-  icon,
-}: {
-  state: ReturnType<typeof slaState>["response"];
-  actionLabel?: string;
-  onAction?: (() => void) | undefined;
-  icon?: React.ReactNode | undefined;
-}) {
+/** Response timing as one quiet line of context, coloured only when it matters. */
+function ClockText({ state }: { state: ReturnType<typeof slaState>["response"] }) {
   if (!state) return null;
-  const tone = state.breached
-    ? "border-danger/40 bg-danger/10 text-danger"
-    : state.met
-      ? "border-success/30 bg-success/10 text-success"
-      : "border-border bg-secondary/40";
+  const tone = state.breached ? "text-danger font-medium" : state.met ? "text-success" : "text-muted-foreground";
+  return <span className={tone}>{state.label}</span>;
+}
+
+/** Parking a ticket is focused work — it opens over the ticket, never in it. */
+function WaitingControl({
+  waitOn,
+  setWaitOn,
+  waitReason,
+  setWaitReason,
+  waitReview,
+  setWaitReview,
+  onPark,
+}: {
+  waitOn: string;
+  setWaitOn: (v: string) => void;
+  waitReason: string;
+  setWaitReason: (v: string) => void;
+  waitReview: string;
+  setWaitReview: (v: string) => void;
+  onPark: () => void;
+}) {
   return (
-    <div className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm ${tone}`}>
-      <span className="font-medium">{state.label}</span>
-      {onAction && (
-        <Button size="sm" variant="secondary" onClick={onAction}>
-          {icon}
-          {actionLabel}
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-muted-foreground">
+          <PauseCircle className="size-4" /> Waiting on someone?
         </Button>
-      )}
-    </div>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Park this and remind me</SheetTitle>
+          <SheetDescription>It comes back to you at the time you set.</SheetDescription>
+        </SheetHeader>
+        <div className="space-y-3 px-4 pb-6">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Who are we waiting on?</Label>
+            <Select value={waitOn} onValueChange={setWaitOn}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WAITING_ON.map((w) => (
+                  <SelectItem key={w.value} value={w.value}>
+                    {w.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">What are we waiting for?</Label>
+            <Input
+              placeholder="e.g. vendor confirming a Thursday window"
+              value={waitReason}
+              onChange={(e) => setWaitReason(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Bring it back to me</Label>
+            <Input type="datetime-local" value={waitReview} onChange={(e) => setWaitReview(e.target.value)} />
+          </div>
+          <Button variant="secondary" onClick={onPark} className="w-full">
+            Park this and remind me
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
