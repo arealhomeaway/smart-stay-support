@@ -19,6 +19,7 @@ import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
+import { ticketNextAction } from "@/lib/ticket-next-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -158,7 +159,7 @@ function TicketDetail() {
     vendor_status: ticket.vendor_status,
     requiredOpenSteps: requiredOpen.length,
     missingClosureEvidence: Boolean(
-      workType?.required_closure_evidence && !ticket.closure_evidence_note,
+      workType?.required_closure_evidence && !ticket.closure_evidence,
     ),
   });
 
