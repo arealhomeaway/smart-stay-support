@@ -6,8 +6,9 @@ import { AlertTriangle, BellRing, Camera, CheckCircle2, PlayCircle, PauseCircle 
 import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
-
+import { GuidanceCard } from "@/components/GuidanceCard";
 import { GuestContextPanel } from "@/components/GuestContextPanel";
+
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
@@ -452,6 +453,47 @@ function TicketDetail() {
           </CardContent>
         </Card>
       )}
+
+      {!closed && (
+        <GuidanceCard
+          subjectType="ticket"
+          subjectId={ticket.id}
+          context={{
+            objectType: "ticket",
+            workTypeName: workType?.name ?? null,
+            category: ticket.category ?? null,
+            priority: (ticket.priority as "p1" | "p2" | "p3" | null) ?? null,
+            escalationFlags: sla.escalation ? ["p1_escalated"] : [],
+            propertySpecialHandling: [ticket.properties?.access_notes, ticket.properties?.notes].filter(
+              (v): v is string => Boolean(v && v.trim()),
+            ),
+          }}
+          why={[
+            meta.summary,
+            ...(sla.escalation
+              ? [`P1 escalated to ${sla.escalation.who} — ${sla.escalation.minutes} minutes with no action started.`]
+              : []),
+            ...(ticket.status === "waiting"
+              ? [`Waiting on ${labelFor(WAITING_ON, ticket.waiting_on)} — this clock is paused, not finished.`]
+              : []),
+            ...(requiredOpen.length > 0
+              ? [`${requiredOpen.length} required playbook step(s) still open.`]
+              : []),
+          ]}
+          escalations={
+            sla.escalation ? [`Already escalated — ${sla.escalation.who} owns the next check-in.`] : []
+          }
+          requiredEvidence={
+            workType?.required_closure_evidence ? [workType.required_closure_evidence] : []
+          }
+          specialHandling={[ticket.properties?.access_notes, ticket.properties?.notes].filter(
+            (v): v is string => Boolean(v && v.trim()),
+          )}
+          vendorEngaged={Boolean(ticket.vendor_name)}
+        />
+      )}
+
+
 
       {ticket.status === "waiting" && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-secondary/40 p-4">

@@ -4089,30 +4089,66 @@ export type Database = {
       playbooks: {
         Row: {
           active: boolean
+          applies_to: string[]
+          approved_by: string | null
           category: string
           created_at: string
+          effective_on: string | null
+          escalate_if: string[]
           id: string
+          immediate_actions: string[]
+          matcher: Json
+          playbook_key: string | null
+          priority_reason: string | null
+          risk_flags: Json
+          status: string
           summary: string | null
           title: string
           updated_at: string
+          vendor_brief: Json | null
+          version: number
         }
         Insert: {
           active?: boolean
+          applies_to?: string[]
+          approved_by?: string | null
           category: string
           created_at?: string
+          effective_on?: string | null
+          escalate_if?: string[]
           id?: string
+          immediate_actions?: string[]
+          matcher?: Json
+          playbook_key?: string | null
+          priority_reason?: string | null
+          risk_flags?: Json
+          status?: string
           summary?: string | null
           title: string
           updated_at?: string
+          vendor_brief?: Json | null
+          version?: number
         }
         Update: {
           active?: boolean
+          applies_to?: string[]
+          approved_by?: string | null
           category?: string
           created_at?: string
+          effective_on?: string | null
+          escalate_if?: string[]
           id?: string
+          immediate_actions?: string[]
+          matcher?: Json
+          playbook_key?: string | null
+          priority_reason?: string | null
+          risk_flags?: Json
+          status?: string
           summary?: string | null
           title?: string
           updated_at?: string
+          vendor_brief?: Json | null
+          version?: number
         }
         Relationships: []
       }
