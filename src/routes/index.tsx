@@ -6,12 +6,12 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { PortalCard } from "@/components/PortalCard";
 import { publicPortals } from "@/lib/portals";
 import { supabase } from "@/integrations/supabase/client";
-import heroImage from "@/assets/overview-hero.jpg";
+import heroImage from "@/assets/hero-arha-property.jpg";
 
 
 const TITLE = "Resolve — ARHA's Central Operating Hub";
 const DESCRIPTION =
-  "Resolve connects A Real Home Away's properties, people, partners, workflows, communications and performance data in one coordinated operating system.";
+  "Keep calm. Check Resolve. Tickets, properties, approvals and answers for the A Real Home Away team — finally in one place.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,71 +93,71 @@ function Overview() {
 
       <main className="mx-auto max-w-6xl px-4">
         <section className="py-10 md:py-14">
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-sidebar text-sidebar-foreground shadow-lg">
-            <img
-              src={heroImage}
-              alt="A warmly lit A Real Home Away property at dusk"
-              width={1600}
-              height={1104}
-              className="absolute inset-0 size-full object-cover"
-            />
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-r from-sidebar via-sidebar/90 to-sidebar/40"
-            />
-            <div className="relative grid gap-8 p-8 md:p-14">
-              <div className="max-w-2xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sidebar-primary">
-                  Resolve Overview
-                </p>
-                <h1 className="mt-5 text-4xl font-semibold leading-[1.05] md:text-6xl">
-                  Keep calm. Check Resolve.
-                </h1>
-                <p className="mt-4 text-lg text-sidebar-foreground/85 md:text-xl">
-                  Your new favorite place to find things.
-                </p>
-                <p className="mt-5 max-w-xl text-sm leading-relaxed text-sidebar-foreground/70 md:text-base">
-                  Resolve connects ARHA&rsquo;s properties, people, partners, workflows and
-                  performance data in one operating system. Choose the portal that matches your
-                  role and you&rsquo;ll land exactly where your work lives.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="min-h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
-                  >
-                    <a href="#portals">
-                      Choose your portal
-                      <ArrowRight className="size-4" aria-hidden="true" />
-                    </a>
-                  </Button>
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="min-h-11 border-sidebar-foreground/30 bg-transparent text-sidebar-foreground hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
-                  >
-                    <Link to={signedIn ? "/hub" : "/auth"}>
-                      {signedIn ? "Go to my portals" : "Sign in"}
-                    </Link>
-                  </Button>
-                </div>
+          <div className="grid overflow-hidden rounded-3xl border border-border shadow-lg lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+            <div className="relative flex flex-col justify-center bg-sidebar p-8 text-sidebar-foreground md:p-12">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sidebar-primary">
+                Resolve Overview
+              </p>
+              <h1 className="mt-5 text-4xl font-semibold leading-[1.05] md:text-5xl">
+                Keep calm. Check Resolve.
+              </h1>
+              <p className="mt-4 text-lg text-sidebar-foreground/90 md:text-xl">
+                Tickets, properties, approvals, answers &mdash; finally in one place.
+              </p>
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-sidebar-foreground/70 md:text-base">
+                Less digging. Less guessing. If it matters at ARHA, it probably lives here. Pick the
+                portal that matches your day and you&rsquo;ll land right where your work is.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button
+                  asChild
+                  size="lg"
+                  className="min-h-11 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                >
+                  <a href="#portals">
+                    Choose your portal
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="min-h-11 border-sidebar-foreground/30 bg-transparent text-sidebar-foreground hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
+                >
+                  <Link to={signedIn ? "/hub" : "/auth"}>
+                    {signedIn ? "Go to my portals" : "Sign in"}
+                  </Link>
+                </Button>
               </div>
+            </div>
+            <div className="relative min-h-64 lg:min-h-[30rem]">
+              <img
+                src={heroImage}
+                alt="A living room in an A Real Home Away managed property, styled and ready for guests"
+                width={1200}
+                height={800}
+                className="absolute inset-0 size-full object-cover"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-r from-sidebar via-sidebar/35 to-transparent lg:from-sidebar lg:via-sidebar/20"
+              />
+              <p className="absolute bottom-3 right-4 text-[0.65rem] uppercase tracking-[0.18em] text-white/70">
+                1039 Swinton Way &middot; Westfield, IN
+              </p>
             </div>
           </div>
         </section>
 
-
         <section aria-labelledby="why" className="border-t border-border py-14">
           <h2 id="why" className="text-2xl font-semibold">
-            Why ARHA built Resolve
+            Why we built this thing
           </h2>
           <p className="mt-3 max-w-3xl text-muted-foreground">
-            ARHA&rsquo;s work used to live in separate places — chats, spreadsheets, vendor tools and
-            individual inboxes. A decision made in one department was invisible to the next, and the
-            property paid for it. Resolve holds the whole operation together: every department works
-            in its own portal, while the company keeps one shared, auditable record.
+            Someone always knew where it was &mdash; in a chat, a spreadsheet, a vendor tool, or
+            somebody&rsquo;s inbox. Great, unless that someone was off that day. Now it&rsquo;s
+            Resolve: every team works in its own portal, and the whole company reads the same record.
           </p>
           <ul className="mt-8 grid gap-6 sm:grid-cols-2">
             {pillars.map((p) => (
@@ -172,7 +172,7 @@ function Overview() {
 
         <section aria-labelledby="connects" className="border-t border-border py-14">
           <h2 id="connects" className="text-2xl font-semibold">
-            How the portals connect
+            How work travels
           </h2>
           <p className="mt-3 max-w-3xl text-muted-foreground">
             Each portal is a different view of the same property record. Work travels left to right,
@@ -202,11 +202,11 @@ function Overview() {
 
         <section id="portals" aria-labelledby="portals-heading" className="border-t border-border py-14">
           <h2 id="portals-heading" className="text-2xl font-semibold">
-            Enter your portal
+            Pick your portal
           </h2>
           <p className="mt-3 max-w-3xl text-muted-foreground">
-            One Resolve account covers every portal you are authorised for. Choose yours and
-            you&rsquo;ll be taken there straight after signing in.
+            One account, every portal you&rsquo;re cleared for. Choose yours and Resolve drops you
+            straight in after sign-in.
           </p>
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {portals.map((portal) => (
@@ -214,9 +214,8 @@ function Overview() {
             ))}
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
-            Leadership and finance workspaces appear automatically once an authorised person signs
-            in. If a portal you expect is missing after sign-in, ask a Platform Owner to review your
-            access.
+            Leadership and finance workspaces show up on their own for the people who hold that
+            access. Portal missing after sign-in? Ask a Platform Owner &mdash; not a group chat.
           </p>
         </section>
       </main>
