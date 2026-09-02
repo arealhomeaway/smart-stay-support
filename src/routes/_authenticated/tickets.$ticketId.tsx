@@ -150,6 +150,19 @@ function TicketDetail() {
   const meta = priorityMeta(ticket.priority);
   const sla = slaState(ticket);
   const guestCommsRequired = workType?.guest_communication_required ?? false;
+  // Readiness is a read of the same gates the close action enforces — no new rules.
+  const closureChecklist: { label: string; done: boolean }[] = [
+    ...requiredOpen.map((s) => ({ label: s.instruction, done: false })),
+    { label: "Record what was wrong and what was done", done: resolution.trim().length > 0 },
+    ...(workType?.required_closure_evidence
+      ? [{ label: workType.required_closure_evidence, done: evidence.trim().length > 0 }]
+      : []),
+    ...(guestCommsRequired ? [{ label: "Final message sent to the guest", done: finalComms }] : []),
+    ...(ticket.guest_in_residence
+      ? [{ label: "Guest confirmed the issue is fully resolved", done: guestConfirmed }]
+      : []),
+  ];
+  const closureReady = closureChecklist.every((c) => c.done);
   // Derived, never stored: the one thing to do next.
   const nextAction = ticketNextAction({
     status: ticket.status,
