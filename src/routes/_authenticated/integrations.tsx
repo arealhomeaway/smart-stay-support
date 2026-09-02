@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getInboundStatus, listImportedMatters, runInboundSync } from "@/lib/inbound.functions";
+import { getInboundStatus, listImportedMatters } from "@/lib/inbound.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
 import { NotionSyncPanel } from "@/components/NotionSyncPanel";
@@ -57,28 +57,9 @@ function IntegrationsPage() {
   const queryClient = useQueryClient();
   const statusFn = useServerFn(getInboundStatus);
   const importedFn = useServerFn(listImportedMatters);
-  const syncFn = useServerFn(runInboundSync);
 
   const status = useQuery({ queryKey: ["inbound-status"], queryFn: () => statusFn() });
   const imported = useQuery({ queryKey: ["imported-matters"], queryFn: () => importedFn() });
-
-  const sync = useMutation({
-    mutationFn: (source: "all" | "ownerrez") => syncFn({ data: { source } }),
-    onSuccess: (res) => {
-      for (const r of res.results) {
-        const name = "OwnerRez";
-        if (!r.ok) {
-          toast.error(`${name}: ${r.error}`);
-          continue;
-        }
-        toast.success(
-          `${name}: ${r.created} imported, ${r.updated} updated${r.unlinked ? `, ${r.unlinked} without a linked home` : ""}.`,
-        );
-      }
-      void queryClient.invalidateQueries({ queryKey: ["imported-matters"] });
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Sync failed"),
-  });
 
   const rows = imported.data?.data ?? [];
 
@@ -91,16 +72,6 @@ function IntegrationsPage() {
           the same ownership, clocks and closure standards as work logged by the team.
         </p>
       </header>
-
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => sync.mutate("all")} disabled={sync.isPending}>
-          <RefreshCw className={`size-4 ${sync.isPending ? "animate-spin" : ""}`} />
-          Sync everything now
-        </Button>
-        <Button variant="outline" onClick={() => sync.mutate("ownerrez")} disabled={sync.isPending}>
-          <Download className="size-4" /> OwnerRez only
-        </Button>
-      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
