@@ -57,6 +57,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
+import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { ROLE_LABELS, type Capability } from "@/lib/permissions";
 
@@ -170,6 +171,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
   const { enabled: flagEnabled } = useFeatureFlags();
   const { can, isVendor, isOwner, isSupervisor, readOnly, primary, isLoading: rolesLoading } = useRole();
+  // Guest Experience & Reservations seats work leads; Property Operations
+  // seats do not. Seat, not permission role, decides this.
+  const seat = useSeat();
   const pathname = router.state.location.pathname;
   const vendorMode = !rolesLoading && isVendor;
   const ownerMode = !rolesLoading && isOwner;
@@ -208,7 +212,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       : navGroups
           .map((g) => ({ ...g, items: g.items.filter(
             (i) =>
-              (!i.capability || can(i.capability)) &&
+              (!i.capability || can(i.capability) ||
+                (i.capability === "leads_work" && seat.isGuestExperience)) &&
               (!i.supervisorOnly || isSupervisor) &&
               (!i.flag || flagEnabled(i.flag)),
           ) }))
