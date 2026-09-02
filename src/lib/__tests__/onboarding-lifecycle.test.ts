@@ -171,6 +171,6 @@ describe("conditional activation and gates", () => {
     );
     expect(gates[0]?.state).toBe("current");
     expect(gates[1]?.state).toBe("upcoming");
-    expect(gates.filter((g) => g.state === "current")).toHaveLength(1);
+    expect(gates.filter((g) => g.state === "current").length).toBe(1);
   });
 });
