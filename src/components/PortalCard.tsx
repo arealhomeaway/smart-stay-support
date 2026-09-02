@@ -38,7 +38,10 @@ export function PortalCard({
       </div>
 
       <h3 className="mt-4 text-lg font-semibold">{portal.name}</h3>
-      <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+      {portal.tagline && (
+        <p className="mt-1 text-sm font-medium text-primary">{portal.tagline}</p>
+      )}
+      <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
         {portal.audience}
       </p>
       <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
