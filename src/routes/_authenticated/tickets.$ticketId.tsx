@@ -147,6 +147,20 @@ function TicketDetail() {
   const meta = priorityMeta(ticket.priority);
   const sla = slaState(ticket);
   const guestCommsRequired = workType?.guest_communication_required ?? false;
+  // Derived, never stored: the one thing to do next.
+  const nextAction = ticketNextAction({
+    status: ticket.status,
+    acknowledged_at: ticket.acknowledged_at,
+    action_started_at: ticket.action_started_at,
+    waiting_on: ticket.waiting_on,
+    guest_in_residence: ticket.guest_in_residence,
+    vendor_name: ticket.vendor_name,
+    vendor_status: ticket.vendor_status,
+    requiredOpenSteps: requiredOpen.length,
+    missingClosureEvidence: Boolean(
+      workType?.required_closure_evidence && !ticket.closure_evidence_note,
+    ),
+  });
 
   async function refresh() {
     await qc.invalidateQueries({ queryKey: ["ticket", ticketId] });
