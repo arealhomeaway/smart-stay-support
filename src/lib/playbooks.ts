@@ -13,10 +13,38 @@
  * reviewed, approved and published without a second vocabulary.
  */
 
-export type PlaybookStatus = "draft" | "active" | "retired";
+/**
+ * Lifecycle. `active` is the legacy stored value for an approved Playbook and
+ * is normalised to `approved` on read, so nothing already published breaks.
+ */
+export type PlaybookStatus = "draft" | "in_review" | "approved" | "retired";
+
+export const STATUS_LABELS: Record<PlaybookStatus, string> = {
+  draft: "Draft",
+  in_review: "In review",
+  approved: "Approved",
+  retired: "Retired",
+};
+
+/** Only an approved Playbook may guide frontline work. */
+export function isApproved(pb: { status: PlaybookStatus; effective_on?: string | null }): boolean {
+  if (pb.status !== "approved") return false;
+  if (!pb.effective_on) return true;
+  return new Date(pb.effective_on).getTime() <= Date.now();
+}
+
+/** Where the authored text came from. */
+export type PlaybookSource = "authored" | "ai_draft" | "imported";
+
+export const SOURCE_LABELS: Record<PlaybookSource, string> = {
+  authored: "Written by the team",
+  ai_draft: "AI draft from existing policy",
+  imported: "Imported from an earlier system",
+};
 
 /** Operational objects a Playbook may attach to. */
 export type PlaybookSubject = "ticket" | "work_order" | "recovery" | "claim";
+
 
 /** A short "consider this" prompt. Same shape as the Coach's risk flags. */
 export type RiskFlag = { title: string; why: string | null };
