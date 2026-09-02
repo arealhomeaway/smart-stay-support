@@ -101,9 +101,8 @@ function Dashboard() {
     },
   });
 
-  if (isLoading || !data) return <LoadingPage tiles={0} />;
-
-  const open = data.filter((t) => OPEN_STATUSES.includes(t.status));
+  const rows = data ?? [];
+  const open = rows.filter((t) => OPEN_STATUSES.includes(t.status));
   const mine = role.userId ? open.filter((t) => isMine(t, role.userId)) : [];
 
   const waiting = mine
@@ -146,6 +145,9 @@ function Dashboard() {
       sub: t.properties?.nickname ?? t.properties?.name ?? undefined,
     })),
   );
+
+  if (isLoading || !data) return <LoadingPage tiles={0} />;
+
 
   return (
     <div className="space-y-6">
