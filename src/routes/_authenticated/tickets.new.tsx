@@ -588,11 +588,11 @@ function NewMatter() {
               {form.property_id && (
                 <p className="text-xs text-muted-foreground">
                   {stayLoading
-                    ? "Checking OwnerRez for the current reservation\u2026"
+                    ? "Checking OwnerRez for the current reservation…"
                     : stay?.ok
                       ? stay.data.occupancy_status === "vacant"
-                        ? `No one in the home${stay.data.next_arrival ? ` \u00b7 next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
-                        : `${stay.data.guest_name ?? "Guest"} in the home \u00b7 ${stay.data.arrival?.slice(0, 10)} \u2192 ${stay.data.departure?.slice(0, 10)}`
+                        ? `No one in the home${stay.data.next_arrival ? ` · next arrival ${stay.data.next_arrival.slice(0, 10)}` : ""}`
+                        : `${stay.data.guest_name ?? "Guest"} in the home · ${stay.data.arrival?.slice(0, 10)} \u2192 ${stay.data.departure?.slice(0, 10)}`
                       : (stay?.error ?? "")}
                 </p>
               )}
@@ -610,7 +610,7 @@ function NewMatter() {
                     {meta.short}
                   </Badge>
                   <span className="font-medium">{situation?.label ?? workType.name}</span>
-                  <span className="text-muted-foreground">\u00b7 {workType.name}</span>
+                  <span className="text-muted-foreground">· {workType.name}</span>
                 </div>
                 <p className="mt-2 text-muted-foreground">
                   {meta.short} because{" "}
@@ -719,7 +719,7 @@ function NewMatter() {
                     <SelectContent>
                       {(workTypes ?? []).map((w) => (
                         <SelectItem key={w.id} value={w.id}>
-                          {w.name} \u00b7 suggests {w.default_priority.toUpperCase()}
+                          {w.name} · suggests {w.default_priority.toUpperCase()}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -731,11 +731,13 @@ function NewMatter() {
             {workType && mode === "ticket" && (
               <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
                 <p className="font-medium">Operating standard</p>
-                <p className="mt-1 text-muted-foreground">{workType.operating_standard}</p>
+                {advanced && (
+                  <p className="mt-1 text-muted-foreground">{workType.operating_standard}</p>
+                )}
                 <p className="mt-1 text-muted-foreground">
-                  Acknowledge within {workType.response_minutes}m \u00b7 start within{" "}
+                  Acknowledge within {workType.response_minutes}m · start within{" "}
                   {workType.action_start_minutes === 0 ? "immediately" : `${workType.action_start_minutes}m`}
-                  {workType.completion_target ? ` \u00b7 target ${workType.completion_target.toLowerCase()}` : ""}
+                  {workType.completion_target ? ` · target ${workType.completion_target.toLowerCase()}` : ""}
                 </p>
                 {workType.required_closure_evidence && (
                   <p className="mt-1 text-muted-foreground">
