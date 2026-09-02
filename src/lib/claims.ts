@@ -280,6 +280,7 @@ export type ClaimLike = {
   submitted_amount?: number | string | null;
   approved_amount?: number | string | null;
   recovered_amount?: number | string | null;
+  recovered_on?: string | null;
   assigned_to?: string | null;
   property_id?: string | null;
   ticket_id?: string | null;
