@@ -737,7 +737,7 @@ function TicketDetail() {
                         {a.author?.full_name ?? a.author?.email ?? "Team member"}
                       </span>{" "}
                       · {relativeTime(a.event_at ?? a.created_at)}
-                    </p>
+                    </div>
                     <p className="mt-0.5">{a.body}</p>
                   </div>
                 ))}
