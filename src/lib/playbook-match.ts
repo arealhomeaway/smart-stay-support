@@ -15,10 +15,12 @@
 import {
   driftWarnings,
   hasAuthoredGuidance,
+  isApproved,
   type AuthoredPlaybook,
   type PlaybookCondition,
   type PlaybookSubject,
 } from "@/lib/playbooks";
+
 
 export type MatchContext = {
   objectType: PlaybookSubject;
