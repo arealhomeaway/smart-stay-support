@@ -52,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/tickets/")({
   component: TicketsPage,
 });
 
-type TicketQueueSearch = { tab?: string; priority?: string; q?: string };
+type TicketQueueSearch = { tab?: string | undefined; priority?: string | undefined; q?: string | undefined };
 
 function TicketsPage() {
   const navigate = Route.useNavigate();
