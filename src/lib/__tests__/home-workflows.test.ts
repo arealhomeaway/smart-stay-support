@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { attentionItems, workflowCue, workflowsFor } from "@/lib/home-workflows";
 import { can, type AppRole } from "@/lib/permissions";
 
