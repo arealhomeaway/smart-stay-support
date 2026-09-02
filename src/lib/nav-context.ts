@@ -81,13 +81,11 @@ function write(token: string, snap: OriginSnapshot) {
 export function rememberOrigin(input: { label: string; href: string; queue?: QueueItem[] }): string {
   const token = originToken(input.href);
   const previous = readOrigin(token);
-  write(token, {
-    label: input.label,
-    href: input.href,
-    scrollY: previous?.scrollY,
-    queue: input.queue ? input.queue.slice(0, MAX_QUEUE) : previous?.queue,
-    at: Date.now(),
-  });
+  const queue = input.queue ? input.queue.slice(0, MAX_QUEUE) : previous?.queue;
+  const snap: OriginSnapshot = { label: input.label, href: input.href, at: Date.now() };
+  if (previous?.scrollY !== undefined) snap.scrollY = previous.scrollY;
+  if (queue) snap.queue = queue;
+  write(token, snap);
   return token;
 }
 
