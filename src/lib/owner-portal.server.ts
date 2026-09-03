@@ -97,28 +97,32 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
       .order("created_at", { ascending: false })
       .limit(60),
     propertyIds.length
-      ? supabase
-          .from("tickets")
-          .select(
-            "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes, owner_participation_path, owner_submitted",
-          )
-          .in("property_id", propertyIds)
-          .eq("is_demo", false)
-          .is("archived_at", null)
-          .order("reported_at", { ascending: false })
-          .limit(120)
+      ? (() => {
+          let q = supabase
+            .from("tickets")
+            .select(
+              "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes, owner_participation_path, owner_submitted",
+            )
+            .in("property_id", propertyIds)
+            .is("archived_at", null);
+          // A staff preview of a demo program must show its demo tickets.
+          if (!preview) q = q.eq("is_demo", false);
+          return q.order("reported_at", { ascending: false }).limit(120);
+        })()
       : Promise.resolve({ data: [], error: null } as const),
   ]);
   if (alerts.error) throw alerts.error;
   if (tickets.error) throw tickets.error;
 
   // Keep achievements current whenever the owner opens the hub.
-  await syncBadges(supabase, agg);
+  // A preview never writes: it reads whatever badges already exist.
+  if (!preview) await syncBadges(supabase, agg);
   const badges = await supabase
     .from("owner_badges")
     .select("code, awarded_at, trigger_rule, needs_review")
     .eq("program_id", agg.program.id)
     .order("awarded_at");
+
 
   return {
     linked: true as const,
