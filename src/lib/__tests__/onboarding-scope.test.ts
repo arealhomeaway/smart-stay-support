@@ -65,7 +65,7 @@ describe("split and summary", () => {
       [{ title: "Utility transfer" }, { title: "HOA registration" }],
       scope,
     );
-    expect(inScope).toHaveLength(1);
+    expect(inScope.length).toBe(1);
     expect(outOfScope[0]?.reason).toContain("HOA");
   });
 
