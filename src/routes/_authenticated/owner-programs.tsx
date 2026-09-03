@@ -1,5 +1,5 @@
 import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,6 +8,7 @@ import {
   CalendarClock,
   ClipboardCheck,
   Copy,
+  Eye,
   FileText,
   Home,
   KeyRound,
@@ -60,6 +61,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useDemo } from "@/components/DemoProvider";
+import { useViewAs } from "@/hooks/useViewAs";
+import { setOwnerPreview } from "@/lib/owner-preview";
 import {
   Select,
   SelectContent,
