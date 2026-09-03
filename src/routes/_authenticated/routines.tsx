@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
+import { useDemo } from "@/components/DemoProvider";
 import { useSeat } from "@/hooks/useSeat";
 import {
   OUTCOME_LABELS,
@@ -125,12 +126,17 @@ function RoutinesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Routine work follows the same demo lens as every other queue: demo rows
+  // only inside the demo environment, live rows only outside it. Before this,
+  // seeded scenarios leaked into the real routine queue.
+  const { demoMode } = useDemo();
   const { data, isLoading } = useQuery({
-    queryKey: ["routine-controls"],
+    queryKey: ["routine-controls", demoMode],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routine_controls")
         .select("*, properties(name, nickname)")
+        .eq("is_demo", demoMode)
         .order("due_at", { ascending: true })
         .limit(400);
       if (error) throw error;
@@ -146,7 +152,8 @@ function RoutinesPage() {
   if (isLoading || !data) return <LoadingPage tiles={0} />;
 
   const openRows = data.filter((r) => r.status === "due" || r.status === "in_progress");
-  const visible = filter === "mine" ? openRows.filter((r) => myTeamKinds.has(r.kind as RoutineKind)) : openRows;
+  const visible =
+    filter === "mine" ? openRows.filter((r) => myTeamKinds.has(r.kind as RoutineKind)) : openRows;
   const overdue = visible.filter((r) => routineDueState(r) === "overdue");
   const today = visible.filter((r) => routineDueState(r) === "today");
   const upcoming = visible.filter((r) => routineDueState(r) === "upcoming");
@@ -184,11 +191,31 @@ function RoutinesPage() {
         }
       />
 
-      <Section title="Late" description="Past the time these were meant to be done." rows={overdue} tone="critical" onOpen={setOpenRow} />
-      <Section title="Due today" description="Scheduled for today." rows={today} onOpen={setOpenRow} />
-      <Section title="Coming up" description="Scheduled, not yet due." rows={upcoming} onOpen={setOpenRow} />
+      <Section
+        title="Late"
+        description="Past the time these were meant to be done."
+        rows={overdue}
+        tone="critical"
+        onOpen={setOpenRow}
+      />
+      <Section
+        title="Due today"
+        description="Scheduled for today."
+        rows={today}
+        onOpen={setOpenRow}
+      />
+      <Section
+        title="Coming up"
+        description="Scheduled, not yet due."
+        rows={upcoming}
+        onOpen={setOpenRow}
+      />
 
-      <SectionCard title="Recently completed" description="What the team found." bodyClassName="space-y-1.5">
+      <SectionCard
+        title="Recently completed"
+        description="What the team found."
+        bodyClassName="space-y-1.5"
+      >
         {recent.length === 0 ? (
           <EmptyState title="Nothing completed yet." />
         ) : (
@@ -216,7 +243,11 @@ function RoutinesPage() {
         )}
       </SectionCard>
 
-      <RoutineDrawer row={openRow} open={Boolean(openRow)} onOpenChange={(v) => !v && setOpenRow(null)} />
+      <RoutineDrawer
+        row={openRow}
+        open={Boolean(openRow)}
+        onOpenChange={(v) => !v && setOpenRow(null)}
+      />
       <RunRoutineDialog
         open={runOpen}
         onOpenChange={setRunOpen}
@@ -296,6 +327,7 @@ function RunRoutineDialog({
   const [propertyId, setPropertyId] = useState("");
   const [query, setQuery] = useState("");
   const [guest, setGuest] = useState("");
+  const { demoMode } = useDemo();
 
   const { data: properties } = useQuery({
     queryKey: ["routine-properties"],
@@ -337,6 +369,7 @@ function RunRoutineDialog({
         team: config.team,
         assigned_to: auth.user?.id ?? null,
         created_by: auth.user?.id ?? null,
+        is_demo: demoMode,
       });
       if (error) throw error;
     },
@@ -370,7 +403,9 @@ function RunRoutineDialog({
                 }`}
               >
                 <span className="block text-sm font-semibold">{ROUTINE_CONFIG[k].label}</span>
-                <span className="block text-xs text-muted-foreground">{ROUTINE_CONFIG[k].teamLabel}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {ROUTINE_CONFIG[k].teamLabel}
+                </span>
               </button>
             ))}
           </div>
