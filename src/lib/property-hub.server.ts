@@ -78,13 +78,26 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   const owns = staff ? false : await ownerOwnsProperty(viewer.userId, propertyId);
   if (!staff && !owns) throw new Error(DENY);
 
-  const property = await supabaseAdmin.from("properties").select("*").eq("id", propertyId).maybeSingle();
+  const property = await supabaseAdmin
+    .from("properties")
+    .select("*")
+    .eq("id", propertyId)
+    .maybeSingle();
   if (property.error || !property.data) throw new Error("That property could not be found.");
   const p = property.data;
 
-  const [tasks, tickets, docs, approvals, handoff, programLink, activity, outbound, links, conflicts] =
-    await Promise.all([
-
+  const [
+    tasks,
+    tickets,
+    docs,
+    approvals,
+    handoff,
+    programLink,
+    activity,
+    outbound,
+    links,
+    conflicts,
+  ] = await Promise.all([
     supabaseAdmin
       .from("onboarding_tasks")
       .select(
@@ -127,7 +140,9 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .limit(1),
     supabaseAdmin
       .from("owner_program_properties")
-      .select("program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)")
+      .select(
+        "program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)",
+      )
       .eq("property_id", propertyId)
       .is("archived_at", null)
       .limit(1),
@@ -144,7 +159,9 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .limit(15),
     supabaseAdmin
       .from("property_external_links")
-      .select("id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of")
+      .select(
+        "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
+      )
       .eq("property_id", propertyId),
     supabaseAdmin
       .from("field_conflicts")
@@ -164,9 +181,6 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     .maybeSingle();
   const quarterlyLive = quarterlyFlag.data?.enabled === true;
 
-
-
-
   const taskRows = tasks.data ?? [];
   const top = taskRows.filter((t) => !t.parent_task_id);
   const complete = top.filter((t) => t.status === "complete").length;
@@ -182,9 +196,14 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   // Resolved and closed both mean the frontline work is finished, so neither
   // belongs in an "open tickets" count. Only working statuses are open.
   const openTickets = (tickets.data ?? []).filter((t) => isWorkingStatus(String(t.status)));
-  const program = (programLink.data ?? [])[0]?.owner_programs as unknown as
-    | { id: string; owner_name: string | null; status: string; started_on: string | null; ends_on: string | null; target_hours: number | null }
-    | null;
+  const program = (programLink.data ?? [])[0]?.owner_programs as unknown as {
+    id: string;
+    owner_name: string | null;
+    status: string;
+    started_on: string | null;
+    ends_on: string | null;
+    target_hours: number | null;
+  } | null;
 
   const sections: HubSection[] = [
     {
@@ -201,43 +220,120 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       id: "location",
       title: "Address & location",
       fields: [
-        f("Street", "address_line1", p.address_line1, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
+        f(
+          "Street",
+          "address_line1",
+          p.address_line1,
+          "OwnerRez / Resolve",
+          p.ownerrez_synced_at ?? p.updated_at,
+          true,
+        ),
         f("Unit", "unit", p.unit, "Resolve", p.updated_at, true),
         f("City", "city", p.city, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
-        f("State", "state", p.state, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
-        f("Postal code", "postal_code", p.postal_code, "OwnerRez / Resolve", p.ownerrez_synced_at ?? p.updated_at, true),
-        f("Geocoded address", "formatted_address", p.formatted_address, "Google Maps", p.geocoded_at, false),
+        f(
+          "State",
+          "state",
+          p.state,
+          "OwnerRez / Resolve",
+          p.ownerrez_synced_at ?? p.updated_at,
+          true,
+        ),
+        f(
+          "Postal code",
+          "postal_code",
+          p.postal_code,
+          "OwnerRez / Resolve",
+          p.ownerrez_synced_at ?? p.updated_at,
+          true,
+        ),
+        f(
+          "Geocoded address",
+          "formatted_address",
+          p.formatted_address,
+          "Google Maps",
+          p.geocoded_at,
+          false,
+        ),
       ],
     },
     {
       id: "facts",
       title: "Property facts",
-      blurb: "Bedrooms, occupancy and stay posture come from OwnerRez. Building systems and utilities are in Property details.",
+      blurb:
+        "Bedrooms, occupancy and stay posture come from OwnerRez. Building systems and utilities are in Property details.",
       fields: [
-        f("Bedrooms", "bedrooms", p.bedrooms == null ? null : String(p.bedrooms), "OwnerRez", p.ownerrez_synced_at, true),
-        f("Bathrooms", "bathrooms", p.bathrooms == null ? null : String(p.bathrooms), "OwnerRez", p.ownerrez_synced_at, true),
-        f("Sleeps", "max_guests", p.max_guests == null ? null : String(p.max_guests), "OwnerRez", p.ownerrez_synced_at, true),
-        f("Living area", "living_area_sqft", p.living_area_sqft == null ? null : `${p.living_area_sqft} sq ft`, "OwnerRez", p.ownerrez_synced_at, true),
-        f("Property type", "property_type", p.property_type, "OwnerRez", p.ownerrez_synced_at, true),
-        f("Check-in / check-out", "check_times", p.check_in_time || p.check_out_time ? `${p.check_in_time ?? "—"} / ${p.check_out_time ?? "—"}` : null, "OwnerRez", p.ownerrez_synced_at, true),
+        f(
+          "Bedrooms",
+          "bedrooms",
+          p.bedrooms == null ? null : String(p.bedrooms),
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          true,
+        ),
+        f(
+          "Bathrooms",
+          "bathrooms",
+          p.bathrooms == null ? null : String(p.bathrooms),
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          true,
+        ),
+        f(
+          "Sleeps",
+          "max_guests",
+          p.max_guests == null ? null : String(p.max_guests),
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          true,
+        ),
+        f(
+          "Living area",
+          "living_area_sqft",
+          p.living_area_sqft == null ? null : `${p.living_area_sqft} sq ft`,
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          true,
+        ),
+        f(
+          "Property type",
+          "property_type",
+          p.property_type,
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          true,
+        ),
+        f(
+          "Check-in / check-out",
+          "check_times",
+          p.check_in_time || p.check_out_time
+            ? `${p.check_in_time ?? "—"} / ${p.check_out_time ?? "—"}`
+            : null,
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          true,
+        ),
         f("Time zone", "time_zone", p.time_zone, "OwnerRez", p.ownerrez_synced_at, false),
-        f("Public listing", "listing_public_url", p.listing_public_url, "OwnerRez", p.ownerrez_synced_at, true),
+        f(
+          "Public listing",
+          "listing_public_url",
+          p.listing_public_url,
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          true,
+        ),
       ],
     },
     {
       id: "access",
       title: "Access",
-      blurb: "Resolve records where access is held and who to ask. It never stores a live code or password.",
-      fields: [
-        f("Access notes", "access_notes", p.access_notes, "Resolve", p.updated_at, false),
-      ],
+      blurb:
+        "Resolve records where access is held and who to ask. It never stores a live code or password.",
+      fields: [f("Access notes", "access_notes", p.access_notes, "Resolve", p.updated_at, false)],
     },
     {
       id: "safety",
       title: "Safety & amenities",
-      fields: [
-        f("Wi-Fi notes", "wifi_notes", p.wifi_notes, "Resolve", p.updated_at, false),
-      ],
+      fields: [f("Wi-Fi notes", "wifi_notes", p.wifi_notes, "Resolve", p.updated_at, false)],
     },
     {
       id: "operations",
@@ -245,8 +341,22 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       fields: [
         ...(quarterlyLive
           ? [
-              f("Quarterly review due", "quarterly_review_due_on", fmtDate(p.quarterly_review_due_on), "Resolve", p.last_quarterly_review_at, false),
-              f("Last quarterly review", "last_quarterly_review_at", fmtDate(p.last_quarterly_review_at), "Resolve", p.last_quarterly_review_at, false),
+              f(
+                "Quarterly review due",
+                "quarterly_review_due_on",
+                fmtDate(p.quarterly_review_due_on),
+                "Resolve",
+                p.last_quarterly_review_at,
+                false,
+              ),
+              f(
+                "Last quarterly review",
+                "last_quarterly_review_at",
+                fmtDate(p.last_quarterly_review_at),
+                "Resolve",
+                p.last_quarterly_review_at,
+                false,
+              ),
             ]
           : []),
 
@@ -258,18 +368,60 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       title: "Onboarding status",
       fields: [
         f("Stage", "onboarding_stage", p.onboarding_stage, "Resolve", p.updated_at, true),
-        f("Planned closing", "planned_closing_on", fmtDate(p.planned_closing_on), "Resolve", p.updated_at, true),
-        f("Actual closing", "actual_closing_on", fmtDate(p.actual_closing_on), "Resolve", p.updated_at, true),
-        f("Access date", "actual_access_on", fmtDate(p.actual_access_on), "Resolve", p.updated_at, true),
-        f("Handoff accepted", "handoff_accepted_at", fmtDate(p.handoff_accepted_at), "Resolve", p.handoff_accepted_at, true),
+        f(
+          "Planned closing",
+          "planned_closing_on",
+          fmtDate(p.planned_closing_on),
+          "Resolve",
+          p.updated_at,
+          true,
+        ),
+        f(
+          "Actual closing",
+          "actual_closing_on",
+          fmtDate(p.actual_closing_on),
+          "Resolve",
+          p.updated_at,
+          true,
+        ),
+        f(
+          "Access date",
+          "actual_access_on",
+          fmtDate(p.actual_access_on),
+          "Resolve",
+          p.updated_at,
+          true,
+        ),
+        f(
+          "Handoff accepted",
+          "handoff_accepted_at",
+          fmtDate(p.handoff_accepted_at),
+          "Resolve",
+          p.handoff_accepted_at,
+          true,
+        ),
       ],
     },
     {
       id: "external",
       title: "External system identifiers",
       fields: [
-        f("OwnerRez id", "ownerrez_property_id", p.ownerrez_property_id, "OwnerRez", p.ownerrez_synced_at, false),
-        f("Breezeway home id", "breezeway_property_id", p.breezeway_property_id, "Breezeway", p.breezeway_synced_at, false),
+        f(
+          "OwnerRez id",
+          "ownerrez_property_id",
+          p.ownerrez_property_id,
+          "OwnerRez",
+          p.ownerrez_synced_at,
+          false,
+        ),
+        f(
+          "Breezeway home id",
+          "breezeway_property_id",
+          p.breezeway_property_id,
+          "Breezeway",
+          p.breezeway_synced_at,
+          false,
+        ),
       ],
     },
   ];
@@ -322,12 +474,18 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   );
   const uploaderNames = new Map<string, string>();
   if (uploaderIds.length > 0) {
-    const { data: people } = await supabaseAdmin.from("profiles").select("id, full_name").in("id", uploaderIds);
-    for (const person of people ?? []) uploaderNames.set(person.id, person.full_name ?? "ARHA staff");
+    const { data: people } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", uploaderIds);
+    for (const person of people ?? [])
+      uploaderNames.set(person.id, person.full_name ?? "ARHA staff");
   }
 
   // Real PID operating information, grouped the way staff ask for it.
-  const detailGroups = staff ? buildPropertyDetailGroups(p as unknown as Record<string, unknown>) : [];
+  const detailGroups = staff
+    ? buildPropertyDetailGroups(p as unknown as Record<string, unknown>)
+    : [];
 
   const linkRows = staff ? (links.data ?? []) : [];
   const externalLinks = linkRows.map((l) => ({
@@ -349,11 +507,24 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   const alerts: { id: string; tone: "danger" | "warn" | "info"; text: string }[] = [];
   if (staff) {
     const p1 = openTickets.filter((t) => t.priority === "p1").length;
-    if (p1 > 0) alerts.push({ id: "p1", tone: "danger", text: `${p1} open P1 ticket${p1 === 1 ? "" : "s"} on this home.` });
+    if (p1 > 0)
+      alerts.push({
+        id: "p1",
+        tone: "danger",
+        text: `${p1} open P1 ticket${p1 === 1 ? "" : "s"} on this home.`,
+      });
     if (blocked.length > 0)
-      alerts.push({ id: "blocked", tone: "danger", text: `${blocked.length} onboarding task${blocked.length === 1 ? " is" : "s are"} blocked.` });
+      alerts.push({
+        id: "blocked",
+        tone: "danger",
+        text: `${blocked.length} onboarding task${blocked.length === 1 ? " is" : "s are"} blocked.`,
+      });
     if (gates.length > 0)
-      alerts.push({ id: "gates", tone: "warn", text: `${gates.length} handoff gate${gates.length === 1 ? "" : "s"} still open.` });
+      alerts.push({
+        id: "gates",
+        tone: "warn",
+        text: `${gates.length} handoff gate${gates.length === 1 ? "" : "s"} still open.`,
+      });
     const openConflicts = (conflicts.data ?? []).length;
     if (openConflicts > 0)
       alerts.push({
@@ -363,10 +534,23 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       });
     const quarterly = quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null;
     if (quarterly && quarterly < new Date().toISOString().slice(0, 10))
-      alerts.push({ id: "quarterly", tone: "warn", text: `Quarterly review was due ${quarterly}.` });
+      alerts.push({
+        id: "quarterly",
+        tone: "warn",
+        text: `Quarterly review was due ${quarterly}.`,
+      });
     if (p.lifecycle_status && p.lifecycle_status !== "active_operations")
-      alerts.push({ id: "lifecycle", tone: "info", text: `Lifecycle: ${String(p.lifecycle_status).replace(/_/g, " ")}.` });
-    if (!p.primary_photo_url) alerts.push({ id: "photo", tone: "info", text: "No listing photo has synced from OwnerRez yet." });
+      alerts.push({
+        id: "lifecycle",
+        tone: "info",
+        text: `Lifecycle: ${String(p.lifecycle_status).replace(/_/g, " ")}.`,
+      });
+    if (!p.primary_photo_url)
+      alerts.push({
+        id: "photo",
+        tone: "info",
+        text: "No listing photo has synced from OwnerRez yet.",
+      });
     const replacements = externalLinks.filter((l) => l.needsReplacement).length;
     if (replacements > 0)
       alerts.push({
@@ -420,11 +604,19 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       quarterlyDue: quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null,
       documents: (docs.data ?? []).filter((d) => staff || d.visibility === "owner_shared").length,
       program: program
-        ? { id: program.id, ownerName: program.owner_name, status: program.status, startedOn: program.started_on, endsOn: program.ends_on }
+        ? {
+            id: program.id,
+            ownerName: program.owner_name,
+            status: program.status,
+            startedOn: program.started_on,
+            endsOn: program.ends_on,
+          }
         : null,
     },
     details: {
-      sections: staff ? sections : sections.filter((s) => ownerVisibleSections.includes(s.id)).map(ownerFilter),
+      sections: staff
+        ? sections
+        : sections.filter((s) => ownerVisibleSections.includes(s.id)).map(ownerFilter),
       groups: detailGroups,
     },
 
@@ -453,12 +645,23 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       subtaskTotal: subs.length,
       subtaskComplete: subsComplete,
       percent: top.length ? Math.round((complete / top.length) * 100) : 0,
-      blockers: blocked.slice(0, 10).map((t) => ({ id: t.id, title: t.title, blocker: t.blocker, stage: t.stage })),
-      ownerActions: ownerActions.slice(0, 10).map((t) => ({ id: t.id, title: t.title, stage: t.stage, dueOn: t.due_on })),
+      blockers: blocked
+        .slice(0, 10)
+        .map((t) => ({ id: t.id, title: t.title, blocker: t.blocker, stage: t.stage })),
+      ownerActions: ownerActions
+        .slice(0, 10)
+        .map((t) => ({ id: t.id, title: t.title, stage: t.stage, dueOn: t.due_on })),
       current: top
         .filter((t) => t.status !== "complete")
         .slice(0, staff ? 15 : 5)
-        .map((t) => ({ id: t.id, title: t.title, stage: t.stage, status: t.status, dueOn: t.due_on, assigned: Boolean(t.assigned_to) })),
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          stage: t.stage,
+          status: t.status,
+          dueOn: t.due_on,
+          assigned: Boolean(t.assigned_to),
+        })),
       handoff: (handoff.data ?? [])[0] ?? null,
     },
     operations: staff
@@ -507,8 +710,15 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         status: t.owner_approval_status ?? "pending",
       })),
       decided: top
-        .filter((t) => t.requires_owner_approval && (t.owner_approval_status ?? "pending") !== "pending")
-        .map((t) => ({ id: t.id, title: t.title, stage: t.stage, status: t.owner_approval_status ?? "pending" })),
+        .filter(
+          (t) => t.requires_owner_approval && (t.owner_approval_status ?? "pending") !== "pending",
+        )
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          stage: t.stage,
+          status: t.owner_approval_status ?? "pending",
+        })),
       records: staff
         ? (approvals.data ?? []).map((a) => ({
             id: a.id,
@@ -521,7 +731,11 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         : [],
     },
     activity: (activity.data ?? [])
-      .filter((a) => (a.entity_label ?? "").includes(p.name) || (a.entity_type === "property" && a.entity_label === p.name))
+      .filter(
+        (a) =>
+          (a.entity_label ?? "").includes(p.name) ||
+          (a.entity_type === "property" && a.entity_label === p.name),
+      )
       .slice(0, 25)
       .map((a) => ({
         id: a.id,
@@ -544,7 +758,6 @@ function f(
 ): HubField {
   return { label, key, value: value ?? null, source, asOf: asOf ?? null, ownerVisible };
 }
-
 
 function defaultLinkLabel(kind: string): string {
   const map: Record<string, string> = {

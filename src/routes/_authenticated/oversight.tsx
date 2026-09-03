@@ -41,7 +41,10 @@ export const Route = createFileRoute("/_authenticated/oversight")({
           "The supervisor exception board: unacknowledged work, overdue actions, waiting past review, unassigned work, handoffs, approvals and workload by seat.",
       },
       { property: "og:title", content: "Operations oversight — Resolve" },
-      { property: "og:description", content: "Exceptions first — what needs a supervisor right now." },
+      {
+        property: "og:description",
+        content: "Exceptions first — what needs a supervisor right now.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -90,13 +93,19 @@ function useOversightData() {
     queryKey: ["oversight-support"],
     queryFn: async () => {
       const [approvals, routines, claims, recoveries, breezeway, profiles] = await Promise.all([
-        supabase.from("approvals").select("id, title, kind, status, due_on, entity_type, entity_id").eq("status", "pending"),
+        supabase
+          .from("approvals")
+          .select("id, title, kind, status, due_on, entity_type, entity_id")
+          .eq("status", "pending"),
         supabase
           .from("routine_controls")
           .select("id, kind, status, due_at, assigned_to, completed_at")
           .eq("is_demo", false),
         supabase.from("claims").select("id, title, stage, deadline_on").eq("is_demo", false),
-        supabase.from("guest_recovery").select("id, title, stage, approval_status").eq("is_demo", false),
+        supabase
+          .from("guest_recovery")
+          .select("id, title, stage, approval_status")
+          .eq("is_demo", false),
         supabase
           .from("breezeway_outbound_tasks")
           .select("id, title, status, scheduled_date, ticket_id"),
@@ -152,15 +161,15 @@ function Oversight() {
 }
 
 function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSupport }) {
-
-
   const open = data.filter((t) => OPEN_STATUSES.includes(t.status));
 
   const unackedP1 = open.filter((t) => t.priority === "p1" && !t.acknowledged_at);
   const unacked = open.filter(
     (t) => t.priority !== "p1" && !t.acknowledged_at && slaState(t).response?.breached,
   );
-  const notStarted = open.filter((t) => t.acknowledged_at && !t.action_started_at && slaState(t).action?.breached);
+  const notStarted = open.filter(
+    (t) => t.acknowledged_at && !t.action_started_at && slaState(t).action?.breached,
+  );
   const pendingHandoffs = open.filter((t) => t.handoff_status === "pending");
   const unassigned = open.filter((t) => !t.assigned_to && !t.current_action_owner);
   const waitingNoReview = open.filter((t) => t.status === "waiting" && !t.next_review_at);
@@ -172,7 +181,9 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       (t.priority === "p1" && hoursOld(t.reported_at) > 24) ||
       (t.priority === "p2" && hoursOld(t.reported_at) > 72),
   );
-  const reopened = data.filter((t) => (t.reopen_count ?? 0) > 0 && OPEN_STATUSES.includes(t.status));
+  const reopened = data.filter(
+    (t) => (t.reopen_count ?? 0) > 0 && OPEN_STATUSES.includes(t.status),
+  );
   const closureQa = data.filter(
     (t) => t.status === "resolved" && t.closure_qa_result === "not_reviewed",
   );
@@ -247,12 +258,16 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
   /* ---------------- compact linked summaries ---------------- */
 
   const now = Date.now();
-  const openRoutines = (s?.routines ?? []).filter((r) => r.status !== "completed" && r.status !== "cancelled");
+  const openRoutines = (s?.routines ?? []).filter(
+    (r) => r.status !== "completed" && r.status !== "cancelled",
+  );
   const routinesLate = openRoutines.filter((r) => r.due_at && new Date(r.due_at).getTime() < now);
   const routinesDone7 = (s?.routines ?? []).filter(
     (r) => r.completed_at && now - new Date(r.completed_at).getTime() < 7 * DAY,
   );
-  const claimsOpen = (s?.claims ?? []).filter((c) => c.stage !== "closed" && c.stage !== "resolved");
+  const claimsOpen = (s?.claims ?? []).filter(
+    (c) => c.stage !== "closed" && c.stage !== "resolved",
+  );
   const claimsDeadline = claimsOpen.filter(
     (c) => c.deadline_on && new Date(c.deadline_on).getTime() - now < 3 * DAY,
   );
@@ -301,10 +316,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
     {
       title: "Guest Recovery",
       to: "/recovery",
-      lines: [
-        `${recoveriesOpen.length} open`,
-        `${recoveriesAwaiting.length} waiting on approval`,
-      ],
+      lines: [`${recoveriesOpen.length} open`, `${recoveriesAwaiting.length} waiting on approval`],
       count: recoveriesAwaiting.length,
     },
     {
@@ -393,7 +405,10 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
               {section.title} — clear
             </div>
           ) : (
-            <Card key={section.title} className={section.tone === "danger" ? "border-danger/40" : ""}>
+            <Card
+              key={section.title}
+              className={section.tone === "danger" ? "border-danger/40" : ""}
+            >
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   {section.title}
@@ -417,9 +432,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
                   <ExceptionRow key={t.id} ticket={t as Row} origin={originSearch} />
                 ))}
                 {section.rows.length > 12 && (
-                  <p className="text-xs text-muted-foreground">
-                    +{section.rows.length - 12} more
-                  </p>
+                  <p className="text-xs text-muted-foreground">+{section.rows.length - 12} more</p>
                 )}
               </CardContent>
             </Card>
@@ -469,7 +482,9 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
                 <div className="h-2 flex-1 rounded-full bg-secondary">
                   <div
                     className="h-2 rounded-full bg-primary"
-                    style={{ width: `${Math.min(100, (w.count / (workload[0]?.count || 1)) * 100)}%` }}
+                    style={{
+                      width: `${Math.min(100, (w.count / (workload[0]?.count || 1)) * 100)}%`,
+                    }}
                   />
                 </div>
                 <span className="w-6 text-right text-muted-foreground">{w.count}</span>
@@ -533,7 +548,9 @@ function ExceptionRow({ ticket, origin }: { ticket: Row; origin: { from: string 
       <Badge variant="outline" className={statusTone(ticket.status)}>
         {labelFor(STATUSES, ticket.status)}
       </Badge>
-      <span className="ml-auto text-sm text-muted-foreground">{relativeTime(ticket.reported_at)}</span>
+      <span className="ml-auto text-sm text-muted-foreground">
+        {relativeTime(ticket.reported_at)}
+      </span>
     </Link>
   );
 }

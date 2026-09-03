@@ -713,7 +713,6 @@ function TicketDetail() {
           {closureReady ? "Close ticket" : "Work through what is missing"}
         </Button>
       ) : (
-
         <div className="space-y-4 border-t border-border pt-4">
           <div className="space-y-2">
             <Label>Outcome</Label>
@@ -1310,10 +1309,12 @@ function MoreActions({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete ticket #{String(ticket["ref"] ?? "")}?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Delete ticket #{String(ticket["ref"] ?? "")}?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action permanently removes this ticket from normal Resolve records. Use it
-                      for duplicates, accidental tickets, tests and junk records.
+                      This action permanently removes this ticket from normal Resolve records. Use
+                      it for duplicates, accidental tickets, tests and junk records.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -1324,7 +1325,6 @@ function MoreActions({
               </AlertDialog>
             </div>
           )}
-
         </div>
       </SheetContent>
     </Sheet>

@@ -53,7 +53,9 @@ export async function gatherLifecycleFacts(
     db.from("ticket_steps").select("required, completed").eq("ticket_id", ticketId),
     db
       .from("work_orders")
-      .select("id, scope, vendor_org_id, vendor_name, approval_status, quote_amount, approved_amount")
+      .select(
+        "id, scope, vendor_org_id, vendor_name, approval_status, quote_amount, approved_amount",
+      )
       .eq("ticket_id", ticketId),
     db
       .from("documents")
@@ -67,7 +69,10 @@ export async function gatherLifecycleFacts(
       .in("kind", ["guest_message", "communication", "guest_update"]),
   ]);
 
-  const wt = (workType as any)?.data as { name?: string; required_closure_evidence?: string } | null;
+  const wt = (workType as any)?.data as {
+    name?: string;
+    required_closure_evidence?: string;
+  } | null;
   const stepRows = (steps.data ?? []) as { required: boolean | null; completed: boolean | null }[];
   const orderRows = (orders.data ?? []) as {
     scope: string | null;
@@ -111,7 +116,10 @@ export async function gatherLifecycleFacts(
     next_review_at: ticket.next_review_at,
 
     hasGuestContext: Boolean(
-      ticket.guest_name || ticket.guest_contact || ticket.ownerrez_booking_id || ticket.guest_in_residence,
+      ticket.guest_name ||
+      ticket.guest_contact ||
+      ticket.ownerrez_booking_id ||
+      ticket.guest_in_residence,
     ),
     guestCommunicationRecorded:
       (comms.data ?? []).length > 0 || Boolean(ticket.final_communication_sent),
@@ -164,7 +172,8 @@ export async function applyStatusChange(
   if ("next_review_at" in p) merged.next_review_at = (p["next_review_at"] as string) ?? null;
   if ("resolution_notes" in p)
     merged.hasClosureSummary = String(p["resolution_notes"] ?? "").trim().length > 0;
-  if ("closure_evidence" in p) merged.closureEvidenceText = (p["closure_evidence"] as string) ?? null;
+  if ("closure_evidence" in p)
+    merged.closureEvidenceText = (p["closure_evidence"] as string) ?? null;
   if ("closure_qa_result" in p) merged.closureQaResult = (p["closure_qa_result"] as string) ?? null;
 
   const verdict = validateTicketTransition(input.status, merged);
@@ -194,7 +203,8 @@ export async function applyStatusChange(
   if (input.status === "closed" && !ticket["resolved_at"]) patch["resolved_at"] = now;
 
   const { error } = await db.from("tickets").update(patch).eq("id", input.ticketId);
-  if (error) return { ok: false as const, code: "write_failed", message: error.message, exception: null };
+  if (error)
+    return { ok: false as const, code: "write_failed", message: error.message, exception: null };
 
   await db.from("ticket_activity").insert({
     ticket_id: input.ticketId,

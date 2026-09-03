@@ -47,7 +47,8 @@ describe("resolved and closed mean different things", () => {
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.exception).toBe("closure_qa");
     expect(
-      validateTicketTransition("closed", { ...base, status: "resolved", closureQaResult: "pass" }).ok,
+      validateTicketTransition("closed", { ...base, status: "resolved", closureQaResult: "pass" })
+        .ok,
     ).toBe(true);
   });
 

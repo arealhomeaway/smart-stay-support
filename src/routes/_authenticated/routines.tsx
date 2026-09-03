@@ -152,7 +152,8 @@ function RoutinesPage() {
   if (isLoading || !data) return <LoadingPage tiles={0} />;
 
   const openRows = data.filter((r) => r.status === "due" || r.status === "in_progress");
-  const visible = filter === "mine" ? openRows.filter((r) => myTeamKinds.has(r.kind as RoutineKind)) : openRows;
+  const visible =
+    filter === "mine" ? openRows.filter((r) => myTeamKinds.has(r.kind as RoutineKind)) : openRows;
   const overdue = visible.filter((r) => routineDueState(r) === "overdue");
   const today = visible.filter((r) => routineDueState(r) === "today");
   const upcoming = visible.filter((r) => routineDueState(r) === "upcoming");
@@ -190,11 +191,31 @@ function RoutinesPage() {
         }
       />
 
-      <Section title="Late" description="Past the time these were meant to be done." rows={overdue} tone="critical" onOpen={setOpenRow} />
-      <Section title="Due today" description="Scheduled for today." rows={today} onOpen={setOpenRow} />
-      <Section title="Coming up" description="Scheduled, not yet due." rows={upcoming} onOpen={setOpenRow} />
+      <Section
+        title="Late"
+        description="Past the time these were meant to be done."
+        rows={overdue}
+        tone="critical"
+        onOpen={setOpenRow}
+      />
+      <Section
+        title="Due today"
+        description="Scheduled for today."
+        rows={today}
+        onOpen={setOpenRow}
+      />
+      <Section
+        title="Coming up"
+        description="Scheduled, not yet due."
+        rows={upcoming}
+        onOpen={setOpenRow}
+      />
 
-      <SectionCard title="Recently completed" description="What the team found." bodyClassName="space-y-1.5">
+      <SectionCard
+        title="Recently completed"
+        description="What the team found."
+        bodyClassName="space-y-1.5"
+      >
         {recent.length === 0 ? (
           <EmptyState title="Nothing completed yet." />
         ) : (
@@ -222,7 +243,11 @@ function RoutinesPage() {
         )}
       </SectionCard>
 
-      <RoutineDrawer row={openRow} open={Boolean(openRow)} onOpenChange={(v) => !v && setOpenRow(null)} />
+      <RoutineDrawer
+        row={openRow}
+        open={Boolean(openRow)}
+        onOpenChange={(v) => !v && setOpenRow(null)}
+      />
       <RunRoutineDialog
         open={runOpen}
         onOpenChange={setRunOpen}
@@ -378,7 +403,9 @@ function RunRoutineDialog({
                 }`}
               >
                 <span className="block text-sm font-semibold">{ROUTINE_CONFIG[k].label}</span>
-                <span className="block text-xs text-muted-foreground">{ROUTINE_CONFIG[k].teamLabel}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {ROUTINE_CONFIG[k].teamLabel}
+                </span>
               </button>
             ))}
           </div>
