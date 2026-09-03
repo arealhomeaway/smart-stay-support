@@ -7,20 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search } from "lucide-react";
 import { Chip, EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -29,8 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OPEN_STATUSES } from "@/lib/tickets";
-import { listOwnerRezListings, importOwnerRezProperties } from "@/lib/ownerrez.functions";
+import { listOwnerRezListings } from "@/lib/ownerrez.functions";
 import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
+import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 
@@ -61,25 +53,9 @@ export const Route = createFileRoute("/_authenticated/properties")({
 
 type PropertySearch = { q?: string | undefined; market?: string | undefined; status?: string | undefined };
 
-const empty = {
-  name: "",
-  nickname: "",
-  address_line1: "",
-  city: "",
-  state: "",
-  postal_code: "",
-  unit: "",
-  access_notes: "",
-  wifi_notes: "",
-  notes: "",
-};
 
 function PropertiesPage() {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(empty);
-  const [saving, setSaving] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [enriching, setEnriching] = useState(false);
 
   const fetchListings = useServerFn(listOwnerRezListings);
@@ -89,31 +65,6 @@ function PropertiesPage() {
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
-
-  const runImport = useServerFn(importOwnerRezProperties);
-
-  async function importAll() {
-    setImporting(true);
-    try {
-      const res = await runImport();
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
-      }
-      const added = res.created + res.matched;
-      toast.success(
-        added === 0
-          ? "All OwnerRez listings are already linked."
-          : `${res.created} home${res.created === 1 ? "" : "s"} added, ${res.matched} linked to existing homes.`,
-      );
-      await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
-      await qc.invalidateQueries({ queryKey: ["properties"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Import failed");
-    } finally {
-      setImporting(false);
-    }
-  }
 
   const runEnrichment = useServerFn(syncPropertyEnrichment);
 
@@ -224,29 +175,6 @@ function PropertiesPage() {
   });
 
 
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      const { error } = await supabase.from("properties").insert({
-        ...form,
-        nickname: form.nickname || null,
-        created_by: userData.user?.id ?? null,
-      });
-      if (error) throw error;
-      toast.success("Property added.");
-      setForm(empty);
-      setOpen(false);
-      await qc.invalidateQueries({ queryKey: ["properties-with-counts"] });
-      await qc.invalidateQueries({ queryKey: ["properties"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save the property");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const { originSearch } = useWorkspaceOrigin(
     "Properties",
     visible.map((p) => ({ id: p.id, label: p.nickname ?? p.name, sub: p.market ?? undefined })),
@@ -260,56 +188,12 @@ function PropertiesPage() {
         description="Every ticket, project and owner action links back to one of these homes."
         actions={
         <div className="flex flex-wrap items-center gap-2">
-
-        <Button variant="outline" onClick={importAll} disabled={importing}>
-          {importing ? "Importing…" : "Import from OwnerRez"}
-        </Button>
         <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
           {enriching ? "Refreshing…" : "Refresh property info & photos"}
         </Button>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>Add property</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add a property</DialogTitle>
-              <DialogDescription>Access notes here show up on every ticket for this home.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={save} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Property name" required value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-                <Field label="Nickname" value={form.nickname} onChange={(v) => setForm({ ...form, nickname: v })} />
-                <Field label="Street address" value={form.address_line1} onChange={(v) => setForm({ ...form, address_line1: v })} />
-                <Field label="Unit" value={form.unit} onChange={(v) => setForm({ ...form, unit: v })} />
-                <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-                <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
-                <Field label="Postal code" value={form.postal_code} onChange={(v) => setForm({ ...form, postal_code: v })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Access notes</Label>
-                <Textarea
-                  rows={3}
-                  placeholder="Lock codes, parking, gate, where the water shutoff is."
-                  value={form.access_notes}
-                  onChange={(e) => setForm({ ...form, access_notes: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Other notes</Label>
-                <Textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? "Saving…" : "Save property"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <AddPropertyDialog />
         </div>
+
         }
       />
 
@@ -461,25 +345,6 @@ function PropertiesPage() {
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  required,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  required?: boolean;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Input value={value} required={required} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

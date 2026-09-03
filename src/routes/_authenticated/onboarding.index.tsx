@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub } from "@/components/onboarding/DirectorHub";
+import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
+
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { summarizeProject, type ProjectProperty } from "@/lib/onboarding-lifecycle";
@@ -115,6 +117,7 @@ function Hub() {
         eyebrow="Onboarding"
         title="Director hub"
         description="What needs attention today, what is at risk and why, which homes are waiting on a review gate, and which handoffs land this week."
+        actions={<AddPropertyDialog disabled={readOnly} />}
       />
 
       <Tabs defaultValue="hub" className="space-y-5">
@@ -147,10 +150,7 @@ function Hub() {
               </ul>
             </section>
           )}
-          <DirectorHub
-            projects={projects}
-            viewer={{ userId, canReview: can("handoff_review") }}
-          />
+          <DirectorHub projects={projects} viewer={{ userId, canReview: can("handoff_review") }} />
         </TabsContent>
 
         <TabsContent value="reviews" className="space-y-4">

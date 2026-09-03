@@ -1,7 +1,7 @@
 /**
  * ARHA "Full Furnishing" onboarding template (browser-safe).
  *
- * Source of truth: the ARHA Asana project plan export (9211 Fitzgerald Dr,
+ * Source of truth: the ARHA onboarding project plan (9211 Fitzgerald Dr,
  * project 1217419174626397 — 150 tasks across 7 phases) plus the Breezeway
  * workflow export, which supplies the New House Setup work-order template IDs
  * referenced by the "create work order" tasks. Nothing here is inferred:
@@ -305,9 +305,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase1_inspection_update_project_status_in_asana",
     stage: "phase1_inspection",
-    title: "Update project status in Asana",
+    title: "Update project status",
     role: "Project Manager",
-    detail: "In the Asana project plan, update the status at the top of the page (by the property name) and make note of anything the team may need to be aware of.",
+    detail: "Update the project status on this home in Resolve and note anything the team needs to be aware of.",
     blocksHandoff: false,
     sortOrder: 280,
   },
@@ -369,9 +369,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase2_estimates_update_project_status_in_asana",
     stage: "phase2_estimates",
-    title: "Update project status in Asana",
+    title: "Update project status",
     role: "Project Manager",
-    detail: "In the Asana project plan, update the status at the top of the page (by the property name) and make note of anything the team may need to be aware of.",
+    detail: "Update the project status on this home in Resolve and note anything the team needs to be aware of.",
     blocksHandoff: false,
     sortOrder: 350,
   },
@@ -685,9 +685,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase3_work_orders_update_project_status_in_asana",
     stage: "phase3_work_orders",
-    title: "Update project status in Asana",
+    title: "Update project status",
     role: "Project Manager",
-    detail: "In the Asana project plan, update the status at the top of the page (by the property name) and make note of anything the team may need to be aware of.",
+    detail: "Update the project status on this home in Resolve and note anything the team needs to be aware of.",
     blocksHandoff: false,
     sortOrder: 680,
   },
@@ -1024,9 +1024,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase4_purchasing_update_project_status_in_asana",
     stage: "phase4_purchasing",
-    title: "Update project status in Asana",
+    title: "Update project status",
     role: "Project Manager",
-    detail: "In the Asana project plan, update the status at the top of the page (by the property name) and make note of anything the team may need to be aware of.",
+    detail: "Update the project status on this home in Resolve and note anything the team needs to be aware of.",
     blocksHandoff: false,
     sortOrder: 1040,
   },
@@ -1429,9 +1429,9 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   {
     key: "phase6_handoff_update_project_status_in_asana",
     stage: "phase6_handoff",
-    title: "Update project status in Asana",
+    title: "Update project status",
     role: "Project Manager",
-    detail: "In the Asana project plan, update the status at the top of the page (by the property name) and make note of anything the team may need to be aware of.",
+    detail: "Update the project status on this home in Resolve and note anything the team needs to be aware of.",
     blocksHandoff: false,
     sortOrder: 1490,
   },
