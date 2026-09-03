@@ -52,7 +52,7 @@ export function lifecycleMeta(value: string | null | undefined) {
 }
 
 /**
- * The real ARHA onboarding phases, taken from the Asana project plan export.
+ * The real ARHA onboarding phases.
  * Legacy stage values from the earlier sample template still resolve a label
  * so existing records keep reading correctly.
  */

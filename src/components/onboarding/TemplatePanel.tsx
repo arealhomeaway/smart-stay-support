@@ -57,8 +57,7 @@ export function TemplatePanel({
           <ListChecks className="h-4 w-4" /> Full Furnishing template
         </CardTitle>
         <CardDescription>
-          The real ARHA onboarding plan built from the Asana project export and Breezeway work-order
-          templates: {counts.tasks} tasks and {counts.subtasks} subtasks across seven phases,{" "}
+          The ARHA onboarding plan for this home: {counts.tasks} tasks and {counts.subtasks} subtasks across seven phases,{" "}
           {counts.workOrders} linked Breezeway templates, {counts.ownerApprovals} homeowner decisions and{" "}
           {counts.evidence} evidence-gated steps. Dates are only pre-filled for the {counts.scheduled} tasks whose
           written instructions state the timing.
