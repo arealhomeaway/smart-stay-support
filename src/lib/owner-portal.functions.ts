@@ -12,13 +12,20 @@ export const ownerHome = createServerFn({ method: "GET" })
     return loadOwnerHome(context.supabase, context.userId);
   });
 
-/** Read-only sample program so a Platform Owner can preview the homeowner hub. */
+/** Read-only preview of a chosen program so a Platform Owner can see the hub. */
 export const ownerHomePreview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((data: unknown) =>
+    z
+      .object({ programId: z.string().uuid().nullable().default(null) })
+      .default({ programId: null })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ context, data }) => {
     const { loadOwnerHomePreview } = await import("./owner-portal.server");
-    return loadOwnerHomePreview(context.supabase, context.userId);
+    return loadOwnerHomePreview(context.supabase, context.userId, data.programId);
   });
+
 
 
 
