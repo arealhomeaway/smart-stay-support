@@ -130,10 +130,12 @@ function attentionReason(row: ProgramRow) {
   const behind = -row.variance;
   if (behind >= 10) return { rank: 1, reason: "10+ hours behind pace" };
   if (behind >= 5) return { rank: 2, reason: "5+ hours behind pace" };
-  if (quiet >= 7 && row.openTasks > 0) return { rank: 3, reason: "No activity for 7 days with open tasks" };
+  if (quiet >= 7 && row.openTasks > 0)
+    return { rank: 3, reason: "No activity for 7 days with open tasks" };
   if (row.daysLeft < 10 && row.reportedHours <= OWNER_GOAL_HOURS)
     return { rank: 4, reason: "Under 10 days remaining and not past 100 hours" };
-  if (row.properties.some((p) => p.overdue > 0)) return { rank: 5, reason: "Overdue property decisions" };
+  if (row.properties.some((p) => p.overdue > 0))
+    return { rank: 5, reason: "Overdue property decisions" };
   if (row.properties.some((p) => p.coverage === "no_activity"))
     return { rank: 6, reason: "A property has no owner activity yet" };
   if (behind >= 1) return { rank: 7, reason: "Slightly behind pace" };
@@ -174,7 +176,9 @@ function ProgramsBoard() {
     mutationFn: () => enroll({ data: { propertyId, ownerName, ownerEmail } }),
     onSuccess: (r) => {
       toast.success(
-        r.alreadyExists ? "That home is already in a program." : "Draft program created. Confirm closing, then activate.",
+        r.alreadyExists
+          ? "That home is already in a program."
+          : "Draft program created. Confirm closing, then activate.",
       );
       setPropertyId("");
       setOwnerName("");
@@ -187,7 +191,9 @@ function ProgramsBoard() {
 
   const attention = rows
     .map((r) => ({ row: r, flag: attentionReason(r) }))
-    .filter((x): x is { row: ProgramRow; flag: { rank: number; reason: string } } => Boolean(x.flag))
+    .filter((x): x is { row: ProgramRow; flag: { rank: number; reason: string } } =>
+      Boolean(x.flag),
+    )
     .sort((a, b) => a.flag.rank - b.flag.rank);
 
   return (
@@ -204,7 +210,6 @@ function ProgramsBoard() {
         }
       />
 
-
       <OwnerContactAlerts />
 
       <OwnerTimeReviewQueue />
@@ -217,7 +222,9 @@ function ProgramsBoard() {
             <CardTitle className="flex items-center gap-2 text-lg">
               <AlertTriangle className="size-4 text-amber-600" /> Owners needing attention
             </CardTitle>
-            <CardDescription>Ordered by urgency. Pace first, then property coverage.</CardDescription>
+            <CardDescription>
+              Ordered by urgency. Pace first, then property coverage.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {attention.map(({ row, flag }) => (
@@ -262,7 +269,9 @@ function ProgramsBoard() {
             <Label>First property</Label>
             <Select value={propertyId} onValueChange={setPropertyId}>
               <SelectTrigger>
-                <SelectValue placeholder={available.length ? "Choose a home" : "Every active home is enrolled"} />
+                <SelectValue
+                  placeholder={available.length ? "Choose a home" : "Every active home is enrolled"}
+                />
               </SelectTrigger>
               <SelectContent>
                 {available.map((p) => (
@@ -276,7 +285,12 @@ function ProgramsBoard() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="ownerName">Owner name</Label>
-            <Input id="ownerName" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} maxLength={120} />
+            <Input
+              id="ownerName"
+              value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)}
+              maxLength={120}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="ownerEmail">Owner email</Label>
@@ -303,7 +317,6 @@ function ProgramsBoard() {
           title="No participation programs yet."
           hint="Pick a property above and create a draft program to start a homeowner's 90 days."
         />
-
       ) : (
         <div className="space-y-3">
           {rows.map((row) => (
@@ -330,7 +343,14 @@ function ProgramSummary({ rows }: { rows: ProgramRow[] }) {
     const behind = active.filter((r) => r.variance < 0).length;
     const open = rows.reduce((n, r) => n + r.openTasks, 0);
     const homes = rows.reduce((n, r) => n + r.properties.length, 0);
-    return { programs: rows.length, active: active.length, homes, hours: Math.round(hours), behind, open };
+    return {
+      programs: rows.length,
+      active: active.length,
+      homes,
+      hours: Math.round(hours),
+      behind,
+      open,
+    };
   }, [rows]);
 
   const tiles = [
@@ -403,7 +423,10 @@ function ProgramCard({
           <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
             <span>
               <span className="text-xl font-semibold">{row.reportedHours}</span>
-              <span className="text-muted-foreground"> hours reported · benchmark {row.benchmark}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                hours reported · benchmark {row.benchmark}
+              </span>
             </span>
             <span className="text-muted-foreground">
               {row.startedOn
@@ -434,11 +457,14 @@ function ProgramCard({
             </span>
             {row.coverageConcerns > 0 ? (
               <span className="font-medium text-amber-700">
-                {row.coverageConcerns} propert{row.coverageConcerns === 1 ? "y" : "ies"} need attention
+                {row.coverageConcerns} propert{row.coverageConcerns === 1 ? "y" : "ies"} need
+                attention
               </span>
             ) : null}
             {row.variance < 0 ? (
-              <span className="font-medium text-destructive">{Math.abs(row.variance)} hrs behind benchmark</span>
+              <span className="font-medium text-destructive">
+                {Math.abs(row.variance)} hrs behind benchmark
+              </span>
             ) : null}
           </div>
         </div>
@@ -544,7 +570,10 @@ function ProgramDetail({
           {properties.map((p) => {
             const meta = COVERAGE_META[p.coverage as CoverageState] ?? COVERAGE_META.in_progress;
             return (
-              <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
+              <div
+                key={p.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+              >
                 <div>
                   <p className="font-medium">
                     {p.name}
@@ -587,7 +616,11 @@ function ProgramDetail({
                         void run(
                           () =>
                             removeProperty({
-                              data: { programId, propertyId: p.propertyId, reason: "Removed by staff" },
+                              data: {
+                                programId,
+                                propertyId: p.propertyId,
+                                reason: "Removed by staff",
+                              },
                             }),
                           "Property removed. Its history is preserved.",
                         )
@@ -633,7 +666,10 @@ function ProgramDetail({
             disabled={!newProperty}
             onClick={() =>
               void run(
-                () => addProperty({ data: { programId, propertyId: newProperty, closingDate: newClosing } }),
+                () =>
+                  addProperty({
+                    data: { programId, propertyId: newProperty, closingDate: newClosing },
+                  }),
                 "Property added. The timeline and combined goal are unchanged.",
               )
             }
@@ -650,23 +686,44 @@ function ProgramDetail({
         <div className="grid gap-3 md:grid-cols-4">
           <div className="space-y-2">
             <Label>Owner name</Label>
-            <Input value={ownerName} onChange={(e) => setOwnerName(e.target.value)} maxLength={120} />
+            <Input
+              value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)}
+              maxLength={120}
+            />
           </div>
           <div className="space-y-2">
             <Label>Owner email</Label>
-            <Input value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} maxLength={255} />
+            <Input
+              value={ownerEmail}
+              onChange={(e) => setOwnerEmail(e.target.value)}
+              maxLength={255}
+            />
           </div>
           <div className="space-y-2">
             <Label>Onboarding lead</Label>
-            <Input value={onboardingLead} onChange={(e) => setOnboardingLead(e.target.value)} maxLength={120} />
+            <Input
+              value={onboardingLead}
+              onChange={(e) => setOnboardingLead(e.target.value)}
+              maxLength={120}
+            />
           </div>
           <div className="space-y-2">
             <Label>Operations lead</Label>
-            <Input value={operationsLead} onChange={(e) => setOperationsLead(e.target.value)} maxLength={120} />
+            <Input
+              value={operationsLead}
+              onChange={(e) => setOperationsLead(e.target.value)}
+              maxLength={120}
+            />
           </div>
           <div className="space-y-2 md:col-span-4">
             <Label>Internal notes</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={4000} rows={2} />
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={4000}
+              rows={2}
+            />
           </div>
         </div>
         <label className="flex items-center gap-2 text-sm">
@@ -737,20 +794,38 @@ function ProgramDetail({
           </p>
         )}
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => void run(() => seed({ data: { programId, phase: "onboarding" } }), "Onboarding activities released.")}>
+          <Button
+            size="sm"
+            onClick={() =>
+              void run(
+                () => seed({ data: { programId, phase: "onboarding" } }),
+                "Onboarding activities released.",
+              )
+            }
+          >
             <RouteIcon className="size-4" /> Release onboarding activities
           </Button>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => void run(() => seed({ data: { programId, phase: "ongoing" } }), "Operating activities released.")}
+            onClick={() =>
+              void run(
+                () => seed({ data: { programId, phase: "ongoing" } }),
+                "Operating activities released.",
+              )
+            }
           >
             Release operating activities
           </Button>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => void run(() => invite({ data: { programId, ownerEmail: row.ownerEmail ?? "" } }), "Invite code created.")}
+            onClick={() =>
+              void run(
+                () => invite({ data: { programId, ownerEmail: row.ownerEmail ?? "" } }),
+                "Invite code created.",
+              )
+            }
           >
             <KeyRound className="size-4" /> Issue invite code
           </Button>
@@ -803,7 +878,10 @@ function ProgramDetail({
                 .map((id) => properties.find((p) => p.propertyId === id)?.name)
                 .filter(Boolean);
               return (
-                <div key={r.id} className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3">
+                <div
+                  key={r.id}
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3"
+                >
                   <div className="space-y-1">
                     <p className="font-medium">{r.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -817,7 +895,9 @@ function ProgramDetail({
                         {path.label}
                       </Badge>
                     ) : null}
-                    {r.respond_by ? <span className="text-muted-foreground">Respond by {r.respond_by}</span> : null}
+                    {r.respond_by ? (
+                      <span className="text-muted-foreground">Respond by {r.respond_by}</span>
+                    ) : null}
                     {r.owner_decision ? (
                       <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700">
                         {r.owner_decision}
@@ -836,8 +916,8 @@ function ProgramDetail({
       <section className="space-y-3">
         <h3 className="text-sm font-semibold">Participation log</h3>
         <p className="text-xs text-muted-foreground">
-          Entries are the homeowner's own record. Corrections are added as a new amending entry with a
-          reason — the original is never overwritten.
+          Entries are the homeowner's own record. Corrections are added as a new amending entry with
+          a reason — the original is never overwritten.
         </p>
         {entries.length === 0 ? (
           <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -846,11 +926,15 @@ function ProgramDetail({
         ) : (
           <div className="space-y-2">
             {entries.slice(0, 25).map((e) => (
-              <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-sm">
+              <div
+                key={e.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-sm"
+              >
                 <div>
                   <p className="font-medium">{e.activity}</p>
                   <p className="text-xs text-muted-foreground">
-                    {e.entry_date} · {formatDuration(e.minutes)} · {e.activity_category ?? "uncategorized"}
+                    {e.entry_date} · {formatDuration(e.minutes)} ·{" "}
+                    {e.activity_category ?? "uncategorized"}
                     {e.amends_entry_id ? " · correction" : ""}
                   </p>
                 </div>
@@ -858,7 +942,10 @@ function ProgramDetail({
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    const raw = window.prompt("Corrected minutes for this entry", String(e.minutes));
+                    const raw = window.prompt(
+                      "Corrected minutes for this entry",
+                      String(e.minutes),
+                    );
                     if (!raw) return;
                     const minutes = Number(raw);
                     if (!Number.isFinite(minutes) || minutes < 1) {
@@ -870,7 +957,10 @@ function ProgramDetail({
                       toast.error("A correction needs a reason.");
                       return;
                     }
-                    void run(() => correct({ data: { entryId: e.id, minutes, reason } }), "Correction recorded.");
+                    void run(
+                      () => correct({ data: { entryId: e.id, minutes, reason } }),
+                      "Correction recorded.",
+                    );
                   }}
                 >
                   Record correction
@@ -888,10 +978,22 @@ function ProgramDetail({
           <ClipboardCheck className="size-4" /> Completion checklist
         </h3>
         <ul className="space-y-1 text-sm">
-          <ChecklistItem ok={Boolean(checklist?.hoursExceeded)} label={`More than ${OWNER_GOAL_HOURS} hours reported`} />
-          <ChecklistItem ok={Boolean(checklist?.propertyTasksComplete)} label="Required tasks complete on every property" />
-          <ChecklistItem ok={Boolean(checklist?.decisionsReceived)} label="All owner decisions received" />
-          <ChecklistItem ok={Boolean(checklist?.entriesAttributed)} label="Every entry describes its activity" />
+          <ChecklistItem
+            ok={Boolean(checklist?.hoursExceeded)}
+            label={`More than ${OWNER_GOAL_HOURS} hours reported`}
+          />
+          <ChecklistItem
+            ok={Boolean(checklist?.propertyTasksComplete)}
+            label="Required tasks complete on every property"
+          />
+          <ChecklistItem
+            ok={Boolean(checklist?.decisionsReceived)}
+            label="All owner decisions received"
+          />
+          <ChecklistItem
+            ok={Boolean(checklist?.entriesAttributed)}
+            label="Every entry describes its activity"
+          />
         </ul>
         <Button
           size="sm"
@@ -971,8 +1073,8 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
                       </div>
                       <p className="text-sm text-muted-foreground">{t.owner_action}</p>
                       <p className="text-xs text-muted-foreground">
-                        Internal plan {t.planning_hours_low}–{t.planning_hours_high} hrs · respond within{" "}
-                        {t.respond_within_days} days
+                        Internal plan {t.planning_hours_low}–{t.planning_hours_high} hrs · respond
+                        within {t.respond_within_days} days
                         {t.recurring ? " · recurring" : ""}
                       </p>
                     </div>
