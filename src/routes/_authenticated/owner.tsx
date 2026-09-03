@@ -109,21 +109,49 @@ type TimeTarget = {
 
 function OwnerHubPage() {
   const qc = useQueryClient();
+  const router = useRouter();
   const { readOnly } = useRole();
+  const { clearViewAs } = useViewAs();
+  const { ownerPreview, clearOwnerPreview } = useOwnerPreview();
   const load = useServerFn(ownerHome);
   const loadPreview = useServerFn(ownerHomePreview);
+  const previewId = readOnly ? (ownerPreview?.programId ?? null) : null;
   const home = useQuery({
-    queryKey: ["owner-home"],
-    queryFn: () => (readOnly ? loadPreview() : load()),
+    queryKey: ["owner-home", readOnly, previewId],
+    queryFn: () => (readOnly ? loadPreview({ data: { programId: previewId } }) : load()),
   });
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-home"] });
+
+  const exitPreview = () => {
+    const origin = ownerPreview?.origin ?? "/owner-programs";
+    clearOwnerPreview();
+    clearViewAs();
+    void router.navigate({ to: origin });
+  };
 
   if (home.isLoading) return <Skeleton className="h-64 w-full" />;
   if (!home.data?.linked) {
     return readOnly ? <UnlinkedPreview /> : <LinkInvite onLinked={invalidate} />;
   }
 
-  return <OwnerHub data={home.data} onChange={invalidate} readOnly={readOnly} />;
+  return (
+    <div className="space-y-4">
+      {readOnly && ownerPreview ? (
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-950">
+          <span>
+            <strong className="mr-1">Read-only homeowner preview</strong>— you are viewing{" "}
+            <strong>{ownerPreview.ownerName}</strong>
+            {ownerPreview.demo ? " (non-production demo program)" : ""} exactly as that homeowner
+            sees it. Nothing you do here can change their data.
+          </span>
+          <Button size="sm" variant="outline" onClick={exitPreview}>
+            Exit preview
+          </Button>
+        </div>
+      ) : null}
+      <OwnerHub data={home.data} onChange={invalidate} readOnly={readOnly} />
+    </div>
+  );
 }
 
 /** Platform Owner previewing the portal with no sample program to show. */
@@ -135,14 +163,14 @@ function UnlinkedPreview() {
           <Eye className="size-5 text-primary" /> Homeowner preview
         </CardTitle>
         <CardDescription>
-          This account isn't linked to a 90-day participation program, so there's no owner dashboard
-          to preview. Pick a homeowner invite code to see the real portal, or open the program you
-          want to review from the Seats page.
+          No participation program is selected to preview. Open Active Owner programs and choose
+          “Preview as homeowner” on the program you want to review.
         </CardDescription>
       </CardHeader>
     </Card>
   );
 }
+
 
 /** First run: the owner types the code ARHA gave them to attach their program. */
 function LinkInvite({ onLinked }: { onLinked: () => void }) {
