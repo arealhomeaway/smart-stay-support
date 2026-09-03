@@ -324,10 +324,12 @@ function ProgramsBoard() {
               key={row.id}
               row={row}
               available={available}
+              demo={demoMode}
               expanded={selected === row.id}
               onToggle={() => setSelected(selected === row.id ? null : row.id)}
             />
           ))}
+
         </div>
       )}
 
