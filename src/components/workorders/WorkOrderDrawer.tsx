@@ -54,6 +54,8 @@ import {
   nextCheckpoint,
   ownerApprovalRequest,
   secondQuoteAdvice,
+  supervisorApprovalRequest,
+  supervisorApproved,
   workOrderBucket,
   type OwnerApprovalOutcome,
 } from "@/lib/work-orders";
@@ -109,6 +111,23 @@ export function WorkOrderDrawer({
     },
   });
 
+  /** Is this property enrolled with an Active Owner who decides in Resolve? */
+  const activeOwner = useQuery({
+    queryKey: ["work-order-active-owner", workOrder?.property_id],
+    enabled: !!workOrder?.property_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("owner_program_properties")
+        .select("owner_programs!inner(id, owner_user_id, owner_name, status)")
+        .eq("property_id", workOrder!.property_id as string)
+        .limit(5);
+      const row = (data ?? [])
+        .map((r) => (r as { owner_programs: { id: string; owner_user_id: string | null; owner_name: string | null; status: string | null } }).owner_programs)
+        .find((p) => p && p.status !== "archived" && p.owner_user_id);
+      return row ?? null;
+    },
+  });
+
   const reqs = (requirements.data ?? []) as RequirementLike[];
   const progress = useMemo(() => evidenceProgress(reqs), [reqs]);
 
@@ -157,6 +176,7 @@ export function WorkOrderDrawer({
     mutationFn: async () => {
       if (!workOrder) return;
       const request = ownerApprovalRequest(workOrder);
+      const program = activeOwner.data;
       const { data, error } = await supabase
         .from("approvals")
         .insert({
@@ -169,6 +189,9 @@ export function WorkOrderDrawer({
           amount: request.amount,
           requested_by: userId,
           approver_role: "owner",
+          // Active Owners decide in Resolve; standard owners answer by email
+          // and staff transcribe the decision onto this same record.
+          approver_id: program?.owner_user_id ?? null,
           status: "pending",
           is_demo: workOrder.is_demo,
         } as never)
@@ -252,6 +275,127 @@ export function WorkOrderDrawer({
       refresh();
       qc.invalidateQueries({ queryKey: ["approvals"] });
       toast.success("Owner decision recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  /** $200–$350: a supervisor decides first, on the same approvals record. */
+  const requestSupervisorApproval = useMutation({
+    mutationFn: async () => {
+      if (!workOrder) return;
+      const request = supervisorApprovalRequest(workOrder);
+      const { data: seat } = await supabase.rpc("seat_holder_at", {
+        _role_code: "ops_supervisor",
+        _at: new Date().toISOString(),
+      });
+      const { data, error } = await supabase
+        .from("approvals")
+        .insert({
+          entity_type: "work_order",
+          entity_id: workOrder.id,
+          property_id: workOrder.property_id,
+          kind: request.kind,
+          title: request.title,
+          detail: (workOrder.scope ?? workOrder.title) as string,
+          amount: request.amount,
+          requested_by: userId,
+          approver_role: "supervisor",
+          approver_id: (seat as string | null) ?? null,
+          status: "pending",
+          is_demo: workOrder.is_demo,
+        } as never)
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      const { error: updateError } = await supabase
+        .from("work_orders")
+        .update({
+          supervisor_approval_id: (data as { id: string }).id,
+          supervisor_approval_status: "pending",
+          supervisor_approval_requested_at: new Date().toISOString(),
+          supervisor_approval_requested_by: userId,
+        } as never)
+        .eq("id", workOrder.id);
+      if (updateError) throw updateError;
+
+      await supabase.from("work_order_events").insert({
+        work_order_id: workOrder.id,
+        author_id: userId,
+        event_type: "supervisor_approval_requested",
+        body: `Supervisor approval requested for ${money(workOrder.quote_amount)}`,
+        detail: request.detail as never,
+        is_demo: workOrder.is_demo,
+      });
+    },
+    onSuccess: () => {
+      refresh();
+      qc.invalidateQueries({ queryKey: ["approvals"] });
+      toast.success("Supervisor approval requested");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const recordSupervisorDecision = useMutation({
+    mutationFn: async (outcome: "approved" | "declined") => {
+      if (!workOrder) return;
+      const decidedAt = new Date().toISOString();
+      if (workOrder.supervisor_approval_id) {
+        const { error } = await supabase
+          .from("approvals")
+          .update({ status: outcome, decision_note: note, decided_at: decidedAt })
+          .eq("id", workOrder.supervisor_approval_id as string);
+        if (error) throw error;
+      }
+      const { error } = await supabase
+        .from("work_orders")
+        .update({
+          supervisor_approval_status: outcome,
+          supervisor_approval_note: note,
+          supervisor_approval_decided_at: decidedAt,
+        } as never)
+        .eq("id", workOrder.id);
+      if (error) throw error;
+
+      await supabase.from("work_order_events").insert({
+        work_order_id: workOrder.id,
+        author_id: userId,
+        event_type: `supervisor_${outcome}`,
+        body: `Supervisor ${outcome} — ${note}`,
+        is_demo: workOrder.is_demo,
+      });
+    },
+    onSuccess: () => {
+      setNote("");
+      refresh();
+      qc.invalidateQueries({ queryKey: ["approvals"] });
+      toast.success("Supervisor decision recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  /** The homeowner is told after supervisor-authorised work, not asked first. */
+  const sendOwnerFyi = useMutation({
+    mutationFn: async () => {
+      if (!workOrder) return;
+      const at = new Date().toISOString();
+      const { error } = await supabase
+        .from("work_orders")
+        .update({ owner_fyi_at: at, owner_fyi_by: userId } as never)
+        .eq("id", workOrder.id);
+      if (error) throw error;
+      await supabase.from("work_order_events").insert({
+        work_order_id: workOrder.id,
+        author_id: userId,
+        event_type: "owner_fyi_sent",
+        body: note ? `Homeowner told: ${note}` : "Homeowner told this work is going ahead.",
+        is_demo: workOrder.is_demo,
+      });
+    },
+    onSuccess: () => {
+      setNote("");
+      refresh();
+      toast.success("Homeowner FYI recorded");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -371,6 +515,79 @@ export function WorkOrderDrawer({
           </section>
 
           <Separator />
+
+          {/* Supervisor approval ----------------------------------------- */}
+          {verdict.supervisorApprovalRequired ? (
+            <>
+              <section className="space-y-3">
+                <h3 className="font-display text-sm font-semibold">Supervisor approval</h3>
+                <p className="text-xs text-muted-foreground">{verdict.reason}</p>
+
+                {!workOrder.supervisor_approval_id ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={readOnly || requestSupervisorApproval.isPending}
+                    onClick={() => requestSupervisorApproval.mutate()}
+                  >
+                    Request supervisor approval
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <Chip className={stateChip(supervisorApproved(workOrder) ? "done" : "waiting")}>
+                      {APPROVAL_STATUS_LABELS[
+                        (workOrder.supervisor_approval_status ?? "pending") as keyof typeof APPROVAL_STATUS_LABELS
+                      ] ?? "Pending"}
+                    </Chip>
+                    {isSupervisor && workOrder.supervisor_approval_status === "pending" ? (
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          disabled={readOnly || !note || recordSupervisorDecision.isPending}
+                          onClick={() => recordSupervisorDecision.mutate("approved")}
+                        >
+                          Approve this amount
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={readOnly || !note || recordSupervisorDecision.isPending}
+                          onClick={() => recordSupervisorDecision.mutate("declined")}
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                {supervisorApproved(workOrder) && !workOrder.owner_fyi_at ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs">What the homeowner was told, and where</Label>
+                    <Textarea
+                      rows={2}
+                      disabled={readOnly}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Emailed the homeowner on 12 Aug — $275 disposal replacement going ahead."
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={readOnly || sendOwnerFyi.isPending}
+                      onClick={() => sendOwnerFyi.mutate()}
+                    >
+                      Record homeowner FYI
+                    </Button>
+                  </div>
+                ) : null}
+                {workOrder.owner_fyi_at ? (
+                  <p className="text-xs text-muted-foreground">Homeowner told on {new Date(workOrder.owner_fyi_at as string).toLocaleDateString()}.</p>
+                ) : null}
+              </section>
+              <Separator />
+            </>
+          ) : null}
 
           {/* Owner approval --------------------------------------------- */}
           <section className="space-y-3">

@@ -7155,6 +7155,8 @@ export type Database = {
           is_demo: boolean
           missed_commitments: number
           occupied_now: boolean
+          owner_fyi_at: string | null
+          owner_fyi_by: string | null
           owner_requested_comparison: boolean
           permanent_repair_needed: boolean
           phase: string
@@ -7173,6 +7175,12 @@ export type Database = {
           scope: string | null
           second_quote_amount: number | null
           service_category: string | null
+          supervisor_approval_decided_at: string | null
+          supervisor_approval_id: string | null
+          supervisor_approval_note: string | null
+          supervisor_approval_requested_at: string | null
+          supervisor_approval_requested_by: string | null
+          supervisor_approval_status: string
           temporary_mitigation: string | null
           ticket_id: string | null
           title: string
@@ -7222,6 +7230,8 @@ export type Database = {
           is_demo?: boolean
           missed_commitments?: number
           occupied_now?: boolean
+          owner_fyi_at?: string | null
+          owner_fyi_by?: string | null
           owner_requested_comparison?: boolean
           permanent_repair_needed?: boolean
           phase?: string
@@ -7240,6 +7250,12 @@ export type Database = {
           scope?: string | null
           second_quote_amount?: number | null
           service_category?: string | null
+          supervisor_approval_decided_at?: string | null
+          supervisor_approval_id?: string | null
+          supervisor_approval_note?: string | null
+          supervisor_approval_requested_at?: string | null
+          supervisor_approval_requested_by?: string | null
+          supervisor_approval_status?: string
           temporary_mitigation?: string | null
           ticket_id?: string | null
           title: string
@@ -7289,6 +7305,8 @@ export type Database = {
           is_demo?: boolean
           missed_commitments?: number
           occupied_now?: boolean
+          owner_fyi_at?: string | null
+          owner_fyi_by?: string | null
           owner_requested_comparison?: boolean
           permanent_repair_needed?: boolean
           phase?: string
@@ -7307,6 +7325,12 @@ export type Database = {
           scope?: string | null
           second_quote_amount?: number | null
           service_category?: string | null
+          supervisor_approval_decided_at?: string | null
+          supervisor_approval_id?: string | null
+          supervisor_approval_note?: string | null
+          supervisor_approval_requested_at?: string | null
+          supervisor_approval_requested_by?: string | null
+          supervisor_approval_status?: string
           temporary_mitigation?: string | null
           ticket_id?: string | null
           title?: string
@@ -7362,6 +7386,13 @@ export type Database = {
             columns: ["recovery_id"]
             isOneToOne: false
             referencedRelation: "guest_recovery"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_supervisor_approval_id_fkey"
+            columns: ["supervisor_approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
             referencedColumns: ["id"]
           },
           {

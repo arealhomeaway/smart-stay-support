@@ -27,15 +27,25 @@ const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60000).toISO
 const ahead = (minutes: number) => new Date(NOW.getTime() + minutes * 60000).toISOString();
 
 describe("maintenance authority", () => {
-  it("A — a $225 routine repair stays with James, no owner and no Micah", () => {
-    const v = evaluateAuthority({ phase: "permanent", quote_amount: 225 });
-    expect(v.level).toBe("supervisor");
+  it("A — a $150 repair proceeds with no approval at all", () => {
+    const v = evaluateAuthority({ phase: "permanent", quote_amount: 150 });
+    expect(v.level).toBe("self");
     expect(v.ownerApprovalRequired).toBe(false);
-    expect(v.reason).toContain("within ARHA's established authority");
+    expect(v.supervisorApprovalRequired).toBe(false);
   });
 
-  it("B — $340 is still within the owner-authorised threshold", () => {
-    expect(evaluateAuthority({ phase: "permanent", quote_amount: 340 }).ownerApprovalRequired).toBe(false);
+  it("A2 — $275 needs a supervisor first and the homeowner told after", () => {
+    const v = evaluateAuthority({ phase: "permanent", quote_amount: 275 });
+    expect(v.level).toBe("supervisor");
+    expect(v.supervisorApprovalRequired).toBe(true);
+    expect(v.ownerFyiRequired).toBe(true);
+    expect(v.ownerApprovalRequired).toBe(false);
+  });
+
+  it("B — $340 is still a supervisor decision, not the owner's", () => {
+    const v = evaluateAuthority({ phase: "permanent", quote_amount: 340 });
+    expect(v.ownerApprovalRequired).toBe(false);
+    expect(v.supervisorApprovalRequired).toBe(true);
   });
 
   it("C — a $650 permanent repair needs the owner, and says why", () => {
@@ -190,7 +200,9 @@ describe("stage, queue and closure", () => {
   it("stage is derived from what actually happened", () => {
     expect(derivedStage({})).toBe("needs_diagnosis");
     expect(derivedStage({ quote_requested_at: ago(60) })).toBe("quote_requested");
-    expect(derivedStage({ quote_amount: 200 })).toBe("quote_received");
+    expect(derivedStage({ quote_amount: 150 })).toBe("quote_received");
+    expect(derivedStage({ quote_amount: 275 })).toBe("awaiting_approval");
+    expect(derivedStage({ quote_amount: 275, supervisor_approval_status: "approved" })).toBe("quote_received");
     expect(derivedStage({ quote_amount: 900 })).toBe("awaiting_approval");
     expect(derivedStage({ quote_amount: 900, approval_status: "approved" })).toBe("approved");
     expect(derivedStage({ vendor_arrived_at: ago(30) })).toBe("in_progress");
@@ -234,7 +246,14 @@ describe("stage, queue and closure", () => {
   });
 
   it("a fully evidenced repair closes", () => {
-    const wo = { quote_amount: 225, vendor_completed_at: ago(10), evidence_complete: true, final_cost: 225 };
+    const wo = {
+      quote_amount: 225,
+      supervisor_approval_status: "approved",
+      owner_fyi_at: ago(20),
+      vendor_completed_at: ago(10),
+      evidence_complete: true,
+      final_cost: 225,
+    };
     expect(canClose(wo)).toBe(true);
     expect(nextAction(wo, NOW)).toBe("Ready to close.");
   });
