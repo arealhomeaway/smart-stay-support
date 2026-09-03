@@ -20,6 +20,7 @@ import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { stateChip } from "@/lib/semantic";
+import { repairApprovalGuidance } from "@/lib/onboarding-scope";
 import { stageLabel } from "@/lib/onboarding";
 import {
   STATUS_LABEL,
@@ -190,6 +191,12 @@ export function TaskDrawer({
               ))}
             </ul>
           </section>
+
+          {repairApprovalGuidance(task.title) && (
+            <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+              {repairApprovalGuidance(task.title)}
+            </p>
+          )}
 
           {task.detail && (
             <section>

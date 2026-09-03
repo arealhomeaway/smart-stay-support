@@ -144,6 +144,19 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // Locked handoff: once Operations accepts the home, the onboarding plan is
+  // history. Anything found afterwards is a correction (reopen with a reason)
+  // or an Operations ticket — never a silent edit to a finished project.
+  const accepted = await supabase
+    .from("properties")
+    .select("handoff_accepted_at")
+    .eq("id", input.propertyId)
+    .maybeSingle();
+  if (accepted.data?.handoff_accepted_at) {
+    throw new Error(
+      "Operations has accepted this home, so onboarding steps are locked. Reopen the step with a reason, or report an issue.",
+    );
+  }
   // Sending alone can never satisfy an owner approval: the step stays open
   // until the authorised homeowner records an approval.
   if (

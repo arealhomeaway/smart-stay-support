@@ -11,6 +11,8 @@
  * hard-coded workflow.
  */
 
+import { MAINTENANCE_POLICY, money } from "./maintenance-policy";
+
 export type FurnishingScope = "full_furnishing" | "no_furnishing";
 
 export const FURNISHING_SCOPES: { value: FurnishingScope; label: string; blurb: string }[] = [
@@ -178,4 +180,16 @@ export function splitByScope<T extends { title: string }>(tasks: T[], scope: Pro
     else inScope.push(t);
   }
   return { inScope, outOfScope };
+}
+
+/* --------------------------------------------------- repair spend authority */
+
+
+/**
+ * Onboarding repairs follow the same authority policy Operations uses — the
+ * threshold is never restated here, only read.
+ */
+export function repairApprovalGuidance(title: string): string | null {
+  if (!/\brepair|make[- ]ready|estimate|quote\b/i.test(title ?? "")) return null;
+  return `Work above ${money(MAINTENANCE_POLICY.ownerApprovalThreshold)} needs the homeowner's decision before it starts. Below it, ARHA proceeds and records the cost.`;
 }
