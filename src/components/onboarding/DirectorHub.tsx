@@ -24,22 +24,69 @@ import {
 } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
 
-type Lens = "attention" | "at_risk" | "blocked" | "review" | "corrections" | "handoffs" | "all";
+type Lens =
+  | "attention"
+  | "mine"
+  | "at_risk"
+  | "blocked"
+  | "review"
+  | "corrections"
+  | "handoffs"
+  | "up7"
+  | "up14"
+  | "up30"
+  | "all";
+
+export type HubViewer = {
+  userId: string | null;
+  /** True for Director / Operations reviewers who own a gate decision. */
+  canReview: boolean;
+};
 
 const LENSES: { key: Lens; label: string; hint: string }[] = [
   { key: "attention", label: "Needs attention", hint: "Something an ARHA person must do today." },
+  {
+    key: "mine",
+    label: "Awaiting my review",
+    hint: "A gate decision that is yours to make right now.",
+  },
+  { key: "corrections", label: "Corrections", hint: "Returned from a review gate." },
   { key: "at_risk", label: "At risk", hint: "Derived from overdue, blocked or evidence gaps." },
   { key: "blocked", label: "Blocked", hint: "Nothing can move until the blocker clears." },
-  { key: "review", label: "Awaiting review", hint: "Sitting at Director or Operations review." },
-  { key: "corrections", label: "Corrections required", hint: "Returned from a review gate." },
+  { key: "review", label: "Handoff queue", hint: "Sitting at a handoff review gate." },
   { key: "handoffs", label: "Upcoming handoffs", hint: "Target handoff within 14 days." },
+  { key: "up7", label: "Next 7 days", hint: "Target handoff within 7 days." },
+  { key: "up14", label: "Next 14 days", hint: "Target handoff within 14 days." },
+  { key: "up30", label: "Next 30 days", hint: "Target handoff within 30 days." },
   { key: "all", label: "All projects", hint: "The whole pipeline." },
 ];
 
-function matches(p: ProjectSummary, lens: Lens) {
+/** Lenses shown as chips; the day-window lenses are reached from the tiles. */
+const CHIP_LENSES: Lens[] = [
+  "attention",
+  "mine",
+  "corrections",
+  "at_risk",
+  "blocked",
+  "review",
+  "handoffs",
+  "all",
+];
+
+function awaitingMyReview(p: ProjectSummary, viewer?: HubViewer) {
+  if (!p.inReview || !viewer) return false;
+  const step = p.gateStep ?? "kati_review";
+  if (step === "kati_review" && viewer.userId && p.property.onboarding_owner === viewer.userId)
+    return true;
+  return viewer.canReview;
+}
+
+function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
   switch (lens) {
     case "attention":
       return !p.next.waiting && p.stage !== "live";
+    case "mine":
+      return awaitingMyReview(p, viewer);
     case "at_risk":
       return p.risk.level === "at_risk";
     case "blocked":
@@ -50,34 +97,56 @@ function matches(p: ProjectSummary, lens: Lens) {
       return p.property.lifecycle_status === "handoff_corrections";
     case "handoffs":
       return withinDays(p.target, 14);
+    case "up7":
+      return withinDays(p.target, 7);
+    case "up14":
+      return withinDays(p.target, 14);
+    case "up30":
+      return withinDays(p.target, 30);
     default:
       return true;
   }
 }
 
-export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
+export function DirectorHub({
+  projects: allProjects,
+  viewer,
+}: {
+  projects: ProjectSummary[];
+  viewer?: HubViewer;
+}) {
+  const [showTest, setShowTest] = useState(false);
+  // Test/QA homes never count towards live onboarding reporting.
+  const testCount = allProjects.filter((p) => p.property.is_demo).length;
+  const projects = useMemo(
+    () => (showTest ? allProjects : allProjects.filter((p) => !p.property.is_demo)),
+    [allProjects, showTest],
+  );
   const [lens, setLens] = useState<Lens>("attention");
   const [find, setFind] = useState("");
+  const [owner, setOwner] = useState<string | null>(null);
 
   const counts = useMemo(
     () =>
       Object.fromEntries(
-        LENSES.map((l) => [l.key, projects.filter((p) => matches(p, l.key)).length]),
+        LENSES.map((l) => [l.key, projects.filter((p) => matches(p, l.key, viewer)).length]),
       ) as Record<Lens, number>,
-    [projects],
+    [projects, viewer],
   );
 
   const visible = useMemo(() => {
     const q = find.trim().toLowerCase();
     return projects
-      .filter((p) => matches(p, lens))
+      .filter((p) => matches(p, lens, viewer))
+      .filter((p) => !owner || (p.owner ?? "Unassigned") === owner)
       .filter((p) => !q || `${p.property.name} ${p.owner ?? ""}`.toLowerCase().includes(q))
       .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
-  }, [projects, lens, find]);
+  }, [projects, lens, find, owner, viewer]);
 
   const active = projects.filter((p) => p.stage !== "live");
   const bottleneck = bottleneckStage(active);
   const workload = workloadByOwner(active);
+
 
   return (
     <div className="space-y-5">
@@ -87,6 +156,7 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
           label="Active projects"
           value={active.length}
           hint="Homes not yet live with Operations."
+          onClick={() => setLens("all")}
         />
         <Stat
           label="At risk or blocked"
@@ -95,17 +165,23 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
           }
           hint="Derived, not self-reported."
           tone="blocked"
+          onClick={() => setLens("at_risk")}
         />
         <Stat
-          label="Awaiting review"
-          value={projects.filter((p) => p.inReview).length}
-          hint="Director or Operations gate."
+          label="Awaiting my review"
+          value={counts.mine}
+          hint="Gate decisions that are yours."
           tone="waiting"
+          onClick={() => setLens("mine")}
         />
         <Stat
           label="Bottleneck stage"
           value={bottleneck ? lifecycleStageMeta(bottleneck).label : "—"}
-          hint="Where most projects are sitting."
+          hint={
+            bottleneck
+              ? `${active.filter((p) => p.stage === bottleneck).length} project(s) sitting here.`
+              : "Where most projects are sitting."
+          }
         />
       </div>
 
@@ -113,23 +189,33 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
       <section className="surface p-4">
         <p className="eyebrow">Expected handoffs</p>
         <div className="mt-2 grid gap-3 sm:grid-cols-3">
-          {[7, 14, 30].map((d) => {
+          {([7, 14, 30] as const).map((d) => {
             const n = active.filter((p) => withinDays(p.target, d)).length;
             const risky = active.filter(
               (p) => withinDays(p.target, d) && p.risk.level !== "on_track",
             ).length;
+            const key = (d === 7 ? "up7" : d === 14 ? "up14" : "up30") as Lens;
             return (
-              <div key={d} className="rounded-lg border border-border bg-card/60 p-3">
+              <button
+                key={d}
+                type="button"
+                onClick={() => setLens(key)}
+                className={cn(
+                  "rounded-lg border bg-card/60 p-3 text-left transition hover:bg-muted/40",
+                  lens === key ? "border-primary" : "border-border",
+                )}
+              >
                 <p className="text-2xl font-semibold">{n}</p>
                 <p className="text-sm text-muted-foreground">next {d} days</p>
                 {risky > 0 && (
                   <p className="pt-1 text-xs text-state-blocked">{risky} not currently on track</p>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
       </section>
+
 
       {/* ------------------------------------------------------ pipeline */}
       <section className="surface p-4">
@@ -159,7 +245,7 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
           placeholder="Find a home or project manager"
           className="w-full max-w-xs"
         />
-        {LENSES.map((l) => (
+        {LENSES.filter((l) => CHIP_LENSES.includes(l.key)).map((l) => (
           <button
             key={l.key}
             type="button"
@@ -175,6 +261,28 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
             {l.label} ({counts[l.key]})
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setShowTest((v) => !v)}
+          title="Test homes are excluded from every count above."
+          className={cn(
+            "rounded-md border px-2.5 py-1 text-xs font-medium",
+            showTest
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {showTest ? "Hide" : "Show"} test projects ({testCount})
+        </button>
+        {owner && (
+          <button
+            type="button"
+            onClick={() => setOwner(null)}
+            className="rounded-md border border-primary bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+          >
+            {owner} · clear
+          </button>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -191,22 +299,37 @@ export function DirectorHub({ projects }: { projects: ProjectSummary[] }) {
       {/* ------------------------------------------------------ workload */}
       <section className="surface p-4">
         <p className="eyebrow">Workload by project manager</p>
+        <p className="text-xs text-muted-foreground">
+          Select a project manager to filter the list above.
+        </p>
         <div className="mt-2 space-y-1.5">
           {workload.length === 0 && (
             <p className="text-sm text-muted-foreground">No active projects.</p>
           )}
           {workload.map((w) => (
-            <div key={w.owner} className="flex items-center gap-3 text-sm">
+            <button
+              key={w.owner}
+              type="button"
+              onClick={() => {
+                setOwner(owner === w.owner ? null : w.owner);
+                setLens("all");
+              }}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-md border px-2 py-1.5 text-left text-sm transition hover:bg-muted/40",
+                owner === w.owner ? "border-primary" : "border-transparent",
+              )}
+            >
               <span className="w-48 truncate">{w.owner}</span>
               <span className="numeric w-24 text-muted-foreground">{w.projects} project(s)</span>
               {w.atRisk > 0 && <Chip className={stateChip("blocked")}>{w.atRisk} at risk</Chip>}
               {w.blockers > 0 && (
                 <Chip className={stateChip("waiting")}>{w.blockers} blocker(s)</Chip>
               )}
-            </div>
+            </button>
           ))}
         </div>
       </section>
+
     </div>
   );
 }
@@ -216,14 +339,16 @@ function Stat({
   value,
   hint,
   tone,
+  onClick,
 }: {
   label: string;
   value: number | string;
   hint: string;
   tone?: "blocked" | "waiting";
+  onClick?: () => void;
 }) {
-  return (
-    <div className="surface p-4">
+  const body = (
+    <>
       <p className="eyebrow">{label}</p>
       <p
         className={cn(
@@ -234,9 +359,20 @@ function Stat({
         {value}
       </p>
       <p className="text-xs text-muted-foreground">{hint}</p>
-    </div>
+    </>
+  );
+  if (!onClick) return <div className="surface p-4">{body}</div>;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="surface p-4 text-left transition hover:bg-muted/40"
+    >
+      {body}
+    </button>
   );
 }
+
 
 function ProjectRow({ project: p }: { project: ProjectSummary }) {
   const stage = lifecycleStageMeta(p.stage);
@@ -260,7 +396,10 @@ function ProjectRow({ project: p }: { project: ProjectSummary }) {
           {p.next.headline}
         </span>
         {p.risk.reasons.length > 0 && (
-          <span className="block truncate text-xs text-state-blocked">
+          <span
+            className="block truncate text-xs text-state-blocked"
+            title={p.risk.reasons.join(" · ")}
+          >
             {p.risk.reasons.join(" · ")}
           </span>
         )}

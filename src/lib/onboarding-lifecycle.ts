@@ -125,6 +125,8 @@ export type ProjectProperty = {
   planned_closing_on?: string | null;
   handoff_accepted_at?: string | null;
   access_notes?: string | null;
+  /** Test/QA homes are visible to staff but never counted in live reporting. */
+  is_demo?: boolean | null;
   latitude?: number | null;
   longitude?: number | null;
 };
@@ -527,7 +529,10 @@ export type ProjectSummary = {
   total: number;
   hasProject: boolean;
   inReview: boolean;
+  /** Which handoff gate the readiness record is sitting at, when open. */
+  gateStep: string | null;
   owner: string | null;
+
 };
 
 export function summarizeProject(input: ProjectInput, ownerName: string | null): ProjectSummary {
@@ -544,6 +549,8 @@ export function summarizeProject(input: ProjectInput, ownerName: string | null):
     total: roll.total,
     hasProject: input.tasks.length > 0,
     inReview: Boolean(input.handoff),
+    gateStep: input.handoff?.gate_step ?? null,
+
     owner: ownerName,
   };
 }

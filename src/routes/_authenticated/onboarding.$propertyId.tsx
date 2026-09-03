@@ -86,6 +86,7 @@ import {
   saveOnboardingTaskFn,
   setPropertyLifecycleFn,
   submitOwnerApprovalFn,
+  recordOwnerTaskDecisionFn,
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
@@ -146,7 +147,12 @@ function PropertyWorkspace() {
     useServerFn(submitOwnerApprovalFn),
     "Sent to the homeowner for approval.",
   );
+  const recordOwnerDecision = mut(
+    useServerFn(recordOwnerTaskDecisionFn),
+    "Homeowner's answer recorded.",
+  );
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
+
 
   const current = data?.properties.find((p) => p.id === propertyId) ?? null;
   const allTasks = useMemo(
@@ -671,6 +677,12 @@ function PropertyWorkspace() {
         onSubmitApproval={(taskId, version, note) =>
           submitApproval.mutate({ data: { taskId, version, note } } as never)
         }
+        onRecordOwnerDecision={(taskId, approved, note, evidenceUrl) =>
+          recordOwnerDecision.mutate({
+            data: { taskId, approved, note, ...(evidenceUrl ? { evidenceUrl } : {}) },
+          } as never)
+        }
+
         onReopen={(taskId, reason) => reopenTask.mutate({ data: { taskId, reason } } as never)}
         onAddObservation={(taskId, body) =>
           addNote.mutate({ data: { propertyId: current.id, taskId, body, mentions: [] } } as never)

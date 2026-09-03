@@ -317,7 +317,14 @@ export async function sendFinancialForApproval(supabase: Client, userId: string,
 export async function routeOwnerDecision(
   supabase: Client,
   userId: string,
-  input: { propertyId: string; approvalId: string | null; subject: string; amount: number; detail: string },
+  input: {
+    propertyId: string;
+    approvalId: string | null;
+    subject: string;
+    /** Money at stake, or null for a decision that is not about spend. */
+    amount: number | null;
+    detail: string;
+  },
 ) {
   const { activeOwnerFor } = await import("./active-owner.server");
   const link = await activeOwnerFor(supabase, input.propertyId);
@@ -347,7 +354,7 @@ export async function routeOwnerDecision(
     `We need your decision before we go ahead with the following at ${home}:`,
     "",
     `${input.subject}`,
-    `Estimated cost: ${money(input.amount)}`,
+    input.amount != null ? `Estimated cost: ${money(input.amount)}` : "",
     input.detail ? `\n${input.detail}` : "",
     "",
     "Reply to this email with approve or hold, and we will record your answer against this request.",
@@ -356,6 +363,7 @@ export async function routeOwnerDecision(
   ]
     .filter((line) => line !== "")
     .join("\n");
+
   const html = emailShell(`Approval needed for ${home}`, body, undefined, "owner");
   const result = await sendEmail({
     to,
