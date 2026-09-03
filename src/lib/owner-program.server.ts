@@ -97,6 +97,11 @@ export type AdminProgramRow = {
   operationsLead: string | null;
   lastNotificationAt: string | null;
   dfyConfirmed: boolean;
+  /** Participation opportunities the owner can act on right now. */
+  availableOpportunities: number;
+  upcomingOpportunities: number;
+  onboardingOpportunities: number;
+  operationsOpportunities: number;
 };
 
 /** One row per participation program, plus the homes still free to enroll. */
@@ -117,7 +122,9 @@ export async function loadPrograms(supabase: Client, demo = false) {
         .select(
           "id, program_id, property_id, inclusion_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname)",
         ),
-      supabase.from("owner_reviews").select("id, program_id, property_id, status, respond_by"),
+      supabase
+        .from("owner_reviews")
+        .select("id, program_id, property_id, status, respond_by, source_type, available_from"),
       supabase.from("owner_time_entries").select("id, program_id, minutes, review_status").eq("is_demo", demo),
       supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
       supabase.from("owner_badges").select("program_id, code"),
@@ -149,6 +156,12 @@ export async function loadPrograms(supabase: Client, demo = false) {
       reportedMinutes: reported,
     });
     const openTasks = myReviews.filter((r) => !["answered", "closed"].includes(r.status));
+    // Is this program actually receiving participation opportunities?
+    const nowMs = Date.now();
+    const live = myReviews.filter((r) => !["answered", "closed"].includes(r.status));
+    const upcoming = live.filter(
+      (r) => r.available_from && new Date(r.available_from).getTime() > nowMs,
+    );
 
     const propertyRows = myLinks.map((l) => {
       const prop = l.properties as unknown as { name: string; nickname: string | null } | null;
@@ -192,6 +205,10 @@ export async function loadPrograms(supabase: Client, demo = false) {
       lastNotificationAt:
         (notifications.data ?? []).find((n) => n.program_id === p.id)?.created_at ?? null,
       dfyConfirmed: p.dfy_confirmed,
+      availableOpportunities: live.length - upcoming.length,
+      upcomingOpportunities: upcoming.length,
+      onboardingOpportunities: myReviews.filter((r) => r.source_type === "onboarding").length,
+      operationsOpportunities: myReviews.filter((r) => r.source_type === "operations").length,
     };
   });
 

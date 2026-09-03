@@ -96,7 +96,6 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string) {
           .is("archived_at", null)
           .order("reported_at", { ascending: false })
           .limit(120)
-
       : Promise.resolve({ data: [], error: null } as const),
   ]);
   if (alerts.error) throw alerts.error;
@@ -180,6 +179,34 @@ export type LogTimeInput = {
  * combined total can never double count.
  */
 export async function logOwnerTime(supabase: Client, userId: string, input: LogTimeInput) {
+  // Every new entry is anchored to a documented participation opportunity.
+  // Legacy entries created before this rule keep their history untouched.
+  if (!input.reviewId) {
+    throw new Error("Choose the participation opportunity this time belongs to.");
+  }
+  const opportunity = await supabase
+    .from("owner_reviews")
+    .select("id, program_id, status, available_from, property_id")
+    .eq("id", input.reviewId)
+    .eq("program_id", input.programId)
+    .maybeSingle();
+  if (opportunity.error) throw opportunity.error;
+  if (!opportunity.data) {
+    throw new Error("That participation opportunity is not part of your program.");
+  }
+  if (opportunity.data.status === "closed") {
+    throw new Error("That opportunity is no longer available.");
+  }
+  if (
+    opportunity.data.available_from &&
+    new Date(opportunity.data.available_from).getTime() > Date.now()
+  ) {
+    throw new Error("That opportunity is not open yet.");
+  }
+  if (input.propertyIds.length === 0 && opportunity.data.property_id) {
+    input = { ...input, propertyIds: [opportunity.data.property_id] };
+  }
+
   const links = await supabase
     .from("owner_program_properties")
     .select("property_id, closing_date, inclusion_status")
@@ -188,7 +215,9 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
 
   // Only homes currently included in the program can carry participation.
   const allowed = new Map(
-    (links.data ?? []).filter((l) => l.inclusion_status === "included").map((l) => [l.property_id, l]),
+    (links.data ?? [])
+      .filter((l) => l.inclusion_status === "included")
+      .map((l) => [l.property_id, l]),
   );
   const chosen = [...new Set(input.propertyIds)].filter((id) => allowed.has(id));
   for (const id of chosen) {
@@ -343,8 +372,6 @@ export async function resubmitOwnerTime(
   return { ok: true as const, entryId: insert.data.id };
 }
 
-
-
 /** Owner answers a task that was waiting on them. */
 export async function respondToReview(
   supabase: Client,
@@ -454,7 +481,6 @@ export async function redeemOwnerInvite(
   return { ok: true as const, programId: program.data.id };
 }
 
-
 /* ------------------------------------------------------------------ *
  * Stage 3 — a homeowner opens a ticket at their own enrolled home.
  *
@@ -559,7 +585,10 @@ export type OwnerApproval = {
  * homes/programs the signed-in owner is authorised for; the property filter
  * here is only to label the card.
  */
-export async function loadOwnerApprovals(supabase: Client, userId: string): Promise<OwnerApproval[]> {
+export async function loadOwnerApprovals(
+  supabase: Client,
+  userId: string,
+): Promise<OwnerApproval[]> {
   const { data, error } = await supabase
     .from("approvals")
     .select(

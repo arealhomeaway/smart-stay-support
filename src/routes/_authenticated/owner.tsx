@@ -2,7 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, CheckCircle2, Clock, Eye, Home, KeyRound, Mail, MessageSquare, Plus } from "lucide-react";
+import {
+  Bell,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Home,
+  KeyRound,
+  Mail,
+  MessageSquare,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   answerOwnerReview,
@@ -39,6 +49,14 @@ import {
   type TaskType,
 } from "@/lib/owner-participation";
 import { findPossibleDuplicate, type ExistingEntry } from "@/lib/owner-duplicate";
+import {
+  actionLabel,
+  actionSentence,
+  OPPORTUNITY_REQUIRED_NOTICE,
+  OPPORTUNITY_STATE_META,
+  opportunityState,
+  sourceLabel,
+} from "@/lib/owner-opportunity";
 import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +101,7 @@ export const Route = createFileRoute("/_authenticated/owner")({
 
 type HomeData = Extract<Awaited<ReturnType<typeof ownerHome>>, { linked: true }>;
 type TimeTarget = {
-  reviewId: string | null;
+  reviewId: string;
   ticketId: string | null;
   label: string;
   propertyIds: string[];
@@ -102,11 +120,7 @@ function OwnerHubPage() {
 
   if (home.isLoading) return <Skeleton className="h-64 w-full" />;
   if (!home.data?.linked) {
-    return readOnly ? (
-      <UnlinkedPreview />
-    ) : (
-      <LinkInvite onLinked={invalidate} />
-    );
+    return readOnly ? <UnlinkedPreview /> : <LinkInvite onLinked={invalidate} />;
   }
 
   return <OwnerHub data={home.data} onChange={invalidate} readOnly={readOnly} />;
@@ -121,9 +135,9 @@ function UnlinkedPreview() {
           <Eye className="size-5 text-primary" /> Homeowner preview
         </CardTitle>
         <CardDescription>
-          This account isn't linked to a 90-day participation program, so there's
-          no owner dashboard to preview. Pick a homeowner invite code to see the
-          real portal, or open the program you want to review from the Seats page.
+          This account isn't linked to a 90-day participation program, so there's no owner dashboard
+          to preview. Pick a homeowner invite code to see the real portal, or open the program you
+          want to review from the Seats page.
         </CardDescription>
       </CardHeader>
     </Card>
@@ -160,7 +174,11 @@ function LinkInvite({ onLinked }: { onLinked: () => void }) {
           placeholder="ABCD-2345"
           className="text-center text-lg tracking-[0.3em]"
         />
-        <Button className="w-full" disabled={code.length < 4 || link.isPending} onClick={() => link.mutate()}>
+        <Button
+          className="w-full"
+          disabled={code.length < 4 || link.isPending}
+          onClick={() => link.mutate()}
+        >
           {link.isPending ? "Connecting…" : "Connect"}
         </Button>
       </CardContent>
@@ -178,7 +196,15 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () => void; readOnly: boolean }) {
+function OwnerHub({
+  data,
+  onChange,
+  readOnly,
+}: {
+  data: HomeData;
+  onChange: () => void;
+  readOnly: boolean;
+}) {
   const {
     program,
     properties,
@@ -218,7 +244,20 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
 
   const included = properties.filter((p) => p.inclusionStatus === "included");
   const progress = PROGRESS_META[snapshot.state];
-  const waiting = reviews.filter((r) => r.status === "awaiting_owner" || r.status === "prepared");
+  // Availability is derived, so the owner only sees what is genuinely open now.
+  const grouped = useMemo(() => {
+    const base: Record<"available" | "upcoming" | "completed", typeof reviews> = {
+      available: [],
+      upcoming: [],
+      completed: [],
+    };
+    for (const r of reviews) {
+      const state = opportunityState(r);
+      if (state === "closed") continue;
+      base[state].push(r);
+    }
+    return base;
+  }, [reviews]);
   const openTickets = tickets.filter((t) => !["resolved", "closed"].includes(t.status));
   const varianceLabel =
     snapshot.variance >= 0
@@ -229,7 +268,9 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Active owner participation</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Active owner participation
+        </p>
         <h1 className="font-display text-2xl font-semibold">Your 90-day participation progress</h1>
         <p className="text-sm text-muted-foreground">
           {included.length} {included.length === 1 ? "property" : "properties"} in one program ·{" "}
@@ -241,7 +282,9 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">
-              {program.startedOn ? `Day ${snapshot.day} of ${PROGRAM_TOTAL_DAYS}` : "Not started yet"}
+              {program.startedOn
+                ? `Day ${snapshot.day} of ${PROGRAM_TOTAL_DAYS}`
+                : "Not started yet"}
             </CardTitle>
             <Badge variant="outline" className={progress.tone}>
               {progress.label}
@@ -255,9 +298,13 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
             <Stat
               label="Reported hours"
               value={formatHours(reportedMinutes)}
-              hint={`${snapshot.percentOfTarget}% of ${OPERATING_TARGET_HOURS} hrs · awaiting review + approved`}
+              hint={`${snapshot.percentOfTarget}% of ${OPERATING_TARGET_HOURS} hrs · your own record`}
             />
-            <Stat label="Pace benchmark" value={`${Math.round(snapshot.benchmark)} hrs`} hint={varianceLabel} />
+            <Stat
+              label="Pace benchmark"
+              value={`${Math.round(snapshot.benchmark)} hrs`}
+              hint={varianceLabel}
+            />
             <Stat
               label="Days remaining"
               value={String(snapshot.daysLeft)}
@@ -279,35 +326,18 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
               <p className="font-medium">{formatHours(operationalMinutes)}</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-            <div className="rounded-md border border-border p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">ARHA-approved hours</p>
-              <p className="font-medium">{formatHours(approvedMinutes)}</p>
-              <p className="text-xs text-muted-foreground">Reviewed and approved by your ARHA contact</p>
-            </div>
-            <div className="rounded-md border border-border p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Awaiting review</p>
-              <p className="font-medium">{formatHours(pendingReviewMinutes)}</p>
-              <p className="text-xs text-muted-foreground">Included in reported hours · not yet approved</p>
-            </div>
-            <div className="rounded-md border border-border p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Returned to you</p>
-              <p className="font-medium">{formatHours(returnedMinutes)}</p>
-              <p className="text-xs text-muted-foreground">Not counted until corrected</p>
-            </div>
-          </div>
+          {returnedMinutes > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {formatHours(returnedMinutes)} was sent back to you for a correction and is not
+              counted yet.
+            </p>
+          )}
 
           <p className="text-xs text-muted-foreground">
-            All hours are self-reported. ARHA never estimates, prefills or auto-calculates your time.
+            Your reported hours are the record. ARHA never estimates, prefills or auto-calculates
+            your time, and does not certify it.
           </p>
-          <Button
-            size="sm"
-            onClick={() =>
-              setTimeTarget({ reviewId: null, ticketId: null, label: "General participation", propertyIds: [] })
-            }
-          >
-            <Clock className="size-4" /> Log my participation
-          </Button>
+          <p className="text-xs text-muted-foreground">{OPPORTUNITY_REQUIRED_NOTICE}</p>
         </CardContent>
       </Card>
 
@@ -315,17 +345,19 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
 
       <Card>
         <CardHeader className="pb-3">
-
           <CardTitle className="flex items-center gap-2 text-base">
             <Home className="size-4 text-primary" /> Your properties
           </CardTitle>
           <CardDescription>
-            Each home is measured by the activities and decisions it needs — not by separate hour targets.
+            Each home is measured by the activities and decisions it needs — not by separate hour
+            targets.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           {included.length === 0 && (
-            <p className="text-sm text-muted-foreground">No properties are attached to your program yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No properties are attached to your program yet.
+            </p>
           )}
           {included.map((p) => {
             const coverage = COVERAGE_META[p.coverage];
@@ -347,22 +379,9 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                   <span>{p.outstandingDecisions} decisions waiting</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Last activity: {p.lastOwnerActivityAt ? relativeTime(p.lastOwnerActivityAt) : "none yet"}
+                  Last activity:{" "}
+                  {p.lastOwnerActivityAt ? relativeTime(p.lastOwnerActivityAt) : "none yet"}
                 </p>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    setTimeTarget({
-                      reviewId: null,
-                      ticketId: null,
-                      label: p.name,
-                      propertyIds: [p.propertyId],
-                    })
-                  }
-                >
-                  <Clock className="size-4" /> Log my participation
-                </Button>
               </div>
             );
           })}
@@ -371,56 +390,106 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
 
       <OwnerApprovalPanel readOnly={readOnly} />
 
-      <Card>
+      <Card id="opportunities">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Waiting on you</CardTitle>
-          <CardDescription>Activities and decisions ARHA has prepared for you.</CardDescription>
+          <CardTitle className="text-base">Participation opportunities</CardTitle>
+          <CardDescription>
+            Real work at your homes that you are welcome to take part in. Each one comes from an
+            onboarding activity or an operations ticket — nothing here is busywork.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {waiting.length === 0 && <p className="text-sm text-muted-foreground">Nothing needs you right now.</p>}
-          {waiting.map((r) => (
-            <div key={r.id} className="rounded-md border border-border p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-                  {TASK_TYPE_META[(r.task_type ?? "program_wide") as TaskType].label}
-                </Badge>
-                <Badge variant="outline" className={DECISION_PATHS[r.decision_path as keyof typeof DECISION_PATHS]?.tone}>
-                  {DECISION_PATHS[r.decision_path as keyof typeof DECISION_PATHS]?.label ?? r.decision_path}
-                </Badge>
-                <span className="text-sm font-medium">{r.title}</span>
-                {r.respond_by && <span className="ml-auto text-xs text-muted-foreground">By {r.respond_by}</span>}
+        <CardContent className="space-y-5">
+          {(["available", "upcoming", "completed"] as const).map((state) => {
+            const list = grouped[state];
+            const meta = OPPORTUNITY_STATE_META[state];
+            return (
+              <div key={state} className="space-y-2">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <h3 className="text-sm font-semibold">{meta.label}</h3>
+                  <span className="text-xs text-muted-foreground">{meta.blurb}</span>
+                </div>
+                {list.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {state === "available"
+                      ? "Nothing is open to you right now. We will let you know as soon as something is."
+                      : state === "upcoming"
+                        ? "Nothing scheduled yet."
+                        : "No completed participation yet."}
+                  </p>
+                )}
+                {list.map((r) => (
+                  <div key={r.id} className="rounded-md border border-border p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className={meta.tone}>
+                        {actionLabel(r.owner_action_type)}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="border-border bg-muted text-muted-foreground"
+                      >
+                        {sourceLabel(r.source_type)}
+                      </Badge>
+                      <span className="text-sm font-medium">{r.title}</span>
+                      {state === "upcoming" && r.available_from && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Opens {r.available_from.slice(0, 10)}
+                        </span>
+                      )}
+                      {state === "available" && r.respond_by && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          By {r.respond_by}
+                        </span>
+                      )}
+                    </div>
+                    {r.propertyIds.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {r.propertyIds.map(propertyName).filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {r.business_question ??
+                        r.recommendation ??
+                        actionSentence(r.owner_action_type)}
+                    </p>
+                    {r.impact && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Why it matters: {r.impact}
+                      </p>
+                    )}
+                    <ReviewPhotos photos={r.photos ?? []} size="lg" />
+                    {state === "available" && !readOnly && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          className="min-h-11"
+                          onClick={() =>
+                            setTimeTarget({
+                              reviewId: r.id,
+                              ticketId: r.ticket_id,
+                              label: r.title,
+                              propertyIds: r.propertyIds,
+                            })
+                          }
+                        >
+                          <Clock className="size-4" /> Log my time
+                        </Button>
+                        {r.status === "awaiting_owner" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="min-h-11"
+                            onClick={() => setAnswering(r)}
+                          >
+                            Respond
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              {r.propertyIds.length > 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {r.propertyIds.map(propertyName).filter(Boolean).join(" · ")}
-                </p>
-              )}
-              {(r.business_question || r.recommendation) && (
-                <p className="mt-1 text-sm text-muted-foreground">{r.business_question ?? r.recommendation}</p>
-              )}
-              {r.impact && <p className="mt-1 text-xs text-muted-foreground">Potential impact: {r.impact}</p>}
-              <ReviewPhotos photos={r.photos ?? []} size="lg" />
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => setAnswering(r)}>
-                  Respond
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    setTimeTarget({
-                      reviewId: r.id,
-                      ticketId: r.ticket_id,
-                      label: r.title,
-                      propertyIds: r.propertyIds,
-                    })
-                  }
-                >
-                  <Clock className="size-4" /> Log my participation
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -450,12 +519,16 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                     {label.label}
                   </Badge>
                   <span className="text-sm font-medium">{a.title}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{relativeTime(a.created_at)}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {relativeTime(a.created_at)}
+                  </span>
                 </div>
                 {a.body && <p className="mt-1 text-sm text-muted-foreground">{a.body}</p>}
                 <p className="mt-1 text-xs text-muted-foreground">
                   {a.email_status === "sent" ? "Emailed" : "In-app"}
-                  {a.sms_status === "escalated" ? " · your ARHA contact is reaching out personally" : ""}
+                  {a.sms_status === "escalated"
+                    ? " · your ARHA contact is reaching out personally"
+                    : ""}
                 </p>
               </div>
             );
@@ -469,7 +542,8 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
             <div>
               <CardTitle className="text-base">Activity at your homes</CardTitle>
               <CardDescription>
-                Every ticket our team opens appears here automatically — {openTickets.length} open now.
+                Every ticket our team opens appears here automatically — {openTickets.length} open
+                now.
               </CardDescription>
             </div>
             {!readOnly && included.length > 0 && (
@@ -480,7 +554,9 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          {tickets.length === 0 && <p className="text-sm text-muted-foreground">No matters logged yet.</p>}
+          {tickets.length === 0 && (
+            <p className="text-sm text-muted-foreground">No matters logged yet.</p>
+          )}
           {tickets.slice(0, 20).map((t) => (
             <div key={t.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -508,29 +584,18 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                 </span>
               </div>
               {t.property_id && (
-                <p className="mt-0.5 text-xs text-muted-foreground">{propertyName(t.property_id)}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {propertyName(t.property_id)}
+                </p>
               )}
-              {t.description && <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>}
+              {t.description && (
+                <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
+              )}
               {t.resolution_notes && (
                 <p className="mt-1 flex gap-2 text-sm text-emerald-700">
                   <CheckCircle2 className="size-4 shrink-0" /> {t.resolution_notes}
                 </p>
               )}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="mt-2"
-                onClick={() =>
-                  setTimeTarget({
-                    reviewId: null,
-                    ticketId: t.id,
-                    label: `#${t.ref} ${t.title}`,
-                    propertyIds: t.property_id ? [t.property_id] : [],
-                  })
-                }
-              >
-                <Clock className="size-4" /> Log my participation
-              </Button>
             </div>
           ))}
         </CardContent>
@@ -538,14 +603,13 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
 
       {!readOnly && <AlertPreferences program={program} onSaved={onChange} />}
 
-
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Your participation log</CardTitle>
           <CardDescription>
-            {entries.length} entries recorded. A saved entry is never edited. If your ARHA contact returns one,
-            you can correct it here — the original stays in your history and only the corrected entry counts.
+            {entries.length} entries recorded. A saved entry is never edited. If your ARHA contact
+            returns one, you can correct it here — the original stays in your history and only the
+            corrected entry counts.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-1">
@@ -591,7 +655,12 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
                       : "Sent back for a small correction. Your hours are not lost; adjust the entry and resubmit."}
                   </span>
                   {!readOnly && !e.superseded && (
-                    <Button size="sm" variant="outline" className="ml-auto" onClick={() => setCorrecting(e)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-auto"
+                      onClick={() => setCorrecting(e)}
+                    >
                       Correct and resubmit
                     </Button>
                   )}
@@ -606,14 +675,21 @@ function OwnerHub({ data, onChange, readOnly }: { data: HomeData; onChange: () =
       </Card>
 
       {!readOnly && correcting && (
-        <CorrectEntryDialog entry={correcting} onClose={() => setCorrecting(null)} onSaved={onChange} />
+        <CorrectEntryDialog
+          entry={correcting}
+          onClose={() => setCorrecting(null)}
+          onSaved={onChange}
+        />
       )}
-
 
       {!readOnly && timeTarget && (
         <LogTimeDialog
           programId={program.id}
-          properties={included.map((p) => ({ id: p.propertyId, name: p.name, closingDate: p.closingDate }))}
+          properties={included.map((p) => ({
+            id: p.propertyId,
+            name: p.name,
+            closingDate: p.closingDate,
+          }))}
           existingEntries={entries}
           target={timeTarget}
           onClose={() => setTimeTarget(null)}
@@ -661,7 +737,13 @@ function CorrectEntryDialog({
   const mutation = useMutation({
     mutationFn: () =>
       resubmit({
-        data: { entryId: entry.id, minutes: total, activity: activity.trim(), note, confirmed: true as const },
+        data: {
+          entryId: entry.id,
+          minutes: total,
+          activity: activity.trim(),
+          note,
+          confirmed: true as const,
+        },
       }),
     onSuccess: () => {
       toast.success("Corrected entry resubmitted for review.");
@@ -703,7 +785,12 @@ function CorrectEntryDialog({
           </div>
           <div className="space-y-1">
             <Label htmlFor="correct-note">Note for your ARHA contact (optional)</Label>
-            <Textarea id="correct-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+            <Textarea
+              id="correct-note"
+              rows={2}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
           <p className="text-xs text-muted-foreground">{MANUAL_ENTRY_NOTICE}</p>
           <label className="flex items-start gap-2 text-sm">
@@ -724,8 +811,13 @@ function CorrectEntryDialog({
   );
 }
 
-
-function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; onSaved: () => void }) {
+function AlertPreferences({
+  program,
+  onSaved,
+}: {
+  program: HomeData["program"];
+  onSaved: () => void;
+}) {
   const [email, setEmail] = useState(program.notifyEmail);
   const [smsP1, setSmsP1] = useState(program.notifySmsP1);
   const [push, setPush] = useState(program.notifyPush);
@@ -752,7 +844,9 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">How we reach you</CardTitle>
-        <CardDescription>Urgent tickets reach you personally; everything else comes by email and in-app.</CardDescription>
+        <CardDescription>
+          Urgent tickets reach you personally; everything else comes by email and in-app.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between gap-4">
@@ -763,13 +857,15 @@ function AlertPreferences({ program, onSaved }: { program: HomeData["program"]; 
         </div>
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="pref-email" className="flex items-center gap-2 font-normal">
-            <Mail className="size-4 text-muted-foreground" /> Email me ({program.ownerEmail ?? "no address on file"})
+            <Mail className="size-4 text-muted-foreground" /> Email me (
+            {program.ownerEmail ?? "no address on file"})
           </Label>
           <Switch id="pref-email" checked={email} onCheckedChange={setEmail} />
         </div>
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="pref-sms" className="flex items-center gap-2 font-normal">
-            <MessageSquare className="size-4 text-muted-foreground" /> Call or text me for urgent (P1) tickets
+            <MessageSquare className="size-4 text-muted-foreground" /> Call or text me for urgent
+            (P1) tickets
           </Label>
           <Switch id="pref-sms" checked={smsP1} onCheckedChange={setSmsP1} />
         </div>
@@ -818,7 +914,8 @@ function LogTimeDialog({
   const [selected, setSelected] = useState<string[]>(target.propertyIds);
   const log = useServerFn(logOwnerParticipation);
 
-  const totalMinutes = (Number.parseInt(hours || "0", 10) || 0) * 60 + (Number.parseInt(minutes || "0", 10) || 0);
+  const totalMinutes =
+    (Number.parseInt(hours || "0", 10) || 0) * 60 + (Number.parseInt(minutes || "0", 10) || 0);
   const minutesValid = totalMinutes >= 1 && totalMinutes <= 1440;
 
   // Warning only — never a block. The homeowner always decides.
@@ -846,7 +943,9 @@ function LogTimeDialog({
       }),
     onSuccess: (res) => {
       toast.success(
-        res.awarded.length > 0 ? "Participation recorded — a new achievement is unlocked." : "Participation recorded.",
+        res.awarded.length > 0
+          ? "Participation recorded — a new achievement is unlocked."
+          : "Participation recorded.",
       );
       onSaved();
       onClose();
@@ -882,7 +981,12 @@ function LogTimeDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label htmlFor="time-date">Date</Label>
-              <Input id="time-date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
+              <Input
+                id="time-date"
+                type="date"
+                value={entryDate}
+                onChange={(e) => setEntryDate(e.target.value)}
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="time-hr">Hours</Label>
@@ -946,37 +1050,59 @@ function LogTimeDialog({
               <div className="space-y-1.5 rounded-md border border-border p-3">
                 {properties.map((p) => (
                   <label key={p.id} className="flex items-center gap-2 text-sm">
-                    <Checkbox checked={selected.includes(p.id)} onCheckedChange={() => toggle(p.id)} />
+                    <Checkbox
+                      checked={selected.includes(p.id)}
+                      onCheckedChange={() => toggle(p.id)}
+                    />
                     <span>{p.name}</span>
                   </label>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                If one activity covered several homes, select each of them and enter the total time once. It is
-                counted once toward your combined program total.
+                If one activity covered several homes, select each of them and enter the total time
+                once. It is counted once toward your combined program total.
               </p>
             </div>
           )}
 
           <div className="space-y-1">
             <Label htmlFor="time-output">Decision or outcome</Label>
-            <Textarea id="time-output" value={output} onChange={(e) => setOutput(e.target.value)} rows={2} />
+            <Textarea
+              id="time-output"
+              value={output}
+              onChange={(e) => setOutput(e.target.value)}
+              rows={2}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="time-comments">Comments (optional)</Label>
-            <Textarea id="time-comments" value={comments} onChange={(e) => setComments(e.target.value)} rows={2} />
+            <Textarea
+              id="time-comments"
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              rows={2}
+            />
           </div>
 
           <div className="flex gap-2">
             {(["onboarding", "ongoing"] as const).map((p) => (
-              <Button key={p} size="sm" variant={phase === p ? "default" : "outline"} onClick={() => setPhase(p)}>
+              <Button
+                key={p}
+                size="sm"
+                variant={phase === p ? "default" : "outline"}
+                onClick={() => setPhase(p)}
+              >
                 {p === "onboarding" ? "Onboarding" : "Operations"}
               </Button>
             ))}
           </div>
 
           <label className="flex items-start gap-2 rounded-md border border-border p-3 text-sm">
-            <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
+            <Checkbox
+              checked={confirmed}
+              onCheckedChange={(v) => setConfirmed(v === true)}
+              className="mt-0.5"
+            />
             <span>{MANUAL_ENTRY_CONFIRMATION}</span>
           </label>
 
@@ -993,8 +1119,8 @@ function LogTimeDialog({
                 {duplicate.activity}
               </div>
               <p className="text-xs text-amber-900/90">
-                If this is separate work you actually did, you can submit it anyway — your real hours are never
-                capped.
+                If this is separate work you actually did, you can submit it anyway — your real
+                hours are never capped.
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button size="sm" variant="outline" onClick={() => setDuplicate(null)}>
@@ -1020,7 +1146,9 @@ function LogTimeDialog({
             Cancel
           </Button>
           <Button
-            disabled={mutation.isPending || !minutesValid || !confirmed || activity.trim().length < 3}
+            disabled={
+              mutation.isPending || !minutesValid || !confirmed || activity.trim().length < 3
+            }
             onClick={attemptSave}
           >
             Save entry
@@ -1059,7 +1187,9 @@ function RespondDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{review.title}</DialogTitle>
-          <DialogDescription>Your decision goes straight to the team handling your program.</DialogDescription>
+          <DialogDescription>
+            Your decision goes straight to the team handling your program.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           {(review.photos?.length ?? 0) > 0 && (
@@ -1072,14 +1202,24 @@ function RespondDialog({
           {review.evidence && <p className="text-sm text-muted-foreground">{review.evidence}</p>}
           <div className="flex flex-wrap gap-2">
             {["approved", "declined", "needs discussion"].map((d) => (
-              <Button key={d} size="sm" variant={decision === d ? "default" : "outline"} onClick={() => setDecision(d)}>
+              <Button
+                key={d}
+                size="sm"
+                variant={decision === d ? "default" : "outline"}
+                onClick={() => setDecision(d)}
+              >
                 <span className="capitalize">{d}</span>
               </Button>
             ))}
           </div>
           <div className="space-y-1">
             <Label htmlFor="resp">Your notes</Label>
-            <Textarea id="resp" rows={4} value={response} onChange={(e) => setResponse(e.target.value)} />
+            <Textarea
+              id="resp"
+              rows={4}
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
@@ -1095,15 +1235,22 @@ function RespondDialog({
   );
 }
 
-
 /**
  * A homeowner opens a ticket at their own enrolled home. ARHA keeps
  * operational control: the owner chooses how they want to participate, not
  * the priority, the assignee or the closure.
  */
 const OWNER_PATHS = [
-  { id: "inform", label: "Just so you know", blurb: "Share it — ARHA handles it and reports back." },
-  { id: "consult", label: "I'd like to weigh in", blurb: "ARHA asks for your input before deciding." },
+  {
+    id: "inform",
+    label: "Just so you know",
+    blurb: "Share it — ARHA handles it and reports back.",
+  },
+  {
+    id: "consult",
+    label: "I'd like to weigh in",
+    blurb: "ARHA asks for your input before deciding.",
+  },
   { id: "approve", label: "I want to approve this", blurb: "ARHA waits for your authorisation." },
   { id: "emergency", label: "Urgent", blurb: "Something needs attention right now." },
 ] as const;
@@ -1128,7 +1275,14 @@ function OpenMatterDialog({
   const save = useMutation({
     mutationFn: () =>
       create({
-        data: { programId, propertyId, path, title: title.trim(), description: description.trim(), category: "maintenance" },
+        data: {
+          programId,
+          propertyId,
+          path,
+          title: title.trim(),
+          description: description.trim(),
+          category: "maintenance",
+        },
       }),
     onSuccess: (r) => {
       toast.success(`Ticket #${r.ref} is with the ARHA team.`);
@@ -1203,7 +1357,10 @@ function OpenMatterDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={title.trim().length < 4 || !propertyId || save.isPending} onClick={() => save.mutate()}>
+          <Button
+            disabled={title.trim().length < 4 || !propertyId || save.isPending}
+            onClick={() => save.mutate()}
+          >
             {save.isPending ? "Sending…" : "Send to ARHA"}
           </Button>
         </DialogFooter>
