@@ -561,8 +561,18 @@ export type Readiness = {
   ready: boolean;
   /** Everything standing between this home and PM readiness. */
   reasons: ReadinessReason[];
+  /** Reasons carryover cannot excuse. While any exists, handoff cannot be requested. */
+  hardReasons: ReadinessReason[];
+  /** True when handoff may not be requested at all, whatever the client shows. */
+  blocked: boolean;
   checks: HandoffCheck[];
 };
+
+/**
+ * Open plan work can move to Operations as accepted carryover. Everything
+ * else is a hard stop: it means the record itself is not trustworthy yet.
+ */
+const CARRYOVER_EXCUSABLE = new Set(["open_work"]);
 
 export type ReadinessExtras = {
   /** Permanent-fact proposals still waiting on a review decision. */
