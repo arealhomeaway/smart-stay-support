@@ -21,7 +21,7 @@ import {
   importOwnerRezPropertyFn,
   searchOwnerRezPropertiesFn,
 } from "@/lib/property-intake.functions";
-import type { IntakeMatch, OwnerRezCandidate } from "@/lib/property-intake.server";
+import type { IntakeMatch, OwnerRezCandidate } from "@/lib/property-intake";
 
 /**
  * The two supported ways a home enters Resolve. Both create the same canonical

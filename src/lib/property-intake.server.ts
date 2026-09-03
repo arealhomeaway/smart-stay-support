@@ -25,27 +25,9 @@ export async function assertPropertyStaff(supabase: Client, userId: string) {
   if (!data) throw new Error("Only the internal team can add properties.");
 }
 
-export type IntakeMatch = {
-  id: string;
-  name: string;
-  address: string | null;
-  lifecycleStatus: string;
-  ownerRezId: string | null;
-  isDemo: boolean;
-};
+import type { IntakeMatch, IntakeResult, OwnerRezCandidate } from "./property-intake";
 
-export type OwnerRezCandidate = {
-  listingId: string;
-  name: string;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  /** Already in Resolve on the OwnerRez ID — importing is blocked. */
-  existing: IntakeMatch | null;
-  /** Same name/address but no OwnerRez ID yet — offer to link instead. */
-  likely: IntakeMatch | null;
-};
+export type { IntakeMatch, IntakeResult, OwnerRezCandidate };
 
 function norm(v: string | null | undefined) {
   return (v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -159,11 +141,6 @@ export async function searchOwnerRezCandidates(
   return { ok: true, items };
 }
 
-export type ImportResult =
-  | { status: "duplicate"; property: IntakeMatch }
-  | { status: "linked"; property: IntakeMatch }
-  | { status: "created"; property: IntakeMatch };
-
 /**
  * Creates ONE canonical property from an OwnerRez listing, or links the
  * listing onto an existing property. Never starts onboarding.
@@ -172,7 +149,7 @@ export async function importOwnerRezProperty(
   supabase: Client,
   userId: string,
   input: { listingId: string; linkToPropertyId?: string | null; isDemo?: boolean },
-): Promise<ImportResult> {
+): Promise<IntakeResult> {
   const { listListings } = await import("./ownerrez.server");
   const listing = (await listListings()).find((l) => String(l.id) === input.listingId);
   if (!listing) throw new Error("That OwnerRez listing is no longer available.");
@@ -240,7 +217,7 @@ export async function createPropertyManually(
   supabase: Client,
   userId: string,
   input: ManualPropertyInput,
-): Promise<ImportResult> {
+): Promise<IntakeResult> {
   const rows = await loadResolveProperties(supabase);
   const orId = input.ownerRezPropertyId?.trim() || null;
   if (orId) {
@@ -290,7 +267,7 @@ export async function createPropertyManually(
 export async function linkOwnerRezToProperty(
   supabase: Client,
   input: { propertyId: string; listingId: string },
-): Promise<ImportResult> {
+): Promise<IntakeResult> {
   const rows = await loadResolveProperties(supabase);
   const dupe = rows.find(
     (r) => String(r.ownerrez_property_id ?? "") === input.listingId && r.id !== input.propertyId,
