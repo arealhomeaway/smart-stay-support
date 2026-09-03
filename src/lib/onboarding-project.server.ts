@@ -132,7 +132,24 @@ export async function startOnboardingProject(
     .neq("status", "cancelled")
     .maybeSingle();
   if (existing.error) throw existing.error;
-  if (existing.data) return existing.data;
+  if (existing.data) {
+    // A project that exists with no plan is the broken state this repairs:
+    // re-running Start onboarding fills the plan in without creating a
+    // second project.
+    const count = await supabase
+      .from("onboarding_tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("property_id", input.propertyId);
+    if (!count.error && (count.count ?? 0) === 0) {
+      try {
+        const { applyOnboardingTemplate } = await import("./onboarding-template.server");
+        await applyOnboardingTemplate(supabase, userId, { propertyId: input.propertyId });
+      } catch {
+        // Plan can still be applied from the Work tab.
+      }
+    }
+    return existing.data;
+  }
 
   const modules = input.modules.length ? input.modules : defaultModules();
 
@@ -178,12 +195,28 @@ export async function startOnboardingProject(
     await ensureActiveOwnerEnrollment(supabase, userId, input.propertyId);
   }
 
+  // Starting onboarding has to hand the team a plan, not an empty shell.
+  // applyOnboardingTemplate deduplicates by task title, so this stays safe on
+  // a retry and never doubles an existing plan.
+  let plannedTasks = 0;
+  try {
+    const { applyOnboardingTemplate } = await import("./onboarding-template.server");
+    const applied = await applyOnboardingTemplate(supabase, userId, {
+      propertyId: input.propertyId,
+    });
+    plannedTasks = (applied as { created?: number } | null)?.created ?? 0;
+  } catch {
+    // The project is real either way; the plan can be applied from the Work
+    // tab. Never leave the caller with a half-created project.
+    plannedTasks = 0;
+  }
+
   await recordProjectEvent(supabase, {
     projectId: data.id,
     propertyId: input.propertyId,
     kind: "project_started",
     summary: `Onboarding started for ${property.data.name}.`,
-    detail: `Scope: ${input.furnishingScope === "no_furnishing" ? "No furnishings" : "Full furnishing"}.`,
+    detail: `Scope: ${input.furnishingScope === "no_furnishing" ? "No furnishings" : "Full furnishing"}.${plannedTasks ? ` Plan created with ${plannedTasks} steps.` : ""}`,
     actor: userId,
     isDemo: property.data.is_demo ?? false,
   });
