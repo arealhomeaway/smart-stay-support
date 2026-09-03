@@ -115,7 +115,9 @@ function Hub() {
         eyebrow="Onboarding"
         title="Director hub"
         description="What needs attention today, what is at risk and why, which homes are waiting on a review gate, and which handoffs land this week."
+        actions={<AddPropertyDialog disabled={readOnly} />}
       />
+
 
       <Tabs defaultValue="hub" className="space-y-5">
         <TabsList>
