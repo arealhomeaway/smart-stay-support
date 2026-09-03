@@ -69,10 +69,20 @@ export async function gatherLifecycleFacts(
 
   const wt = (workType as any)?.data as { name?: string; required_closure_evidence?: string } | null;
   const stepRows = (steps.data ?? []) as { required: boolean | null; completed: boolean | null }[];
-  const orderRows = (orders.data ?? []) as Record<string, any>[];
-  const fileRows = ((files.data ?? []) as Record<string, any>[]).filter(
-    (d) => !d.deleted_at && d.upload_status === "uploaded" && Number(d.size_bytes ?? 0) > 0,
-  );
+  const orderRows = (orders.data ?? []) as {
+    scope: string | null;
+    vendor_org_id: string | null;
+    vendor_name: string | null;
+    approval_status: string | null;
+  }[];
+  const fileRows = (
+    (files.data ?? []) as {
+      upload_status: string | null;
+      size_bytes: number | null;
+      deleted_at: string | null;
+      mime_type: string | null;
+    }[]
+  ).filter((d) => !d.deleted_at && d.upload_status === "uploaded" && Number(d.size_bytes ?? 0) > 0);
 
   const evidenceLabel = wt?.required_closure_evidence ?? null;
   const dispatchable = orderRows.filter((o) => o.vendor_org_id || o.vendor_name);

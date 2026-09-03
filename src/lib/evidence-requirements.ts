@@ -45,6 +45,6 @@ export function closureEvidenceSatisfied(input: {
 }): boolean {
   if (!input.requirement || !String(input.requirement).trim()) return true;
   const hasText = String(input.text ?? "").trim().length > 0;
-  if (requiresPhotoOrFile(input.requirement)) return (input.fileCount ?? 0) > 0 && hasText === hasText;
+  if (requiresPhotoOrFile(input.requirement)) return (input.fileCount ?? 0) > 0;
   return hasText;
 }
