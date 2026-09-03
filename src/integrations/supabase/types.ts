@@ -3715,6 +3715,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           attachment_path: string | null
+          available_from: string | null
           business_question: string | null
           closed_at: string | null
           created_at: string
@@ -3725,7 +3726,9 @@ export type Database = {
           impact: string | null
           is_demo: boolean
           notified_at: string | null
+          onboarding_task_id: string | null
           outcome: string | null
+          owner_action_type: string
           owner_decision: string | null
           owner_response: string | null
           phase: string
@@ -3736,6 +3739,8 @@ export type Database = {
           respond_by: string | null
           responded_at: string | null
           sort_order: number
+          source_type: string
+          staff_context: string | null
           stage: string
           status: string
           task_type: string
@@ -3747,6 +3752,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           attachment_path?: string | null
+          available_from?: string | null
           business_question?: string | null
           closed_at?: string | null
           created_at?: string
@@ -3757,7 +3763,9 @@ export type Database = {
           impact?: string | null
           is_demo?: boolean
           notified_at?: string | null
+          onboarding_task_id?: string | null
           outcome?: string | null
+          owner_action_type?: string
           owner_decision?: string | null
           owner_response?: string | null
           phase: string
@@ -3768,6 +3776,8 @@ export type Database = {
           respond_by?: string | null
           responded_at?: string | null
           sort_order?: number
+          source_type?: string
+          staff_context?: string | null
           stage: string
           status?: string
           task_type?: string
@@ -3779,6 +3789,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           attachment_path?: string | null
+          available_from?: string | null
           business_question?: string | null
           closed_at?: string | null
           created_at?: string
@@ -3789,7 +3800,9 @@ export type Database = {
           impact?: string | null
           is_demo?: boolean
           notified_at?: string | null
+          onboarding_task_id?: string | null
           outcome?: string | null
+          owner_action_type?: string
           owner_decision?: string | null
           owner_response?: string | null
           phase?: string
@@ -3800,6 +3813,8 @@ export type Database = {
           respond_by?: string | null
           responded_at?: string | null
           sort_order?: number
+          source_type?: string
+          staff_context?: string | null
           stage?: string
           status?: string
           task_type?: string
@@ -3809,6 +3824,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_reviews_onboarding_task_id_fkey"
+            columns: ["onboarding_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "owner_reviews_program_id_fkey"
             columns: ["program_id"]
@@ -3847,6 +3869,7 @@ export type Database = {
           decision_path: string
           id: string
           owner_action: string
+          owner_action_type: string
           phase: string
           planning_hours_high: number
           planning_hours_low: number
@@ -3865,6 +3888,7 @@ export type Database = {
           decision_path?: string
           id?: string
           owner_action: string
+          owner_action_type?: string
           phase: string
           planning_hours_high?: number
           planning_hours_low?: number
@@ -3883,6 +3907,7 @@ export type Database = {
           decision_path?: string
           id?: string
           owner_action?: string
+          owner_action_type?: string
           phase?: string
           planning_hours_high?: number
           planning_hours_low?: number

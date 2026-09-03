@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Chip } from "@/components/ui/page";
 import { Separator } from "@/components/ui/separator";
+import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { stateChip } from "@/lib/semantic";
@@ -316,6 +317,12 @@ export function TaskDrawer({
           )}
 
           <Separator />
+
+          <Separator />
+          <section className="space-y-2">
+            <p className="eyebrow">Active Owner</p>
+            <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
+          </section>
 
           <section className="space-y-2">
             <p className="eyebrow">Breezeway</p>

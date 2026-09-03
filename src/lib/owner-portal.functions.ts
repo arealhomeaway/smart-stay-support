@@ -65,7 +65,8 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
         output: z.string().trim().max(1000).default(""),
         comments: z.string().trim().max(1000).default(""),
         attachmentPath: z.string().trim().max(400).nullable().default(null),
-        reviewId: z.string().uuid().nullable().default(null),
+        // Mandatory: context-free time entries are not allowed.
+        reviewId: z.string().uuid(),
         ticketId: z.string().uuid().nullable().default(null),
         propertyIds: z.array(z.string().uuid()).max(25).default([]),
         confirmed: z.literal(true, {

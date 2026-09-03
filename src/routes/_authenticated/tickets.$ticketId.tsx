@@ -22,6 +22,7 @@ import { GuidanceCard } from "@/components/GuidanceCard";
 import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
+import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
@@ -1263,6 +1264,8 @@ function MoreActions({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             <HandoffPanel ticket={ticket as any} closed={closed} onChanged={onChanged} />
           )}
+          {/* Only shows when this property belongs to an Active Owner program. */}
+          <OwnerParticipationOffer source="operations" sourceId={String(ticket["id"])} />
           {!branches.recovery && (
             <IncidentBranch
               open={false}
