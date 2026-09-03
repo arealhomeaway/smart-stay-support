@@ -55,7 +55,7 @@ export function useStaffDirectory() {
       }
       return staff.map((m) => {
         const key = (m.full_name ?? "").trim().toLowerCase();
-        return counts.get(key) ?? 0 > 1 ? { ...m, ambiguous: true } : m;
+        return (counts.get(key) ?? 0) > 1 ? { ...m, ambiguous: true } : m;
       });
     },
   });
