@@ -60,7 +60,9 @@ export function AddPropertyDialog({
         if (!v) setDone(null);
       }}
     >
-      <DialogTrigger asChild>{trigger ?? <Button disabled={disabled}>Add property</Button>}</DialogTrigger>
+      <DialogTrigger asChild>
+        {trigger ?? <Button disabled={disabled}>Add property</Button>}
+      </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add a property to Resolve</DialogTitle>
@@ -118,8 +120,8 @@ function Outcome({
         </p>
       </div>
       <p className="text-sm text-muted-foreground">
-        Onboarding has not been started. Open the home and choose <strong>Start onboarding</strong> when
-        you are ready.
+        Onboarding has not been started. Open the home and choose <strong>Start onboarding</strong>{" "}
+        when you are ready.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button asChild onClick={onClose}>
@@ -140,7 +142,11 @@ function Outcome({
   );
 }
 
-function OwnerRezImport({ onDone }: { onDone: (r: { status: string; property: IntakeMatch }) => void }) {
+function OwnerRezImport({
+  onDone,
+}: {
+  onDone: (r: { status: string; property: IntakeMatch }) => void;
+}) {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<OwnerRezCandidate | null>(null);
   const [isDemo, setIsDemo] = useState(false);
@@ -182,14 +188,21 @@ function OwnerRezImport({ onDone }: { onDone: (r: { status: string; property: In
     const dupe = selected.existing;
     return (
       <div className="space-y-4">
-        <button type="button" className="text-sm text-muted-foreground hover:underline" onClick={() => setSelected(null)}>
+        <button
+          type="button"
+          className="text-sm text-muted-foreground hover:underline"
+          onClick={() => setSelected(null)}
+        >
           ← Back to search
         </button>
         <div className="surface space-y-2 p-4">
           <p className="eyebrow">Import preview</p>
           <Row label="Property name" value={selected.name} />
           <Row label="Address" value={selected.address} />
-          <Row label="City / state / ZIP" value={[selected.city, selected.state, selected.postalCode].filter(Boolean).join(", ")} />
+          <Row
+            label="City / state / ZIP"
+            value={[selected.city, selected.state, selected.postalCode].filter(Boolean).join(", ")}
+          />
           <Row label="OwnerRez property ID" value={selected.listingId} />
         </div>
 
@@ -197,7 +210,8 @@ function OwnerRezImport({ onDone }: { onDone: (r: { status: string; property: In
           <div className="surface space-y-2 p-4">
             <p className="eyebrow">Already in Resolve</p>
             <p className="text-sm">
-              {dupe.name} is already linked to this OwnerRez listing. No second property will be created.
+              {dupe.name} is already linked to this OwnerRez listing. No second property will be
+              created.
             </p>
             <Button asChild variant="outline" size="sm">
               <Link to="/property/$propertyId" params={{ propertyId: dupe.id }}>
@@ -211,8 +225,8 @@ function OwnerRezImport({ onDone }: { onDone: (r: { status: string; property: In
               <div className="surface space-y-2 p-4">
                 <p className="eyebrow">Possible match</p>
                 <p className="text-sm">
-                  {selected.likely.name} looks like the same home but has no OwnerRez link yet. Link the
-                  listing to it instead of creating a second property.
+                  {selected.likely.name} looks like the same home but has no OwnerRez link yet. Link
+                  the listing to it instead of creating a second property.
                 </p>
                 <Button
                   size="sm"
@@ -235,7 +249,9 @@ function OwnerRezImport({ onDone }: { onDone: (r: { status: string; property: In
             </label>
             <Button
               disabled={doImport.isPending}
-              onClick={() => doImport.mutate({ listingId: selected.listingId, linkToPropertyId: null })}
+              onClick={() =>
+                doImport.mutate({ listingId: selected.listingId, linkToPropertyId: null })
+              }
             >
               {doImport.isPending ? "Importing…" : "Create property in Resolve"}
             </Button>
@@ -258,14 +274,17 @@ function OwnerRezImport({ onDone }: { onDone: (r: { status: string; property: In
       />
       <ul className="max-h-[45vh] divide-y divide-border overflow-y-auto rounded-md border border-border">
         {items.length === 0 && (
-          <li className="p-3 text-sm text-muted-foreground">No OwnerRez listing matches that search.</li>
+          <li className="p-3 text-sm text-muted-foreground">
+            No OwnerRez listing matches that search.
+          </li>
         )}
         {items.map((c) => (
           <li key={c.listingId} className="flex items-center justify-between gap-3 p-3">
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{c.name}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {[c.address, c.city, c.state].filter(Boolean).join(", ") || `OwnerRez ${c.listingId}`}
+                {[c.address, c.city, c.state].filter(Boolean).join(", ") ||
+                  `OwnerRez ${c.listingId}`}
               </p>
             </div>
             {c.existing ? (
@@ -304,7 +323,11 @@ const emptyManual = {
   ownerRezPropertyId: "",
 };
 
-function ManualForm({ onDone }: { onDone: (r: { status: string; property: IntakeMatch }) => void }) {
+function ManualForm({
+  onDone,
+}: {
+  onDone: (r: { status: string; property: IntakeMatch }) => void;
+}) {
   const [form, setForm] = useState(emptyManual);
   const [isDemo, setIsDemo] = useState(false);
   const create = useServerFn(createPropertyManuallyFn);
@@ -343,7 +366,12 @@ function ManualForm({ onDone }: { onDone: (r: { status: string; property: Intake
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <Text label="Property name" required value={form.name} onChange={set("name")} />
-        <Text label="Street address" required value={form.addressLine1} onChange={set("addressLine1")} />
+        <Text
+          label="Street address"
+          required
+          value={form.addressLine1}
+          onChange={set("addressLine1")}
+        />
         <Text label="Unit" value={form.unit} onChange={set("unit")} />
         <Text label="City" required value={form.city} onChange={set("city")} />
         <Text label="State" required value={form.state} onChange={set("state")} />

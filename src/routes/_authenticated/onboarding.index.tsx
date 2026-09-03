@@ -120,7 +120,6 @@ function Hub() {
         actions={<AddPropertyDialog disabled={readOnly} />}
       />
 
-
       <Tabs defaultValue="hub" className="space-y-5">
         <TabsList>
           <TabsTrigger value="hub">Hub ({projects.length})</TabsTrigger>
@@ -151,10 +150,7 @@ function Hub() {
               </ul>
             </section>
           )}
-          <DirectorHub
-            projects={projects}
-            viewer={{ userId, canReview: can("handoff_review") }}
-          />
+          <DirectorHub projects={projects} viewer={{ userId, canReview: can("handoff_review") }} />
         </TabsContent>
 
         <TabsContent value="reviews" className="space-y-4">

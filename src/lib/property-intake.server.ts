@@ -41,7 +41,9 @@ function addressOf(p: {
   postal_code?: string | null;
 }) {
   const line = [p.address_line1, p.unit].filter(Boolean).join(" ");
-  const rest = [p.city, [p.state, p.postal_code].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const rest = [p.city, [p.state, p.postal_code].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join(", ");
   return [line, rest].filter(Boolean).join(", ") || null;
 }
 
@@ -100,7 +102,9 @@ export async function searchOwnerRezCandidates(
 
   const rows = await loadResolveProperties(supabase);
   const byOwnerRez = new Map(
-    rows.filter((r) => r.ownerrez_property_id).map((r) => [String(r.ownerrez_property_id), r] as const),
+    rows
+      .filter((r) => r.ownerrez_property_id)
+      .map((r) => [String(r.ownerrez_property_id), r] as const),
   );
   const q = norm(query);
 
@@ -109,14 +113,14 @@ export async function searchOwnerRezCandidates(
       const listingId = String(l.id);
       const existing = byOwnerRez.get(listingId) ?? null;
       const street = norm(l.address?.street1);
-      const likely =
-        existing
-          ? null
-          : (rows.find(
-              (r) =>
-                !r.ownerrez_property_id &&
-                (norm(r.name) === norm(l.name) || (street.length > 4 && norm(r.address_line1) === street)),
-            ) ?? null);
+      const likely = existing
+        ? null
+        : (rows.find(
+            (r) =>
+              !r.ownerrez_property_id &&
+              (norm(r.name) === norm(l.name) ||
+                (street.length > 4 && norm(r.address_line1) === street)),
+          ) ?? null);
       return {
         listingId,
         name: l.name,

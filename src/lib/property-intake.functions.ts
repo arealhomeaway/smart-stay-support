@@ -9,7 +9,8 @@ export const searchOwnerRezPropertiesFn = createServerFn({ method: "POST" })
     z.object({ query: z.string().trim().max(120).default("") }).parse(data ?? {}),
   )
   .handler(async ({ context, data }) => {
-    const { assertPropertyStaff, searchOwnerRezCandidates } = await import("./property-intake.server");
+    const { assertPropertyStaff, searchOwnerRezCandidates } =
+      await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
     return searchOwnerRezCandidates(context.supabase, data.query);
   });
@@ -27,7 +28,8 @@ export const importOwnerRezPropertyFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertPropertyStaff, importOwnerRezProperty } = await import("./property-intake.server");
+    const { assertPropertyStaff, importOwnerRezProperty } =
+      await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
     return importOwnerRezProperty(context.supabase, context.userId, data);
   });
@@ -54,7 +56,8 @@ export const createPropertyManuallyFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertPropertyStaff, createPropertyManually } = await import("./property-intake.server");
+    const { assertPropertyStaff, createPropertyManually } =
+      await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
     return createPropertyManually(context.supabase, context.userId, data);
   });
@@ -68,7 +71,8 @@ export const linkOwnerRezToPropertyFn = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertPropertyStaff, linkOwnerRezToProperty } = await import("./property-intake.server");
+    const { assertPropertyStaff, linkOwnerRezToProperty } =
+      await import("./property-intake.server");
     await assertPropertyStaff(context.supabase, context.userId);
     return linkOwnerRezToProperty(context.supabase, data);
   });
