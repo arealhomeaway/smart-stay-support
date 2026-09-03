@@ -85,6 +85,10 @@ export type WorkOrderLike = {
 
   approval_status?: ApprovalStatus | string | null;
   approved_amount?: number | string | null;
+  /** Supervisor decision for the $200–$350 band. */
+  supervisor_approval_status?: ApprovalStatus | string | null;
+  /** When the homeowner was told about supervisor-authorised work. */
+  owner_fyi_at?: string | null;
 
   vendor_org_id?: string | null;
   vendor_name?: string | null;
@@ -129,6 +133,10 @@ export type AuthorityVerdict = {
   label: string;
   reason: string;
   ownerApprovalRequired: boolean;
+  /** True in the $200–$350 band: a supervisor decides before work starts. */
+  supervisorApprovalRequired: boolean;
+  /** True when the homeowner is told afterwards rather than asked first. */
+  ownerFyiRequired: boolean;
   /** True when mitigation may proceed but the permanent repair still cannot. */
   mitigationOnly: boolean;
   policyVersion: string;
@@ -136,17 +144,18 @@ export type AuthorityVerdict = {
 };
 
 /**
- * Who may authorise this work.
+ * Who may authorise this work — one ladder, matching the maintenance policy:
  *
- * A coordinator may always get quotes and dispatch an approved vendor. James
- * may approve normal operational work up to the owner threshold. Above it the
- * owner decides. Emergency mitigation proceeds on its own authority and never
- * carries the permanent repair with it — Micah is not pulled in merely because
- * a routine repair costs more than $250.
+ *  - under $200 — proceed, record the cost;
+ *  - $200 to $350 — a supervisor approves first, the homeowner is told after;
+ *  - above $350 — the homeowner decides before work starts;
+ *  - emergency mitigation — proceeds under a documented exception, and never
+ *    carries the permanent repair with it.
  */
 export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
   const amount = num(input.quote_amount) ?? num(input.approved_amount);
   const threshold = MAINTENANCE_POLICY.ownerApprovalThreshold;
+  const supThreshold = MAINTENANCE_POLICY.supervisorApprovalThreshold;
   const phase: WorkOrderPhase = input.phase === "mitigation" ? "mitigation" : "permanent";
   const emergency = input.emergency_reason as EmergencyReason | null | undefined;
 
@@ -155,8 +164,10 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
     return {
       level: "emergency",
       label: "Emergency mitigation may proceed",
-      reason: `Mitigation may proceed without prior owner approval to ${clause}. The permanent repair is evaluated separately and may still require owner approval.`,
+      reason: `Mitigation may proceed without prior approval to ${clause}. Record the exception — reason, scope, amount, who decided and evidence. The permanent repair is evaluated separately.`,
       ownerApprovalRequired: false,
+      supervisorApprovalRequired: false,
+      ownerFyiRequired: true,
       mitigationOnly: true,
       policyVersion: MAINTENANCE_POLICY_VERSION,
       amount,
@@ -169,6 +180,8 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
       label: "Get the quote",
       reason: "A coordinator may request quotes and dispatch an approved vendor. Authority is evaluated once an amount is known.",
       ownerApprovalRequired: false,
+      supervisorApprovalRequired: false,
+      ownerFyiRequired: false,
       mitigationOnly: false,
       policyVersion: MAINTENANCE_POLICY_VERSION,
       amount: null,
@@ -181,6 +194,8 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
       label: "Owner approval required",
       reason: `Owner approval is required because the permanent repair of ${money(amount)} exceeds ${money(threshold)}.`,
       ownerApprovalRequired: true,
+      supervisorApprovalRequired: false,
+      ownerFyiRequired: false,
       mitigationOnly: false,
       policyVersion: MAINTENANCE_POLICY_VERSION,
       amount,
@@ -190,9 +205,25 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
   if (amount > threshold && input.contractual_exception) {
     return {
       level: "supervisor",
-      label: "James may approve",
-      reason: `${money(amount)} exceeds ${money(threshold)}, but a recorded contractual exception applies, so it stays within ARHA's authority.`,
+      label: "Supervisor approval",
+      reason: `${money(amount)} exceeds ${money(threshold)}, but a recorded contractual exception applies, so a supervisor approves and the homeowner is told afterwards.`,
       ownerApprovalRequired: false,
+      supervisorApprovalRequired: true,
+      ownerFyiRequired: true,
+      mitigationOnly: false,
+      policyVersion: MAINTENANCE_POLICY_VERSION,
+      amount,
+    };
+  }
+
+  if (amount < supThreshold) {
+    return {
+      level: "self",
+      label: "Proceed — no approval needed",
+      reason: `${money(amount)} is under ${money(supThreshold)}, so ARHA proceeds and records the cost.`,
+      ownerApprovalRequired: false,
+      supervisorApprovalRequired: false,
+      ownerFyiRequired: false,
       mitigationOnly: false,
       policyVersion: MAINTENANCE_POLICY_VERSION,
       amount,
@@ -201,9 +232,11 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
 
   return {
     level: "supervisor",
-    label: "James may approve",
-    reason: `${money(amount)} is within ARHA's established authority of ${money(threshold)}, so James may approve and coordinate the work.`,
+    label: "Supervisor approval",
+    reason: `${money(amount)} falls between ${money(supThreshold)} and ${money(threshold)}, so a supervisor approves before work starts and the homeowner is told afterwards.`,
     ownerApprovalRequired: false,
+    supervisorApprovalRequired: true,
+    ownerFyiRequired: true,
     mitigationOnly: false,
     policyVersion: MAINTENANCE_POLICY_VERSION,
     amount,
@@ -447,6 +480,7 @@ export function derivedStage(wo: WorkOrderLike): WorkOrderStage {
   const verdict = evaluateAuthority(wo);
   const status = (wo.approval_status ?? "not_required") as ApprovalStatus;
   if (verdict.ownerApprovalRequired && status !== "approved") return "awaiting_approval";
+  if (verdict.supervisorApprovalRequired && !supervisorApproved(wo)) return "awaiting_approval";
   if (status === "approved") return "approved";
 
   if (wo.quote_received_at || num(wo.quote_amount) != null) return "quote_received";
@@ -454,11 +488,18 @@ export function derivedStage(wo: WorkOrderLike): WorkOrderStage {
   return "needs_diagnosis";
 }
 
-export type WaitingOn = "vendor" | "quote" | "owner" | "warranty" | null;
+/** Has a supervisor signed off the $200–$350 band? */
+export function supervisorApproved(wo: WorkOrderLike): boolean {
+  return wo.supervisor_approval_status === "approved";
+}
+
+export type WaitingOn = "vendor" | "quote" | "owner" | "supervisor" | "warranty" | null;
 
 export function waitingOn(wo: WorkOrderLike): WaitingOn {
   if (wo.closed_at) return null;
-  if (evaluateAuthority(wo).ownerApprovalRequired && wo.approval_status !== "approved") return "owner";
+  const authority = evaluateAuthority(wo);
+  if (authority.ownerApprovalRequired && wo.approval_status !== "approved") return "owner";
+  if (authority.supervisorApprovalRequired && !supervisorApproved(wo)) return "supervisor";
   if (wo.warranty_may_apply && wo.warranty_contacted_at && !warrantyBypassed(wo) && !wo.vendor_completed_at) {
     return "warranty";
   }
@@ -493,6 +534,16 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
     if (status === "declined") return "Owner declined — record the alternative or close with the reason.";
     if (status !== "approved") return verdict.reason;
   }
+  if (verdict.supervisorApprovalRequired && !supervisorApproved(wo)) {
+    const sup = (wo.supervisor_approval_status ?? "not_required") as ApprovalStatus;
+    if (sup === "pending") return "Waiting on the supervisor's decision on this amount.";
+    if (sup === "declined") return "Supervisor declined — record the alternative before going further.";
+    return "Request supervisor approval for this amount, then tell the homeowner once it is authorised.";
+  }
+  if (verdict.ownerFyiRequired && supervisorApproved(wo) && !wo.owner_fyi_at && !wo.closed_at) {
+    return "Approved — send the homeowner the FYI that this work is going ahead.";
+  }
+
 
   const stage = derivedStage(wo);
   if (stage === "needs_diagnosis") return "Diagnose the issue or request a quote from an approved vendor.";
@@ -531,6 +582,12 @@ export function closureBlockers(
   const verdict = evaluateAuthority(wo);
   if (verdict.ownerApprovalRequired && wo.approval_status !== "approved") {
     blockers.push("Owner approval for this repair is not documented.");
+  }
+  if (verdict.supervisorApprovalRequired && !supervisorApproved(wo)) {
+    blockers.push("Supervisor approval for this amount is not documented.");
+  }
+  if (verdict.mitigationOnly && !wo.emergency_reason) {
+    blockers.push("Record the emergency exception — reason, scope, amount and evidence.");
   }
   if (wo.permanent_repair_needed && wo.phase === "mitigation" && !wo.follow_up_ticket_id) {
     blockers.push("Permanent repair is still outstanding — create the follow-up before closing.");
@@ -611,6 +668,39 @@ export { EMERGENCY_REASON_LABELS, MAINTENANCE_POLICY_VERSION, money };
  * record, and the Work Order keeps the mirror of the decision.
  */
 export const OWNER_APPROVAL_KIND = "maintenance_owner_approval";
+
+/** The same approvals architecture, asked of a supervisor instead of the owner. */
+export const SUPERVISOR_APPROVAL_KIND = "maintenance_supervisor_approval";
+
+/** The supervisor request for the $200–$350 band. */
+export function supervisorApprovalRequest(
+  wo: WorkOrderLike & {
+    id?: string;
+    title?: string | null;
+    scope?: string | null;
+    property_id?: string | null;
+    ticket_id?: string | null;
+    service_category?: string | null;
+  },
+) {
+  const verdict = evaluateAuthority({ ...wo, phase: "permanent" });
+  return {
+    kind: SUPERVISOR_APPROVAL_KIND,
+    title: `Supervisor approval — ${wo.title ?? "maintenance repair"}`,
+    amount: num(wo.quote_amount),
+    detail: {
+      work_order_id: wo.id ?? null,
+      ticket_id: wo.ticket_id ?? null,
+      property_id: wo.property_id ?? null,
+      scope: wo.scope ?? null,
+      vendor: wo.vendor_name ?? null,
+      quote_amount: num(wo.quote_amount),
+      authority_reason: verdict.reason,
+      owner_fyi_required: verdict.ownerFyiRequired,
+      policy_version: MAINTENANCE_POLICY_VERSION,
+    },
+  };
+}
 
 export type OwnerApprovalOutcome = "approved" | "declined" | "info_requested";
 
