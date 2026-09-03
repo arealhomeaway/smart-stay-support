@@ -18,6 +18,13 @@
 
 import { GATE_STEPS, gateLabel } from "./onboarding";
 import { rollupProperty, viewTask, type TaskView, type WorkflowTask } from "./onboarding-workflow";
+import {
+  buildReleaseContext,
+  deriveLifecycle,
+  type OnboardingPhase,
+  type ReleaseContext,
+  type StateProject,
+} from "./onboarding-state";
 import type { WorkState } from "./semantic";
 
 /* ------------------------------------------------------------ the lifecycle */
@@ -142,40 +149,51 @@ export type ProjectInput = {
   property: ProjectProperty;
   tasks: WorkflowTask[];
   handoff: OpenHandoff;
+  /** The Onboarding Project row, when onboarding has actually been started. */
+  project?: StateProject;
+};
+
+/**
+ * Every derivation in this module reads the same authoritative state, so no
+ * two surfaces can disagree about a project's phase or about which work is
+ * actionable today.
+ */
+function stateOf(input: ProjectInput) {
+  return {
+    property: input.property,
+    project: input.project ?? null,
+    tasks: input.tasks,
+    handoff: input.handoff,
+  };
+}
+
+export function releaseFor(input: ProjectInput): ReleaseContext {
+  return buildReleaseContext(stateOf(input));
+}
+
+export function lifecycleFor(input: ProjectInput) {
+  return deriveLifecycle(stateOf(input));
+}
+
+const PHASE_TO_STAGE: Record<OnboardingPhase, LifecycleStage> = {
+  not_started: "pre_close",
+  pre_close: "pre_close",
+  access_ready: "access_ready",
+  setup: "setup",
+  furnishing_repairs: "furnishing_repairs",
+  final_prep: "final_prep",
+  pm_readiness: "final_prep",
+  director_onboarding_review: "director_review",
+  director_operations_review: "operations_review",
+  operations_acceptance: "operations_review",
+  live_confirmation: "operations_review",
+  live: "live",
 };
 
 /* ------------------------------------------------------------------- stage */
 
 export function deriveStage(input: ProjectInput): LifecycleStage {
-  const { property, handoff, tasks } = input;
-
-  if (property.lifecycle_status === "active_operations" || property.handoff_accepted_at)
-    return "live";
-
-  if (handoff) {
-    const step = handoff.gate_step ?? "kati_review";
-    if (step === "kati_review") return "director_review";
-    if (step === "live_confirmation") return "operations_review";
-    if (step === "complete") return "live";
-    return "operations_review";
-  }
-  if (property.lifecycle_status === "handoff_corrections") return "director_review";
-
-  // Access is the hard gate: nothing onsite is real before it.
-  const hasAccess =
-    Boolean(property.actual_access_on) || Boolean((property.access_notes ?? "").trim());
-  if (!hasAccess) return "pre_close";
-
-  // Otherwise the stage is the earliest phase with unfinished work.
-  const views = tasks.map((t) => viewTask(t, tasks));
-  const open = views.filter((v) => v.status !== "complete" && v.status !== "carryover");
-  if (open.length === 0) return tasks.length === 0 ? "access_ready" : "final_prep";
-
-  const earliest = open
-    .map((v) => stageIndex(lifecycleStageForTask(v.task.stage)))
-    .sort((a, b) => a - b)[0]!;
-  const stage = LIFECYCLE_STAGES[Math.max(earliest, 1)]!.value;
-  return stage;
+  return PHASE_TO_STAGE[lifecycleFor(input).phase];
 }
 
 /* ------------------------------------------------------------- next action */
@@ -231,7 +249,8 @@ export function deriveNextAction(input: ProjectInput): NextAction {
       waiting: false,
     };
 
-  const views = tasks.map((t) => viewTask(t, tasks));
+  const release = releaseFor(input);
+  const views = tasks.map((t) => viewTask(t, tasks, release));
   const open = views.filter((v) => v.status !== "complete" && v.status !== "carryover");
 
   if (open.length === 0)
@@ -244,7 +263,7 @@ export function deriveNextAction(input: ProjectInput): NextAction {
 
   // Actionable work first, oldest due date wins; only then explain the wait.
   const actionable = open
-    .filter((v) => v.status === "ready" || v.status === "in_progress")
+    .filter((v) => v.canComplete && v.status !== "future")
     .sort((a, b) => (a.task.due_on ?? "9999").localeCompare(b.task.due_on ?? "9999"));
 
   const first = actionable[0];
@@ -285,6 +304,9 @@ export type Blocker = {
 };
 
 function blockerKind(v: TaskView): Blocker["kind"] {
+  if (v.status === "correction") return "correction";
+  if (v.task.requires_owner_approval && v.task.owner_approval_status !== "approved") return "owner";
+  if ((v.reason ?? "").startsWith("Waiting on ")) return "dependency";
   if (
     v.reason === "Blocked — Waiting on Owner" ||
     v.reason === "Blocked — Homeowner requested changes"
@@ -327,10 +349,19 @@ export function deriveBlockers(input: ProjectInput): Blocker[] {
       kind: "access",
     });
 
-  const views = tasks.map((t) => viewTask(t, tasks));
+  const release = releaseFor(input);
+  const views = tasks.map((t) => viewTask(t, tasks, release));
   for (const v of views) {
     if (v.status === "complete" || v.status === "carryover") continue;
-    if (v.status !== "blocked" && v.status !== "needs_review" && v.status !== "not_ready") continue;
+    // Future work is not a blocker: it simply has not been released yet.
+    if (v.status === "future") continue;
+    if (
+      v.status !== "blocked" &&
+      v.status !== "needs_review" &&
+      v.status !== "not_ready" &&
+      v.status !== "correction"
+    )
+      continue;
     const kind = blockerKind(v);
     out.push({
       taskId: v.task.id,
@@ -391,7 +422,7 @@ export function deriveRisk(input: ProjectInput): Risk {
   // A home already live with Operations carries no onboarding risk.
   if (deriveStage(input) === "live") return { level: "on_track", reasons: [] };
 
-  const roll = rollupProperty(input.tasks);
+  const roll = rollupProperty(input.tasks, releaseFor(input));
   const reasons: string[] = [];
   let level: RiskLevel = "on_track";
 
@@ -528,6 +559,12 @@ export type ProjectSummary = {
   done: number;
   total: number;
   hasProject: boolean;
+  /** Authoritative phase and its label — the only lifecycle text to render. */
+  phase: OnboardingPhase;
+  phaseLabel: string;
+  accepted: boolean;
+  locked: boolean;
+  notStarted: boolean;
   inReview: boolean;
   /** Which handoff gate the readiness record is sitting at, when open. */
   gateStep: string | null;
@@ -536,10 +573,16 @@ export type ProjectSummary = {
 };
 
 export function summarizeProject(input: ProjectInput, ownerName: string | null): ProjectSummary {
-  const roll = rollupProperty(input.tasks);
+  const life = lifecycleFor(input);
+  const roll = rollupProperty(input.tasks, releaseFor(input));
   return {
     property: input.property,
-    stage: deriveStage(input),
+    stage: PHASE_TO_STAGE[life.phase],
+    phase: life.phase,
+    phaseLabel: life.label,
+    accepted: life.accepted,
+    locked: life.locked,
+    notStarted: life.notStarted,
     next: deriveNextAction(input),
     risk: deriveRisk(input),
     blockers: deriveBlockers(input),
@@ -547,9 +590,11 @@ export function summarizeProject(input: ProjectInput, ownerName: string | null):
     progress: roll.progress,
     done: roll.done,
     total: roll.total,
-    hasProject: input.tasks.length > 0,
-    inReview: Boolean(input.handoff),
-    gateStep: input.handoff?.gate_step ?? null,
+    hasProject: !life.notStarted,
+    // An accepted home is never simultaneously "in review", whatever stale
+    // handoff rows may still exist.
+    inReview: Boolean(input.handoff) && !life.accepted,
+    gateStep: life.accepted ? null : (input.handoff?.gate_step ?? null),
 
     owner: ownerName,
   };

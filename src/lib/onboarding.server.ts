@@ -157,6 +157,42 @@ export async function saveOnboardingTask(
       "Operations has accepted this home, so onboarding steps are locked. Reopen the step with a reason, or report an issue.",
     );
   }
+  // Ready must mean ready: a step in a phase the project has not reached, or
+  // one still waiting on a milestone or a prerequisite, can never be completed
+  // early — whatever a stale client believes.
+  if (input.status === "complete" && input.id) {
+    const [{ buildReleaseContext, releaseState }, prop, siblings, projectRow] = await Promise.all([
+      import("./onboarding-state"),
+      supabase.from("properties").select(PROPERTY_FIELDS).eq("id", input.propertyId).maybeSingle(),
+      supabase
+        .from("onboarding_tasks")
+        .select("*")
+        .eq("property_id", input.propertyId)
+        .is("archived_at", null),
+      supabase
+        .from("onboarding_projects")
+        .select("id, status, completed_at")
+        .eq("property_id", input.propertyId)
+        .neq("status", "cancelled")
+        .maybeSingle(),
+    ]);
+    const all = (siblings.data ?? []) as never[];
+    const target = (siblings.data ?? []).find((t) => t.id === input.id);
+    if (prop.data && target) {
+      const ctx = buildReleaseContext({
+        property: prop.data as never,
+        project: (projectRow.data ?? null) as never,
+        tasks: all,
+        handoff: null,
+      });
+      const verdict = releaseState(target as never, all, ctx);
+      if (!verdict.canComplete)
+        throw new Error(
+          verdict.reason ?? "This step is not released yet and cannot be completed.",
+        );
+    }
+  }
+
   // Sending alone can never satisfy an owner approval: the step stays open
   // until the authorised homeowner records an approval.
   if (

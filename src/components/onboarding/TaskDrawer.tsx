@@ -21,6 +21,7 @@ import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { stateChip } from "@/lib/semantic";
 import { repairApprovalGuidance } from "@/lib/onboarding-scope";
+import type { ReleaseContext } from "@/lib/onboarding-state";
 import { stageLabel } from "@/lib/onboarding";
 import {
   STATUS_LABEL,
@@ -93,6 +94,8 @@ export function TaskDrawer({
   onRecordException,
   onReopen,
   onAddObservation,
+  release,
+  approvals = [],
 }: {
   task: WorkflowTask | null;
   tasks: WorkflowTask[];
@@ -112,6 +115,18 @@ export function TaskDrawer({
   onRecordException: (taskId: string, reason: string) => void;
   onReopen: (taskId: string, reason: string) => void;
   onAddObservation: (taskId: string, body: string) => void;
+  /** Authoritative release context; without it nothing may be completed early. */
+  release?: ReleaseContext;
+  /** Canonical owner approval records already raised for this task. */
+  approvals?: {
+    id: string;
+    entity_id: string | null;
+    status: string;
+    created_at: string;
+    decided_at: string | null;
+    decision_note: string | null;
+    detail?: string | null;
+  }[];
 }) {
   const [evidence, setEvidence] = useState("");
   const [due, setDue] = useState("");
@@ -140,7 +155,14 @@ export function TaskDrawer({
 
   if (!task) return null;
 
-  const view = viewTask(task, tasks);
+  const view = viewTask(task, tasks, release);
+  // One canonical approval record per request — the drawer must never look
+  // like a request that already went out has never been sent.
+  const taskApprovals = approvals
+    .filter((a) => a.entity_id === task.id)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const openApproval = taskApprovals.find((a) => a.status === "pending") ?? null;
+  const lastApproval = taskApprovals[0] ?? null;
   const why = whyThisTaskExists(view, tasks);
   const subtasks = tasks.filter((t) => t.parent_task_id === task.id);
   const deps = (task.depends_on ?? [])
@@ -366,8 +388,47 @@ export function TaskDrawer({
           {task.requires_owner_approval && task.owner_approval_status !== "approved" && (
             <>
               <Separator />
+              {lastApproval && (
+                <section className="space-y-1 rounded-lg border border-border p-3 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Chip
+                      className={stateChip(
+                        lastApproval.status === "approved"
+                          ? "done"
+                          : lastApproval.status === "pending"
+                            ? "waiting"
+                            : "info",
+                      )}
+                    >
+                      {lastApproval.status === "pending"
+                        ? "Request sent — waiting on the homeowner"
+                        : lastApproval.status === "approved"
+                          ? "Approved"
+                          : "Changes requested"}
+                    </Chip>
+                    <span className="numeric text-xs text-muted-foreground">
+                      Sent {new Date(lastApproval.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Channel:{" "}
+                    {task.owner_approval_status === "awaiting_owner"
+                      ? "Recorded on the canonical approval record — Active Owner portal or Resolve-generated email."
+                      : "Canonical approval record."}
+                    {lastApproval.decided_at
+                      ? ` Decided ${new Date(lastApproval.decided_at).toLocaleString()}.`
+                      : ""}
+                  </p>
+                  {lastApproval.decision_note && (
+                    <p className="text-xs text-muted-foreground">{lastApproval.decision_note}</p>
+                  )}
+                </section>
+              )}
+
               <section className="space-y-2">
-                <p className="eyebrow">Send to the homeowner</p>
+                <p className="eyebrow">
+                  {openApproval ? "Resend this request" : "Send to the homeowner"}
+                </p>
                 <Input
                   value={approvalVersion}
                   onChange={(e) => setApprovalVersion(e.target.value)}
@@ -392,9 +453,11 @@ export function TaskDrawer({
                     onSubmitApproval(task.id, approvalVersion.trim(), approvalNote.trim())
                   }
                 >
-                  {task.owner_approval_status === "changes_requested"
-                    ? "Resubmit for approval"
-                    : "Send for approval"}
+                  {openApproval
+                    ? "Resend request"
+                    : task.owner_approval_status === "changes_requested"
+                      ? "Resubmit for approval"
+                      : "Send for approval"}
                 </Button>
               </section>
 
@@ -497,13 +560,24 @@ export function TaskDrawer({
 
         <div className="sticky bottom-0 flex items-center gap-2 border-t border-border bg-card p-3">
           {task.status !== "complete" ? (
-            <Button
-              className="flex-1"
-              disabled={disabled || view.waitingOn.length > 0 || evidenceMissing || awaitingOwner}
-              onClick={() => onSave(taskPayload(task, { status: "complete", blocker: "" }))}
-            >
-              Mark complete
-            </Button>
+            <div className="flex flex-1 flex-col gap-1">
+              <Button
+                className="w-full"
+                disabled={
+                  disabled ||
+                  !view.canComplete ||
+                  view.waitingOn.length > 0 ||
+                  evidenceMissing ||
+                  awaitingOwner
+                }
+                onClick={() => onSave(taskPayload(task, { status: "complete", blocker: "" }))}
+              >
+                Mark complete
+              </Button>
+              {!view.canComplete && view.reason && (
+                <p className="text-xs text-muted-foreground">{view.reason}</p>
+              )}
+            </div>
           ) : (
             <div className="flex flex-1 flex-col gap-1.5">
               <Input

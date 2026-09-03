@@ -11,6 +11,7 @@ import { ChevronDown, ChevronRight, CircleAlert, Lock } from "lucide-react";
 import { Chip } from "@/components/ui/page";
 import { cn } from "@/lib/utils";
 import { stateChip } from "@/lib/semantic";
+import type { ReleaseContext } from "@/lib/onboarding-state";
 import {
   STATUS_LABEL,
   STATUS_STATE,
@@ -31,15 +32,18 @@ export function WorkflowTable({
   selectedId,
   onSelect,
   outOfScope = [],
+  release,
 }: {
   tasks: WorkflowTask[];
   people: Person[];
   selectedId?: string | null;
   onSelect: (task: WorkflowTask) => void;
+  /** Authoritative release context — decides what may read "Ready". */
+  release?: ReleaseContext;
   /** Work this project's scope switched off — shown, never counted as missing. */
   outOfScope?: { task: WorkflowTask; reason: string }[];
 }) {
-  const sections = useMemo(() => buildSections(tasks), [tasks]);
+  const sections = useMemo(() => buildSections(tasks, release), [tasks, release]);
   const active = useMemo(() => activeSectionKey(sections), [sections]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [showSkipped, setShowSkipped] = useState(false);

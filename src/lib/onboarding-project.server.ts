@@ -224,6 +224,17 @@ export async function updateProject(
     .single();
   if (current.error) throw current.error;
 
+  // A scope change after initialization must always carry a reason: History
+  // has to explain why this home stopped being asked for that work.
+  const scopeChanging =
+    (input.furnishingScope !== undefined &&
+      input.furnishingScope !== current.data.furnishing_scope) ||
+    (input.modules !== undefined &&
+      JSON.stringify([...input.modules].sort()) !==
+        JSON.stringify([...(current.data.modules ?? [])].sort()));
+  if (scopeChanging && (input.reason ?? "").trim().length < 5)
+    throw new Error("A scope change needs a reason so History can explain it.");
+
   const patch: Database["public"]["Tables"]["onboarding_projects"]["Update"] = {};
   if (input.branch !== undefined) patch.branch = input.branch;
   if (input.projectManager !== undefined) patch.project_manager = input.projectManager;
