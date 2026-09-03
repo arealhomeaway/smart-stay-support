@@ -114,7 +114,7 @@ function PropertyWorkspace() {
   const { propertyId } = Route.useParams();
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { can, readOnly, userId } = useRole();
+  const { can, readOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
@@ -496,7 +496,7 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------ Financial */}
         <TabsContent value="financial" className="space-y-4">
-          <FinancialPanel propertyId={current.id} canEdit={canEdit} isAdmin={can("admin")} />
+          <FinancialPanel propertyId={current.id} canEdit={canEdit} isAdmin={roles.includes("admin")} />
         </TabsContent>
 
         {/* -------------------------------------------------------- Handoff */}
