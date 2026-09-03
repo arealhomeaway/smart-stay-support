@@ -59,8 +59,8 @@ describe("one shared definition of test data", () => {
 
   it("hides test rows by default and reveals them on request", () => {
     const rows = [{ name: "Real home" }, { name: "ZZ QA — Birch" }];
-    expect(applyTestDataFilter(rows, false, (r) => r)).toHaveLength(1);
-    expect(applyTestDataFilter(rows, true, (r) => r)).toHaveLength(2);
+    expect(applyTestDataFilter(rows, false, (r) => r).length).toBe(1);
+    expect(applyTestDataFilter(rows, true, (r) => r).length).toBe(2);
     expect(countTestRecords(rows, (r) => r)).toBe(1);
   });
 });
