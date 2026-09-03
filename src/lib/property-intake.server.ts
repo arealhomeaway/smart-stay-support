@@ -189,6 +189,8 @@ export async function importOwnerRezProperty(
       postal_code: listing.address?.postal_code ?? listing.address?.zip ?? null,
       ownerrez_property_id: input.listingId,
       ownerrez_synced_at: now,
+      // A property existing is not onboarding, acceptance or Live.
+      lifecycle_status: "not_onboarded",
       is_demo: input.isDemo ?? false,
       created_by: userId,
     })
@@ -258,6 +260,8 @@ export async function createPropertyManually(
       owner_record_id: ownerRecordId,
       ownerrez_property_id: orId,
       ownerrez_synced_at: orId ? new Date().toISOString() : null,
+      // A property existing is not onboarding, acceptance or Live.
+      lifecycle_status: "not_onboarded",
       is_demo: input.isDemo ?? false,
       created_by: userId,
     })

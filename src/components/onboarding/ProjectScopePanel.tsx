@@ -138,6 +138,13 @@ export function ProjectScopePanel({
                 <li key={e.id} className="text-xs text-muted-foreground">
                   <span className="numeric">{e.created_at.slice(0, 10)}</span> — {e.summary}
                   {e.detail ? ` ${e.detail}` : ""}
+                  {/* History has to be readable without opening the record:
+                      say what the scope was and what it became. */}
+                  {(e.prior_value || e.new_value) && (
+                    <span className="block text-foreground/70">
+                      {e.prior_value ?? "—"} → {e.new_value ?? "—"}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

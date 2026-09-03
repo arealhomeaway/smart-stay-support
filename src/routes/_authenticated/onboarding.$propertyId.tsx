@@ -719,9 +719,16 @@ function PropertyWorkspace() {
                   Handoff in review — {gateLabel(openHandoff.gate_step)}
                 </Chip>
               ) : (
+                <>
+                {readiness.blocked && (
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    Ready for handoff is unavailable until the blockers above are cleared.
+                  </p>
+                )}
                 <RequestHandoffDialog
                   ready={readiness.ready}
-                  disabled={!canEdit}
+                  blockedReasons={readiness.hardReasons}
+                  disabled={!canEdit || readiness.blocked}
                   carryoverCount={
                     tasks.filter((t) => t.status !== "complete" && t.status !== "carryover").length
                   }
@@ -731,6 +738,7 @@ function PropertyWorkspace() {
                     } as never)
                   }
                 />
+                </>
               )}
             </div>
           </section>
@@ -1153,11 +1161,13 @@ function NewTaskDialog({
 
 function RequestHandoffDialog({
   ready,
+  blockedReasons,
   disabled,
   carryoverCount,
   onRequest,
 }: {
   ready: boolean;
+  blockedReasons: { key: string; label: string }[];
   disabled: boolean;
   carryoverCount: number;
   onRequest: (notes: string, carryoverAccepted: boolean) => void;
@@ -1176,6 +1186,12 @@ function RequestHandoffDialog({
           <DialogTitle>Request handoff to operations</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {blockedReasons.length > 0 && (
+            <p className="text-sm text-destructive">
+              Handoff cannot be requested while these stand:{" "}
+              {blockedReasons.map((r) => r.label).join("; ")}.
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             {ready
               ? "All blocking checks pass. The Director of Onboarding reviews first, then the Director of Operations."

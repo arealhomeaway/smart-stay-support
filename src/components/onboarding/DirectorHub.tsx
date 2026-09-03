@@ -23,6 +23,7 @@ import {
   type ProjectSummary,
 } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
+import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 
 type Lens =
   | "attention"
@@ -131,10 +132,11 @@ export function DirectorHub({
   viewer?: HubViewer;
 }) {
   const [showTest, setShowTest] = useState(false);
-  // Test/QA homes never count towards live onboarding reporting.
-  const testCount = allProjects.filter((p) => p.property.is_demo).length;
+  // Test/QA homes never count towards live onboarding reporting. One shared
+  // rule (src/lib/test-data.ts) decides this everywhere in Resolve.
+  const testCount = countTestRecords(allProjects, (p) => p.property);
   const projects = useMemo(
-    () => (showTest ? allProjects : allProjects.filter((p) => !p.property.is_demo)),
+    () => applyTestDataFilter(allProjects, showTest, (p) => p.property),
     [allProjects, showTest],
   );
   const [lens, setLens] = useState<Lens>("attention");

@@ -11,6 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { validateHandoff } from "./onboarding";
+import { handoffReadiness } from "./onboarding-state";
 export { validateHandoff };
 import { writeAudit } from "./audit.server";
 
@@ -634,6 +635,43 @@ export async function requestHandoff(
   if (tasks.error) throw tasks.error;
 
   const { checks, openBlocking, ready } = validateHandoff(property.data, tasks.data ?? []);
+
+  // Authoritative server-side gate. The UI disables the action, but a stale
+  // or alternate client must never be able to advance a blocked handoff.
+  const [projectRow, openHandoffRow] = await Promise.all([
+    supabase
+      .from("onboarding_projects")
+      .select("id, status, completed_at")
+      .eq("property_id", input.propertyId)
+      .neq("status", "cancelled")
+      .maybeSingle(),
+    supabase
+      .from("property_handoffs")
+      .select("id, status, gate_step, accepted_at, live_confirmed_at")
+      .eq("property_id", input.propertyId)
+      .in("status", ["requested", "accepted_pending_live"])
+      .maybeSingle(),
+  ]);
+  if (openHandoffRow.data) {
+    throw new Error("A handoff is already in review for this home.");
+  }
+  const readiness = handoffReadiness(
+    {
+      property: property.data as never,
+      project: (projectRow.data ?? null) as never,
+      tasks: (tasks.data ?? []) as never,
+      handoff: null,
+    },
+    checks,
+  );
+  if (readiness.blocked) {
+    throw new Error(
+      `Handoff is blocked and cannot be requested: ${readiness.hardReasons
+        .map((r) => r.label)
+        .join("; ")}.`,
+    );
+  }
+
   if (!ready && !input.carryoverAccepted) {
     throw new Error(
       "Readiness checklist has blocking failures. Resolve them, or accept the open items as carryover work with an owner, due date and reason.",

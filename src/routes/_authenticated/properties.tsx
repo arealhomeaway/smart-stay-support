@@ -25,6 +25,7 @@ import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
+import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/properties")({
     if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
     if (typeof raw["market"] === "string" && raw["market"]) out.market = raw["market"];
     if (typeof raw["status"] === "string" && raw["status"]) out.status = raw["status"];
+    if (raw["test"] === true || raw["test"] === "true") out.test = true;
     return out;
   },
   component: () => (
@@ -51,7 +53,12 @@ export const Route = createFileRoute("/_authenticated/properties")({
   ),
 });
 
-type PropertySearch = { q?: string | undefined; market?: string | undefined; status?: string | undefined };
+type PropertySearch = {
+  q?: string | undefined;
+  market?: string | undefined;
+  status?: string | undefined;
+  test?: boolean | undefined;
+};
 
 
 function PropertiesPage() {
@@ -129,6 +136,7 @@ function PropertiesPage() {
         if (!next.q) delete next.q;
         if (!next.market || next.market === "all") delete next.market;
         if (!next.status || next.status === "all") delete next.status;
+        if (!next.test) delete next.test;
         return next;
       },
       replace: true,
@@ -142,7 +150,10 @@ function PropertiesPage() {
   ).sort();
 
   const q = find.trim().toLowerCase();
-  const visible = (data?.properties ?? []).filter((p) => {
+  const showTest = params.test === true;
+  const allProps = data?.properties ?? [];
+  const testCount = countTestRecords(allProps, (p) => p);
+  const visible = applyTestDataFilter(allProps, showTest, (p) => p).filter((p) => {
     if (marketFilter !== "all" && p.market !== marketFilter) return false;
     if (statusFilter === "open") {
       const has = (data?.tickets ?? []).some(
@@ -191,6 +202,14 @@ function PropertiesPage() {
         <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
           {enriching ? "Refreshing…" : "Refresh property info & photos"}
         </Button>
+        {testCount > 0 && (
+          <Button
+            variant={showTest ? "secondary" : "ghost"}
+            onClick={() => setParam({ test: showTest ? undefined : true })}
+          >
+            {showTest ? "Hide" : "Show"} QA / test homes ({testCount})
+          </Button>
+        )}
         <AddPropertyDialog />
         </div>
 
