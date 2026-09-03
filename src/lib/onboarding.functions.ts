@@ -264,6 +264,24 @@ export const submitOwnerApprovalFn = createServerFn({ method: "POST" })
     return submitOwnerApproval(context.supabase, context.userId, data);
   });
 
+export const recordOwnerTaskDecisionFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        approved: z.boolean(),
+        note: z.string().trim().min(3).max(1000),
+        evidenceUrl: z.string().trim().max(500).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { recordOwnerTaskDecision } = await import("./onboarding.server");
+    return recordOwnerTaskDecision(context.supabase, context.userId, data);
+  });
+
+
 export const confirmApprovalRequirementFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

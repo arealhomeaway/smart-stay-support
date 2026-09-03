@@ -88,6 +88,8 @@ export function TaskDrawer({
   onClose,
   onSave,
   onSubmitApproval,
+  onRecordOwnerDecision,
+
   onRecordException,
   onReopen,
   onAddObservation,
@@ -101,6 +103,12 @@ export function TaskDrawer({
   onClose: () => void;
   onSave: (input: SaveTaskInput) => void;
   onSubmitApproval: (taskId: string, version: string, note: string) => void;
+  onRecordOwnerDecision: (
+    taskId: string,
+    approved: boolean,
+    note: string,
+    evidenceUrl: string,
+  ) => void;
   onRecordException: (taskId: string, reason: string) => void;
   onReopen: (taskId: string, reason: string) => void;
   onAddObservation: (taskId: string, body: string) => void;
@@ -110,6 +118,8 @@ export function TaskDrawer({
   const [overrideReason, setOverrideReason] = useState("");
   const [approvalVersion, setApprovalVersion] = useState("");
   const [approvalNote, setApprovalNote] = useState("");
+  const [decisionNote, setDecisionNote] = useState("");
+  const [decisionEvidence, setDecisionEvidence] = useState("");
   const [exception, setException] = useState("");
   const [observation, setObservation] = useState("");
   const [reopenReason, setReopenReason] = useState("");
@@ -120,10 +130,13 @@ export function TaskDrawer({
     setOverrideReason("");
     setApprovalVersion("");
     setApprovalNote("");
+    setDecisionNote("");
+    setDecisionEvidence("");
     setException("");
     setObservation("");
     setReopenReason("");
   }, [task?.id, task?.evidence_note, task?.due_on]);
+
 
   if (!task) return null;
 
@@ -367,8 +380,9 @@ export function TaskDrawer({
                   placeholder="What the homeowner is being asked to approve."
                 />
                 <p className="text-xs text-muted-foreground">
-                  The homeowner&apos;s name, the time, their comments and this version are recorded
-                  with the decision. Sending alone does not complete the step.
+                  An enrolled Active Owner sees this in their portal. A standard homeowner gets a
+                  Resolve-generated email — they never need Resolve access to answer. Either way it
+                  is the same approval record. Sending alone does not complete the step.
                 </p>
                 <Button
                   size="sm"
@@ -383,8 +397,61 @@ export function TaskDrawer({
                     : "Send for approval"}
                 </Button>
               </section>
+
+              {task.owner_approval_status === "awaiting_owner" && (
+                <section className="space-y-2 rounded-lg border border-border p-3">
+                  <p className="eyebrow">Record the homeowner&apos;s answer</p>
+                  <p className="text-xs text-muted-foreground">
+                    When the homeowner replies by email or phone, record it here. It is written to
+                    the same approval record with your name and the time.
+                  </p>
+                  <Textarea
+                    rows={2}
+                    value={decisionNote}
+                    onChange={(e) => setDecisionNote(e.target.value)}
+                    placeholder="What they said, and where the answer came from."
+                  />
+                  <Input
+                    value={decisionEvidence}
+                    onChange={(e) => setDecisionEvidence(e.target.value)}
+                    placeholder="Link to the reply email or saved document (optional)"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      disabled={disabled || decisionNote.trim().length < 3}
+                      onClick={() =>
+                        onRecordOwnerDecision(
+                          task.id,
+                          true,
+                          decisionNote.trim(),
+                          decisionEvidence.trim(),
+                        )
+                      }
+                    >
+                      Homeowner approved
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={disabled || decisionNote.trim().length < 3}
+                      onClick={() =>
+                        onRecordOwnerDecision(
+                          task.id,
+                          false,
+                          decisionNote.trim(),
+                          decisionEvidence.trim(),
+                        )
+                      }
+                    >
+                      Changes requested
+                    </Button>
+                  </div>
+                </section>
+              )}
             </>
           )}
+
 
           <Separator />
 

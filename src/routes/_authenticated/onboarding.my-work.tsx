@@ -16,6 +16,7 @@ import {
   reopenOnboardingTaskFn,
   saveOnboardingTaskFn,
   submitOwnerApprovalFn,
+  recordOwnerTaskDecisionFn,
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/my-work")({
@@ -65,7 +66,16 @@ function MyWork() {
     },
     onError,
   });
+  const recordOwnerDecision = useMutation({
+    mutationFn: useServerFn(recordOwnerTaskDecisionFn) as never,
+    onSuccess: () => {
+      toast.success("Homeowner's answer recorded.");
+      void refresh();
+    },
+    onError,
+  });
   const reopenTask = useMutation({
+
     mutationFn: useServerFn(reopenOnboardingTaskFn) as never,
     onSuccess: () => {
       toast.success("Task reopened.");
@@ -225,8 +235,14 @@ function MyWork() {
             data: { propertyId: openTask?.property_id ?? "", taskId, body, mentions: [] },
           } as never)
         }
+        onRecordOwnerDecision={(taskId, approved, note, evidenceUrl) =>
+          recordOwnerDecision.mutate({
+            data: { taskId, approved, note, ...(evidenceUrl ? { evidenceUrl } : {}) },
+          } as never)
+        }
         onRecordException={(taskId, reason) => recordException.mutate({ data: { taskId, reason } } as never)}
       />
+
     </div>
   );
 }

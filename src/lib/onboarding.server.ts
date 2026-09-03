@@ -238,9 +238,12 @@ export async function saveOnboardingTask(
 
 /**
  * Create the homeowner-facing decision record for a task that needs owner
- * approval. It is addressed to the homeowner enrolled on that property through
- * the existing owner-program enrollment; if no enrolled homeowner is linked,
- * nothing is created and staff keep the task pending.
+ * approval, and put it in front of that homeowner.
+ *
+ * There is ONE canonical approval model. An Active Owner sees the same
+ * `approvals` row in their portal; a standard owner — who never needs Resolve
+ * access — gets a Resolve-generated email carrying the same reference, and the
+ * row records the address it went to.
  *
  * A new request is created only when there is no request still waiting. Earlier
  * decisions are never overwritten — a revision request produces an additional
@@ -259,7 +262,7 @@ export async function ensureOwnerApprovalRequest(
     /** Version label of the item being reviewed, e.g. "Mood boards v2". */
     version?: string | null;
   },
-) {
+): Promise<{ approvalId: string | null; channel: "in_app" | "email" | "none" }> {
   const existing = await supabase
     .from("approvals")
     .select("id, status")
@@ -269,12 +272,13 @@ export async function ensureOwnerApprovalRequest(
     .limit(1);
   if (existing.error) throw existing.error;
   const latest = existing.data?.[0];
-  if (latest && latest.status === "pending") return latest.id;
+  if (latest && latest.status === "pending") {
+    return { approvalId: latest.id, channel: "in_app" };
+  }
 
   const { activeOwnerFor } = await import("./active-owner.server");
   const link = await activeOwnerFor(supabase, input.propertyId);
   const ownerUserId = link?.ownerUserId ?? null;
-  if (!ownerUserId) return null;
 
   const detail = [input.detail || null, input.version ? `Version reviewed: ${input.version}` : null]
     .filter(Boolean)
@@ -299,8 +303,20 @@ export async function ensureOwnerApprovalRequest(
     .select("id")
     .maybeSingle();
   if (error) throw error;
-  return data?.id ?? null;
+  const approvalId = data?.id ?? null;
+  if (!approvalId) return { approvalId: null, channel: "none" };
+
+  const { routeOwnerDecision } = await import("./onboarding-finance.server");
+  const routed = await routeOwnerDecision(supabase, userId, {
+    propertyId: input.propertyId,
+    approvalId,
+    subject: input.title,
+    amount: null,
+    detail: detail || "",
+  });
+  return { approvalId, channel: routed.channel };
 }
+
 
 /**
  * Send (or re-send) one task to the enrolled homeowner for approval.
@@ -329,7 +345,7 @@ export async function submitOwnerApproval(
     throw new Error("The homeowner already approved this step.");
   }
 
-  const approvalId = await ensureOwnerApprovalRequest(supabase, userId, {
+  const { approvalId, channel } = await ensureOwnerApprovalRequest(supabase, userId, {
     taskId: task.data.id,
     propertyId: task.data.property_id,
     title: task.data.title,
@@ -338,9 +354,9 @@ export async function submitOwnerApproval(
     isDemo: task.data.is_demo ?? false,
     version: input.version || null,
   });
-  if (!approvalId) {
+  if (!approvalId || channel === "none") {
     throw new Error(
-      "No enrolled homeowner is linked to this home, so the approval could not be sent.",
+      "This home has no enrolled homeowner and no homeowner email on file, so the approval could not be sent. Add an owner contact email on the Property tab first.",
     );
   }
 
@@ -356,10 +372,90 @@ export async function submitOwnerApproval(
     entityType: "onboarding_task",
     entityId: task.data.id,
     entityLabel: task.data.title,
-    after: { approvalId, version: input.version || null },
+    after: { approvalId, channel, version: input.version || null },
+  });
+  return { ok: true as const, approvalId, channel };
+}
+
+/**
+ * Staff confirm the homeowner's final answer on a task approval.
+ *
+ * A standard owner replies by email, so a member of staff records what they
+ * said against the SAME canonical approval row: the decision, who reported it,
+ * their words, and a link to the reply kept as evidence. Nothing is invented —
+ * the row keeps its identity, and history is never rewritten.
+ */
+export async function recordOwnerTaskDecision(
+  supabase: Client,
+  userId: string,
+  input: {
+    taskId: string;
+    approved: boolean;
+    /** What the homeowner said, and where it came from. */
+    note: string;
+    /** Link to the reply email or saved document, when available. */
+    evidenceUrl?: string | null | undefined;
+  },
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  if (!input.note || input.note.trim().length < 3) {
+    throw new Error("Record what the homeowner said and where the answer came from.");
+  }
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select("id, property_id, title, requires_owner_approval, owner_approval_status")
+    .eq("id", input.taskId)
+    .maybeSingle();
+  if (task.error) throw task.error;
+  if (!task.data) throw new Error("That task is not available.");
+  if (!task.data.requires_owner_approval) {
+    throw new Error("This step does not require a homeowner approval.");
+  }
+
+  const pending = await supabase
+    .from("approvals")
+    .select("id")
+    .eq("entity_type", "onboarding_task")
+    .eq("entity_id", task.data.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (pending.error) throw pending.error;
+  const approvalId = pending.data?.[0]?.id ?? null;
+  if (!approvalId) {
+    throw new Error("There is no open homeowner request on this step — send it for approval first.");
+  }
+
+  const now = new Date().toISOString();
+  const decided = await supabase
+    .from("approvals")
+    .update({
+      status: input.approved ? "approved" : "declined",
+      decision_note: input.note.trim(),
+      decided_at: now,
+      ...(input.evidenceUrl ? { evidence_url: input.evidenceUrl } : {}),
+    })
+    .eq("id", approvalId);
+  if (decided.error) throw decided.error;
+
+  const { error } = await supabase
+    .from("onboarding_tasks")
+    .update({ owner_approval_status: input.approved ? "approved" : "changes_requested" })
+    .eq("id", task.data.id);
+  if (error) throw error;
+
+  await writeAudit({
+    actorId: userId,
+    action: input.approved ? "owner_approval_recorded" : "owner_changes_recorded",
+    entityType: "onboarding_task",
+    entityId: task.data.id,
+    entityLabel: task.data.title,
+    reason: input.note.trim(),
+    after: { approvalId, evidenceUrl: input.evidenceUrl ?? null },
   });
   return { ok: true as const, approvalId };
 }
+
 
 /**
  * Staff-confirmed reconciliation after a participation change.
