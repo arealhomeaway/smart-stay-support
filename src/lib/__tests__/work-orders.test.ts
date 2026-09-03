@@ -200,7 +200,9 @@ describe("stage, queue and closure", () => {
   it("stage is derived from what actually happened", () => {
     expect(derivedStage({})).toBe("needs_diagnosis");
     expect(derivedStage({ quote_requested_at: ago(60) })).toBe("quote_requested");
-    expect(derivedStage({ quote_amount: 200 })).toBe("quote_received");
+    expect(derivedStage({ quote_amount: 150 })).toBe("quote_received");
+    expect(derivedStage({ quote_amount: 275 })).toBe("awaiting_approval");
+    expect(derivedStage({ quote_amount: 275, supervisor_approval_status: "approved" })).toBe("quote_received");
     expect(derivedStage({ quote_amount: 900 })).toBe("awaiting_approval");
     expect(derivedStage({ quote_amount: 900, approval_status: "approved" })).toBe("approved");
     expect(derivedStage({ vendor_arrived_at: ago(30) })).toBe("in_progress");
@@ -244,7 +246,14 @@ describe("stage, queue and closure", () => {
   });
 
   it("a fully evidenced repair closes", () => {
-    const wo = { quote_amount: 225, vendor_completed_at: ago(10), evidence_complete: true, final_cost: 225 };
+    const wo = {
+      quote_amount: 225,
+      supervisor_approval_status: "approved",
+      owner_fyi_at: ago(20),
+      vendor_completed_at: ago(10),
+      evidence_complete: true,
+      final_cost: 225,
+    };
     expect(canClose(wo)).toBe(true);
     expect(nextAction(wo, NOW)).toBe("Ready to close.");
   });
