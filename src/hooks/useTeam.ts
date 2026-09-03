@@ -7,6 +7,8 @@ export type TeamMember = {
   full_name: string | null;
   email: string | null;
   roles: AppRole[];
+  /** Another active account shares this display name. */
+  ambiguous?: boolean;
 };
 
 /** The signed-in user's id, resolved once. */
@@ -39,14 +41,32 @@ export function useStaffDirectory() {
         list.push(r.role as AppRole);
         roleMap.set(r.user_id, list);
       }
-      return (profiles.data ?? [])
+      const staff = (profiles.data ?? [])
         .map((p) => ({ ...p, roles: roleMap.get(p.id) ?? [] }) as TeamMember)
         .filter((p) => p.roles.some((r) => ["admin", "manager", "onboarding", "tech"].includes(r)));
+
+      // Two accounts can carry the same name (a real staff member and a test
+      // account, for instance). Assigning work to "Emily Jimenez" twice over is
+      // not a choice anyone can make, so colliding names get their email shown.
+      const counts = new Map<string, number>();
+      for (const m of staff) {
+        const key = (m.full_name ?? "").trim().toLowerCase();
+        if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      return staff.map((m) => {
+        const key = (m.full_name ?? "").trim().toLowerCase();
+        return counts.get(key) ?? 0 > 1 ? { ...m, ambiguous: true } : m;
+      });
     },
   });
 }
 
-export function displayName(m: { full_name: string | null; email: string | null } | undefined | null) {
+export function displayName(
+  m: { full_name: string | null; email: string | null; ambiguous?: boolean } | undefined | null,
+) {
   if (!m) return "Unassigned";
-  return m.full_name?.trim() || m.email || "Team member";
+  const name = m.full_name?.trim();
+  if (!name) return m.email || "Team member";
+  // Disambiguate duplicate names so the picker never offers two identical rows.
+  return m.ambiguous && m.email ? `${name} (${m.email})` : name;
 }
