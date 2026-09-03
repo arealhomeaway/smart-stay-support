@@ -83,8 +83,13 @@ function Hub() {
               (h.status === "requested" || h.status === "accepted_pending_live"),
           ) ?? null;
         const pm = data.people.find((x) => x.id === p.onboarding_owner);
+        // The Onboarding Project row is authoritative for lifecycle: without
+        // it a home with tasks would read as started when it is not.
+        const project =
+          (data.projects ?? []).find((x) => x.property_id === p.id && x.status !== "cancelled") ??
+          null;
         return summarizeProject(
-          { property: p as unknown as ProjectProperty, tasks, handoff },
+          { property: p as unknown as ProjectProperty, tasks, handoff, project: project as never },
           pm?.full_name ?? pm?.email ?? null,
         );
       });

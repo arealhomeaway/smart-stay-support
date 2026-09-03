@@ -44,6 +44,13 @@ import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
 import { CurrentWork } from "@/components/onboarding/CurrentWork";
+import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
+import {
+  buildReleaseContext,
+  chainProgress,
+  deriveLifecycle,
+  handoffReadiness,
+} from "@/lib/onboarding-state";
 import {
   deriveBlockers,
   deriveNextAction,
@@ -182,16 +189,14 @@ function PropertyWorkspace() {
       <EmptyState title="Home not found" hint="This property is not in the onboarding workspace." />
     );
 
-  const roll = rollupProperty(tasks);
-  const sections = buildSections(tasks);
-  const readiness = validateHandoff(current, tasks as never, {
-    includeQuarterlyReview: enabled("quarterly_reviews"),
-  });
   const openHandoff = data.handoffs.find(
     (h) =>
       h.property_id === current.id &&
       (h.status === "requested" || h.status === "accepted_pending_live"),
   );
+  const projectRow =
+    (data.projects ?? []).find((x) => x.property_id === propertyId && x.status !== "cancelled") ??
+    null;
   const notes = data.notes.filter((n) => n.property_id === current.id);
   const approvals = (data.ownerApprovals ?? []).filter((a) => a.property_id === current.id);
   const mismatches = (data.approvalMismatches ?? []).filter((m) => m.propertyId === current.id);
@@ -205,8 +210,102 @@ function PropertyWorkspace() {
     property: current as unknown as ProjectProperty,
     tasks,
     handoff: (openHandoff ?? null) as OpenHandoff,
+    project: projectRow as never,
   };
+  // One authoritative read, shared by every surface on this page.
+  const life = deriveLifecycle({
+    property: current as never,
+    project: projectRow as never,
+    tasks,
+    handoff: (openHandoff ?? null) as never,
+  });
+  const release = buildReleaseContext({
+    property: current as never,
+    project: projectRow as never,
+    tasks,
+    handoff: (openHandoff ?? null) as never,
+  });
+  const roll = rollupProperty(tasks, release);
+  const sections = buildSections(tasks, release);
+  const readiness = handoffReadiness(
+    {
+      property: current as never,
+      project: projectRow as never,
+      tasks,
+      handoff: (openHandoff ?? null) as never,
+    },
+    validateHandoff(current, tasks as never, {
+      includeQuarterlyReview: enabled("quarterly_reviews"),
+    }).checks,
+  );
+  const chain = chainProgress({
+    property: current as never,
+    project: projectRow as never,
+    tasks,
+    handoff: (openHandoff ?? null) as never,
+  });
+  // Work recorded after Operations accepted the home is never part of that
+  // finished plan: it is a correction or an Operations ticket.
+  const postAcceptance = life.lockedAt
+    ? tasks.filter(
+        (t) =>
+          (t.created_at ?? "") > life.lockedAt! &&
+          t.status !== "complete" &&
+          t.status !== "carryover",
+      )
+    : [];
   const stage = deriveStage(project);
+
+  // Before onboarding is actually started there is no plan to act on. Showing
+  // scope pickers, Add task or template actions here would imply a project
+  // exists, so this home gets a pre-start screen instead.
+  if (life.notStarted) {
+    return (
+      <div className="space-y-5">
+        <Link
+          to="/onboarding"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="size-4" /> Director hub
+        </Link>
+        <PageHeader
+          eyebrow="Onboarding"
+          title={current.name}
+          description="Onboarding has not been started for this home yet."
+        />
+        <section className="surface p-4">
+          <p className="font-medium">What Resolve knows about this home</p>
+          <dl className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Summary label="Address">
+              {[current.address_line1, current.city, current.state].filter(Boolean).join(", ") ||
+                "Not recorded"}
+            </Summary>
+            <Summary label="Lifecycle">{lifecycleMeta(current.lifecycle_status).label}</Summary>
+            <Summary label="Planned closing">{current.planned_closing_on ?? "Not set"}</Summary>
+            <Summary label="Access confirmed">{current.actual_access_on ?? "Not yet"}</Summary>
+            <Summary label="Project manager">{pm?.full_name ?? pm?.email ?? "Unassigned"}</Summary>
+            <Summary label="Program">
+              {activeOwner ? "Active Owner Program" : "Standard owner"}
+            </Summary>
+          </dl>
+        </section>
+
+        <ProjectScopePanel
+          propertyId={current.id}
+          propertyName={current.name}
+          people={data.people}
+          canEdit={canEdit}
+          hints={{ planned_closing_on: current.planned_closing_on ?? null }}
+        />
+
+        <p className="text-sm text-muted-foreground">
+          Templates, tasks and handoff become available once an Onboarding Project is started. Until
+          then nothing here is actionable.
+        </p>
+      </div>
+    );
+  }
+
   const nextAction = deriveNextAction(project);
   const risk = deriveRisk(project);
   const blockers = deriveBlockers(project);
@@ -224,14 +323,14 @@ function PropertyWorkspace() {
       <PageHeader
         eyebrow="Onboarding"
         title={current.name}
-        description={`${lifecycleStageMeta(stage).label} · ${roll.done}/${roll.total} standard workflow steps complete`}
+        description={`${life.label} · ${roll.done}/${roll.total} applicable steps complete`}
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Chip className={stateChip("info")}>{lifecycleMeta(current.lifecycle_status).label}</Chip>
+        <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
         {activeOwner && <Chip className={stateChip("waiting")}>Active Owner Program</Chip>}
         {pm && <Chip className={stateChip("info")}>{pm.full_name ?? pm.email}</Chip>}
-        {openHandoff && (
+        {openHandoff && !life.accepted && (
           <Chip className={stateChip("waiting")}>Handoff — {gateLabel(openHandoff.gate_step)}</Chip>
         )}
         <Button asChild size="sm" variant="outline" className="ml-auto">
@@ -244,8 +343,16 @@ function PropertyWorkspace() {
         </Button>
       </div>
 
+      {life.staleHandoff && (
+        <p className="text-xs text-muted-foreground">
+          A handoff record from before acceptance is kept for history. It no longer affects this
+          home&apos;s state.
+        </p>
+      )}
+
       <CurrentWork
         stage={stage}
+        chain={chain}
         next={nextAction}
         risk={risk}
         blockers={blockers}
@@ -485,14 +592,38 @@ function PropertyWorkspace() {
             />
           </div>
           <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
+          {life.locked && (
+            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              This onboarding plan is locked{life.lockedAt ? ` (${life.lockedAt.slice(0, 10)})` : ""}.
+              Template changes cannot inject new work here — record a correction or report an issue
+              instead.
+            </p>
+          )}
+          {postAcceptance.length > 0 && (
+            <section className="surface p-4">
+              <p className="font-medium">Found after acceptance ({postAcceptance.length})</p>
+              <p className="text-sm text-muted-foreground">
+                These steps were created after Operations accepted the home, so they are not part of
+                the historical plan. Handle each as a correction or an Operations ticket.
+              </p>
+              <ul className="mt-2 list-inside list-disc text-sm">
+                {postAcceptance.map((t) => (
+                  <li key={t.id}>{t.title}</li>
+                ))}
+              </ul>
+            </section>
+          )}
           <WorkflowTable
             tasks={tasks}
             outOfScope={outOfScope}
             people={data.people}
             selectedId={openTaskId}
+            release={release}
             onSelect={(t) => setOpenTaskId(t.id)}
           />
-          <TemplatePanel propertyId={current.id} propertyName={current.name} readOnly={!canEdit} />
+          {!life.locked && (
+            <TemplatePanel propertyId={current.id} propertyName={current.name} readOnly={!canEdit} />
+          )}
         </TabsContent>
 
         {/* ------------------------------------------------------- Property */}
@@ -507,6 +638,26 @@ function PropertyWorkspace() {
 
         {/* -------------------------------------------------------- Handoff */}
         <TabsContent value="handoff" className="space-y-5">
+          <section className="surface p-4">
+            <p className="eyebrow">Handoff chain</p>
+            <div className="mt-2 grid gap-1.5 sm:grid-cols-6">
+              {chain.map((g) => (
+                <div
+                  key={g.key}
+                  title={g.blurb}
+                  className={
+                    g.state === "done"
+                      ? "rounded-md border border-state-done/40 bg-state-done/10 px-2.5 py-1.5 text-xs"
+                      : g.state === "current"
+                        ? "rounded-md border border-primary bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary"
+                        : "rounded-md border border-border bg-card/40 px-2.5 py-1.5 text-xs text-muted-foreground"
+                  }
+                >
+                  {g.label}
+                </div>
+              ))}
+            </div>
+          </section>
           {/* Handoff gate */}
           {openHandoff && (
             <HandoffGatePanel
@@ -549,6 +700,19 @@ function PropertyWorkspace() {
                 </div>
               ))}
             </div>
+            {readiness.reasons.length > 0 && (
+              <div className="mt-3 rounded-md border border-state-blocked/40 bg-state-blocked/5 p-3">
+                <p className="text-sm font-medium">Handoff is blocked ({readiness.reasons.length})</p>
+                <ul className="mt-1 space-y-1 text-sm">
+                  {readiness.reasons.map((r) => (
+                    <li key={r.key}>
+                      <span className="font-medium">{r.label}</span>{" "}
+                      <span className="text-muted-foreground">— {r.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="mt-3">
               {openHandoff ? (
                 <Chip className={stateChip("waiting")}>
@@ -651,7 +815,20 @@ function PropertyWorkspace() {
         </TabsContent>
 
         {/* ------------------------------------------------------- Activity */}
-        <TabsContent value="activity">
+        <TabsContent value="activity" className="space-y-4">
+          <ProjectHistory
+            propertyId={current.id}
+            tasks={tasks}
+            approvals={approvals as never}
+            reviews={
+              data.reviews.filter((r) =>
+                data.handoffs.some(
+                  (h) => h.id === r.handoff_id && h.property_id === current.id,
+                ),
+              ) as never
+            }
+            people={data.people}
+          />
           <OnboardingNotes
             notes={notes as never}
             people={data.people}
@@ -671,6 +848,8 @@ function PropertyWorkspace() {
         people={data.people}
         propertyName={current.name}
         disabled={!canEdit}
+        release={release}
+        approvals={approvals as never}
         canRecordException={can("handoff_review")}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}

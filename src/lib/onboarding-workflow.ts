@@ -11,6 +11,8 @@
  */
 
 import { ONBOARDING_STAGES, dependencyBlocked, isOverdue, stageLabel } from "./onboarding";
+import { releaseState, type ReleaseContext, type ReleaseState } from "./onboarding-state";
+
 import { FULL_FURNISHING_TEMPLATE, type TemplateTask } from "./onboarding-template";
 import { SEAT_LABELS, type SeatCode } from "./onboarding-ownership";
 import type { WorkState } from "./semantic";
@@ -43,35 +45,43 @@ export type WorkflowTask = {
   status: string;
   sort_order: number;
   completed_at: string | null;
+  /** Present on rows loaded from the database; used for accepted-plan locking. */
+  created_at?: string | null;
 };
 
 /* ---------------------------------------------------------------- statuses */
 
 export type DerivedStatus =
+  | "future"
   | "not_ready"
   | "ready"
   | "in_progress"
   | "blocked"
   | "needs_review"
+  | "correction"
   | "complete"
   | "carryover";
 
 export const STATUS_LABEL: Record<DerivedStatus, string> = {
+  future: "Future",
   not_ready: "Not Ready",
   ready: "Ready",
   in_progress: "In Progress",
-  blocked: "Blocked",
-  needs_review: "Needs Review",
+  blocked: "Waiting",
+  needs_review: "Awaiting Review",
+  correction: "Correction Required",
   complete: "Complete",
   carryover: "Carryover",
 };
 
 export const STATUS_STATE: Record<DerivedStatus, WorkState> = {
+  future: "new",
   not_ready: "new",
   ready: "active",
   in_progress: "active",
-  blocked: "blocked",
+  blocked: "waiting",
   needs_review: "waiting",
+  correction: "blocked",
   complete: "done",
   carryover: "info",
 };
@@ -85,7 +95,10 @@ export type TaskView = {
   waitingOn: string[];
   markers: Marker[];
   template: TemplateTask | null;
+  /** True when the step is genuinely actionable today. */
+  canComplete: boolean;
 };
+
 
 export type Marker = { key: string; label: string; explain: string };
 
@@ -107,8 +120,25 @@ export function anchorLabel(anchor: string | null | undefined) {
   return ANCHOR_LABEL[anchor ?? ""] ?? "milestone";
 }
 
+/** Maps the authoritative release state onto the presentation status. */
+const RELEASE_TO_STATUS: Record<ReleaseState, DerivedStatus> = {
+  future: "future",
+  waiting: "blocked",
+  ready: "ready",
+  in_progress: "in_progress",
+  awaiting_review: "needs_review",
+  correction_required: "correction",
+  complete: "complete",
+  not_applicable: "carryover",
+};
+
 /** Everything the workflow table and drawer need for one task. */
-export function viewTask(task: WorkflowTask, all: WorkflowTask[]): TaskView {
+export function viewTask(
+  task: WorkflowTask,
+  all: WorkflowTask[],
+  release?: ReleaseContext,
+): TaskView {
+
   const template = templateFor(task.title);
   const waitingIds = dependencyBlocked(task, all);
   const waitingOn = waitingIds
@@ -207,17 +237,24 @@ export function viewTask(task: WorkflowTask, all: WorkflowTask[]): TaskView {
     });
   }
 
+  // Release gating is authoritative when the caller supplies the project's
+  // release context: a phase that has not been released can never read Ready,
+  // and nothing outside the released work can be completed early.
+  let canComplete = status !== "complete" && status !== "carryover";
+  if (release) {
+    const verdict = releaseState(task, all, release);
+    status = RELEASE_TO_STATUS[verdict.state] ?? "ready";
+    reason = verdict.reason ?? reason;
+    canComplete = verdict.canComplete;
+  } else if (status === "needs_review" || status === "blocked" || status === "not_ready") {
+    canComplete = false;
+  }
+
   // Overdue describes work someone can actually do today. A task that is
   // still waiting on a prerequisite, an internal blocker or a homeowner
   // decision is legitimately not startable, so its date is not the team's
   // failure and must not be reported as late.
-  const WORKABLE = !(
-    status === "not_ready" ||
-    status === "blocked" ||
-    status === "needs_review" ||
-    status === "complete" ||
-    status === "carryover"
-  );
+  const WORKABLE = status === "ready" || status === "in_progress" || status === "correction";
   return {
     task,
     status,
@@ -226,8 +263,10 @@ export function viewTask(task: WorkflowTask, all: WorkflowTask[]): TaskView {
     waitingOn,
     markers,
     template,
+    canComplete,
   };
 }
+
 
 /* ---------------------------------------------------------------- sections */
 
@@ -247,8 +286,11 @@ export type WorkflowSection = {
  * phases. Any stage value that is not in the canonical list still gets its own
  * section at the end so nothing is ever hidden.
  */
-export function buildSections(tasks: WorkflowTask[]): WorkflowSection[] {
-  const views = tasks.map((t) => viewTask(t, tasks));
+export function buildSections(
+  tasks: WorkflowTask[],
+  release?: ReleaseContext,
+): WorkflowSection[] {
+  const views = tasks.map((t) => viewTask(t, tasks, release));
   const order = ONBOARDING_STAGES.map((s) => s.value as string);
   const stages = [
     ...order.filter((s) => views.some((v) => v.task.stage === s)),
@@ -265,8 +307,9 @@ export function buildSections(tasks: WorkflowTask[]): WorkflowSection[] {
     let state: SectionState = "empty";
     if (total > 0) {
       if (done === total) state = "complete";
+      else if (inStage.some((v) => v.status === "correction")) state = "blocked";
+      else if (inStage.some((v) => v.status === "ready" || v.status === "in_progress")) state = "active";
       else if (inStage.some((v) => v.status === "blocked" || v.status === "needs_review")) state = "blocked";
-      else if (inStage.some((v) => v.status !== "not_ready" && v.status !== "complete")) state = "active";
       else state = "not_ready";
     }
 
@@ -390,8 +433,8 @@ export type PropertyRollup = {
   primaryBlocker: string | null;
 };
 
-export function rollupProperty(tasks: WorkflowTask[]): PropertyRollup {
-  const views = tasks.map((t) => viewTask(t, tasks));
+export function rollupProperty(tasks: WorkflowTask[], release?: ReleaseContext): PropertyRollup {
+  const views = tasks.map((t) => viewTask(t, tasks, release));
   const total = views.length;
   const done = views.filter((v) => v.status === "complete" || v.status === "carryover").length;
   const open = views.filter((v) => v.status !== "complete" && v.status !== "carryover");
@@ -405,7 +448,9 @@ export function rollupProperty(tasks: WorkflowTask[]): PropertyRollup {
     done,
     progress: total === 0 ? 0 : Math.round((done / total) * 100),
     blocked: blockedViews.length,
-    ownerPending: open.filter((v) => v.reason === "Blocked — Waiting on Owner").length,
+    ownerPending: open.filter(
+      (v) => v.task.requires_owner_approval && v.task.owner_approval_status !== "approved",
+    ).length,
     missingEvidence: open.filter((v) => v.task.evidence_required && !(v.task.evidence_note ?? "").trim())
       .length,
     overdue: open.filter((v) => v.overdue).length,

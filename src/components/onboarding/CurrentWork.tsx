@@ -37,6 +37,7 @@ export function CurrentWork({
   handoff,
   accepted,
   target,
+  chain,
   onOpenTask,
 }: {
   stage: LifecycleStage;
@@ -47,12 +48,21 @@ export function CurrentWork({
   handoff: OpenHandoff;
   accepted: boolean;
   target: string | null;
+  /** The authoritative handoff chain, when the caller has derived it. */
+  chain?: { key: string; label: string; blurb: string; state: "done" | "current" | "upcoming" }[];
   onOpenTask: (taskId: string) => void;
 }) {
   const meta = lifecycleStageMeta(stage);
   const current = stageIndex(stage);
   const branches = activeBranches(tasks);
-  const gates = gateProgress(handoff, accepted);
+  const gates =
+    chain ??
+    gateProgress(handoff, accepted).map((g) => ({
+      key: g.value,
+      label: g.label,
+      blurb: g.blurb,
+      state: g.state,
+    }));
 
   return (
     <div className="space-y-4">
@@ -154,10 +164,10 @@ export function CurrentWork({
       {/* ------------------------------------------------------ review gates */}
       <section className="surface p-4">
         <p className="eyebrow">Handoff gates</p>
-        <div className="mt-2 grid gap-1.5 sm:grid-cols-5">
+        <div className="mt-2 grid gap-1.5 sm:grid-cols-6">
           {gates.map((g) => (
             <div
-              key={g.value}
+              key={g.key}
               title={g.blurb}
               className={cn(
                 "rounded-md border px-2.5 py-1.5 text-xs",

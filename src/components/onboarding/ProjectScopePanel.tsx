@@ -199,7 +199,7 @@ export function ProjectScopePanel({
                 furnishingScope: v.furnishing,
                 modules: v.modules,
                 notes: v.notes || null,
-                reason: reason || null,
+                reason: reason.trim(),
               },
             });
           } else {
@@ -382,8 +382,17 @@ function ScopeDialog({
           </Field>
 
           {editing && (
-            <Field label="Why is the scope changing?">
-              <Input value={reason} onChange={(e) => setReason(e.target.value)} />
+            <Field label="Why is the scope changing? (required)">
+              <Input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="e.g. Owner removed the pool from the scope of work"
+                aria-invalid={reason.trim().length < 5}
+              />
+              <p className="pt-1 text-xs text-muted-foreground">
+                A scope change is recorded in History with your name, the time, and the previous
+                scope. Give a reason a teammate would understand.
+              </p>
             </Field>
           )}
 
@@ -399,7 +408,10 @@ function ScopeDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button disabled={busy} onClick={() => onSubmit(v, reason)}>
+            <Button
+              disabled={busy || (editing && reason.trim().length < 5)}
+              onClick={() => onSubmit(v, reason.trim())}
+            >
               {editing ? "Save scope" : "Start onboarding"}
             </Button>
           </div>

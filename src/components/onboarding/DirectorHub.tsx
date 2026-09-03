@@ -81,28 +81,43 @@ function awaitingMyReview(p: ProjectSummary, viewer?: HubViewer) {
   return viewer.canReview;
 }
 
+/**
+ * Every lens reads the same authoritative summary, so the counts reconcile:
+ * a live home appears in no attention queue, "blocked" and "at risk" are
+ * mutually exclusive derived levels, and a project in review is never also
+ * counted as needing a project manager's action.
+ */
 function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
+  // Accepted homes are history: they belong to Operations, not this hub.
+  const live = p.accepted || p.stage === "live";
   switch (lens) {
     case "attention":
-      return !p.next.waiting && p.stage !== "live";
+      return (
+        !live &&
+        (p.risk.level === "blocked" ||
+          p.risk.level === "at_risk" ||
+          p.property.lifecycle_status === "handoff_corrections" ||
+          awaitingMyReview(p, viewer) ||
+          (!p.next.waiting && !p.inReview))
+      );
     case "mine":
-      return awaitingMyReview(p, viewer);
+      return !live && awaitingMyReview(p, viewer);
     case "at_risk":
-      return p.risk.level === "at_risk";
+      return !live && p.risk.level === "at_risk";
     case "blocked":
-      return p.risk.level === "blocked" || p.blockers.length > 0;
+      return !live && p.risk.level === "blocked";
     case "review":
-      return p.inReview;
+      return !live && p.inReview;
     case "corrections":
-      return p.property.lifecycle_status === "handoff_corrections";
+      return !live && p.property.lifecycle_status === "handoff_corrections";
     case "handoffs":
-      return withinDays(p.target, 14);
+      return !live && withinDays(p.target, 14);
     case "up7":
-      return withinDays(p.target, 7);
+      return !live && withinDays(p.target, 7);
     case "up14":
-      return withinDays(p.target, 14);
+      return !live && withinDays(p.target, 14);
     case "up30":
-      return withinDays(p.target, 30);
+      return !live && withinDays(p.target, 30);
     default:
       return true;
   }
@@ -143,7 +158,7 @@ export function DirectorHub({
       .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
   }, [projects, lens, find, owner, viewer]);
 
-  const active = projects.filter((p) => p.stage !== "live");
+  const active = projects.filter((p) => !p.accepted && p.stage !== "live");
   const bottleneck = bottleneckStage(active);
   const workload = workloadByOwner(active);
 
@@ -160,9 +175,7 @@ export function DirectorHub({
         />
         <Stat
           label="At risk or blocked"
-          value={
-            active.filter((p) => p.risk.level === "at_risk" || p.risk.level === "blocked").length
-          }
+          value={counts.at_risk + counts.blocked}
           hint="Derived, not self-reported."
           tone="blocked"
           onClick={() => setLens("at_risk")}
