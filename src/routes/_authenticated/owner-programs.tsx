@@ -115,6 +115,10 @@ type ProgramRow = {
   operationsLead: string | null;
   lastNotificationAt: string | null;
   dfyConfirmed: boolean;
+  availableOpportunities: number;
+  upcomingOpportunities: number;
+  onboardingOpportunities: number;
+  operationsOpportunities: number;
 };
 
 /** Attention ordering, mirrored client-side so the queue can sort instantly. */
@@ -410,6 +414,21 @@ function ProgramCard({
           <Progress value={percent} />
           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
             <span>{row.openTasks} owner tasks open</span>
+            <span
+              className={
+                row.availableOpportunities === 0 && row.status === "active"
+                  ? "font-medium text-amber-700"
+                  : undefined
+              }
+            >
+              {row.availableOpportunities === 0 && row.status === "active"
+                ? "No participation opportunities available — needs staff setup"
+                : `${row.availableOpportunities} available · ${row.upcomingOpportunities} upcoming`}
+            </span>
+            <span>
+              Sources: {row.onboardingOpportunities} onboarding · {row.operationsOpportunities}{" "}
+              operations
+            </span>
             <span>
               Next milestone: day {row.nextMilestone.day} · {row.nextMilestone.hours} hrs
             </span>
