@@ -142,7 +142,10 @@ function Hub() {
               </ul>
             </section>
           )}
-          <DirectorHub projects={projects} />
+          <DirectorHub
+            projects={projects}
+            viewer={{ userId, canReview: can("handoff_review") }}
+          />
         </TabsContent>
 
         <TabsContent value="reviews" className="space-y-4">

@@ -376,7 +376,10 @@ function ProjectRow({ project: p }: { project: ProjectSummary }) {
           {p.next.headline}
         </span>
         {p.risk.reasons.length > 0 && (
-          <span className="block truncate text-xs text-state-blocked">
+          <span
+            className="block truncate text-xs text-state-blocked"
+            title={p.risk.reasons.join(" · ")}
+          >
             {p.risk.reasons.join(" · ")}
           </span>
         )}
