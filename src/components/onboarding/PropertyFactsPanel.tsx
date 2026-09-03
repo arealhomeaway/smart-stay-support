@@ -132,7 +132,7 @@ export function PropertyFactsPanel({
               <div key={f.id} className="rounded-lg border p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{f.field_key}</span>
-                  {isConflict(f) ? <Chip state="warn">Conflicts with the current value</Chip> : <Chip>New value</Chip>}
+                  {isConflict(f) ? <Chip className="text-warning">Conflicts with the current value</Chip> : <Chip>New value</Chip>}
                 </div>
                 <p className="mt-1 text-muted-foreground">{factSummary(f)}</p>
                 {canEdit ? (
