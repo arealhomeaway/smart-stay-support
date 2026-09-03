@@ -164,7 +164,9 @@ export function PropertyFactsPanel({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {notReady.length === 0
+            {utilities.length === 0
+              ? "No utility accounts recorded yet."
+              : notReady.length === 0
               ? `All utilities are active. Recorded spend ${money(utilitySpend(costs))}.`
               : `${notReady.length} utility account${notReady.length === 1 ? "" : "s"} still need work. Recorded spend ${money(utilitySpend(costs))}.`}
           </p>
