@@ -381,17 +381,33 @@ function ProgramSummary({ rows }: { rows: ProgramRow[] }) {
 function ProgramCard({
   row,
   available,
+  demo,
   expanded,
   onToggle,
 }: {
   row: ProgramRow;
   available: { id: string; name: string; location: string }[];
+  demo: boolean;
   expanded: boolean;
   onToggle: () => void;
 }) {
   const status = PROGRAM_STATUS_META[row.status] ?? PROGRAM_STATUS_META.draft;
   const progress = PROGRESS_META[(row.progressState as ProgressState) ?? "not_started"];
   const percent = Math.min(100, Math.round((row.reportedHours / OWNER_GOAL_HOURS) * 100));
+  const router = useRouter();
+  const { setViewAs } = useViewAs();
+
+  /** Open this program's hub exactly as its homeowner sees it — read-only. */
+  function previewAsHomeowner() {
+    setOwnerPreview({
+      programId: row.id,
+      ownerName: row.ownerName || "this homeowner",
+      demo,
+      origin: "/owner-programs",
+    });
+    setViewAs("owner");
+    void router.navigate({ to: "/owner" });
+  }
 
   return (
     <Card>
@@ -415,9 +431,13 @@ function ProgramCard({
             <Badge variant="outline" className={progress.tone}>
               {progress.label}
             </Badge>
+            <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
+              <Eye className="size-4" /> Preview as homeowner
+            </Button>
             <Button size="sm" variant="outline" onClick={onToggle}>
               {expanded ? "Hide" : "Manage"}
             </Button>
+
           </div>
         </div>
 
