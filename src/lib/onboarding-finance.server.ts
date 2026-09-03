@@ -378,7 +378,7 @@ export async function routeOwnerDecision(
 export async function decideFinancialRequest(
   supabase: Client,
   userId: string,
-  input: { requestId: string; approved: boolean; note: string; approvedAmount?: number | null },
+  input: { requestId: string; approved: boolean; note: string; approvedAmount?: number | null | undefined },
 ) {
   await assertOnboardingStaff(supabase, userId);
   const row = await supabase.from("financial_requests").select("*").eq("id", input.requestId).maybeSingle();
@@ -437,7 +437,7 @@ export async function decideFinancialRequest(
 export async function recordInvoice(
   supabase: Client,
   userId: string,
-  input: { requestId: string; invoiceAmount: number; invoiceRef?: string | null | undefined; varianceNote?: string | null },
+  input: { requestId: string; invoiceAmount: number; invoiceRef?: string | null | undefined; varianceNote?: string | null | undefined },
 ) {
   await assertOnboardingStaff(supabase, userId);
   const row = await supabase.from("financial_requests").select("*").eq("id", input.requestId).maybeSingle();
@@ -666,7 +666,7 @@ const FACT_FIELDS: Record<string, string> = {
 export async function proposeFact(
   supabase: Client,
   userId: string,
-  input: { propertyId: string; fieldKey: string; proposedValue: string; taskId?: string | null | undefined; sourceDetail?: string | null },
+  input: { propertyId: string; fieldKey: string; proposedValue: string; taskId?: string | null | undefined; sourceDetail?: string | null | undefined },
 ) {
   await assertOnboardingStaff(supabase, userId);
   const label = FACT_FIELDS[input.fieldKey] ?? input.fieldKey;
@@ -709,7 +709,7 @@ export async function proposeFact(
 export async function decideFact(
   supabase: Client,
   userId: string,
-  input: { proposalId: string; accept: boolean; note?: string | null },
+  input: { proposalId: string; accept: boolean; note?: string | null | undefined },
 ) {
   await assertOnboardingStaff(supabase, userId);
   const row = await supabase.from("property_fact_proposals").select("*").eq("id", input.proposalId).maybeSingle();
@@ -772,7 +772,7 @@ export async function decideFact(
 export async function setFinancialReconciliation(
   supabase: Client,
   userId: string,
-  input: { handoffId: string; status: "open" | "in_review" | "reconciled"; note?: string | null },
+  input: { handoffId: string; status: "open" | "in_review" | "reconciled"; note?: string | null | undefined },
 ) {
   await assertOnboardingStaff(supabase, userId);
   const { data, error } = await supabase
