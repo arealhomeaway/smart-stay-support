@@ -43,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/properties")({
     if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
     if (typeof raw["market"] === "string" && raw["market"]) out.market = raw["market"];
     if (typeof raw["status"] === "string" && raw["status"]) out.status = raw["status"];
+    if (raw["test"] === true || raw["test"] === "true") out.test = true;
     return out;
   },
   component: () => (
@@ -52,7 +53,12 @@ export const Route = createFileRoute("/_authenticated/properties")({
   ),
 });
 
-type PropertySearch = { q?: string | undefined; market?: string | undefined; status?: string | undefined };
+type PropertySearch = {
+  q?: string | undefined;
+  market?: string | undefined;
+  status?: string | undefined;
+  test?: boolean | undefined;
+};
 
 
 function PropertiesPage() {
@@ -130,6 +136,7 @@ function PropertiesPage() {
         if (!next.q) delete next.q;
         if (!next.market || next.market === "all") delete next.market;
         if (!next.status || next.status === "all") delete next.status;
+        if (!next.test) delete next.test;
         return next;
       },
       replace: true,
