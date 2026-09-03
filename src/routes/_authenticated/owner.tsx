@@ -298,7 +298,7 @@ function OwnerHub({
             <Stat
               label="Reported hours"
               value={formatHours(reportedMinutes)}
-              hint={`${snapshot.percentOfTarget}% of ${OPERATING_TARGET_HOURS} hrs · awaiting review + approved`}
+              hint={`${snapshot.percentOfTarget}% of ${OPERATING_TARGET_HOURS} hrs · your own record`}
             />
             <Stat
               label="Pace benchmark"

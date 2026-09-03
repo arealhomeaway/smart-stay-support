@@ -84,14 +84,12 @@ export function ParticipationReportPanel() {
           <div className="rounded-md border border-border p-3">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Reported hours</p>
             <p className="text-lg font-semibold">{t.reportedHours}</p>
-            <p className="text-xs text-muted-foreground">Approved + awaiting review</p>
+            <p className="text-xs text-muted-foreground">Everything you have logged</p>
           </div>
           <div className="rounded-md border border-border p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              ARHA-approved hours
-            </p>
-            <p className="text-lg font-semibold">{t.approvedHours}</p>
-            <p className="text-xs text-muted-foreground">Approved entries only</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Entries</p>
+            <p className="text-lg font-semibold">{data.entries.length}</p>
+            <p className="text-xs text-muted-foreground">Documented participation records</p>
           </div>
           <div className="rounded-md border border-border p-3">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Not counted</p>
@@ -107,8 +105,8 @@ export function ParticipationReportPanel() {
           {data.outsidePeriod.length > 0
             ? ` · ${data.outsidePeriod.length} entries dated outside the period are listed separately`
             : ""}
-          . Awaiting-review time is not approved and has not been verified by ARHA. This report is
-          not a tax certification.
+. These are your own reported hours; ARHA does not certify them. This report is a record of
+          participation, not a tax certification.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => void download("pdf")} disabled={busy !== null}>
