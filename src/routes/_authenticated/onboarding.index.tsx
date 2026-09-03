@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub } from "@/components/onboarding/DirectorHub";
+import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
+
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { summarizeProject, type ProjectProperty } from "@/lib/onboarding-lifecycle";
