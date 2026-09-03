@@ -26,6 +26,9 @@ import {
   saveOwnerAlertPreferences,
 } from "@/lib/owner-portal.functions";
 import { useRole } from "@/hooks/useRole";
+import { useViewAs } from "@/hooks/useViewAs";
+import { useOwnerPreview } from "@/lib/owner-preview";
+
 import { ReviewPhotos } from "@/components/ReviewPhotos";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
