@@ -260,56 +260,12 @@ function PropertiesPage() {
         description="Every ticket, project and owner action links back to one of these homes."
         actions={
         <div className="flex flex-wrap items-center gap-2">
-
-        <Button variant="outline" onClick={importAll} disabled={importing}>
-          {importing ? "Importing…" : "Import from OwnerRez"}
-        </Button>
         <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
           {enriching ? "Refreshing…" : "Refresh property info & photos"}
         </Button>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>Add property</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add a property</DialogTitle>
-              <DialogDescription>Access notes here show up on every ticket for this home.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={save} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Property name" required value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-                <Field label="Nickname" value={form.nickname} onChange={(v) => setForm({ ...form, nickname: v })} />
-                <Field label="Street address" value={form.address_line1} onChange={(v) => setForm({ ...form, address_line1: v })} />
-                <Field label="Unit" value={form.unit} onChange={(v) => setForm({ ...form, unit: v })} />
-                <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-                <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} />
-                <Field label="Postal code" value={form.postal_code} onChange={(v) => setForm({ ...form, postal_code: v })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Access notes</Label>
-                <Textarea
-                  rows={3}
-                  placeholder="Lock codes, parking, gate, where the water shutoff is."
-                  value={form.access_notes}
-                  onChange={(e) => setForm({ ...form, access_notes: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Other notes</Label>
-                <Textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? "Saving…" : "Save property"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <AddPropertyDialog />
         </div>
+
         }
       />
 
