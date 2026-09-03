@@ -129,12 +129,17 @@ export async function setAccountingRecipient(supabase: Client, userId: string, e
 /* ------------------------------------------------------------------ */
 
 export async function loadFinance(supabase: Client, propertyId: string) {
-  const [requests, accounts, costs, facts, recipient] = await Promise.all([
+  const [requests, accounts, costs, facts, recipient, owner] = await Promise.all([
     supabase.from("financial_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     supabase.from("utility_accounts").select("*").eq("property_id", propertyId).order("utility_type"),
     supabase.from("utility_costs").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     supabase.from("property_fact_proposals").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     accountingRecipient(supabase),
+    supabase
+      .from("property_owner_contacts")
+      .select("owner_name, owner_email, owner_phone")
+      .eq("property_id", propertyId)
+      .maybeSingle(),
   ]);
   if (requests.error) throw requests.error;
   if (accounts.error) throw accounts.error;
@@ -146,6 +151,7 @@ export async function loadFinance(supabase: Client, propertyId: string) {
     utilityCosts: costs.data ?? [],
     factProposals: facts.data ?? [],
     accountingRecipient: recipient,
+    ownerContact: owner.data ?? null,
   };
 }
 
