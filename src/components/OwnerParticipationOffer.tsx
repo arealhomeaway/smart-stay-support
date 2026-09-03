@@ -223,9 +223,7 @@ export function OwnerParticipationOffer({
               Cancel
             </Button>
             <Button
-              disabled={
-                save.isPending || title.trim().length < 3 || instructions.trim().length < 3
-              }
+              disabled={save.isPending || title.trim().length < 3 || instructions.trim().length < 3}
               onClick={() => save.mutate()}
             >
               Offer to owner

@@ -41,7 +41,8 @@ export type SaveTaskInput = {
   dueOn: string | null;
   blocker: string;
   requiresOwnerApproval: boolean;
-  ownerApprovalStatus: "not_required" | "pending" | "awaiting_owner" | "changes_requested" | "approved" | "declined";
+  ownerApprovalStatus:
+    "not_required" | "pending" | "awaiting_owner" | "changes_requested" | "approved" | "declined";
   evidenceRequired: boolean;
   evidenceNote: string;
   status: "open" | "blocked" | "complete" | "carryover";
@@ -63,7 +64,8 @@ export function taskPayload(t: WorkflowTask, patch: Partial<SaveTaskInput> = {})
     dueOn: t.due_on,
     blocker: t.blocker ?? "",
     requiresOwnerApproval: t.requires_owner_approval,
-    ownerApprovalStatus: (t.owner_approval_status ?? "pending") as SaveTaskInput["ownerApprovalStatus"],
+    ownerApprovalStatus: (t.owner_approval_status ??
+      "pending") as SaveTaskInput["ownerApprovalStatus"],
     evidenceRequired: t.evidence_required,
     evidenceNote: t.evidence_note ?? "",
     status: (t.status ?? "open") as SaveTaskInput["status"],
@@ -124,8 +126,7 @@ export function TaskDrawer({
     .filter((t): t is WorkflowTask => Boolean(t));
   const downstream = tasks.filter((t) => (t.depends_on ?? []).includes(task.id));
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
-  const awaitingOwner =
-    task.requires_owner_approval && task.owner_approval_status !== "approved";
+  const awaitingOwner = task.requires_owner_approval && task.owner_approval_status !== "approved";
   const dueChanged = (due || null) !== (task.due_on ?? null);
 
   return (
@@ -134,7 +135,9 @@ export function TaskDrawer({
         <SheetHeader className="border-b border-border p-4">
           <SheetTitle className="pr-6 text-left text-base leading-snug">{task.title}</SheetTitle>
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <Chip className={stateChip(STATUS_STATE[view.status])}>{STATUS_LABEL[view.status]}</Chip>
+            <Chip className={stateChip(STATUS_STATE[view.status])}>
+              {STATUS_LABEL[view.status]}
+            </Chip>
             {view.overdue && view.status !== "complete" && (
               <Chip className={stateChip("blocked")}>Overdue</Chip>
             )}
@@ -183,7 +186,9 @@ export function TaskDrawer({
           {task.detail && (
             <section>
               <p className="eyebrow">Instructions</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.detail}</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                {task.detail}
+              </p>
             </section>
           )}
 
@@ -240,12 +245,20 @@ export function TaskDrawer({
             <Button
               size="sm"
               variant="secondary"
-              disabled={disabled || evidence.trim().length < 3 || evidence.trim() === (task.evidence_note ?? "")}
+              disabled={
+                disabled ||
+                evidence.trim().length < 3 ||
+                evidence.trim() === (task.evidence_note ?? "")
+              }
               onClick={() => onSave(taskPayload(task, { evidenceNote: evidence.trim() }))}
             >
               Save evidence
             </Button>
-            <AttachmentsPanel entityType="onboarding_task" entityId={task.id} title="Photos & documents" />
+            <AttachmentsPanel
+              entityType="onboarding_task"
+              entityId={task.id}
+              title="Photos & documents"
+            />
           </section>
 
           <Separator />
@@ -256,15 +269,25 @@ export function TaskDrawer({
             <div className="flex flex-wrap items-end gap-2">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Date</Label>
-                <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="w-44" />
+                <Input
+                  type="date"
+                  value={due}
+                  onChange={(e) => setDue(e.target.value)}
+                  className="w-44"
+                />
               </div>
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={disabled || !dueChanged || (Boolean(task.schedule_anchor) && overrideReason.trim().length < 3)}
+                disabled={
+                  disabled ||
+                  !dueChanged ||
+                  (Boolean(task.schedule_anchor) && overrideReason.trim().length < 3)
+                }
                 onClick={() => {
                   onSave(taskPayload(task, { dueOn: due || null }));
-                  if (overrideReason.trim().length >= 3) onRecordException(task.id, `Due date override: ${overrideReason.trim()}`);
+                  if (overrideReason.trim().length >= 3)
+                    onRecordException(task.id, `Due date override: ${overrideReason.trim()}`);
                 }}
               >
                 Save date
@@ -301,16 +324,20 @@ export function TaskDrawer({
                   placeholder="What the homeowner is being asked to approve."
                 />
                 <p className="text-xs text-muted-foreground">
-                  The homeowner&apos;s name, the time, their comments and this version are recorded with the
-                  decision. Sending alone does not complete the step.
+                  The homeowner&apos;s name, the time, their comments and this version are recorded
+                  with the decision. Sending alone does not complete the step.
                 </p>
                 <Button
                   size="sm"
                   variant="secondary"
                   disabled={disabled || approvalVersion.trim().length < 2}
-                  onClick={() => onSubmitApproval(task.id, approvalVersion.trim(), approvalNote.trim())}
+                  onClick={() =>
+                    onSubmitApproval(task.id, approvalVersion.trim(), approvalNote.trim())
+                  }
                 >
-                  {task.owner_approval_status === "changes_requested" ? "Resubmit for approval" : "Send for approval"}
+                  {task.owner_approval_status === "changes_requested"
+                    ? "Resubmit for approval"
+                    : "Send for approval"}
                 </Button>
               </section>
             </>
@@ -362,12 +389,7 @@ export function TaskDrawer({
           {task.status !== "complete" ? (
             <Button
               className="flex-1"
-              disabled={
-                disabled ||
-                view.waitingOn.length > 0 ||
-                evidenceMissing ||
-                awaitingOwner
-              }
+              disabled={disabled || view.waitingOn.length > 0 || evidenceMissing || awaitingOwner}
               onClick={() => onSave(taskPayload(task, { status: "complete", blocker: "" }))}
             >
               Mark complete
@@ -391,7 +413,15 @@ export function TaskDrawer({
   );
 }
 
-function Field({ label, value, hint }: { label: string; value: string; hint?: string | undefined }) {
+function Field({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string | undefined;
+}) {
   return (
     <div>
       <dt className="eyebrow">{label}</dt>

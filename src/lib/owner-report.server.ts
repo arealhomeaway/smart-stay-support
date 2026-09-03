@@ -64,7 +64,10 @@ function addDays(iso: string, days: number) {
 }
 
 function fileName(base: string, ext: string) {
-  return `${base.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()}.${ext}`;
+  return `${base
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase()}.${ext}`;
 }
 
 /** Owner-visible report model. Internal notes and other owners never appear. */
@@ -82,9 +85,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const { actionLabel, sourceLabel } = await import("./owner-opportunity");
   const opportunities = new Map(agg.reviews.map((r) => [r.id, r] as const));
 
-  const superseded = new Set(
-    agg.entries.filter((e) => e.superseded).map((e) => e.id),
-  );
+  const superseded = new Set(agg.entries.filter((e) => e.superseded).map((e) => e.id));
 
   const entries: ReportEntry[] = agg.entries.map((e) => {
     const isSuperseded = superseded.has(e.id);
@@ -120,11 +121,9 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const totals = {
     reportedMinutes: combinedMinutes(countable),
     approvedMinutes: combinedMinutes(
-      countable.filter((e) => e.status === STATUS_LABEL['approved']),
+      countable.filter((e) => e.status === STATUS_LABEL["approved"]),
     ),
-    pendingMinutes: combinedMinutes(
-      countable.filter((e) => e.status !== STATUS_LABEL['approved']),
-    ),
+    pendingMinutes: combinedMinutes(countable.filter((e) => e.status !== STATUS_LABEL["approved"])),
     returnedMinutes: combinedMinutes(
       inPeriod.filter((e) => !e.counts && e.status !== "Superseded by a correction"),
     ),
@@ -203,8 +202,7 @@ const NOTES = [
 ];
 
 export function reportCsv(report: OwnerReport) {
-  const esc = (v: string | number | boolean) =>
-    `"${String(v).replace(/"/g, '""')}"`;
+  const esc = (v: string | number | boolean) => `"${String(v).replace(/"/g, '""')}"`;
   const head = [
     "entry_date",
     "activity",
@@ -237,7 +235,9 @@ export function reportCsv(report: OwnerReport) {
       e.counts && e.inPeriod ? "yes" : "no",
       e.inPeriod ? "yes" : "no",
       e.reason,
-    ].map(esc).join(","),
+    ]
+      .map(esc)
+      .join(","),
   );
   const meta = [
     `# ARHA Hours & Participation Report (${report.kind === "final" ? "end of period" : "progress"})`,
@@ -440,26 +440,30 @@ export async function reportPdf(report: OwnerReport) {
 
   if (report.outsidePeriod.length > 0) {
     heading("Entries outside the program period");
-    para("Recorded by the homeowner but dated outside the configured window. Excluded from all totals above.");
+    para(
+      "Recorded by the homeowner but dated outside the configured window. Excluded from all totals above.",
+    );
     rowHead();
     for (const e of report.outsidePeriod) {
       space(12);
       text(e.date, { size: 8, x: cols[0] });
-      text(fit(e.activity, 226), { size: 8, x: cols[1] });
-      text(String(e.hours), { size: 8, x: cols[2] });
-      text("—", { size: 8, x: cols[3] });
-      text("Outside period", { size: 8, x: cols[4], color: MUTED });
+      text(fit(e.activity, 168), { size: 8, x: cols[1] });
+      text(fit(`${e.action} · ${e.source}`, 78), { size: 8, color: MUTED, x: cols[2] });
+      text(String(e.hours), { size: 8, x: cols[3] });
+      text("—", { size: 8, x: cols[4] });
+      text("Outside period", { size: 8, x: cols[5], color: MUTED });
     }
   }
 
   heading("Recorded participation actions");
-  para("Approvals, returns, corrections and owner decisions. These are a record of review activity and never generate hours.");
+  para(
+    "Approvals, returns, corrections and owner decisions. These are a record of review activity and never generate hours.",
+  );
   for (const a of report.actions.slice(0, 40)) {
     space(12);
     text(a.date, { size: 8, x: cols[0] });
     text(fit(`${a.kind}: ${a.summary}`, 360), { size: 8, x: cols[1] });
     if (a.document) text(fit(a.document, 84), { size: 8, x: cols[4], color: MUTED });
-
   }
   if (report.actions.length === 0) para("No review actions recorded yet.");
 
