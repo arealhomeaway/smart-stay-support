@@ -212,14 +212,11 @@ export async function applyStatusChange(
       actor_id: userId,
       entity_type: "ticket",
       entity_id: input.ticketId,
+      entity_label: String(ticket["ref"] ?? input.ticketId),
       action: "lifecycle_exception",
-      summary: `${LIFECYCLE_EXCEPTIONS[usedException]} — ${input.exceptionReason}`,
-      metadata: {
-        exception: usedException,
-        to_status: input.status,
-        from_status: facts.status,
-        blocked_code: verdict.ok ? null : verdict.code,
-      },
+      before_value: { status: facts.status },
+      after_value: { status: input.status, exception: usedException },
+      reason: `${LIFECYCLE_EXCEPTIONS[usedException]} — ${input.exceptionReason}`,
     });
   }
 
