@@ -123,14 +123,16 @@ export async function startOnboardingProject(
     .single();
   if (property.error) throw property.error;
 
+  // Idempotent by design: a double click, a refresh or a retry must open the
+  // project that already exists rather than create a second one.
   const existing = await supabase
     .from("onboarding_projects")
-    .select("id")
+    .select("*")
     .eq("property_id", input.propertyId)
     .neq("status", "cancelled")
     .maybeSingle();
   if (existing.error) throw existing.error;
-  if (existing.data) throw new Error("Onboarding has already been started for this home.");
+  if (existing.data) return existing.data;
 
   const modules = input.modules.length ? input.modules : defaultModules();
 
