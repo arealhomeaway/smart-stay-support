@@ -10,6 +10,7 @@ import {
   Copy,
   Eye,
   FileText,
+  FlaskConical,
   Home,
   KeyRound,
   Plus,
@@ -165,9 +166,13 @@ function ProgramsBoard() {
   const [ownerEmail, setOwnerEmail] = useState("");
 
   const { demoMode } = useDemo();
+  // Staff can look at the non-production QA/demo programs without leaving
+  // their normal admin session.
+  const [showDemo, setShowDemo] = useState(false);
+  const viewingDemo = demoMode || showDemo;
   const programs = useQuery({
-    queryKey: ["owner-programs", demoMode],
-    queryFn: () => load({ data: { demo: demoMode } }),
+    queryKey: ["owner-programs", viewingDemo],
+    queryFn: () => load({ data: { demo: viewingDemo } }),
   });
   const roadmap = useQuery({ queryKey: ["owner-roadmap"], queryFn: () => loadRoadmap() });
 
@@ -313,11 +318,29 @@ function ProgramsBoard() {
         </CardContent>
       </Card>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
+        <div>
+          <p className="text-sm font-medium">
+            {viewingDemo ? "Showing QA / demo programs" : "Showing live programs"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Demo programs are non-production and excluded from live metrics. Use them to preview the
+            homeowner experience end to end.
+          </p>
+        </div>
+        {!demoMode && (
+          <Button size="sm" variant="outline" onClick={() => setShowDemo(!showDemo)}>
+            <FlaskConical className="size-4" />
+            {showDemo ? "Show live programs" : "Show QA / demo programs"}
+          </Button>
+        )}
+      </div>
+
       {programs.isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
         <EmptyState
-          title="No participation programs yet."
+          title={viewingDemo ? "No QA / demo programs yet." : "No participation programs yet."}
           hint="Pick a property above and create a draft program to start a homeowner's 90 days."
         />
       ) : (
@@ -327,7 +350,7 @@ function ProgramsBoard() {
               key={row.id}
               row={row}
               available={available}
-              demo={demoMode}
+              demo={viewingDemo}
               expanded={selected === row.id}
               onToggle={() => setSelected(selected === row.id ? null : row.id)}
             />
