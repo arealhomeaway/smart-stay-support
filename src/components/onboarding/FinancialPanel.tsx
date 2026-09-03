@@ -213,8 +213,8 @@ export function FinancialPanel({
             ))}
           </ul>
           <div className="flex flex-wrap gap-4 pt-2 text-sm">
-            <span>Estimated {money(totals.estimate)}</span>
-            <span>Approved {money(totals.approved)}</span>
+            <span>Estimated {money(totals.estimated)}</span>
+            <span>Awaiting approval {totals.awaitingApproval}</span>
             <span>Invoiced {money(totals.invoiced)}</span>
           </div>
         </CardContent>
@@ -251,7 +251,7 @@ export function FinancialPanel({
       </Card>
 
       {requests.length === 0 ? (
-        <EmptyState title="No costs yet" description="Cost requests for this home will show here." />
+        <EmptyState title="No costs yet" hint="Cost requests for this home will show here." />
       ) : (
         <div className="space-y-3">
           {requests.map((r) => (
