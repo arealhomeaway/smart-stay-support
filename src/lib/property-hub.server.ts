@@ -19,6 +19,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { buildPropertyDetailGroups } from "@/lib/property-details";
 import { propertyAddress } from "@/lib/property-address";
+import { isWorkingStatus } from "@/lib/ticket-lifecycle";
 
 type Client = SupabaseClient<Database>;
 
@@ -178,7 +179,9 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   const subsComplete = subs.filter((t) => t.status === "complete").length;
   const unassigned = top.filter((t) => !t.assigned_to).length;
 
-  const openTickets = (tickets.data ?? []).filter((t) => t.status !== "closed");
+  // Resolved and closed both mean the frontline work is finished, so neither
+  // belongs in an "open tickets" count. Only working statuses are open.
+  const openTickets = (tickets.data ?? []).filter((t) => isWorkingStatus(String(t.status)));
   const program = (programLink.data ?? [])[0]?.owner_programs as unknown as
     | { id: string; owner_name: string | null; status: string; started_on: string | null; ends_on: string | null; target_hours: number | null }
     | null;
