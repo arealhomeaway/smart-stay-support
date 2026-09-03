@@ -109,12 +109,19 @@ function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
 }
 
 export function DirectorHub({
-  projects,
+  projects: allProjects,
   viewer,
 }: {
   projects: ProjectSummary[];
   viewer?: HubViewer;
 }) {
+  const [showTest, setShowTest] = useState(false);
+  // Test/QA homes never count towards live onboarding reporting.
+  const testCount = allProjects.filter((p) => p.property.is_demo).length;
+  const projects = useMemo(
+    () => (showTest ? allProjects : allProjects.filter((p) => !p.property.is_demo)),
+    [allProjects, showTest],
+  );
   const [lens, setLens] = useState<Lens>("attention");
   const [find, setFind] = useState("");
   const [owner, setOwner] = useState<string | null>(null);
@@ -254,6 +261,19 @@ export function DirectorHub({
             {l.label} ({counts[l.key]})
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setShowTest((v) => !v)}
+          title="Test homes are excluded from every count above."
+          className={cn(
+            "rounded-md border px-2.5 py-1 text-xs font-medium",
+            showTest
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {showTest ? "Hide" : "Show"} test projects ({testCount})
+        </button>
         {owner && (
           <button
             type="button"

@@ -125,6 +125,8 @@ export type ProjectProperty = {
   planned_closing_on?: string | null;
   handoff_accepted_at?: string | null;
   access_notes?: string | null;
+  /** Test/QA homes are visible to staff but never counted in live reporting. */
+  is_demo?: boolean | null;
   latitude?: number | null;
   longitude?: number | null;
 };
