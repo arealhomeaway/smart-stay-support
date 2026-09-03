@@ -241,6 +241,14 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------- Overview */}
         <TabsContent value="overview" className="space-y-5">
+          <ProjectScopePanel
+            propertyId={current.id}
+            propertyName={current.name}
+            people={data.people}
+            canEdit={canEdit}
+            hints={{ planned_closing_on: current.planned_closing_on ?? null }}
+          />
+
           <div className="surface p-4">
             <StageRail
               tone="onboarding"

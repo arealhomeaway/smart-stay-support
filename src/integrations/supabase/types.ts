@@ -2894,6 +2894,137 @@ export type Database = {
           },
         ]
       }
+      onboarding_project_events: {
+        Row: {
+          actor: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          is_demo: boolean
+          kind: string
+          new_value: string | null
+          prior_value: string | null
+          project_id: string
+          property_id: string
+          summary: string
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          is_demo?: boolean
+          kind: string
+          new_value?: string | null
+          prior_value?: string | null
+          project_id: string
+          property_id: string
+          summary: string
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          new_value?: string | null
+          prior_value?: string | null
+          project_id?: string
+          property_id?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_project_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_project_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_projects: {
+        Row: {
+          branch: string | null
+          completed_at: string | null
+          created_at: string
+          director: string | null
+          external_refs: Json
+          furnishing_scope: string
+          id: string
+          is_demo: boolean
+          modules: string[]
+          notes: string | null
+          planned_closing_on: string | null
+          possession_on: string | null
+          project_manager: string | null
+          property_id: string
+          started_at: string
+          started_by: string | null
+          status: string
+          target_handoff_on: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch?: string | null
+          completed_at?: string | null
+          created_at?: string
+          director?: string | null
+          external_refs?: Json
+          furnishing_scope?: string
+          id?: string
+          is_demo?: boolean
+          modules?: string[]
+          notes?: string | null
+          planned_closing_on?: string | null
+          possession_on?: string | null
+          project_manager?: string | null
+          property_id: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          target_handoff_on?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch?: string | null
+          completed_at?: string | null
+          created_at?: string
+          director?: string | null
+          external_refs?: Json
+          furnishing_scope?: string
+          id?: string
+          is_demo?: boolean
+          modules?: string[]
+          notes?: string | null
+          planned_closing_on?: string | null
+          possession_on?: string | null
+          project_manager?: string | null
+          property_id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          target_handoff_on?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_projects_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_tasks: {
         Row: {
           archived_at: string | null
