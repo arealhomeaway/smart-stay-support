@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import {
   allowedTransitions,
   isFinished,
@@ -29,20 +29,20 @@ const base: LifecycleFacts = {
 const future = () => new Date(Date.now() + 86_400_000).toISOString();
 
 describe("resolved and closed mean different things", () => {
-  test("resolved is finished work but not terminal", () => {
+  it("resolved is finished work but not terminal", () => {
     expect(isFinished("resolved")).toBe(true);
     expect(isTerminal("resolved")).toBe(false);
     expect(isWorkingStatus("resolved")).toBe(false);
     expect(isTerminal("closed")).toBe(true);
   });
 
-  test("a ticket cannot be closed before it is resolved", () => {
+  it("a ticket cannot be closed before it is resolved", () => {
     const v = validateTicketTransition("closed", { ...base, status: "in_progress" });
     expect(v.ok).toBe(false);
     if (!v.ok) expect(v.code).toBe("close_before_resolved");
   });
 
-  test("closure QA must pass before closing", () => {
+  it("closure QA must pass before closing", () => {
     const blocked = validateTicketTransition("closed", { ...base, status: "resolved" });
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.exception).toBe("closure_qa");
@@ -51,7 +51,7 @@ describe("resolved and closed mean different things", () => {
     ).toBe(true);
   });
 
-  test("a closed ticket must be reopened before anything else", () => {
+  it("a closed ticket must be reopened before anything else", () => {
     const v = validateTicketTransition("in_progress", { ...base, status: "closed" });
     expect(v.ok).toBe(false);
     if (!v.ok) expect(v.code).toBe("reopen_required");
@@ -59,11 +59,11 @@ describe("resolved and closed mean different things", () => {
 });
 
 describe("waiting always has a dependency, a reason and a future date", () => {
-  test("refuses a waiting state with nothing to wait on", () => {
+  it("refuses a waiting state with nothing to wait on", () => {
     expect(validateTicketTransition("waiting", { ...base }).ok).toBe(false);
   });
 
-  test("refuses a review date in the past", () => {
+  it("refuses a review date in the past", () => {
     const v = validateTicketTransition("waiting", {
       ...base,
       waiting_on: "vendor",
@@ -74,7 +74,7 @@ describe("waiting always has a dependency, a reason and a future date", () => {
     if (!v.ok) expect(v.code).toBe("waiting_no_review_date");
   });
 
-  test("accepts a complete waiting state", () => {
+  it("accepts a complete waiting state", () => {
     expect(
       validateTicketTransition("waiting", {
         ...base,
@@ -85,20 +85,20 @@ describe("waiting always has a dependency, a reason and a future date", () => {
     ).toBe(true);
   });
 
-  test("an unreadable date is refused rather than silently accepted", () => {
+  it("an unreadable date is refused rather than silently accepted", () => {
     expect(reviewDateProblem("not a date")).toBeTruthy();
     expect(reviewDateProblem(future())).toBeNull();
   });
 });
 
 describe("dispatch needs somewhere to dispatch to", () => {
-  test("refuses dispatch with no work order", () => {
+  it("refuses dispatch with no work order", () => {
     const v = validateTicketTransition("dispatched", { ...base, requiresFieldWork: true });
     expect(v.ok).toBe(false);
     if (!v.ok) expect(v.exception).toBe("dispatch_prerequisites");
   });
 
-  test("refuses dispatch while the cost tier is unapproved", () => {
+  it("refuses dispatch while the cost tier is unapproved", () => {
     const v = validateTicketTransition("dispatched", {
       ...base,
       requiresFieldWork: true,
@@ -113,7 +113,7 @@ describe("dispatch needs somewhere to dispatch to", () => {
 });
 
 describe("awaiting guest confirmation needs a guest", () => {
-  test("refuses when there is no guest and no message sent", () => {
+  it("refuses when there is no guest and no message sent", () => {
     expect(validateTicketTransition("awaiting_guest", base).ok).toBe(false);
     const v = validateTicketTransition("awaiting_guest", { ...base, hasGuestContext: true });
     expect(v.ok).toBe(false);
@@ -122,7 +122,7 @@ describe("awaiting guest confirmation needs a guest", () => {
 });
 
 describe("closure evidence is evidence, not a sentence", () => {
-  test("a photo requirement is not met by a description", () => {
+  it("a photo requirement is not met by a description", () => {
     const v = validateTicketTransition("resolved", {
       ...base,
       status: "in_progress",
@@ -134,7 +134,7 @@ describe("closure evidence is evidence, not a sentence", () => {
     if (!v.ok) expect(v.code).toBe("closure_no_file");
   });
 
-  test("the requirement reader knows a photo request from a note request", () => {
+  it("the requirement reader knows a photo request from a note request", () => {
     expect(requiresPhotoOrFile("Photo of the completed repair")).toBe(true);
     expect(requiresPhotoOrFile("Upload the vendor invoice")).toBe(true);
     expect(requiresPhotoOrFile("Written confirmation from the guest")).toBe(false);
@@ -145,7 +145,7 @@ describe("closure evidence is evidence, not a sentence", () => {
     expect(closureEvidenceSatisfied({ requirement: null, text: "" })).toBe(true);
   });
 
-  test("open required steps block resolution", () => {
+  it("open required steps block resolution", () => {
     const v = validateTicketTransition("resolved", {
       ...base,
       status: "in_progress",
@@ -157,14 +157,14 @@ describe("closure evidence is evidence, not a sentence", () => {
 });
 
 describe("the status menu only offers what is legal", () => {
-  test("a bare open ticket cannot be offered dispatch or closure", () => {
+  it("a bare open ticket cannot be offered dispatch or closure", () => {
     const options = allowedTransitions(base);
     expect(options).toContain("in_progress");
     expect(options).not.toContain("closed");
     expect(options).not.toContain("dispatched");
   });
 
-  test("a supervisor with exceptions sees more, but not the impossible", () => {
+  it("a supervisor with exceptions sees more, but not the impossible", () => {
     const options = allowedTransitions(base, { allowExceptions: true });
     expect(options).toContain("dispatched");
     // Closing before resolving has no named exception — it stays unavailable.
