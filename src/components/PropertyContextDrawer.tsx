@@ -20,6 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
+import { propertyAddressLabel } from "@/lib/property-address";
 import { useRole } from "@/hooks/useRole";
 
 export function PropertyContextDrawer({
@@ -48,7 +49,7 @@ export function PropertyContextDrawer({
     },
   });
 
-  const address = [data?.address_line1, data?.unit, data?.city, data?.state].filter(Boolean).join(", ");
+  const address = propertyAddressLabel(data);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -58,7 +59,7 @@ export function PropertyContextDrawer({
             <Building2 className="size-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{data?.nickname ?? data?.name ?? "Property"}</span>
           </SheetTitle>
-          <SheetDescription>{address || "No address on file"}</SheetDescription>
+          <SheetDescription>{address}</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 px-4 pb-6">

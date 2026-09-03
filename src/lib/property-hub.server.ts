@@ -18,6 +18,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { buildPropertyDetailGroups } from "@/lib/property-details";
+import { propertyAddress } from "@/lib/property-address";
 
 type Client = SupabaseClient<Database>;
 
@@ -379,7 +380,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       name: p.name,
 
       nickname: p.nickname,
-      address: [p.address_line1, p.unit, p.city, p.state, p.postal_code].filter(Boolean).join(", "),
+      address: propertyAddress(p),
       market: p.market,
       lifecycleStatus: p.lifecycle_status,
       onboardingStage: p.onboarding_stage,
