@@ -37,6 +37,7 @@ import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
+import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
 import { CurrentWork } from "@/components/onboarding/CurrentWork";
