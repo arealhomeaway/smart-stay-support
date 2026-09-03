@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
@@ -92,6 +92,14 @@ function Hub() {
 
   if (isLoading || !data) return <LoadingPage />;
 
+  // Homes in the pipeline where nobody has started an Onboarding Project yet.
+  // A property existing is not the same as onboarding being under way.
+  const notStarted = data.properties.filter(
+    (p) =>
+      data.pipeline.includes(p.id) &&
+      !(data.projects ?? []).some((x) => x.property_id === p.id && x.status !== "cancelled"),
+  );
+
   const pendingReviews = data.handoffs.filter(
     (h) => h.status === "requested" || h.status === "accepted_pending_live",
   );
@@ -111,7 +119,29 @@ function Hub() {
           <TabsTrigger value="records">Source records</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="hub">
+        <TabsContent value="hub" className="space-y-4">
+          {notStarted.length > 0 && (
+            <section className="surface p-4">
+              <p className="eyebrow">Onboarding not started ({notStarted.length})</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                These homes are in the pipeline but no one has set the scope yet. Open the home to
+                start onboarding.
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {notStarted.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      to="/onboarding/$propertyId"
+                      params={{ propertyId: p.id }}
+                      className="inline-flex rounded-md border border-border px-2.5 py-1 text-sm hover:bg-muted"
+                    >
+                      {p.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <DirectorHub projects={projects} />
         </TabsContent>
 

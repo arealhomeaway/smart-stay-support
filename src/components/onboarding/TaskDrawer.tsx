@@ -20,6 +20,7 @@ import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { stateChip } from "@/lib/semantic";
+import { repairApprovalGuidance } from "@/lib/onboarding-scope";
 import { stageLabel } from "@/lib/onboarding";
 import {
   STATUS_LABEL,
@@ -88,6 +89,8 @@ export function TaskDrawer({
   onSave,
   onSubmitApproval,
   onRecordException,
+  onReopen,
+  onAddObservation,
 }: {
   task: WorkflowTask | null;
   tasks: WorkflowTask[];
@@ -99,6 +102,8 @@ export function TaskDrawer({
   onSave: (input: SaveTaskInput) => void;
   onSubmitApproval: (taskId: string, version: string, note: string) => void;
   onRecordException: (taskId: string, reason: string) => void;
+  onReopen: (taskId: string, reason: string) => void;
+  onAddObservation: (taskId: string, body: string) => void;
 }) {
   const [evidence, setEvidence] = useState("");
   const [due, setDue] = useState("");
@@ -106,6 +111,8 @@ export function TaskDrawer({
   const [approvalVersion, setApprovalVersion] = useState("");
   const [approvalNote, setApprovalNote] = useState("");
   const [exception, setException] = useState("");
+  const [observation, setObservation] = useState("");
+  const [reopenReason, setReopenReason] = useState("");
 
   useEffect(() => {
     setEvidence(task?.evidence_note ?? "");
@@ -114,6 +121,8 @@ export function TaskDrawer({
     setApprovalVersion("");
     setApprovalNote("");
     setException("");
+    setObservation("");
+    setReopenReason("");
   }, [task?.id, task?.evidence_note, task?.due_on]);
 
   if (!task) return null;
@@ -182,6 +191,12 @@ export function TaskDrawer({
               ))}
             </ul>
           </section>
+
+          {repairApprovalGuidance(task.title) && (
+            <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+              {repairApprovalGuidance(task.title)}
+            </p>
+          )}
 
           {task.detail && (
             <section>
@@ -259,6 +274,34 @@ export function TaskDrawer({
               entityId={task.id}
               title="Photos & documents"
             />
+          </section>
+
+          <Separator />
+
+          {/* Native capture: what the person actually found in the home. */}
+          <section className="space-y-2">
+            <p className="eyebrow">What did you find?</p>
+            <p className="text-xs text-muted-foreground">
+              Record the observation here, in Resolve — not in a separate form. It stays on this
+              step and on the home&apos;s history.
+            </p>
+            <Textarea
+              rows={2}
+              value={observation}
+              onChange={(e) => setObservation(e.target.value)}
+              placeholder="Condition, measurement, missing item, something the next person needs to know."
+            />
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={disabled || observation.trim().length < 3}
+              onClick={() => {
+                onAddObservation(task.id, observation.trim());
+                setObservation("");
+              }}
+            >
+              Record observation
+            </Button>
           </section>
 
           <Separator />
@@ -395,14 +438,20 @@ export function TaskDrawer({
               Mark complete
             </Button>
           ) : (
-            <Button
-              className="flex-1"
-              variant="secondary"
-              disabled={disabled}
-              onClick={() => onSave(taskPayload(task, { status: "open" }))}
-            >
-              Reopen task
-            </Button>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Input
+                value={reopenReason}
+                onChange={(e) => setReopenReason(e.target.value)}
+                placeholder="Why is this being reopened?"
+              />
+              <Button
+                variant="secondary"
+                disabled={disabled || reopenReason.trim().length < 3}
+                onClick={() => onReopen(task.id, reopenReason.trim())}
+              >
+                Reopen with reason
+              </Button>
+            </div>
           )}
           <Button variant="ghost" onClick={onClose}>
             Close

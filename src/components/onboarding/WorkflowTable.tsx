@@ -30,17 +30,21 @@ export function WorkflowTable({
   people,
   selectedId,
   onSelect,
+  outOfScope = [],
 }: {
   tasks: WorkflowTask[];
   people: Person[];
   selectedId?: string | null;
   onSelect: (task: WorkflowTask) => void;
+  /** Work this project's scope switched off — shown, never counted as missing. */
+  outOfScope?: { task: WorkflowTask; reason: string }[];
 }) {
   const sections = useMemo(() => buildSections(tasks), [tasks]);
   const active = useMemo(() => activeSectionKey(sections), [sections]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [showSkipped, setShowSkipped] = useState(false);
 
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && outOfScope.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
         No onboarding tasks yet for this home. Apply the standard workflow template to create them.
@@ -65,6 +69,39 @@ export function WorkflowTable({
           />
         );
       })}
+
+      {outOfScope.length > 0 && (
+        <section className="surface overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowSkipped((v) => !v)}
+            aria-expanded={showSkipped}
+            className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50"
+          >
+            {showSkipped ? (
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            )}
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-muted-foreground">
+              Not applicable to this home
+            </span>
+            <span className="numeric shrink-0 text-xs text-muted-foreground">
+              {outOfScope.length}
+            </span>
+          </button>
+          {showSkipped && (
+            <div className="border-t border-border">
+              {outOfScope.map(({ task, reason }) => (
+                <div key={task.id} className="border-b border-border/60 px-3 py-2 last:border-b-0">
+                  <p className="text-sm text-muted-foreground line-through">{task.title}</p>
+                  <p className="text-xs text-muted-foreground">{reason}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

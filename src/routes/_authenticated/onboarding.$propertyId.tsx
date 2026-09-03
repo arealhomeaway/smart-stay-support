@@ -38,6 +38,7 @@ import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
+import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
 import { CurrentWork } from "@/components/onboarding/CurrentWork";
@@ -77,6 +78,7 @@ import {
   confirmApprovalRequirementFn,
   getOnboardingWorkspace,
   recordTaskExceptionFn,
+  reopenOnboardingTaskFn,
   requestHandoffFn,
   reviewHandoffFn,
   saveOnboardingTaskFn,
@@ -137,6 +139,7 @@ function PropertyWorkspace() {
   const reviewHandoff = mut(useServerFn(reviewHandoffFn), "Decision recorded.");
   const addNote = mut(useServerFn(addOnboardingNoteFn), "Note added.");
   const recordException = mut(useServerFn(recordTaskExceptionFn), "Exception recorded.");
+  const reopenTask = mut(useServerFn(reopenOnboardingTaskFn), "Task reopened.");
   const submitApproval = mut(
     useServerFn(submitOwnerApprovalFn),
     "Sent to the homeowner for approval.",
@@ -144,10 +147,25 @@ function PropertyWorkspace() {
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
 
   const current = data?.properties.find((p) => p.id === propertyId) ?? null;
-  const tasks = useMemo(
+  const allTasks = useMemo(
     () =>
       (data?.tasks ?? []).filter((t) => t.property_id === propertyId) as unknown as WorkflowTask[],
     [data, propertyId],
+  );
+  const scope = useMemo(
+    () =>
+      projectScope(
+        (data?.projects ?? []).find(
+          (p) => p.property_id === propertyId && p.status !== "cancelled",
+        ) ?? null,
+      ),
+    [data, propertyId],
+  );
+  // Scope decides what this home is asked for. Out-of-scope work is listed
+  // separately and never counts as missing.
+  const { inScope: tasks, outOfScope } = useMemo(
+    () => splitByScope(allTasks, scope),
+    [allTasks, scope],
   );
 
   if (isLoading || !data) return <LoadingPage />;
@@ -518,8 +536,10 @@ function PropertyWorkspace() {
               onSave={(values) => saveTask.mutate({ data: values } as never)}
             />
           </div>
+          <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
           <WorkflowTable
             tasks={tasks}
+            outOfScope={outOfScope}
             people={data.people}
             selectedId={openTaskId}
             onSelect={(t) => setOpenTaskId(t.id)}
@@ -631,6 +651,10 @@ function PropertyWorkspace() {
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSubmitApproval={(taskId, version, note) =>
           submitApproval.mutate({ data: { taskId, version, note } } as never)
+        }
+        onReopen={(taskId, reason) => reopenTask.mutate({ data: { taskId, reason } } as never)}
+        onAddObservation={(taskId, body) =>
+          addNote.mutate({ data: { propertyId: current.id, taskId, body, mentions: [] } } as never)
         }
         onRecordException={(taskId, reason) =>
           recordException.mutate({ data: { taskId, reason } } as never)

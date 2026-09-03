@@ -11,7 +11,9 @@ import { useRole } from "@/hooks/useRole";
 import { viewTask, type TaskView, type WorkflowTask } from "@/lib/onboarding-workflow";
 import {
   getOnboardingWorkspace,
+  addOnboardingNoteFn,
   recordTaskExceptionFn,
+  reopenOnboardingTaskFn,
   saveOnboardingTaskFn,
   submitOwnerApprovalFn,
 } from "@/lib/onboarding.functions";
@@ -62,6 +64,22 @@ function MyWork() {
       void refresh();
     },
     onError,
+  });
+  const reopenTask = useMutation({
+    mutationFn: useServerFn(reopenOnboardingTaskFn) as never,
+    onSuccess: () => {
+      toast.success("Task reopened.");
+      void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const addObservation = useMutation({
+    mutationFn: useServerFn(addOnboardingNoteFn) as never,
+    onSuccess: () => {
+      toast.success("Observation recorded.");
+      void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
   const recordException = useMutation({
     mutationFn: useServerFn(recordTaskExceptionFn) as never,
@@ -200,6 +218,12 @@ function MyWork() {
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSubmitApproval={(taskId, version, note) =>
           submitApproval.mutate({ data: { taskId, version, note } } as never)
+        }
+        onReopen={(taskId, reason) => reopenTask.mutate({ data: { taskId, reason } } as never)}
+        onAddObservation={(taskId, body) =>
+          addObservation.mutate({
+            data: { propertyId: openTask?.property_id ?? "", taskId, body, mentions: [] },
+          } as never)
         }
         onRecordException={(taskId, reason) => recordException.mutate({ data: { taskId, reason } } as never)}
       />

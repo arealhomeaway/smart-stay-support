@@ -94,9 +94,15 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     }))
     .filter((m) => m.requiresNow !== m.shouldRequire);
 
+  // Onboarding Projects: scope, accountable people and dates for the homes
+  // where onboarding has actually been started.
+  const { loadProjects } = await import("./onboarding-project.server");
+  const projects = await loadProjects(supabase);
+
   return {
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
+    projects,
     tasks: tasks.data ?? [],
     activeOwnerProperties: [...participation.values()],
     approvalMismatches,
@@ -138,6 +144,19 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // Locked handoff: once Operations accepts the home, the onboarding plan is
+  // history. Anything found afterwards is a correction (reopen with a reason)
+  // or an Operations ticket — never a silent edit to a finished project.
+  const accepted = await supabase
+    .from("properties")
+    .select("handoff_accepted_at")
+    .eq("id", input.propertyId)
+    .maybeSingle();
+  if (accepted.data?.handoff_accepted_at) {
+    throw new Error(
+      "Operations has accepted this home, so onboarding steps are locked. Reopen the step with a reason, or report an issue.",
+    );
+  }
   // Sending alone can never satisfy an owner approval: the step stays open
   // until the authorised homeowner records an approval.
   if (
@@ -742,6 +761,60 @@ export async function addOnboardingNote(
     after: { noteId: data.id, mentions: input.mentions },
   });
   return { id: data.id };
+}
+
+/**
+ * Correction: reopen a completed step.
+ *
+ * Completion is a claim about the home, so undoing it is never silent. The
+ * reason is mandatory and lands in both the audit log and the project's
+ * human-readable history, and the original completion stays visible there.
+ */
+export async function reopenOnboardingTask(
+  supabase: Client,
+  userId: string,
+  input: { taskId: string; reason: string },
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  const { data: task, error: readError } = await supabase
+    .from("onboarding_tasks")
+    .select("id, property_id, title, completed_at")
+    .eq("id", input.taskId)
+    .single();
+  if (readError) throw readError;
+
+  const { error } = await supabase
+    .from("onboarding_tasks")
+    .update({ status: "open", completed_at: null })
+    .eq("id", input.taskId);
+  if (error) throw error;
+
+  const { loadProjectForProperty, recordProjectEvent } = await import(
+    "./onboarding-project.server"
+  );
+  const { project } = await loadProjectForProperty(supabase, task.property_id);
+  if (project) {
+    await recordProjectEvent(supabase, {
+      projectId: project.id,
+      propertyId: task.property_id,
+      kind: "task_reopened",
+      summary: `Reopened "${task.title}"`,
+      detail: input.reason,
+      priorValue: task.completed_at ? `Completed ${task.completed_at.slice(0, 10)}` : "Complete",
+      newValue: "Open",
+      actor: userId,
+      isDemo: project.is_demo ?? false,
+    });
+  }
+
+  await writeAudit({
+    actorId: userId,
+    action: "onboarding_task_reopened",
+    entityType: "onboarding_task",
+    entityId: input.taskId,
+    reason: input.reason,
+  });
+  return { ok: true as const };
 }
 
 export async function recordTaskException(

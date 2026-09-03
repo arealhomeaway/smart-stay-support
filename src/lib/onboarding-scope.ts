@@ -11,6 +11,8 @@
  * hard-coded workflow.
  */
 
+import { MAINTENANCE_POLICY, money } from "./maintenance-policy";
+
 export type FurnishingScope = "full_furnishing" | "no_furnishing";
 
 export const FURNISHING_SCOPES: { value: FurnishingScope; label: string; blurb: string }[] = [
@@ -150,4 +152,44 @@ export function scopeSummary(scope: ProjectScope): string {
 
 export function isActiveOwnerProject(scope: ProjectScope) {
   return scope.modules.includes("active_owner");
+}
+
+/* -------------------------------------------------------------- work release */
+
+/** Scope of a persisted project row, with a safe default before initialization. */
+export function projectScope(
+  project: { furnishing_scope?: string | null; modules?: string[] | null } | null | undefined,
+): ProjectScope {
+  return {
+    furnishing: (project?.furnishing_scope as FurnishingScope) ?? "full_furnishing",
+    modules: (project?.modules as ModuleKey[] | undefined) ?? defaultModules(),
+  };
+}
+
+/**
+ * Split work into what this home is actually being asked for and what scope
+ * has switched off. Out-of-scope work is never deleted and never counted as
+ * missing — it is listed separately with the reason it does not apply.
+ */
+export function splitByScope<T extends { title: string }>(tasks: T[], scope: ProjectScope) {
+  const inScope: T[] = [];
+  const outOfScope: { task: T; reason: string }[] = [];
+  for (const t of tasks) {
+    const reason = outOfScopeReason(t.title, scope);
+    if (reason) outOfScope.push({ task: t, reason });
+    else inScope.push(t);
+  }
+  return { inScope, outOfScope };
+}
+
+/* --------------------------------------------------- repair spend authority */
+
+
+/**
+ * Onboarding repairs follow the same authority policy Operations uses — the
+ * threshold is never restated here, only read.
+ */
+export function repairApprovalGuidance(title: string): string | null {
+  if (!/\brepair|make[- ]ready|estimate|quote\b/i.test(title ?? "")) return null;
+  return `Work above ${money(MAINTENANCE_POLICY.ownerApprovalThreshold)} needs the homeowner's decision before it starts. Below it, ARHA proceeds and records the cost.`;
 }
