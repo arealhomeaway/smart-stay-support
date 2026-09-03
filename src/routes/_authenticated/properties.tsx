@@ -202,6 +202,14 @@ function PropertiesPage() {
         <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
           {enriching ? "Refreshing…" : "Refresh property info & photos"}
         </Button>
+        {testCount > 0 && (
+          <Button
+            variant={showTest ? "secondary" : "ghost"}
+            onClick={() => setParam({ test: showTest ? undefined : true })}
+          >
+            {showTest ? "Hide" : "Show"} QA / test homes ({testCount})
+          </Button>
+        )}
         <AddPropertyDialog />
         </div>
 
