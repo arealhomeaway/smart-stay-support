@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
@@ -209,6 +210,7 @@ function TicketDetail() {
   // Repair state at page level so the workspace knows which stage it is in.
   // Same query key as the repair panel, so there is one fetch and one truth.
   const repairStateFn = useServerFn(breezewayOutboundState);
+  const setStatusFn = useServerFn(setTicketStatusFn);
   const { data: repairState } = useQuery({
     queryKey: ["breezeway-outbound", "ticket", ticketId],
     queryFn: () => repairStateFn({ data: { sourceType: "ticket", sourceId: ticketId } }),
@@ -357,16 +359,40 @@ function TicketDetail() {
    */
   const canStart = !closed && (!ticket.acknowledged_at || !ticket.action_started_at);
 
+  /**
+   * Every status write in this file goes through the one server-side
+   * validator. The browser no longer decides what a legal transition is; it
+   * only asks, and shows the refusal when the answer is no.
+   */
+  async function applyStatus(
+    status: string,
+    patch: Record<string, unknown> = {},
+  ): Promise<boolean> {
+    try {
+      const result = await setStatusFn({ data: { ticketId, status, patch } });
+      if (!result.ok) {
+        toast.error(result.message);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "That change could not be saved.");
+      return false;
+    }
+  }
+
   async function startWorking() {
     const now = new Date().toISOString();
     const { data: userData } = await supabase.auth.getUser();
     const firstTouch = !ticket.acknowledged_at;
+    if (ticket.status === "open") {
+      if (!(await applyStatus("in_progress"))) return;
+    }
     const { error } = await supabase
       .from("tickets")
       .update({
         acknowledged_at: ticket.acknowledged_at ?? now,
         action_started_at: ticket.action_started_at ?? now,
-        status: ticket.status === "open" ? "in_progress" : ticket.status,
         ...(firstTouch
           ? {
               current_action_owner: userData.user?.id ?? null,
@@ -396,19 +422,12 @@ function TicketDetail() {
       toast.error("Set a review date so this doesn't disappear.");
       return;
     }
-    const { error } = await supabase
-      .from("tickets")
-      .update({
-        status: "waiting",
-        waiting_on: waitOn,
-        waiting_reason: waitReason.trim(),
-        next_review_at: new Date(waitReview).toISOString(),
-      })
-      .eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    const ok = await applyStatus("waiting", {
+      waiting_on: waitOn,
+      waiting_reason: waitReason.trim(),
+      next_review_at: new Date(waitReview).toISOString(),
+    });
+    if (!ok) return;
     await log(
       "waiting",
       `Waiting on ${labelFor(WAITING_ON, waitOn)}: ${waitReason.trim()} — review ${new Date(waitReview).toLocaleString()}`,
@@ -421,19 +440,12 @@ function TicketDetail() {
   }
 
   async function clearWaiting() {
-    const { error } = await supabase
-      .from("tickets")
-      .update({
-        status: "in_progress",
-        waiting_on: null,
-        waiting_reason: null,
-        next_review_at: null,
-      })
-      .eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    const ok = await applyStatus("in_progress", {
+      waiting_on: null,
+      waiting_reason: null,
+      next_review_at: null,
+    });
+    if (!ok) return;
     await log("waiting", "No longer waiting — back in progress.", "waiting_cleared");
     await refresh();
   }
@@ -461,21 +473,7 @@ function TicketDetail() {
   }
 
   async function changeStatus(status: string) {
-    const now = new Date().toISOString();
-    // Moving a ticket into progress is the action starting — stop both clocks
-    // even when the coordinator uses the status menu instead of the clock buttons.
-    const patch: { status: string; acknowledged_at?: string; action_started_at?: string } = {
-      status,
-    };
-    if (status === "in_progress") {
-      if (!ticket.acknowledged_at) patch.acknowledged_at = now;
-      if (!ticket.action_started_at) patch.action_started_at = now;
-    }
-    const { error } = await supabase.from("tickets").update(patch).eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (!(await applyStatus(status))) return;
     await log("status", `Status changed to ${labelFor(STATUSES, status)}.`, "status_changed");
     await refresh();
     toast.success("Status updated.");
@@ -524,23 +522,15 @@ function TicketDetail() {
       return;
     }
 
-    const { error } = await supabase
-      .from("tickets")
-      .update({
-        status: "resolved",
-        outcome_type: outcome,
-        resolution_notes: resolution.trim(),
-        closure_evidence: evidence.trim() || null,
-        final_communication_sent: finalComms,
-        guest_confirmed: guestConfirmed,
-        resolved_at: new Date().toISOString(),
-        late_reason: sla.breached ? "SLA target missed" : null,
-      })
-      .eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    const ok = await applyStatus("resolved", {
+      outcome_type: outcome,
+      resolution_notes: resolution.trim(),
+      closure_evidence: evidence.trim() || null,
+      final_communication_sent: finalComms,
+      guest_confirmed: guestConfirmed,
+      late_reason: sla.breached ? "SLA target missed" : null,
+    });
+    if (!ok) return;
     await log(
       "resolved",
       `Closed as ${labelFor(OUTCOME_TYPES, outcome)}. ${resolution.trim()}`,
