@@ -269,3 +269,82 @@ export const confirmApprovalRequirementFn = createServerFn({ method: "POST" })
     const { confirmApprovalRequirement } = await import("./onboarding.server");
     return confirmApprovalRequirement(context.supabase, context.userId, data);
   });
+
+/* ------------------------------------------------ Onboarding Project record */
+
+const moduleEnum = z.enum([
+  "pool",
+  "hoa",
+  "utilities",
+  "repairs",
+  "existing_appliances",
+  "new_appliances",
+  "smart_lock",
+  "cameras",
+  "furniture_warranty",
+  "landscaping",
+  "active_owner",
+]);
+
+export const getOnboardingProjects = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { loadProjects } = await import("./onboarding-project.server");
+    return loadProjects(context.supabase);
+  });
+
+export const getPropertyProject = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { loadProjectForProperty } = await import("./onboarding-project.server");
+    return loadProjectForProperty(context.supabase, data.propertyId);
+  });
+
+export const startOnboardingProjectFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        branch: z.string().trim().max(80).nullable().default(null),
+        projectManager: z.string().uuid().nullable().default(null),
+        director: z.string().uuid().nullable().default(null),
+        plannedClosingOn: z.string().date().nullable().default(null),
+        possessionOn: z.string().date().nullable().default(null),
+        targetHandoffOn: z.string().date().nullable().default(null),
+        furnishingScope: z.enum(["full_furnishing", "no_furnishing"]),
+        modules: z.array(moduleEnum).max(20).default([]),
+        notes: z.string().trim().max(2000).nullable().default(null),
+        externalRefs: z.record(z.string(), z.string().trim().max(300)).default({}),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { startOnboardingProject } = await import("./onboarding-project.server");
+    return startOnboardingProject(context.supabase, context.userId, data);
+  });
+
+export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        branch: z.string().trim().max(80).nullable().optional(),
+        projectManager: z.string().uuid().nullable().optional(),
+        director: z.string().uuid().nullable().optional(),
+        plannedClosingOn: z.string().date().nullable().optional(),
+        possessionOn: z.string().date().nullable().optional(),
+        targetHandoffOn: z.string().date().nullable().optional(),
+        furnishingScope: z.enum(["full_furnishing", "no_furnishing"]).optional(),
+        modules: z.array(moduleEnum).max(20).optional(),
+        notes: z.string().trim().max(2000).nullable().optional(),
+        reason: z.string().trim().max(500).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { updateProject } = await import("./onboarding-project.server");
+    return updateProject(context.supabase, context.userId, data);
+  });
