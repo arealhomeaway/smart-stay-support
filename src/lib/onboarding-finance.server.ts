@@ -154,14 +154,14 @@ export async function createFinancialRequest(
   userId: string,
   input: {
     propertyId: string;
-    taskId?: string | null;
+    taskId?: string | null | undefined;
     kind: string;
     title: string;
-    vendor?: string | null;
-    description?: string | null;
+    vendor?: string | null | undefined;
+    description?: string | null | undefined;
     estimateAmount: number;
     emergency?: boolean;
-    emergencyReason?: string | null;
+    emergencyReason?: string | null | undefined;
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
@@ -437,7 +437,7 @@ export async function decideFinancialRequest(
 export async function recordInvoice(
   supabase: Client,
   userId: string,
-  input: { requestId: string; invoiceAmount: number; invoiceRef?: string | null; varianceNote?: string | null },
+  input: { requestId: string; invoiceAmount: number; invoiceRef?: string | null | undefined; varianceNote?: string | null },
 ) {
   await assertOnboardingStaff(supabase, userId);
   const row = await supabase.from("financial_requests").select("*").eq("id", input.requestId).maybeSingle();
@@ -573,15 +573,15 @@ export async function saveUtilityAccount(
   supabase: Client,
   userId: string,
   input: {
-    id?: string | null;
+    id?: string | null | undefined;
     propertyId: string;
     utilityType: string;
     provider: string;
     accountLabel: string;
     status: string;
     responsible: string;
-    serviceStartOn?: string | null;
-    notes?: string | null;
+    serviceStartOn?: string | null | undefined;
+    notes?: string | null | undefined;
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
@@ -625,10 +625,10 @@ export async function recordUtilityCost(
     accountId: string;
     propertyId: string;
     amount: number;
-    periodStart?: string | null;
-    periodEnd?: string | null;
-    invoiceRef?: string | null;
-    paidOn?: string | null;
+    periodStart?: string | null | undefined;
+    periodEnd?: string | null | undefined;
+    invoiceRef?: string | null | undefined;
+    paidOn?: string | null | undefined;
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
@@ -666,7 +666,7 @@ const FACT_FIELDS: Record<string, string> = {
 export async function proposeFact(
   supabase: Client,
   userId: string,
-  input: { propertyId: string; fieldKey: string; proposedValue: string; taskId?: string | null; sourceDetail?: string | null },
+  input: { propertyId: string; fieldKey: string; proposedValue: string; taskId?: string | null | undefined; sourceDetail?: string | null },
 ) {
   await assertOnboardingStaff(supabase, userId);
   const label = FACT_FIELDS[input.fieldKey] ?? input.fieldKey;
