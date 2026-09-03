@@ -1,5 +1,5 @@
 import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,6 +8,7 @@ import {
   CalendarClock,
   ClipboardCheck,
   Copy,
+  Eye,
   FileText,
   Home,
   KeyRound,
@@ -60,6 +61,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useDemo } from "@/components/DemoProvider";
+import { useViewAs } from "@/hooks/useViewAs";
+import { setOwnerPreview } from "@/lib/owner-preview";
 import {
   Select,
   SelectContent,
@@ -324,10 +327,12 @@ function ProgramsBoard() {
               key={row.id}
               row={row}
               available={available}
+              demo={demoMode}
               expanded={selected === row.id}
               onToggle={() => setSelected(selected === row.id ? null : row.id)}
             />
           ))}
+
         </div>
       )}
 
@@ -379,17 +384,33 @@ function ProgramSummary({ rows }: { rows: ProgramRow[] }) {
 function ProgramCard({
   row,
   available,
+  demo,
   expanded,
   onToggle,
 }: {
   row: ProgramRow;
   available: { id: string; name: string; location: string }[];
+  demo: boolean;
   expanded: boolean;
   onToggle: () => void;
 }) {
   const status = PROGRAM_STATUS_META[row.status] ?? PROGRAM_STATUS_META.draft;
   const progress = PROGRESS_META[(row.progressState as ProgressState) ?? "not_started"];
   const percent = Math.min(100, Math.round((row.reportedHours / OWNER_GOAL_HOURS) * 100));
+  const router = useRouter();
+  const { setViewAs } = useViewAs();
+
+  /** Open this program's hub exactly as its homeowner sees it — read-only. */
+  function previewAsHomeowner() {
+    setOwnerPreview({
+      programId: row.id,
+      ownerName: row.ownerName || "this homeowner",
+      demo,
+      origin: "/owner-programs",
+    });
+    setViewAs("owner");
+    void router.navigate({ to: "/owner" });
+  }
 
   return (
     <Card>
@@ -413,9 +434,13 @@ function ProgramCard({
             <Badge variant="outline" className={progress.tone}>
               {progress.label}
             </Badge>
+            <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
+              <Eye className="size-4" /> Preview as homeowner
+            </Button>
             <Button size="sm" variant="outline" onClick={onToggle}>
               {expanded ? "Hide" : "Manage"}
             </Button>
+
           </div>
         </div>
 

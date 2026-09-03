@@ -53,25 +53,36 @@ export async function loadOwnerHome(supabase: Client, userId: string) {
 }
 
 /**
- * Read-only sample of the homeowner hub for a Platform Owner previewing the
- * portal. It never links anything to the admin's own account — it just opens
- * the most recently created program so the admin can see the real interface.
+ * Read-only preview of one homeowner hub for a Platform Owner.
+ *
+ * Staff deliberately pick a program on the Active Owner board and Resolve
+ * renders that program's owner/property context — never the admin's own
+ * account. With no explicit pick it falls back to the newest program.
  */
-export async function loadOwnerHomePreview(supabase: Client, userId: string) {
+export async function loadOwnerHomePreview(
+  supabase: Client,
+  userId: string,
+  programId?: string | null,
+) {
   const { assertAdmin } = await import("./access.server");
   await assertAdmin(supabase, userId);
-  const program = await supabase
-    .from("owner_programs")
-    .select("id")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (program.error) throw program.error;
-  if (!program.data) return { linked: false as const, preview: true as const };
-  return { ...(await loadOwnerHomeByProgram(supabase, program.data.id)), preview: true as const };
+  let id = programId ?? null;
+  if (!id) {
+    const program = await supabase
+      .from("owner_programs")
+      .select("id")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (program.error) throw program.error;
+    if (!program.data) return { linked: false as const, preview: true as const };
+    id = program.data.id;
+  }
+  return { ...(await loadOwnerHomeByProgram(supabase, id, true)), preview: true as const };
 }
 
-async function loadOwnerHomeByProgram(supabase: Client, programId: string) {
+async function loadOwnerHomeByProgram(supabase: Client, programId: string, preview = false) {
+
   const agg = await loadProgramAggregate(supabase, programId);
 
   const propertyIds = agg.properties.map((p) => p.propertyId);
@@ -86,28 +97,32 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string) {
       .order("created_at", { ascending: false })
       .limit(60),
     propertyIds.length
-      ? supabase
-          .from("tickets")
-          .select(
-            "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes, owner_participation_path, owner_submitted",
-          )
-          .in("property_id", propertyIds)
-          .eq("is_demo", false)
-          .is("archived_at", null)
-          .order("reported_at", { ascending: false })
-          .limit(120)
+      ? (() => {
+          let q = supabase
+            .from("tickets")
+            .select(
+              "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes, owner_participation_path, owner_submitted",
+            )
+            .in("property_id", propertyIds)
+            .is("archived_at", null);
+          // A staff preview of a demo program must show its demo tickets.
+          if (!preview) q = q.eq("is_demo", false);
+          return q.order("reported_at", { ascending: false }).limit(120);
+        })()
       : Promise.resolve({ data: [], error: null } as const),
   ]);
   if (alerts.error) throw alerts.error;
   if (tickets.error) throw tickets.error;
 
   // Keep achievements current whenever the owner opens the hub.
-  await syncBadges(supabase, agg);
+  // A preview never writes: it reads whatever badges already exist.
+  if (!preview) await syncBadges(supabase, agg);
   const badges = await supabase
     .from("owner_badges")
     .select("code, awarded_at, trigger_rule, needs_review")
     .eq("program_id", agg.program.id)
     .order("awarded_at");
+
 
   return {
     linked: true as const,
