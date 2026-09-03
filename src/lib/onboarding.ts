@@ -55,7 +55,8 @@ export const LIFECYCLE: { value: LifecycleStatus; label: string; tone: string; b
 ];
 
 export function lifecycleMeta(value: string | null | undefined) {
-  return LIFECYCLE.find((l) => l.value === value) ?? LIFECYCLE[3]!;
+  // Unknown or missing lifecycle never reads as an accepted, live home.
+  return LIFECYCLE.find((l) => l.value === value) ?? LIFECYCLE[0]!;
 }
 
 /**
