@@ -302,6 +302,7 @@ function RunRoutineDialog({
   const [propertyId, setPropertyId] = useState("");
   const [query, setQuery] = useState("");
   const [guest, setGuest] = useState("");
+  const { demoMode } = useDemo();
 
   const { data: properties } = useQuery({
     queryKey: ["routine-properties"],
@@ -343,6 +344,7 @@ function RunRoutineDialog({
         team: config.team,
         assigned_to: auth.user?.id ?? null,
         created_by: auth.user?.id ?? null,
+        is_demo: demoMode,
       });
       if (error) throw error;
     },
