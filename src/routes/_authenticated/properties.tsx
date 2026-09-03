@@ -25,6 +25,7 @@ import { syncPropertyEnrichment } from "@/lib/property-enrichment.functions";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
+import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -142,7 +143,10 @@ function PropertiesPage() {
   ).sort();
 
   const q = find.trim().toLowerCase();
-  const visible = (data?.properties ?? []).filter((p) => {
+  const showTest = params.test === true;
+  const allProps = data?.properties ?? [];
+  const testCount = countTestRecords(allProps, (p) => p);
+  const visible = applyTestDataFilter(allProps, showTest, (p) => p).filter((p) => {
     if (marketFilter !== "all" && p.market !== marketFilter) return false;
     if (statusFilter === "open") {
       const has = (data?.tickets ?? []).some(
