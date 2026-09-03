@@ -114,12 +114,43 @@ function useOversightData() {
   return { tickets, support };
 }
 
+type OversightQueries = ReturnType<typeof useOversightData>;
+type OversightTickets = NonNullable<OversightQueries["tickets"]["data"]>;
+type OversightSupport = OversightQueries["support"]["data"];
+
+/**
+ * Loading and error live in the wrapper, never in the board.
+ *
+ * The board calls `useWorkspaceOrigin` near the bottom of its body. When the
+ * early "still loading" return sat inside the same component, that hook ran on
+ * the loaded render but not the loading one, and React threw a hook-count
+ * mismatch the moment the query resolved — which is what crashed Oversight for
+ * supervisors. Splitting the component keeps hook order identical every render.
+ */
 function Oversight() {
   const { tickets, support } = useOversightData();
 
+  if (tickets.isError)
+    return (
+      <div className="rounded-xl border border-border p-6">
+        <h1 className="text-lg font-semibold">Oversight could not load</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {tickets.error instanceof Error
+            ? tickets.error.message
+            : "The exception board could not be read."}
+        </p>
+        <Button className="mt-4" variant="outline" onClick={() => void tickets.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
   if (tickets.isLoading || !tickets.data) return <Skeleton className="h-96 w-full" />;
-  const data = tickets.data;
-  const s = support.data;
+
+  return <OversightBoard data={tickets.data} s={support.data} />;
+}
+
+function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSupport }) {
+
 
   const open = data.filter((t) => OPEN_STATUSES.includes(t.status));
 
