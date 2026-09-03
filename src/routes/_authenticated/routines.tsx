@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
+import { useDemo } from "@/components/DemoProvider";
 import { useSeat } from "@/hooks/useSeat";
 import {
   OUTCOME_LABELS,
@@ -125,12 +126,17 @@ function RoutinesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Routine work follows the same demo lens as every other queue: demo rows
+  // only inside the demo environment, live rows only outside it. Before this,
+  // seeded scenarios leaked into the real routine queue.
+  const { demoMode } = useDemo();
   const { data, isLoading } = useQuery({
-    queryKey: ["routine-controls"],
+    queryKey: ["routine-controls", demoMode],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routine_controls")
         .select("*, properties(name, nickname)")
+        .eq("is_demo", demoMode)
         .order("due_at", { ascending: true })
         .limit(400);
       if (error) throw error;
