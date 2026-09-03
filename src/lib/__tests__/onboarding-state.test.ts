@@ -153,7 +153,7 @@ describe("the handoff gate explains itself", () => {
       { pendingFacts: 1, openFinancials: 2 },
     );
     expect(r.ready).toBe(false);
-    expect(r.reasons.length).toBeGreaterThanOrEqual(3);
+    expect(r.reasons.length > 2).toBe(true);
     expect(r.reasons.every((x) => x.detail.length > 0)).toBe(true);
   });
 
