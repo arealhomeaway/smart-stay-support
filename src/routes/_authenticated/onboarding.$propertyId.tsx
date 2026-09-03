@@ -721,7 +721,8 @@ function PropertyWorkspace() {
               ) : (
                 <RequestHandoffDialog
                   ready={readiness.ready}
-                  disabled={!canEdit}
+                  blockedReasons={readiness.hardReasons}
+                  disabled={!canEdit || readiness.blocked}
                   carryoverCount={
                     tasks.filter((t) => t.status !== "complete" && t.status !== "carryover").length
                   }
@@ -1153,11 +1154,13 @@ function NewTaskDialog({
 
 function RequestHandoffDialog({
   ready,
+  blockedReasons,
   disabled,
   carryoverCount,
   onRequest,
 }: {
   ready: boolean;
+  blockedReasons: { key: string; label: string }[];
   disabled: boolean;
   carryoverCount: number;
   onRequest: (notes: string, carryoverAccepted: boolean) => void;
