@@ -658,7 +658,14 @@ export function handoffReadiness(
       detail: "Start an Onboarding Project before requesting handoff.",
     });
 
-  return { ready: reasons.length === 0, reasons, checks: baseChecks };
+  const hardReasons = reasons.filter((r) => !CARRYOVER_EXCUSABLE.has(r.key));
+  return {
+    ready: reasons.length === 0,
+    reasons,
+    hardReasons,
+    blocked: hardReasons.length > 0,
+    checks: baseChecks,
+  };
 }
 
 /** Display state of the handoff chain for the rail. */
