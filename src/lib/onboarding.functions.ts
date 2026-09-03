@@ -138,6 +138,16 @@ export const recordTaskExceptionFn = createServerFn({ method: "POST" })
     return recordTaskException(context.supabase, context.userId, data);
   });
 
+export const reopenOnboardingTaskFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ taskId: z.string().uuid(), reason: z.string().min(3) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { reopenOnboardingTask } = await import("./onboarding.server");
+    return reopenOnboardingTask(context.supabase, context.userId, data);
+  });
+
 export const archiveOnboardingTaskFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
