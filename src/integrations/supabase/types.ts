@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       app_user_connections: {
         Row: {
           connected_identity: string | null
@@ -1870,6 +1891,128 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      financial_requests: {
+        Row: {
+          accounting_recipient: string | null
+          accounting_sent_at: string | null
+          approval_id: string | null
+          approved_amount: number | null
+          approved_at: string | null
+          authority_tier: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          emergency: boolean
+          emergency_reason: string | null
+          estimate_amount: number
+          id: string
+          invoice_amount: number | null
+          invoice_at: string | null
+          invoice_ref: string | null
+          is_demo: boolean
+          kind: string
+          project_id: string | null
+          property_id: string
+          settled_at: string | null
+          settlement_note: string | null
+          status: string
+          task_id: string | null
+          title: string
+          updated_at: string
+          variance_note: string | null
+          vendor: string | null
+        }
+        Insert: {
+          accounting_recipient?: string | null
+          accounting_sent_at?: string | null
+          approval_id?: string | null
+          approved_amount?: number | null
+          approved_at?: string | null
+          authority_tier?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          emergency?: boolean
+          emergency_reason?: string | null
+          estimate_amount?: number
+          id?: string
+          invoice_amount?: number | null
+          invoice_at?: string | null
+          invoice_ref?: string | null
+          is_demo?: boolean
+          kind?: string
+          project_id?: string | null
+          property_id: string
+          settled_at?: string | null
+          settlement_note?: string | null
+          status?: string
+          task_id?: string | null
+          title: string
+          updated_at?: string
+          variance_note?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          accounting_recipient?: string | null
+          accounting_sent_at?: string | null
+          approval_id?: string | null
+          approved_amount?: number | null
+          approved_at?: string | null
+          authority_tier?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          emergency?: boolean
+          emergency_reason?: string | null
+          estimate_amount?: number
+          id?: string
+          invoice_amount?: number | null
+          invoice_at?: string | null
+          invoice_ref?: string | null
+          is_demo?: boolean
+          kind?: string
+          project_id?: string | null
+          property_id?: string
+          settled_at?: string | null
+          settlement_note?: string | null
+          status?: string
+          task_id?: string | null
+          title?: string
+          updated_at?: string
+          variance_note?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_requests_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_requests_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       functional_roles: {
         Row: {
@@ -4834,6 +4977,88 @@ export type Database = {
           },
         ]
       }
+      property_fact_proposals: {
+        Row: {
+          created_at: string
+          current_value: string | null
+          decision_note: string | null
+          field_key: string
+          field_label: string
+          id: string
+          is_demo: boolean
+          project_id: string | null
+          property_id: string
+          proposed_by: string | null
+          proposed_value: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string
+          source_detail: string | null
+          status: string
+          task_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_value?: string | null
+          decision_note?: string | null
+          field_key: string
+          field_label: string
+          id?: string
+          is_demo?: boolean
+          project_id?: string | null
+          property_id: string
+          proposed_by?: string | null
+          proposed_value: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          source_detail?: string | null
+          status?: string
+          task_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_value?: string | null
+          decision_note?: string | null
+          field_key?: string
+          field_label?: string
+          id?: string
+          is_demo?: boolean
+          project_id?: string | null
+          property_id?: string
+          proposed_by?: string | null
+          proposed_value?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          source_detail?: string | null
+          status?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_fact_proposals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_fact_proposals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_fact_proposals_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_field_provenance: {
         Row: {
           as_of: string
@@ -4888,6 +5113,10 @@ export type Database = {
           corrections: string | null
           created_at: string
           exceptions: Json
+          financial_note: string | null
+          financial_reconciled_at: string | null
+          financial_reconciled_by: string | null
+          financial_status: string
           gate_step: string
           id: string
           is_demo: boolean
@@ -4921,6 +5150,10 @@ export type Database = {
           corrections?: string | null
           created_at?: string
           exceptions?: Json
+          financial_note?: string | null
+          financial_reconciled_at?: string | null
+          financial_reconciled_by?: string | null
+          financial_status?: string
           gate_step?: string
           id?: string
           is_demo?: boolean
@@ -4954,6 +5187,10 @@ export type Database = {
           corrections?: string | null
           created_at?: string
           exceptions?: Json
+          financial_note?: string | null
+          financial_reconciled_at?: string | null
+          financial_reconciled_by?: string | null
+          financial_status?: string
           gate_step?: string
           id?: string
           is_demo?: boolean
@@ -6044,6 +6281,145 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      utility_accounts: {
+        Row: {
+          account_label: string
+          created_at: string
+          created_by: string | null
+          credential_id: string | null
+          id: string
+          is_demo: boolean
+          notes: string | null
+          project_id: string | null
+          property_id: string
+          provider: string
+          responsible: string
+          service_end_on: string | null
+          service_start_on: string | null
+          status: string
+          updated_at: string
+          utility_type: string
+        }
+        Insert: {
+          account_label?: string
+          created_at?: string
+          created_by?: string | null
+          credential_id?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          project_id?: string | null
+          property_id: string
+          provider?: string
+          responsible?: string
+          service_end_on?: string | null
+          service_start_on?: string | null
+          status?: string
+          updated_at?: string
+          utility_type: string
+        }
+        Update: {
+          account_label?: string
+          created_at?: string
+          created_by?: string | null
+          credential_id?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          project_id?: string | null
+          property_id?: string
+          provider?: string
+          responsible?: string
+          service_end_on?: string | null
+          service_start_on?: string | null
+          status?: string
+          updated_at?: string
+          utility_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utility_accounts_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "property_credentials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utility_accounts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utility_accounts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      utility_costs: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_ref: string | null
+          is_demo: boolean
+          notes: string | null
+          paid_on: string | null
+          period_end: string | null
+          period_start: string | null
+          property_id: string
+        }
+        Insert: {
+          account_id: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_ref?: string | null
+          is_demo?: boolean
+          notes?: string | null
+          paid_on?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          property_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_ref?: string | null
+          is_demo?: boolean
+          notes?: string | null
+          paid_on?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utility_costs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "utility_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utility_costs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendor_attestations: {
         Row: {

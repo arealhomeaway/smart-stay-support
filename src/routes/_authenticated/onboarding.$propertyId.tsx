@@ -38,6 +38,8 @@ import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
+import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
+import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
@@ -112,7 +114,7 @@ function PropertyWorkspace() {
   const { propertyId } = Route.useParams();
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { can, readOnly, userId } = useRole();
+  const { can, readOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
@@ -251,11 +253,14 @@ function PropertyWorkspace() {
       <Tabs defaultValue="workflow" className="space-y-5">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="workflow">Workflow</TabsTrigger>
+          <TabsTrigger value="workflow">Work</TabsTrigger>
+          <TabsTrigger value="property">Property</TabsTrigger>
+          <TabsTrigger value="financial">Financial</TabsTrigger>
+          <TabsTrigger value="handoff">Handoff</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="activity">History</TabsTrigger>
         </TabsList>
 
         {/* ------------------------------------------------------- Overview */}
@@ -456,6 +461,46 @@ function PropertyWorkspace() {
             </div>
           </section>
 
+        </TabsContent>
+
+        {/* ------------------------------------------------------- Workflow */}
+        <TabsContent value="workflow" className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Standard ARHA onboarding workflow. Sections, release conditions and dates are managed
+              by Resolve — open a task to see why.
+            </p>
+            <NewTaskDialog
+              propertyId={current.id}
+              people={data.people}
+              tasks={tasks}
+              disabled={!canEdit}
+              onSave={(values) => saveTask.mutate({ data: values } as never)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
+          <WorkflowTable
+            tasks={tasks}
+            outOfScope={outOfScope}
+            people={data.people}
+            selectedId={openTaskId}
+            onSelect={(t) => setOpenTaskId(t.id)}
+          />
+          <TemplatePanel propertyId={current.id} propertyName={current.name} readOnly={!canEdit} />
+        </TabsContent>
+
+        {/* ------------------------------------------------------- Property */}
+        <TabsContent value="property" className="space-y-4">
+          <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
+        </TabsContent>
+
+        {/* ------------------------------------------------------ Financial */}
+        <TabsContent value="financial" className="space-y-4">
+          <FinancialPanel propertyId={current.id} canEdit={canEdit} isAdmin={roles.includes("admin")} />
+        </TabsContent>
+
+        {/* -------------------------------------------------------- Handoff */}
+        <TabsContent value="handoff" className="space-y-5">
           {/* Handoff gate */}
           {openHandoff && (
             <HandoffGatePanel
@@ -519,32 +564,6 @@ function PropertyWorkspace() {
               )}
             </div>
           </section>
-        </TabsContent>
-
-        {/* ------------------------------------------------------- Workflow */}
-        <TabsContent value="workflow" className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              Standard ARHA onboarding workflow. Sections, release conditions and dates are managed
-              by Resolve — open a task to see why.
-            </p>
-            <NewTaskDialog
-              propertyId={current.id}
-              people={data.people}
-              tasks={tasks}
-              disabled={!canEdit}
-              onSave={(values) => saveTask.mutate({ data: values } as never)}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
-          <WorkflowTable
-            tasks={tasks}
-            outOfScope={outOfScope}
-            people={data.people}
-            selectedId={openTaskId}
-            onSelect={(t) => setOpenTaskId(t.id)}
-          />
-          <TemplatePanel propertyId={current.id} propertyName={current.name} readOnly={!canEdit} />
         </TabsContent>
 
         {/* ------------------------------------------------------- Timeline */}

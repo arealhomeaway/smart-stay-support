@@ -11,7 +11,7 @@
  * hard-coded workflow.
  */
 
-import { MAINTENANCE_POLICY, money } from "./maintenance-policy";
+import { authorityLadder } from "./maintenance-policy";
 
 export type FurnishingScope = "full_furnishing" | "no_furnishing";
 
@@ -191,5 +191,5 @@ export function splitByScope<T extends { title: string }>(tasks: T[], scope: Pro
  */
 export function repairApprovalGuidance(title: string): string | null {
   if (!/\brepair|make[- ]ready|estimate|quote\b/i.test(title ?? "")) return null;
-  return `Work above ${money(MAINTENANCE_POLICY.ownerApprovalThreshold)} needs the homeowner's decision before it starts. Below it, ARHA proceeds and records the cost.`;
+  return authorityLadder().join(" ");
 }
