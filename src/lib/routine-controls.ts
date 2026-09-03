@@ -172,11 +172,17 @@ export function routineDueState(
   if (row.status === "completed" || row.status === "cancelled") return "done";
   if (!row.due_at) return "upcoming";
   const due = new Date(row.due_at);
-  if (due.getTime() <= now.getTime()) return "overdue";
-  const endOfDay = new Date(now);
-  endOfDay.setHours(23, 59, 59, 999);
-  return due.getTime() <= endOfDay.getTime() ? "today" : "upcoming";
+  if (Number.isNaN(due.getTime())) return "upcoming";
+  // A routine is not late the instant it becomes due: routine checks are
+  // day-shaped work, so the person has the rest of the due day to do them.
+  const endOfDueDay = new Date(due);
+  endOfDueDay.setHours(23, 59, 59, 999);
+  if (now.getTime() > endOfDueDay.getTime()) return "overdue";
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+  return due.getTime() <= endOfToday.getTime() ? "today" : "upcoming";
 }
+
 
 /** The sentence a person reads on the row, without needing to know the model. */
 export function routineDueLabel(row: { status: string; due_at: string | null | undefined }): string {
