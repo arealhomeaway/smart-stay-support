@@ -193,9 +193,41 @@ const PHASE_OF_STAGE: Record<string, OnboardingPhase> = {
  */
 export function deriveLifecycle(input: StateInput): LifecycleState {
   const { property, project, handoff, tasks } = input;
-  const accepted =
-    Boolean(property.handoff_accepted_at) || property.lifecycle_status === "active_operations";
   const lockedAt = property.handoff_accepted_at ?? project?.completed_at ?? null;
+
+  // A home with no persisted Onboarding Project has no onboarding state at
+  // all. This is checked FIRST so a default/unknown lifecycle value can never
+  // manufacture "Live / Handoff complete" for a property nobody has started.
+  // Homes accepted before Resolve keep their accepted reading: they carry an
+  // explicit operational lifecycle and/or an acceptance timestamp.
+  const preStartLifecycle =
+    !property.lifecycle_status || property.lifecycle_status === "not_onboarded";
+  const notStartedNow =
+    !project &&
+    tasks.length === 0 &&
+    !handoff &&
+    !property.handoff_accepted_at &&
+    preStartLifecycle;
+  if (notStartedNow) {
+    return {
+      phase: "not_started",
+      label: PHASE_LABEL.not_started,
+      accepted: false,
+      live: false,
+      corrections: false,
+      notStarted: true,
+      locked: false,
+      lockedAt: null,
+      chainKey: null,
+      staleHandoff: false,
+      explain:
+        "This home is in Resolve, but no Onboarding Project has been started, so there is no plan to work.",
+    };
+  }
+
+  const accepted =
+    !preStartLifecycle &&
+    (Boolean(property.handoff_accepted_at) || property.lifecycle_status === "active_operations");
 
   if (accepted) {
     return {
