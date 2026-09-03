@@ -53,25 +53,36 @@ export async function loadOwnerHome(supabase: Client, userId: string) {
 }
 
 /**
- * Read-only sample of the homeowner hub for a Platform Owner previewing the
- * portal. It never links anything to the admin's own account — it just opens
- * the most recently created program so the admin can see the real interface.
+ * Read-only preview of one homeowner hub for a Platform Owner.
+ *
+ * Staff deliberately pick a program on the Active Owner board and Resolve
+ * renders that program's owner/property context — never the admin's own
+ * account. With no explicit pick it falls back to the newest program.
  */
-export async function loadOwnerHomePreview(supabase: Client, userId: string) {
+export async function loadOwnerHomePreview(
+  supabase: Client,
+  userId: string,
+  programId?: string | null,
+) {
   const { assertAdmin } = await import("./access.server");
   await assertAdmin(supabase, userId);
-  const program = await supabase
-    .from("owner_programs")
-    .select("id")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (program.error) throw program.error;
-  if (!program.data) return { linked: false as const, preview: true as const };
-  return { ...(await loadOwnerHomeByProgram(supabase, program.data.id)), preview: true as const };
+  let id = programId ?? null;
+  if (!id) {
+    const program = await supabase
+      .from("owner_programs")
+      .select("id")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (program.error) throw program.error;
+    if (!program.data) return { linked: false as const, preview: true as const };
+    id = program.data.id;
+  }
+  return { ...(await loadOwnerHomeByProgram(supabase, id, true)), preview: true as const };
 }
 
-async function loadOwnerHomeByProgram(supabase: Client, programId: string) {
+async function loadOwnerHomeByProgram(supabase: Client, programId: string, preview = false) {
+
   const agg = await loadProgramAggregate(supabase, programId);
 
   const propertyIds = agg.properties.map((p) => p.propertyId);
