@@ -21,6 +21,13 @@ export const MAINTENANCE_POLICY = {
    */
   ownerApprovalThreshold: 350,
 
+  /**
+   * Below this amount ARHA proceeds on its own authority and records the cost.
+   * From here up to the owner threshold a supervisor decides and the owner is
+   * told afterwards.
+   */
+  supervisorApprovalThreshold: 200,
+
   /** Vendor contact and acknowledgment benchmarks, in minutes, by priority. */
   vendorContactMinutes: { p1: 10, p2: 30, p3: 120 } as Record<Priority, number>,
   vendorAcknowledgeMinutes: { p1: 10, p2: 30, p3: 120 } as Record<Priority, number>,
@@ -136,4 +143,68 @@ export function minutesSince(iso: string | null | undefined, now = new Date()) {
 
 export function normalisePriority(value: string | null | undefined): Priority {
   return value === "p1" || value === "p2" ? value : "p3";
+}
+
+/* ------------------------------------------------------------------ */
+/* Spend authority ladder                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Who decides a given amount of spend. One ladder for the whole app:
+ *
+ *  - under $200 — ARHA proceeds, cost recorded;
+ *  - $200 to $350 — supervisor decides, homeowner told afterwards;
+ *  - above $350 — the homeowner decides before work starts;
+ *  - emergency — mitigation proceeds under a documented exception.
+ */
+export type AuthorityTier = "proceed" | "supervisor" | "owner" | "emergency";
+
+export const AUTHORITY_TIER_LABELS: Record<AuthorityTier, string> = {
+  proceed: "Proceed — no approval needed",
+  supervisor: "Supervisor approval",
+  owner: "Homeowner approval",
+  emergency: "Emergency exception",
+};
+
+export function authorityTier(
+  amount: number | null | undefined,
+  options: { emergency?: boolean } = {},
+): AuthorityTier {
+  if (options.emergency) return "emergency";
+  const value = Number(amount ?? 0);
+  if (!Number.isFinite(value) || value < MAINTENANCE_POLICY.supervisorApprovalThreshold) return "proceed";
+  if (value <= MAINTENANCE_POLICY.ownerApprovalThreshold) return "supervisor";
+  return "owner";
+}
+
+/** Plain-language sentence for the tier a given amount falls into. */
+export function authorityGuidance(
+  amount: number | null | undefined,
+  options: { emergency?: boolean } = {},
+): string {
+  const tier = authorityTier(amount, options);
+  const sup = money(MAINTENANCE_POLICY.supervisorApprovalThreshold);
+  const own = money(MAINTENANCE_POLICY.ownerApprovalThreshold);
+  switch (tier) {
+    case "emergency":
+      return `Emergency: mitigate now and record the exception — reason, scope, amount, who decided and evidence. Anything beyond stopping the immediate problem still follows the normal ladder.`;
+    case "proceed":
+      return `Under ${sup}: proceed without supervisor or homeowner approval and record the cost.`;
+    case "supervisor":
+      return `${sup} to ${own}: a supervisor approves before the work starts, and the homeowner is told afterwards.`;
+    case "owner":
+      return `Above ${own}: the homeowner decides before the work starts.`;
+  }
+}
+
+/** The full ladder, for guidance panels that explain it up front. */
+export function authorityLadder(): string[] {
+  const sup = money(MAINTENANCE_POLICY.supervisorApprovalThreshold);
+  const own = money(MAINTENANCE_POLICY.ownerApprovalThreshold);
+  return [
+    `Under ${sup} — proceed, record the cost.`,
+    `${sup} to ${own} — supervisor approves, homeowner is told afterwards.`,
+    `Above ${own} — homeowner approves before work starts.`,
+    `Emergency — mitigate now under a documented exception: reason, scope, amount, who decided, evidence.`,
+  ];
 }
