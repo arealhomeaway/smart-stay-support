@@ -427,11 +427,11 @@ export async function reportPdf(report: OwnerReport) {
     text(String(e.hours), { size: 8, x: cols[3] });
     text(e.shared ? `${e.properties.length} shared` : fit(e.properties[0] ?? "—", 78), {
       size: 8,
-      x: cols[3],
+      x: cols[4],
     });
     text(fit(shortStatus(e.status), 84), {
       size: 8,
-      x: cols[4],
+      x: cols[5],
       color: e.counts ? INK : MUTED,
     });
   }
