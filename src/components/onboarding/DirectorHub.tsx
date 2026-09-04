@@ -408,7 +408,7 @@ function ProjectRow({ project: p }: { project: ProjectSummary }) {
       className="surface flex flex-col gap-2 p-3 transition hover:bg-muted/40 lg:flex-row lg:items-center lg:gap-4"
     >
       <PropertyPhoto
-        url={(p.property as { primary_photo_url?: string | null }).primary_photo_url}
+        url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
         name={p.property.name}
         className="size-12 rounded-xl"
         rounded="rounded-xl"
