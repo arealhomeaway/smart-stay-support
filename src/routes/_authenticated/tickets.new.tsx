@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Clock, Users, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
+import { useDemo } from "@/components/DemoProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,9 @@ function NewMatter() {
   const router = useRouter();
   const context = Route.useSearch();
   const { can, readOnly, isLoading: rolesLoading } = useRole();
+  // In the demo environment a new ticket is a demo ticket: it lands in the
+  // demo queues, never in the real counts, and reaches no guest or vendor.
+  const { demoMode } = useDemo();
   const [mode, setMode] = useState<Mode>("ticket");
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
@@ -134,12 +138,13 @@ function NewMatter() {
   });
 
   const { data: properties } = useQuery({
-    queryKey: ["properties"],
+    queryKey: ["properties", demoMode],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
         .select("id, name, nickname")
         .eq("active", true)
+        .eq("is_demo", demoMode)
         .order("name");
       if (error) throw error;
       return data;
@@ -365,6 +370,7 @@ function NewMatter() {
       const { data: ticket, error } = await supabase
         .from("tickets")
         .insert({
+          is_demo: demoMode,
           record_type: oneTouch
             ? "completed_interaction"
             : form.cross_team

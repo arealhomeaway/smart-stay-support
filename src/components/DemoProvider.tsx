@@ -2,13 +2,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AppRole } from "@/lib/permissions";
 import { useViewAs } from "@/hooks/useViewAs";
-import {
-  getDemoStatus,
-  resetDemoEnvironment,
-  seedDemoEnvironment,
-} from "@/lib/demo.functions";
+import { getDemoStatus, resetDemoEnvironment, seedDemoEnvironment } from "@/lib/demo.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DEMO_FLAG_EVENT,
+  PREVIEW_SEAT_EVENT,
+  readDemoFlag,
+  writeDemoFlag,
+  writePreviewSeat,
+  type PreviewSeat,
+} from "@/lib/demo-mode";
 
 /**
  * Demo Mode.
@@ -34,7 +38,7 @@ type DemoContextValue = {
   status: DemoStatus | undefined;
   /** Whether the current user may operate the demo environment. */
   canDemo: boolean;
-  enterDemo: (role: AppRole) => void;
+  enterDemo: (role: AppRole, seat?: PreviewSeat | null) => void;
   exitDemo: () => void;
   /** Admin-only: (re)seed or wipe the demo records. */
   seed: () => Promise<void>;
@@ -43,21 +47,8 @@ type DemoContextValue = {
   resetting: boolean;
 };
 
-const KEY = "resolve.demo-mode";
-const EVENT = "resolve:demo-mode";
+const EVENT = DEMO_FLAG_EVENT;
 const DemoContext = createContext<DemoContextValue | null>(null);
-
-function readDemoFlag(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.sessionStorage.getItem(KEY) === "1";
-}
-
-function writeDemoFlag(on: boolean) {
-  if (typeof window === "undefined") return;
-  if (on) window.sessionStorage.setItem(KEY, "1");
-  else window.sessionStorage.removeItem(KEY);
-  window.dispatchEvent(new Event(EVENT));
-}
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
   const { viewAs, setViewAs, clearViewAs } = useViewAs();
@@ -69,9 +60,11 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const sync = () => setFlag(readDemoFlag());
     window.addEventListener(EVENT, sync);
+    window.addEventListener(PREVIEW_SEAT_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener(EVENT, sync);
+      window.removeEventListener(PREVIEW_SEAT_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -110,8 +103,9 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const [resetting, setResetting] = useState(false);
 
   const enterDemo = useCallback(
-    (role: AppRole) => {
+    (role: AppRole, seat: PreviewSeat | null = null) => {
       setViewAs(role);
+      writePreviewSeat(seat);
       writeDemoFlag(true);
       void queryClient.invalidateQueries({ queryKey: ["demo-status"] });
     },
@@ -119,6 +113,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   );
 
   const exitDemo = useCallback(() => {
+    writePreviewSeat(null);
     writeDemoFlag(false);
     clearViewAs();
   }, [clearViewAs]);

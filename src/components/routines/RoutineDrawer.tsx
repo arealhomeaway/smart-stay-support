@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TaskWorkspace } from "@/components/ui/workspace";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import {
   OUTCOME_LABELS,
@@ -123,190 +123,187 @@ export function RoutineDrawer({
   const propertyName = row.properties?.nickname ?? row.properties?.name ?? null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg">
-        <SheetHeader className="space-y-1.5 text-left">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{config.label}</Badge>
-            {done ? (
-              <Badge variant="outline" className="border-success/40 bg-success/10 text-success">
-                Completed
-              </Badge>
-            ) : (
-              <Badge variant="outline">{routineDueLabel(row)}</Badge>
-            )}
-          </div>
-          <SheetTitle className="text-lg">{row.title}</SheetTitle>
-          <SheetDescription>
-            {propertyName ? `${propertyName} · ` : ""}
-            {config.purpose}
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="space-y-5 py-5">
-          {(row.guest_name || row.reservation_confirmation || row.stay_departure) && (
-            <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
-              {row.guest_name && (
-                <p>
-                  <span className="text-muted-foreground">Guest: </span>
-                  {row.guest_name}
-                </p>
-              )}
-              {row.reservation_confirmation && (
-                <p>
-                  <span className="text-muted-foreground">Reservation: </span>
-                  {row.reservation_confirmation}
-                </p>
-              )}
-              {row.stay_departure && (
-                <p>
-                  <span className="text-muted-foreground">Departed: </span>
-                  {new Date(row.stay_departure).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-          )}
-
-          {row.property_id && (
-            <SpecialHandlingNotice
-              propertyId={row.property_id}
-              moment={config.kind === "cleaning_review" ? "cleaning" : "guest_access"}
-            />
-          )}
-
+    <TaskWorkspace
+      open={open}
+      onOpenChange={onOpenChange}
+      title={row.title}
+      subtitle={`${propertyName ? `${propertyName} · ` : ""}${config.purpose}`}
+      headerExtra={
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{config.label}</Badge>
           {done ? (
-            <div className="space-y-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm">
-              <p className="flex items-center gap-2 font-medium text-success">
-                <CheckCircle2 className="size-4" />
-                {OUTCOME_LABELS[(row.outcome as RoutineOutcome) ?? "looks_good"]}
-              </p>
-              {row.findings && <p className="whitespace-pre-line">{row.findings}</p>}
-              {row.follow_up_ticket_id && (
-                <Link
-                  to="/tickets/$ticketId"
-                  params={{ ticketId: row.follow_up_ticket_id }}
-                  className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                >
-                  Open the follow-up ticket <ExternalLink className="size-3.5" />
-                </Link>
-              )}
-            </div>
+            <Badge variant="outline" className="border-success/40 bg-success/10 text-success">
+              Completed
+            </Badge>
           ) : (
-            <>
-              <div className="space-y-2">
-                <p className="text-sm font-semibold">Work through it</p>
-                {config.steps.map((step) => (
-                  <label
-                    key={step.id}
-                    className="flex cursor-pointer items-start gap-3 rounded-lg border border-border px-3 py-2.5 transition-colors hover:bg-secondary/60"
-                  >
-                    <Checkbox
-                      checked={Boolean(checked[step.id])}
-                      onCheckedChange={(v) => {
-                        setChecked((c) => ({ ...c, [step.id]: Boolean(v) }));
-                        if (row.status === "due") start.mutate();
-                      }}
-                      className="mt-0.5"
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium">{step.prompt}</span>
-                      {step.hint && (
-                        <span className="block text-xs text-muted-foreground">{step.hint}</span>
-                      )}
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-semibold">What did you find?</p>
-                <div className="flex flex-wrap gap-2">
-                  {config.outcomes.map((o) => (
-                    <button
-                      key={o}
-                      type="button"
-                      onClick={() => setOutcome(o)}
-                      className={`h-10 rounded-lg border px-4 text-sm font-medium transition-colors ${
-                        outcome === o
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border hover:bg-secondary"
-                      }`}
-                    >
-                      {OUTCOME_LABELS[o]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {needsFollowUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="routine-findings">{config.followUpPrompt}</Label>
-                  <Textarea
-                    id="routine-findings"
-                    rows={3}
-                    value={findings}
-                    onChange={(e) => setFindings(e.target.value)}
-                    placeholder="Say it the way you would to a teammate."
-                  />
-                </div>
-              )}
-
-              {!needsFollowUp && outcome && (
-                <div className="space-y-2">
-                  <Label htmlFor="routine-notes">Anything worth noting? (optional)</Label>
-                  <Textarea
-                    id="routine-notes"
-                    rows={2}
-                    value={findings}
-                    onChange={(e) => setFindings(e.target.value)}
-                  />
-                </div>
-              )}
-
-              {config.evidenceLabel && (
-                <div className="space-y-2">
-                  <Label htmlFor="routine-evidence">{config.evidenceLabel} (optional)</Label>
-                  <Input
-                    id="routine-evidence"
-                    value={evidence}
-                    onChange={(e) => setEvidence(e.target.value)}
-                    placeholder="Paste one or more links"
-                  />
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-                <Button
-                  onClick={() => complete.mutate()}
-                  disabled={!outcome || complete.isPending}
-                  className="h-11"
-                >
-                  {complete.isPending && <Loader2 className="size-4 animate-spin" />}
-                  Mark it done
-                </Button>
-                {needsFollowUp && (
-                  <Button asChild variant="outline" className="h-11">
-                    <Link
-                      to="/tickets/new"
-                      search={{
-                        ...(row.property_id ? { property: row.property_id } : {}),
-                        from: `routine:${row.id}`,
-                      }}
-                    >
-                      Create a follow-up ticket
-                    </Link>
-                  </Button>
-                )}
-                {!allChecked && outcome === "looks_good" && (
-                  <p className="basis-full text-xs text-muted-foreground">
-                    You have not ticked everything — that is fine, but say why in the note.
-                  </p>
-                )}
-              </div>
-            </>
+            <Badge variant="outline">{routineDueLabel(row)}</Badge>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      }
+    >
+      <div className="space-y-5">
+        {(row.guest_name || row.reservation_confirmation || row.stay_departure) && (
+          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
+            {row.guest_name && (
+              <p>
+                <span className="text-muted-foreground">Guest: </span>
+                {row.guest_name}
+              </p>
+            )}
+            {row.reservation_confirmation && (
+              <p>
+                <span className="text-muted-foreground">Reservation: </span>
+                {row.reservation_confirmation}
+              </p>
+            )}
+            {row.stay_departure && (
+              <p>
+                <span className="text-muted-foreground">Departed: </span>
+                {new Date(row.stay_departure).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        )}
+
+        {row.property_id && (
+          <SpecialHandlingNotice
+            propertyId={row.property_id}
+            moment={config.kind === "cleaning_review" ? "cleaning" : "guest_access"}
+          />
+        )}
+
+        {done ? (
+          <div className="space-y-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm">
+            <p className="flex items-center gap-2 font-medium text-success">
+              <CheckCircle2 className="size-4" />
+              {OUTCOME_LABELS[(row.outcome as RoutineOutcome) ?? "looks_good"]}
+            </p>
+            {row.findings && <p className="whitespace-pre-line">{row.findings}</p>}
+            {row.follow_up_ticket_id && (
+              <Link
+                to="/tickets/$ticketId"
+                params={{ ticketId: row.follow_up_ticket_id }}
+                className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+              >
+                Open the follow-up ticket <ExternalLink className="size-3.5" />
+              </Link>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold">Work through it</p>
+              {config.steps.map((step) => (
+                <label
+                  key={step.id}
+                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-border px-3 py-2.5 transition-colors hover:bg-secondary/60"
+                >
+                  <Checkbox
+                    checked={Boolean(checked[step.id])}
+                    onCheckedChange={(v) => {
+                      setChecked((c) => ({ ...c, [step.id]: Boolean(v) }));
+                      if (row.status === "due") start.mutate();
+                    }}
+                    className="mt-0.5"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">{step.prompt}</span>
+                    {step.hint && (
+                      <span className="block text-xs text-muted-foreground">{step.hint}</span>
+                    )}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold">What did you find?</p>
+              <div className="flex flex-wrap gap-2">
+                {config.outcomes.map((o) => (
+                  <button
+                    key={o}
+                    type="button"
+                    onClick={() => setOutcome(o)}
+                    className={`h-10 rounded-lg border px-4 text-sm font-medium transition-colors ${
+                      outcome === o
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:bg-secondary"
+                    }`}
+                  >
+                    {OUTCOME_LABELS[o]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {needsFollowUp && (
+              <div className="space-y-2">
+                <Label htmlFor="routine-findings">{config.followUpPrompt}</Label>
+                <Textarea
+                  id="routine-findings"
+                  rows={3}
+                  value={findings}
+                  onChange={(e) => setFindings(e.target.value)}
+                  placeholder="Say it the way you would to a teammate."
+                />
+              </div>
+            )}
+
+            {!needsFollowUp && outcome && (
+              <div className="space-y-2">
+                <Label htmlFor="routine-notes">Anything worth noting? (optional)</Label>
+                <Textarea
+                  id="routine-notes"
+                  rows={2}
+                  value={findings}
+                  onChange={(e) => setFindings(e.target.value)}
+                />
+              </div>
+            )}
+
+            {config.evidenceLabel && (
+              <div className="space-y-2">
+                <Label htmlFor="routine-evidence">{config.evidenceLabel} (optional)</Label>
+                <Input
+                  id="routine-evidence"
+                  value={evidence}
+                  onChange={(e) => setEvidence(e.target.value)}
+                  placeholder="Paste one or more links"
+                />
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+              <Button
+                onClick={() => complete.mutate()}
+                disabled={!outcome || complete.isPending}
+                className="h-11"
+              >
+                {complete.isPending && <Loader2 className="size-4 animate-spin" />}
+                Mark it done
+              </Button>
+              {needsFollowUp && (
+                <Button asChild variant="outline" className="h-11">
+                  <Link
+                    to="/tickets/new"
+                    search={{
+                      ...(row.property_id ? { property: row.property_id } : {}),
+                      from: `routine:${row.id}`,
+                    }}
+                  >
+                    Create a follow-up ticket
+                  </Link>
+                </Button>
+              )}
+              {!allChecked && outcome === "looks_good" && (
+                <p className="basis-full text-xs text-muted-foreground">
+                  You have not ticked everything — that is fine, but say why in the note.
+                </p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </TaskWorkspace>
   );
 }

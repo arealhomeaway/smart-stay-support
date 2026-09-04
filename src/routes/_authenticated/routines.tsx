@@ -16,14 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FocusedAction } from "@/components/ui/workspace";
 import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
 import { useDemo } from "@/components/DemoProvider";
@@ -385,82 +378,81 @@ function RunRoutineDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Run a routine control</DialogTitle>
-          <DialogDescription>Pick the check you are about to do.</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {ROUTINE_KINDS.map((k) => (
-              <button
-                key={k}
-                onClick={() => setKind(k)}
-                className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
-                  kind === k ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
-                }`}
-              >
-                <span className="block text-sm font-semibold">{ROUTINE_CONFIG[k].label}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {ROUTINE_CONFIG[k].teamLabel}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <p className="text-sm text-muted-foreground">{ROUTINE_CONFIG[kind].purpose}</p>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="routine-property">Which home?</Label>
-            <Input
-              id="routine-property"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setPropertyId("");
-              }}
-              placeholder="Start typing a property name"
-            />
-            {query.trim() && !propertyId && (
-              <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border p-1">
-                {matches.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setPropertyId(p.id);
-                      setQuery(p.nickname ?? p.name ?? "");
-                    }}
-                    className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-secondary"
-                  >
-                    {p.nickname ?? p.name}
-                  </button>
-                ))}
-                {matches.length === 0 && (
-                  <p className="px-2 py-1.5 text-sm text-muted-foreground">No match.</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {ROUTINE_CONFIG[kind].team === "guest_experience" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="routine-guest">Guest name (optional)</Label>
-              <Input id="routine-guest" value={guest} onChange={(e) => setGuest(e.target.value)} />
-            </div>
-          )}
-        </div>
-
-        <DialogFooter>
+    <FocusedAction
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Run a routine control"
+      description="Pick the check you are about to do."
+      footer={
+        <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={() => create.mutate()} disabled={create.isPending}>
             Start it
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {ROUTINE_KINDS.map((k) => (
+            <button
+              key={k}
+              onClick={() => setKind(k)}
+              className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                kind === k ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
+              }`}
+            >
+              <span className="block text-sm font-semibold">{ROUTINE_CONFIG[k].label}</span>
+              <span className="block text-xs text-muted-foreground">
+                {ROUTINE_CONFIG[k].teamLabel}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <p className="text-sm text-muted-foreground">{ROUTINE_CONFIG[kind].purpose}</p>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="routine-property">Which home?</Label>
+          <Input
+            id="routine-property"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPropertyId("");
+            }}
+            placeholder="Start typing a property name"
+          />
+          {query.trim() && !propertyId && (
+            <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border p-1">
+              {matches.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setPropertyId(p.id);
+                    setQuery(p.nickname ?? p.name ?? "");
+                  }}
+                  className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-secondary"
+                >
+                  {p.nickname ?? p.name}
+                </button>
+              ))}
+              {matches.length === 0 && (
+                <p className="px-2 py-1.5 text-sm text-muted-foreground">No match.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {ROUTINE_CONFIG[kind].team === "guest_experience" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="routine-guest">Guest name (optional)</Label>
+            <Input id="routine-guest" value={guest} onChange={(e) => setGuest(e.target.value)} />
+          </div>
+        )}
+      </div>
+    </FocusedAction>
   );
 }

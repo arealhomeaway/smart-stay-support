@@ -9,6 +9,7 @@ import {
   type Capability,
 } from "@/lib/permissions";
 import { useViewAs } from "@/hooks/useViewAs";
+import { useDemoFlag, usePreviewSeat } from "@/hooks/useDemoFlag";
 
 export type { AppRole };
 
@@ -20,6 +21,8 @@ export type { AppRole };
  */
 export function useRole() {
   const { viewAs } = useViewAs();
+  const demoFlag = useDemoFlag();
+  const previewSeat = usePreviewSeat();
 
   const query = useQuery({
     queryKey: ["my-roles"],
@@ -39,6 +42,10 @@ export function useRole() {
   const actualRoles = query.data?.roles ?? [];
   const userId = query.data?.userId ?? null;
   const previewing = Boolean(viewAs) && actualRoles.includes("admin");
+  // The demo environment exists to be worked. An ordinary role preview is a
+  // look, never a change; the demo lens is a look at *demo records*, which the
+  // previewer is meant to act on.
+  const demoMode = previewing && demoFlag;
   const roles: AppRole[] = previewing && viewAs ? [viewAs] : actualRoles;
 
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");
@@ -51,8 +58,17 @@ export function useRole() {
     actualRoles,
     previewing,
     previewRole: previewing ? viewAs : null,
-    /** Every preview is read-only: nothing in the UI may mutate data. */
-    readOnly: previewing,
+    /**
+     * Read-only means read-only. A plain role preview may not change anything;
+     * the safe demo environment may change demo records only, which the
+     * queries and writes on each surface already scope by `is_demo`.
+     */
+    readOnly: previewing && !demoMode,
+    /** True while previewing the isolated demo environment. */
+    demoMode,
+    /** The operational seat being previewed, when one was chosen. */
+    previewSeat: previewing ? previewSeat : null,
+    isDirectorPreview: previewing && previewSeat === "director_ops",
     isLoading: query.isLoading,
     primary: primaryRole(roles),
     capabilities: capabilitiesFor(roles),

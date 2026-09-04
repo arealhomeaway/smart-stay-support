@@ -2,10 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
 import { ticketStage, repairIsPossible } from "@/lib/ticket-stage";
+import { scopedClosureEvidence } from "@/lib/closure-evidence";
+import { closureEvidenceSatisfied, requiresPhotoOrFile } from "@/lib/evidence-requirements";
+import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle,
@@ -230,6 +233,44 @@ function TicketDetail() {
     },
   });
 
+  // Real files on this ticket. A photo requirement is satisfied by an actual
+  // stored upload, never by a sentence in the evidence box.
+  const listAttachments = useServerFn(listAttachmentsFn);
+  const { data: attachments } = useQuery({
+    queryKey: ["attachments", "ticket", ticketId],
+    queryFn: () => listAttachments({ data: { entityType: "ticket" as const, entityId: ticketId } }),
+  });
+
+  // Field repair can be raised as a Breezeway task or as an internal work
+  // order. Either one means a repair exists, and either one completing means
+  // the ticket stops asking whether a repair is needed.
+  const { data: workOrders } = useQuery({
+    queryKey: ["ticket-work-orders", ticketId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("work_orders")
+        .select("id, phase, closed_at, vendor_completed_at")
+        .eq("ticket_id", ticketId);
+      return data ?? [];
+    },
+  });
+
+  // Waiting is a saved state, not a form: reopening the ticket shows exactly
+  // what was parked, on what, and when it comes back.
+  const savedWaitOn = data?.ticket.waiting_on ?? null;
+  const savedWaitReason = data?.ticket.waiting_reason ?? null;
+  const savedWaitReview = data?.ticket.next_review_at ?? null;
+  useEffect(() => {
+    if (savedWaitOn) setWaitOn(savedWaitOn);
+    if (savedWaitReason) setWaitReason(savedWaitReason);
+    if (savedWaitReview) {
+      // <input type="datetime-local"> wants local wall time, not an ISO stamp.
+      const d = new Date(savedWaitReview);
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      setWaitReview(local.toISOString().slice(0, 16));
+    }
+  }, [savedWaitOn, savedWaitReason, savedWaitReview]);
+
   if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
 
   const { ticket, steps, activity } = data;
@@ -239,7 +280,37 @@ function TicketDetail() {
   const closed = isClosed(ticket.status);
   const meta = priorityMeta(ticket.priority);
   const sla = slaState(ticket);
-  const guestCommsRequired = workType?.guest_communication_required ?? false;
+  // The requirement, scoped to this scenario: a porch railing never has to
+  // certify every smoke and CO device in the home.
+  const requiredEvidence = scopedClosureEvidence(workType?.required_closure_evidence, {
+    category: ticket.category,
+    workTypeName: workType?.name ?? null,
+    text: [ticket.title, ticket.description].filter(Boolean).join(" — "),
+  });
+  const attachmentRows = (attachments?.files ?? []) as {
+    upload_status?: string | null;
+    size_bytes?: number | null;
+  }[];
+  const qualifyingFiles = attachmentRows.filter(
+    (f) =>
+      (f.upload_status === "stored" || f.upload_status === "uploaded") &&
+      Number(f.size_bytes ?? 0) > 0,
+  ).length;
+  const evidenceNeedsFile = requiresPhotoOrFile(requiredEvidence);
+  const evidenceSatisfied = closureEvidenceSatisfied({
+    requirement: requiredEvidence,
+    text: evidence.trim() || ticket.closure_evidence,
+    fileCount: qualifyingFiles,
+  });
+  // A guest message can only be required when there is a guest to write to.
+  const guestPresent = Boolean(
+    ticket.guest_in_residence ||
+    ticket.guest_name ||
+    ticket.guest_contact ||
+    ticket.reservation_confirmation ||
+    ticket.reservation_guest_name,
+  );
+  const guestCommsRequired = (workType?.guest_communication_required ?? false) && guestPresent;
   // Readiness is a read of the same gates the close action enforces — no new
   // rules. Anything Resolve already recorded counts as done automatically.
   // These are evaluated by Resolve, never ticked off by hand: each row states
@@ -268,16 +339,15 @@ function TicketDetail() {
       hint: "Add what was wrong and what was done.",
       action: "Add summary",
     },
-    ...(workType?.required_closure_evidence
+    ...(requiredEvidence
       ? [
           {
-            label: workType.required_closure_evidence,
-            done: evidence.trim().length > 0 || Boolean(ticket.closure_evidence),
-            state:
-              evidence.trim().length > 0 || Boolean(ticket.closure_evidence)
-                ? ("complete" as const)
-                : ("needs_you" as const),
-            hint: "Add the photo or confirmation this work needs.",
+            label: requiredEvidence,
+            done: evidenceSatisfied,
+            state: evidenceSatisfied ? ("complete" as const) : ("needs_you" as const),
+            hint: evidenceNeedsFile
+              ? `Upload the photo or file this work needs${qualifyingFiles > 0 ? "" : " — nothing is attached yet"}.`
+              : "Add the confirmation this work needs.",
             action: "Add evidence",
           },
         ]
@@ -311,7 +381,7 @@ function TicketDetail() {
   // Evidence appears when the work actually calls for it — never as an empty
   // upload box on an ordinary ticket.
   const needsEvidence = Boolean(
-    workType?.required_closure_evidence ||
+    requiredEvidence ||
     steps.some((s) => s.photo_required) ||
     branches?.claim ||
     ticket.vendor_name,
@@ -329,9 +399,7 @@ function TicketDetail() {
     vendor_name: ticket.vendor_name,
     vendor_status: ticket.vendor_status,
     requiredOpenSteps: requiredOpen.length,
-    missingClosureEvidence: Boolean(
-      workType?.required_closure_evidence && !ticket.closure_evidence,
-    ),
+    missingClosureEvidence: Boolean(requiredEvidence) && !evidenceSatisfied,
   });
 
   async function refresh() {
@@ -422,6 +490,11 @@ function TicketDetail() {
       toast.error("Set a review date so this doesn't disappear.");
       return;
     }
+    const review = new Date(waitReview);
+    if (Number.isNaN(review.getTime()) || review.getTime() <= Date.now()) {
+      toast.error("The review time has to be in the future — that is when this comes back to you.");
+      return;
+    }
     const ok = await applyStatus("waiting", {
       waiting_on: waitOn,
       waiting_reason: waitReason.trim(),
@@ -433,8 +506,6 @@ function TicketDetail() {
       `Waiting on ${labelFor(WAITING_ON, waitOn)}: ${waitReason.trim()} — review ${new Date(waitReview).toLocaleString()}`,
       "waiting_set",
     );
-    setWaitReason("");
-    setWaitReview("");
     await refresh();
     toast.success("Marked as waiting, with a review date.");
   }
@@ -447,6 +518,8 @@ function TicketDetail() {
     });
     if (!ok) return;
     await log("waiting", "No longer waiting — back in progress.", "waiting_cleared");
+    setWaitReason("");
+    setWaitReview("");
     await refresh();
   }
 
@@ -509,8 +582,12 @@ function TicketDetail() {
       toast.error("Add a resolution summary — what was wrong and what was done.");
       return;
     }
-    if (workType?.required_closure_evidence && !evidence.trim() && !waived) {
-      toast.error("This work type requires closure evidence before you can close.");
+    if (requiredEvidence && !evidenceSatisfied && !waived) {
+      toast.error(
+        evidenceNeedsFile
+          ? "Attach the photo or file this work requires — a description is not enough."
+          : "Add the closure evidence this work requires.",
+      );
       return;
     }
     if (guestCommsRequired && !finalComms && !waived) {
@@ -539,23 +616,16 @@ function TicketDetail() {
     setResolution("");
     setEvidence("");
     await refresh();
-    toast.success("Ticket closed.");
+    toast.success("Resolved — it moves to closure review before it is closed.");
   }
 
   async function reopen() {
-    const { error } = await supabase
-      .from("tickets")
-      .update({
-        status: "in_progress",
-        resolved_at: null,
-        reopen_count: (ticket.reopen_count ?? 0) + 1,
-        last_reopened_at: new Date().toISOString(),
-      })
-      .eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    const ok = await applyStatus("in_progress", {
+      resolved_at: null,
+      reopen_count: (ticket.reopen_count ?? 0) + 1,
+      last_reopened_at: new Date().toISOString(),
+    });
+    if (!ok) return;
     await log("reopened", "Reopened — the issue was not fully resolved.", "reopened");
     await refresh();
     toast.success("Reopened.");
@@ -578,9 +648,18 @@ function TicketDetail() {
 
   /* ---------------- where this ticket is in the work ---------------- */
   const repairLinks = (repairState?.links ?? []) as { status: string }[];
-  const repairExists = repairLinks.length > 0;
+  const orders = (workOrders ?? []) as {
+    phase: string | null;
+    closed_at: string | null;
+    vendor_completed_at: string | null;
+  }[];
+  const liveOrders = orders.filter((o) => o.phase !== "cancelled");
+  const repairExists = repairLinks.length > 0 || liveOrders.length > 0;
   const repairComplete =
-    ticket.vendor_status === "completed" || repairLinks.some((l) => l.status === "completed");
+    ticket.vendor_status === "completed" ||
+    repairLinks.some((l) => l.status === "completed") ||
+    (liveOrders.length > 0 &&
+      liveOrders.every((o) => Boolean(o.closed_at) || Boolean(o.vendor_completed_at)));
   const verified = !ticket.guest_in_residence || Boolean(ticket.guest_confirmed);
   const rawStage = ticketStage({
     status: ticket.status,
@@ -599,8 +678,7 @@ function TicketDetail() {
   // lives in Current Work, and the Evidence tab shows history only.
   const evidenceRequirementActive =
     !closed &&
-    ((stage === "verify" && needsEvidence) ||
-      Boolean(workType?.required_closure_evidence && !ticket.closure_evidence));
+    ((stage === "verify" && needsEvidence) || (Boolean(requiredEvidence) && !evidenceSatisfied));
 
   const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
@@ -735,9 +813,9 @@ function TicketDetail() {
             <Textarea rows={3} value={resolution} onChange={(e) => setResolution(e.target.value)} />
           </div>
 
-          {workType?.required_closure_evidence && (
+          {requiredEvidence && (
             <div className="space-y-2">
-              <Label>{workType.required_closure_evidence}</Label>
+              <Label>{requiredEvidence}</Label>
               <Textarea
                 rows={2}
                 placeholder="Describe or link the evidence (photo, invoice, serial number, vendor confirmation)."
@@ -745,6 +823,12 @@ function TicketDetail() {
                 onChange={(e) => setEvidence(e.target.value)}
               />
               <AttachmentsPanel entityType="ticket" entityId={ticketId} title="Add photos" />
+              {evidenceNeedsFile && qualifyingFiles === 0 && (
+                <p className="text-sm text-danger">
+                  A photo or file is required here — a written description on its own will not close
+                  this ticket.
+                </p>
+              )}
             </div>
           )}
 

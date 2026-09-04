@@ -103,7 +103,12 @@ function Dashboard() {
 
   const rows = data ?? [];
   const open = rows.filter((t) => OPEN_STATUSES.includes(t.status));
-  const mine = role.userId ? open.filter((t) => isMine(t, role.userId)) : [];
+  const owned = role.userId ? open.filter((t) => isMine(t, role.userId)) : [];
+  // While an admin is previewing another seat, their own assignments are not
+  // that person's work. Rather than show an empty, misleading Home, show a
+  // sample of the queue this seat works and say plainly that it is a sample.
+  const sampleQueue = Boolean(role.previewRole) && owned.length === 0 && open.length > 0;
+  const mine = sampleQueue ? open.slice(0, 20) : owned;
 
   const waiting = mine
     .filter((t) => t.status === "waiting")
@@ -190,6 +195,14 @@ function Dashboard() {
           )}
         </div>
       </header>
+
+      {sampleQueue && (
+        <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
+          You are previewing the {role.previewRole?.replace(/_/g, " ")} view. Nothing is assigned to
+          your own account here, so this is a sample of the work this seat handles — not one
+          person&apos;s real queue.
+        </p>
+      )}
 
       <SectionCard
         tone={needsMe.length > 0 ? "critical" : "default"}

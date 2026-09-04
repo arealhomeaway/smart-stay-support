@@ -32,7 +32,7 @@ import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
-import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
+import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
@@ -543,6 +543,12 @@ const OPERATIONAL_GROUPS = [
 
 function OperationsTab({ hub }: { hub: Hub }) {
   const ops = hub.operations;
+  // Opening a ticket from a home is still working that home: Back returns
+  // here, and the rail keeps the rest of this home's tickets in reach.
+  const { originSearch } = useWorkspaceOrigin(
+    hub.property.nickname || hub.property.name || "Property",
+    ops.tickets.map((t) => ({ id: t.id, label: t.title, sub: `ARHA-${t.ref}` })),
+  );
   const opsGroups = (hub.details.groups ?? []).filter((g) => OPERATIONAL_GROUPS.includes(g.id));
   return (
     <div className="space-y-4">
@@ -578,6 +584,7 @@ function OperationsTab({ hub }: { hub: Hub }) {
                 key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
+                search={{ from: originSearch.from }}
                 className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0 hover:text-primary"
               >
                 <span>
