@@ -154,6 +154,13 @@ export function ApprovalDetail({
           {a.decision_note ? <PeekRow label="Note" value={a.decision_note} /> : null}
           {q.data?.workOrder ? <PeekRow label="Work order" value={q.data.workOrder.title} /> : null}
 
+          <OwnerReplies
+            approvalId={a.id}
+            pending={a.status === "pending" && a.approver_role === "owner"}
+            onRecorded={() => void q.refetch()}
+          />
+
+
           {linkedTicketId ? (
             <Link
               to="/tickets/$ticketId"
