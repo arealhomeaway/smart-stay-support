@@ -74,6 +74,17 @@ function norm(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Whole-word (or whole-phrase) containment, so "water" never hides inside "wateringly". */
+function matchesWholePhrase(haystack: string, keyword: string): boolean {
+  const pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(keyword)}(?:$|[^a-z0-9])`, "i");
+  return pattern.test(haystack);
+}
+
+
 function conditionHolds(condition: PlaybookCondition, ctx: MatchContext): boolean {
   switch (condition) {
     case "guest_in_home":
