@@ -1218,7 +1218,7 @@ function TicketDetail() {
                     </span>{" "}
                     · {relativeTime(a.event_at ?? a.created_at)}
                   </div>
-                  <p className="mt-0.5">{a.body}</p>
+                  <p className="mt-0.5">{humanizeHistoryText(a.body)}</p>
                 </div>
               ))}
             </div>
