@@ -395,6 +395,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const home = vendorMode ? "/vendor" : ownerMode ? "/owner" : "/dashboard";
 
+  // Orientation surfaces: where people arrive, get their bearings and choose.
+  const orientationSurface = ["/dashboard", "/welcome", "/owner", "/vendor", "/hub"].some(
+    (p) => pathname === p,
+  );
+
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
@@ -425,7 +430,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           asChild
                           isActive={active}
                           tooltip={item.label}
-                          className="relative data-[active=true]:before:absolute data-[active=true]:before:inset-y-1 data-[active=true]:before:left-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-sidebar-primary data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:[&>svg]:text-sidebar-primary"
+                          className="h-10 rounded-lg font-medium data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm data-[active=true]:[&>svg]:text-sidebar-primary-foreground"
                         >
                           <Link
                             to={item.to}
@@ -461,7 +466,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SidebarInset>
         <RouteProgress />
         <TooltipProvider delayDuration={200}>
-          <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <header className="sticky top-0 z-30 border-b bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
             <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 md:px-6">
               <SidebarTrigger className="min-h-11 min-w-11 md:min-h-9 md:min-w-9" />
               <span className="hidden text-sm font-medium sm:inline">{workspace}</span>
@@ -514,7 +519,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
         </TooltipProvider>
 
-        <main className="min-h-[70vh] px-4 py-6 md:px-8 md:py-8">
+        {/*
+          Warm for orientation, bright for execution. Overview and portal Homes
+          keep the hospitality warmth; every working surface sits on the bright
+          near-white canvas so the work itself is the brightest thing on screen.
+        */}
+        <main
+          className={`min-h-[70vh] px-4 py-6 md:px-8 md:py-8 ${
+            orientationSurface ? "warm-canvas" : "work-canvas"
+          }`}
+        >
           <div className="mx-auto w-full max-w-[1400px]">{children}</div>
         </main>
 

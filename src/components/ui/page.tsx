@@ -100,8 +100,9 @@ export function SectionCard({
 }
 
 /**
- * A single headline number. Tone colours the figure only — the label stays
- * neutral so a wall of tiles does not read as a wall of warnings.
+ * A single headline number on a softly tinted plate. The tint carries the
+ * meaning of the figure; the label stays neutral so a row of tiles reads as
+ * information rather than a row of alarms.
  */
 export function StatTile({
   label,
@@ -113,26 +114,113 @@ export function StatTile({
   label: string;
   value: ReactNode;
   hint?: ReactNode;
-  tone?: "neutral" | "critical" | "attention" | "positive";
+  tone?: "neutral" | "critical" | "attention" | "positive" | "review" | "progress";
   className?: string;
 }) {
+  const plate =
+    tone === "critical"
+      ? "border-coral/20 bg-coral/8"
+      : tone === "attention"
+        ? "border-amber/25 bg-amber/10"
+        : tone === "positive"
+          ? "border-sage/25 bg-sage/8"
+          : tone === "review"
+            ? "border-lavender/25 bg-lavender/8"
+            : tone === "progress"
+              ? "border-sky/25 bg-sky/8"
+              : "border-border bg-card";
+  const figure =
+    tone === "critical"
+      ? "text-coral"
+      : tone === "attention"
+        ? "text-amber"
+        : tone === "positive"
+          ? "text-sage"
+          : tone === "review"
+            ? "text-lavender"
+            : tone === "progress"
+              ? "text-sky"
+              : "text-foreground";
   return (
-    <div className={cn("surface px-4 py-3.5", className)}>
+    <div className={cn("rounded-xl border px-4 py-3.5", plate, className)}>
       <p className="eyebrow">{label}</p>
-      <p
-        className={cn(
-          "numeric mt-1.5 text-[1.75rem] font-semibold leading-none",
-          tone === "critical" && "text-danger",
-          tone === "attention" && "text-accent",
-          tone === "positive" && "text-success",
-        )}
-      >
+      <p className={cn("numeric mt-1.5 text-[1.75rem] font-semibold leading-none", figure)}>
         {value}
       </p>
       {hint ? <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
+
+/**
+ * The editorial hero used at the top of orientation surfaces — Home, portal
+ * overviews, welcome. A real ARHA home, a role-specific line, and at most a
+ * couple of actions. Never a KPI dashboard.
+ */
+export function PageHero({
+  image,
+  eyebrow,
+  title,
+  description,
+  actions,
+  className,
+}: {
+  /** A real ARHA property photograph. */
+  image?: string;
+  eyebrow?: string;
+  title: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-warm-deep/60 bg-warm",
+        className,
+      )}
+    >
+      {image ? (
+        <div className="absolute inset-0">
+          <img src={image} alt="" aria-hidden="true" className="size-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-plate/85 via-plate/60 to-plate/10" />
+        </div>
+      ) : null}
+      <div
+        className={cn(
+          "relative px-6 py-8 md:px-9 md:py-11",
+          image ? "text-white" : "text-foreground",
+        )}
+      >
+        {eyebrow ? (
+          <p
+            className={cn(
+              "eyebrow mb-2",
+              image && "text-white/70",
+            )}
+          >
+            {eyebrow}
+          </p>
+        ) : null}
+        <h1 className="max-w-2xl font-display text-3xl font-semibold leading-tight tracking-tight md:text-[2.5rem]">
+          {title}
+        </h1>
+        {description ? (
+          <p
+            className={cn(
+              "mt-2 max-w-xl text-base leading-relaxed",
+              image ? "text-white/85" : "text-muted-foreground",
+            )}
+          >
+            {description}
+          </p>
+        ) : null}
+        {actions ? <div className="mt-6 flex flex-wrap items-center gap-2.5">{actions}</div> : null}
+      </div>
+    </section>
+  );
+}
+
 
 /**
  * What staff see when there is genuinely nothing to show. Always says what is
@@ -154,7 +242,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/30 px-6 py-10 text-center",
+        "flex flex-col items-center justify-center rounded-lg px-6 py-10 text-center",
         className,
       )}
     >
