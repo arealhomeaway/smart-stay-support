@@ -331,20 +331,20 @@
 /*
  * Resolve surface language.
  *
- * Elevation is expressed with two soft, warm shadows only — a resting card and
- * a raised panel. Anything that needs more emphasis earns it through spacing
- * and type scale, never through another shadow or a heavier border.
+ * Elevation is expressed with two soft shadows only — a resting card and a
+ * raised panel. Anything that needs more emphasis earns it through spacing and
+ * type scale, never through another shadow or a heavier border.
  */
 @theme inline {
-  --shadow-card: 0 1px 2px oklch(0.27 0.013 222.5 / 6%), 0 1px 3px oklch(0.27 0.013 222.5 / 4%);
-  --shadow-raised: 0 4px 16px -6px oklch(0.27 0.013 222.5 / 14%), 0 1px 2px oklch(0.27 0.013 222.5 / 6%);
+  --shadow-card: 0 1px 2px oklch(0.32 0.015 220 / 5%);
+  --shadow-raised: 0 6px 20px -10px oklch(0.32 0.015 220 / 18%), 0 1px 2px oklch(0.32 0.015 220 / 5%);
 }
 
 /* Standard page section surface: card background, hairline border, soft rest. */
 @utility surface {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
 }
 
@@ -359,9 +359,32 @@
     box-shadow 120ms ease;
 
   &:hover {
-    border-color: color-mix(in oklab, var(--color-primary) 32%, var(--color-border));
+    border-color: color-mix(in oklab, var(--color-primary) 30%, var(--color-border));
+    background-color: color-mix(in oklab, var(--color-primary) 3%, var(--color-card));
     box-shadow: var(--shadow-raised);
   }
+}
+
+/*
+ * Two page canvases.
+ *
+ * `work-canvas` is the bright, near-white surface for execution pages.
+ * `warm-canvas` is the warm ivory used for orientation — Home, portal
+ * overviews, welcome. Warm for orientation, bright for execution.
+ */
+@utility work-canvas {
+  background-color: var(--color-canvas);
+}
+
+@utility warm-canvas {
+  background-color: var(--color-warm);
+}
+
+/* A soft warm panel used inside orientation pages. */
+@utility warm-surface {
+  background-color: color-mix(in oklab, var(--color-warm) 70%, var(--color-card));
+  border: 1px solid color-mix(in oklab, var(--color-warm-deep) 70%, transparent);
+  border-radius: var(--radius-xl);
 }
 
 /* Small uppercase eyebrow used above section titles and in stat tiles. */
@@ -394,12 +417,22 @@
   gap: 0.375rem;
   border-radius: 999px;
   border: 1px solid transparent;
-  padding: 0.0625rem 0.5rem;
+  padding: 0.125rem 0.625rem;
   font-size: 0.75rem;
   line-height: 1.25rem;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
 }
+
+/* The small semantic dot inside a status badge. */
+@utility chip-dot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 999px;
+  background-color: currentColor;
+  flex: none;
+}
+
 
 /* A section band: a heading strip that separates major page regions. */
 @utility band {
