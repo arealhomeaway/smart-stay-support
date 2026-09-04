@@ -16,6 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CalendarClock, Search, Send, UserCheck, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { TaskWorkspace } from "@/components/ui/workspace";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+
 } from "@/components/ui/sheet";
 import {
   Select,
@@ -105,6 +107,9 @@ export function BreezewayTaskPanel({
   const [evidenceNote, setEvidenceNote] = useState("");
   const [priority, setPriority] = useState<string>("normal");
   const [scheduledDate, setScheduledDate] = useState("");
+  // Vendors commit to a window, not a day. The time is stored with the task so
+  // the checkpoint and the "past the committed date" read agree.
+  const [scheduledTime, setScheduledTime] = useState("");
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
@@ -152,6 +157,7 @@ export function BreezewayTaskPanel({
           department,
           priority,
           scheduledDate: scheduledDate || null,
+          scheduledTime: scheduledTime || null,
           templateId: templateId === "none" ? null : Number(templateId),
           assigneeIds,
           resolveEvidenceNote: evidenceNote || null,
@@ -166,6 +172,8 @@ export function BreezewayTaskPanel({
         setRequestKey(crypto.randomUUID());
         setAssigneeIds([]);
         setEvidenceNote("");
+        setScheduledDate("");
+        setScheduledTime("");
         setOpen(false);
       }
       void qc.invalidateQueries({ queryKey });
@@ -262,16 +270,13 @@ export function BreezewayTaskPanel({
         ) : null}
       </CardContent>
 
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Send for repair</SheetTitle>
-            <SheetDescription>
-              You already own this ticket. This is who does the field work, and when.
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="mt-5 space-y-5 text-sm">
+      <TaskWorkspace
+        open={open}
+        onOpenChange={setOpen}
+        title="Send for repair"
+        subtitle="You already own this ticket. This is who does the field work, and when."
+      >
+          <div className="space-y-5 text-sm">
             <SpecialHandlingNotice propertyId={propertyId} moment="maintenance" />
 
             {authorityNote ? (
@@ -328,6 +333,16 @@ export function BreezewayTaskPanel({
                   type="date"
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="bz-time">Committed time (optional)</Label>
+                <Input
+                  id="bz-time"
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  disabled={!scheduledDate}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -420,8 +435,7 @@ export function BreezewayTaskPanel({
               {send.isPending ? "Sending…" : "Send to Breezeway"}
             </Button>
           </div>
-        </SheetContent>
-      </Sheet>
+      </TaskWorkspace>
     </Card>
   );
 }
