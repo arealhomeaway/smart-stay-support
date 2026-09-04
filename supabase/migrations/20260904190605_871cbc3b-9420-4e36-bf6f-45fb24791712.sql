@@ -1,0 +1,2 @@
+ALTER TABLE public.tickets DROP CONSTRAINT IF EXISTS tickets_qa_chk;
+ALTER TABLE public.tickets ADD CONSTRAINT tickets_qa_chk CHECK (closure_qa_result = ANY (ARRAY['not_reviewed'::text,'pass'::text,'fail'::text,'corrected'::text,'returned'::text,'waived'::text,'not_required'::text]));

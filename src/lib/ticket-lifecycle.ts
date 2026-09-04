@@ -322,5 +322,16 @@ export function humanizeHistoryText(body: string | null | undefined): string {
     if (!status.includes("_")) continue;
     out = out.replace(new RegExp(`\\b${status}\\b`, "g"), TICKET_STATUS_LABELS[status]);
   }
+  // Single-word system statuses ("waiting", "resolved") are ordinary English
+  // elsewhere in a sentence, so they are only repaired where the sentence is
+  // plainly reporting a status change.
+  out = out.replace(
+    /\bStatus changed to ([a-z_]+)\b/g,
+    (whole, word: string) =>
+      (TICKET_STATUSES as readonly string[]).includes(word)
+        ? `Status changed to ${TICKET_STATUS_LABELS[word as TicketStatus]}`
+        : whole,
+  );
   return out;
 }
+
