@@ -87,7 +87,7 @@ export async function gatherLifecycleFacts(
       deleted_at: string | null;
       mime_type: string | null;
     }[]
-  ).filter((d) => !d.deleted_at && d.upload_status === "uploaded" && Number(d.size_bytes ?? 0) > 0);
+  ).filter((d) => !d.deleted_at && (d.upload_status === "stored" || d.upload_status === "uploaded") && Number(d.size_bytes ?? 0) > 0);
 
   const evidenceLabel = wt?.required_closure_evidence ?? null;
   const dispatchable = orderRows.filter((o) => o.vendor_org_id || o.vendor_name);

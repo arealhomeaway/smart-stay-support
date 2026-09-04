@@ -14,13 +14,40 @@ import { useViewAs } from "@/hooks/useViewAs";
 import { useDemo } from "@/components/DemoProvider";
 import { ROLE_BLURBS, ROLE_LABELS, type AppRole } from "@/lib/permissions";
 import { entryPathFor, portalsFor, rememberPortal } from "@/lib/portals";
+import { PREVIEW_SEAT_LABEL, type PreviewSeat } from "@/lib/demo-mode";
 
-const PREVIEW_ROLES: AppRole[] = ["manager", "onboarding", "tech", "vendor", "owner"];
+/**
+ * Personas a Platform Owner can step into. Director of Operations and
+ * Operations Supervisor share the manager permission role but do different
+ * jobs, so each is offered as its own seat.
+ */
+const PREVIEW_PERSONAS: { id: string; role: AppRole; seat?: PreviewSeat; label: string; blurb: string }[] = [
+  {
+    id: "director_ops",
+    role: "manager",
+    seat: "director_ops",
+    label: PREVIEW_SEAT_LABEL.director_ops,
+    blurb: "Portfolio view: exceptions, risk, handoffs and workload across every pod",
+  },
+  {
+    id: "ops_supervisor",
+    role: "manager",
+    seat: "ops_supervisor",
+    label: PREVIEW_SEAT_LABEL.ops_supervisor,
+    blurb: "The exception board: unacknowledged, overdue, waiting and unassigned work",
+  },
+  ...(["onboarding", "tech", "vendor", "owner"] as AppRole[]).map((role) => ({
+    id: role,
+    role,
+    label: ROLE_LABELS[role],
+    blurb: ROLE_BLURBS[role],
+  })),
+];
 
 /** Header control for Platform Owners: jump portals, preview a role, or demo. */
 export function PortalSwitcher() {
   const router = useRouter();
-  const { previewing, previewRole, actualRoles, roles } = useRole();
+  const { previewing, previewRole, previewSeat, actualRoles, roles } = useRole();
   const { demoMode, enterDemo, exitDemo, status, seed, reset, seeding, resetting } = useDemo();
   const portals = portalsFor(roles);
   const { viewAs, clearViewAs } = useViewAs();
@@ -32,8 +59,8 @@ export function PortalSwitcher() {
   }
 
   /** Enter the safe demo lens as a persona, landing where that role starts. */
-  function preview(role: AppRole) {
-    enterDemo(role);
+  function preview(role: AppRole, seat?: PreviewSeat) {
+    enterDemo(role, seat ?? null);
     go(entryPathFor([role]));
   }
 
@@ -45,7 +72,7 @@ export function PortalSwitcher() {
             {demoMode ? <FlaskConical className="size-4" /> : previewing ? <Eye className="size-4" /> : <LayoutGrid className="size-4" />}
             <span className="hidden sm:inline">
               {demoMode
-                ? `Demo · ${previewRole ? ROLE_LABELS[previewRole] : "preview"}`
+                ? `Demo · ${previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : previewRole ? ROLE_LABELS[previewRole] : "preview"}`
                 : previewing && previewRole
                   ? `Viewing as ${ROLE_LABELS[previewRole]}`
                   : "Portals"}
@@ -98,18 +125,24 @@ export function PortalSwitcher() {
           <DropdownMenuLabel className="flex items-center gap-2">
             <Eye className="size-3.5" /> Enter demo as…
           </DropdownMenuLabel>
-          {PREVIEW_ROLES.map((role) => (
+          {PREVIEW_PERSONAS.map((persona) => (
             <DropdownMenuItem
-              key={role}
+              key={persona.id}
               onSelect={() => {
-                preview(role);
+                preview(persona.role, persona.seat);
               }}
               className="flex flex-col items-start gap-0.5"
             >
-              <span className={viewAs === role && demoMode ? "font-semibold" : undefined}>
-                {ROLE_LABELS[role]}
+              <span
+                className={
+                  viewAs === persona.role && demoMode && (persona.seat ?? null) === previewSeat
+                    ? "font-semibold"
+                    : undefined
+                }
+              >
+                {persona.label}
               </span>
-              <span className="text-xs text-muted-foreground">{ROLE_BLURBS[role]}</span>
+              <span className="text-xs text-muted-foreground">{persona.blurb}</span>
             </DropdownMenuItem>
           ))}
           {(demoMode || previewing) && (
@@ -134,7 +167,7 @@ export function PortalSwitcher() {
 
 /** Persistent reminder that the screen is a demo/preview and cannot change live data. */
 export function ViewAsBanner() {
-  const { previewing, previewRole } = useRole();
+  const { previewing, previewRole, previewSeat } = useRole();
   const { demoMode, exitDemo, status } = useDemo();
   const { clearViewAs } = useViewAs();
   if (!previewing || !previewRole) return null;
@@ -147,16 +180,19 @@ export function ViewAsBanner() {
         <span>
           {demoMode ? (
             <>
-              <strong className="mr-1">Safe demo environment</strong>— you are exploring as a{" "}
-              <strong>{ROLE_LABELS[previewRole]}</strong> against demo records only.{" "}
+              <strong className="mr-1">Safe demo environment</strong>— you are working as a{" "}
+              <strong>{previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : ROLE_LABELS[previewRole]}</strong>. You can
+              complete work here: changes are saved to demo records only, and real homes, guests, owners, vendors and
+              email are never touched.{" "}
               {status?.seeded
-                ? `${status.scenarioCount} scenarios are loaded. Nothing here reaches real guests, owners, vendors or emails.`
+                ? `${status.scenarioCount} scenarios are loaded.`
                 : "No demo data is loaded — use the Portals menu to seed it."}
             </>
           ) : (
             <>
               Read-only preview — you are seeing Resolve as a{" "}
-              <strong>{ROLE_LABELS[previewRole]}</strong>. No action can change data while previewing.
+              <strong>{previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : ROLE_LABELS[previewRole]}</strong>. No action
+              can change data while previewing.
             </>
           )}
         </span>
