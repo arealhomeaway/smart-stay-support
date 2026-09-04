@@ -99,7 +99,8 @@ function useOversightData() {
   const support = useQuery({
     queryKey: ["oversight-support", demoMode],
     queryFn: async () => {
-      const [approvals, routines, claims, recoveries, breezeway, profiles] = await Promise.all([
+      const [approvals, routines, claims, recoveries, breezeway, profiles, escalations] =
+        await Promise.all([
         supabase
           .from("approvals")
           .select(
@@ -120,6 +121,11 @@ function useOversightData() {
           .from("breezeway_outbound_tasks")
           .select("id, title, status, scheduled_date, ticket_id"),
         supabase.from("profiles").select("id, full_name, email"),
+        supabase
+          .from("escalations")
+          .select("id, ticket_id, reason, requested_help, urgency, status, created_at, raised_by")
+          .eq("status", "open")
+          .eq("is_demo", demoMode),
       ]);
       return {
         approvals: approvals.data ?? [],
@@ -128,6 +134,7 @@ function useOversightData() {
         recoveries: recoveries.data ?? [],
         breezeway: breezeway.data ?? [],
         profiles: profiles.data ?? [],
+        escalations: escalations.data ?? [],
       };
     },
   });
@@ -299,7 +306,12 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
   );
   const recoveriesOpen = (s?.recoveries ?? []).filter((r) => r.stage !== "closed");
   const recoveriesAwaiting = recoveriesOpen.filter((r) => r.approval_status === "pending");
-  const bzOpen = (s?.breezeway ?? []).filter((b) => b.status !== "abandoned");
+  // breezeway_outbound_tasks has no demo flag of its own, so scope it through
+  // the tickets already loaded for this environment.
+  const ticketIds = new Set(data.map((t) => t.id));
+  const bzOpen = (s?.breezeway ?? []).filter(
+    (b) => b.status !== "abandoned" && (!b.ticket_id || ticketIds.has(b.ticket_id)),
+  );
   const bzPastCommitment = bzOpen.filter(
     (b) => b.scheduled_date && new Date(b.scheduled_date).getTime() < now - DAY,
   );
