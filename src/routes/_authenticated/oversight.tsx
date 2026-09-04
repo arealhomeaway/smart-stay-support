@@ -28,6 +28,7 @@ import {
   statusTone,
 } from "@/lib/tickets";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { finalReviewRequirement } from "@/lib/final-review";
 import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { OnCallNowCard } from "@/components/OnCallNowCard";
 import { OvernightHandoffPanel } from "@/components/OvernightHandoffPanel";
@@ -267,11 +268,13 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       tone: "warning" as const,
     },
     {
-      title: "Closure QA pending",
-      description: "Resolved tickets that have not been quality-checked yet.",
-      rows: closureQa,
+      title: "Final Review pending",
+      description:
+        "Finished work that needs a supervisor's decision before it can close. Routine work closes without you.",
+      rows: finalReview as typeof reopened,
       tone: "neutral" as const,
     },
+
   ];
 
   const totalExceptions = sections
