@@ -413,7 +413,7 @@ export function WorkOrderDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!workOrder) return <Sheet open={false} onOpenChange={() => onClose()} />;
+  if (!workOrder) return null;
 
   const value = (key: keyof WorkOrderRow) =>
     fields[key as string] ??
