@@ -18,12 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FocusedAction } from "@/components/ui/workspace";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
