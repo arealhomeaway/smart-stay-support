@@ -126,3 +126,8 @@ export function categoriesAfterClose(categories: Categories) {
 export function categoriesAfterReopen(categories: Categories) {
   return withTag(categories, CREATED_TAG);
 }
+
+/** Categories to write once a homeowner's reply is filed for staff to confirm. */
+export function categoriesAfterOwnerResponse(categories: Categories) {
+  return withTag(categories, OWNER_RESPONSE_FILED_TAG);
+}
