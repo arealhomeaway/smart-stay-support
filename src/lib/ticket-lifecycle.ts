@@ -12,6 +12,8 @@
  * same reason the server would refuse it.
  */
 
+import { FINAL_REVIEW_SATISFIED } from "@/lib/final-review";
+
 export const TICKET_STATUSES = [
   "open",
   "dispatched",
@@ -46,9 +48,10 @@ export function ticketStatusLabel(status: string): string {
 /**
  * Resolved vs Closed — one meaning, everywhere.
  *
- * Resolved: frontline work is finished and the ticket is waiting on required
- * closure QA. It is out of the working queues but not yet final.
- * Closed: closure QA is done (or not required) and nothing further is expected.
+ * Resolved: frontline work is finished. If the ticket needs Final Review it is
+ * waiting on a supervisor; if it does not, it can be closed straight away. It
+ * is out of the working queues either way.
+ * Closed: nothing further is expected from anyone.
  */
 export const WORKING_STATUSES: TicketStatus[] = [
   "open",
@@ -67,26 +70,24 @@ export function isWorkingStatus(status: string) {
 export function isFinished(status: string) {
   return (FINISHED_STATUSES as string[]).includes(status);
 }
-/** Only `closed` is terminal: resolved tickets still owe closure QA. */
+/** Only `closed` is terminal: a resolved ticket may still owe Final Review. */
 export function isTerminal(status: string) {
   return status === "closed";
 }
-
-/** Closure QA outcomes that let a resolved ticket become closed. */
-const QA_SATISFIED = new Set(["pass", "corrected", "not_required", "waived"]);
 
 /** Named exceptions. A privileged role may use one, with a written reason. */
 export const LIFECYCLE_EXCEPTIONS = {
   dispatch_prerequisites: "Dispatch without a recorded work order",
   guest_confirmation_prerequisites: "Await guest confirmation without recorded guest contact",
   closure_requirements: "Resolve without the required closure evidence",
-  closure_qa: "Close without closure QA",
+  closure_qa: "Close without Final Review",
 } as const;
 export type LifecycleException = keyof typeof LIFECYCLE_EXCEPTIONS;
 
 export function isLifecycleException(value: string): value is LifecycleException {
   return Object.prototype.hasOwnProperty.call(LIFECYCLE_EXCEPTIONS, value);
 }
+
 
 /** Everything the validator needs to judge a transition, gathered by the caller. */
 export type LifecycleFacts = {
@@ -122,7 +123,15 @@ export type LifecycleFacts = {
   /** Required playbook steps are all ticked. */
   requiredStepsComplete: boolean;
 
+  /** The stored Final Review outcome (column is still `closure_qa_result`). */
   closureQaResult?: string | null;
+  /**
+   * Whether this ticket needs Final Review at all. Left undefined it is
+   * treated as required, so nothing slips through when a caller has not
+   * worked the rule out yet.
+   */
+  finalReviewRequired?: boolean;
+
 };
 
 export type LifecycleVerdict =
@@ -266,17 +275,20 @@ export function validateTicketTransition(
       if (from !== "resolved")
         return fail(
           "close_before_resolved",
-          "Resolve the ticket first — closing happens after closure QA.",
+          "Resolve the ticket first — closing comes after the work is finished.",
           null,
         );
-      if (!QA_SATISFIED.has(String(facts.closureQaResult ?? "not_reviewed")))
+      // Selective review: only elevated-risk work waits on a supervisor.
+      if (facts.finalReviewRequired === false) return { ok: true };
+      if (!FINAL_REVIEW_SATISFIED.has(String(facts.closureQaResult ?? "not_reviewed")))
         return fail(
           "close_qa_outstanding",
-          "Closure QA has not passed yet, so this ticket cannot be closed.",
+          "This ticket needs Final Review by a supervisor before it can be closed.",
           "closure_qa",
         );
       return { ok: true };
     }
+
 
     default:
       return fail("unknown_status", `"${to}" is not a ticket status.`);

@@ -88,6 +88,16 @@ const frontlineGroup: NavGroup = {
   items: [
     { to: "/dashboard", label: "Home", icon: Home, tour: "dashboard" },
     { to: "/tickets", label: "My work", icon: ClipboardList, tour: "tickets" },
+    // Coverage overlaps all day and the next available person still has to
+    // handle the work, so the shared queue is open to every coordinator.
+    { to: "/team-queue", label: "Team Queue", icon: Users, tour: "team-queue" },
+    {
+      to: "/work-orders",
+      label: "Work orders",
+      icon: Wrench,
+      tour: "work-orders",
+      capability: "work_orders_internal",
+    },
     {
       to: "/routines",
       label: "Routine work",
@@ -112,6 +122,7 @@ const frontlineGroup: NavGroup = {
     },
   ],
 };
+
 
 const navGroups: NavGroup[] = [
   frontlineGroup,
@@ -153,15 +164,7 @@ const navGroups: NavGroup[] = [
         capability: "onboarding_workspace",
       },
       { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
-      // Internal Work Orders / Vendor Portal are not live for the beta.
-      // Breezeway is the only visible field-execution path.
-      {
-        to: "/work-orders",
-        label: "Work orders",
-        icon: Wrench,
-        tour: "work-orders",
-        capability: "work_orders_internal",
-      },
+
     ],
   },
   {

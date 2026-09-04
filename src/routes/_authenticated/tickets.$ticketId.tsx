@@ -28,6 +28,8 @@ import { GuestContextPanel } from "@/components/GuestContextPanel";
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { HandoffPanel } from "@/components/HandoffPanel";
+import { FinalReviewPanel } from "@/components/FinalReviewPanel";
+import { EscalationPanel } from "@/components/EscalationPanel";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
@@ -1076,17 +1078,30 @@ function TicketDetail() {
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">
                     {ticket.status === "resolved"
-                      ? "Work is finished — closure review is next"
+                      ? "Work is finished"
                       : "This ticket is closed"}
                   </h2>
-                  {ticket.status === "resolved" && (
-                    <p className="text-sm text-muted-foreground">
-                      Nothing more is needed from the frontline. A supervisor checks the closing
-                      record before it is closed for good.
-                    </p>
-                  )}
                   {ticket.resolution_notes && (
                     <p className="text-sm text-muted-foreground">{ticket.resolution_notes}</p>
+                  )}
+                  {ticket.status === "resolved" && (
+                    <FinalReviewPanel
+                      ticketId={String(ticket["id"])}
+                      result={ticket["closure_qa_result"] as string | null}
+                      note={ticket["final_review_note"] as string | null}
+                      facts={{
+                        priority: ticket["priority"] as string,
+                        category: ticket["category"] as string,
+                        guest_in_residence: ticket["guest_in_residence"] as boolean,
+                        guest_impact: ticket["guest_impact"] as string,
+                        escalated: Boolean(ticket["escalated_at"]),
+                        escalation_level: ticket["escalation_level"] as string,
+                        reopen_count: ticket["reopen_count"] as number,
+                        hasClaim: activeBranch.claim,
+                        hasRecovery: activeBranch.recovery,
+                      }}
+                    />
+
                   )}
                   {ticket.record_type !== "completed_interaction" && (
                     <Button variant="outline" onClick={reopen}>
@@ -1095,6 +1110,7 @@ function TicketDetail() {
                   )}
                 </div>
               )}
+
 
 
               {/* Special Handling belongs with the decision, never as page furniture. */}
@@ -1340,15 +1356,28 @@ function MoreActions({
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>More actions</SheetTitle>
-          <SheetDescription>Assignment, handoff and the lanes that are not open.</SheetDescription>
+          <SheetDescription>
+            Assignment, handoff, escalation and the lanes that are not open.
+          </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-8">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           <MatterOwnershipPanel ticket={ticket as any} closed={closed} onChanged={onChanged} />
+          {!closed && (
+            <div className="rounded-lg border border-border/60 p-4">
+              <h3 className="font-medium">Stuck on a decision?</h3>
+              <p className="mb-3 mt-1 text-sm text-muted-foreground">
+                Escalating asks for a decision. You keep the ticket unless the person answering
+                takes it.
+              </p>
+              <EscalationPanel ticketId={String(ticket["id"])} />
+            </div>
+          )}
           {ticket.record_type !== "completed_interaction" && (
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             <HandoffPanel ticket={ticket as any} closed={closed} onChanged={onChanged} />
           )}
+
           {/* Only shows when this property belongs to an Active Owner program. */}
           <OwnerParticipationOffer source="operations" sourceId={String(ticket["id"])} />
           {!branches.recovery && (

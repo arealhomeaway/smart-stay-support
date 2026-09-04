@@ -37,6 +37,7 @@ import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authentica
 import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticated/recovery'
 import { Route as AuthenticatedRoutinesRouteImport } from './routes/_authenticated/routines'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
+import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authenticated/team-queue'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authenticated/work-orders'
@@ -216,6 +217,11 @@ const AuthenticatedRoutinesRoute = AuthenticatedRoutinesRouteImport.update({
 const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTeamQueueRoute = AuthenticatedTeamQueueRouteImport.update({
+  id: '/team-queue',
+  path: '/team-queue',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
@@ -453,6 +459,7 @@ export interface FileRoutesByFullPath {
   '/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/routines': typeof AuthenticatedRoutinesRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -514,6 +521,7 @@ export interface FileRoutesByTo {
   '/quarterly': typeof AuthenticatedQuarterlyRoute
   '/routines': typeof AuthenticatedRoutinesRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
@@ -580,6 +588,7 @@ export interface FileRoutesById {
   '/_authenticated/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/_authenticated/routines': typeof AuthenticatedRoutinesRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
+  '/_authenticated/team-queue': typeof AuthenticatedTeamQueueRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -647,6 +656,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/routines'
     | '/team'
+    | '/team-queue'
     | '/vendors'
     | '/welcome'
     | '/work-orders'
@@ -708,6 +718,7 @@ export interface FileRouteTypes {
     | '/quarterly'
     | '/routines'
     | '/team'
+    | '/team-queue'
     | '/vendors'
     | '/welcome'
     | '/claims/manager'
@@ -773,6 +784,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recovery'
     | '/_authenticated/routines'
     | '/_authenticated/team'
+    | '/_authenticated/team-queue'
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
     | '/_authenticated/work-orders'
@@ -1024,6 +1036,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof AuthenticatedTeamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/team-queue': {
+      id: '/_authenticated/team-queue'
+      path: '/team-queue'
+      fullPath: '/team-queue'
+      preLoaderRoute: typeof AuthenticatedTeamQueueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendors': {
@@ -1395,6 +1414,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecoveryRoute: typeof AuthenticatedRecoveryRouteWithChildren
   AuthenticatedRoutinesRoute: typeof AuthenticatedRoutinesRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
+  AuthenticatedTeamQueueRoute: typeof AuthenticatedTeamQueueRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
@@ -1431,6 +1451,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecoveryRoute: AuthenticatedRecoveryRouteWithChildren,
   AuthenticatedRoutinesRoute: AuthenticatedRoutinesRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
+  AuthenticatedTeamQueueRoute: AuthenticatedTeamQueueRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
