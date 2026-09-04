@@ -39,7 +39,10 @@ export function clientState() {
 
 /** Where Graph should post notifications. */
 export function notificationUrl() {
-  const base = (process.env["PUBLIC_SITE_URL"] ?? "https://smart-stay-support.lovable.app").replace(/\/$/, "");
+  const base = (process.env["PUBLIC_SITE_URL"] ?? "https://smart-stay-support.lovable.app").replace(
+    /\/$/,
+    "",
+  );
   return `${base}/api/public/hooks/outlook/messages`;
 }
 
@@ -92,9 +95,18 @@ export function isTrustedNotification(state: string | null | undefined) {
  * Creates the subscription if there is none, renews it when it is close to
  * expiring, and records the result either way. Safe to call on every cron run.
  */
-export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action: string; expiresAt?: string | undefined; error?: string | undefined }> {
-  if (!config()) return { ok: false, action: "skipped", error: "The Microsoft mailbox is not connected." };
-  if (!clientState()) return { ok: false, action: "skipped", error: "No notification secret is configured." };
+export async function ensureSubscription(
+  db: Db,
+): Promise<{
+  ok: boolean;
+  action: string;
+  expiresAt?: string | undefined;
+  error?: string | undefined;
+}> {
+  if (!config())
+    return { ok: false, action: "skipped", error: "The Microsoft mailbox is not connected." };
+  if (!clientState())
+    return { ok: false, action: "skipped", error: "No notification secret is configured." };
 
   const existing = await currentSubscription(db);
   const expiry = existing?.next_attempt_at ? new Date(existing.next_attempt_at).getTime() : 0;
@@ -103,7 +115,8 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
   // A subscription created against the old Inbox-only resource must be
   // replaced, not renewed, or folder-routed mail stays invisible.
   const existingResource = existing?.request_payload?.resource ?? "";
-  const wrongResource = Boolean(existing?.external_id) && existingResource !== `${mailboxRoot()}/messages`;
+  const wrongResource =
+    Boolean(existing?.external_id) && existingResource !== `${mailboxRoot()}/messages`;
 
   if (existing?.external_id && existing.status === "active" && !expiresSoon && !wrongResource) {
     return { ok: true, action: "healthy", expiresAt: existing.next_attempt_at ?? undefined };
@@ -119,13 +132,20 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
       });
       await db
         .from("integration_events")
-        .update({ next_attempt_at: expirationDateTime, error_message: null, resolved_at: new Date().toISOString() })
+        .update({
+          next_attempt_at: expirationDateTime,
+          error_message: null,
+          resolved_at: new Date().toISOString(),
+        })
         .eq("id", existing.id);
       return { ok: true, action: "renewed", expiresAt: expirationDateTime };
     } catch (err) {
       // Renewal failed (usually because it already expired) — fall through and
       // create a fresh one rather than leaving the mailbox unwatched.
-      console.error("Outlook subscription renewal failed:", err instanceof Error ? err.message : err);
+      console.error(
+        "Outlook subscription renewal failed:",
+        err instanceof Error ? err.message : err,
+      );
       await db.from("integration_events").update({ status: "expired" }).eq("id", existing.id);
     }
   }
@@ -134,13 +154,17 @@ export async function ensureSubscription(db: Db): Promise<{ ok: boolean; action:
   // left posting duplicate notifications from two overlapping watches.
   if (existing?.external_id && wrongResource) {
     try {
-      await graph(`/subscriptions/${encodeURIComponent(existing.external_id)}`, { method: "DELETE" });
+      await graph(`/subscriptions/${encodeURIComponent(existing.external_id)}`, {
+        method: "DELETE",
+      });
     } catch (err) {
-      console.error("Could not remove the old mailbox subscription:", err instanceof Error ? err.message : err);
+      console.error(
+        "Could not remove the old mailbox subscription:",
+        err instanceof Error ? err.message : err,
+      );
     }
     await db.from("integration_events").update({ status: "expired" }).eq("id", existing.id);
   }
-
 
   try {
     const res = await graph(`/subscriptions`, {

@@ -37,7 +37,9 @@ export const Route = createFileRoute("/api/public/hooks/outlook/messages")({
         }
 
         const { isTrustedNotification } = await import("@/lib/outlook-subscription.server");
-        const notifications = (payload.value ?? []).filter((n) => isTrustedNotification(n.clientState));
+        const notifications = (payload.value ?? []).filter((n) =>
+          isTrustedNotification(n.clientState),
+        );
         if (notifications.length === 0) {
           // Unsigned or unrecognised — acknowledge without doing any work, so
           // Graph does not retry, but nothing is processed.

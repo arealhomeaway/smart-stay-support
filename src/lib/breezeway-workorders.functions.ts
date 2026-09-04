@@ -68,7 +68,9 @@ export const replyToWorkOrderFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { workOrderId: string; body: string }) => ({
     workOrderId: uuid(input?.workOrderId, "work order"),
-    body: String(input?.body ?? "").trim().slice(0, 4000),
+    body: String(input?.body ?? "")
+      .trim()
+      .slice(0, 4000),
   }))
   .handler(async ({ data, context }) => {
     await assertStaff(context.supabase, context.userId);

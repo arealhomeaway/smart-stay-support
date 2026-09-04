@@ -85,7 +85,10 @@ export function canUpload(
 ): Decision {
   if (isStaff(viewer)) {
     if (ctx.recordClosed && !isSupervisor(viewer)) {
-      return { allow: false, reason: "This record is closed. A supervisor can still add a file to it." };
+      return {
+        allow: false,
+        reason: "This record is closed. A supervisor can still add a file to it.",
+      };
     }
     return { allow: true };
   }
@@ -100,7 +103,11 @@ export function canUpload(
 export function canDelete(viewer: Viewer, row: AttachmentRow): Decision {
   if (isSupervisor(viewer)) return { allow: true };
   if (isStaff(viewer) && row.uploaded_by === viewer.userId) return { allow: true };
-  if (isStaff(viewer)) return { allow: false, reason: "Only the person who uploaded this, or a supervisor, can remove it." };
+  if (isStaff(viewer))
+    return {
+      allow: false,
+      reason: "Only the person who uploaded this, or a supervisor, can remove it.",
+    };
   return { allow: false, reason: DENY_UNRELATED };
 }
 
@@ -170,7 +177,11 @@ async function ownerOwnsProperty(userId: string, propertyId: string | null): Pro
 /* Operations                                                          */
 /* ------------------------------------------------------------------ */
 
-export async function listAttachments(viewer: Viewer, entityType: AttachmentEntity, entityId: string) {
+export async function listAttachments(
+  viewer: Viewer,
+  entityType: AttachmentEntity,
+  entityId: string,
+) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const record = await loadRecord(entityType, entityId);
   const owns = isStaff(viewer) ? false : await ownerOwnsProperty(viewer.userId, record.propertyId);
@@ -193,14 +204,19 @@ export async function listAttachments(viewer: Viewer, entityType: AttachmentEnti
   const uploaderIds = [...new Set(visible.map((r) => r.uploaded_by).filter(Boolean))] as string[];
   const names = new Map<string, string>();
   if (uploaderIds.length) {
-    const profiles = await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", uploaderIds);
+    const profiles = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", uploaderIds);
     for (const p of profiles.data ?? []) names.set(p.id, p.full_name || p.email || "Unknown");
   }
 
   return {
     canUpload: canUpload(viewer, {
       ownerOfProperty: owns,
-      requestSlotOpen: rows.some((r) => r.requested_from === "owner" && r.upload_status === "pending"),
+      requestSlotOpen: rows.some(
+        (r) => r.requested_from === "owner" && r.upload_status === "pending",
+      ),
       recordClosed: record.closed,
     }).allow,
     recordClosed: record.closed,
@@ -257,7 +273,11 @@ export async function beginUpload(
       data.upload_status === "pending";
   }
 
-  const allowed = canUpload(viewer, { ownerOfProperty: owns, requestSlotOpen, recordClosed: record.closed });
+  const allowed = canUpload(viewer, {
+    ownerOfProperty: owns,
+    requestSlotOpen,
+    recordClosed: record.closed,
+  });
   if (!allowed.allow) throw new Error(allowed.reason);
 
   const path = storagePathFor(input.entityType, input.entityId, input.uploadKey, input.filename);
@@ -306,7 +326,8 @@ export async function beginUpload(
           .select("id")
           .eq("upload_key", input.uploadKey)
           .maybeSingle();
-        if (again.data) return { documentId: again.data.id, alreadyStored: false as const, path, token: null };
+        if (again.data)
+          return { documentId: again.data.id, alreadyStored: false as const, path, token: null };
       }
       throw insert.error;
     }
@@ -336,7 +357,9 @@ export async function completeUpload(
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("documents")
-    .select("id, uploaded_by, storage_path, entity_type, entity_id, original_filename, size_bytes, mime_type")
+    .select(
+      "id, uploaded_by, storage_path, entity_type, entity_id, original_filename, size_bytes, mime_type",
+    )
     .eq("id", input.documentId)
     .maybeSingle();
   if (error || !data) throw new Error("That upload is no longer on file.");
@@ -344,7 +367,8 @@ export async function completeUpload(
 
   if (!input.ok) {
     // Failed attempt: clear the key so a fresh retry is clean, and drop any partial object.
-    if (data.storage_path) await supabaseAdmin.storage.from(ATTACHMENT_BUCKET).remove([data.storage_path]);
+    if (data.storage_path)
+      await supabaseAdmin.storage.from(ATTACHMENT_BUCKET).remove([data.storage_path]);
     await supabaseAdmin.from("documents").delete().eq("id", data.id);
     return { ok: false as const };
   }
@@ -352,7 +376,8 @@ export async function completeUpload(
   const head = await supabaseAdmin.storage
     .from(ATTACHMENT_BUCKET)
     .createSignedUrl(data.storage_path!, 10);
-  if (head.error) throw new Error("Resolve could not find the uploaded file. Please try the upload again.");
+  if (head.error)
+    throw new Error("Resolve could not find the uploaded file. Please try the upload again.");
 
   await supabaseAdmin
     .from("documents")
@@ -389,7 +414,8 @@ export async function signedFileUrl(viewer: Viewer, documentId: string, download
     )
     .eq("id", documentId)
     .maybeSingle();
-  if (error || !data || data.deleted_at || !data.storage_path) throw new Error("That file is no longer on file.");
+  if (error || !data || data.deleted_at || !data.storage_path)
+    throw new Error("That file is no longer on file.");
 
   const owns = isStaff(viewer) ? false : await ownerOwnsProperty(viewer.userId, data.property_id);
   const decision = canView(viewer, data as AttachmentRow, owns);
@@ -397,7 +423,11 @@ export async function signedFileUrl(viewer: Viewer, documentId: string, download
 
   const signed = await supabaseAdmin.storage
     .from(ATTACHMENT_BUCKET)
-    .createSignedUrl(data.storage_path, SIGNED_URL_SECONDS, download ? { download: data.original_filename ?? true } : {});
+    .createSignedUrl(
+      data.storage_path,
+      SIGNED_URL_SECONDS,
+      download ? { download: data.original_filename ?? true } : {},
+    );
   if (signed.error) throw new Error("Resolve could not open that file.");
   return { url: signed.data.signedUrl, expiresInSeconds: SIGNED_URL_SECONDS };
 }
@@ -407,7 +437,9 @@ export async function removeAttachment(viewer: Viewer, documentId: string, reaso
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("documents")
-    .select("id, uploaded_by, storage_path, entity_type, entity_id, original_filename, visibility, requested_from, deleted_at, upload_status, title, mime_type, size_bytes, kind, property_id, note, created_at, uploaded_at")
+    .select(
+      "id, uploaded_by, storage_path, entity_type, entity_id, original_filename, visibility, requested_from, deleted_at, upload_status, title, mime_type, size_bytes, kind, property_id, note, created_at, uploaded_at",
+    )
     .eq("id", documentId)
     .maybeSingle();
   if (error || !data || data.deleted_at) throw new Error("That file is no longer on file.");
@@ -415,10 +447,15 @@ export async function removeAttachment(viewer: Viewer, documentId: string, reaso
   const decision = canDelete(viewer, data as AttachmentRow);
   if (!decision.allow) throw new Error(decision.reason);
 
-  if (data.storage_path) await supabaseAdmin.storage.from(ATTACHMENT_BUCKET).remove([data.storage_path]);
+  if (data.storage_path)
+    await supabaseAdmin.storage.from(ATTACHMENT_BUCKET).remove([data.storage_path]);
   const upd = await supabaseAdmin
     .from("documents")
-    .update({ deleted_at: new Date().toISOString(), deleted_by: viewer.userId, delete_reason: reason })
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: viewer.userId,
+      delete_reason: reason,
+    })
     .eq("id", documentId);
   if (upd.error) throw upd.error;
 
@@ -435,7 +472,11 @@ export async function removeAttachment(viewer: Viewer, documentId: string, reaso
 }
 
 /** Staff decide whether the homeowner sees a file. */
-export async function setVisibility(viewer: Viewer, documentId: string, visibility: AttachmentVisibility) {
+export async function setVisibility(
+  viewer: Viewer,
+  documentId: string,
+  visibility: AttachmentVisibility,
+) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const decision = canChangeVisibility(viewer);
   if (!decision.allow) throw new Error(decision.reason);
@@ -537,10 +578,14 @@ export async function listOwnerFileRecords(viewer: Viewer) {
   >();
   for (const row of data ?? []) {
     const key = `${row.entity_type}:${row.entity_id}`;
-    const g =
-      grouped.get(key) ??
-      { entityType: row.entity_type as AttachmentEntity, entityId: row.entity_id as string, shared: 0, openRequestId: null };
-    if (row.requested_from === "owner" && row.upload_status === "pending") g.openRequestId = row.id as string;
+    const g = grouped.get(key) ?? {
+      entityType: row.entity_type as AttachmentEntity,
+      entityId: row.entity_id as string,
+      shared: 0,
+      openRequestId: null,
+    };
+    if (row.requested_from === "owner" && row.upload_status === "pending")
+      g.openRequestId = row.id as string;
     else if (row.upload_status === "stored") g.shared += 1;
     grouped.set(key, g);
   }

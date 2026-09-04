@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authenticated/claims")({
       { property: "og:title", content: "Damage claims and recovery — Resolve" },
       {
         property: "og:description",
-        content: "ARHA's recovery pipeline: evidence, costs, submissions and reimbursements in one queue.",
+        content:
+          "ARHA's recovery pipeline: evidence, costs, submissions and reimbursements in one queue.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

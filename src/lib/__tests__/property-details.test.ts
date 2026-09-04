@@ -12,7 +12,11 @@ const row = {
   systems: {
     water_shutoff_indoor: "Under kitchen sink",
     breaker_panel_location: "Garage",
-    smoke: { last_replaced: "2024-06-30", last_replaced_precision: "month", last_replaced_source_text: "June 2024" },
+    smoke: {
+      last_replaced: "2024-06-30",
+      last_replaced_precision: "month",
+      last_replaced_source_text: "June 2024",
+    },
   },
   hvac: { filter_size: "20x25x1" },
   pool_spa: { type: "Pool & Hot Tub" },

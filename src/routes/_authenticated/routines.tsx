@@ -9,15 +9,16 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CheckCircle2, ClipboardCheck, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RequireCapability } from "@/components/RequireCapability";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FocusedAction } from "@/components/ui/workspace";
 import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
 import { useDemo } from "@/components/DemoProvider";
 import { useSeat } from "@/hooks/useSeat";
@@ -218,7 +219,10 @@ function RoutinesPage() {
               onClick={() => setOpenRow(r)}
               className="surface-row flex w-full flex-wrap items-center gap-3 px-4 py-2.5 text-left"
             >
-              <CheckCircle2 className="size-4 shrink-0 text-success" />
+              <PropertyPhoto
+                name={r.properties?.nickname ?? r.properties?.name}
+                className="size-9"
+              />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">{r.title}</span>
                 <span className="block truncate text-xs text-muted-foreground">
@@ -228,9 +232,9 @@ function RoutinesPage() {
                     : ""}
                 </span>
               </span>
-              <Badge variant="outline">
+              <StatusBadge tone="resolved">
                 {OUTCOME_LABELS[(r.outcome as RoutineOutcome) ?? "looks_good"]}
-              </Badge>
+              </StatusBadge>
             </button>
           ))
         )}
@@ -282,7 +286,10 @@ function Section({
               onClick={() => onOpen(r)}
               className="surface-row flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left"
             >
-              <ClipboardCheck className="size-4 shrink-0 text-muted-foreground" />
+              <PropertyPhoto
+                name={r.properties?.nickname ?? r.properties?.name}
+                className="size-9"
+              />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-base font-medium">{r.title}</span>
                 <span className="block truncate text-sm text-muted-foreground">
@@ -292,13 +299,7 @@ function Section({
                     : ""}
                 </span>
               </span>
-              <span
-                className={`rounded-md px-2 py-1 text-sm font-medium ${
-                  late ? "bg-danger/10 text-danger" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {routineDueLabel(r)}
-              </span>
+              <StatusBadge tone={late ? "escalated" : "closed"}>{routineDueLabel(r)}</StatusBadge>
             </button>
           );
         })

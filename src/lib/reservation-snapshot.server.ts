@@ -24,7 +24,17 @@ type Db = SupabaseClient<Database>;
 
 export type SnapshotOutcome =
   | { applied: true; bookingId: string }
-  | { applied: false; reason: "already_snapshotted" | "no_property" | "not_linked" | "no_stay" | "ambiguous" | "demo" | "error" };
+  | {
+      applied: false;
+      reason:
+        | "already_snapshotted"
+        | "no_property"
+        | "not_linked"
+        | "no_stay"
+        | "ambiguous"
+        | "demo"
+        | "error";
+    };
 
 export async function applyReservationSnapshot(db: Db, ticketId: string): Promise<SnapshotOutcome> {
   try {
@@ -50,7 +60,8 @@ export async function applyReservationSnapshot(db: Db, ticketId: string): Promis
     const { currentGuestForListing } = await import("@/lib/ownerrez.server");
     const stay = await currentGuestForListing(property.ownerrez_property_id);
     if (stay.status === "ambiguous") return { applied: false, reason: "ambiguous" };
-    if (stay.status !== "match" || !stay.reservation_id) return { applied: false, reason: "no_stay" };
+    if (stay.status !== "match" || !stay.reservation_id)
+      return { applied: false, reason: "no_stay" };
 
     const columns = reservationColumns({
       booking_id: stay.reservation_id,

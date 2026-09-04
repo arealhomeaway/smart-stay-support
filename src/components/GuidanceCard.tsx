@@ -167,8 +167,8 @@ export function GuidanceCard({
           <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-sm">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
             <span>
-              This Playbook states a threshold the policy engine owns. It is flagged for supervisor review and
-              its guidance is withheld until then.
+              This Playbook states a threshold the policy engine owns. It is flagged for supervisor
+              review and its guidance is withheld until then.
             </span>
           </div>
         )}
@@ -181,7 +181,9 @@ export function GuidanceCard({
                   {riskFlags.map((flag) => (
                     <li key={flag.title}>
                       <span className="font-medium">{flag.title}</span>
-                      {flag.why ? <span className="text-muted-foreground"> — {flag.why}</span> : null}
+                      {flag.why ? (
+                        <span className="text-muted-foreground"> — {flag.why}</span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -224,7 +226,9 @@ export function GuidanceCard({
                   {vendorBrief.scope && <p>{vendorBrief.scope}</p>}
                   {vendorBrief.must_check.length > 0 && <Bullets items={vendorBrief.must_check} />}
                   {vendorBrief.must_not_do.length > 0 && (
-                    <p className="text-muted-foreground">Do not: {vendorBrief.must_not_do.join("; ")}</p>
+                    <p className="text-muted-foreground">
+                      Do not: {vendorBrief.must_not_do.join("; ")}
+                    </p>
                   )}
                 </div>
               </Section>

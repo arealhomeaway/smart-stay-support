@@ -29,7 +29,10 @@ export type PropertyAddress = {
 };
 
 export function addressLine(p: PropertyAddress) {
-  return [p.address_line1, p.city, p.state, p.postal_code].map((s) => s?.trim()).filter(Boolean).join(", ");
+  return [p.address_line1, p.city, p.state, p.postal_code]
+    .map((s) => s?.trim())
+    .filter(Boolean)
+    .join(", ");
 }
 
 type GeocodeHit = { lat: number; lng: number; formatted: string };
@@ -41,15 +44,19 @@ async function geocodeOne(address: string): Promise<GeocodeHit | null> {
     throw new Error("Google Maps isn't connected yet. Link it under Connectors and try again.");
   }
 
-  const res = await fetch(`${GATEWAY_URL}/maps/api/geocode/json?address=${encodeURIComponent(address)}`, {
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": connectionKey,
+  const res = await fetch(
+    `${GATEWAY_URL}/maps/api/geocode/json?address=${encodeURIComponent(address)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": connectionKey,
+      },
     },
-  });
+  );
 
   if (res.status === 403) {
-    const details: Array<{ reason?: string }> = ((await res.json().catch(() => null)) as any)?.error?.details ?? [];
+    const details: Array<{ reason?: string }> =
+      ((await res.json().catch(() => null)) as any)?.error?.details ?? [];
     const reason = details.find((d) => d.reason)?.reason;
     if (reason === "API_KEY_HTTP_REFERRER_BLOCKED") {
       throw new Error(
@@ -72,19 +79,27 @@ async function geocodeOne(address: string): Promise<GeocodeHit | null> {
 
   const json = (await res.json()) as {
     status: string;
-    results?: Array<{ formatted_address: string; geometry: { location: { lat: number; lng: number } } }>;
+    results?: Array<{
+      formatted_address: string;
+      geometry: { location: { lat: number; lng: number } };
+    }>;
   };
 
   if (json.status === "ZERO_RESULTS") return null;
   if (json.status !== "OK") {
     console.error(`Geocode returned ${json.status} for "${address}"`);
-    if (json.status === "OVER_QUERY_LIMIT") throw new Error("Google Maps quota reached. Try again later.");
+    if (json.status === "OVER_QUERY_LIMIT")
+      throw new Error("Google Maps quota reached. Try again later.");
     return null;
   }
 
   const hit = json.results?.[0];
   if (!hit) return null;
-  return { lat: hit.geometry.location.lat, lng: hit.geometry.location.lng, formatted: hit.formatted_address };
+  return {
+    lat: hit.geometry.location.lat,
+    lng: hit.geometry.location.lng,
+    formatted: hit.formatted_address,
+  };
 }
 
 /**
@@ -144,26 +159,34 @@ export async function geocodeProperties(supabase: Client, opts: { force?: boolea
     if (updateError) throw updateError;
   }
 
-  return { attempted: rows.length, located, skipped, failed, capped: rows.length === GEOCODE_BATCH_LIMIT };
+  return {
+    attempted: rows.length,
+    located,
+    skipped,
+    failed,
+    capped: rows.length === GEOCODE_BATCH_LIMIT,
+  };
 }
 
 /** Every pinned home plus its open work, for the dispatch map. */
 export async function loadJobMap(supabase: Client) {
-  const [{ data: props, error: propError }, { data: tickets, error: ticketError }] = await Promise.all([
-    supabase
-      .from("properties")
-      .select("id, name, formatted_address, address_line1, city, state, postal_code, latitude, longitude")
-      .eq("active", true)
-      .not("latitude", "is", null),
-    supabase
-      .from("tickets")
-      .select("id, ref, title, priority, status, due_at, property_id, vendor_name, vendor_status")
-      .in("status", OPEN_STATUSES)
-      .eq("is_demo", false)
-      .is("archived_at", null)
-      .not("property_id", "is", null),
-
-  ]);
+  const [{ data: props, error: propError }, { data: tickets, error: ticketError }] =
+    await Promise.all([
+      supabase
+        .from("properties")
+        .select(
+          "id, name, formatted_address, address_line1, city, state, postal_code, latitude, longitude",
+        )
+        .eq("active", true)
+        .not("latitude", "is", null),
+      supabase
+        .from("tickets")
+        .select("id, ref, title, priority, status, due_at, property_id, vendor_name, vendor_status")
+        .in("status", OPEN_STATUSES)
+        .eq("is_demo", false)
+        .is("archived_at", null)
+        .not("property_id", "is", null),
+    ]);
   if (propError) throw propError;
   if (ticketError) throw ticketError;
 

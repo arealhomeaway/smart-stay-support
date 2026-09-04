@@ -26,10 +26,6 @@ export const ownerHomePreview = createServerFn({ method: "GET" })
     return loadOwnerHomePreview(context.supabase, context.userId, data.programId);
   });
 
-
-
-
-
 export const markOwnerAlertsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -123,7 +119,6 @@ export const answerOwnerReview = createServerFn({ method: "POST" })
     const { respondToReview } = await import("./owner-portal.server");
     return respondToReview(context.supabase, context.userId, data);
   });
-
 
 /** Links a brand-new account to the program its invite code belongs to. */
 export const redeemInvite = createServerFn({ method: "POST" })

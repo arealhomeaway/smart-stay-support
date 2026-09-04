@@ -9,7 +9,12 @@ describe("frontline classification", () => {
     expect(c?.situation.id).toBe("broken_now");
     const s = c!.situation;
     expect(
-      mechanicalPriority("p1", s.guestImpact ?? "none", s.occupancy ?? "occupied", s.priorityCeiling),
+      mechanicalPriority(
+        "p1",
+        s.guestImpact ?? "none",
+        s.occupancy ?? "occupied",
+        s.priorityCeiling,
+      ),
     ).toBe("p2");
   });
 
@@ -22,9 +27,14 @@ describe("frontline classification", () => {
   it("treats a lockout as an emergency, not a device alert", () => {
     const c = classifyTicketText("Guest is locked out, the keypad code is not working");
     expect(c?.situation.id).toBe("locked_out");
-    expect(mechanicalPriority("p2", c!.situation.guestImpact ?? "none", "occupied", c!.situation.priorityCeiling)).toBe(
-      "p1",
-    );
+    expect(
+      mechanicalPriority(
+        "p2",
+        c!.situation.guestImpact ?? "none",
+        "occupied",
+        c!.situation.priorityCeiling,
+      ),
+    ).toBe("p1");
   });
 
   it("recognises a cleaning miss", () => {

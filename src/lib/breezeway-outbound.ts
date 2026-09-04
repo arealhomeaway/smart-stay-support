@@ -62,12 +62,7 @@ export type BreezewayAssignee = {
  *   abandoned    — an admin confirmed no Breezeway task exists for this row.
  */
 export type BreezewayOutboundStatus =
-  | "creating"
-  | "created"
-  | "synced"
-  | "error"
-  | "needs_review"
-  | "abandoned";
+  "creating" | "created" | "synced" | "error" | "needs_review" | "abandoned";
 
 /** User-facing wording for each state. The uncertain state must never read as a failure. */
 export const OUTBOUND_STATUS_LABEL: Record<BreezewayOutboundStatus, string> = {

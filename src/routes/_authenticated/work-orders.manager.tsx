@@ -44,11 +44,17 @@ function WorkOrderManager() {
   const [filter, setFilter] = useState<WorkOrderManagerFilter>("owner_approval_pending");
 
   const rows = useMemo(
-    () => [...(workOrders.data ?? [])].filter((w) => matchesManagerFilter(w, filter)).sort(workOrderSort),
+    () =>
+      [...(workOrders.data ?? [])]
+        .filter((w) => matchesManagerFilter(w, filter))
+        .sort(workOrderSort),
     [workOrders.data, filter],
   );
 
-  const repeats = useMemo(() => repeatMaintenanceProperties(workOrders.data ?? []), [workOrders.data]);
+  const repeats = useMemo(
+    () => repeatMaintenanceProperties(workOrders.data ?? []),
+    [workOrders.data],
+  );
 
   return (
     <div className="space-y-5">
@@ -60,7 +66,12 @@ function WorkOrderManager() {
 
       <div className="flex flex-wrap gap-1">
         {FILTERS.map((f) => (
-          <Button key={f} size="sm" variant={f === filter ? "default" : "outline"} onClick={() => setFilter(f)}>
+          <Button
+            key={f}
+            size="sm"
+            variant={f === filter ? "default" : "outline"}
+            onClick={() => setFilter(f)}
+          >
             {MANAGER_FILTER_LABELS[f]}
           </Button>
         ))}

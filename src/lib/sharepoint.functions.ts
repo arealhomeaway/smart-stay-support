@@ -68,4 +68,3 @@ export const validateSharePointAccess = createServerFn({ method: "POST" })
     const { runSharePointReadOnlyValidation } = await import("@/lib/sharepoint-validate.server");
     return runSharePointReadOnlyValidation(context.userId);
   });
-

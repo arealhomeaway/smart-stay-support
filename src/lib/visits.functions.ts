@@ -16,7 +16,9 @@ export const startVisit = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z.object({ ticketId: z.string().uuid(), fix: fixSchema }).parse(data),
   )
-  .handler(({ context, data }) => checkIn(context.supabase, context.userId, data.ticketId, data.fix));
+  .handler(({ context, data }) =>
+    checkIn(context.supabase, context.userId, data.ticketId, data.fix),
+  );
 
 export const endVisit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -30,7 +32,11 @@ export const endVisit = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(({ context, data }) =>
-    checkOut(context.supabase, context.userId, { ticketId: data.ticketId, fix: data.fix, notes: data.notes ?? "" }),
+    checkOut(context.supabase, context.userId, {
+      ticketId: data.ticketId,
+      fix: data.fix,
+      notes: data.notes ?? "",
+    }),
   );
 
 export const getVisits = createServerFn({ method: "GET" })

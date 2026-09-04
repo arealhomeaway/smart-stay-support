@@ -2,7 +2,7 @@ import { LaunchStateGate } from "@/components/LaunchStateGate";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarCheck, ClipboardList, Play } from "lucide-react";
+import { ClipboardList, Play } from "lucide-react";
 import { toast } from "sonner";
 import {
   quarterlyReviews,
@@ -10,10 +10,11 @@ import {
   startDueQuarterlyReviews,
 } from "@/lib/quarterly.functions";
 import { QUARTERLY_LABELS, daysUntil, type QuarterlyRow } from "@/lib/quarterly";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader, SectionCard, StatTile, EmptyState, LoadingRows } from "@/components/ui/page";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { usDate } from "@/lib/dates";
 import { CleaningRegionsPanel } from "@/components/CleaningRegionsPanel";
 
 export const Route = createFileRoute("/_authenticated/quarterly")({
@@ -37,6 +38,20 @@ export const Route = createFileRoute("/_authenticated/quarterly")({
   component: GatedQuarterlyPage,
 });
 
+function reviewTone(status: QuarterlyRow["status"]): StatusTone {
+  switch (status) {
+    case "in_progress":
+      return "progress";
+    case "overdue":
+    case "due":
+      return "escalated";
+    case "upcoming":
+      return "waiting";
+    default:
+      return "closed";
+  }
+}
+
 function dueText(row: QuarterlyRow) {
   const d = daysUntil(row.dueOn);
   if (d === 0) return "Due today";
@@ -46,7 +61,11 @@ function dueText(row: QuarterlyRow) {
 
 function GatedQuarterlyPage() {
   return (
-    <LaunchStateGate flag="quarterly_reviews" title="Quarterly reviews are not part of the Operations beta" description="Quarterly property reviews launch later, alongside the mature Vendor Portal.">
+    <LaunchStateGate
+      flag="quarterly_reviews"
+      title="Quarterly reviews are not part of the Operations beta"
+      description="Quarterly property reviews launch later, alongside the mature Vendor Portal."
+    >
       <QuarterlyPage />
     </LaunchStateGate>
   );
@@ -67,7 +86,11 @@ function QuarterlyPage() {
   const openOne = useMutation({
     mutationFn: (propertyId: string) => startOne({ data: { propertyId } }),
     onSuccess: (r) => {
-      toast.success(r.alreadyOpen ? "That review is already open." : "Quarterly review opened with its checklist.");
+      toast.success(
+        r.alreadyOpen
+          ? "That review is already open."
+          : "Quarterly review opened with its checklist.",
+      );
       invalidate();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not open the review"),
@@ -78,7 +101,8 @@ function QuarterlyPage() {
     onSuccess: (r) =>
       r.created === 0
         ? toast.info("Nothing is due right now.")
-        : (toast.success(`${r.created} quarterly review${r.created === 1 ? "" : "s"} opened.`), invalidate()),
+        : (toast.success(`${r.created} quarterly review${r.created === 1 ? "" : "s"} opened.`),
+          invalidate()),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not open the reviews"),
   });
 
@@ -87,81 +111,79 @@ function QuarterlyPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="flex items-center gap-2 font-display text-2xl font-semibold">
-            <CalendarCheck className="size-6" /> Quarterly reviews
-          </h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            The first assessment is scheduled 30 days after a home is handed off to operations, and every one after
-            that lands 90 days later. Assessments open on their own as the date arrives, assigned to the regional
-            cleaning manager for that market.
-          </p>
-
-        </div>
-        <div className="flex gap-2">
-          {playbookId ? (
-            <Button asChild variant="outline">
-              <Link to="/playbooks">
-                <ClipboardList className="mr-2 size-4" /> View the checklist
-              </Link>
+      <PageHeader
+        eyebrow="Operations"
+        title="Quarterly reviews"
+        description="Every home gets a supervisor visit 30 days after handoff, then every 90 days after that. Reviews open on their own as the date arrives."
+        actions={
+          <>
+            {playbookId ? (
+              <Button asChild variant="outline">
+                <Link to="/playbooks">
+                  <ClipboardList className="mr-2 size-4" /> View the checklist
+                </Link>
+              </Button>
+            ) : null}
+            <Button
+              onClick={() => openAll.mutate()}
+              disabled={openAll.isPending || needsWork.length === 0}
+            >
+              <Play className="mr-2 size-4" />
+              Open all due ({needsWork.length})
             </Button>
-          ) : null}
-          <Button onClick={() => openAll.mutate()} disabled={openAll.isPending || needsWork.length === 0}>
-            <Play className="mr-2 size-4" />
-            Open all due ({needsWork.length})
-          </Button>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Due or overdue" value={needsWork.length} />
-        <StatCard label="Reviews in progress" value={inFlight.length} />
-        <StatCard label="Homes on the cycle" value={rows.length} />
+        <StatTile
+          label="Due or overdue"
+          value={needsWork.length}
+          tone={needsWork.length ? "attention" : "neutral"}
+        />
+        <StatTile label="Reviews in progress" value={inFlight.length} tone="progress" />
+        <StatTile label="Homes on the cycle" value={rows.length} />
       </div>
 
       <CleaningRegionsPanel />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>The cycle</CardTitle>
-          <CardDescription>Sorted by what needs a supervisor on site soonest.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {reviews.isLoading ? (
-            <>
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </>
-          ) : rows.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No active homes yet. Add properties and they'll join the quarterly cycle automatically.
-            </p>
-          ) : (
-            rows.map((row) => {
+      <SectionCard
+        title="The cycle"
+        description="Sorted by what needs a supervisor on site soonest."
+      >
+        {reviews.isLoading ? (
+          <LoadingRows rows={3} />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="No active homes yet"
+            hint="Add properties and they'll join the quarterly cycle automatically."
+          />
+        ) : (
+          <div className="space-y-2">
+            {rows.map((row) => {
               const meta = QUARTERLY_LABELS[row.status];
               return (
                 <div
                   key={row.propertyId}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3"
                 >
-                  <div className="min-w-0 space-y-1">
-                    <p className="truncate font-medium">{row.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {row.market ? `${row.market} · ` : ""}
-                      {row.inspector ?? "No regional manager set"} ·{" "}
-                      {row.location || "No address on file"} ·{" "}
-                      {row.lastReviewedAt
-                        ? `Last reviewed ${new Date(row.lastReviewedAt).toLocaleDateString()}`
-                        : "Never reviewed in Resolve"}{" "}
-                      · {dueText(row)}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <PropertyPhoto name={row.name} />
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate font-medium">{row.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {row.market ? `${row.market} · ` : ""}
+                        {row.inspector ?? "No regional manager set"} ·{" "}
+                        {row.location || "No address on file"} ·{" "}
+                        {row.lastReviewedAt
+                          ? `Last reviewed ${usDate(row.lastReviewedAt)}`
+                          : "Never reviewed in Resolve"}{" "}
+                        · {dueText(row)}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={meta.tone}>
-                      {meta.label}
-                    </Badge>
+                    <StatusBadge tone={reviewTone(row.status)}>{meta.label}</StatusBadge>
                     {row.openTicketId ? (
                       <Button asChild size="sm" variant="outline">
                         <Link to="/tickets/$ticketId" params={{ ticketId: row.openTicketId }}>
@@ -181,21 +203,10 @@ function QuarterlyPage() {
                   </div>
                 </div>
               );
-            })
-          )}
-        </CardContent>
-      </Card>
+            })}
+          </div>
+        )}
+      </SectionCard>
     </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="font-display text-3xl font-semibold">{value}</p>
-      </CardContent>
-    </Card>
   );
 }

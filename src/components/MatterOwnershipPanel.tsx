@@ -69,7 +69,12 @@ export function MatterOwnershipPanel({
   const ownerId = currentOwnerId(ticket);
   const owner = people.find((p) => p.id === ownerId);
 
-  async function log(kind: string, body: string, eventType: string, opts?: { internal?: boolean; mentions?: string[] }) {
+  async function log(
+    kind: string,
+    body: string,
+    eventType: string,
+    opts?: { internal?: boolean; mentions?: string[] },
+  ) {
     await supabase.from("ticket_activity").insert({
       ticket_id: ticket.id,
       author_id: userId,
@@ -139,7 +144,9 @@ export function MatterOwnershipPanel({
       const mentions = extractMentions(note, people);
       await log("note", note.trim(), internal ? "internal_note" : "note", { internal, mentions });
       setNote("");
-      toast.success(mentions.length ? `Note added, ${mentions.length} teammate(s) mentioned.` : "Note added.");
+      toast.success(
+        mentions.length ? `Note added, ${mentions.length} teammate(s) mentioned.` : "Note added.",
+      );
     });
 
   const recordException = () =>
@@ -157,7 +164,11 @@ export function MatterOwnershipPanel({
         })
         .eq("id", ticket.id);
       if (error) throw error;
-      await log("exception", `Closure exception authorised: ${exception.trim()}`, "closure_exception");
+      await log(
+        "exception",
+        `Closure exception authorised: ${exception.trim()}`,
+        "closure_exception",
+      );
       setException("");
       toast.success("Exception recorded. This ticket can now be closed.");
     });
@@ -217,7 +228,8 @@ export function MatterOwnershipPanel({
 
         {!canEdit && !readOnly && (
           <p className="rounded-md border border-border bg-secondary/40 p-2 text-xs text-muted-foreground">
-            This ticket belongs to {displayName(owner)}. Ask a supervisor to reassign it if you need to work on it.
+            This ticket belongs to {displayName(owner)}. Ask a supervisor to reassign it if you need
+            to work on it.
           </p>
         )}
 
@@ -225,7 +237,12 @@ export function MatterOwnershipPanel({
           <>
             <div className="flex flex-wrap gap-2">
               {ownerId !== userId && userId && (
-                <Button size="sm" variant="secondary" disabled={busy} onClick={() => assign(userId, true)}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => assign(userId, true)}
+                >
                   Take this ticket
                 </Button>
               )}
@@ -288,8 +305,8 @@ export function MatterOwnershipPanel({
                 ) : (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      Waive a closure requirement only when the evidence genuinely cannot be produced. The reason is
-                      permanent.
+                      Waive a closure requirement only when the evidence genuinely cannot be
+                      produced. The reason is permanent.
                     </p>
                     <Textarea
                       value={exception}

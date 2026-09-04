@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Chip } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { stateChip } from "@/lib/semantic";
 import { displayName, useStaffDirectory } from "@/hooks/useTeam";
 import { LeadDrawer, stageState } from "@/components/leads/LeadDrawer";
@@ -71,13 +72,15 @@ export function LeadRowCard({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold">{lead.contact_name}</span>
-        {lead.company ? <span className="text-sm text-muted-foreground">· {lead.company}</span> : null}
+        {lead.company ? (
+          <span className="text-sm text-muted-foreground">· {lead.company}</span>
+        ) : null}
         <Chip className={stateChip(stageState(lead.stage))}>{STAGE_LABELS[lead.stage]}</Chip>
         <Chip>{SOURCE_LABELS[lead.source]}</Chip>
         {bucket === "overdue" ? (
-          <Chip className="border-danger/40 bg-danger/10 text-danger">Overdue</Chip>
+          <StatusBadge tone="escalated">Overdue</StatusBadge>
         ) : bucket === "today" ? (
-          <Chip className="border-warning/40 bg-warning/10 text-warning">Due today</Chip>
+          <StatusBadge tone="waiting">Due today</StatusBadge>
         ) : null}
         {flags
           .filter((f) => f.key !== "overdue")
@@ -88,10 +91,13 @@ export function LeadRowCard({
             </Chip>
           ))}
       </div>
-      <p className="mt-1 text-sm font-medium text-foreground/90">{nextAction(lead, { hasProperty })}</p>
+      <p className="mt-1 text-sm font-medium text-foreground/90">
+        {nextAction(lead, { hasProperty })}
+      </p>
       <p className="mt-0.5 text-xs text-muted-foreground">
         {lead.market ?? "Market unspecified"} · move-in {formatDate(lead.desired_move_in)} ·{" "}
-        {formatMoney(lead.budget_monthly)}/mo · {assigneeName} · last contact {relativeDays(lead.last_contact_at)}
+        {formatMoney(lead.budget_monthly)}/mo · {assigneeName} · last contact{" "}
+        {relativeDays(lead.last_contact_at)}
       </p>
     </button>
   );

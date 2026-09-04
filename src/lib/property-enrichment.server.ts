@@ -65,7 +65,12 @@ export type PropertyPatch = {
   values: Record<string, string | number | boolean | null>;
   /** OwnerRez owner id this home belongs to, if the listing names one. */
   ownerSourceId: string | null;
-  provenance: { field_key: string; value_source: string; source_record_id: string | null; as_of: string }[];
+  provenance: {
+    field_key: string;
+    value_source: string;
+    source_record_id: string | null;
+    as_of: string;
+  }[];
 };
 
 export type EnrichmentConflict = {
@@ -173,11 +178,7 @@ export function planEnrichment(
 
     const values: Record<string, string | number | boolean | null> = {};
     const provenance: PropertyPatch["provenance"] = [];
-    const put = (
-      column: string,
-      value: string | number | boolean | null,
-      fieldKey = column,
-    ) => {
+    const put = (column: string, value: string | number | boolean | null, fieldKey = column) => {
       if (value === null) return;
       values[column] = value;
       provenance.push({
@@ -253,12 +254,13 @@ export function planEnrichment(
           as_of: stamp,
         });
         if (!ownerDrafts.has(oid)) {
-          const addr = (o as { address?: { city?: string; state?: string; postal_code?: string } }).address;
+          const addr = (o as { address?: { city?: string; state?: string; postal_code?: string } })
+            .address;
           ownerDrafts.set(oid, {
             source: "ownerrez",
             source_owner_id: oid,
             name:
-              text(o.name) ?? (text([o.first_name, o.last_name].filter(Boolean).join(" ")) ?? null),
+              text(o.name) ?? text([o.first_name, o.last_name].filter(Boolean).join(" ")) ?? null,
             email: text(o.email_address),
             phone: text(o.phone?.number),
             city: text(addr?.city),

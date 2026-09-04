@@ -24,7 +24,6 @@ import {
 type Inspection = Awaited<ReturnType<typeof inspectSharePointAuthRequest>>;
 type Validation = Awaited<ReturnType<typeof validateSharePointAccess>>;
 
-
 function waitForOAuthCompletion(popup: Window) {
   return new Promise<string | null>((resolve, reject) => {
     let poll: number | undefined;
@@ -70,14 +69,12 @@ export function SharePointConnectionPanel() {
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [validation, setValidation] = useState<Validation | null>(null);
 
-
   const statusFn = useServerFn(sharePointConnectionStatus);
   const inspectFn = useServerFn(inspectSharePointAuthRequest);
   const startFn = useServerFn(startSharePointConnect);
   const completeFn = useServerFn(completeSharePointConnect);
   const revokeFn = useServerFn(revokeSharePointConnect);
   const validateFn = useServerFn(validateSharePointAccess);
-
 
   const status = useQuery({
     queryKey: ["sharepoint-connection"],
@@ -137,7 +134,6 @@ export function SharePointConnectionPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   if (isLoading || !isPlatformOwner) return null;
 
   const connected = status.data?.connected ?? false;
@@ -194,7 +190,11 @@ export function SharePointConnectionPanel() {
               >
                 Run read-only validation
               </Button>
-              <Button variant="ghost" disabled={readOnly || revoke.isPending} onClick={() => revoke.mutate()}>
+              <Button
+                variant="ghost"
+                disabled={readOnly || revoke.isPending}
+                onClick={() => revoke.mutate()}
+              >
                 Revoke
               </Button>
             </>
@@ -210,7 +210,6 @@ export function SharePointConnectionPanel() {
               "Something went wrong. Nothing was changed."}
           </p>
         ) : null}
-
 
         {validation?.probes.length ? (
           <div className="overflow-x-auto rounded-lg border border-border">
@@ -239,11 +238,10 @@ export function SharePointConnectionPanel() {
           </div>
         ) : null}
 
-
         {!inspection ? (
           <p className="text-xs text-muted-foreground">
-            Verify the request first — sign-in stays disabled until the generated request matches the
-            approved scope list exactly.
+            Verify the request first — sign-in stays disabled until the generated request matches
+            the approved scope list exactly.
           </p>
         ) : (
           <dl className="grid gap-2 rounded-lg border border-border p-4 text-xs sm:grid-cols-[10rem_1fr]">
@@ -251,7 +249,8 @@ export function SharePointConnectionPanel() {
             <dd className="font-mono break-all">{inspection.clientId ?? "—"}</dd>
             <dt className="text-muted-foreground">Tenant</dt>
             <dd className="font-mono break-all">
-              {inspection.tenant ?? "—"} <span className="text-muted-foreground">({inspection.authority})</span>
+              {inspection.tenant ?? "—"}{" "}
+              <span className="text-muted-foreground">({inspection.authority})</span>
             </dd>
             <dt className="text-muted-foreground">Redirect URI</dt>
             <dd className="font-mono break-all">{inspection.redirectUri ?? "—"}</dd>

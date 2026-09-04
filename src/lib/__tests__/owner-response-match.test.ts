@@ -1,5 +1,10 @@
 import { describe, expect, it } from "bun:test";
-import { approvalRef, findApprovalRefs, matchOwnerResponse, type ApprovalCandidate } from "../approval-reference";
+import {
+  approvalRef,
+  findApprovalRefs,
+  matchOwnerResponse,
+  type ApprovalCandidate,
+} from "../approval-reference";
 import {
   OWNER_RESPONSE_TAG,
   OWNER_RESPONSE_FILED_TAG,
@@ -61,8 +66,12 @@ describe("placing a homeowner's reply", () => {
 
   it("the sender is used only when they have exactly one decision waiting", () => {
     expect(
-      matchOwnerResponse({ subject: "ok", body: "yes", fromAddress: "owner@example.invalid", candidates: [railing] })
-        .method,
+      matchOwnerResponse({
+        subject: "ok",
+        body: "yes",
+        fromAddress: "owner@example.invalid",
+        candidates: [railing],
+      }).method,
     ).toBe("sender");
     const ambiguous = matchOwnerResponse({
       subject: "ok",
@@ -109,6 +118,9 @@ describe("the homeowner-response category", () => {
   });
 
   it("filing swaps the category and keeps the team's own filing", () => {
-    expect(categoriesAfterOwnerResponse(["Owner", OWNER_RESPONSE_TAG])).toEqual(["Owner", OWNER_RESPONSE_FILED_TAG]);
+    expect(categoriesAfterOwnerResponse(["Owner", OWNER_RESPONSE_TAG])).toEqual([
+      "Owner",
+      OWNER_RESPONSE_FILED_TAG,
+    ]);
   });
 });

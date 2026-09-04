@@ -82,9 +82,7 @@ export function EscalationPanel({ ticketId }: { ticketId: string }) {
           </div>
           <p className="mt-2 text-sm">{openOne.reason}</p>
           {openOne.help_needed && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Needs: {openOne.help_needed}
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Needs: {openOne.help_needed}</p>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
             This is a request for a decision. Whoever raised it still owns the work.
@@ -113,9 +111,7 @@ export function EscalationPanel({ ticketId }: { ticketId: string }) {
             <div key={h.id} className="rounded-md border border-border/60 px-3 py-2 text-sm">
               <span className="font-medium">{escalationOutcomeLabel(h.outcome)}</span>{" "}
               <span className="text-muted-foreground">· {relativeTime(h.resolved_at)}</span>
-              {h.outcome_note && (
-                <p className="mt-1 text-muted-foreground">{h.outcome_note}</p>
-              )}
+              {h.outcome_note && <p className="mt-1 text-muted-foreground">{h.outcome_note}</p>}
             </div>
           ))}
         </div>
@@ -342,10 +338,7 @@ export function AnswerEscalation({
         placeholder="Write the decision so the record explains itself."
       />
 
-      <Button
-        disabled={note.trim().length < 5 || answer.isPending}
-        onClick={() => answer.mutate()}
-      >
+      <Button disabled={note.trim().length < 5 || answer.isPending} onClick={() => answer.mutate()}>
         {answer.isPending ? "Recording…" : "Record decision"}
       </Button>
     </div>

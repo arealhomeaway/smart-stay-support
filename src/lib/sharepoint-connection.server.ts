@@ -30,7 +30,7 @@ import {
  * button go through it, so what is reported is what is sent.
  */
 export async function buildSharePointAuthorization(userId: string) {
-  const clientAPIKey = process.env['MICROSOFT_SHAREPOINT_APP_USER_CONNECTOR_CLIENT_API_KEY'];
+  const clientAPIKey = process.env["MICROSOFT_SHAREPOINT_APP_USER_CONNECTOR_CLIENT_API_KEY"];
   if (!clientAPIKey) {
     throw new Error("MICROSOFT_SHAREPOINT_APP_USER_CONNECTOR_CLIENT_API_KEY is not set");
   }
@@ -91,7 +91,6 @@ async function loadStoredConnection(
   }
 }
 
-
 /**
  * Generate the real authorization request and return only non-secret
  * parameters. The full URL, OAuth state, codes and keys are never returned.
@@ -132,9 +131,9 @@ async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // The table is server-only (service-role grants only) and intentionally not
   // part of the generated browser types.
-  return (supabaseAdmin as unknown as {
+  return supabaseAdmin as unknown as {
     from: (table: string) => any;
-  });
+  };
 }
 
 /** Ask Graph who this connection actually belongs to. Requires only User.Read. */

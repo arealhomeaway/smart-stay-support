@@ -39,9 +39,10 @@ export function refTag(ref: number) {
   return `[ARHA-${ref}]`;
 }
 
-
-const P1 = /(fire|smoke|carbon monoxide|co alarm|gas|flood|flooding|active leak|no heat|no ac|no a\/c|no power|lockout|locked out|break-?in|injur|emergenc|urgent)/i;
-const P2 = /(leak|water|hvac|heat|air condition|no hot water|toilet|clog|backed up|pest|roach|bed bug|broken|not working|guest complain)/i;
+const P1 =
+  /(fire|smoke|carbon monoxide|co alarm|gas|flood|flooding|active leak|no heat|no ac|no a\/c|no power|lockout|locked out|break-?in|injur|emergenc|urgent)/i;
+const P2 =
+  /(leak|water|hvac|heat|air condition|no hot water|toilet|clog|backed up|pest|roach|bed bug|broken|not working|guest complain)/i;
 
 function guessPriority(text: string): "p1" | "p2" | "p3" {
   if (P1.test(text)) return "p1";
@@ -59,7 +60,11 @@ function guessCategory(text: string) {
 }
 
 function normalize(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Finds the home whose name or nickname appears in the message text. */
@@ -116,7 +121,6 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     }
   }
 
-
   // Don't create the same ticket twice when a webhook retries.
   if (payload.externalId) {
     const { data: existing } = await db
@@ -145,7 +149,8 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     .insert({
       record_type: "active_task",
       title: subject,
-      description: [payload.from ? `From: ${payload.from}` : null, body].filter(Boolean).join("\n\n") || null,
+      description:
+        [payload.from ? `From: ${payload.from}` : null, body].filter(Boolean).join("\n\n") || null,
       property_id: propertyId,
       category: guessCategory(combined),
       priority,
@@ -177,8 +182,6 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     /* ignore */
   }
 
-
-
   await db.from("ticket_activity").insert({
     ticket_id: inserted.id,
     kind: "created",
@@ -189,5 +192,11 @@ export async function createIntakeMatter(db: Db, payload: IntakePayload): Promis
     }`,
   });
 
-  return { ok: true, ticketId: inserted.id, ref: inserted.ref, propertyMatched: Boolean(propertyId), priority };
+  return {
+    ok: true,
+    ticketId: inserted.id,
+    ref: inserted.ref,
+    propertyMatched: Boolean(propertyId),
+    priority,
+  };
 }

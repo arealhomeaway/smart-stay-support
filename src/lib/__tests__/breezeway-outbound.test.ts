@@ -43,9 +43,8 @@ mock.module("@/lib/breezeway.server", () => ({
   },
 }));
 
-const { createOutboundTask, listOutboundNeedingReview, reconcileOutboundTask } = await import(
-  "@/lib/breezeway-outbound.server"
-);
+const { createOutboundTask, listOutboundNeedingReview, reconcileOutboundTask } =
+  await import("@/lib/breezeway-outbound.server");
 
 const TICKET = "11111111-1111-4111-8111-111111111111";
 const ONBOARDING_TASK = "33333333-3333-4333-8333-333333333333";
@@ -202,7 +201,10 @@ describe("feature flag and pilot lock", () => {
   });
 
   it("returns a sanitized refusal (not a thrown error) for a missing record", async () => {
-    const missing = { ...input("key-missing-000000000"), sourceId: "22222222-2222-4222-8222-222222222222" };
+    const missing = {
+      ...input("key-missing-000000000"),
+      sourceId: "22222222-2222-4222-8222-222222222222",
+    };
     const result = await createOutboundTask(missing, "actor");
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toContain("does not exist");

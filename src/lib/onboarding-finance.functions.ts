@@ -85,7 +85,9 @@ export const sendToAccountingFn = createServerFn({ method: "POST" })
 export const settleFinancialRequestFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ requestId: z.string().uuid(), note: z.string().trim().min(3).max(1000) }).parse(data),
+    z
+      .object({ requestId: z.string().uuid(), note: z.string().trim().min(3).max(1000) })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { settleFinancialRequest } = await import("./onboarding-finance.server");

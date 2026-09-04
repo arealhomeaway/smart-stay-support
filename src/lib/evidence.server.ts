@@ -137,7 +137,11 @@ type ItemRow = {
 
 async function signedUrlFor(documentId: string): Promise<string | null> {
   const db = await admin();
-  const { data } = await db.from("documents").select("storage_path").eq("id", documentId).maybeSingle();
+  const { data } = await db
+    .from("documents")
+    .select("storage_path")
+    .eq("id", documentId)
+    .maybeSingle();
   const path = (data as { storage_path: string | null } | null)?.storage_path;
   if (!path) return null;
   const signed = await db.storage.from(ATTACHMENT_BUCKET).createSignedUrl(path, SIGNED_URL_SECONDS);
@@ -180,7 +184,11 @@ export async function listRequirements(
   ];
   if (ids.length) {
     const { data } = await db.from("profiles").select("id, full_name, email").in("id", ids);
-    for (const p of (data ?? []) as { id: string; full_name: string | null; email: string | null }[]) {
+    for (const p of (data ?? []) as {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+    }[]) {
       people.set(p.id, p.full_name || p.email || "Unknown");
     }
   }
@@ -236,7 +244,11 @@ export async function evidenceComplete(subjectType: EvidenceSubject, subjectId: 
   const outstanding = rows.filter(
     (r) => r.required && r.status !== "verified" && r.status !== "accepted_exception",
   );
-  return { complete: outstanding.length === 0, outstanding: outstanding.length, total: rows.length };
+  return {
+    complete: outstanding.length === 0,
+    outstanding: outstanding.length,
+    total: rows.length,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -340,7 +352,11 @@ export async function runGate(input: {
     reasonCodes: pass ? [] : codes.length ? codes : (["work_not_visible"] as ReasonCode[]),
     guidance: pass ? null : null,
     stageA: { pass: parsed.stage_a_pass, notes: parsed.stage_a_notes, whatISee: parsed.what_i_see },
-    stageB: { pass: parsed.stage_b_pass, notes: parsed.stage_b_notes, extractedText: parsed.extracted_text },
+    stageB: {
+      pass: parsed.stage_b_pass,
+      notes: parsed.stage_b_notes,
+      extractedText: parsed.extracted_text,
+    },
     evaluator: COACH_MODEL,
   };
 }
@@ -356,7 +372,11 @@ type RawVerdict = {
 };
 
 export function parseVerdict(text: string): RawVerdict {
-  const cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   let raw: Record<string, unknown> = {};
@@ -450,11 +470,19 @@ export async function submitEvidence(
     breezewayTaskId?: number | null;
     source?: "resolve_upload" | "breezeway_photo";
   },
-): Promise<{ ok: boolean; itemId?: string; status?: ItemStatus; message?: string; guidance?: string | null }> {
+): Promise<{
+  ok: boolean;
+  itemId?: string;
+  status?: ItemStatus;
+  message?: string;
+  guidance?: string | null;
+}> {
   const db = await admin();
   const { data: reqData } = await db
     .from("evidence_requirements")
-    .select("id, subject_type, subject_id, property_id, label, requirement_kind, instruction, detail")
+    .select(
+      "id, subject_type, subject_id, property_id, label, requirement_kind, instruction, detail",
+    )
     .eq("id", input.requirementId)
     .maybeSingle();
   const req = reqData as unknown as ReqRow | null;
@@ -500,7 +528,12 @@ export async function submitEvidence(
   const url = input.documentId ? await signedUrlFor(input.documentId) : (input.externalUrl ?? null);
   if (!url) {
     await markUnchecked(itemId, req.id, "Resolve could not open the photo to check it.");
-    return { ok: true, itemId, status: "unchecked", message: "Photo saved, but it could not be checked." };
+    return {
+      ok: true,
+      itemId,
+      status: "unchecked",
+      message: "Photo saved, but it could not be checked.",
+    };
   }
 
   let verdict: GateVerdict;
@@ -513,7 +546,11 @@ export async function submitEvidence(
       detail: req.detail,
     });
   } catch {
-    await markUnchecked(itemId, req.id, "The photo check could not run. A supervisor can review it by eye.");
+    await markUnchecked(
+      itemId,
+      req.id,
+      "The photo check could not run. A supervisor can review it by eye.",
+    );
     return {
       ok: true,
       itemId,
@@ -550,7 +587,11 @@ async function markUnchecked(itemId: string, requirementId: string, note: string
   const db = await admin();
   await db
     .from("evidence_items")
-    .update({ status: "unchecked", guidance: note, evaluated_at: new Date().toISOString() } as never)
+    .update({
+      status: "unchecked",
+      guidance: note,
+      evaluated_at: new Date().toISOString(),
+    } as never)
     .eq("id", itemId);
   await refreshRequirementStatus(requirementId);
   await logEvent(itemId, requirementId, "check_unavailable", null, { note });
@@ -564,10 +605,18 @@ export async function recheckEvidence(actor: Actor, itemId: string) {
     .select("id, requirement_id, document_id, external_url")
     .eq("id", itemId)
     .maybeSingle();
-  const item = data as { id: string; requirement_id: string | null; document_id: string | null; external_url: string | null } | null;
+  const item = data as {
+    id: string;
+    requirement_id: string | null;
+    document_id: string | null;
+    external_url: string | null;
+  } | null;
   if (!item?.requirement_id) return { ok: false, message: "That photo is no longer on file." };
 
-  await db.from("evidence_items").update({ status: "checking" } as never).eq("id", itemId);
+  await db
+    .from("evidence_items")
+    .update({ status: "checking" } as never)
+    .eq("id", itemId);
   const { data: reqData } = await db
     .from("evidence_requirements")
     .select("id, label, requirement_kind, instruction, detail")
@@ -604,7 +653,11 @@ export async function recheckEvidence(actor: Actor, itemId: string) {
     await logEvent(itemId, req.id, "rechecked", actor.userId, { status: verdict.status });
     return { ok: true, status: verdict.status, guidance };
   } catch {
-    await markUnchecked(itemId, req.id, "The photo check could not run. A supervisor can review it by eye.");
+    await markUnchecked(
+      itemId,
+      req.id,
+      "The photo check could not run. A supervisor can review it by eye.",
+    );
     return { ok: false, message: "The photo check could not run just now." };
   }
 }
@@ -620,11 +673,17 @@ export async function recheckEvidence(actor: Actor, itemId: string) {
  */
 export async function acceptWithException(actor: Actor, itemId: string, reason: string) {
   if (!actor.isSupervisor) {
-    return { ok: false as const, message: "Only a supervisor can accept a photo with an exception." };
+    return {
+      ok: false as const,
+      message: "Only a supervisor can accept a photo with an exception.",
+    };
   }
   const text = reason.trim();
   if (text.length < 10) {
-    return { ok: false as const, message: "Write a short reason (at least a sentence) for the exception." };
+    return {
+      ok: false as const,
+      message: "Write a short reason (at least a sentence) for the exception.",
+    };
   }
 
   const db = await admin();
@@ -633,9 +692,13 @@ export async function acceptWithException(actor: Actor, itemId: string, reason: 
     .select("id, requirement_id, status, guidance, reason_codes")
     .eq("id", itemId)
     .maybeSingle();
-  const item = data as
-    | { id: string; requirement_id: string | null; status: ItemStatus; guidance: string | null; reason_codes: string[] | null }
-    | null;
+  const item = data as {
+    id: string;
+    requirement_id: string | null;
+    status: ItemStatus;
+    guidance: string | null;
+    reason_codes: string[] | null;
+  } | null;
   if (!item) return { ok: false as const, message: "That photo is no longer on file." };
   if (item.status === "verified") {
     return { ok: false as const, message: "That photo already passed — no exception is needed." };

@@ -58,7 +58,6 @@ export type ParsedRow = {
   profile?: LegacyProfile | null;
 };
 
-
 function splitList(value: string) {
   return value
     .split(/[,;/]+/)
@@ -81,7 +80,10 @@ export function parseLegacyRows(text: string): ParsedRow[] {
     if (/^name$/i.test(name)) continue; // header row
     const roleText = (role ?? "").toLowerCase();
     rows.push({
-      sourceRole: roleText.includes("service") || roleText.includes("provider") ? "service_provider" : "representative",
+      sourceRole:
+        roleText.includes("service") || roleText.includes("provider")
+          ? "service_provider"
+          : "representative",
       displayName: name,
       email: email && email.includes("@") ? email.toLowerCase() : null,
       phone: phone || null,
@@ -236,12 +238,16 @@ export function parseBreezewayCsv(text: string): ParsedRow[] {
     const groups = splitPiped(record["Groups"] ?? "");
 
     const claims: string[] = [];
-    if (twoFactor && twoFactor.toUpperCase() !== "N/A") claims.push(`Two-factor in Breezeway: ${twoFactor}`);
+    if (twoFactor && twoFactor.toUpperCase() !== "N/A")
+      claims.push(`Two-factor in Breezeway: ${twoFactor}`);
     if (employeeId) claims.push(`Breezeway employee ID: ${employeeId}`);
     if (notes) claims.push(`Export note: ${notes}`);
 
     rows.push({
-      sourceRole: roleText.includes("service") || roleText.includes("provider") ? "service_provider" : "representative",
+      sourceRole:
+        roleText.includes("service") || roleText.includes("provider")
+          ? "service_provider"
+          : "representative",
       displayName: name,
       email: email && email.includes("@") ? email.toLowerCase() : null,
       phone: firstValue(record, "Mobile Phone Number", "Phone Number", "Phone"),
@@ -284,7 +290,12 @@ function normalizeName(value: string) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-type Existing = { id: string; display_name: string; website: string | null; primary_contact_email: string | null };
+type Existing = {
+  id: string;
+  display_name: string;
+  website: string | null;
+  primary_contact_email: string | null;
+};
 
 /** Proposes what to do with one legacy row. Confidence never auto-approves. */
 export function proposeAction(row: ParsedRow, existing: Existing[]) {
@@ -302,7 +313,9 @@ export function proposeAction(row: ParsedRow, existing: Existing[]) {
       score += 0.6;
       why.push("company name matches");
     }
-    const orgDomain = domainOf(org.primary_contact_email) ?? (org.website ? org.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]! : null);
+    const orgDomain =
+      domainOf(org.primary_contact_email) ??
+      (org.website ? org.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]! : null);
     if (rowDomain && orgDomain && rowDomain === orgDomain) {
       score += 0.35;
       why.push(`email domain ${rowDomain} matches`);
@@ -336,14 +349,18 @@ export function proposeAction(row: ParsedRow, existing: Existing[]) {
       action: "needs_review" as const,
       match: null,
       confidence: 0.3,
-      reasons: [`Work email domain ${rowDomain} suggests a company, but no company matches it yet.`],
+      reasons: [
+        `Work email domain ${rowDomain} suggests a company, but no company matches it yet.`,
+      ],
     };
   }
   return {
     action: "needs_review" as const,
     match: null,
     confidence: 0,
-    reasons: ["Personal or missing email — no defensible link to a company. Unmatched legacy representative."],
+    reasons: [
+      "Personal or missing email — no defensible link to a company. Unmatched legacy representative.",
+    ],
   };
 }
 
@@ -361,7 +378,6 @@ export async function createImportBatch(
       ? parseBreezewayCsv(input.text)
       : parseLegacyRows(input.text);
   if (parsed.length === 0) throw new Error("No rows found. Paste one vendor per line.");
-
 
   const { data: existing, error: existingError } = await db
     .from("vendor_orgs")
@@ -385,7 +401,9 @@ export async function createImportBatch(
     return {
       batch_id: batch.id,
       source_role: row.sourceRole,
-      raw: JSON.parse(JSON.stringify(row)) as Database["public"]["Tables"]["vendor_import_rows"]["Row"]["raw"],
+      raw: JSON.parse(
+        JSON.stringify(row),
+      ) as Database["public"]["Tables"]["vendor_import_rows"]["Row"]["raw"],
       display_name: row.displayName,
       email: row.email,
       phone: row.phone,
@@ -406,7 +424,11 @@ export async function createImportBatch(
 
 export async function loadImportQueue(db: Client) {
   const [batchesRes, rowsRes] = await Promise.all([
-    db.from("vendor_import_batches").select("*").order("created_at", { ascending: false }).limit(20),
+    db
+      .from("vendor_import_batches")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20),
     db
       .from("vendor_import_rows")
       .select("*, vendor_orgs:match_org_id(display_name)")
@@ -432,9 +454,9 @@ export async function loadImportQueue(db: Client) {
       matchOrgName: (r.vendor_orgs as { display_name?: string } | null)?.display_name ?? null,
       matchConfidence: r.match_confidence,
       matchReasons: r.match_reasons ?? [],
-      profile: ((r.raw as { profile?: LegacyProfile | null } | null)?.profile ?? null) as LegacyProfile | null,
+      profile: ((r.raw as { profile?: LegacyProfile | null } | null)?.profile ??
+        null) as LegacyProfile | null,
     })),
-
   };
 }
 
@@ -442,10 +464,19 @@ export async function loadImportQueue(db: Client) {
 export async function decideImportRow(
   db: Client,
   userId: string,
-  input: { rowId: string; action: "create" | "match" | "skip"; orgId?: string | null | undefined; note?: string | null | undefined },
+  input: {
+    rowId: string;
+    action: "create" | "match" | "skip";
+    orgId?: string | null | undefined;
+    note?: string | null | undefined;
+  },
 ) {
   await assertSupervisor(db, userId);
-  const { data: row, error } = await db.from("vendor_import_rows").select("*").eq("id", input.rowId).maybeSingle();
+  const { data: row, error } = await db
+    .from("vendor_import_rows")
+    .select("*")
+    .eq("id", input.rowId)
+    .maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) throw new Error("That import row no longer exists.");
   if (row.decision !== "pending") throw new Error("That row was already decided.");
@@ -466,7 +497,9 @@ export async function decideImportRow(
       profile?.preference ? `Historic preference: ${profile.preference}` : null,
       profile?.coverageHours ? `Coverage hours: ${profile.coverageHours}` : null,
       profile?.serviceArea ? `Service area on record: ${profile.serviceArea}` : null,
-      profile?.claims.length ? `Recorded in Notion (unverified) — ${profile.claims.join("; ")}.` : null,
+      profile?.claims.length
+        ? `Recorded in Notion (unverified) — ${profile.claims.join("; ")}.`
+        : null,
     ]
       .filter(Boolean)
       .join("\n");
@@ -477,7 +510,9 @@ export async function decideImportRow(
         display_name: row.display_name,
         legal_name: row.display_name,
         status: "legacy",
-        service_categories: profile?.specialties?.length ? profile.specialties : (row.departments ?? []),
+        service_categories: profile?.specialties?.length
+          ? profile.specialties
+          : (row.departments ?? []),
         markets: profile?.markets ?? [],
         legacy_market_hints: groupsAreMeaningful,
         legacy_all_groups: allGroups,
@@ -487,7 +522,9 @@ export async function decideImportRow(
         website: profile?.website ?? null,
         pricing_note: profile?.pricing ?? null,
         payment_terms: profile?.paymentType ?? null,
-        emergency_available: Boolean(profile?.emergencyAvailability && /yes|24|always/i.test(profile.emergencyAvailability)),
+        emergency_available: Boolean(
+          profile?.emergencyAvailability && /yes|24|always/i.test(profile.emergencyAvailability),
+        ),
         insurance_expires_on: profile?.insuranceExpiresOn ?? null,
         license_expires_on: profile?.licenseExpiresOn ?? null,
         notes: notes || null,
@@ -497,7 +534,6 @@ export async function decideImportRow(
       .single();
     if (insertError) throw new Error(insertError.message);
     createdOrgId = data.id;
-
 
     await db.from("vendor_status_events").insert({
       org_id: data.id,
@@ -512,10 +548,12 @@ export async function decideImportRow(
       external_id: profile?.notionVendorId ?? row.display_name,
       last_sync_status: "imported",
     });
-
   }
 
-  if (input.action === "match" || (input.action === "create" && row.source_role === "representative")) {
+  if (
+    input.action === "match" ||
+    (input.action === "create" && row.source_role === "representative")
+  ) {
     const orgId = input.orgId ?? row.match_org_id ?? createdOrgId;
     const { data, error: contactError } = await db
       .from("vendor_contacts")

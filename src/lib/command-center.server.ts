@@ -31,7 +31,8 @@ function pct(n: number, d: number) {
 function fmt(value: number | null, unit: Kpi["unit"]) {
   if (value == null) return "—";
   if (unit === "percent") return `${value.toFixed(1)}%`;
-  if (unit === "minutes") return value >= 120 ? `${(value / 60).toFixed(1)} h` : `${Math.round(value)} min`;
+  if (unit === "minutes")
+    return value >= 120 ? `${(value / 60).toFixed(1)} h` : `${Math.round(value)} min`;
   if (unit === "days") return `${value.toFixed(1)} d`;
   if (unit === "score") return value.toFixed(2);
   if (unit === "hours") return `${value.toFixed(1)} h`;
@@ -89,54 +90,83 @@ export async function loadCommandCenter(
   const since = new Date(now.getTime() - filters.days * 86400000).toISOString();
   const priorSince = new Date(now.getTime() - filters.days * 2 * 86400000).toISOString();
 
-  const [ticketsRes, propsRes, visitsRes, ratingsRes, reviewsRes, notifRes, programsRes, tasksRes, handoffRes, ticketHandoffRes, profilesRes] =
-    await Promise.all([
-      supabase
-        .from("tickets")
-        .select(
-          "id, ref, priority, status, category, team:functional_role_code, reported_at, acknowledged_at, resolved_at, response_due_at, action_due_at, next_review_at, waiting_on, reopen_count, avoidable_reopen, closure_qa_result, closure_evidence, escalation_level, supervisor_caught, guest_impact, occupancy_status, final_communication_sent, property_id, vendor_user_id, vendor_status, accountable_owner, current_action_owner, external_source, external_id, properties(name, state)",
-        )
-        // Executive KPIs exclude demo and archived records.
-        .eq("is_demo", false)
-        .is("archived_at", null)
+  const [
+    ticketsRes,
+    propsRes,
+    visitsRes,
+    ratingsRes,
+    reviewsRes,
+    notifRes,
+    programsRes,
+    tasksRes,
+    handoffRes,
+    ticketHandoffRes,
+    profilesRes,
+  ] = await Promise.all([
+    supabase
+      .from("tickets")
+      .select(
+        "id, ref, priority, status, category, team:functional_role_code, reported_at, acknowledged_at, resolved_at, response_due_at, action_due_at, next_review_at, waiting_on, reopen_count, avoidable_reopen, closure_qa_result, closure_evidence, escalation_level, supervisor_caught, guest_impact, occupancy_status, final_communication_sent, property_id, vendor_user_id, vendor_status, accountable_owner, current_action_owner, external_source, external_id, properties(name, state)",
+      )
+      // Executive KPIs exclude demo and archived records.
+      .eq("is_demo", false)
+      .is("archived_at", null)
 
-        .gte("reported_at", priorSince)
-        .limit(5000),
-      supabase
-        .from("properties")
-        .select(
-          "id, name, state, active, lifecycle_status, onboarding_stage, onboarding_started_at, handoff_accepted_at, latitude, longitude, address_line1, ownerrez_property_id",
-        )
-        // Executive KPIs exclude demo/test homes and their paper trail.
-        .eq("is_demo", false),
-      supabase
-        .from("ticket_visits")
-        .select("id, ticket_id, vendor_user_id, checked_in_at, checked_out_at, check_in_verified, minutes_on_site")
-        .eq("is_demo", false)
-        .gte("checked_in_at", priorSince),
-      supabase
-        .from("vendor_job_ratings")
-        .select("id, ticket_id, vendor_user_id, overall, thoroughness, timeliness, communication, photos_complete, reopened, on_time, created_at")
-        .gte("created_at", priorSince),
-      supabase
-        .from("owner_reviews")
-        .select("id, program_id, status, respond_by, notified_at, responded_at, created_at, property_id"),
-      supabase
-        .from("owner_notifications")
-        .select("id, kind, created_at, delivered_at, email_status, read_at")
-        .gte("created_at", priorSince),
-      supabase
-        .from("owner_programs")
-        .select("id, status, target_hours, started_on, ends_on, property_id, last_owner_activity_at"),
-      supabase.from("onboarding_tasks").select("*").eq("is_demo", false),
-      supabase.from("property_handoffs").select("*").eq("is_demo", false),
-      supabase.from("handoffs").select("id, ticket_id, status, created_at, responded_at").gte("created_at", priorSince),
-      supabase.from("profiles").select("id, full_name, email"),
-    ]);
+      .gte("reported_at", priorSince)
+      .limit(5000),
+    supabase
+      .from("properties")
+      .select(
+        "id, name, state, active, lifecycle_status, onboarding_stage, onboarding_started_at, handoff_accepted_at, latitude, longitude, address_line1, ownerrez_property_id",
+      )
+      // Executive KPIs exclude demo/test homes and their paper trail.
+      .eq("is_demo", false),
+    supabase
+      .from("ticket_visits")
+      .select(
+        "id, ticket_id, vendor_user_id, checked_in_at, checked_out_at, check_in_verified, minutes_on_site",
+      )
+      .eq("is_demo", false)
+      .gte("checked_in_at", priorSince),
+    supabase
+      .from("vendor_job_ratings")
+      .select(
+        "id, ticket_id, vendor_user_id, overall, thoroughness, timeliness, communication, photos_complete, reopened, on_time, created_at",
+      )
+      .gte("created_at", priorSince),
+    supabase
+      .from("owner_reviews")
+      .select(
+        "id, program_id, status, respond_by, notified_at, responded_at, created_at, property_id",
+      ),
+    supabase
+      .from("owner_notifications")
+      .select("id, kind, created_at, delivered_at, email_status, read_at")
+      .gte("created_at", priorSince),
+    supabase
+      .from("owner_programs")
+      .select("id, status, target_hours, started_on, ends_on, property_id, last_owner_activity_at"),
+    supabase.from("onboarding_tasks").select("*").eq("is_demo", false),
+    supabase.from("property_handoffs").select("*").eq("is_demo", false),
+    supabase
+      .from("handoffs")
+      .select("id, ticket_id, status, created_at, responded_at")
+      .gte("created_at", priorSince),
+    supabase.from("profiles").select("id, full_name, email"),
+  ]);
 
-  const err = [ticketsRes, propsRes, visitsRes, ratingsRes, reviewsRes, notifRes, programsRes, tasksRes, handoffRes, ticketHandoffRes].find(
-    (r) => r.error,
-  );
+  const err = [
+    ticketsRes,
+    propsRes,
+    visitsRes,
+    ratingsRes,
+    reviewsRes,
+    notifRes,
+    programsRes,
+    tasksRes,
+    handoffRes,
+    ticketHandoffRes,
+  ].find((r) => r.error);
   if (err?.error) throw err.error;
 
   const properties = propsRes.data ?? [];
@@ -149,7 +179,9 @@ export async function loadCommandCenter(
     !row.ticket_id || liveTicketIds.has(row.ticket_id);
   const liveHandoffs = (ticketHandoffRes.data ?? []).filter(onLiveTicket);
 
-  const matchesFilters = (t: (typeof ticketsRes.data extends null ? never : NonNullable<typeof ticketsRes.data>)[number]) => {
+  const matchesFilters = (
+    t: (typeof ticketsRes.data extends null ? never : NonNullable<typeof ticketsRes.data>)[number],
+  ) => {
     if (filters.propertyId && t.property_id !== filters.propertyId) return false;
     if (filters.priority && (t.priority ?? "").toLowerCase() !== filters.priority) return false;
     if (filters.team && t.team !== filters.team) return false;
@@ -186,9 +218,7 @@ export async function loadCommandCenter(
     (t) => t.action_due_at && t.action_due_at < now.toISOString(),
   );
   const unacceptedHandoffs = liveHandoffs.filter((h) => h.status === "pending");
-  const waitingNoReview = allTickets.filter(
-    (t) => t.status === "waiting" && !t.next_review_at,
-  );
+  const waitingNoReview = allTickets.filter((t) => t.status === "waiting" && !t.next_review_at);
   const reopened = current.filter((t) => (t.reopen_count ?? 0) > 0);
   const closedCurrent = current.filter((t) => t.resolved_at);
   const firstTimeClosure = closedCurrent.filter((t) => (t.reopen_count ?? 0) === 0);
@@ -216,7 +246,11 @@ export async function loadCommandCenter(
         label: "Median time to acknowledge",
         unit: "minutes",
         value: median(ackMinutes),
-        previous: median(prior.filter((t) => t.acknowledged_at).map((t) => minutes(t.reported_at, t.acknowledged_at!))),
+        previous: median(
+          prior
+            .filter((t) => t.acknowledged_at)
+            .map((t) => minutes(t.reported_at, t.acknowledged_at!)),
+        ),
         target: "P1 ≤ 3 min",
         status: grade(median(ackMinutes), { good: 15, warn: 45, higherIsBetter: false }),
         denominator: `${ackMinutes.length} acknowledged tickets`,
@@ -227,7 +261,9 @@ export async function loadCommandCenter(
         label: "Median time to resolve",
         unit: "minutes",
         value: median(resolveMinutes),
-        previous: median(prior.filter((t) => t.resolved_at).map((t) => minutes(t.reported_at, t.resolved_at!))),
+        previous: median(
+          prior.filter((t) => t.resolved_at).map((t) => minutes(t.reported_at, t.resolved_at!)),
+        ),
         target: "Work-type standard",
         status: grade(median(resolveMinutes), { good: 1440, warn: 4320, higherIsBetter: false }),
         denominator: `${resolveMinutes.length} resolved tickets`,
@@ -239,7 +275,11 @@ export async function loadCommandCenter(
         unit: "count",
         value: openGuestImpacting.length,
         target: "0 overdue",
-        status: overdueGuestImpacting.length ? "red" : openGuestImpacting.length > 10 ? "yellow" : "green",
+        status: overdueGuestImpacting.length
+          ? "red"
+          : openGuestImpacting.length > 10
+            ? "yellow"
+            : "green",
         denominator: `${overdueGuestImpacting.length} of them overdue`,
         drill: { to: "/tickets", label: "Guest-impacting queue" },
       }),
@@ -249,7 +289,12 @@ export async function loadCommandCenter(
         unit: "count",
         value: unacceptedHandoffs.length,
         target: "0",
-        status: unacceptedHandoffs.length === 0 ? "green" : unacceptedHandoffs.length < 3 ? "yellow" : "red",
+        status:
+          unacceptedHandoffs.length === 0
+            ? "green"
+            : unacceptedHandoffs.length < 3
+              ? "yellow"
+              : "red",
         denominator: `${liveHandoffs.length} handoffs in window`,
         drill: { to: "/oversight", label: "Oversight queue" },
         note: "A handoff is not complete until it is accepted — the original owner stays responsible.",
@@ -260,7 +305,8 @@ export async function loadCommandCenter(
         unit: "count",
         value: waitingNoReview.length,
         target: "0",
-        status: waitingNoReview.length === 0 ? "green" : waitingNoReview.length < 5 ? "yellow" : "red",
+        status:
+          waitingNoReview.length === 0 ? "green" : waitingNoReview.length < 5 ? "yellow" : "red",
         denominator: `${allTickets.filter((t) => t.status === "waiting").length} waiting tickets`,
         drill: { to: "/oversight", label: "Waiting queue" },
       }),
@@ -271,7 +317,11 @@ export async function loadCommandCenter(
         value: pct(reopened.length, current.length),
         previous: pct(prior.filter((t) => (t.reopen_count ?? 0) > 0).length, prior.length),
         target: "≤ 5%",
-        status: grade(pct(reopened.length, current.length), { good: 5, warn: 10, higherIsBetter: false }),
+        status: grade(pct(reopened.length, current.length), {
+          good: 5,
+          warn: 10,
+          higherIsBetter: false,
+        }),
         denominator: `${current.length} tickets in window`,
         drill: { to: "/analytics", label: "Root-cause view" },
       }),
@@ -281,7 +331,11 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(firstTimeClosure.length, closedCurrent.length),
         target: "≥ 90%",
-        status: grade(pct(firstTimeClosure.length, closedCurrent.length), { good: 90, warn: 80, higherIsBetter: true }),
+        status: grade(pct(firstTimeClosure.length, closedCurrent.length), {
+          good: 90,
+          warn: 80,
+          higherIsBetter: true,
+        }),
         denominator: `${closedCurrent.length} resolved tickets`,
         drill: { to: "/analytics", label: "Closure detail" },
       }),
@@ -291,7 +345,11 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(closureEvidence.length, closedCurrent.length),
         target: "100%",
-        status: grade(pct(closureEvidence.length, closedCurrent.length), { good: 98, warn: 90, higherIsBetter: true }),
+        status: grade(pct(closureEvidence.length, closedCurrent.length), {
+          good: 98,
+          warn: 90,
+          higherIsBetter: true,
+        }),
         denominator: `${closedCurrent.length} resolved tickets`,
         drill: { to: "/oversight", label: "Needs review" },
       }),
@@ -302,7 +360,11 @@ export async function loadCommandCenter(
         value: pct(supervisorCaught.length, current.length),
         previous: pct(prior.filter((t) => t.supervisor_caught).length, prior.length),
         target: "≤ 10%",
-        status: grade(pct(supervisorCaught.length, current.length), { good: 10, warn: 20, higherIsBetter: false }),
+        status: grade(pct(supervisorCaught.length, current.length), {
+          good: 10,
+          warn: 20,
+          higherIsBetter: false,
+        }),
         denominator: `${current.length} tickets in window`,
         drill: { to: "/oversight", label: "Interventions" },
       }),
@@ -325,7 +387,9 @@ export async function loadCommandCenter(
   const vendorCurrent = vendorTickets.filter((t) => t.reported_at >= since);
   const visits = (visitsRes.data ?? []).filter((v) => onLiveTicket(v) && v.checked_in_at >= since);
   const ratings = (ratingsRes.data ?? []).filter((r) => onLiveTicket(r) && r.created_at >= since);
-  const priorRatings = (ratingsRes.data ?? []).filter((r) => onLiveTicket(r) && r.created_at < since);
+  const priorRatings = (ratingsRes.data ?? []).filter(
+    (r) => onLiveTicket(r) && r.created_at < since,
+  );
   const onTime = ratings.filter((r) => r.on_time).length;
   const evidenceComplete = ratings.filter((r) => r.photos_complete).length;
   const vendorReopen = ratings.filter((r) => r.reopened).length;
@@ -363,7 +427,11 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(vendorFirstTime, vendorCompleted),
         target: "≥ 90%",
-        status: grade(pct(vendorFirstTime, vendorCompleted), { good: 90, warn: 80, higherIsBetter: true }),
+        status: grade(pct(vendorFirstTime, vendorCompleted), {
+          good: 90,
+          warn: 80,
+          higherIsBetter: true,
+        }),
         denominator: `${vendorCompleted} vendor-completed tickets`,
         drill: { to: "/tickets", label: "Vendor work" },
       }),
@@ -373,7 +441,11 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(vendorReopen, ratings.length),
         target: "≤ 8%",
-        status: grade(pct(vendorReopen, ratings.length), { good: 8, warn: 15, higherIsBetter: false }),
+        status: grade(pct(vendorReopen, ratings.length), {
+          good: 8,
+          warn: 15,
+          higherIsBetter: false,
+        }),
         denominator: `${ratings.length} rated jobs · ${visits.length} site visits`,
         drill: { to: "/team", label: "Vendor scoreboard" },
       }),
@@ -383,7 +455,11 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(evidenceComplete, ratings.length),
         target: "100%",
-        status: grade(pct(evidenceComplete, ratings.length), { good: 98, warn: 90, higherIsBetter: true }),
+        status: grade(pct(evidenceComplete, ratings.length), {
+          good: 98,
+          warn: 90,
+          higherIsBetter: true,
+        }),
         denominator: `${ratings.length} rated jobs`,
         drill: { to: "/team", label: "Evidence gaps" },
       }),
@@ -424,9 +500,7 @@ export async function loadCommandCenter(
   // ---------- Homeowners ----------
   const reviews = reviewsRes.data ?? [];
   const awaiting = reviews.filter((r) => r.status === "awaiting_owner");
-  const aging = awaiting.filter(
-    (r) => r.respond_by && new Date(r.respond_by) < now,
-  );
+  const aging = awaiting.filter((r) => r.respond_by && new Date(r.respond_by) < now);
   const ownerImpacting = allTickets.filter(
     (t) => OPEN_STATUSES.includes(t.status) && t.category === "owner",
   );
@@ -436,7 +510,8 @@ export async function loadCommandCenter(
   ).length;
   const activePrograms = (programsRes.data ?? []).filter((p) => p.status === "active");
   const quietPrograms = activePrograms.filter(
-    (p) => !p.last_owner_activity_at || minutes(p.last_owner_activity_at, now.toISOString()) > 7 * 1440,
+    (p) =>
+      !p.last_owner_activity_at || minutes(p.last_owner_activity_at, now.toISOString()) > 7 * 1440,
   );
 
   const homeowners: KpiSection = {
@@ -470,7 +545,8 @@ export async function loadCommandCenter(
         unit: "count",
         value: ownerImpacting.length,
         target: "Trend down",
-        status: ownerImpacting.length === 0 ? "green" : ownerImpacting.length < 8 ? "yellow" : "red",
+        status:
+          ownerImpacting.length === 0 ? "green" : ownerImpacting.length < 8 ? "yellow" : "red",
         denominator: `${allTickets.filter((t) => t.category === "owner").length} owner tickets in window`,
         drill: { to: "/tickets", label: "Owner tickets" },
       }),
@@ -478,7 +554,10 @@ export async function loadCommandCenter(
         key: "owner_comm_timeliness",
         label: "Communication timeliness (≤ 1 h to send)",
         unit: "percent",
-        value: pct(deliveredOnTime, notifications.filter((n) => n.email_status !== "skipped").length),
+        value: pct(
+          deliveredOnTime,
+          notifications.filter((n) => n.email_status !== "skipped").length,
+        ),
         target: "≥ 95%",
         status: grade(
           pct(deliveredOnTime, notifications.filter((n) => n.email_status !== "skipped").length),
@@ -514,7 +593,8 @@ export async function loadCommandCenter(
   const tasks = tasksRes.data ?? [];
   const handoffs = handoffRes.data ?? [];
   const pipeline = properties.filter(
-    (p) => (p.lifecycle_status ?? "active_operations") !== "active_operations" &&
+    (p) =>
+      (p.lifecycle_status ?? "active_operations") !== "active_operations" &&
       (p.lifecycle_status ?? "") !== "offboarded",
   );
   const blockedTasks = tasks.filter((t) => t.status === "blocked" || (t.blocker ?? "").trim());
@@ -610,9 +690,14 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(requiredComplete, requiredTotal),
         target: "100% before handoff",
-        status: grade(pct(requiredComplete, requiredTotal), { good: 100, warn: 80, higherIsBetter: true }),
+        status: grade(pct(requiredComplete, requiredTotal), {
+          good: 100,
+          warn: 80,
+          higherIsBetter: true,
+        }),
         denominator: `${requiredTotal} handoff-blocking tasks`,
-        unavailable: requiredTotal === 0 ? "No handoff-blocking onboarding tasks recorded yet." : null,
+        unavailable:
+          requiredTotal === 0 ? "No handoff-blocking onboarding tasks recorded yet." : null,
         drill: { to: "/onboarding", label: "Checklist" },
       }),
       kpi({
@@ -631,9 +716,14 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(evidenceOk, evidenceNeeded),
         target: "100%",
-        status: grade(pct(evidenceOk, evidenceNeeded), { good: 100, warn: 85, higherIsBetter: true }),
+        status: grade(pct(evidenceOk, evidenceNeeded), {
+          good: 100,
+          warn: 85,
+          higherIsBetter: true,
+        }),
         denominator: `${evidenceNeeded} evidence-required tasks`,
-        unavailable: evidenceNeeded === 0 ? "No evidence-required onboarding tasks recorded yet." : null,
+        unavailable:
+          evidenceNeeded === 0 ? "No evidence-required onboarding tasks recorded yet." : null,
         drill: { to: "/onboarding", label: "Evidence" },
       }),
       kpi({
@@ -642,7 +732,11 @@ export async function loadCommandCenter(
         unit: "percent",
         value: pct(acceptedFirstPass.first, acceptedFirstPass.total),
         target: "≥ 80%",
-        status: grade(pct(acceptedFirstPass.first, acceptedFirstPass.total), { good: 80, warn: 60, higherIsBetter: true }),
+        status: grade(pct(acceptedFirstPass.first, acceptedFirstPass.total), {
+          good: 80,
+          warn: 60,
+          higherIsBetter: true,
+        }),
         denominator: `${acceptedFirstPass.total} properties reviewed · ${reviewed.length} reviews`,
         unavailable: acceptedFirstPass.total === 0 ? "No handoff has been reviewed yet." : null,
         drill: { to: "/onboarding", label: "Handoff queue" },
@@ -790,7 +884,9 @@ export async function loadCommandCenter(
     }));
   })();
 
-  const vendorIds = [...new Set(allTickets.map((t) => t.vendor_user_id).filter(Boolean))] as string[];
+  const vendorIds = [
+    ...new Set(allTickets.map((t) => t.vendor_user_id).filter(Boolean)),
+  ] as string[];
 
   return {
     generatedAt: now.toISOString(),

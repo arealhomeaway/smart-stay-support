@@ -9,7 +9,12 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { MAX_TRUSTED_ACCURACY_M, ON_SITE_RADIUS_M, distanceMeters, formatOnSite } from "@/lib/visits";
+import {
+  MAX_TRUSTED_ACCURACY_M,
+  ON_SITE_RADIUS_M,
+  distanceMeters,
+  formatOnSite,
+} from "@/lib/visits";
 
 type Client = SupabaseClient<Database>;
 
@@ -53,7 +58,11 @@ async function log(ticketId: string, authorId: string, body: string) {
 
 export async function checkIn(supabase: Client, userId: string, ticketId: string, fix: Fix) {
   const ticket = await loadJobForCaller(supabase, ticketId, userId);
-  const home = (ticket.properties ?? null) as { name: string; latitude: number | null; longitude: number | null } | null;
+  const home = (ticket.properties ?? null) as {
+    name: string;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
   const { distance, verified } = measure(fix, home);
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -112,7 +121,11 @@ export async function checkOut(
   input: { ticketId: string; fix: Fix; notes?: string },
 ) {
   const ticket = await loadJobForCaller(supabase, input.ticketId, userId);
-  const home = (ticket.properties ?? null) as { name: string; latitude: number | null; longitude: number | null } | null;
+  const home = (ticket.properties ?? null) as {
+    name: string;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
   const { distance, verified } = measure(input.fix, home);
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -147,7 +160,10 @@ export async function checkOut(
     .eq("id", open.id);
   if (error) throw error;
 
-  await supabaseAdmin.from("tickets").update({ vendor_status: "accepted" }).eq("id", input.ticketId);
+  await supabaseAdmin
+    .from("tickets")
+    .update({ vendor_status: "accepted" })
+    .eq("id", input.ticketId);
 
   await log(
     input.ticketId,

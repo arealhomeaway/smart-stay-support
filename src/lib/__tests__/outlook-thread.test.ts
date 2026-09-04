@@ -59,7 +59,9 @@ describe("a reply on a thread that already produced work", () => {
       entity_type: null,
       entity_id: null,
     });
-    expect(await conversationRecord(store.db, CONV, [reply.id, reply.internetMessageId])).toBeNull();
+    expect(
+      await conversationRecord(store.db, CONV, [reply.id, reply.internetMessageId]),
+    ).toBeNull();
   });
 
   it("a lead thread links back to the lead, not to a ticket", async () => {

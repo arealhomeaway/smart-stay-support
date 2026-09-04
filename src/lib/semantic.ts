@@ -20,12 +20,7 @@ export type Ownership = "team_a" | "team_b" | "leadership" | "vendor" | "owner" 
 export type WorkState = "new" | "active" | "waiting" | "blocked" | "done" | "info";
 
 export type ModuleKey =
-  | "operations"
-  | "onboarding"
-  | "owner"
-  | "approval"
-  | "coverage"
-  | "override";
+  "operations" | "onboarding" | "owner" | "approval" | "coverage" | "override";
 
 const OWNERSHIP_CHIP: Record<Ownership, string> = {
   team_a: "bg-team-a/10 text-team-a",
@@ -53,7 +48,6 @@ const MODULE_CHIP: Record<ModuleKey, string> = {
   coverage: "bg-module-coverage/12 text-module-coverage",
   override: "bg-module-override/14 text-module-override",
 };
-
 
 export function ownershipChip(kind: Ownership) {
   return OWNERSHIP_CHIP[kind];

@@ -59,7 +59,11 @@ export async function listAssignableBreezewayPeople(): Promise<BreezewayAssignee
         email: string | null;
       };
       const name = `${r.first_name ?? ""} ${r.last_name ?? ""}`.replace(/\s+/g, " ").trim();
-      return { id: r.breezeway_person_id, name: name || `Breezeway person ${r.breezeway_person_id}`, email: r.email };
+      return {
+        id: r.breezeway_person_id,
+        name: name || `Breezeway person ${r.breezeway_person_id}`,
+        email: r.email,
+      };
     })
     .filter((p) => Number.isFinite(p.id));
 
@@ -69,10 +73,14 @@ export async function listAssignableBreezewayPeople(): Promise<BreezewayAssignee
     const raw = await breezewayRequest<{ results?: PersonRow[] } | PersonRow[]>("/people");
     const list = Array.isArray(raw) ? raw : (raw?.results ?? []);
     rows = list
-      .filter((p): p is PersonRow & { id: number } => typeof p.id === "number" && p.active !== false)
+      .filter(
+        (p): p is PersonRow & { id: number } => typeof p.id === "number" && p.active !== false,
+      )
       .map((p) => ({
         id: p.id,
-        name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.replace(/\s+/g, " ").trim() || `Breezeway person ${p.id}`,
+        name:
+          `${p.first_name ?? ""} ${p.last_name ?? ""}`.replace(/\s+/g, " ").trim() ||
+          `Breezeway person ${p.id}`,
         email: p.email ?? null,
       }));
   }

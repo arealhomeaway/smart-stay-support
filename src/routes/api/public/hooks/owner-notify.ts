@@ -33,7 +33,6 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
             { status: 500 },
           );
         }
-
       },
     },
   },

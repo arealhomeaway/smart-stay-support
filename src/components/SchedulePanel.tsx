@@ -12,7 +12,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
-import { applyScheduleFn, previewScheduleFn, saveScheduleAnchorsFn } from "@/lib/onboarding.functions";
+import {
+  applyScheduleFn,
+  previewScheduleFn,
+  saveScheduleAnchorsFn,
+} from "@/lib/onboarding.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,8 +101,8 @@ export function SchedulePanel({
           Milestone dates
         </CardTitle>
         <CardDescription>
-          Planned closing, actual closing and actual access are recorded separately. Saving a date never moves a task
-          on its own — recalculation is previewed and confirmed.
+          Planned closing, actual closing and actual access are recorded separately. Saving a date
+          never moves a task on its own — recalculation is previewed and confirmed.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -139,7 +143,12 @@ export function SchedulePanel({
           <Button size="sm" disabled={!canEdit || save.isPending} onClick={() => save.mutate()}>
             Save dates
           </Button>
-          <Button size="sm" variant="outline" disabled={load.isPending} onClick={() => load.mutate()}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={load.isPending}
+            onClick={() => load.mutate()}
+          >
             Preview date changes
           </Button>
         </div>
@@ -148,12 +157,15 @@ export function SchedulePanel({
           <div className="rounded-md border border-border p-3">
             {preview.rows.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No task is anchored to a milestone date yet, so there is nothing to recalculate. Anchors and offsets
-                are recorded per task.
+                No task is anchored to a milestone date yet, so there is nothing to recalculate.
+                Anchors and offsets are recorded per task.
               </p>
             )}
             {preview.rows.map((r) => (
-              <div key={r.taskId} className="flex items-start gap-2 border-b border-border/50 py-2 last:border-0">
+              <div
+                key={r.taskId}
+                className="flex items-start gap-2 border-b border-border/50 py-2 last:border-0"
+              >
                 <Checkbox
                   checked={selected.includes(r.taskId)}
                   disabled={!canEdit || !r.changed}
@@ -163,8 +175,10 @@ export function SchedulePanel({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{r.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {r.currentDue ?? "no date"} → <span className="font-medium">{r.proposedDue}</span> ·{" "}
-                    {r.anchor.replace("_", " ")} {r.offsetDays >= 0 ? `+${r.offsetDays}` : r.offsetDays}d
+                    {r.currentDue ?? "no date"} →{" "}
+                    <span className="font-medium">{r.proposedDue}</span> ·{" "}
+                    {r.anchor.replace("_", " ")}{" "}
+                    {r.offsetDays >= 0 ? `+${r.offsetDays}` : r.offsetDays}d
                   </p>
                   {r.conflict && (
                     <Badge variant="outline" className="mt-1">
@@ -177,7 +191,8 @@ export function SchedulePanel({
             ))}
             {preview.skipped.length > 0 && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Preserved without change: {preview.skipped.map((s) => `${s.title} (${s.reason})`).join("; ")}
+                Preserved without change:{" "}
+                {preview.skipped.map((s) => `${s.title} (${s.reason})`).join("; ")}
               </p>
             )}
             {preview.rows.some((r) => r.changed) && (

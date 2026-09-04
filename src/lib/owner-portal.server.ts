@@ -82,7 +82,6 @@ export async function loadOwnerHomePreview(
 }
 
 async function loadOwnerHomeByProgram(supabase: Client, programId: string, preview = false) {
-
   const agg = await loadProgramAggregate(supabase, programId);
 
   const propertyIds = agg.properties.map((p) => p.propertyId);
@@ -122,7 +121,6 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     .select("code, awarded_at, trigger_rule, needs_review")
     .eq("program_id", agg.program.id)
     .order("awarded_at");
-
 
   return {
     linked: true as const,

@@ -84,10 +84,7 @@ async function keyMaterial() {
   const raw = process.env["CREDENTIAL_ENCRYPTION_KEY"];
   if (!raw) throw new Error("Credential storage is not configured.");
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
-  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, [
-    "encrypt",
-    "decrypt",
-  ]);
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
 function toB64(bytes: Uint8Array) {

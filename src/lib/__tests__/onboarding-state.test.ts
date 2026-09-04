@@ -137,10 +137,16 @@ describe("an accepted plan is locked", () => {
 
   it("marks work created after the lock as outside that plan", () => {
     expect(
-      isPostLock({ created_at: "2026-03-01T00:00:00.000Z", status: "open" }, "2026-02-01T00:00:00.000Z"),
+      isPostLock(
+        { created_at: "2026-03-01T00:00:00.000Z", status: "open" },
+        "2026-02-01T00:00:00.000Z",
+      ),
     ).toBe(true);
     expect(
-      isPostLock({ created_at: "2026-01-01T00:00:00.000Z", status: "open" }, "2026-02-01T00:00:00.000Z"),
+      isPostLock(
+        { created_at: "2026-01-01T00:00:00.000Z", status: "open" },
+        "2026-02-01T00:00:00.000Z",
+      ),
     ).toBe(false);
   });
 });
@@ -149,7 +155,15 @@ describe("the handoff gate explains itself", () => {
   it("blocks and names every failing condition", () => {
     const r = handoffReadiness(
       { property: property(), project: PROJECT, tasks: [task()], handoff: null },
-      [{ key: "open_work", label: "Open work", detail: "1 step is still open.", passed: false, blocking: true }],
+      [
+        {
+          key: "open_work",
+          label: "Open work",
+          detail: "1 step is still open.",
+          passed: false,
+          blocking: true,
+        },
+      ],
       { pendingFacts: 1, openFinancials: 2 },
     );
     expect(r.ready).toBe(false);
@@ -165,7 +179,15 @@ describe("the handoff gate explains itself", () => {
         tasks: [task({ status: "complete", completed_at: "2026-01-06T00:00:00.000Z" })],
         handoff: null,
       },
-      [{ key: "open_work", label: "Open work", detail: "All steps are complete.", passed: true, blocking: true }],
+      [
+        {
+          key: "open_work",
+          label: "Open work",
+          detail: "All steps are complete.",
+          passed: true,
+          blocking: true,
+        },
+      ],
       {},
     );
     expect(r.ready).toBe(true);

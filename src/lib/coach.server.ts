@@ -96,7 +96,9 @@ function contextBlock(catalog: Catalog) {
   if (catalog.history?.length) {
     lines.push("", "RECENT HISTORY AT THIS HOME:");
     for (const h of catalog.history) {
-      lines.push(`- [${h.priority.toUpperCase()}] ${h.title} (${h.category})${h.outcome ? ` → ${h.outcome}` : ""}`);
+      lines.push(
+        `- [${h.priority.toUpperCase()}] ${h.title} (${h.category})${h.outcome ? ` → ${h.outcome}` : ""}`,
+      );
     }
   }
   return lines.join("\n");
@@ -132,7 +134,8 @@ const JSON_SHAPE = `Reply with ONLY a JSON object, no prose and no code fence, i
 function parseGuidanceText(text: string, question: string): Guidance {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("The coach returned an unreadable answer. Try again.");
+  if (start === -1 || end === -1)
+    throw new Error("The coach returned an unreadable answer. Try again.");
   const raw = RawGuidanceSchema.parse(JSON.parse(text.slice(start, end + 1)));
   return normalizeGuidance(raw, question);
 }
@@ -147,7 +150,6 @@ export async function generateGuidance(question: string, catalog: Catalog): Prom
   });
   return parseGuidanceText(text, question);
 }
-
 
 export async function answerFollowUp(input: {
   question: string;

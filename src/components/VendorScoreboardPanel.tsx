@@ -21,8 +21,8 @@ export function VendorScoreboardPanel() {
           <Award className="size-4" /> Vendor scorecards
         </CardTitle>
         <CardDescription>
-          Internal view. Vendors only ever see their own points and an anonymous percentile — no names, no
-          leaderboard.
+          Internal view. Vendors only ever see their own points and an anonymous percentile — no
+          names, no leaderboard.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -30,7 +30,8 @@ export function VendorScoreboardPanel() {
           <Skeleton className="h-24 w-full" />
         ) : vendors.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No vendor logins yet. Set a partner to “Vendor” above, dispatch a job, then score it when it's done.
+            No vendor logins yet. Set a partner to “Vendor” above, dispatch a job, then score it
+            when it's done.
           </p>
         ) : (
           vendors.map((v) => (
@@ -39,10 +40,15 @@ export function VendorScoreboardPanel() {
               className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
             >
               <span className="font-medium">{v.name}</span>
-              <Badge variant={v.tier === "gold" ? "default" : "secondary"}>{TIER_LABEL[v.tier]}</Badge>
+              <Badge variant={v.tier === "gold" ? "default" : "secondary"}>
+                {TIER_LABEL[v.tier]}
+              </Badge>
               <span className="text-muted-foreground">
-                {v.ratedJobs} scored · {v.averageOverall !== null ? `${v.averageOverall.toFixed(1)}/5` : "—"} avg
-                {v.reopenCount > 0 ? ` · ${v.reopenCount} callback${v.reopenCount === 1 ? "" : "s"}` : ""}
+                {v.ratedJobs} scored ·{" "}
+                {v.averageOverall !== null ? `${v.averageOverall.toFixed(1)}/5` : "—"} avg
+                {v.reopenCount > 0
+                  ? ` · ${v.reopenCount} callback${v.reopenCount === 1 ? "" : "s"}`
+                  : ""}
               </span>
               <span className="ml-auto font-semibold">{v.points} pts</span>
             </div>

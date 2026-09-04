@@ -43,9 +43,7 @@ export function FinalReviewPanel({
     mutationFn: async (decision: "approve" | "return") =>
       recordFinalReviewFn({ data: { ticketId, decision, note: reviewNote || null } }),
     onSuccess: (_r, decision) => {
-      toast.success(
-        decision === "approve" ? "Approved and closed." : "Sent back for changes.",
-      );
+      toast.success(decision === "approve" ? "Approved and closed." : "Sent back for changes.");
       setReviewNote("");
       setMode("idle");
       void qc.invalidateQueries({ queryKey: ["ticket", ticketId] });
@@ -58,7 +56,6 @@ export function FinalReviewPanel({
   // "Changes needed" is a request, not a verdict. Once the work comes back
   // finished, the reviewer must be able to answer again.
   const decided = Boolean(result) && result !== "not_reviewed" && result !== "returned";
-
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-4">
@@ -76,7 +73,9 @@ export function FinalReviewPanel({
       </div>
 
       <p className="mt-2 text-sm text-muted-foreground">
-        {decided ? (note ?? finalReviewExplanation(requirement)) : finalReviewExplanation(requirement)}
+        {decided
+          ? (note ?? finalReviewExplanation(requirement))
+          : finalReviewExplanation(requirement)}
       </p>
 
       {!decided && requirement.required && requirement.reasons.length > 1 && (

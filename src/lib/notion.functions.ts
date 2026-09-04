@@ -3,7 +3,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { NotionProbe, SyncStatusRow } from "@/lib/notion";
 
 async function assertSupervisor(context: { supabase: { rpc: Function }; userId: string }) {
-  const { data } = await (context.supabase as any).rpc("is_supervisor", { _user_id: context.userId });
+  const { data } = await (context.supabase as any).rpc("is_supervisor", {
+    _user_id: context.userId,
+  });
   if (!data) throw new Error("Only supervisors and platform owners can manage integrations.");
 }
 
@@ -43,11 +45,12 @@ export const getNotionOverview = createServerFn({ method: "GET" })
     ]);
 
     const rows = links.data ?? [];
-    const lastSuccessAt = rows
-      .map((r) => r.last_synced_at)
-      .filter((v): v is string => Boolean(v))
-      .sort()
-      .at(-1) ?? null;
+    const lastSuccessAt =
+      rows
+        .map((r) => r.last_synced_at)
+        .filter((v): v is string => Boolean(v))
+        .sort()
+        .at(-1) ?? null;
 
     const status: SyncStatusRow = {
       system: "notion",

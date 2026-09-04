@@ -92,7 +92,9 @@ export function reservationColumns(
     reservation_arrival: dateOnly(snapshot.arrival),
     reservation_departure: dateOnly(snapshot.departure),
     reservation_guest_count:
-      typeof snapshot.guest_count === "number" && snapshot.guest_count > 0 ? snapshot.guest_count : null,
+      typeof snapshot.guest_count === "number" && snapshot.guest_count > 0
+        ? snapshot.guest_count
+        : null,
     reservation_url: snapshot.url ?? ownerRezBookingUrl(snapshot.booking_id),
     reservation_snapshot_at: now.toISOString(),
   };

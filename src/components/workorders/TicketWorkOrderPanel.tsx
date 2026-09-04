@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Chip } from "@/components/ui/page";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { usDate } from "@/lib/dates";
 import {
   Select,
   SelectContent,
@@ -66,6 +68,7 @@ type WorkOrderRow = WorkOrderLike & {
   service_category: string | null;
   scope: string | null;
   warranty_contact: string | null;
+  created_at?: string | null;
 };
 
 const EMERGENCY_OPTIONS = Object.keys(EMERGENCY_REASON_LABELS) as EmergencyReason[];
@@ -87,6 +90,13 @@ function bucketState(bucket: ReturnType<typeof workOrderBucket>) {
   if (bucket === "needs_action") return "blocked" as const;
   if (bucket === "permanent_pending" || bucket === "evidence_missing") return "active" as const;
   return "waiting" as const;
+}
+
+function bucketTone(bucket: ReturnType<typeof workOrderBucket>): StatusTone {
+  if (bucket === "closed") return "resolved";
+  if (bucket === "needs_action") return "escalated";
+  if (bucket === "permanent_pending" || bucket === "evidence_missing") return "progress";
+  return "waiting";
 }
 
 export function TicketWorkOrderPanel({
@@ -159,7 +169,9 @@ export function TicketWorkOrderPanel({
           quote_received_at: quote ? new Date().toISOString() : null,
           authority_level: draftVerdict.level,
           approval_status: draftVerdict.ownerApprovalRequired ? "pending" : "not_required",
-          approval_requested_at: draftVerdict.ownerApprovalRequired ? new Date().toISOString() : null,
+          approval_requested_at: draftVerdict.ownerApprovalRequired
+            ? new Date().toISOString()
+            : null,
           approval_requested_by: draftVerdict.ownerApprovalRequired ? userId : null,
           warranty_may_apply: draftHint.mayApply,
           warranty_kind: draftHint.kind,
@@ -208,9 +220,7 @@ export function TicketWorkOrderPanel({
     <Card>
       <CardHeader>
         <CardTitle>Send for repair</CardTitle>
-        <CardDescription>
-          The execution and cost record for this repair — authority, warranty and vendor commitments in one place.
-        </CardDescription>
+        <CardDescription>Cost, approval and vendor tracking for this repair.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {existing.map((wo) => {
@@ -220,26 +230,32 @@ export function TicketWorkOrderPanel({
           const advice = secondQuoteAdvice(wo);
           const blockers = closureBlockers(wo);
           return (
-            <div key={wo.id} className="space-y-2 rounded-md border px-3 py-2">
+            <div key={wo.id} className="space-y-2 rounded-lg bg-sunken px-3 py-2.5">
               <div className="flex flex-wrap items-center gap-2">
-                <Chip className={stateChip(bucketState(bucket))}>{BUCKET_LABELS[bucket]}</Chip>
+                <StatusBadge tone={bucketTone(bucket)}>{BUCKET_LABELS[bucket]}</StatusBadge>
                 <Chip>{PHASE_LABELS[wo.phase === "mitigation" ? "mitigation" : "permanent"]}</Chip>
                 <Chip>{STAGE_LABELS[derivedStage(wo)]}</Chip>
                 {wo.service_category ? <Chip>{wo.service_category}</Chip> : null}
+                {wo.created_at ? (
+                  <span className="text-[0.6875rem] text-muted-foreground">
+                    Opened {usDate(wo.created_at as string)}
+                  </span>
+                ) : null}
               </div>
 
               <p className="font-medium">{nextAction(wo)}</p>
               <p className="text-xs text-muted-foreground">{verdict.reason}</p>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="numeric text-xs text-muted-foreground">
                 Quote {money(wo.quote_amount as number | null)} · approved{" "}
-                {money(wo.approved_amount as number | null)} · final {money(wo.final_cost as number | null)}
+                {money(wo.approved_amount as number | null)} · final{" "}
+                {money(wo.final_cost as number | null)}
               </p>
 
               {wo.warranty_may_apply && !wo.warranty_override_reason ? (
-                <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-xs">
-                  Warranty may apply{wo.warranty_contact ? ` — ${wo.warranty_contact}` : ""}. Confirm coverage before
-                  committing to a paid repair.
+                <p className="rounded-md border border-amber/25 bg-amber/10 px-2 py-1 text-xs">
+                  Warranty may apply{wo.warranty_contact ? ` — ${wo.warranty_contact}` : ""}.
+                  Confirm coverage first.
                 </p>
               ) : null}
 
@@ -247,7 +263,9 @@ export function TicketWorkOrderPanel({
                 <p className="text-xs text-muted-foreground">{commitments.action}</p>
               ) : null}
 
-              {advice.recommended ? <p className="text-xs text-muted-foreground">{advice.reason}</p> : null}
+              {advice.recommended ? (
+                <p className="text-xs text-muted-foreground">{advice.reason}</p>
+              ) : null}
 
               {blockers.length && !wo.closed_at ? (
                 <p className="text-xs text-muted-foreground">Before closing: {blockers[0]}</p>
@@ -266,7 +284,9 @@ export function TicketWorkOrderPanel({
               <div className="space-y-1">
                 <Label className="text-xs">Phase</Label>
                 <Select value={phase} onValueChange={(v) => setPhase(v as WorkOrderPhase)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="permanent">{PHASE_LABELS.permanent}</SelectItem>
                     <SelectItem value="mitigation">{PHASE_LABELS.mitigation}</SelectItem>
@@ -276,10 +296,14 @@ export function TicketWorkOrderPanel({
               <div className="space-y-1">
                 <Label className="text-xs">Category</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger><SelectValue placeholder="Choose" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose" />
+                  </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -290,10 +314,14 @@ export function TicketWorkOrderPanel({
               <div className="space-y-1">
                 <Label className="text-xs">What makes this an emergency?</Label>
                 <Select value={emergency} onValueChange={(v) => setEmergency(v as EmergencyReason)}>
-                  <SelectTrigger><SelectValue placeholder="Choose the risk being contained" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose the risk being contained" />
+                  </SelectTrigger>
                   <SelectContent>
                     {EMERGENCY_OPTIONS.map((r) => (
-                      <SelectItem key={r} value={r}>{EMERGENCY_REASON_LABELS[r]}</SelectItem>
+                      <SelectItem key={r} value={r}>
+                        {EMERGENCY_REASON_LABELS[r]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -301,7 +329,9 @@ export function TicketWorkOrderPanel({
             ) : null}
 
             <div className="space-y-1">
-              <Label className="text-xs" htmlFor="wo-scope">Scope of work</Label>
+              <Label className="text-xs" htmlFor="wo-scope">
+                Scope of work
+              </Label>
               <Textarea
                 id="wo-scope"
                 rows={2}
@@ -312,23 +342,37 @@ export function TicketWorkOrderPanel({
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs" htmlFor="wo-quote">Quote amount (leave blank if not quoted yet)</Label>
-              <Input id="wo-quote" type="number" value={quote} onChange={(e) => setQuote(e.target.value)} />
+              <Label className="text-xs" htmlFor="wo-quote">
+                Quote amount (leave blank if not quoted yet)
+              </Label>
+              <Input
+                id="wo-quote"
+                type="number"
+                value={quote}
+                onChange={(e) => setQuote(e.target.value)}
+              />
             </div>
 
             <div className="rounded-md border bg-muted/40 p-3">
               <p className="text-sm font-medium">{draftVerdict.label}</p>
               <p className="text-xs text-muted-foreground">{draftVerdict.reason}</p>
               {draftHint.mayApply ? (
-                <p className="mt-1 text-xs text-muted-foreground">Warranty may apply — {draftHint.reason}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Warranty may apply — {draftHint.reason}
+                </p>
               ) : null}
             </div>
 
             <div className="flex gap-2">
-              <Button disabled={create.isPending || blockedByEmergency} onClick={() => create.mutate()}>
+              <Button
+                disabled={create.isPending || blockedByEmergency}
+                onClick={() => create.mutate()}
+              >
                 Open work order
               </Button>
-              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
             </div>
           </div>
         )}

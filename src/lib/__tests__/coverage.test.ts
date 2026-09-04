@@ -42,7 +42,11 @@ describe("coverageNow", () => {
   });
 
   it("reports not configured when the business has not set hours", () => {
-    const state = coverageNow({ ...CFG, after_hours_start_minute: null, after_hours_end_minute: null });
+    const state = coverageNow({
+      ...CFG,
+      after_hours_start_minute: null,
+      after_hours_end_minute: null,
+    });
     expect(state.configured).toBe(false);
     expect(state.afterHours).toBe(false);
     expect(windowLabel({ ...CFG, after_hours_start_minute: null })).toBeNull();

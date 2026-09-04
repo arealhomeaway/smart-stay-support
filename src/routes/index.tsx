@@ -7,7 +7,6 @@ import { publicPortals } from "@/lib/portals";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-arha-property.jpg";
 
-
 const TITLE = "Resolve — ARHA's Central Operating Hub";
 const DESCRIPTION =
   "Keep Calm. Check Resolve. Tickets, properties, approvals and answers for the A Real Home Away team — finally in one place.";
@@ -107,7 +106,6 @@ function Overview() {
               Sign in
             </Link>
           )}
-
         </div>
       </header>
 
@@ -154,7 +152,8 @@ function Overview() {
           <p className="mt-3 max-w-3xl text-muted-foreground">
             Someone always knew where it was &mdash; in a chat, a spreadsheet, a vendor tool, or
             somebody&rsquo;s inbox. Great, unless that someone was off that day. Now it&rsquo;s
-            Resolve: every team works in its own portal, and the whole company reads the same record.
+            Resolve: every team works in its own portal, and the whole company reads the same
+            record.
           </p>
           <ul className="mt-8 grid gap-6 sm:grid-cols-2">
             {pillars.map((p) => (
@@ -197,7 +196,11 @@ function Overview() {
           </p>
         </section>
 
-        <section id="portals" aria-labelledby="portals-heading" className="border-t border-border py-14">
+        <section
+          id="portals"
+          aria-labelledby="portals-heading"
+          className="border-t border-border py-14"
+        >
           <h2 id="portals-heading" className="text-2xl font-semibold">
             Pick your lane.
           </h2>

@@ -30,7 +30,9 @@ export type EnrichmentResult = {
 async function isSupervisor(
   supabase: {
     from: (t: string) => {
-      select: (c: string) => { eq: (a: string, b: string) => Promise<{ data: { role: string }[] | null }> };
+      select: (c: string) => {
+        eq: (a: string, b: string) => Promise<{ data: { role: string }[] | null }>;
+      };
     };
   },
   userId: string,
@@ -45,11 +47,15 @@ export const syncPropertyEnrichment = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<EnrichmentResult> => {
     const { supabase, userId } = context;
     if (!(await isSupervisor(supabase as never, userId))) {
-      return { ok: false, message: "Only supervisors and administrators can refresh property information." };
+      return {
+        ok: false,
+        message: "Only supervisors and administrators can refresh property information.",
+      };
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { planEnrichment, listDetailedListings } = await import("@/lib/property-enrichment.server");
+    const { planEnrichment, listDetailedListings } =
+      await import("@/lib/property-enrichment.server");
     const { listOwnerRezOwners } = await import("@/lib/owner-directory.server");
 
     const { data: properties, error } = await supabaseAdmin
@@ -73,12 +79,10 @@ export const syncPropertyEnrichment = createServerFn({ method: "POST" })
     // 1. Owner records — one row per real owner, reused across their homes.
     const ownerIdBySource = new Map<string, string>();
     if (plan.owners.length) {
-      const { error: ownerError } = await supabaseAdmin
-        .from("property_owners")
-        .upsert(
-          plan.owners.map((o) => ({ ...o, synced_at: new Date().toISOString() })),
-          { onConflict: "source,source_owner_id" },
-        );
+      const { error: ownerError } = await supabaseAdmin.from("property_owners").upsert(
+        plan.owners.map((o) => ({ ...o, synced_at: new Date().toISOString() })),
+        { onConflict: "source,source_owner_id" },
+      );
       if (ownerError) return { ok: false, message: ownerError.message };
       const { data: saved } = await supabaseAdmin
         .from("property_owners")

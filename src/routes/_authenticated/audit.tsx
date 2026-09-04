@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RequireCapability } from "@/components/RequireCapability";
+import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { getAuditLog } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/audit")({
@@ -50,14 +50,11 @@ function AuditPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Controls</p>
-        <h1 className="font-display text-3xl font-semibold">Audit history</h1>
-        <p className="max-w-3xl text-sm text-muted-foreground">
-          Append-only. Nothing here can be edited or deleted — role changes, lifecycle moves, handoff
-          decisions and material record edits are recorded with the person, the time and the reason.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Controls"
+        title="Audit history"
+        description="Append-only record of who changed what, when and why. Nothing here can be edited or deleted."
+      />
 
       <Input
         value={filter}
@@ -66,30 +63,36 @@ function AuditPage() {
         className="max-w-md"
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Recent activity</CardTitle>
-          <CardDescription>{entries.length} entries</CardDescription>
-        </CardHeader>
-        <CardContent className="divide-y">
-          {entries.map((e) => (
-            <div key={e.id} className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
-              <div className="space-y-1">
-                <p className="font-medium">
-                  {e.actor} · <span className="font-normal">{e.action.replace(/_/g, " ")}</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {e.entity_type}
-                  {e.entity_label ? ` — ${e.entity_label}` : ""}
-                </p>
-                {e.reason && <p className="text-xs italic text-muted-foreground">Reason: {e.reason}</p>}
+      <SectionCard title="Recent activity" description={`${entries.length} entries`}>
+        {!entries.length ? (
+          <EmptyState title="Nothing recorded yet" />
+        ) : (
+          <div className="divide-y">
+            {entries.map((e) => (
+              <div
+                key={e.id}
+                className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm"
+              >
+                <div className="space-y-1">
+                  <p className="font-medium">
+                    {e.actor} · <span className="font-normal">{e.action.replace(/_/g, " ")}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {e.entity_type}
+                    {e.entity_label ? ` — ${e.entity_label}` : ""}
+                  </p>
+                  {e.reason && (
+                    <p className="text-xs italic text-muted-foreground">Reason: {e.reason}</p>
+                  )}
+                </div>
+                <StatusBadge tone="closed">
+                  {new Date(e.created_at as string).toLocaleString()}
+                </StatusBadge>
               </div>
-              <Badge variant="outline">{new Date(e.created_at as string).toLocaleString()}</Badge>
-            </div>
-          ))}
-          {!entries.length && <p className="py-3 text-sm text-muted-foreground">Nothing recorded yet.</p>}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        )}
+      </SectionCard>
     </div>
   );
 }

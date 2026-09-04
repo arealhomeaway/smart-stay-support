@@ -76,7 +76,11 @@ export const askCoachFollowUp = createServerFn({ method: "POST" })
       catalog,
     });
 
-    const nextHistory = [...history, { role: "user", content: data.question }, { role: "assistant", content: answer }];
+    const nextHistory = [
+      ...history,
+      { role: "user", content: data.question },
+      { role: "assistant", content: answer },
+    ];
     await supabase.from("coach_sessions").update({ follow_ups: nextHistory }).eq("id", session.id);
 
     return { answer, history: nextHistory };

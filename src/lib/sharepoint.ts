@@ -25,5 +25,4 @@ export const SHAREPOINT_SCOPES = [
 export const REQUIRED_SHAREPOINT_IDENTITY = "resolve.integration@arealhomeaway.com";
 
 /** The ARHA Resolve site the site-level grant covers. */
-export const ARHA_RESOLVE_SITE_PATH =
-  "/sites/arealhomeaway.sharepoint.com:/sites/ARHAResolve";
+export const ARHA_RESOLVE_SITE_PATH = "/sites/arealhomeaway.sharepoint.com:/sites/ARHAResolve";

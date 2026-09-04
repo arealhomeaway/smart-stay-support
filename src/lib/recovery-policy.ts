@@ -131,7 +131,8 @@ export const SUPERVISOR_TRIGGER_REASONS: Record<SupervisorTrigger, string> = {
     "Supervisor escalation required — guest, vendor and team information conflict.",
   hostile_conversation:
     "Supervisor escalation required — the guest conversation has become significantly hostile.",
-  missing_closure_evidence: "Supervisor escalation required — required closure evidence is missing.",
+  missing_closure_evidence:
+    "Supervisor escalation required — required closure evidence is missing.",
   reopened_issue: "Supervisor escalation required — a previously resolved issue has reopened.",
 };
 

@@ -17,7 +17,8 @@ export function SupervisorOnly({ children }: { children: ReactNode }) {
         <ShieldAlert className="mx-auto size-8 text-muted-foreground" />
         <h1 className="font-display text-xl font-semibold">Supervisor access only</h1>
         <p className="text-sm text-muted-foreground">
-          This area is limited to supervisors and leadership. If you need it, ask a manager to update your access.
+          This area is limited to supervisors and leadership. If you need it, ask a manager to
+          update your access.
         </p>
         <Button asChild variant="outline">
           <Link to="/dashboard">Back to dashboard</Link>

@@ -4,7 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { GATE_STEPS, gateLabel } from "@/lib/onboarding";
 
 export type HandoffRow = {
@@ -53,14 +59,20 @@ export function HandoffGatePanel({
   propertyName: string;
   canReview: boolean;
   disabled: boolean;
-  onDecision: (input: { decision: "accepted" | "returned"; corrections: string; exceptionReason?: string }) => void;
+  onDecision: (input: {
+    decision: "accepted" | "returned";
+    corrections: string;
+    exceptionReason?: string;
+  }) => void;
 }) {
   const step = handoff.gate_step ?? "kati_review";
   const order = GATE_STEPS.map((s) => s.value as string);
   const currentIndex = order.indexOf(step);
   const history = reviews.filter((r) => r.handoff_id === handoff.id);
   const nameOf = (id: string | null) =>
-    people.find((p) => p.id === id)?.full_name || people.find((p) => p.id === id)?.email || "Reviewer";
+    people.find((p) => p.id === id)?.full_name ||
+    people.find((p) => p.id === id)?.email ||
+    "Reviewer";
   const exceptions = Array.isArray(handoff.exceptions)
     ? (handoff.exceptions as { step: string; reason: string; at: string }[])
     : [];
@@ -82,14 +94,17 @@ export function HandoffGatePanel({
         <ol className="space-y-2">
           {GATE_STEPS.filter((s) => s.value !== "complete").map((s, i) => {
             const done = handoff.status === "accepted" || i < currentIndex;
-            const open = handoff.status === "requested" || handoff.status === "accepted_pending_live";
+            const open =
+              handoff.status === "requested" || handoff.status === "accepted_pending_live";
             const active = i === currentIndex && open;
             return (
               <li key={s.value} className="flex items-start gap-3 rounded-md border p-3 text-sm">
                 {done ? (
                   <CheckCircle2 className="mt-0.5 size-4 text-emerald-600" />
                 ) : (
-                  <Circle className={`mt-0.5 size-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                  <Circle
+                    className={`mt-0.5 size-4 ${active ? "text-primary" : "text-muted-foreground"}`}
+                  />
                 )}
                 <div className="flex-1">
                   <p className="font-medium">{s.label}</p>
@@ -112,29 +127,32 @@ export function HandoffGatePanel({
           </div>
         )}
 
-        {(handoff.status === "requested" || handoff.status === "accepted_pending_live") && canReview && (
-          <div className="flex flex-wrap gap-2">
-            <ApproveDialog
-              step={step}
-              disabled={disabled}
-              onApprove={(note, exceptionReason) =>
-                onDecision({
-                  decision: "accepted",
-                  corrections: note,
-                  ...(exceptionReason ? { exceptionReason } : {}),
-                })
-              }
-            />
-            <ReturnDialog
-              disabled={disabled}
-              onReturn={(corrections) => onDecision({ decision: "returned", corrections })}
-            />
-          </div>
-        )}
+        {(handoff.status === "requested" || handoff.status === "accepted_pending_live") &&
+          canReview && (
+            <div className="flex flex-wrap gap-2">
+              <ApproveDialog
+                step={step}
+                disabled={disabled}
+                onApprove={(note, exceptionReason) =>
+                  onDecision({
+                    decision: "accepted",
+                    corrections: note,
+                    ...(exceptionReason ? { exceptionReason } : {}),
+                  })
+                }
+              />
+              <ReturnDialog
+                disabled={disabled}
+                onReturn={(corrections) => onDecision({ decision: "returned", corrections })}
+              />
+            </div>
+          )}
 
         {history.length > 0 && (
           <div className="space-y-1 border-t pt-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">History</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              History
+            </p>
             {history.map((h) => (
               <p key={h.id} className="text-xs text-muted-foreground">
                 {new Date(h.created_at).toLocaleString()} · {gateLabel(h.step)} ·{" "}
@@ -175,7 +193,12 @@ function ApproveDialog({
           <DialogTitle>Approve {gateLabel(step).toLowerCase()}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Review note (optional)" />
+          <Textarea
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Review note (optional)"
+          />
           <Textarea
             rows={2}
             value={exception}
@@ -199,7 +222,13 @@ function ApproveDialog({
   );
 }
 
-function ReturnDialog({ disabled, onReturn }: { disabled: boolean; onReturn: (corrections: string) => void }) {
+function ReturnDialog({
+  disabled,
+  onReturn,
+}: {
+  disabled: boolean;
+  onReturn: (corrections: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [corrections, setCorrections] = useState("");
 

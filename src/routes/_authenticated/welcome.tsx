@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, ClipboardList, ListChecks, ShieldAlert, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, SectionBand } from "@/components/ui/page";
 import walkthrough from "@/assets/resolve-executive-walkthrough.mp4.asset.json";
 
 export const Route = createFileRoute("/_authenticated/welcome")({
@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_authenticated/welcome")({
       { property: "og:title", content: "How Resolve Works | ARHA Coordinator Training" },
       {
         property: "og:description",
-        content: "A 65-second executive walkthrough of intake, inbound sync, triage, playbook enforcement, handoffs and oversight in Resolve.",
+        content:
+          "A 65-second executive walkthrough of intake, inbound sync, triage, playbook enforcement, handoffs and oversight in Resolve.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -66,14 +67,11 @@ const basics = [
 function WelcomePage() {
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Start here</p>
-        <h1 className="font-display text-3xl font-semibold">How Resolve works</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Watch the walkthrough, then take the guided tour inside the app. Anyone new to the coordinator seat should do
-          both before their first shift.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Start here"
+        title="How Resolve works"
+        description="Watch the walkthrough, then take the guided tour inside the app. Do both before your first shift."
+      />
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <video
@@ -102,33 +100,36 @@ function WelcomePage() {
 
       <section className="grid gap-4 md:grid-cols-2">
         {basics.map((b) => (
-          <Card key={b.title}>
-            <CardHeader className="flex-row items-start gap-3 space-y-0">
-              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-secondary text-secondary-foreground">
-                <b.icon className="size-4" />
-              </span>
-              <div>
-                <CardTitle className="text-base">{b.title}</CardTitle>
-                <CardDescription className="mt-1 leading-relaxed">{b.body}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="ghost" size="sm" className="px-0 hover:bg-transparent hover:underline">
+          <div
+            key={b.title}
+            className="flex items-start gap-3 rounded-lg border border-border bg-card p-4"
+          >
+            <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-secondary text-secondary-foreground">
+              <b.icon className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-base font-semibold">{b.title}</p>
+              <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                {b.body}
+              </p>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="-ml-3 mt-1 px-3 hover:bg-transparent hover:underline"
+              >
                 <Link to={b.to}>{b.cta} →</Link>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </section>
 
-      <section className="rounded-xl border border-border bg-secondary/40 p-6">
-        <h2 className="font-display text-xl font-semibold">The rule behind all of it</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Common sense has to be written down to be reliable. If a coordinator or a vendor has to remember a step, the
-          step will eventually be missed — so Resolve puts it in the playbook, on the clock, and in front of the person
-          who owns the ticket.
-        </p>
-      </section>
+      <SectionBand title="The rule behind all of it" />
+      <p className="-mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+        If a step has to be remembered, it will eventually be missed. So Resolve writes it into the
+        playbook, on the clock, in front of the person who owns the ticket.
+      </p>
     </div>
   );
 }

@@ -7,15 +7,13 @@ import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTea
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Chip,
-  EmptyState,
-  LoadingRows,
-  PageHeader,
-  PriorityRail,
-  SegmentedControl,
-} from "@/components/ui/page";
-import { ownershipChip, stateChip, ticketState } from "@/lib/semantic";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SlidersHorizontal } from "lucide-react";
+import { Chip, EmptyState, LoadingRows, PageHeader, SegmentedControl } from "@/components/ui/page";
+import { StatusBadge, ticketTone } from "@/components/ui/status";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { ownershipChip } from "@/lib/semantic";
+import { usDate } from "@/lib/dates";
 
 import {
   OPEN_STATUSES,
@@ -180,7 +178,6 @@ function TicketsPage() {
         }
       />
 
-
       {demoMode && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">
           <span className="font-medium">Demo data.</span> These tickets are seeded examples. They
@@ -200,22 +197,11 @@ function TicketsPage() {
           }))}
         />
 
-        <SegmentedControl
-          ariaLabel="Filter by priority"
-          value={priority}
-          onChange={setPriority}
-          options={["all", ...PRIORITIES.map((p) => p.value)].map((p) => ({
-            value: p,
-            label: p === "all" ? "All" : p.toUpperCase(),
-          }))}
-        />
-
-        <Input
-          placeholder="Search reference, title, guest, property, work type, owner…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search tickets"
-          className="w-full max-w-sm sm:ml-auto sm:w-auto"
+        <FilterPopover
+          priority={priority}
+          setPriority={setPriority}
+          search={search}
+          setSearch={setSearch}
         />
       </div>
 
@@ -232,80 +218,187 @@ function TicketsPage() {
         />
       ) : (
         <div className="space-y-2">
-          {tickets.map((t) => {
-            const sla = slaState(t);
-            const live =
-              sla.response?.met === false
-                ? sla.response
-                : sla.action?.met === false
-                  ? sla.action
-                  : null;
-            const ownerId = currentOwnerId(t);
-            return (
-              <Link
-                key={t.id}
-                to="/tickets/$ticketId"
-                params={{ ticketId: t.id }}
-                search={originSearch}
-                className="surface-row relative block py-3 pl-5 pr-4"
-              >
-                <PriorityRail priority={t.priority} />
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="numeric text-xs text-muted-foreground">#{t.ref}</span>
-                  <span className="font-medium">{t.title}</span>
-                  <Badge variant="outline" className={priorityTone(t.priority)}>
-                    {priorityMeta(t.priority).short}
-                  </Badge>
-                  <Chip className={stateChip(ticketState(t.status))}>
-                    {labelFor(STATUSES, t.status)}
-                  </Chip>
-                  {sla.escalation && (
-                    <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-                      Escalated
-                    </Badge>
-                  )}
-                  {t.handoff_status === "pending" && (
-                    <Badge variant="outline" className="border-info/40 bg-info/10 text-info">
-                      Handoff pending
-                    </Badge>
-                  )}
-                  {t.is_demo && (
-                    <Badge variant="outline" className="border-warning/40 bg-warning/10">
-                      Demo
-                    </Badge>
-                  )}
-                  <span className="numeric ml-auto text-sm text-muted-foreground">
-                    {live ? (
-                      <span className={live.breached ? "font-medium text-danger" : ""}>
-                        {live.label}
-                      </span>
-                    ) : (
-                      relativeTime(t.reported_at)
-                    )}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
-                  {t.work_types?.name ?? t.category} ·{" "}
-                  {ownerId ? (
-                    <span className="font-medium text-foreground">
-                      {displayName(people.get(ownerId))}
-                    </span>
-                  ) : (
-                    <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
-                  )}
-                  {" · "}
-                  {labelFor(SOURCE_CHANNELS, t.source_channel)}
-                  {t.guest_name ? ` · Guest: ${t.guest_name}` : ""}
-                  {!OPEN_STATUSES.includes(t.status) && t.resolved_at
-                    ? ` · closed ${relativeTime(t.resolved_at)}`
-                    : ""}
-                </p>
-              </Link>
-            );
-          })}
+          {tickets.map((t) => (
+            <TicketWorkCard
+              key={t.id}
+              t={t}
+              ownerName={
+                currentOwnerId(t) ? displayName(people.get(currentOwnerId(t) ?? "")) : null
+              }
+              originSearch={originSearch}
+            />
+          ))}
         </div>
       )}
     </div>
+  );
+}
+
+/** Consolidated priority + search behind one control, with a live summary. */
+function FilterPopover({
+  priority,
+  setPriority,
+  search,
+  setSearch,
+}: {
+  priority: string;
+  setPriority: (v: string) => void;
+  search: string;
+  setSearch: (v: string) => void;
+}) {
+  const activeCount = (priority !== "all" ? 1 : 0) + (search.trim() ? 1 : 0);
+  const summary = [
+    priority !== "all" ? priority.toUpperCase() : null,
+    search.trim() ? `"${search.trim()}"` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <div className="flex items-center gap-2 sm:ml-auto">
+      {summary && <span className="text-sm text-muted-foreground">{summary}</span>}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <SlidersHorizontal className="size-3.5" />
+            Filter
+            {activeCount > 0 && (
+              <Badge
+                variant="outline"
+                className="ml-1 border-primary/40 bg-primary/10 text-primary"
+              >
+                {activeCount}
+              </Badge>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-80 space-y-4">
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Priority</p>
+            <SegmentedControl
+              ariaLabel="Filter by priority"
+              value={priority}
+              onChange={setPriority}
+              options={["all", ...PRIORITIES.map((p) => p.value)].map((p) => ({
+                value: p,
+                label: p === "all" ? "All" : p.toUpperCase(),
+              }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Search</p>
+            <Input
+              placeholder="Reference, title, guest, property, work type, owner…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search tickets"
+            />
+          </div>
+          {activeCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                setPriority("all");
+                setSearch("");
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+/** What should happen next, in plain English — the reason this card is here. */
+function nextActionLabel(t: {
+  status: string;
+  priority: string;
+  acknowledged_at: string | null;
+  action_started_at: string | null;
+  handoff_status?: string | null;
+}) {
+  if (!t.acknowledged_at) return t.priority === "p1" ? "Acknowledge now" : "Acknowledge";
+  if (t.handoff_status === "pending") return "Accept handoff";
+  if (!t.action_started_at) return "Start work";
+  if (t.status === "waiting") return "Follow up";
+  if (t.status === "awaiting_guest") return "Awaiting guest reply";
+  if (t.status === "resolved") return "Confirm closure";
+  return "Continue work";
+}
+
+function TicketWorkCard({
+  t,
+  ownerName,
+  originSearch,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+  ownerName: string | null;
+  originSearch: { from: string };
+}) {
+  const sla = slaState(t);
+  const live =
+    sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
+
+  return (
+    <Link
+      to="/tickets/$ticketId"
+      params={{ ticketId: t.id }}
+      search={originSearch}
+      className="surface-row flex items-start gap-3 py-3 pl-4 pr-4"
+    >
+      <PropertyPhoto
+        url={t.properties?.primary_photo_url}
+        name={t.properties?.nickname ?? t.properties?.name}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="numeric text-xs text-muted-foreground">#{t.ref}</span>
+          <span className="truncate font-medium">{t.title}</span>
+          <Badge variant="outline" className={priorityTone(t.priority)}>
+            {priorityMeta(t.priority).short}
+          </Badge>
+          <StatusBadge tone={ticketTone(t.status)}>{labelFor(STATUSES, t.status)}</StatusBadge>
+          {sla.escalation && (
+            <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
+              Escalated
+            </Badge>
+          )}
+          {t.is_demo && (
+            <Badge variant="outline" className="border-warning/40 bg-warning/10">
+              Demo
+            </Badge>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
+          {t.work_types?.name ?? t.category}
+        </p>
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm">
+          <span className="font-medium text-primary">{nextActionLabel(t)}</span>
+          <span className="text-muted-foreground">·</span>
+          {ownerName ? (
+            <span className="text-foreground">{ownerName}</span>
+          ) : (
+            <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
+          )}
+        </p>
+      </div>
+      <div className="shrink-0 text-right text-sm text-muted-foreground">
+        {live ? (
+          <span className={"numeric " + (live.breached ? "font-medium text-danger" : "")}>
+            {live.label}
+          </span>
+        ) : !OPEN_STATUSES.includes(t.status) && t.resolved_at ? (
+          <span>Closed {usDate(t.resolved_at)}</span>
+        ) : (
+          <span>Reported {usDate(t.reported_at)}</span>
+        )}
+      </div>
+    </Link>
   );
 }

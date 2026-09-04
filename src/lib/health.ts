@@ -73,7 +73,8 @@ function readingFor(score: number | null, criticals: number): string {
     return "A critical threshold has been breached. Treat the exceptions below as the priority regardless of the average.";
   }
   if (score >= 85) return "Healthy. Standards are being met across the departments we can measure.";
-  if (score >= 70) return "Steady, with soft spots. A few measures are off target and worth a look this week.";
+  if (score >= 70)
+    return "Steady, with soft spots. A few measures are off target and worth a look this week.";
   if (score >= 60) return "Strained. Several measures are off target at the same time.";
   return "Off standard. Multiple departments are below their thresholds right now.";
 }
@@ -105,7 +106,8 @@ export function buildCompanyHealth(data: CommandCenter): CompanyHealth {
       scored,
       missing,
       topRisk: worst && worst.status !== "green" ? worst : null,
-      attentionCount: section.kpis.filter((k) => k.status === "red" || k.status === "yellow").length,
+      attentionCount: section.kpis.filter((k) => k.status === "red" || k.status === "yellow")
+        .length,
       coverage: section.kpis.length > 0 ? scored.length / section.kpis.length : 0,
     };
   });
@@ -124,7 +126,8 @@ export function buildCompanyHealth(data: CommandCenter): CompanyHealth {
 
   return {
     score,
-    status: criticalBreaches.length > 0 && statusFor(score) === "green" ? "yellow" : statusFor(score),
+    status:
+      criticalBreaches.length > 0 && statusFor(score) === "green" ? "yellow" : statusFor(score),
     reading: readingFor(score, criticalBreaches.length),
     // No approved weighting table exists yet, so every department counts equally.
     provisional: true,

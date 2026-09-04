@@ -93,7 +93,6 @@ export async function activeOwnerLinks(
     });
   }
 
-
   return map;
 }
 

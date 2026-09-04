@@ -152,7 +152,6 @@ export function TaskDrawer({
     setReopenReason("");
   }, [task?.id, task?.evidence_note, task?.due_on]);
 
-
   if (!task) return null;
 
   const view = viewTask(task, tasks, release);
@@ -514,7 +513,6 @@ export function TaskDrawer({
               )}
             </>
           )}
-
 
           <Separator />
 

@@ -90,9 +90,7 @@ export const recordFinalReviewFn = createServerFn({ method: "POST" })
       kind: "status",
       event_type: "final_review_approved",
       internal: false,
-      body: data.note
-        ? `Reviewed and closed — ${data.note}`
-        : "Reviewed and closed.",
+      body: data.note ? `Reviewed and closed — ${data.note}` : "Reviewed and closed.",
     });
 
     return { ok: true as const, decision: "approve" as const };

@@ -77,8 +77,16 @@ export const ROUTINE_CONFIG: Record<RoutineKind, RoutineConfig> = {
     purpose: "Review a finished departure clean and either approve it or flag what needs fixing.",
     dueNoun: "Review by",
     steps: [
-      { id: "photos", prompt: "Photos match a finished clean", hint: "Kitchen, bathrooms, beds, floors, trash." },
-      { id: "presentation", prompt: "Presentation is guest-ready", hint: "Staging, linens, towels, welcome items." },
+      {
+        id: "photos",
+        prompt: "Photos match a finished clean",
+        hint: "Kitchen, bathrooms, beds, floors, trash.",
+      },
+      {
+        id: "presentation",
+        prompt: "Presentation is guest-ready",
+        hint: "Staging, linens, towels, welcome items.",
+      },
       { id: "damage", prompt: "No damage or missing items reported" },
       { id: "supplies", prompt: "Consumables and supplies restocked" },
     ],
@@ -99,7 +107,11 @@ export const ROUTINE_CONFIG: Record<RoutineKind, RoutineConfig> = {
     dueNoun: "Respond by",
     steps: [
       { id: "read", prompt: "Read the full review and the stay history" },
-      { id: "respond", prompt: "Reply to the guest publicly or privately", hint: "Match the tone to the stay." },
+      {
+        id: "respond",
+        prompt: "Reply to the guest publicly or privately",
+        hint: "Match the tone to the stay.",
+      },
       { id: "pattern", prompt: "Check whether this is a repeat issue at the home" },
     ],
     outcomes: ["looks_good", "needs_follow_up", "not_applicable"],
@@ -114,12 +126,17 @@ export const ROUTINE_CONFIG: Record<RoutineKind, RoutineConfig> = {
     runLabel: "Run a checkout",
     team: "guest_experience",
     teamLabel: "Guest Experience & Reservations",
-    purpose: "A short post-stay pass: confirm the guest is out, capture anything left behind or broken.",
+    purpose:
+      "A short post-stay pass: confirm the guest is out, capture anything left behind or broken.",
     dueNoun: "Complete by",
     steps: [
       { id: "departed", prompt: "Guest has departed and access is secure" },
       { id: "condition", prompt: "Nothing obviously damaged or missing" },
-      { id: "left_behind", prompt: "No belongings left behind", hint: "If there are, note them and tell the guest." },
+      {
+        id: "left_behind",
+        prompt: "No belongings left behind",
+        hint: "If there are, note them and tell the guest.",
+      },
       { id: "handover", prompt: "Home is ready to hand to cleaning" },
     ],
     outcomes: ["looks_good", "needs_follow_up", "not_applicable"],
@@ -137,7 +154,11 @@ export const ROUTINE_CONFIG: Record<RoutineKind, RoutineConfig> = {
     purpose: "Reach out mid-stay before a small problem becomes a bad review.",
     dueNoun: "Reach out by",
     steps: [
-      { id: "contact", prompt: "Contacted the guest", hint: "Whichever channel they have been using." },
+      {
+        id: "contact",
+        prompt: "Contacted the guest",
+        hint: "Whichever channel they have been using.",
+      },
       { id: "settled", prompt: "Guest is settled and has what they need" },
       { id: "issues", prompt: "Asked directly whether anything needs attention" },
     ],
@@ -183,9 +204,11 @@ export function routineDueState(
   return due.getTime() <= endOfToday.getTime() ? "today" : "upcoming";
 }
 
-
 /** The sentence a person reads on the row, without needing to know the model. */
-export function routineDueLabel(row: { status: string; due_at: string | null | undefined }): string {
+export function routineDueLabel(row: {
+  status: string;
+  due_at: string | null | undefined;
+}): string {
   const state = routineDueState(row);
   if (state === "done") return "Completed";
   if (!row.due_at) return "No date set";

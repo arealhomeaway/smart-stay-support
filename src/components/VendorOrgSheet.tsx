@@ -40,9 +40,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -87,7 +99,10 @@ export function VendorOrgSheet({
   };
 
   const statusMutation = useMutation({
-    mutationFn: () => changeStatus({ data: { orgId: orgId!, status: statusChoice as VendorStatus, reason: statusReason } }),
+    mutationFn: () =>
+      changeStatus({
+        data: { orgId: orgId!, status: statusChoice as VendorStatus, reason: statusReason },
+      }),
     onSuccess: () => {
       toast.success("Status updated and recorded.");
       setStatusReason("");
@@ -99,7 +114,9 @@ export function VendorOrgSheet({
 
   const resultMutation = useMutation({
     mutationFn: (input: { requirementId: string; result: GatekeeperResult }) =>
-      setResult({ data: { orgId: orgId!, requirementId: input.requirementId, result: input.result } }),
+      setResult({
+        data: { orgId: orgId!, requirementId: input.requirementId, result: input.result },
+      }),
     onSuccess: () => {
       toast.success("Screening item updated.");
       refresh();
@@ -171,11 +188,12 @@ export function VendorOrgSheet({
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
 
-
               <TabsContent value="screening" className="space-y-4 pt-4">
                 <div className="rounded-lg border p-3 text-sm">
                   <p className="font-medium">
-                    {data.readiness.clear ? "All blocking items are verified." : "Not approvable yet."}
+                    {data.readiness.clear
+                      ? "All blocking items are verified."
+                      : "Not approvable yet."}
                   </p>
                   <p className="text-muted-foreground">
                     {data.readiness.passed} of {data.readiness.total} screening items verified.
@@ -212,20 +230,29 @@ export function VendorOrgSheet({
                                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                               )}
                               <span className="text-sm font-medium">{line.label}</span>
-                              <Badge variant={line.level === "blocking" ? "destructive" : "secondary"}>
+                              <Badge
+                                variant={line.level === "blocking" ? "destructive" : "secondary"}
+                              >
                                 {REQUIREMENT_LEVEL_LABELS[line.level]}
                               </Badge>
                             </div>
-                            {line.detail && <p className="mt-1 text-xs text-muted-foreground">{line.detail}</p>}
+                            {line.detail && (
+                              <p className="mt-1 text-xs text-muted-foreground">{line.detail}</p>
+                            )}
                             {line.expiresOn && (
-                              <p className="mt-1 text-xs text-muted-foreground">Expires {line.expiresOn}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Expires {line.expiresOn}
+                              </p>
                             )}
                           </div>
                           {canManage && (
                             <Select
                               value={shown}
                               onValueChange={(v) =>
-                                resultMutation.mutate({ requirementId: line.requirementId, result: v as GatekeeperResult })
+                                resultMutation.mutate({
+                                  requirementId: line.requirementId,
+                                  result: v as GatekeeperResult,
+                                })
                               }
                             >
                               <SelectTrigger className="w-52 shrink-0">
@@ -251,7 +278,10 @@ export function VendorOrgSheet({
                     <Separator />
                     <div className="space-y-2">
                       <Label>Change status</Label>
-                      <Select value={statusChoice} onValueChange={(v) => setStatusChoice(v as VendorStatus)}>
+                      <Select
+                        value={statusChoice}
+                        onValueChange={(v) => setStatusChoice(v as VendorStatus)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Pick a new status" />
                         </SelectTrigger>
@@ -271,7 +301,11 @@ export function VendorOrgSheet({
                       />
                       <Button
                         onClick={() => statusMutation.mutate()}
-                        disabled={!statusChoice || statusReason.trim().length < 5 || statusMutation.isPending}
+                        disabled={
+                          !statusChoice ||
+                          statusReason.trim().length < 5 ||
+                          statusMutation.isPending
+                        }
                       >
                         <ShieldCheck className="mr-2 h-4 w-4" />
                         Record status change
@@ -284,25 +318,36 @@ export function VendorOrgSheet({
               <TabsContent value="coverage" className="space-y-4 pt-4">
                 {data.coverage.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No homes assigned yet. Coverage is what makes this vendor the right first call for a property.
+                    No homes assigned yet. Coverage is what makes this vendor the right first call
+                    for a property.
                   </p>
                 ) : (
                   <div className="space-y-2">
                     {data.coverage.map((c) => (
-                      <div key={c.id} className="flex items-start justify-between gap-3 rounded-lg border p-3">
+                      <div
+                        key={c.id}
+                        className="flex items-start justify-between gap-3 rounded-lg border p-3"
+                      >
                         <div className="text-sm">
                           <p className="font-medium">{c.propertyName}</p>
                           <p className="text-muted-foreground">
                             {c.serviceCategory} ·{" "}
-                            {COVERAGE_PRIORITY_LABELS[c.coveragePriority as CoveragePriority] ?? c.coveragePriority}
+                            {COVERAGE_PRIORITY_LABELS[c.coveragePriority as CoveragePriority] ??
+                              c.coveragePriority}
                             {c.approvalLimit != null && ` · approval limit $${c.approvalLimit}`}
                           </p>
                           {c.accessRequirements && (
-                            <p className="text-xs text-muted-foreground">Access: {c.accessRequirements}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Access: {c.accessRequirements}
+                            </p>
                           )}
                         </div>
                         {canManage && (
-                          <Button variant="ghost" size="icon" onClick={() => dropMutation.mutate(c.id)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => dropMutation.mutate(c.id)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
@@ -338,7 +383,10 @@ export function VendorOrgSheet({
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={coveragePriority} onValueChange={(v) => setCoveragePriority(v as CoveragePriority)}>
+                    <Select
+                      value={coveragePriority}
+                      onValueChange={(v) => setCoveragePriority(v as CoveragePriority)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -363,7 +411,9 @@ export function VendorOrgSheet({
                     />
                     <Button
                       onClick={() => coverageMutation.mutate()}
-                      disabled={!coverageProperty || !coverageCategory || coverageMutation.isPending}
+                      disabled={
+                        !coverageProperty || !coverageCategory || coverageMutation.isPending
+                      }
                     >
                       Add coverage
                     </Button>
@@ -389,17 +439,21 @@ export function VendorOrgSheet({
                 />
               </TabsContent>
 
-
-
               <TabsContent value="team" className="space-y-3 pt-4">
                 <p className="text-xs text-muted-foreground">
-                  ARHA schedules the masked code, never a worker's personal name. Vendor admins manage their own team.
+                  ARHA schedules the masked code, never a worker's personal name. Vendor admins
+                  manage their own team.
                 </p>
                 {data.members.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No logins attached to this company yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No logins attached to this company yet.
+                  </p>
                 ) : (
                   data.members.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between rounded-lg border p-3 text-sm"
+                    >
                       <span className="font-medium">{m.maskedCode}</span>
                       <span className="text-muted-foreground">
                         {m.vendorRole} · {m.active ? "active" : "inactive"} ·{" "}
@@ -418,7 +472,8 @@ export function VendorOrgSheet({
                       <div key={c.id} className="rounded-lg border p-3 text-sm">
                         <p className="font-medium">{c.full_name}</p>
                         <p className="text-muted-foreground">
-                          {[c.email, c.phone].filter(Boolean).join(" · ") || "No contact details on file"}
+                          {[c.email, c.phone].filter(Boolean).join(" · ") ||
+                            "No contact details on file"}
                         </p>
                       </div>
                     ))}
@@ -427,14 +482,18 @@ export function VendorOrgSheet({
               </TabsContent>
 
               <TabsContent value="history" className="space-y-3 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status history</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Status history
+                </p>
                 {data.statusHistory.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
                 ) : (
                   data.statusHistory.map((e) => (
                     <div key={e.id} className="rounded-lg border p-3 text-sm">
                       <p className="font-medium">
-                        {e.from_status ? `${e.from_status} → ${e.to_status}` : `Created as ${e.to_status}`}
+                        {e.from_status
+                          ? `${e.from_status} → ${e.to_status}`
+                          : `Created as ${e.to_status}`}
                       </p>
                       <p className="text-muted-foreground">{e.reason}</p>
                       <p className="text-xs text-muted-foreground">

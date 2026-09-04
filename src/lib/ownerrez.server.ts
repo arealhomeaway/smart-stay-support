@@ -191,7 +191,6 @@ export type GuestContact = {
   note?: string;
 };
 
-
 type OwnerRezGuest = {
   first_name?: string;
   last_name?: string;
@@ -222,16 +221,13 @@ export async function currentGuestForListing(ownerRezPropertyId: string): Promis
   };
 
   const today = new Date();
-  const data = await ownerRezGet<{ items?: OwnerRezStayBooking[] }>(
-    "/bookings",
-    {
-      property_ids: ownerRezPropertyId,
-      from: ymd(new Date(today.getTime() - 2 * 86400000)),
-      to: ymd(new Date(today.getTime() + 2 * 86400000)),
-      limit: "50",
-      include_guest: "true",
-    },
-  );
+  const data = await ownerRezGet<{ items?: OwnerRezStayBooking[] }>("/bookings", {
+    property_ids: ownerRezPropertyId,
+    from: ymd(new Date(today.getTime() - 2 * 86400000)),
+    to: ymd(new Date(today.getTime() + 2 * 86400000)),
+    limit: "50",
+    include_guest: "true",
+  });
 
   const todayKey = ymd(today);
   const active = (data.items ?? []).filter(
@@ -298,4 +294,3 @@ function guestCount(stay: OwnerRezStayBooking): number | null {
   const total = (stay.adults ?? 0) + (stay.children ?? 0) + (stay.infants ?? 0);
   return total > 0 ? total : null;
 }
-

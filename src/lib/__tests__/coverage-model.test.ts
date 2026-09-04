@@ -16,10 +16,28 @@ import {
 
 /** The six approved cross-team triage windows, as seeded. */
 const TRIAGE: TriageWindow[] = [
-  { weekday: 1, start_minute: 1020, end_minute: 1320, covers_team: TEAM_B, role_code: "ge_evening" },
+  {
+    weekday: 1,
+    start_minute: 1020,
+    end_minute: 1320,
+    covers_team: TEAM_B,
+    role_code: "ge_evening",
+  },
   { weekday: 2, start_minute: 480, end_minute: 780, covers_team: TEAM_B, role_code: "po_day" },
-  { weekday: 2, start_minute: 1020, end_minute: 1320, covers_team: TEAM_B, role_code: "ge_evening" },
-  { weekday: 3, start_minute: 1020, end_minute: 1320, covers_team: TEAM_B, role_code: "ge_evening" },
+  {
+    weekday: 2,
+    start_minute: 1020,
+    end_minute: 1320,
+    covers_team: TEAM_B,
+    role_code: "ge_evening",
+  },
+  {
+    weekday: 3,
+    start_minute: 1020,
+    end_minute: 1320,
+    covers_team: TEAM_B,
+    role_code: "ge_evening",
+  },
   { weekday: 6, start_minute: 480, end_minute: 780, covers_team: TEAM_B, role_code: "ge_day" },
   { weekday: 0, start_minute: 480, end_minute: 780, covers_team: TEAM_B, role_code: "ge_day" },
 ];
@@ -122,7 +140,10 @@ describe("routing precedence", () => {
   });
 
   it("uses the Supervisor only when the Supervisor is on duty", () => {
-    const d = decideRoute({ ...base, supervisorOnDuty: { userId: "james", roleCode: "ops_supervisor" } });
+    const d = decideRoute({
+      ...base,
+      supervisorOnDuty: { userId: "james", roleCode: "ops_supervisor" },
+    });
     expect(d.userId).toBe("james");
     expect(d.fallback).toBe(true);
   });
@@ -152,7 +173,10 @@ describe("Central-time windows", () => {
 
   it("reads weekday and minute in Central regardless of server time", () => {
     // DST has already started, so 2026-03-09T02:30:00Z is Sunday 9:30 p.m. CDT.
-    const { weekday, minutes } = localWeekdayMinutes(new Date("2026-03-09T02:30:00Z"), "America/Chicago");
+    const { weekday, minutes } = localWeekdayMinutes(
+      new Date("2026-03-09T02:30:00Z"),
+      "America/Chicago",
+    );
     expect(weekday).toBe(0);
     expect(minutes).toBe(21 * 60 + 30);
   });

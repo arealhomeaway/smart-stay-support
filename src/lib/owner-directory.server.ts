@@ -121,7 +121,8 @@ export function resolvePrimaryOwners(
         source_id: null,
         match_status: "unmatched",
         candidate_count: 0,
-        detail: "This home is not linked to an OwnerRez listing, so no primary owner could be resolved.",
+        detail:
+          "This home is not linked to an OwnerRez listing, so no primary owner could be resolved.",
         synced_at: stamp,
       });
       continue;
@@ -146,7 +147,11 @@ export function resolvePrimaryOwners(
     }
 
     const ownerIds = Array.from(
-      new Set(matches.map((m) => (m.owner_id == null ? null : String(m.owner_id))).filter(Boolean) as string[]),
+      new Set(
+        matches
+          .map((m) => (m.owner_id == null ? null : String(m.owner_id)))
+          .filter(Boolean) as string[],
+      ),
     );
     if (ownerIds.length === 0) {
       counts.unmatched += 1;

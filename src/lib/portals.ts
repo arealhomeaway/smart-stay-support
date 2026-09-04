@@ -145,9 +145,9 @@ export function publicPortals(): PortalDefinition[] {
 
 /** Portals a signed-in person is authorised to open. */
 export function portalsFor(roles: AppRole[]): PortalDefinition[] {
-  return PORTAL_REGISTRY.filter(
-    (p) => p.active && p.roles.some((r) => roles.includes(r)),
-  ).sort(byOrder);
+  return PORTAL_REGISTRY.filter((p) => p.active && p.roles.some((r) => roles.includes(r))).sort(
+    byOrder,
+  );
 }
 
 export function portalByRoute(route: string): PortalDefinition | undefined {

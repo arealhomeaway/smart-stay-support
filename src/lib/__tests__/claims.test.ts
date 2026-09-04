@@ -58,7 +58,9 @@ describe("money", () => {
   it("uses the most committed figure available", () => {
     expect(amountAtRisk(claim({ estimated_amount: 100 }))).toBe(100);
     expect(amountAtRisk(claim({ estimated_amount: 100, actual_cost: 250 }))).toBe(250);
-    expect(amountAtRisk(claim({ estimated_amount: 100, actual_cost: 250, submitted_amount: 300 }))).toBe(300);
+    expect(
+      amountAtRisk(claim({ estimated_amount: 100, actual_cost: 250, submitted_amount: 300 })),
+    ).toBe(300);
   });
 
   it("derives unrecovered without inventing figures", () => {
@@ -90,7 +92,14 @@ describe("next action", () => {
 
   it("chases reimbursement after a partial approval", () => {
     expect(
-      nextAction(claim({ stage: "decided", disposition: "partial", approved_amount: 200, recovered_amount: 0 })),
+      nextAction(
+        claim({
+          stage: "decided",
+          disposition: "partial",
+          approved_amount: 200,
+          recovered_amount: 0,
+        }),
+      ),
     ).toBe("Confirm reimbursement received");
   });
 });
@@ -101,11 +110,15 @@ describe("proposed stage", () => {
   });
 
   it("suggests submitting once cost is known", () => {
-    expect(proposeStage(claim({ actual_cost: 400 }), reqs({ status: "verified" }))).toBe("ready_to_submit");
+    expect(proposeStage(claim({ actual_cost: 400 }), reqs({ status: "verified" }))).toBe(
+      "ready_to_submit",
+    );
   });
 
   it("never advances a claim that is waiting on someone else", () => {
-    expect(proposeStage(claim({ stage: "submitted", actual_cost: 1 }), reqs({ status: "verified" }))).toBe("submitted");
+    expect(
+      proposeStage(claim({ stage: "submitted", actual_cost: 1 }), reqs({ status: "verified" })),
+    ).toBe("submitted");
   });
 });
 
@@ -115,7 +128,9 @@ describe("home buckets", () => {
   });
 
   it("separates deadline risk from evidence gaps", () => {
-    expect(claimBucket(claim({ deadline_on: "2026-03-13" }), { now: NOW })).toBe("deadline_approaching");
+    expect(claimBucket(claim({ deadline_on: "2026-03-13" }), { now: NOW })).toBe(
+      "deadline_approaching",
+    );
     expect(claimBucket(claim(), { now: NOW, requirements: reqs({}) })).toBe("evidence_missing");
   });
 
@@ -135,19 +150,29 @@ describe("manager filters", () => {
   it("finds unsubmitted and long waits", () => {
     expect(matchesFilter(claim(), "unsubmitted", { now: NOW })).toBe(true);
     expect(
-      matchesFilter(claim({ stage: "waiting_external", submitted_on: "2026-02-01" }), "long_wait", { now: NOW }),
+      matchesFilter(claim({ stage: "waiting_external", submitted_on: "2026-02-01" }), "long_wait", {
+        now: NOW,
+      }),
     ).toBe(true);
   });
 
   it("flags high value and poor outcomes", () => {
     expect(matchesFilter(claim({ submitted_amount: 2500 }), "high_value", { now: NOW })).toBe(true);
-    expect(matchesFilter(claim({ disposition: "denied" }), "denied_partial", { now: NOW })).toBe(true);
+    expect(matchesFilter(claim({ disposition: "denied" }), "denied_partial", { now: NOW })).toBe(
+      true,
+    );
   });
 });
 
 describe("duplicate protection", () => {
   const existing = [
-    claim({ id: "a", stage: "gathering", ticket_id: "t1", property_id: "p1", ownerrez_booking_id: "b1" }),
+    claim({
+      id: "a",
+      stage: "gathering",
+      ticket_id: "t1",
+      property_id: "p1",
+      ownerrez_booking_id: "b1",
+    }),
   ];
 
   it("warns about a second claim on the same ticket", () => {
@@ -165,11 +190,16 @@ describe("duplicate protection", () => {
 
   it("allows a different recovery path for the same stay", () => {
     expect(
-      findDuplicates({ claim_type: "insurance", property_id: "p1", ownerrez_booking_id: "b1" }, existing).length,
+      findDuplicates(
+        { claim_type: "insurance", property_id: "p1", ownerrez_booking_id: "b1" },
+        existing,
+      ).length,
     ).toBe(0);
   });
 
   it("ignores claims that are already finished", () => {
-    expect(findDuplicates({ ticket_id: "t1" }, [claim({ stage: "closed", ticket_id: "t1" })]).length).toBe(0);
+    expect(
+      findDuplicates({ ticket_id: "t1" }, [claim({ stage: "closed", ticket_id: "t1" })]).length,
+    ).toBe(0);
   });
 });

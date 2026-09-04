@@ -11,6 +11,11 @@ import { scopedClosureEvidence } from "@/lib/closure-evidence";
 import { closureEvidenceSatisfied, requiresPhotoOrFile } from "@/lib/evidence-requirements";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatusBadge, ticketTone, type StatusTone } from "@/components/ui/status";
+import { ActivityList, type ActivityKind } from "@/components/ui/activity";
+import { Celebrate } from "@/components/ui/feedback";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { usDate, usDateTime } from "@/lib/dates";
 import {
   AlertTriangle,
   BellRing,
@@ -139,6 +144,7 @@ function TicketDetail() {
   // Where this ticket was opened from, so Back restores that workspace.
   const { origin, token } = useRecordOrigin("ticket");
   const [propertyOpen, setPropertyOpen] = useState(false);
+  const [showCelebrate, setShowCelebrate] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ticket", ticketId],
@@ -147,7 +153,7 @@ function TicketDetail() {
         supabase
           .from("tickets")
           .select(
-            "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
+            "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
           .single(),
@@ -273,6 +279,18 @@ function TicketDetail() {
       setWaitReview(local.toISOString().slice(0, 16));
     }
   }, [savedWaitOn, savedWaitReason, savedWaitReview]);
+
+  useEffect(() => {
+    if (!data) return;
+    const t = data.ticket;
+    const closedNow = t.status === "resolved" || t.status === "closed";
+    if (!closedNow) return;
+    const key = `celebrate-ticket-${ticketId}`;
+    if (typeof window !== "undefined" && !window.sessionStorage.getItem(key)) {
+      window.sessionStorage.setItem(key, "1");
+      setShowCelebrate(true);
+    }
+  }, [data, ticketId]);
 
   if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
 
@@ -506,7 +524,7 @@ function TicketDetail() {
     if (!ok) return;
     await log(
       "waiting",
-      `Waiting on ${labelFor(WAITING_ON, waitOn)}: ${waitReason.trim()} — review ${new Date(waitReview).toLocaleString()}`,
+      `Waiting on ${labelFor(WAITING_ON, waitOn)}: ${waitReason.trim()} — review ${usDateTime(waitReview)}`,
       "waiting_set",
     );
     await refresh();
@@ -624,7 +642,6 @@ function TicketDetail() {
       "resolved",
     );
 
-
     setResolution("");
     setEvidence("");
     await refresh();
@@ -695,6 +712,35 @@ function TicketDetail() {
   const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
   const activeBranch = { claim: Boolean(branches?.claim), recovery: Boolean(branches?.recovery) };
+
+  // One plain-language sentence: what is happening and what comes next. No stat wall.
+  const nextStepLine = closed
+    ? ticket.status === "resolved"
+      ? "Resolved — waiting on closure review."
+      : "Closed and filed."
+    : stage === "start"
+      ? "Not started yet — acknowledge it and start the clock."
+      : stage === "waiting"
+        ? `Waiting on ${labelFor(WAITING_ON, ticket.waiting_on).toLowerCase()}.`
+        : stage === "repair_active"
+          ? "Field team has it — watch for completion, then verify."
+          : stage === "verify"
+            ? "Repair reported complete — confirm with the guest."
+            : stage === "steps"
+              ? (nextAction?.label ?? "Work the remaining steps.")
+              : stage === "repair"
+                ? "Decide whether this needs a field repair."
+                : stage === "closure"
+                  ? closureReady
+                    ? "Everything required is satisfied — ready to close."
+                    : `${remaining} thing${remaining === 1 ? "" : "s"} left before this can close.`
+                  : "In progress.";
+
+  function priorityTone2(priority: string | null | undefined): StatusTone {
+    if (priority === "p1") return "escalated";
+    if (priority === "p2") return "waiting";
+    return "context";
+  }
 
   const guidance = !closed && (
     <details className="group rounded-lg border border-border bg-card px-3 py-2">
@@ -783,11 +829,11 @@ function TicketDetail() {
               {!c.done && c.hint && <p className="text-xs text-muted-foreground">{c.hint}</p>}
             </div>
             {c.state === "complete" ? (
-              <Chip className={stateChip("done")}>Complete ✓</Chip>
+              <StatusBadge tone="resolved">Complete</StatusBadge>
             ) : c.state === "waiting" ? (
-              <Chip className={stateChip("waiting")}>{c.waitingOn ?? "Waiting"}</Chip>
+              <StatusBadge tone="waiting">{c.waitingOn ?? "Waiting"}</StatusBadge>
             ) : (
-              <Chip className={stateChip("blocked")}>Needs you</Chip>
+              <StatusBadge tone="escalated">Needs you</StatusBadge>
             )}
             {c.state === "needs_you" && c.action && !closeOpen && (
               <Button size="sm" variant="outline" onClick={() => setCloseOpen(true)}>
@@ -889,36 +935,44 @@ function TicketDetail() {
           paramKey="ticketId"
         />
 
-        {/* ---------------- header: what happened ---------------- */}
+        {/* ---------------- A. identity & state ---------------- */}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-          <div className="min-w-0">
-            <p className="text-sm text-muted-foreground">
-              #{ticket.ref}
-              {ticket.record_type === "completed_interaction" ? " · Completed interaction" : ""}
-            </p>
-            <h1 className="text-2xl font-semibold sm:text-3xl">{ticket.title}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className={priorityTone(ticket.priority)}>
-                {meta.short}
-              </Badge>
-              <Badge variant="outline" className={statusTone(ticket.status)}>
-                {labelFor(STATUSES, ticket.status)}
-              </Badge>
-              {ticket.guest_in_residence && (
-                <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
-                  Guest in the home
-                </Badge>
-              )}
-              {ticket.property_id && (
-                <button
-                  type="button"
-                  onClick={() => setPropertyOpen(true)}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium transition-colors hover:bg-secondary"
-                >
-                  <Building2 className="size-3.5" aria-hidden="true" />
-                  {propertyName}
-                </button>
-              )}
+          <div className="flex min-w-0 gap-3">
+            {ticket.property_id && (
+              <button type="button" onClick={() => setPropertyOpen(true)} className="shrink-0">
+                <PropertyPhoto
+                  url={ticket.properties?.primary_photo_url}
+                  name={propertyName}
+                  className="size-12"
+                />
+              </button>
+            )}
+            <div className="min-w-0">
+              <p className="text-sm text-muted-foreground">
+                #{ticket.ref}
+                {ticket.record_type === "completed_interaction" ? " · Completed interaction" : ""}
+              </p>
+              <h1 className="text-2xl font-semibold sm:text-3xl">{ticket.title}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <StatusBadge tone={priorityTone2(ticket.priority)}>{meta.short}</StatusBadge>
+                <StatusBadge tone={ticketTone(ticket.status)}>
+                  {labelFor(STATUSES, ticket.status)}
+                </StatusBadge>
+                {ticket.guest_in_residence && (
+                  <StatusBadge tone="brand">Guest in the home</StatusBadge>
+                )}
+                {ticket.property_id && (
+                  <button
+                    type="button"
+                    onClick={() => setPropertyOpen(true)}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium transition-colors hover:bg-secondary"
+                  >
+                    <Building2 className="size-3.5" aria-hidden="true" />
+                    {propertyName}
+                  </button>
+                )}
+              </div>
+              <p className="mt-2 text-sm font-medium text-muted-foreground">{nextStepLine}</p>
             </div>
           </div>
           <MoreActions
@@ -945,15 +999,10 @@ function TicketDetail() {
         )}
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* ---------------- A. current work ---------------- */}
-          <div className="space-y-4 lg:col-span-2">
-            <section
-              aria-label="Current work"
-              className="rounded-xl border border-primary/30 bg-primary/5 p-5 shadow-sm"
-            >
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Current work
-              </p>
+          {/* ---------------- B. dominant active-work canvas ---------------- */}
+          <div className="space-y-5 lg:col-span-2">
+            <section aria-label="Current work">
+              <h2 className="eyebrow text-muted-foreground">Current work</h2>
 
               {stage === "start" && (
                 <div className="mt-2 space-y-3">
@@ -976,7 +1025,7 @@ function TicketDetail() {
                   <p className="text-sm text-muted-foreground">
                     {ticket.waiting_reason}
                     {ticket.next_review_at
-                      ? ` · comes back to you ${new Date(ticket.next_review_at).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}`
+                      ? ` · comes back to you ${usDateTime(ticket.next_review_at)}`
                       : ""}
                   </p>
                   <Button size="lg" onClick={clearWaiting}>
@@ -1085,13 +1134,25 @@ function TicketDetail() {
 
               {stage === "closed" && (
                 <div className="mt-2 space-y-3">
-                  <h2 className="text-xl font-semibold">
-                    {ticket.status === "resolved"
-                      ? "Work is finished"
-                      : "This ticket is closed"}
-                  </h2>
-                  {ticket.resolution_notes && (
-                    <p className="text-sm text-muted-foreground">{ticket.resolution_notes}</p>
+                  {showCelebrate ? (
+                    <Celebrate
+                      title={
+                        ticket.status === "resolved" ? "Work is finished" : "This ticket is closed"
+                      }
+                    >
+                      {ticket.resolution_notes ?? "Nice work."}
+                    </Celebrate>
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-semibold">
+                        {ticket.status === "resolved"
+                          ? "Work is finished"
+                          : "This ticket is closed"}
+                      </h2>
+                      {ticket.resolution_notes && (
+                        <p className="text-sm text-muted-foreground">{ticket.resolution_notes}</p>
+                      )}
+                    </>
                   )}
                   {ticket.status === "resolved" && (
                     <FinalReviewPanel
@@ -1110,7 +1171,6 @@ function TicketDetail() {
                         hasRecovery: activeBranch.recovery,
                       }}
                     />
-
                   )}
                   {ticket.record_type !== "completed_interaction" && (
                     <Button variant="outline" onClick={reopen}>
@@ -1119,8 +1179,6 @@ function TicketDetail() {
                   )}
                 </div>
               )}
-
-
 
               {/* Special Handling belongs with the decision, never as page furniture. */}
               {(stage === "repair" || stage === "repair_active" || stage === "steps") && (
@@ -1214,22 +1272,23 @@ function TicketDetail() {
                 Add note
               </Button>
             </div>
-            <div className="space-y-3 border-t border-border pt-4">
-              {activity.length === 0 && (
-                <p className="text-sm text-muted-foreground">No activity yet.</p>
-              )}
-              {activity.map((a) => (
-                <div key={a.id} className="text-sm">
-                  <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-                    <LaneChip lane={laneOf(a.kind, a.event_type, a.body)} />
-                    <span className="font-medium text-foreground">
-                      {a.author?.full_name ?? a.author?.email ?? "Team member"}
-                    </span>{" "}
-                    · {relativeTime(a.event_at ?? a.created_at)}
-                  </div>
-                  <p className="mt-0.5">{humanizeHistoryText(a.body)}</p>
-                </div>
-              ))}
+            <div className="border-t border-border pt-2">
+              <ActivityList
+                events={activity.map((a) => ({
+                  id: a.id,
+                  kind: activityKindFor(a.kind, a.event_type, a.body),
+                  label: (
+                    <>
+                      {humanizeHistoryText(a.body)}{" "}
+                      <span className="text-muted-foreground">
+                        — {a.author?.full_name ?? a.author?.email ?? "Team member"}
+                      </span>
+                    </>
+                  ),
+                  when: relativeTime(a.event_at ?? a.created_at),
+                }))}
+                emptyLabel="No activity yet."
+              />
             </div>
           </TabsContent>
 
@@ -1249,57 +1308,80 @@ function TicketDetail() {
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 pt-4">
-            <Card>
-              <CardContent className="space-y-3 pt-6 text-sm">
-                <Field
-                  label="Address"
-                  value={
-                    [ticket.properties?.address_line1, ticket.properties?.city]
-                      .filter(Boolean)
-                      .join(", ") || "—"
-                  }
-                />
-                <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
-                <Field label="Action started" value={relativeTime(ticket.action_started_at)} />
-                <Field label="Vendor" value={ticket.vendor_name ?? "—"} />
-                {ticket.priority_override_reason && (
-                  <Field label="Priority override" value={ticket.priority_override_reason} />
-                )}
-                {ticket.description && (
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Description
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
-                  </div>
-                )}
-                {ticket.closure_evidence && (
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Evidence
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap">{ticket.closure_evidence}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <OutlookSourceCard entityType="ticket" entityId={ticketId} />
-            <details className="rounded-lg border border-border px-3 py-2 text-sm">
-              <summary className="cursor-pointer text-muted-foreground">
-                Reservation snapshot from when this ticket opened
+            <div className="space-y-3 text-sm">
+              <Field
+                label="Address"
+                value={
+                  [ticket.properties?.address_line1, ticket.properties?.city]
+                    .filter(Boolean)
+                    .join(", ") || "—"
+                }
+              />
+              <Field label="Acknowledged" value={relativeTime(ticket.acknowledged_at)} />
+              <Field label="Action started" value={relativeTime(ticket.action_started_at)} />
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-muted-foreground">Vendor</span>
+                <span className="flex items-center gap-2 text-right font-medium">
+                  {ticket.vendor_name ?? "—"}
+                  {ticket.vendor_name && ticket.vendor_status && (
+                    <StatusBadge tone={vendorStatusTone(ticket.vendor_status)}>
+                      {labelFor(
+                        [
+                          { value: "dispatched", label: "Dispatched" },
+                          { value: "in_progress", label: "In progress" },
+                          { value: "completed", label: "Completed" },
+                        ],
+                        ticket.vendor_status,
+                      )}
+                    </StatusBadge>
+                  )}
+                </span>
+              </div>
+              {ticket.priority_override_reason && (
+                <Field label="Priority override" value={ticket.priority_override_reason} />
+              )}
+              {ticket.description && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Description
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap">{ticket.description}</p>
+                </div>
+              )}
+              {ticket.closure_evidence && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Evidence</p>
+                  <p className="mt-1 whitespace-pre-wrap">{ticket.closure_evidence}</p>
+                </div>
+              )}
+            </div>
+
+            <details className="group rounded-lg border border-border px-3 py-2 text-sm">
+              <summary className="cursor-pointer font-medium text-muted-foreground">
+                More about this ticket
               </summary>
-              <div className="pt-3">
-                <ReservationContextPanel
-                  ticket={ticket}
-                  ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
-                />
+              <div className="mt-3 space-y-4 border-t border-border pt-3">
+                <OutlookSourceCard entityType="ticket" entityId={ticketId} />
+                <details className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    Reservation snapshot from when this ticket opened
+                  </summary>
+                  <div className="pt-3">
+                    <ReservationContextPanel
+                      ticket={ticket}
+                      ownerRezPropertyId={ticket.properties?.ownerrez_property_id ?? null}
+                    />
+                  </div>
+                </details>
+                {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
+                  <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
+                )}
+                {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
+                {role.can("work_orders_internal") && (
+                  <TicketWorkOrderPanel ticket={ticket} readOnly />
+                )}
               </div>
             </details>
-            {ticket.vendor_user_id && ticket.vendor_status === "completed" && (
-              <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
-            )}
-            {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-            {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} readOnly />}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-2 pt-4">
@@ -1603,19 +1685,32 @@ function laneOf(kind: string | null, eventType: string | null, body: string | nu
   return "repair";
 }
 
-const LANE_STYLE: Record<Lane, { label: string; className: string }> = {
-  repair: { label: "Repair", className: "border-border" },
-  claim: { label: "Claim", className: "border-warning/40 bg-warning/10" },
-  guest: { label: "Guest", className: "border-primary/30 bg-primary/10 text-primary" },
-};
+/** Which Activity List icon/colour a logged event gets. */
+function activityKindFor(
+  kind: string | null,
+  eventType: string | null,
+  body: string | null,
+): ActivityKind {
+  if (kind === "note") return "note";
+  if (
+    kind === "resolved" ||
+    (eventType === "status_changed" && body?.toLowerCase().includes("closed"))
+  )
+    return "completed";
+  if (kind === "waiting") return "waiting";
+  const text = `${kind ?? ""} ${eventType ?? ""}`.toLowerCase();
+  if (text.includes("escalat")) return "escalation";
+  const lane = laneOf(kind, eventType, body);
+  if (lane === "claim") return "approval";
+  if (lane === "guest") return "owner";
+  return "repair";
+}
 
-function LaneChip({ lane }: { lane: Lane }) {
-  const style = LANE_STYLE[lane];
-  return (
-    <Badge variant="outline" className={`text-[10px] uppercase tracking-wide ${style.className}`}>
-      {style.label}
-    </Badge>
-  );
+/** Plain-language vendor status → the shared status vocabulary. */
+function vendorStatusTone(status: string | null | undefined): StatusTone {
+  if (status === "completed") return "resolved";
+  if (status === "dispatched") return "waiting";
+  return "progress";
 }
 
 /** An inactive lane is one quiet line until somebody opens it. */

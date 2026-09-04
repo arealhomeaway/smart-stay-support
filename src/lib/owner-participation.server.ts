@@ -83,6 +83,8 @@ export type ProgramPropertyRow = {
   propertyId: string;
   name: string;
   address: string;
+  /** Real ARHA property photo, presentation-only — never a stock image. */
+  photoUrl: string | null;
   closingDate: string | null;
   closingConfirmed: boolean;
   addedOn: string;
@@ -140,7 +142,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     supabase
       .from("owner_program_properties")
       .select(
-        "id, property_id, closing_date, closing_confirmed, added_on, inclusion_status, onboarding_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname, address_line1, city, state)",
+        "id, property_id, closing_date, closing_confirmed, added_on, inclusion_status, onboarding_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname, address_line1, city, state, primary_photo_url)",
       )
       .eq("program_id", programId)
       .order("added_on"),
@@ -204,6 +206,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
       address_line1: string | null;
       city: string | null;
       state: string | null;
+      primary_photo_url: string | null;
     } | null;
     const mine = reviewRows.filter((r) => r.propertyIds.includes(l.property_id));
     const completed = mine.filter((r) => CLOSED_REVIEW.has(r.status));
@@ -220,7 +223,8 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     if (direct.length + shared.length === 0) coverage = "no_activity";
     else if (overdue.length > 0) coverage = "needs_attention";
     else if (open.length === 0 && mine.length > 0) coverage = "complete";
-    else if (l.launch_status === "launched" || l.launch_status === "ready") coverage = "launch_ready";
+    else if (l.launch_status === "launched" || l.launch_status === "ready")
+      coverage = "launch_ready";
     else coverage = "in_progress";
 
     return {
@@ -228,6 +232,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
       propertyId: l.property_id,
       name: prop ? prop.nickname || prop.name : "Property",
       address: prop ? locationOf(prop) : "",
+      photoUrl: prop?.primary_photo_url ?? null,
       closingDate: l.closing_date,
       closingConfirmed: l.closing_confirmed,
       addedOn: l.added_on,
@@ -266,7 +271,6 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
   const returnedMinutes = combinedMinutes(
     entryRows.filter((e) => e.review_status === "returned" && !supersededIds.has(e.id)),
   );
-
 
   const snapshot = progressSnapshot({
     status: p.status as ProgramStatus,

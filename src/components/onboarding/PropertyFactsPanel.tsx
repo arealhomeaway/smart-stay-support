@@ -35,7 +35,8 @@ import {
   saveUtilityAccountFn,
 } from "@/lib/onboarding-finance.functions";
 
-const money = (n: number) => `$${Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const money = (n: number) =>
+  `$${Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
 export function PropertyFactsPanel({
   propertyId,
@@ -77,7 +78,11 @@ export function PropertyFactsPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const [newUtility, setNewUtility] = useState({ utilityType: "electric", provider: "", status: "needed" });
+  const [newUtility, setNewUtility] = useState({
+    utilityType: "electric",
+    provider: "",
+    status: "needed",
+  });
   const [costDraft, setCostDraft] = useState<Record<string, string>>({});
 
   if (isLoading || !data) return <p className="text-muted-foreground">Loading property facts…</p>;
@@ -126,27 +131,38 @@ export function PropertyFactsPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           {pending.length === 0 ? (
-            <EmptyState title="Nothing to review" hint="Proposed changes to permanent property facts land here." />
+            <EmptyState
+              title="Nothing to review"
+              hint="Proposed changes to permanent property facts land here."
+            />
           ) : (
             pending.map((f) => (
               <div key={f.id} className="rounded-lg border p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{f.field_key}</span>
-                  {isConflict(f) ? <Chip className="text-warning">Conflicts with the current value</Chip> : <Chip>New value</Chip>}
+                  {isConflict(f) ? (
+                    <Chip className="text-warning">Conflicts with the current value</Chip>
+                  ) : (
+                    <Chip>New value</Chip>
+                  )}
                 </div>
                 <p className="mt-1 text-muted-foreground">{factSummary(f)}</p>
                 {canEdit ? (
                   <div className="mt-2 flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => decideFact.mutate({ data: { proposalId: f.id, accept: true } } as never)}
+                      onClick={() =>
+                        decideFact.mutate({ data: { proposalId: f.id, accept: true } } as never)
+                      }
                     >
                       Accept
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => decideFact.mutate({ data: { proposalId: f.id, accept: false } } as never)}
+                      onClick={() =>
+                        decideFact.mutate({ data: { proposalId: f.id, accept: false } } as never)
+                      }
                     >
                       Keep current
                     </Button>
@@ -167,8 +183,8 @@ export function PropertyFactsPanel({
             {utilities.length === 0
               ? "No utility accounts recorded yet."
               : notReady.length === 0
-              ? `All utilities are active. Recorded spend ${money(utilitySpend(costs))}.`
-              : `${notReady.length} utility account${notReady.length === 1 ? "" : "s"} still need work. Recorded spend ${money(utilitySpend(costs))}.`}
+                ? `All utilities are active. Recorded spend ${money(utilitySpend(costs))}.`
+                : `${notReady.length} utility account${notReady.length === 1 ? "" : "s"} still need work. Recorded spend ${money(utilitySpend(costs))}.`}
           </p>
 
           {utilities.length === 0 ? (
@@ -180,7 +196,9 @@ export function PropertyFactsPanel({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{utilityLabel(u.utility_type)}</span>
                     <Chip>{utilityStatusLabel(u.status)}</Chip>
-                    {u.provider ? <span className="text-muted-foreground">{u.provider}</span> : null}
+                    {u.provider ? (
+                      <span className="text-muted-foreground">{u.provider}</span>
+                    ) : null}
                   </div>
                   {canEdit ? (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -225,7 +243,11 @@ export function PropertyFactsPanel({
                         onClick={() =>
                           addCost.mutate(
                             {
-                              data: { accountId: u.id, propertyId, amount: Number(costDraft[u.id]) },
+                              data: {
+                                accountId: u.id,
+                                propertyId,
+                                amount: Number(costDraft[u.id]),
+                              },
                             } as never,
                             { onSuccess: () => setCostDraft({ ...costDraft, [u.id]: "" }) },
                           )

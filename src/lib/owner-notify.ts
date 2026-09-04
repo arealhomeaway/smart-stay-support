@@ -35,13 +35,19 @@ export type OwnerAlert = {
 };
 
 export const ALERT_LABELS: Record<OwnerAlertKind, { label: string; tone: string }> = {
-  ticket_opened: { label: "New at your home", tone: "bg-primary/10 text-primary border-primary/20" },
+  ticket_opened: {
+    label: "New at your home",
+    tone: "bg-primary/10 text-primary border-primary/20",
+  },
   ticket_p1: { label: "Urgent", tone: "bg-destructive/10 text-destructive border-destructive/20" },
   ticket_resolved: {
     label: "Resolved",
     tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
   },
-  review_ready: { label: "Ready for you", tone: "bg-amber-500/10 text-amber-700 border-amber-500/20" },
+  review_ready: {
+    label: "Ready for you",
+    tone: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+  },
   reminder: { label: "Reminder", tone: "bg-muted text-muted-foreground border-border" },
   progress_pace: { label: "Your pace", tone: "bg-amber-500/10 text-amber-700 border-amber-500/20" },
   progress_quiet: { label: "Check in", tone: "bg-muted text-muted-foreground border-border" },
@@ -58,7 +64,6 @@ export const ALERT_LABELS: Record<OwnerAlertKind, { label: string; tone: string 
     tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
   },
 };
-
 
 export function alertLabel(kind: string) {
   return ALERT_LABELS[(kind as OwnerAlertKind) ?? "reminder"] ?? ALERT_LABELS.reminder;

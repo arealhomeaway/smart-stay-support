@@ -32,7 +32,9 @@ export function OutlookSourceCard({
       <div className="flex flex-wrap items-center gap-2">
         <Mail className="size-4 text-muted-foreground" />
         <span className="font-medium">Created from Outlook</span>
-        {data.syncState === "linked" ? <Badge variant="secondary">Filed on this record</Badge> : null}
+        {data.syncState === "linked" ? (
+          <Badge variant="secondary">Filed on this record</Badge>
+        ) : null}
         {data.syncState === "failed" || data.syncState === "recategorise_pending" ? (
           <Badge variant="destructive">Category sync pending</Badge>
         ) : null}

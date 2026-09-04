@@ -40,7 +40,9 @@ export const beginUploadFn = createServerFn({ method: "POST" })
 
 export const completeUploadFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { documentId: string; ok: boolean; fulfilsRequestId?: string | null }) => input)
+  .inputValidator(
+    (input: { documentId: string; ok: boolean; fulfilsRequestId?: string | null }) => input,
+  )
   .handler(async ({ data, context }) => {
     const m = await import("@/lib/attachments.server");
     const viewer = await m.loadViewer(context.supabase, context.userId);
@@ -77,7 +79,12 @@ export const setAttachmentVisibilityFn = createServerFn({ method: "POST" })
 export const requestOwnerDocumentFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { entityType: AttachmentEntity; entityId: string; title: string; note?: string | null }) => input,
+    (input: {
+      entityType: AttachmentEntity;
+      entityId: string;
+      title: string;
+      note?: string | null;
+    }) => input,
   )
   .handler(async ({ data, context }) => {
     const m = await import("@/lib/attachments.server");

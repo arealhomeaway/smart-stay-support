@@ -50,7 +50,9 @@ describe("category update failed after the ticket saved", () => {
   });
 
   it("refuses to retag when no ticket is linked — that would be an unfinished create, not a retry", () => {
-    expect(nextActionFor(record({ error_message: CATEGORY_PENDING, entity_id: null }))).toBe("skip");
+    expect(nextActionFor(record({ error_message: CATEGORY_PENDING, entity_id: null }))).toBe(
+      "skip",
+    );
   });
 
   it("the link survives a Graph id lookup as well as an internet-message-id lookup", async () => {
@@ -62,7 +64,9 @@ describe("category update failed after the ticket saved", () => {
   });
 
   it("a failed intake is never silently retried into a duplicate — it stays a decision on file", () => {
-    expect(nextActionFor(record({ status: "failed", entity_id: null, error_message: "Intake failed" }))).toBe("skip");
+    expect(
+      nextActionFor(record({ status: "failed", entity_id: null, error_message: "Intake failed" })),
+    ).toBe("skip");
   });
 });
 
@@ -92,7 +96,9 @@ describe("a pass that died mid-flight", () => {
   const old = new Date(Date.now() - CLAIM_STALE_MS - 1000).toISOString();
 
   it("an abandoned claim is reclaimed rather than blocking the message forever", () => {
-    expect(nextActionFor(record({ status: "processing", entity_id: null, created_at: old }))).toBe("create");
+    expect(nextActionFor(record({ status: "processing", entity_id: null, created_at: old }))).toBe(
+      "create",
+    );
   });
 
   it("only a claim goes stale — a settled decision never reopens, however old", () => {

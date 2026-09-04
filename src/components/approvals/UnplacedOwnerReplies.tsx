@@ -15,7 +15,11 @@ import { unplacedOwnerRepliesFn, placeOwnerReplyFn } from "@/lib/owner-response.
 
 type Candidate = { id: string; ref: number | null; title: string };
 
-export function UnplacedOwnerReplies({ onOpenApproval }: { onOpenApproval?: (id: string) => void }) {
+export function UnplacedOwnerReplies({
+  onOpenApproval,
+}: {
+  onOpenApproval?: (id: string) => void;
+}) {
   const load = useServerFn(unplacedOwnerRepliesFn);
   const place = useServerFn(placeOwnerReplyFn);
   const qc = useQueryClient();
@@ -29,7 +33,8 @@ export function UnplacedOwnerReplies({ onOpenApproval }: { onOpenApproval?: (id:
       void qc.invalidateQueries({ queryKey: ["unplaced-owner-replies"] });
       onOpenApproval?.(vars.approvalId);
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Could not file that reply."),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Could not file that reply."),
   });
 
   const rows = q.data ?? [];

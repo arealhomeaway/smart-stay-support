@@ -87,8 +87,16 @@ export function mostUrgent(a: string, b: string) {
 // triggers staffing escalation and backup review. It does not replace the
 // normal 3-minute / 5-minute standard.
 export const P1_ESCALATION = [
-  { minutes: 3, level: "backup" as const, who: "Backup role notified — acknowledgment standard missed" },
-  { minutes: 5, level: "supervisor" as const, who: "Operations Supervisor notified — action has not started" },
+  {
+    minutes: 3,
+    level: "backup" as const,
+    who: "Backup role notified — acknowledgment standard missed",
+  },
+  {
+    minutes: 5,
+    level: "supervisor" as const,
+    who: "Operations Supervisor notified — action has not started",
+  },
   { minutes: 15, level: "staffing" as const, who: "Staffing escalation and backup review" },
 ];
 
@@ -133,18 +141,16 @@ export function mechanicalPriority(
   const occupancyFloor = OCCUPANCY_STATUS.find((o) => o.value === occupancy)?.floor ?? "p3";
   // Occupancy alone never forces P1 unless the guest is actually affected.
   const occupancyEffective =
-    occupancyFloor === "p1" && impactFloor === "p3" && guestImpact === "none" ? "p2" : occupancyFloor;
+    occupancyFloor === "p1" && impactFloor === "p3" && guestImpact === "none"
+      ? "p2"
+      : occupancyFloor;
   const result = mostUrgent(mostUrgent(base, impactFloor), occupancyEffective);
   if (!ceiling || guestImpact === "safety_security") return result;
   return (PRIORITY_RANK[result] ?? 0) > (PRIORITY_RANK[ceiling] ?? 0) ? ceiling : result;
 }
 
-
 export function priorityDrivers(guestImpact: string, occupancy: string) {
-  return [
-    labelFor(GUEST_IMPACT, guestImpact),
-    labelFor(OCCUPANCY_STATUS, occupancy),
-  ];
+  return [labelFor(GUEST_IMPACT, guestImpact), labelFor(OCCUPANCY_STATUS, occupancy)];
 }
 
 export const STATUSES = [
@@ -203,9 +209,21 @@ export const HANDOFF_TYPES = [
     label: "Ownership transfer",
     hint: "They become the Current Assignee — only once they accept.",
   },
-  { value: "shift_coverage", label: "Shift transition", hint: "Action is needed before your next shift." },
-  { value: "lunch_coverage", label: "Lunch coverage", hint: "New P1 or time-sensitive P2 while you step away." },
-  { value: "supervisor_intervention", label: "Escalation", hint: "Authority, approval or leadership judgment needed." },
+  {
+    value: "shift_coverage",
+    label: "Shift transition",
+    hint: "Action is needed before your next shift.",
+  },
+  {
+    value: "lunch_coverage",
+    label: "Lunch coverage",
+    hint: "New P1 or time-sensitive P2 while you step away.",
+  },
+  {
+    value: "supervisor_intervention",
+    label: "Escalation",
+    hint: "Authority, approval or leadership judgment needed.",
+  },
 ] as const;
 
 export const GUEST_COMM_STATUS = [
@@ -246,7 +264,11 @@ type StandardSource = {
  * Response + action deadlines. The work type's own standard wins when it is
  * defined (the SOP sets these per work type); otherwise the priority default.
  */
-export function slaDueDates(priority: string, receivedAt: Date = new Date(), workType?: StandardSource) {
+export function slaDueDates(
+  priority: string,
+  receivedAt: Date = new Date(),
+  workType?: StandardSource,
+) {
   const meta = priorityMeta(priority);
   const response = workType?.response_minutes ?? meta.responseMinutes;
   const action = workType?.action_start_minutes ?? meta.actionMinutes;
@@ -298,7 +320,9 @@ function clock(
   const minutes = Math.round((due - Date.now()) / 60_000);
   return {
     label:
-      minutes < 0 ? `${name} overdue by ${formatMinutes(-minutes)}` : `${name} due in ${formatMinutes(minutes)}`,
+      minutes < 0
+        ? `${name} overdue by ${formatMinutes(-minutes)}`
+        : `${name} due in ${formatMinutes(minutes)}`,
     minutes,
     breached: minutes < 0,
     met: false,

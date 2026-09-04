@@ -19,7 +19,6 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/microsoft_outlook";
 /** The single authorised mailbox everything sends from. Replies land in the team inbox. */
 export const SHARED_MAILBOX = authorizedMailbox();
 
-
 const BRAND = {
   ink: "#20282B",
   teal: "#13747A",
@@ -42,7 +41,10 @@ export function emailEnabled() {
 }
 
 export function escapeHtml(value: string) {
-  return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
+  return value.replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c,
+  );
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -54,8 +56,10 @@ export type Audience = "staff" | "owner" | "vendor";
 
 const FOOTER: Record<Audience, string> = {
   staff: "You're receiving this because you're on the A Real Home Away operations team in Resolve.",
-  owner: "You're receiving this as a homeowner working with A Real Home Away. Reply to this email and a coordinator will pick it up.",
-  vendor: "You're receiving this as an A Real Home Away service partner. Reply to this email to reach the coordinator on duty.",
+  owner:
+    "You're receiving this as a homeowner working with A Real Home Away. Reply to this email and a coordinator will pick it up.",
+  vendor:
+    "You're receiving this as an A Real Home Away service partner. Reply to this email to reach the coordinator on duty.",
 };
 
 /** Wraps plain text in the ARHA email shell. */
@@ -95,14 +99,20 @@ export function emailShell(
 
 /** Plain-text alternative built from the same content. Improves inbox placement. */
 export function emailText(heading: string, body: string, action?: { label: string; url: string }) {
-  return [heading, "", body, action ? `\n${action.label}: ${action.url}` : "", "", "— A Real Home Away"]
+  return [
+    heading,
+    "",
+    body,
+    action ? `\n${action.label}: ${action.url}` : "",
+    "",
+    "— A Real Home Away",
+  ]
     .filter((line) => line !== null)
     .join("\n");
 }
 
 export type SendEmailResult =
-  | { status: "sent"; error: null }
-  | { status: "skipped" | "failed"; error: string };
+  { status: "sent"; error: null } | { status: "skipped" | "failed"; error: string };
 
 type SendInput = {
   to: string;
@@ -194,7 +204,9 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
   // by an individual coordinator. Their name may appear in the signature; the
   // address never changes.
   if (isEmailAddress(input.replyTo) && input.replyTo.trim().toLowerCase() !== SHARED_MAILBOX) {
-    console.warn(`Ignoring requested reply-to ${input.replyTo.trim()} — replies are pinned to ${SHARED_MAILBOX}.`);
+    console.warn(
+      `Ignoring requested reply-to ${input.replyTo.trim()} — replies are pinned to ${SHARED_MAILBOX}.`,
+    );
   }
   const replyTo = SHARED_MAILBOX;
   const message = {
@@ -202,7 +214,11 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     body: { contentType: "HTML", content: input.html },
     toRecipients: [{ emailAddress: { address: to } }],
     ...(input.cc?.filter(isEmailAddress).length
-      ? { ccRecipients: input.cc.filter(isEmailAddress).map((address) => ({ emailAddress: { address } })) }
+      ? {
+          ccRecipients: input.cc
+            .filter(isEmailAddress)
+            .map((address) => ({ emailAddress: { address } })),
+        }
       : {}),
     // From and Sender are fixed server-side and are not caller-supplied.
     from: { emailAddress: { address: SHARED_MAILBOX } },
@@ -244,7 +260,6 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
         body: JSON.stringify({ message, saveToSentItems: true }),
       });
 
-
       if (res.ok) {
         await logDelivery({
           recipient: to,
@@ -265,10 +280,11 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
 
       if (!RETRYABLE.has(res.status) || attempts >= MAX_ATTEMPTS) break;
       const retryAfter = Number(res.headers.get("retry-after"));
-      await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 500 * 2 ** (attempts - 1));
-
-
-
+      await sleep(
+        Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1000
+          : 500 * 2 ** (attempts - 1),
+      );
     } catch (err) {
       lastError = err instanceof Error ? err.message : "Email failed";
       if (attempts >= MAX_ATTEMPTS) break;

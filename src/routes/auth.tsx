@@ -11,12 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BrandLogo } from "@/components/BrandLogo";
 
-
 export const Route = createFileRoute("/auth")({
   ssr: false,
   /** `next` carries the portal the visitor picked on the overview page. */
   validateSearch: (search: Record<string, unknown>): { next?: string } => {
-    const next = typeof search['next'] === "string" ? (search['next'] as string) : undefined;
+    const next = typeof search["next"] === "string" ? (search["next"] as string) : undefined;
     return isKnownPortalRoute(next) ? { next } : {};
   },
   head: () => ({
@@ -77,7 +76,6 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
-
   async function go() {
     let intended = next;
     if (!intended) {
@@ -108,7 +106,6 @@ function AuthPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -137,7 +134,6 @@ function AuthPage() {
         if (error) throw error;
         await go();
       }
-
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -185,9 +181,7 @@ function AuthPage() {
                   : "Reset your password"}
             </CardTitle>
             {requested && mode === "signin" && (
-              <p className="text-sm font-medium text-primary">
-                Signing in to {requested.name}
-              </p>
+              <p className="text-sm font-medium text-primary">Signing in to {requested.name}</p>
             )}
             <CardDescription>
               {mode === "forgot"
@@ -196,122 +190,136 @@ function AuthPage() {
             </CardDescription>
           </CardHeader>
 
-        <CardContent className="space-y-4">
-          {mode === "forgot" ? (
-            resetSent ? (
-              <div className="space-y-4">
-                <p className="rounded-md border border-border bg-secondary p-4 text-sm text-muted-foreground">
-                  If an account exists for that email, a password reset link is on its way.
-                  Check your inbox (and junk folder), then follow the link to choose a new
-                  password.
-                </p>
+          <CardContent className="space-y-4">
+            {mode === "forgot" ? (
+              resetSent ? (
+                <div className="space-y-4">
+                  <p className="rounded-md border border-border bg-secondary p-4 text-sm text-muted-foreground">
+                    If an account exists for that email, a password reset link is on its way. Check
+                    your inbox (and junk folder), then follow the link to choose a new password.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setResetSent(false);
+                      setMode("signin");
+                    }}
+                  >
+                    Back to sign in
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={submit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Work email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Sending…" : "Send reset link"}
+                  </Button>
+                  <button
+                    type="button"
+                    className="w-full text-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    onClick={() => setMode("signin")}
+                  >
+                    Back to sign in
+                  </button>
+                </form>
+              )
+            ) : (
+              <>
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => {
-                    setResetSent(false);
-                    setMode("signin");
-                  }}
+                  onClick={signInWithGoogle}
+                  disabled={loading}
                 >
-                  Back to sign in
+                  Continue with Google
                 </Button>
-              </div>
-            ) : (
-              <form onSubmit={submit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email">Work email</Label>
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+                <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  or
+                  <span className="h-px flex-1 bg-border" />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Sending…" : "Send reset link"}
-                </Button>
-                <button
-                  type="button"
-                  className="w-full text-center text-sm font-medium text-primary underline-offset-4 hover:underline"
-                  onClick={() => setMode("signin")}
-                >
-                  Back to sign in
-                </button>
-              </form>
-            )
-          ) : (
-            <>
-              <Button variant="outline" className="w-full" onClick={signInWithGoogle} disabled={loading}>
-                Continue with Google
-              </Button>
-              <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                or
-                <span className="h-px flex-1 bg-border" />
-              </div>
-              <form onSubmit={submit} className="space-y-4">
-                {mode === "signup" && (
+                <form onSubmit={submit} className="space-y-4">
+                  {mode === "signup" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Full name</Label>
+                      <Input
+                        id="fullName"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full name</Label>
-                    <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                    <Label htmlFor="email">Work email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="email">Work email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    {mode === "signin" && (
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-primary underline-offset-4 hover:underline"
-                        onClick={() => {
-                          setResetSent(false);
-                          setMode("forgot");
-                        }}
-                      >
-                        Forgot password?
-                      </button>
-                    )}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      {mode === "signin" && (
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                          onClick={() => {
+                            setResetSent(false);
+                            setMode("forgot");
+                          }}
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
-                </Button>
-              </form>
-              <p className="text-center text-sm text-muted-foreground">
-                {mode === "signin" ? "New teammate?" : "Already have an account?"}{" "}
-                <button
-                  type="button"
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                  onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-                >
-                  {mode === "signin" ? "Create an account" : "Sign in"}
-                </button>
-              </p>
-            </>
-          )}
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+                  </Button>
+                </form>
+                <p className="text-center text-sm text-muted-foreground">
+                  {mode === "signin" ? "New teammate?" : "Already have an account?"}{" "}
+                  <button
+                    type="button"
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                    onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                  >
+                    {mode === "signin" ? "Create an account" : "Sign in"}
+                  </button>
+                </p>
+              </>
+            )}
 
-          <p className="text-center text-xs text-muted-foreground">
-            <Link to="/" className="hover:underline">
-              Back to overview
-            </Link>
-          </p>
-        </CardContent>
+            <p className="text-center text-xs text-muted-foreground">
+              <Link to="/" className="hover:underline">
+                Back to overview
+              </Link>
+            </p>
+          </CardContent>
         </Card>
       </div>
     </div>
-
   );
 }

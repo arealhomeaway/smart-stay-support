@@ -14,7 +14,12 @@ import {
   PROGRESS_META,
   nextMilestone,
 } from "./owner-participation";
-import { loadProgramAggregate, recordEvent, type Client, type ProgramAggregate } from "./owner-participation.server";
+import {
+  loadProgramAggregate,
+  recordEvent,
+  type Client,
+  type ProgramAggregate,
+} from "./owner-participation.server";
 
 const WEEK_MS = 7 * 86_400_000;
 

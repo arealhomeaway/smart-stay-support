@@ -36,7 +36,11 @@ export async function assertSupervisor(db: Client, userId: string) {
 }
 
 async function actorLabel(db: Client, userId: string) {
-  const { data } = await db.from("profiles").select("full_name, email").eq("id", userId).maybeSingle();
+  const { data } = await db
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", userId)
+    .maybeSingle();
   return data?.full_name ?? data?.email ?? "Unknown";
 }
 
@@ -56,8 +60,14 @@ export async function loadVendorDirectory(db: Client): Promise<{
       db.from("property_vendor_coverage").select("org_id"),
       db.from("gatekeeper_requirements").select("id, requirement_level").eq("active", true),
       db.from("vendor_gatekeeper_results").select("org_id, requirement_id, result, expires_on"),
-      db.from("vendor_contacts").select("id", { count: "exact", head: true }).eq("match_status", "unmatched"),
-      db.from("vendor_import_rows").select("id", { count: "exact", head: true }).eq("decision", "pending"),
+      db
+        .from("vendor_contacts")
+        .select("id", { count: "exact", head: true })
+        .eq("match_status", "unmatched"),
+      db
+        .from("vendor_import_rows")
+        .select("id", { count: "exact", head: true })
+        .eq("decision", "pending"),
     ]);
 
   for (const res of [orgsRes, membersRes, coverageRes, reqRes, resultsRes]) {
@@ -65,9 +75,11 @@ export async function loadVendorDirectory(db: Client): Promise<{
   }
 
   const memberCounts = new Map<string, number>();
-  for (const m of membersRes.data ?? []) memberCounts.set(m.org_id, (memberCounts.get(m.org_id) ?? 0) + 1);
+  for (const m of membersRes.data ?? [])
+    memberCounts.set(m.org_id, (memberCounts.get(m.org_id) ?? 0) + 1);
   const coverageCounts = new Map<string, number>();
-  for (const c of coverageRes.data ?? []) coverageCounts.set(c.org_id, (coverageCounts.get(c.org_id) ?? 0) + 1);
+  for (const c of coverageRes.data ?? [])
+    coverageCounts.set(c.org_id, (coverageCounts.get(c.org_id) ?? 0) + 1);
 
   const requirements = reqRes.data ?? [];
   const byOrg = new Map<string, Map<string, { result: string; expires_on: string | null }>>();
@@ -139,8 +151,17 @@ export async function loadVendorOrg(db: Client, orgId: string, viewerIsSuperviso
         .order("service_category"),
       db.from("gatekeeper_requirements").select("*").eq("active", true).order("sort_order"),
       db.from("vendor_gatekeeper_results").select("*").eq("org_id", orgId),
-      db.from("vendor_documents").select("*").eq("org_id", orgId).order("created_at", { ascending: false }),
-      db.from("vendor_status_events").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(25),
+      db
+        .from("vendor_documents")
+        .select("*")
+        .eq("org_id", orgId)
+        .order("created_at", { ascending: false }),
+      db
+        .from("vendor_status_events")
+        .select("*")
+        .eq("org_id", orgId)
+        .order("created_at", { ascending: false })
+        .limit(25),
     ]);
 
   if (orgRes.error) throw new Error(orgRes.error.message);
@@ -191,7 +212,8 @@ export async function loadVendorOrg(db: Client, orgId: string, viewerIsSuperviso
       id: c.id,
       propertyId: c.property_id,
       propertyName:
-        (c.properties as { name?: string | undefined; nickname?: string | null } | null)?.nickname ||
+        (c.properties as { name?: string | undefined; nickname?: string | null } | null)
+          ?.nickname ||
         (c.properties as { name?: string } | null)?.name ||
         "Unknown home",
       serviceCategory: c.service_category,
@@ -240,7 +262,9 @@ export async function createVendorOrg(
     .or(
       [
         `display_name.ilike.${input.displayName}`,
-        input.primaryContactEmail ? `primary_contact_email.ilike.${input.primaryContactEmail}` : null,
+        input.primaryContactEmail
+          ? `primary_contact_email.ilike.${input.primaryContactEmail}`
+          : null,
         input.primaryContactPhone ? `primary_contact_phone.eq.${input.primaryContactPhone}` : null,
       ]
         .filter(Boolean)
@@ -293,7 +317,8 @@ export async function setVendorStatus(
 ) {
   await assertSupervisor(db, userId);
   const reason = input.reason.trim();
-  if (reason.length < 5) throw new Error("Write a short reason for the status change — it goes on the record.");
+  if (reason.length < 5)
+    throw new Error("Write a short reason for the status change — it goes on the record.");
 
   const { data: org, error: orgError } = await db
     .from("vendor_orgs")
@@ -307,7 +332,10 @@ export async function setVendorStatus(
   if (input.status === "approved") {
     const [{ data: reqs }, { data: results }] = await Promise.all([
       db.from("gatekeeper_requirements").select("id, label, requirement_level").eq("active", true),
-      db.from("vendor_gatekeeper_results").select("requirement_id, result, expires_on").eq("org_id", input.orgId),
+      db
+        .from("vendor_gatekeeper_results")
+        .select("requirement_id, result, expires_on")
+        .eq("org_id", input.orgId),
     ]);
     const map = new Map((results ?? []).map((r) => [r.requirement_id, r]));
     const lines: GatekeeperLine[] = (reqs ?? []).map((r) => ({
@@ -399,9 +427,15 @@ export async function addCoverage(
   },
 ) {
   await assertSupervisor(db, userId);
-  const { data: org } = await db.from("vendor_orgs").select("status").eq("id", input.orgId).maybeSingle();
+  const { data: org } = await db
+    .from("vendor_orgs")
+    .select("status")
+    .eq("id", input.orgId)
+    .maybeSingle();
   if (org && ["removed", "potential", "screening"].includes(org.status)) {
-    throw new Error("Only a trial, approved, restricted or paused vendor can be put on a coverage map.");
+    throw new Error(
+      "Only a trial, approved, restricted or paused vendor can be put on a coverage map.",
+    );
   }
   const { error } = await db.from("property_vendor_coverage").insert({
     org_id: input.orgId,
@@ -433,7 +467,10 @@ export async function addVendorMember(
   await assertSupervisor(db, userId);
   const [{ data: org }, { count }] = await Promise.all([
     db.from("vendor_orgs").select("display_name").eq("id", input.orgId).maybeSingle(),
-    db.from("vendor_org_members").select("id", { count: "exact", head: true }).eq("org_id", input.orgId),
+    db
+      .from("vendor_org_members")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", input.orgId),
   ]);
   if (!org) throw new Error("That vendor company no longer exists.");
 
@@ -465,7 +502,12 @@ export async function zipPropertyCounts(db: Client) {
 
 export async function loadServiceAreas(db: Client, orgId: string): Promise<ServiceAreaRow[]> {
   const [{ data, error }, counts] = await Promise.all([
-    db.from("vendor_service_areas").select("*").eq("org_id", orgId).order("service_category").order("postal_code"),
+    db
+      .from("vendor_service_areas")
+      .select("*")
+      .eq("org_id", orgId)
+      .order("service_category")
+      .order("postal_code"),
     zipPropertyCounts(db),
   ]);
   if (error) throw new Error(error.message);
@@ -503,7 +545,11 @@ export async function addServiceArea(
   if (zips.length === 0) {
     throw new Error("No usable five-digit ZIP codes in that list.");
   }
-  const { data: org } = await db.from("vendor_orgs").select("status").eq("id", input.orgId).maybeSingle();
+  const { data: org } = await db
+    .from("vendor_orgs")
+    .select("status")
+    .eq("id", input.orgId)
+    .maybeSingle();
   if (org && ["removed", "potential", "screening"].includes(org.status)) {
     throw new Error("Only a trial, approved, restricted or paused vendor can hold a territory.");
   }
@@ -544,7 +590,8 @@ export async function coverageForOrg(db: Client, orgId: string) {
     db.from("property_vendor_coverage").select("*").eq("org_id", orgId),
     db.from("vendor_service_areas").select("*").eq("org_id", orgId),
   ]);
-  for (const res of [propsRes, coverageRes, areasRes]) if (res.error) throw new Error(res.error.message);
+  for (const res of [propsRes, coverageRes, areasRes])
+    if (res.error) throw new Error(res.error.message);
 
   const rows: {
     propertyId: string;
@@ -570,14 +617,18 @@ export async function coverageForOrg(db: Client, orgId: string) {
         (c) => c.property_id === property.id && c.service_category === category,
       );
       const territoryRow = zip
-        ? (areasRes.data ?? []).find((a) => a.postal_code === zip && a.service_category === category)
+        ? (areasRes.data ?? []).find(
+            (a) => a.postal_code === zip && a.service_category === category,
+          )
         : undefined;
       if (!propertyRow && !territoryRow) continue;
       const resolved = resolveCoverage({
         propertyRow: propertyRow
           ? { coveragePriority: propertyRow.coverage_priority, excluded: propertyRow.excluded }
           : undefined,
-        territoryRow: territoryRow ? { coveragePriority: territoryRow.coverage_priority } : undefined,
+        territoryRow: territoryRow
+          ? { coveragePriority: territoryRow.coverage_priority }
+          : undefined,
       });
       rows.push({
         propertyId: property.id,
@@ -622,7 +673,9 @@ export async function recordVendorDocument(
   const spec = DOC_TYPE_BY_CODE.get(input.docType);
   if (!spec) throw new Error("Unknown document type.");
   if (spec.retention === "verify_only" && input.externalUrl) {
-    throw new Error("Identity documents are verified and discarded — Resolve does not keep a copy.");
+    throw new Error(
+      "Identity documents are verified and discarded — Resolve does not keep a copy.",
+    );
   }
 
   const { error } = await db.from("vendor_documents").insert({

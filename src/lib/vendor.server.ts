@@ -115,15 +115,29 @@ export async function rankVendorsForTicket(ticketId: string) {
     .eq("id", ticketId)
     .maybeSingle();
 
-  const home = (ticket as unknown as { properties: { latitude: number | null; longitude: number | null; name: string | null } | null } | null)
-    ?.properties ?? null;
+  const home =
+    (
+      ticket as unknown as {
+        properties: {
+          latitude: number | null;
+          longitude: number | null;
+          name: string | null;
+        } | null;
+      } | null
+    )?.properties ?? null;
   const homePin =
-    home?.latitude != null && home?.longitude != null ? { lat: home.latitude, lng: home.longitude } : null;
+    home?.latitude != null && home?.longitude != null
+      ? { lat: home.latitude, lng: home.longitude }
+      : null;
   const urgent = ticket?.priority === "p1" || ticket?.priority === "p2";
 
   const [vendors, board] = await Promise.all([loadVendors(), loadVendorScoreboard()]);
   if (vendors.length === 0) {
-    return { candidates: [] as VendorCandidate[], homeName: home?.name ?? null, hasHomePin: !!homePin };
+    return {
+      candidates: [] as VendorCandidate[],
+      homeName: home?.name ?? null,
+      hasHomePin: !!homePin,
+    };
   }
   const ids = vendors.map((v) => v.id);
   const cardById = new Map(board.vendors.map((v) => [v.vendorUserId, v]));
@@ -148,7 +162,11 @@ export async function rankVendorsForTicket(ticketId: string) {
   for (const v of visits ?? []) {
     if (!v.vendor_user_id || v.check_in_lat == null || v.check_in_lng == null) continue;
     if (lastSeen.has(v.vendor_user_id)) continue;
-    lastSeen.set(v.vendor_user_id, { lat: v.check_in_lat, lng: v.check_in_lng, at: v.checked_in_at });
+    lastSeen.set(v.vendor_user_id, {
+      lat: v.check_in_lat,
+      lng: v.check_in_lng,
+      at: v.checked_in_at,
+    });
   }
 
   const openCount = new Map<string, number>();
@@ -160,7 +178,8 @@ export async function rankVendorsForTicket(ticketId: string) {
   const candidates: VendorCandidate[] = vendors.map((v) => {
     const card = cardById.get(v.id);
     const seen = lastSeen.get(v.id) ?? null;
-    const distanceM = homePin && seen ? distanceMeters(homePin, { lat: seen.lat, lng: seen.lng }) : null;
+    const distanceM =
+      homePin && seen ? distanceMeters(homePin, { lat: seen.lat, lng: seen.lng }) : null;
     const base = {
       tier: card?.tier ?? ("rising" as const),
       averageOverall: card?.averageOverall ?? null,

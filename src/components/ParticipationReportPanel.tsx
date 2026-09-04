@@ -4,9 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { SectionCard } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { ownerReport, ownerReportFile } from "@/lib/owner-report.functions";
+import { usDate } from "@/lib/dates";
 
 function saveFile(file: { filename: string; mime: string; base64: string }) {
   const bin = atob(file.base64);
@@ -49,11 +50,11 @@ export function ParticipationReportPanel() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+      <SectionCard title="Your report">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Preparing your report…
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
     );
   }
   if (!data) return null;
@@ -62,51 +63,53 @@ export function ParticipationReportPanel() {
   const t = data.totals;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center gap-2">
+    <SectionCard
+      title={
+        <span className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary" />
-          <CardTitle className="text-base">
-            {final ? "End-of-period participation report" : "Progress report"}
-          </CardTitle>
-          <Badge variant={final ? "default" : "secondary"}>
-            {final ? "Available now" : `Day ${data.program.day} of ${data.program.totalDays}`}
-          </Badge>
-        </div>
-        <CardDescription>
-          {final
-            ? "Your 90-day window has closed. Download your complete record whenever you need it — no request to ARHA required."
-            : "A live snapshot of your participation so far. The end-of-period report becomes available automatically when your 90-day window closes."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+          {final ? "Your end-of-period report" : "Your progress report"}
+        </span>
+      }
+      description={
+        final
+          ? "Your 90-day window has closed. Download your complete record whenever you need it — no request to ARHA required."
+          : "A live snapshot of your participation so far. Your end-of-period report becomes available automatically once your 90-day window closes."
+      }
+      actions={
+        <StatusBadge tone={final ? "resolved" : "progress"}>
+          {final ? "Available now" : `Day ${data.program.day} of ${data.program.totalDays}`}
+        </StatusBadge>
+      }
+    >
+      <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-md border border-border p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Reported hours</p>
-            <p className="text-lg font-semibold">{t.reportedHours}</p>
+          <div>
+            <p className="eyebrow">Reported hours</p>
+            <p className="mt-1 text-lg font-semibold">{t.reportedHours}</p>
             <p className="text-xs text-muted-foreground">Everything you have logged</p>
           </div>
-          <div className="rounded-md border border-border p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Entries</p>
-            <p className="text-lg font-semibold">{data.entries.length}</p>
-            <p className="text-xs text-muted-foreground">Documented participation records</p>
+          <div>
+            <p className="eyebrow">Entries</p>
+            <p className="mt-1 text-lg font-semibold">{data.entries.length}</p>
+            <p className="text-xs text-muted-foreground">Times you've reported</p>
           </div>
-          <div className="rounded-md border border-border p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Not counted</p>
-            <p className="text-lg font-semibold">
+          <div>
+            <p className="eyebrow">Not counted</p>
+            <p className="mt-1 text-lg font-semibold">
               {Math.round((t.returnedHours + t.supersededHours) * 100) / 100}
             </p>
             <p className="text-xs text-muted-foreground">Returned or replaced by a correction</p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Period {data.program.startedOn ?? "not started"} to {data.program.endsOn ?? "n/a"} ·{" "}
-          {data.entries.length} entries in period
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Period {data.program.startedOn ? usDate(data.program.startedOn) : "not started"} to{" "}
+          {data.program.endsOn ? usDate(data.program.endsOn) : "n/a"} · {data.entries.length}{" "}
+          entries in period
           {data.outsidePeriod.length > 0
             ? ` · ${data.outsidePeriod.length} entries dated outside the period are listed separately`
             : ""}
-. These are your own reported hours; ARHA does not certify them. This report is a record of
-          participation, not a tax certification.
+          . These are your own reported hours; ARHA does not certify them. This report is a record
+          of participation, not a tax certification.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => void download("pdf")} disabled={busy !== null}>
@@ -117,11 +120,7 @@ export function ParticipationReportPanel() {
             )}
             Download PDF
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => void download("csv")}
-            disabled={busy !== null}
-          >
+          <Button variant="outline" onClick={() => void download("csv")} disabled={busy !== null}>
             {busy === "csv" ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -130,7 +129,7 @@ export function ParticipationReportPanel() {
             Download CSV detail
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SectionCard>
   );
 }

@@ -101,8 +101,7 @@ export function PropertyCredentialsPanel({ propertyId }: { propertyId: string })
     retry: false,
   });
 
-  const invalidate = () =>
-    qc.invalidateQueries({ queryKey: ["property-credentials", propertyId] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["property-credentials", propertyId] });
 
   async function onReveal(row: Row) {
     if (shown[row.id]) {

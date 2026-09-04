@@ -50,7 +50,13 @@ import {
 } from "@/lib/claims";
 import type { ClaimActivityRow, ClaimRow, ClaimUpdate } from "@/lib/claim-types";
 
-const DISPOSITIONS: ClaimDisposition[] = ["approved", "partial", "denied", "withdrawn", "written_off"];
+const DISPOSITIONS: ClaimDisposition[] = [
+  "approved",
+  "partial",
+  "denied",
+  "withdrawn",
+  "written_off",
+];
 
 /** Dates a stage change should stamp, so nobody backfills them by hand. */
 function stampsFor(stage: ClaimStage): ClaimUpdate {
@@ -133,7 +139,15 @@ export function ClaimDrawer({
   };
 
   const update = useMutation({
-    mutationFn: async ({ patch, event, body }: { patch: ClaimUpdate; event: string; body: string }) => {
+    mutationFn: async ({
+      patch,
+      event,
+      body,
+    }: {
+      patch: ClaimUpdate;
+      event: string;
+      body: string;
+    }) => {
       if (!claim) return;
       const { error } = await supabase.from("claims").update(patch).eq("id", claim.id);
       if (error) throw error;
@@ -160,7 +174,10 @@ export function ClaimDrawer({
 
   const setRequirementStatus = useMutation({
     mutationFn: async ({ id, status, label }: { id: string; status: string; label: string }) => {
-      const { error } = await supabase.from("evidence_requirements").update({ status }).eq("id", id);
+      const { error } = await supabase
+        .from("evidence_requirements")
+        .update({ status })
+        .eq("id", id);
       if (error) throw error;
       await logEvent(
         "evidence",
@@ -213,7 +230,9 @@ export function ClaimDrawer({
         </SheetHeader>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Chip className={stateChip(stageState(claim.stage))}>{CLAIM_STAGE_LABELS[claim.stage]}</Chip>
+          <Chip className={stateChip(stageState(claim.stage))}>
+            {CLAIM_STAGE_LABELS[claim.stage]}
+          </Chip>
           <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
           <Chip>Recover from {RECOVERY_SOURCE[claim.claim_type]}</Chip>
           {claim.disposition ? <Chip>{DISPOSITION_LABELS[claim.disposition]}</Chip> : null}
@@ -251,15 +270,24 @@ export function ClaimDrawer({
         {/* Context */}
         <section className="space-y-1 text-sm">
           <h3 className="text-sm font-semibold">Incident</h3>
-          <p className="text-muted-foreground">{claim.incident_description || "No description recorded."}</p>
+          <p className="text-muted-foreground">
+            {claim.incident_description || "No description recorded."}
+          </p>
           <p className="text-xs text-muted-foreground">
-            {propertyName} · incident {formatDate(claim.incident_on)} · {claim.guest_name ?? "Guest unrecorded"}
+            {propertyName} · incident {formatDate(claim.incident_on)} ·{" "}
+            {claim.guest_name ?? "Guest unrecorded"}
             {claim.reservation_confirmation ? ` · ${claim.reservation_confirmation}` : ""}
-            {claim.stay_arrival ? ` · stay ${formatDate(claim.stay_arrival)}–${formatDate(claim.stay_departure)}` : ""}
+            {claim.stay_arrival
+              ? ` · stay ${formatDate(claim.stay_arrival)}–${formatDate(claim.stay_departure)}`
+              : ""}
           </p>
           <div className="flex flex-wrap gap-3 pt-1 text-xs">
             {claim.ticket_id ? (
-              <Link to="/tickets/$ticketId" params={{ ticketId: claim.ticket_id }} className="text-primary underline">
+              <Link
+                to="/tickets/$ticketId"
+                params={{ ticketId: claim.ticket_id }}
+                className="text-primary underline"
+              >
                 Originating ticket
               </Link>
             ) : null}
@@ -357,8 +385,8 @@ export function ClaimDrawer({
             {amountField("recovered_amount", "Recovered", "Money actually received.")}
           </div>
           <p className="text-xs text-muted-foreground">
-            At risk {formatMoney(amountAtRisk(claim))} · outstanding {formatMoney(unrecovered(claim))} · booked in
-            QuickBooks separately.
+            At risk {formatMoney(amountAtRisk(claim))} · outstanding{" "}
+            {formatMoney(unrecovered(claim))} · booked in QuickBooks separately.
           </p>
         </section>
 
@@ -381,10 +409,14 @@ export function ClaimDrawer({
                     })
                   }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {CLAIM_PIPELINE.map((s) => (
-                      <SelectItem key={s} value={s}>{CLAIM_STAGE_LABELS[s]}</SelectItem>
+                      <SelectItem key={s} value={s}>
+                        {CLAIM_STAGE_LABELS[s]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -404,17 +436,23 @@ export function ClaimDrawer({
                     })
                   }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {people.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{displayName(p)}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {displayName(p)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs" htmlFor="claim-deadline">Deadline</Label>
+                <Label className="text-xs" htmlFor="claim-deadline">
+                  Deadline
+                </Label>
                 <Input
                   id="claim-deadline"
                   type="date"
@@ -427,10 +465,14 @@ export function ClaimDrawer({
                     })
                   }
                 />
-                <p className="text-[11px] text-muted-foreground">From the platform notice — Resolve never guesses it.</p>
+                <p className="text-[11px] text-muted-foreground">
+                  From the platform notice — Resolve never guesses it.
+                </p>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs" htmlFor="claim-followup">Follow up on</Label>
+                <Label className="text-xs" htmlFor="claim-followup">
+                  Follow up on
+                </Label>
                 <Input
                   id="claim-followup"
                   type="date"
@@ -445,7 +487,9 @@ export function ClaimDrawer({
                 />
               </div>
               <div className="space-y-1 col-span-2">
-                <Label className="text-xs" htmlFor="claim-ref">External reference</Label>
+                <Label className="text-xs" htmlFor="claim-ref">
+                  External reference
+                </Label>
                 <Input
                   id="claim-ref"
                   defaultValue={claim.external_reference ?? ""}
@@ -469,16 +513,23 @@ export function ClaimDrawer({
                   value={claim.disposition ?? ""}
                   onValueChange={(v) =>
                     update.mutate({
-                      patch: { disposition: v as ClaimDisposition, decided_on: claim.decided_on ?? new Date().toISOString().slice(0, 10) },
+                      patch: {
+                        disposition: v as ClaimDisposition,
+                        decided_on: claim.decided_on ?? new Date().toISOString().slice(0, 10),
+                      },
                       event: "disposition",
                       body: `Outcome: ${DISPOSITION_LABELS[v as ClaimDisposition]}`,
                     })
                   }
                 >
-                  <SelectTrigger><SelectValue placeholder="Record the outcome" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Record the outcome" />
+                  </SelectTrigger>
                   <SelectContent>
                     {DISPOSITIONS.map((d) => (
-                      <SelectItem key={d} value={d}>{DISPOSITION_LABELS[d]}</SelectItem>
+                      <SelectItem key={d} value={d}>
+                        {DISPOSITION_LABELS[d]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -501,7 +552,9 @@ export function ClaimDrawer({
             ) : null}
 
             {isOpenClaim(claim.stage) ? null : (
-              <p className="text-xs text-muted-foreground">This claim is finished. Reopen it by changing the stage.</p>
+              <p className="text-xs text-muted-foreground">
+                This claim is finished. Reopen it by changing the stage.
+              </p>
             )}
           </section>
         ) : (
@@ -521,7 +574,11 @@ export function ClaimDrawer({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
-              <Button size="sm" disabled={!note.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
+              <Button
+                size="sm"
+                disabled={!note.trim() || addNote.isPending}
+                onClick={() => addNote.mutate()}
+              >
                 Add note
               </Button>
             </div>
@@ -531,7 +588,8 @@ export function ClaimDrawer({
               <li key={a.id} className="rounded-md border px-3 py-2">
                 <p className="text-sm">{a.body}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {displayName(people.find((p) => p.id === a.author_id))} · {formatDate(a.created_at)}
+                  {displayName(people.find((p) => p.id === a.author_id))} ·{" "}
+                  {formatDate(a.created_at)}
                 </p>
               </li>
             ))}

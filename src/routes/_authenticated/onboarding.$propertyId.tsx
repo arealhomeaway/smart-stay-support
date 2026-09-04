@@ -44,6 +44,7 @@ import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
 import { CurrentWork } from "@/components/onboarding/CurrentWork";
+import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
 import {
   buildReleaseContext,
@@ -65,6 +66,7 @@ import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDraw
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
+import { usDate } from "@/lib/dates";
 import {
   LIFECYCLE,
   ONBOARDING_STAGES,
@@ -159,7 +161,6 @@ function PropertyWorkspace() {
     "Homeowner's answer recorded.",
   );
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
-
 
   const current = data?.properties.find((p) => p.id === propertyId) ?? null;
   const allTasks = useMemo(
@@ -363,10 +364,10 @@ function PropertyWorkspace() {
         onOpenTask={setOpenTaskId}
       />
 
-      <Tabs defaultValue="workflow" className="space-y-5">
+      <Tabs defaultValue="overview" className="space-y-5">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="workflow">Work</TabsTrigger>
+          <TabsTrigger value="workflow">All work</TabsTrigger>
           <TabsTrigger value="property">Property</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="handoff">Handoff</TabsTrigger>
@@ -378,6 +379,56 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------- Overview */}
         <TabsContent value="overview" className="space-y-5">
+          <div className="surface p-4">
+            <PhotoStrip
+              entityType="property"
+              entityId={current.id}
+              title="Recent visual evidence"
+              emptyHint="No photos on file yet for this home."
+            />
+          </div>
+
+          {(() => {
+            const release2 = release;
+            const nextThree = tasks
+              .map((t) => viewTask(t, tasks, release2))
+              .filter(
+                (v) =>
+                  v.canComplete &&
+                  v.status !== "future" &&
+                  v.status !== "complete" &&
+                  v.status !== "carryover",
+              )
+              .sort((a, b) => (a.task.due_on ?? "9999").localeCompare(b.task.due_on ?? "9999"))
+              .slice(0, 3);
+            if (nextThree.length === 0) return null;
+            return (
+              <section className="surface p-4">
+                <p className="eyebrow">Next 3 actions</p>
+                <div className="mt-2 space-y-1.5">
+                  {nextThree.map((v) => (
+                    <button
+                      key={v.task.id}
+                      type="button"
+                      onClick={() => setOpenTaskId(v.task.id)}
+                      className="flex w-full flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-muted/50"
+                    >
+                      <span className="min-w-0 flex-1 truncate font-medium">{v.task.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {assigneeLabel(v.task, data.people)}
+                      </span>
+                      {v.task.due_on && (
+                        <span className="numeric text-xs text-muted-foreground">
+                          {usDate(v.task.due_on)}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
+
           <ProjectScopePanel
             propertyId={current.id}
             propertyName={current.name}
@@ -428,7 +479,7 @@ function PropertyWorkspace() {
             </Summary>
             <Summary label="Carryover items">{String(roll.carryover)}</Summary>
             <Summary label="Handoff accepted">
-              {current.handoff_accepted_at?.slice(0, 10) ?? "Not yet"}
+              {current.handoff_accepted_at ? usDate(current.handoff_accepted_at) : "Not yet"}
             </Summary>
           </div>
 
@@ -573,7 +624,6 @@ function PropertyWorkspace() {
               ))}
             </div>
           </section>
-
         </TabsContent>
 
         {/* ------------------------------------------------------- Workflow */}
@@ -594,9 +644,9 @@ function PropertyWorkspace() {
           <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
           {life.locked && (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              This onboarding plan is locked{life.lockedAt ? ` (${life.lockedAt.slice(0, 10)})` : ""}.
-              Template changes cannot inject new work here — record a correction or report an issue
-              instead.
+              This onboarding plan is locked
+              {life.lockedAt ? ` (${life.lockedAt.slice(0, 10)})` : ""}. Template changes cannot
+              inject new work here — record a correction or report an issue instead.
             </p>
           )}
           {postAcceptance.length > 0 && (
@@ -622,7 +672,11 @@ function PropertyWorkspace() {
             onSelect={(t) => setOpenTaskId(t.id)}
           />
           {!life.locked && (
-            <TemplatePanel propertyId={current.id} propertyName={current.name} readOnly={!canEdit} />
+            <TemplatePanel
+              propertyId={current.id}
+              propertyName={current.name}
+              readOnly={!canEdit}
+            />
           )}
         </TabsContent>
 
@@ -633,7 +687,11 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------ Financial */}
         <TabsContent value="financial" className="space-y-4">
-          <FinancialPanel propertyId={current.id} canEdit={canEdit} isAdmin={roles.includes("admin")} />
+          <FinancialPanel
+            propertyId={current.id}
+            canEdit={canEdit}
+            isAdmin={roles.includes("admin")}
+          />
         </TabsContent>
 
         {/* -------------------------------------------------------- Handoff */}
@@ -702,7 +760,9 @@ function PropertyWorkspace() {
             </div>
             {readiness.reasons.length > 0 && (
               <div className="mt-3 rounded-md border border-state-blocked/40 bg-state-blocked/5 p-3">
-                <p className="text-sm font-medium">Handoff is blocked ({readiness.reasons.length})</p>
+                <p className="text-sm font-medium">
+                  Handoff is blocked ({readiness.reasons.length})
+                </p>
                 <ul className="mt-1 space-y-1 text-sm">
                   {readiness.reasons.map((r) => (
                     <li key={r.key}>
@@ -720,24 +780,25 @@ function PropertyWorkspace() {
                 </Chip>
               ) : (
                 <>
-                {readiness.blocked && (
-                  <p className="mb-2 text-sm text-muted-foreground">
-                    Ready for handoff is unavailable until the blockers above are cleared.
-                  </p>
-                )}
-                <RequestHandoffDialog
-                  ready={readiness.ready}
-                  blockedReasons={readiness.hardReasons}
-                  disabled={!canEdit || readiness.blocked}
-                  carryoverCount={
-                    tasks.filter((t) => t.status !== "complete" && t.status !== "carryover").length
-                  }
-                  onRequest={(notes2, carryoverAccepted) =>
-                    requestHandoff.mutate({
-                      data: { propertyId: current.id, notes: notes2, carryoverAccepted },
-                    } as never)
-                  }
-                />
+                  {readiness.blocked && (
+                    <p className="mb-2 text-sm text-muted-foreground">
+                      Ready for handoff is unavailable until the blockers above are cleared.
+                    </p>
+                  )}
+                  <RequestHandoffDialog
+                    ready={readiness.ready}
+                    blockedReasons={readiness.hardReasons}
+                    disabled={!canEdit || readiness.blocked}
+                    carryoverCount={
+                      tasks.filter((t) => t.status !== "complete" && t.status !== "carryover")
+                        .length
+                    }
+                    onRequest={(notes2, carryoverAccepted) =>
+                      requestHandoff.mutate({
+                        data: { propertyId: current.id, notes: notes2, carryoverAccepted },
+                      } as never)
+                    }
+                  />
                 </>
               )}
             </div>
@@ -808,6 +869,7 @@ function PropertyWorkspace() {
 
         {/* ---------------------------------------------------------- Files */}
         <TabsContent value="files" className="space-y-4">
+          <PhotoStrip entityType="property" entityId={current.id} title="Photos" limit={16} />
           <AttachmentsPanel
             entityType="property"
             entityId={current.id}
@@ -830,9 +892,7 @@ function PropertyWorkspace() {
             approvals={approvals as never}
             reviews={
               data.reviews.filter((r) =>
-                data.handoffs.some(
-                  (h) => h.id === r.handoff_id && h.property_id === current.id,
-                ),
+                data.handoffs.some((h) => h.id === r.handoff_id && h.property_id === current.id),
               ) as never
             }
             people={data.people}

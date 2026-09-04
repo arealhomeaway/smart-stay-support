@@ -54,11 +54,17 @@ export const PROGRAM_STATUS_META: Record<ProgramStatus, { label: string; tone: s
     label: "Target reached",
     tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
   },
-  completed: { label: "Completed", tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" },
+  completed: {
+    label: "Completed",
+    tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+  },
   paused: { label: "Paused", tone: "bg-amber-500/10 text-amber-700 border-amber-500/20" },
   closed: { label: "Closed", tone: "bg-muted text-muted-foreground border-border" },
   pending: { label: "Draft", tone: "bg-muted text-muted-foreground border-border" },
-  complete: { label: "Completed", tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" },
+  complete: {
+    label: "Completed",
+    tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+  },
 };
 
 export const ACTIVATABLE_STATUSES: ProgramStatus[] = [
@@ -283,10 +289,14 @@ export function progressSnapshot(input: {
 /* Property coverage — task based, never hour based                    */
 /* ------------------------------------------------------------------ */
 
-export type CoverageState = "no_activity" | "needs_attention" | "in_progress" | "launch_ready" | "complete";
+export type CoverageState =
+  "no_activity" | "needs_attention" | "in_progress" | "launch_ready" | "complete";
 
 export const COVERAGE_META: Record<CoverageState, { label: string; tone: string }> = {
-  no_activity: { label: "No owner activity yet", tone: "bg-muted text-muted-foreground border-border" },
+  no_activity: {
+    label: "No owner activity yet",
+    tone: "bg-muted text-muted-foreground border-border",
+  },
   needs_attention: {
     label: "Needs attention",
     tone: "bg-orange-500/10 text-orange-700 border-orange-500/20",
@@ -315,10 +325,33 @@ export type BadgeDef = {
 };
 
 export const BADGES: BadgeDef[] = [
-  { code: "first_step", name: "First Step", kind: "hours", requirement: "Your first participation entry" },
-  { code: "building_momentum", name: "Building Momentum", kind: "hours", hours: 10, requirement: "10 reported hours" },
-  { code: "engaged_owner", name: "Engaged Owner", kind: "hours", hours: 25, requirement: "25 reported hours" },
-  { code: "halfway", name: "Halfway Milestone", kind: "hours", hours: 50, requirement: "50 reported hours" },
+  {
+    code: "first_step",
+    name: "First Step",
+    kind: "hours",
+    requirement: "Your first participation entry",
+  },
+  {
+    code: "building_momentum",
+    name: "Building Momentum",
+    kind: "hours",
+    hours: 10,
+    requirement: "10 reported hours",
+  },
+  {
+    code: "engaged_owner",
+    name: "Engaged Owner",
+    kind: "hours",
+    hours: 25,
+    requirement: "25 reported hours",
+  },
+  {
+    code: "halfway",
+    name: "Halfway Milestone",
+    kind: "hours",
+    hours: 50,
+    requirement: "50 reported hours",
+  },
   {
     code: "onboarding_champion",
     name: "Onboarding Champion",
@@ -326,7 +359,13 @@ export const BADGES: BadgeDef[] = [
     hours: 60,
     requirement: "60 reported hours with onboarding activities substantially complete",
   },
-  { code: "strong_finish", name: "Strong Finish", kind: "hours", hours: 75, requirement: "75 reported hours" },
+  {
+    code: "strong_finish",
+    name: "Strong Finish",
+    kind: "hours",
+    hours: 75,
+    requirement: "75 reported hours",
+  },
   {
     code: "hundred_plus",
     name: "100+ Milestone",
@@ -340,7 +379,12 @@ export const BADGES: BadgeDef[] = [
     kind: "action",
     requirement: "ARHA has completed the formal program closeout",
   },
-  { code: "decision_maker", name: "Decision Maker", kind: "action", requirement: "Your first completed owner decision" },
+  {
+    code: "decision_maker",
+    name: "Decision Maker",
+    kind: "action",
+    requirement: "Your first completed owner decision",
+  },
   {
     code: "consistent_participation",
     name: "Consistent Participation",
@@ -385,7 +429,10 @@ export const BADGES: BadgeDef[] = [
   },
 ];
 
-export const BADGE_BY_CODE = Object.fromEntries(BADGES.map((b) => [b.code, b])) as Record<string, BadgeDef>;
+export const BADGE_BY_CODE = Object.fromEntries(BADGES.map((b) => [b.code, b])) as Record<
+  string,
+  BadgeDef
+>;
 
 export const BADGE_HOURS_NOTE =
   "Hour milestones are based on participation you reported yourself. Badges never add, estimate or suggest time, and they do not imply tax qualification.";

@@ -1,8 +1,15 @@
 import { describe, expect, it } from "bun:test";
 import { matchPlaybook, NO_APPROVED_GUIDANCE, type MatchContext } from "@/lib/playbook-match";
-import { driftWarnings, hasAuthoredGuidance, parsePlaybook, type PlaybookRow } from "@/lib/playbooks";
+import {
+  driftWarnings,
+  hasAuthoredGuidance,
+  parsePlaybook,
+  type PlaybookRow,
+} from "@/lib/playbooks";
 
-function pb(overrides: Partial<PlaybookRow> & { id: string; title: string }): ReturnType<typeof parsePlaybook> {
+function pb(
+  overrides: Partial<PlaybookRow> & { id: string; title: string },
+): ReturnType<typeof parsePlaybook> {
   return parsePlaybook({
     category: "other",
     status: "active",
@@ -17,7 +24,12 @@ const leak = pb({
   category: "water",
   playbook_key: "water_active_leak",
   matcher: { categories: ["water"], priorities: ["p1"], requires: ["guest_in_home"] },
-  risk_flags: [{ title: "Water can reach the unit below", why: "Check the ceiling downstairs before leaving." }],
+  risk_flags: [
+    {
+      title: "Water can reach the unit below",
+      why: "Check the ceiling downstairs before leaving.",
+    },
+  ],
   immediate_actions: ["Shut the water off at the source before anything else."],
   escalate_if: ["Water reaches a neighbouring unit."],
 });
@@ -70,7 +82,12 @@ describe("matchPlaybook", () => {
   });
 
   it("does not match the leak playbook when its required condition is absent", () => {
-    const r = matchPlaybook(ALL, { ...base, category: "water", priority: "p1", guestInHome: false });
+    const r = matchPlaybook(ALL, {
+      ...base,
+      category: "water",
+      priority: "p1",
+      guestInHome: false,
+    });
     expect(r.primary).toBeNull();
   });
 

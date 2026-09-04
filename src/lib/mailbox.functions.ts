@@ -37,7 +37,9 @@ export const runMailboxSync = createServerFn({ method: "POST" })
     limit: Math.min(Math.max(Number(input?.limit ?? 25), 1), 50),
   }))
   .handler(async ({ context, data }) => {
-    const { data: supervisor } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    const { data: supervisor } = await context.supabase.rpc("is_supervisor", {
+      _user_id: context.userId,
+    });
     if (!supervisor) throw new Error("Only supervisors can run the inbox sync.");
     const { syncMailbox } = await import("./mailbox.server");
     return syncMailbox(context.supabase, data);
@@ -47,7 +49,9 @@ export const runMailboxSync = createServerFn({ method: "POST" })
 export const refreshMailboxSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: supervisor } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    const { data: supervisor } = await context.supabase.rpc("is_supervisor", {
+      _user_id: context.userId,
+    });
     if (!supervisor) throw new Error("Only supervisors can manage the mailbox subscription.");
     const { ensureSubscription } = await import("./outlook-subscription.server");
     return ensureSubscription(context.supabase);
@@ -67,7 +71,11 @@ export const getOutlookSource = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     // The record must be readable by this user before its email origin is.
     const table = data.entityType === "lead" ? "leads" : "tickets";
-    const { data: record } = await context.supabase.from(table).select("id").eq("id", data.entityId).maybeSingle();
+    const { data: record } = await context.supabase
+      .from(table)
+      .select("id")
+      .eq("id", data.entityId)
+      .maybeSingle();
     if (!record) return null;
     const { outlookSourceFor } = await import("./mailbox.server");
     return outlookSourceFor(context.supabase, data.entityType, data.entityId);

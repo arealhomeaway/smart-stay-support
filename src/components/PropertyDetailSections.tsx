@@ -7,11 +7,15 @@
  */
 import { useMemo, useState } from "react";
 import { KeyRound, Search } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/page";
 import {
   filterPropertyDetailGroups,
   matchesCredentialSearch,
@@ -32,14 +36,10 @@ export function PropertyDetailSections({
 
   if (groups.length === 0) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">No operating detail recorded yet</CardTitle>
-          <CardDescription>
-            Nothing has been imported or entered for this home. Onboarding fills this in as the property is prepared.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <EmptyState
+        title="No operating detail recorded yet"
+        hint="Onboarding fills this in as the property is prepared."
+      />
     );
   }
 
@@ -57,19 +57,17 @@ export function PropertyDetailSections({
       </div>
 
       {credentialHint && (
-        <Card className="border-primary/50">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
-            <span className="flex items-center gap-2">
-              <KeyRound className="size-4 text-primary" />
-              Codes and passwords live in Guest Access &amp; Credentials, not in property details.
-            </span>
-            {onGoToCredentials && (
-              <Button size="sm" variant="outline" onClick={onGoToCredentials}>
-                Go to credentials
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-primary/8 px-4 py-3 text-sm">
+          <span className="flex items-center gap-2">
+            <KeyRound className="size-4 text-primary" />
+            Codes and passwords live in Guest Access &amp; Credentials, not here.
+          </span>
+          {onGoToCredentials && (
+            <Button size="sm" variant="outline" onClick={onGoToCredentials}>
+              Go to credentials
+            </Button>
+          )}
+        </div>
       )}
 
       {visible.length === 0 ? (
@@ -77,27 +75,33 @@ export function PropertyDetailSections({
           Nothing recorded on this home matches “{query.trim()}”.
         </p>
       ) : (
+        // Property details are daily-use reference, so every section opens by
+        // default; staff collapse what they don't need rather than dig for
+        // what they do.
         <Accordion
           type="multiple"
-          // While searching, every surviving section opens so the answer is on screen.
           {...(searching ? { value: visible.map((g) => g.id) } : {})}
-          defaultValue={groups.slice(0, 3).map((g) => g.id)}
-          className="rounded-xl border border-border bg-card px-4"
+          defaultValue={groups.map((g) => g.id)}
+          className="divide-y divide-border/60"
         >
           {visible.map((g) => (
-            <AccordionItem key={g.id} value={g.id}>
-              <AccordionTrigger className="text-left">
-                <span className="flex items-center gap-2">
-                  {g.title}
-                  <Badge variant="outline">{g.fields.length}</Badge>
+            <AccordionItem key={g.id} value={g.id} className="border-0">
+              <AccordionTrigger className="py-3 text-left hover:no-underline">
+                <span className="flex items-baseline gap-2">
+                  <span className="text-[0.9375rem] font-semibold tracking-tight">{g.title}</span>
+                  <span className="numeric text-xs text-muted-foreground">{g.fields.length}</span>
                 </span>
               </AccordionTrigger>
-              <AccordionContent>
-                <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              <AccordionContent className="pb-4">
+                <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
                   {g.fields.map((f) => (
-                    <div key={f.key} className="border-b border-border/50 pb-2">
-                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</dt>
-                      <dd className="whitespace-pre-line text-sm">{f.value}</dd>
+                    <div key={f.key} className="min-w-0">
+                      <dt className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">
+                        {f.label}
+                      </dt>
+                      <dd className="mt-0.5 whitespace-pre-line text-[0.9375rem] leading-snug">
+                        {f.value}
+                      </dd>
                     </div>
                   ))}
                 </dl>

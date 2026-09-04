@@ -25,8 +25,9 @@ export function OwnerFilesPanel() {
           <FolderOpen className="size-4 text-primary" /> Documents &amp; photos
         </CardTitle>
         <CardDescription>
-          Files ARHA has shared with you, and any document your coordinator has asked you to upload. Each file can be up
-          to {formatBytes(MAX_FILE_BYTES)} — longer videos need to be trimmed or shared as a smaller copy.
+          Files ARHA has shared with you, and any document your coordinator has asked you to upload.
+          Each file can be up to {formatBytes(MAX_FILE_BYTES)} — longer videos need to be trimmed or
+          shared as a smaller copy.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

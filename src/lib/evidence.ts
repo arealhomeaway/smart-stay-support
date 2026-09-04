@@ -36,7 +36,8 @@ export const EVIDENCE_KINDS = [
 ] as const;
 export type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
 
-export type RequirementStatus = "awaiting" | "checking" | "verified" | "rejected" | "accepted_exception";
+export type RequirementStatus =
+  "awaiting" | "checking" | "verified" | "rejected" | "accepted_exception";
 export type ItemStatus = "checking" | "verified" | "rejected" | "accepted_exception" | "unchecked";
 
 /** The status words Operations sees. These are fixed — do not paraphrase them. */
@@ -92,20 +93,50 @@ export const REASON_CODES = [
 export type ReasonCode = (typeof REASON_CODES)[number];
 
 export const REASON_GUIDANCE: Record<ReasonCode, { title: string; fix: string }> = {
-  blurry: { title: "Too blurry", fix: "Hold still, tap the screen on the subject to focus, then take it again." },
+  blurry: {
+    title: "Too blurry",
+    fix: "Hold still, tap the screen on the subject to focus, then take it again.",
+  },
   low_resolution: {
     title: "Too small to read",
     fix: "Send the full-size photo from the camera, not a screenshot or a forwarded copy.",
   },
-  too_dark: { title: "Too dark", fix: "Turn on the room light or your phone's flash and retake it." },
-  overexposed: { title: "Too bright", fix: "Move out of the direct light or turn off the flash and retake it." },
-  glare: { title: "Glare on the surface", fix: "Step slightly to one side so the light does not bounce back at the lens." },
-  obstructed: { title: "Something is in the way", fix: "Move the object blocking the view, or shoot from another angle." },
-  too_far: { title: "Taken from too far away", fix: "Move closer so the subject fills most of the frame." },
-  too_close: { title: "Taken too close", fix: "Step back so we can see the subject and enough of what is around it." },
-  cut_off: { title: "Subject is cut off", fix: "Reframe so the whole subject is inside the picture with a little room around it." },
-  motion_blur: { title: "Camera moved", fix: "Brace your elbows or rest the phone on something and take it again." },
-  wrong_subject: { title: "Not what was asked for", fix: "Read the request again and photograph that exact item." },
+  too_dark: {
+    title: "Too dark",
+    fix: "Turn on the room light or your phone's flash and retake it.",
+  },
+  overexposed: {
+    title: "Too bright",
+    fix: "Move out of the direct light or turn off the flash and retake it.",
+  },
+  glare: {
+    title: "Glare on the surface",
+    fix: "Step slightly to one side so the light does not bounce back at the lens.",
+  },
+  obstructed: {
+    title: "Something is in the way",
+    fix: "Move the object blocking the view, or shoot from another angle.",
+  },
+  too_far: {
+    title: "Taken from too far away",
+    fix: "Move closer so the subject fills most of the frame.",
+  },
+  too_close: {
+    title: "Taken too close",
+    fix: "Step back so we can see the subject and enough of what is around it.",
+  },
+  cut_off: {
+    title: "Subject is cut off",
+    fix: "Reframe so the whole subject is inside the picture with a little room around it.",
+  },
+  motion_blur: {
+    title: "Camera moved",
+    fix: "Brace your elbows or rest the phone on something and take it again.",
+  },
+  wrong_subject: {
+    title: "Not what was asked for",
+    fix: "Read the request again and photograph that exact item.",
+  },
   text_unreadable: {
     title: "The label cannot be read",
     fix: "Get close enough that every character is sharp, straight on, with light on the label rather than behind it.",
@@ -162,10 +193,13 @@ export const KIND_CRITERIA: Record<EvidenceKind, string> = {
   completed_repair:
     "The repair itself is in frame and visibly finished — no exposed wiring, open holes, loose parts or tools left in place.",
   before: "The problem or the original condition is clearly visible before any work was done.",
-  after: "The same area as the before photo, showing the finished condition from a comparable angle.",
-  property_feature: "The feature is clearly identifiable, with enough of the room to place it in the home.",
+  after:
+    "The same area as the before photo, showing the finished condition from a comparable angle.",
+  property_feature:
+    "The feature is clearly identifiable, with enough of the room to place it in the home.",
   meter_reading: "The full reading, including every digit, is sharp and readable.",
-  damage: "The damage is clearly visible, with both a close view of it and enough context to locate it.",
+  damage:
+    "The damage is clearly visible, with both a close view of it and enough context to locate it.",
 };
 
 export type EvidenceRequirementView = {

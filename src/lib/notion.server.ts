@@ -64,12 +64,24 @@ function friendlyError(status: number, body: string) {
 
 function titleOf(obj: Record<string, unknown>): string | null {
   const title = (obj as { title?: { plain_text?: string }[] }).title;
-  if (Array.isArray(title)) return title.map((t) => t.plain_text ?? "").join("").trim() || null;
-  const props = (obj as { properties?: Record<string, { type?: string; title?: { plain_text?: string }[] }> })
-    .properties;
+  if (Array.isArray(title))
+    return (
+      title
+        .map((t) => t.plain_text ?? "")
+        .join("")
+        .trim() || null
+    );
+  const props = (
+    obj as { properties?: Record<string, { type?: string; title?: { plain_text?: string }[] }> }
+  ).properties;
   for (const value of Object.values(props ?? {})) {
     if (value?.type === "title" && Array.isArray(value.title)) {
-      return value.title.map((t) => t.plain_text ?? "").join("").trim() || null;
+      return (
+        value.title
+          .map((t) => t.plain_text ?? "")
+          .join("")
+          .trim() || null
+      );
     }
   }
   return null;
@@ -79,7 +91,13 @@ function titleOf(obj: Record<string, unknown>): string | null {
 export async function probeNotionSources(sources: NotionSource[] = NOTION_SOURCES) {
   const probes: NotionProbe[] = [];
   for (const source of sources) {
-    const base = { key: source.key, label: source.label, id: source.id, kind: source.kind, blurb: source.blurb };
+    const base = {
+      key: source.key,
+      label: source.label,
+      id: source.id,
+      kind: source.kind,
+      blurb: source.blurb,
+    };
     try {
       const db = await notionFetch<{
         object: string;
@@ -158,16 +176,23 @@ function plainValue(value: Record<string, unknown>): string | null {
     case "title":
     case "rich_text":
       return Array.isArray(raw)
-        ? (raw as { plain_text?: string }[]).map((t) => t.plain_text ?? "").join("").trim()
+        ? (raw as { plain_text?: string }[])
+            .map((t) => t.plain_text ?? "")
+            .join("")
+            .trim()
         : null;
     case "select":
       return (raw as { name?: string } | null)?.name ?? null;
     case "status":
       return (raw as { name?: string } | null)?.name ?? null;
     case "multi_select":
-      return Array.isArray(raw) ? (raw as { name?: string }[]).map((o) => o.name ?? "").join(", ") : null;
+      return Array.isArray(raw)
+        ? (raw as { name?: string }[]).map((o) => o.name ?? "").join(", ")
+        : null;
     case "people":
-      return Array.isArray(raw) ? (raw as { name?: string }[]).map((p) => p.name ?? "").join(", ") : null;
+      return Array.isArray(raw)
+        ? (raw as { name?: string }[]).map((p) => p.name ?? "").join(", ")
+        : null;
     case "date":
       return (raw as { start?: string } | null)?.start ?? null;
     case "checkbox":
@@ -187,7 +212,10 @@ function plainValue(value: Record<string, unknown>): string | null {
     case "rollup": {
       const r = raw as { array?: Record<string, unknown>[] } | null;
       if (!r?.array) return null;
-      return r.array.map((item) => plainValue(item) ?? "").filter(Boolean).join(", ");
+      return r.array
+        .map((item) => plainValue(item) ?? "")
+        .filter(Boolean)
+        .join(", ");
     }
     default:
       return null;

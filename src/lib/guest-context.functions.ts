@@ -10,7 +10,6 @@ import {
 
 export type { PropertyContactResult, PrimaryOwnerContact };
 
-
 /**
  * Current guest / tenant context for an Operations ticket.
  *
@@ -74,7 +73,10 @@ export const getPropertyContactContext = createServerFn({ method: "POST" })
 
     // Authorisation: Operations staff and supervisors only — identical rule
     // to getGuestContext.
-    const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
     const roles = (roleRows ?? []).map((r) => r.role as string);
     const allowed = roles.some((r) => r === "admin" || r === "manager" || r === "tech");
     if (!allowed) return { visible: false };
@@ -89,7 +91,9 @@ export const getPropertyContactContext = createServerFn({ method: "POST" })
     const [{ data: directory }, { data: ownerProgram }] = await Promise.all([
       supabase
         .from("property_owner_contacts")
-        .select("owner_name, owner_phone, owner_email, source, source_id, match_status, synced_at, detail")
+        .select(
+          "owner_name, owner_phone, owner_email, source, source_id, match_status, synced_at, detail",
+        )
         .eq("property_id", property.id)
         .maybeSingle(),
       supabase
@@ -143,7 +147,6 @@ export const getPropertyContactContext = createServerFn({ method: "POST" })
     };
   });
 
-
 export const getGuestContext = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ ticketId: z.string().uuid() }).parse(data))
@@ -151,7 +154,10 @@ export const getGuestContext = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     // Authorisation: Operations staff and supervisors only.
-    const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
     const roles = (roleRows ?? []).map((r) => r.role as string);
     const allowed = roles.some((r) => r === "admin" || r === "manager" || r === "tech");
     if (!allowed) return { visible: false };

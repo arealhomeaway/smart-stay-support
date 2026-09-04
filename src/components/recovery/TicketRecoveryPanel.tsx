@@ -225,23 +225,28 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
       <CardHeader>
         <CardTitle>Make it right for the guest</CardTitle>
         <CardDescription>
-          What the guest is owed after this failure — separate from recovering the cost from anyone else.
+          What the guest is owed after this failure — separate from recovering the cost from anyone
+          else.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {existing.map((row) => (
           <div key={row.id} className="rounded-md border px-3 py-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Chip className={stateChip(stageState(row.stage))}>{RECOVERY_STAGE_LABELS[row.stage]}</Chip>
-              {row.recovery_action ? <Chip>{RECOVERY_ACTION_LABELS[row.recovery_action]}</Chip> : null}
+              <Chip className={stateChip(stageState(row.stage))}>
+                {RECOVERY_STAGE_LABELS[row.stage]}
+              </Chip>
+              {row.recovery_action ? (
+                <Chip>{RECOVERY_ACTION_LABELS[row.recovery_action]}</Chip>
+              ) : null}
               {row.within_airbnb_policy === false ? (
                 <Chip className={stateChip("blocked")}>Outside standard policy</Chip>
               ) : null}
             </div>
             <p className="mt-1 font-medium">{nextAction(row)}</p>
             <p className="text-xs text-muted-foreground">
-              Proposed {formatMoney(row.proposed_amount)} · approved {formatMoney(row.approved_amount)} · issued{" "}
-              {formatMoney(row.delivered_amount)}
+              Proposed {formatMoney(row.proposed_amount)} · approved{" "}
+              {formatMoney(row.approved_amount)} · issued {formatMoney(row.delivered_amount)}
             </p>
           </div>
         ))}
@@ -253,7 +258,9 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         ) : (
           <div className="space-y-3 rounded-md border p-3">
             <div className="space-y-1">
-              <Label className="text-xs" htmlFor="rec-impact">What did the guest actually lose?</Label>
+              <Label className="text-xs" htmlFor="rec-impact">
+                What did the guest actually lose?
+              </Label>
               <Textarea
                 id="rec-impact"
                 value={impact}
@@ -266,11 +273,18 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-xs">Situation</Label>
-                <Select value={situation} onValueChange={(v) => setSituation(v as RecoverySituation)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={situation}
+                  onValueChange={(v) => setSituation(v as RecoverySituation)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {SITUATIONS.map((s) => (
-                      <SelectItem key={s} value={s}>{SITUATION_LABELS[s]}</SelectItem>
+                      <SelectItem key={s} value={s}>
+                        {SITUATION_LABELS[s]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -279,10 +293,14 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               <div className="space-y-1">
                 <Label className="text-xs">Proposed remedy</Label>
                 <Select value={action} onValueChange={(v) => setAction(v as RecoveryAction)}>
-                  <SelectTrigger><SelectValue placeholder="Decide later" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Decide later" />
+                  </SelectTrigger>
                   <SelectContent>
                     {RECOVERY_ACTIONS.map((a) => (
-                      <SelectItem key={a} value={a}>{RECOVERY_ACTION_LABELS[a]}</SelectItem>
+                      <SelectItem key={a} value={a}>
+                        {RECOVERY_ACTION_LABELS[a]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -291,11 +309,20 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
 
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className="text-xs" htmlFor="rec-requested">Guest asked for</Label>
-                <Input id="rec-requested" type="number" value={requested} onChange={(e) => setRequested(e.target.value)} />
+                <Label className="text-xs" htmlFor="rec-requested">
+                  Guest asked for
+                </Label>
+                <Input
+                  id="rec-requested"
+                  type="number"
+                  value={requested}
+                  onChange={(e) => setRequested(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs" htmlFor="rec-amount">Proposed amount</Label>
+                <Label className="text-xs" htmlFor="rec-amount">
+                  Proposed amount
+                </Label>
                 <Input
                   id="rec-amount"
                   type="number"
@@ -306,8 +333,13 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Airbnb policy fit</Label>
-                <Select value={policyFit} onValueChange={(v) => setPolicyFit(v as typeof policyFit)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={policyFit}
+                  onValueChange={(v) => setPolicyFit(v as typeof policyFit)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unknown">Not confirmed yet</SelectItem>
                     <SelectItem value="within">Within normal policy</SelectItem>
@@ -323,7 +355,10 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
                 {ESCALATION_FLAGS.filter(
                   (f) => f !== "outside_policy" && f !== "multi_night_refund" && f !== "relocation",
                 ).map((flag) => (
-                  <label key={flag} className="flex items-center gap-1 rounded border px-2 py-1 text-xs">
+                  <label
+                    key={flag}
+                    className="flex items-center gap-1 rounded border px-2 py-1 text-xs"
+                  >
                     <input
                       type="checkbox"
                       checked={flags.includes(flag)}
@@ -346,9 +381,15 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
             {duplicates.length > 0 ? (
               <div className="rounded-md border border-warning/40 bg-warning/10 p-3">
                 <p className="text-sm font-medium">Possible duplicate</p>
-                <p className="text-xs text-muted-foreground">{duplicates[0]?.reason} Review before opening another.</p>
+                <p className="text-xs text-muted-foreground">
+                  {duplicates[0]?.reason} Review before opening another.
+                </p>
                 <label className="mt-2 flex items-center gap-2 text-xs">
-                  <input type="checkbox" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={acknowledged}
+                    onChange={(e) => setAcknowledged(e.target.checked)}
+                  />
                   This is a separate remedy
                 </label>
               </div>
@@ -358,7 +399,13 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               <Button disabled={create.isPending || blocked} onClick={() => create.mutate()}>
                 Open recovery
               </Button>
-              <Button variant="ghost" onClick={() => { setOpen(false); setAcknowledged(false); }}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setOpen(false);
+                  setAcknowledged(false);
+                }}
+              >
                 Cancel
               </Button>
             </div>

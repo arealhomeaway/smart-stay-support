@@ -17,7 +17,9 @@ import {
 
 describe("where Resolve is allowed to read", () => {
   it("reads the mailbox, not one folder", () => {
-    expect(mailboxMessagesPath()).toBe(`/users/${encodeURIComponent(authorizedMailbox())}/messages`);
+    expect(mailboxMessagesPath()).toBe(
+      `/users/${encodeURIComponent(authorizedMailbox())}/messages`,
+    );
     expect(mailboxMessagesPath()).not.toContain("mailFolders");
   });
 
@@ -69,14 +71,18 @@ describe("retry reporting", () => {
 
   it("a retry with no record on file is still a failure", async () => {
     const { retryCategory } = await import("@/lib/mailbox.server");
-    const outcome = await retryCategory({} as never, { id: "AAMk2" }, {
-      id: "row-2",
-      status: "created",
-      error_message: "recategorise_pending",
-      entity_id: null,
-      external_id: "AAMk2",
-      created_at: new Date().toISOString(),
-    });
+    const outcome = await retryCategory(
+      {} as never,
+      { id: "AAMk2" },
+      {
+        id: "row-2",
+        status: "created",
+        error_message: "recategorise_pending",
+        entity_id: null,
+        external_id: "AAMk2",
+        created_at: new Date().toISOString(),
+      },
+    );
     expect(outcome).toBe("failed");
   });
 });

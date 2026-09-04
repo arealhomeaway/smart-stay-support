@@ -18,7 +18,9 @@ export type RatingInput = {
 };
 
 /** Average of the three 1-5 scores, rounded to 2dp. */
-export function overallScore(r: Pick<RatingInput, "thoroughness" | "communication" | "timeliness">) {
+export function overallScore(
+  r: Pick<RatingInput, "thoroughness" | "communication" | "timeliness">,
+) {
   return Math.round(((r.thoroughness + r.communication + r.timeliness) / 3) * 100) / 100;
 }
 

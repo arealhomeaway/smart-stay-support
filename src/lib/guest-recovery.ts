@@ -51,7 +51,8 @@ export type RecoveryStage =
   | "completed"
   | "closed";
 
-export type RecoveryOutcome = "resolved" | "declined_no_compensation" | "guest_disputed" | "withdrawn";
+export type RecoveryOutcome =
+  "resolved" | "declined_no_compensation" | "guest_disputed" | "withdrawn";
 
 export type RecoveryAction =
   | "none"
@@ -204,7 +205,8 @@ const STAFF_VERIFICATION: RecoverySlot = {
   key: "staff_verification",
   label: "Staff or vendor verification",
   kind: "general",
-  instruction: "Who confirmed the issue on site, and what they found. Confirm before any number is discussed.",
+  instruction:
+    "Who confirmed the issue on site, and what they found. Confirm before any number is discussed.",
   required: true,
 };
 
@@ -242,11 +244,7 @@ const PLATFORM_MESSAGE: RecoverySlot = {
 
 /** The situation drives the checklist — only evidence that fits the case. */
 export type RecoverySituation =
-  | "food_loss"
-  | "construction_noise"
-  | "maintenance_failure"
-  | "guest_violation"
-  | "general";
+  "food_loss" | "construction_noise" | "maintenance_failure" | "guest_violation" | "general";
 
 export const SITUATION_LABELS: Record<RecoverySituation, string> = {
   food_loss: "Food loss",
@@ -342,8 +340,8 @@ export function derivedEscalations(input: AuthorityInput): EscalationFlag[] {
 }
 
 export function allEscalations(input: AuthorityInput): EscalationFlag[] {
-  const recorded = (input.escalation_flags ?? []).filter((f): f is EscalationFlag =>
-    typeof f === "string" && isEscalationFlag(f),
+  const recorded = (input.escalation_flags ?? []).filter(
+    (f): f is EscalationFlag => typeof f === "string" && isEscalationFlag(f),
   );
   return Array.from(new Set([...recorded, ...derivedEscalations(input)]));
 }
@@ -498,16 +496,29 @@ export type SupervisorTriggerInput = {
  * Involving James is not a handoff — it is guidance, approval or coaching. The
  * coordinator stays the owner until someone explicitly accepts the work.
  */
-export function supervisorTriggers(input: SupervisorTriggerInput, now = new Date()): SupervisorTrigger[] {
+export function supervisorTriggers(
+  input: SupervisorTriggerInput,
+  now = new Date(),
+): SupervisorTrigger[] {
   const out: SupervisorTrigger[] = [];
   const priority = normalisePriority(input.priority ?? null);
   const openMinutes = minutesSince(input.created_at, now);
   const resolved = input.stage === "closed" || input.stage === "completed";
 
-  if (!resolved && priority === "p1" && !input.accepted_at && (openMinutes ?? 0) > RECOVERY_POLICY.p1UnacceptedMinutes) {
+  if (
+    !resolved &&
+    priority === "p1" &&
+    !input.accepted_at &&
+    (openMinutes ?? 0) > RECOVERY_POLICY.p1UnacceptedMinutes
+  ) {
     out.push("p1_unaccepted");
   }
-  if (!resolved && priority === "p2" && !input.action_plan && (openMinutes ?? 0) > RECOVERY_POLICY.p2NoPlanMinutes) {
+  if (
+    !resolved &&
+    priority === "p2" &&
+    !input.action_plan &&
+    (openMinutes ?? 0) > RECOVERY_POLICY.p2NoPlanMinutes
+  ) {
     out.push("p2_no_plan");
   }
   if (input.guest_requested_supervisor) out.push("guest_asked_supervisor");
@@ -519,7 +530,11 @@ export function supervisorTriggers(input: SupervisorTriggerInput, now = new Date
   if ((input.vendor_missed_commitments ?? 0) >= RECOVERY_POLICY.vendorMissedCommitments) {
     out.push("vendor_missed_commitments");
   }
-  if (!resolved && (openMinutes ?? 0) >= RECOVERY_POLICY.unresolvedActiveStayMinutes && isActiveStay(input, now)) {
+  if (
+    !resolved &&
+    (openMinutes ?? 0) >= RECOVERY_POLICY.unresolvedActiveStayMinutes &&
+    isActiveStay(input, now)
+  ) {
     out.push("unresolved_two_hours");
   }
   if (input.no_sop) out.push("no_sop");
@@ -660,7 +675,10 @@ export function nextAction(recovery: RecoveryLike, ctx: NextActionContext = {}):
     return "Impact is confirmed. Decide the remedy — a temporary fix first where one exists.";
   }
 
-  if (isMonetary(recovery.recovery_action as RecoveryAction) && num(recovery.proposed_amount) === null) {
+  if (
+    isMonetary(recovery.recovery_action as RecoveryAction) &&
+    num(recovery.proposed_amount) === null
+  ) {
     return "Record the proposed amount so Resolve can show whose approval this needs.";
   }
 
@@ -687,11 +705,15 @@ export function daysUntil(iso: string | null | undefined, now = new Date()): num
 }
 
 /** The stage the record has actually reached, offered as a suggestion only. */
-export function proposeStage(recovery: RecoveryLike, requirements: RequirementLike[]): RecoveryStage {
+export function proposeStage(
+  recovery: RecoveryLike,
+  requirements: RequirementLike[],
+): RecoveryStage {
   if (recovery.stage === "closed" || recovery.stage === "completed") return recovery.stage;
   if (num(recovery.delivered_amount) !== null) return "completed";
   if (num(recovery.approved_amount) !== null) return "approved";
-  if (recovery.stage === "awaiting_approval" || recovery.stage === "guest_offered") return recovery.stage;
+  if (recovery.stage === "awaiting_approval" || recovery.stage === "guest_offered")
+    return recovery.stage;
   if (!recovery.impact_detail) return "reported";
   const progress = evidenceProgress(requirements);
   if (progress.blocking.length > 0) return "evidence";
@@ -709,13 +731,16 @@ export function proposeStage(recovery: RecoveryLike, requirements: RequirementLi
  */
 export function closureBlockers(recovery: RecoveryLike): string[] {
   const out: string[] = [];
-  if (!recovery.corrective_action) out.push("Document the corrective action taken on the property.");
-  if (!recovery.final_communication_at) out.push("Complete the final guest communication before closing.");
+  if (!recovery.corrective_action)
+    out.push("Document the corrective action taken on the property.");
+  if (!recovery.final_communication_at)
+    out.push("Complete the final guest communication before closing.");
   const approved = num(recovery.approved_amount);
   if (approved !== null && num(recovery.delivered_amount) === null) {
     out.push("Record the actual amount issued to the guest.");
   }
-  if (recovery.approval_status === "pending") out.push("The required approval is still outstanding.");
+  if (recovery.approval_status === "pending")
+    out.push("The required approval is still outstanding.");
   if (recovery.handoff_status === "requested") {
     out.push("A handoff is still waiting to be accepted — you remain responsible until it is.");
   }
@@ -793,15 +818,19 @@ export function recoveryBucket(
     return days <= 30 ? "recently_resolved" : null;
   }
 
-  if (recovery.outcome === "guest_disputed" || recovery.approval_status === "declined") return "reassess";
+  if (recovery.outcome === "guest_disputed" || recovery.approval_status === "declined")
+    return "reassess";
   if (recovery.approval_status === "returned") return "reassess";
   if (communicationOverdue(recovery, now)) return "needs_attention";
 
   const checkout = daysUntil(recovery.stay_departure, now);
-  if (checkout !== null && checkout <= 1 && recovery.stage !== "guest_offered") return "needs_attention";
+  if (checkout !== null && checkout <= 1 && recovery.stage !== "guest_offered")
+    return "needs_attention";
 
-  if (recovery.stage === "awaiting_approval" || recovery.approval_status === "pending") return "approval_required";
-  if (recovery.stage === "approved" || recovery.stage === "guest_accepted") return "approved_action_needed";
+  if (recovery.stage === "awaiting_approval" || recovery.approval_status === "pending")
+    return "approval_required";
+  if (recovery.stage === "approved" || recovery.stage === "guest_accepted")
+    return "approved_action_needed";
   if (recovery.stage === "guest_offered") return "waiting_guest";
   if (progress.blocking.length > 0) return "waiting_evidence";
   return "needs_attention";
@@ -848,9 +877,16 @@ export const MANAGER_FILTER_LABELS: Record<ManagerFilter, string> = {
   reopened: "Reopened recoveries",
 };
 
-export type ManagerRow = RecoveryLike & { reopened_at?: string | null; property_id?: string | null };
+export type ManagerRow = RecoveryLike & {
+  reopened_at?: string | null;
+  property_id?: string | null;
+};
 
-export function matchesManagerFilter(row: ManagerRow, filter: ManagerFilter, now = new Date()): boolean {
+export function matchesManagerFilter(
+  row: ManagerRow,
+  filter: ManagerFilter,
+  now = new Date(),
+): boolean {
   const amount = num(row.proposed_amount) ?? num(row.approved_amount);
   switch (filter) {
     case "pending_approvals":
@@ -867,11 +903,13 @@ export function matchesManagerFilter(row: ManagerRow, filter: ManagerFilter, now
     case "outside_policy":
       return row.within_airbnb_policy === false;
     case "director_escalations":
-      return allEscalations({
-        recovery_action: row.recovery_action,
-        within_airbnb_policy: row.within_airbnb_policy,
-        escalation_flags: row.escalation_flags,
-      }).length > 0;
+      return (
+        allEscalations({
+          recovery_action: row.recovery_action,
+          within_airbnb_policy: row.within_airbnb_policy,
+          escalation_flags: row.escalation_flags,
+        }).length > 0
+      );
     case "communication_overdue":
       return isOpenRecovery(row.stage) && communicationOverdue(row, now);
     case "unresolved_two_hours":

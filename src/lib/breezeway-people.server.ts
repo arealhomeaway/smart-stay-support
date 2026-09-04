@@ -64,7 +64,9 @@ export async function syncBreezewayPeople(): Promise<{
     let page = 1;
     let pages = 1;
     do {
-      const data = await breezewayRequest<RawPerson[] | { results?: RawPerson[]; total_pages?: number }>(
+      const data = await breezewayRequest<
+        RawPerson[] | { results?: RawPerson[]; total_pages?: number }
+      >(
         // Breezeway serves this list at "/people" exactly; "/people/" 404s.
         "/people",
         { params: { limit: 100, page } },
@@ -146,9 +148,11 @@ export async function commentIdentityFor(userId: string): Promise<CommentIdentit
     .eq("resolve_user_id", userId)
     .eq("active", true)
     .maybeSingle();
-  const mine = own.data as
-    | { breezeway_person_id: number; first_name: string | null; last_name: string | null }
-    | null;
+  const mine = own.data as {
+    breezeway_person_id: number;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
   if (mine) {
     return {
       ok: true,
@@ -163,15 +167,18 @@ export async function commentIdentityFor(userId: string): Promise<CommentIdentit
     .select("breezeway_person_id, first_name, last_name")
     .eq("is_integration_identity", true)
     .maybeSingle();
-  const integration = shared.data as
-    | { breezeway_person_id: number; first_name: string | null; last_name: string | null }
-    | null;
+  const integration = shared.data as {
+    breezeway_person_id: number;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
   if (integration) {
     return {
       ok: true,
       peopleId: integration.breezeway_person_id,
       mode: "integration",
-      personName: [integration.first_name, integration.last_name].filter(Boolean).join(" ") || "ARHA Resolve",
+      personName:
+        [integration.first_name, integration.last_name].filter(Boolean).join(" ") || "ARHA Resolve",
     };
   }
 
@@ -192,7 +199,9 @@ export async function breezewayPeopleAudit() {
   const db = await admin();
   const { data } = await db
     .from("breezeway_people")
-    .select("breezeway_person_id, first_name, last_name, email, active, resolve_user_id, mapping_state, is_integration_identity, synced_at")
+    .select(
+      "breezeway_person_id, first_name, last_name, email, active, resolve_user_id, mapping_state, is_integration_identity, synced_at",
+    )
     .order("last_name", { ascending: true, nullsFirst: false });
   const rows = (data ?? []) as {
     breezeway_person_id: number;

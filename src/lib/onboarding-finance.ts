@@ -76,12 +76,16 @@ export function financialStatus(row: Pick<FinancialRequest, "status">): Financia
 }
 
 /** Tier a request falls into, from its estimate and emergency flag. */
-export function tierFor(row: Pick<FinancialRequest, "estimate_amount" | "emergency">): AuthorityTier {
+export function tierFor(
+  row: Pick<FinancialRequest, "estimate_amount" | "emergency">,
+): AuthorityTier {
   return authorityTier(row.estimate_amount, { emergency: row.emergency });
 }
 
 /** Invoice minus what was approved. Positive means it came in over. */
-export function variance(row: Pick<FinancialRequest, "approved_amount" | "estimate_amount" | "invoice_amount">) {
+export function variance(
+  row: Pick<FinancialRequest, "approved_amount" | "estimate_amount" | "invoice_amount">,
+) {
   if (row.invoice_amount == null) return null;
   const baseline = row.approved_amount ?? row.estimate_amount ?? 0;
   return Number(row.invoice_amount) - Number(baseline);
@@ -114,7 +118,9 @@ export function financialNextAction(row: FinancialRequest): string {
       if (tier === "emergency") return "Record the emergency exception, then add the invoice.";
       return "No approval needed — add the invoice when it arrives.";
     case "awaiting_approval":
-      return tier === "owner" ? "Waiting on the homeowner's decision." : "Waiting on supervisor approval.";
+      return tier === "owner"
+        ? "Waiting on the homeowner's decision."
+        : "Waiting on supervisor approval.";
     case "approved":
       return "Add the invoice when it arrives.";
     case "declined":
@@ -214,7 +220,9 @@ export function utilityStatusLabel(status: string) {
 
 /** Utilities that would block a clean handoff: not yet on at the home. */
 export function utilitiesNotReady(rows: UtilityAccount[]) {
-  return rows.filter((r) => r.responsible === "arha" && r.status !== "active" && r.status !== "closed");
+  return rows.filter(
+    (r) => r.responsible === "arha" && r.status !== "active" && r.status !== "closed",
+  );
 }
 
 export function utilitySpend(costs: UtilityCost[]) {

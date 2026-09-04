@@ -3,9 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { Chip, EmptyState, LoadingRows, PageHeader, SectionBand } from "@/components/ui/page";
+import { usDateTime } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/vendor/")({
   component: VendorQueue,
@@ -28,10 +29,26 @@ export const Route = createFileRoute("/_authenticated/vendor/")({
   }),
 });
 
-const PRIORITY_TONE: Record<string, string> = {
-  p1: "bg-destructive text-destructive-foreground",
-  p2: "bg-amber-500 text-white",
+const VENDOR_STATE: Record<string, { label: string; tone: StatusTone }> = {
+  on_site: { label: "On site", tone: "progress" },
+  accepted: { label: "In progress", tone: "progress" },
+  dispatched: { label: "New", tone: "waiting" },
+  completed: { label: "Complete", tone: "resolved" },
 };
+
+function vendorState(status: string | null | undefined) {
+  return VENDOR_STATE[status ?? ""] ?? { label: "New", tone: "waiting" as StatusTone };
+}
+
+function nextAction(job: { vendor_status: string | null; due_at: string | null }) {
+  if (job.vendor_status === "on_site" || job.vendor_status === "accepted") {
+    return "Finish the required steps and mark it complete.";
+  }
+  if (job.due_at && new Date(job.due_at).getTime() < Date.now()) {
+    return "Past due — accept the job and head over.";
+  }
+  return "Accept the job to let the team know you're on it.";
+}
 
 function VendorQueue() {
   const { enabled: flagEnabled } = useFeatureFlags();
@@ -41,7 +58,7 @@ function VendorQueue() {
       const { data, error } = await supabase
         .from("tickets")
         .select(
-          "id, ref, title, priority, status, vendor_status, due_at, vendor_dispatched_at, properties(name, city, state)",
+          "id, ref, title, priority, status, category, vendor_status, due_at, vendor_dispatched_at, properties(name, city, state, primary_photo_url)",
         )
         .eq("is_demo", false)
         .is("archived_at", null)
@@ -54,101 +71,117 @@ function VendorQueue() {
 
   const showScorecard = flagEnabled("vendor_portal");
 
-  const open = (jobs.data ?? []).filter((j) => j.vendor_status !== "completed" && j.status !== "closed");
-  const done = (jobs.data ?? []).filter((j) => j.vendor_status === "completed" || j.status === "closed");
+  const open = (jobs.data ?? []).filter(
+    (j) => j.vendor_status !== "completed" && j.status !== "closed",
+  );
+  const done = (jobs.data ?? []).filter(
+    (j) => j.vendor_status === "completed" || j.status === "closed",
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="font-display text-2xl font-semibold">My work orders</h1>
-          {showScorecard ? (
-          <Link
-            to="/vendor/scorecard"
-            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-accent/40"
-          >
-            <Award className="size-4" /> My scorecard
-          </Link>
-          ) : null}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Everything A Real Home Away has sent your way. Open a job for the address, access details and the steps
-          we need finished before it can be closed.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Vendor portal"
+        title="My work orders"
+        description="Everything A Real Home Away has sent your way. Open a job for the address, access details and the steps we need finished before it can be closed."
+        actions={
+          showScorecard ? (
+            <Link
+              to="/vendor/scorecard"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-accent/40"
+            >
+              <Award className="size-4" /> My scorecard
+            </Link>
+          ) : undefined
+        }
+      />
 
       {jobs.isLoading ? (
-        <Skeleton className="h-40 w-full" />
+        <LoadingRows rows={3} />
       ) : open.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Nothing open right now</CardTitle>
-            <CardDescription>
-              New work shows up here the moment a coordinator dispatches it to you.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <EmptyState
+          title="Nothing open right now"
+          hint="New work shows up here the moment a coordinator dispatches it to you."
+        />
       ) : (
-        <div className="space-y-3">
-          {open.map((job) => (
-            <Link
-              key={job.id}
-              to="/vendor/$ticketId"
-              params={{ ticketId: job.id }}
-              className="block rounded-lg border border-border p-4 transition-colors hover:bg-accent/40"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className={PRIORITY_TONE[job.priority ?? ""] ?? ""} variant={PRIORITY_TONE[job.priority ?? ""] ? "default" : "secondary"}>
-                  {(job.priority ?? "").toUpperCase()}
-                </Badge>
-                <span className="font-medium">
-                  #{job.ref} {job.title}
-                </span>
-                <Badge variant="outline" className="ml-auto capitalize">
-                  {job.vendor_status === "on_site"
-                    ? "On site"
-                    : job.vendor_status === "accepted"
-                      ? "In progress"
-                      : "New"}
-                </Badge>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {(job.properties as { name: string; city: string | null; state: string | null } | null)?.name ??
-                  "Home to be confirmed"}
-                {job.due_at ? ` · due ${new Date(job.due_at).toLocaleString()}` : ""}
-              </p>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {done.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recently finished</CardTitle>
-            <CardDescription>Your last completed work orders.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {done.slice(0, 10).map((job) => (
+        <div className="space-y-2">
+          {open.map((job) => {
+            const property = job.properties as {
+              name: string;
+              city: string | null;
+              state: string | null;
+              primary_photo_url: string | null;
+            } | null;
+            const state = vendorState(job.vendor_status);
+            return (
               <Link
                 key={job.id}
                 to="/vendor/$ticketId"
                 params={{ ticketId: job.id }}
-                className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 hover:bg-accent/40"
+                className="surface-row flex items-start gap-3 py-3 pl-4 pr-4"
               >
-                <span className="font-medium">
-                  #{job.ref} {job.title}
-                </span>
-                <span className="text-muted-foreground">
-                  {(job.properties as { name: string } | null)?.name ?? "—"}
-                </span>
-                <Badge variant="secondary" className="ml-auto">
-                  Complete
-                </Badge>
+                <PropertyPhoto
+                  url={property?.primary_photo_url}
+                  name={property?.name}
+                  className="mt-0.5 size-12"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Chip
+                      className={
+                        job.priority === "p1"
+                          ? "border-danger/40 bg-danger/10 text-danger"
+                          : undefined
+                      }
+                    >
+                      {(job.priority ?? "").toUpperCase()}
+                    </Chip>
+                    <span className="numeric text-xs text-muted-foreground">#{job.ref}</span>
+                    <span className="font-medium">{job.title}</span>
+                    <StatusBadge tone={state.tone} className="ml-auto">
+                      {state.label}
+                    </StatusBadge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {property?.name ?? "Home to be confirmed"} ·{" "}
+                    {(job.category ?? "").replace(/_/g, " ")}
+                    {job.due_at ? ` · due ${usDateTime(job.due_at)}` : ""}
+                  </p>
+                  <p className="mt-1 text-[0.8125rem] font-medium text-foreground/80">
+                    {nextAction(job)}
+                  </p>
+                </div>
               </Link>
-            ))}
-          </CardContent>
-        </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {done.length > 0 && (
+        <div className="space-y-3">
+          <SectionBand title="Recently finished" hint="Your last completed work orders." />
+          <div className="space-y-1.5">
+            {done.slice(0, 10).map((job) => {
+              const property = job.properties as { name: string } | null;
+              return (
+                <Link
+                  key={job.id}
+                  to="/vendor/$ticketId"
+                  params={{ ticketId: job.id }}
+                  className="surface-row flex flex-wrap items-center gap-2 py-2.5 pl-4 pr-4 text-sm"
+                >
+                  <span className="font-medium">
+                    #{job.ref} {job.title}
+                  </span>
+                  <span className="text-muted-foreground">{property?.name ?? "—"}</span>
+                  <StatusBadge tone="resolved" className="ml-auto">
+                    Complete
+                  </StatusBadge>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

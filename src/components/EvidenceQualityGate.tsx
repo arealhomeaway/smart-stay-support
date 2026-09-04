@@ -102,13 +102,7 @@ function itemTone(status: EvidenceItemView["status"]) {
   }
 }
 
-function ExceptionDialog({
-  item,
-  onDone,
-}: {
-  item: EvidenceItemView;
-  onDone: () => void;
-}) {
+function ExceptionDialog({ item, onDone }: { item: EvidenceItemView; onDone: () => void }) {
   const accept = useServerFn(acceptEvidenceExceptionFn);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -156,7 +150,10 @@ function ExceptionDialog({
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={reason.trim().length < 10 || save.isPending} onClick={() => save.mutate()}>
+            <Button
+              disabled={reason.trim().length < 10 || save.isPending}
+              onClick={() => save.mutate()}
+            >
               Accept with exception
             </Button>
           </DialogFooter>
@@ -240,8 +237,14 @@ function ItemCard({
 
         {(item.status === "rejected" || item.status === "unchecked") && (
           <div className="flex flex-wrap gap-2 pt-1">
-            <Button variant="ghost" size="sm" disabled={again.isPending} onClick={() => again.mutate()}>
-              <RefreshCw className={`mr-1 size-3 ${again.isPending ? "animate-spin" : ""}`} /> Check again
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={again.isPending}
+              onClick={() => again.mutate()}
+            >
+              <RefreshCw className={`mr-1 size-3 ${again.isPending ? "animate-spin" : ""}`} /> Check
+              again
             </Button>
             {canOverride && <ExceptionDialog item={item} onDone={onChanged} />}
           </div>
@@ -364,7 +367,12 @@ function RequirementCard({
             if (f) void upload(f);
           }}
         />
-        <Button variant="outline" size="sm" disabled={busy} onClick={() => fileRef.current?.click()}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() => fileRef.current?.click()}
+        >
           {busy ? (
             <>
               <Loader2 className="mr-1 size-3 animate-spin" /> Checking photo…
@@ -433,8 +441,8 @@ function AddRequirement({
           <DialogHeader>
             <DialogTitle>Ask for a photo</DialogTitle>
             <DialogDescription>
-              Say exactly what has to be visible. The clearer the request, the fewer photos come back
-              unusable.
+              Say exactly what has to be visible. The clearer the request, the fewer photos come
+              back unusable.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -548,9 +556,7 @@ export function EvidenceQualityGate({
         {isLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : requirements.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No photo has been asked for here yet.
-          </p>
+          <p className="text-sm text-muted-foreground">No photo has been asked for here yet.</p>
         ) : (
           requirements.map((r) => (
             <RequirementCard

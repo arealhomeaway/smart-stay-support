@@ -24,31 +24,36 @@ export const PHASE_LABELS: Record<ProgramPhase, string> = {
   ongoing: "Ongoing operations",
 };
 
-export const ONBOARDING_STAGES = ["Discover + assess", "Plan + prepare", "Verify + launch"] as const;
+export const ONBOARDING_STAGES = [
+  "Discover + assess",
+  "Plan + prepare",
+  "Verify + launch",
+] as const;
 export const ONGOING_STAGES = ["Recurring", "Periodic"] as const;
 
-export const DECISION_PATHS: Record<DecisionPath, { label: string; blurb: string; tone: string }> = {
-  inform: {
-    label: "Inform",
-    blurb: "ARHA acts within approved authority, then shares the outcome for review.",
-    tone: "bg-muted text-muted-foreground border-border",
-  },
-  consult: {
-    label: "Consult",
-    blurb: "ARHA asks for the owner's input before settling the direction.",
-    tone: "bg-primary/10 text-primary border-primary/20",
-  },
-  approve: {
-    label: "Approve",
-    blurb: "The owner authorizes a material or discretionary choice before ARHA proceeds.",
-    tone: "bg-amber-500/10 text-amber-700 border-amber-500/20",
-  },
-  time_sensitive: {
-    label: "Time-sensitive",
-    blurb: "Urgent work keeps moving within approved authority; the outcome is shared after.",
-    tone: "bg-destructive/10 text-destructive border-destructive/20",
-  },
-};
+export const DECISION_PATHS: Record<DecisionPath, { label: string; blurb: string; tone: string }> =
+  {
+    inform: {
+      label: "Inform",
+      blurb: "ARHA acts within approved authority, then shares the outcome for review.",
+      tone: "bg-muted text-muted-foreground border-border",
+    },
+    consult: {
+      label: "Consult",
+      blurb: "ARHA asks for the owner's input before settling the direction.",
+      tone: "bg-primary/10 text-primary border-primary/20",
+    },
+    approve: {
+      label: "Approve",
+      blurb: "The owner authorizes a material or discretionary choice before ARHA proceeds.",
+      tone: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+    },
+    time_sensitive: {
+      label: "Time-sensitive",
+      blurb: "Urgent work keeps moving within approved authority; the outcome is shared after.",
+      tone: "bg-destructive/10 text-destructive border-destructive/20",
+    },
+  };
 
 export const PROGRAM_STATUS_LABELS: Record<ProgramStatus, { label: string; tone: string }> = {
   pending: { label: "Not started", tone: "bg-muted text-muted-foreground border-border" },
@@ -125,8 +130,9 @@ export function daysRemaining(startedOn: string | null) {
  */
 export function paceState(startedOn: string | null, reportedMinutes: number, targetHours: number) {
   const day = programDay(startedOn);
-  if (!startedOn || day === 0) return { state: "not_started" as const, expectedHours: 0, gapHours: 0 };
-  const expectedHours = Math.round((targetHours * (day / PROGRAM_DAYS)) * 10) / 10;
+  if (!startedOn || day === 0)
+    return { state: "not_started" as const, expectedHours: 0, gapHours: 0 };
+  const expectedHours = Math.round(targetHours * (day / PROGRAM_DAYS) * 10) / 10;
   const actual = hoursFromMinutes(reportedMinutes);
   const gapHours = Math.round((expectedHours - actual) * 10) / 10;
   if (actual >= targetHours) return { state: "target_met" as const, expectedHours, gapHours };
@@ -139,8 +145,14 @@ export const PACE_LABELS = {
   not_started: { label: "Not started", tone: "bg-muted text-muted-foreground border-border" },
   on_pace: { label: "On pace", tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" },
   slipping: { label: "Slipping", tone: "bg-amber-500/10 text-amber-700 border-amber-500/20" },
-  behind: { label: "Behind pace", tone: "bg-destructive/10 text-destructive border-destructive/20" },
-  target_met: { label: "Target met", tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" },
+  behind: {
+    label: "Behind pace",
+    tone: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+  target_met: {
+    label: "Target met",
+    tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+  },
 } as const;
 
 /** Owner-facing invite codes: unambiguous characters only, easy to read aloud. */

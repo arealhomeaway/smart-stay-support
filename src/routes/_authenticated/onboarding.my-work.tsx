@@ -4,7 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TaskRow } from "@/components/onboarding/WorkflowTable";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
@@ -29,7 +35,10 @@ export const Route = createFileRoute("/_authenticated/onboarding/my-work")({
           "Every onboarding task assigned to you across homes, grouped into overdue, today, upcoming, blocked and waiting on review.",
       },
       { property: "og:title", content: "My onboarding work — Resolve" },
-      { property: "og:description", content: "Your onboarding tasks across every home in one list." },
+      {
+        property: "og:description",
+        content: "Your onboarding tasks across every home in one list.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -46,7 +55,10 @@ function MyWork() {
   const [who, setWho] = useState("me");
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({ queryKey: ["onboarding-workspace"], queryFn: () => load() });
+  const { data, isLoading } = useQuery({
+    queryKey: ["onboarding-workspace"],
+    queryFn: () => load(),
+  });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
   const onError = (e: Error) => toast.error(e.message);
 
@@ -75,7 +87,6 @@ function MyWork() {
     onError,
   });
   const reopenTask = useMutation({
-
     mutationFn: useServerFn(reopenOnboardingTaskFn) as never,
     onSuccess: () => {
       toast.success("Task reopened.");
@@ -113,8 +124,14 @@ function MyWork() {
 
   if (isLoading || !data) return <LoadingPage />;
 
-  const propertyName = (id: string) => data.properties.find((p) => p.id === id)?.name ?? "Unknown home";
-  const views = mine.map((t) => viewTask(t, allTasks.filter((x) => x.property_id === t.property_id)));
+  const propertyName = (id: string) =>
+    data.properties.find((p) => p.id === id)?.name ?? "Unknown home";
+  const views = mine.map((t) =>
+    viewTask(
+      t,
+      allTasks.filter((x) => x.property_id === t.property_id),
+    ),
+  );
   const t0 = today();
 
   const groups: { key: string; label: string; hint: string; items: TaskView[] }[] = [
@@ -134,7 +151,9 @@ function MyWork() {
       key: "blocked",
       label: "Blocked",
       hint: "Waiting on a dependency, a homeowner decision, or a recorded blocker.",
-      items: views.filter((v) => !v.overdue && (v.status === "blocked" || v.status === "not_ready")),
+      items: views.filter(
+        (v) => !v.overdue && (v.status === "blocked" || v.status === "not_ready"),
+      ),
     },
     {
       key: "review",
@@ -147,7 +166,12 @@ function MyWork() {
       label: "Upcoming",
       hint: "Released and dated for a later day.",
       items: views.filter(
-        (v) => !v.overdue && v.status !== "blocked" && v.status !== "not_ready" && v.status !== "needs_review" && (v.task.due_on ?? "") > t0,
+        (v) =>
+          !v.overdue &&
+          v.status !== "blocked" &&
+          v.status !== "not_ready" &&
+          v.status !== "needs_review" &&
+          (v.task.due_on ?? "") > t0,
       ),
     },
     {
@@ -155,13 +179,20 @@ function MyWork() {
       label: "No date yet",
       hint: "Not scheduled — usually waiting on a milestone date such as closing or access.",
       items: views.filter(
-        (v) => !v.task.due_on && !v.overdue && v.status !== "blocked" && v.status !== "not_ready" && v.status !== "needs_review",
+        (v) =>
+          !v.task.due_on &&
+          !v.overdue &&
+          v.status !== "blocked" &&
+          v.status !== "not_ready" &&
+          v.status !== "needs_review",
       ),
     },
   ];
 
   const openTask = allTasks.find((t) => t.id === openTaskId) ?? null;
-  const drawerSiblings = openTask ? allTasks.filter((t) => t.property_id === openTask.property_id) : [];
+  const drawerSiblings = openTask
+    ? allTasks.filter((t) => t.property_id === openTask.property_id)
+    : [];
   const canEdit = !readOnly && can("handoff_request");
 
   return (
@@ -189,7 +220,10 @@ function MyWork() {
       />
 
       {views.length === 0 && (
-        <EmptyState title="Nothing open" hint="No open onboarding task matches this view right now." />
+        <EmptyState
+          title="Nothing open"
+          hint="No open onboarding task matches this view right now."
+        />
       )}
 
       {groups
@@ -240,9 +274,10 @@ function MyWork() {
             data: { taskId, approved, note, ...(evidenceUrl ? { evidenceUrl } : {}) },
           } as never)
         }
-        onRecordException={(taskId, reason) => recordException.mutate({ data: { taskId, reason } } as never)}
+        onRecordException={(taskId, reason) =>
+          recordException.mutate({ data: { taskId, reason } } as never)
+        }
       />
-
     </div>
   );
 }

@@ -424,9 +424,8 @@ export async function verifyAndFinalizeTask(
 
 async function refreshMirroredWorkOrder(taskId: number) {
   try {
-    const { refreshWorkOrder, syncWorkOrderComments } = await import(
-      "./breezeway-workorders.server"
-    );
+    const { refreshWorkOrder, syncWorkOrderComments } =
+      await import("./breezeway-workorders.server");
     const mirrored = await refreshWorkOrder(taskId);
     if (mirrored) await syncWorkOrderComments(mirrored.id);
   } catch {
@@ -500,4 +499,3 @@ export async function processBreezewayWebhook(
     ...(finalized.retryable !== undefined ? { retryable: finalized.retryable } : {}),
   };
 }
-

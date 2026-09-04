@@ -31,9 +31,8 @@ export const breezewayOutboundState = createServerFn({ method: "POST" })
   .inputValidator(parseSource)
   .handler(async ({ data, context }) => {
     await assertStaff(context.supabase, context.userId);
-    const { listOutboundLinks, outboundEligibility } = await import(
-      "@/lib/breezeway-outbound.server"
-    );
+    const { listOutboundLinks, outboundEligibility } =
+      await import("@/lib/breezeway-outbound.server");
     const [eligibility, links] = await Promise.all([
       outboundEligibility(data),
       listOutboundLinks(data),
@@ -152,9 +151,8 @@ export const breezewayCreationOptions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertStaff(context.supabase, context.userId);
-    const { listBreezewayTemplates, listAssignableBreezewayPeople } = await import(
-      "@/lib/breezeway-directory.server"
-    );
+    const { listBreezewayTemplates, listAssignableBreezewayPeople } =
+      await import("@/lib/breezeway-directory.server");
     const [templates, assignees] = await Promise.all([
       listBreezewayTemplates().catch(() => []),
       listAssignableBreezewayPeople().catch(() => []),

@@ -15,8 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Chip, EmptyState, LoadingRows, PageHeader, PriorityRail } from "@/components/ui/page";
-import { ownershipChip, stateChip, ticketState } from "@/lib/semantic";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SlidersHorizontal } from "lucide-react";
+import { Chip, EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
+import { StatusBadge, ticketTone } from "@/components/ui/status";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { ownershipChip } from "@/lib/semantic";
+import { usDate } from "@/lib/dates";
 import {
   PRIORITIES,
   STATUSES,
@@ -146,7 +151,6 @@ function TeamQueuePage() {
     [all, JSON.stringify(filters), homeTeamOf],
   );
 
-
   const properties = useMemo(() => {
     const map = new Map<string, string>();
     for (const t of all)
@@ -180,11 +184,31 @@ function TeamQueuePage() {
   const flagButtons: { key: string; label: string; count: number }[] = useMemo(() => {
     const active = all.filter((t) => !["resolved", "closed"].includes(t.status));
     return [
-      { key: "unassigned", label: "Unassigned", count: active.filter((t) => !currentOwnerId(t)).length },
-      { key: "waiting", label: "Waiting", count: active.filter((t) => t.status === "waiting").length },
-      { key: "blocked", label: "Blocked", count: active.filter((t) => isBlocked(t as never)).length },
-      { key: "escalated", label: "Escalated", count: active.filter((t) => isEscalated(t as never)).length },
-      { key: "overdue", label: "Overdue", count: active.filter((t) => slaState(t).breached).length },
+      {
+        key: "unassigned",
+        label: "Unassigned",
+        count: active.filter((t) => !currentOwnerId(t)).length,
+      },
+      {
+        key: "waiting",
+        label: "Waiting",
+        count: active.filter((t) => t.status === "waiting").length,
+      },
+      {
+        key: "blocked",
+        label: "Blocked",
+        count: active.filter((t) => isBlocked(t as never)).length,
+      },
+      {
+        key: "escalated",
+        label: "Escalated",
+        count: active.filter((t) => isEscalated(t as never)).length,
+      },
+      {
+        key: "overdue",
+        label: "Overdue",
+        count: active.filter((t) => slaState(t).breached).length,
+      },
     ];
   }, [all]);
 
@@ -239,72 +263,97 @@ function TeamQueuePage() {
         <Button
           size="sm"
           variant={filters.assignee === userId ? "default" : "outline"}
-          onClick={() => setParam({ assignee: filters.assignee === userId ? undefined : (userId ?? undefined) })}
+          onClick={() =>
+            setParam({ assignee: filters.assignee === userId ? undefined : (userId ?? undefined) })
+          }
         >
           Only mine
         </Button>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
-        <FilterSelect
-          label="Owner"
-          value={filters.assignee}
-          onChange={(v) => setParam({ assignee: v === "all" ? undefined : v })}
-          options={[
-            { value: "all", label: "Anyone" },
-            { value: "unassigned", label: "Unassigned" },
-            ...owners.map((o) => ({ value: o.id, label: o.name })),
-          ]}
-        />
-        <FilterSelect
-          label="Home team"
-          value={filters.homeTeam}
-          onChange={(v) => setParam({ homeTeam: v === "all" ? undefined : v })}
-          options={HOME_TEAM_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-        />
-        <FilterSelect
-          label="Priority"
-          value={filters.priority}
-          onChange={(v) => setParam({ priority: v === "all" ? undefined : v })}
-          options={[
-            { value: "all", label: "Any priority" },
-            ...PRIORITIES.map((p) => ({ value: p.value, label: p.value.toUpperCase() })),
-          ]}
-        />
-        <FilterSelect
-          label="Status"
-          value={filters.status}
-          onChange={(v) => setParam({ status: v === "active" ? undefined : v })}
-          options={[
-            { value: "active", label: "Active work" },
-            { value: "all", label: "Everything" },
-            ...STATUSES.map((s) => ({ value: s.value, label: s.label })),
-          ]}
-        />
-        <FilterSelect
-          label="Property"
-          value={filters.property}
-          onChange={(v) => setParam({ property: v === "all" ? undefined : v })}
-          options={[
-            { value: "all", label: "Any property" },
-            ...properties.map(([id, name]) => ({ value: id, label: name })),
-          ]}
-        />
-        <FilterSelect
-          label="Age"
-          value={filters.age}
-          onChange={(v) => setParam({ age: v === "all" ? undefined : v })}
-          options={AGE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">
+          {filterCount > 0
+            ? `${filterCount} filter${filterCount === 1 ? "" : "s"} active`
+            : "Showing active work"}
+        </span>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <SlidersHorizontal className="size-3.5" />
+              Filter
+              {filterCount > 0 && (
+                <Badge
+                  variant="outline"
+                  className="ml-1 border-primary/40 bg-primary/10 text-primary"
+                >
+                  {filterCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-[26rem] space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <FilterSelect
+                label="Owner"
+                value={filters.assignee}
+                onChange={(v) => setParam({ assignee: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Anyone" },
+                  { value: "unassigned", label: "Unassigned" },
+                  ...owners.map((o) => ({ value: o.id, label: o.name })),
+                ]}
+              />
+              <FilterSelect
+                label="Home team"
+                value={filters.homeTeam}
+                onChange={(v) => setParam({ homeTeam: v === "all" ? undefined : v })}
+                options={HOME_TEAM_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              />
+              <FilterSelect
+                label="Priority"
+                value={filters.priority}
+                onChange={(v) => setParam({ priority: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any priority" },
+                  ...PRIORITIES.map((p) => ({ value: p.value, label: p.value.toUpperCase() })),
+                ]}
+              />
+              <FilterSelect
+                label="Status"
+                value={filters.status}
+                onChange={(v) => setParam({ status: v === "active" ? undefined : v })}
+                options={[
+                  { value: "active", label: "Active work" },
+                  { value: "all", label: "Everything" },
+                  ...STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                ]}
+              />
+              <FilterSelect
+                label="Property"
+                value={filters.property}
+                onChange={(v) => setParam({ property: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any property" },
+                  ...properties.map(([id, name]) => ({ value: id, label: name })),
+                ]}
+              />
+              <FilterSelect
+                label="Age"
+                value={filters.age}
+                onChange={(v) => setParam({ age: v === "all" ? undefined : v })}
+                options={AGE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              />
+            </div>
+            <Input
+              placeholder="Search reference, title, guest…"
+              value={filters.q}
+              onChange={(e) => setParam({ q: e.target.value || undefined })}
+              aria-label="Search the team queue"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
-
-      <Input
-        placeholder="Search reference, title, guest…"
-        value={filters.q}
-        onChange={(e) => setParam({ q: e.target.value || undefined })}
-        aria-label="Search the team queue"
-        className="max-w-sm"
-      />
 
       {isError ? (
         <EmptyState
@@ -328,53 +377,67 @@ function TeamQueuePage() {
             const ownerId = currentOwnerId(t);
             const team = homeTeamOf(ownerId);
             const sla = slaState(t);
+            const blocked = isBlocked(t as never);
+            const escalated = isEscalated(t as never);
             return (
               <Link
                 key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
                 search={originSearch}
-                className="surface-row relative block py-3 pl-5 pr-4"
+                className="surface-row flex items-start gap-3 py-3 pl-4 pr-4"
               >
-                <PriorityRail priority={t.priority} />
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="numeric text-xs text-muted-foreground">#{t.ref}</span>
-                  <span className="font-medium">{t.title}</span>
-                  <Badge variant="outline" className={priorityTone(t.priority)}>
-                    {priorityMeta(t.priority).short}
-                  </Badge>
-                  <Chip className={stateChip(ticketState(t.status))}>
-                    {labelFor(STATUSES, t.status)}
-                  </Chip>
-                  {isBlocked(t as never) && (
-                    <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-                      Blocked
+                <PropertyPhoto
+                  url={(t.properties as { primary_photo_url?: string } | null)?.primary_photo_url}
+                  name={t.properties?.nickname ?? t.properties?.name}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="numeric text-xs text-muted-foreground">#{t.ref}</span>
+                    <span className="truncate font-medium">{t.title}</span>
+                    <Badge variant="outline" className={priorityTone(t.priority)}>
+                      {priorityMeta(t.priority).short}
                     </Badge>
-                  )}
-                  {isEscalated(t as never) && (
-                    <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-                      Escalated
-                    </Badge>
-                  )}
-                  <span className="numeric ml-auto text-sm text-muted-foreground">
-                    {sla.breached ? (
-                      <span className="font-medium text-danger">Overdue</span>
-                    ) : (
-                      relativeTime(t.reported_at)
+                    <StatusBadge tone={ticketTone(t.status)}>
+                      {labelFor(STATUSES, t.status)}
+                    </StatusBadge>
+                    {blocked && (
+                      <Badge
+                        variant="outline"
+                        className="border-danger/40 bg-danger/10 text-danger"
+                      >
+                        Blocked
+                      </Badge>
                     )}
-                  </span>
+                    {escalated && (
+                      <Badge
+                        variant="outline"
+                        className="border-danger/40 bg-danger/10 text-danger"
+                      >
+                        Escalated
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm">
+                    {ownerId ? (
+                      <span className="font-medium text-foreground">
+                        {displayName(people.get(ownerId))}
+                      </span>
+                    ) : (
+                      <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
+                    )}
+                    {team ? (
+                      <span className="text-muted-foreground">{HOME_TEAM_SHORT[team] ?? team}</span>
+                    ) : null}
+                  </p>
                 </div>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
-                  {ownerId ? (
-                    <span className="font-medium text-foreground">
-                      {displayName(people.get(ownerId))}
-                    </span>
+                <div className="shrink-0 text-right text-sm text-muted-foreground">
+                  {sla.breached ? (
+                    <span className="numeric font-medium text-danger">Overdue</span>
                   ) : (
-                    <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
+                    <span>Reported {usDate(t.reported_at)}</span>
                   )}
-                  {team ? ` · ${HOME_TEAM_SHORT[team] ?? team}` : ""}
-                </p>
+                </div>
               </Link>
             );
           })}

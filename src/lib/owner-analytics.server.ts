@@ -91,9 +91,8 @@ export async function loadOwnerAnalytics(
     .from("owner_programs")
     .select("id, owner_name, owner_email, status, started_on, ends_on")
     .is("archived_at", null);
-  const programs = await (options.demo
-    ? base.eq("is_demo", true)
-    : base.or("is_demo.is.null,is_demo.eq.false")
+  const programs = await (
+    options.demo ? base.eq("is_demo", true) : base.or("is_demo.is.null,is_demo.eq.false")
   ).order("started_on", { ascending: false });
   if (programs.error) throw programs.error;
 
@@ -154,9 +153,7 @@ export async function loadOwnerAnalytics(
     const superseded = new Set(
       mine.map((e) => e.amends_entry_id).filter((id): id is string => Boolean(id)),
     );
-    const countable = mine.filter(
-      (e) => e.review_status !== "returned" && !superseded.has(e.id),
-    );
+    const countable = mine.filter((e) => e.review_status !== "returned" && !superseded.has(e.id));
     const reported = combinedMinutes(countable);
     const approved = combinedMinutes(countable.filter((e) => e.review_status === "approved"));
     const pending = combinedMinutes(countable.filter((e) => e.review_status !== "approved"));
@@ -171,12 +168,12 @@ export async function loadOwnerAnalytics(
     });
 
     const lastEntryAt =
-      mine.map((e) => e.created_at).sort().at(-1) ?? null;
+      mine
+        .map((e) => e.created_at)
+        .sort()
+        .at(-1) ?? null;
     const weeksLeft = snapshot.daysLeft / 7;
-    const remaining = Math.max(
-      0,
-      OPERATING_TARGET_HOURS - hoursFromMinutes(reported),
-    );
+    const remaining = Math.max(0, OPERATING_TARGET_HOURS - hoursFromMinutes(reported));
 
     return {
       programId: p.id,

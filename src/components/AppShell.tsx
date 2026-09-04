@@ -123,7 +123,6 @@ const frontlineGroup: NavGroup = {
   ],
 };
 
-
 const navGroups: NavGroup[] = [
   frontlineGroup,
   {
@@ -164,7 +163,6 @@ const navGroups: NavGroup[] = [
         capability: "onboarding_workspace",
       },
       { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
-
     ],
   },
   {
@@ -456,6 +454,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </SidebarContent>
         <SidebarFooter>
+          {!vendorMode && !ownerMode && <NotificationBell placement="sidebar" />}
           <p className="px-2 pb-1 text-[0.65rem] leading-relaxed text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
             Every home. Every guest. Every time.
           </p>
@@ -486,7 +485,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </Link>
                   </Button>
                 )}
-                {!vendorMode && !ownerMode && <NotificationBell />}
                 {!vendorMode && !ownerMode && can("oversight") && (
                   <IconAction to="/oversight" label="Alerts and escalations">
                     <ShieldAlert className="size-4" aria-hidden="true" />

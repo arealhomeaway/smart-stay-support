@@ -49,8 +49,8 @@ export function OwnerContactAlerts() {
           {pending.length > 0 && <Badge variant="destructive">{pending.length} waiting</Badge>}
         </CardTitle>
         <CardDescription>
-          Resolve sends email and in-app alerts automatically. Urgent tickets that deserve a voice or
-          text come here so a teammate reaches the homeowner personally.
+          Resolve sends email and in-app alerts automatically. Urgent tickets that deserve a voice
+          or text come here so a teammate reaches the homeowner personally.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -67,16 +67,23 @@ export function OwnerContactAlerts() {
               <Badge variant="destructive">{a.priority.toUpperCase()}</Badge>
               <span className="font-medium">{a.owner_name ?? "Homeowner"}</span>
               {a.owner_phone ? (
-                <a className="text-sm font-medium text-primary underline" href={`tel:${a.owner_phone}`}>
+                <a
+                  className="text-sm font-medium text-primary underline"
+                  href={`tel:${a.owner_phone}`}
+                >
                   {a.owner_phone}
                 </a>
               ) : (
                 <span className="text-sm text-muted-foreground">No phone on file</span>
               )}
-              <span className="ml-auto text-xs text-muted-foreground">{relativeTime(a.created_at)}</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {relativeTime(a.created_at)}
+              </span>
             </div>
             <p className="mt-2 text-sm font-medium">{a.title}</p>
-            {a.body && <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.body}</p>}
+            {a.body && (
+              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.body}</p>
+            )}
             <p className="mt-2 text-xs text-muted-foreground">{a.reason}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {a.ticket_id && (

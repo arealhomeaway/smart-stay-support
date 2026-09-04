@@ -142,9 +142,14 @@ async function setCategories(messageId: string, categories: string[]) {
  * no longer resolves. In that case the message is found again by its stable
  * internetMessageId, which survives the move.
  */
-export async function fetchMessage(messageId: string, internetMessageId?: string | null): Promise<GraphMessage | null> {
+export async function fetchMessage(
+  messageId: string,
+  internetMessageId?: string | null,
+): Promise<GraphMessage | null> {
   try {
-    const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`));
+    const res = await graph(
+      mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=${SELECT_FIELDS}`),
+    );
     return (await res.json()) as GraphMessage;
   } catch {
     if (!internetMessageId) return null;
@@ -153,7 +158,9 @@ export async function fetchMessage(messageId: string, internetMessageId?: string
 }
 
 /** Mailbox-wide lookup by the id that survives a folder move. */
-export async function findByInternetMessageId(internetMessageId: string): Promise<GraphMessage | null> {
+export async function findByInternetMessageId(
+  internetMessageId: string,
+): Promise<GraphMessage | null> {
   try {
     const filter = `internetMessageId eq '${internetMessageId.replace(/'/g, "''")}'`;
     const res = await graph(
@@ -166,14 +173,19 @@ export async function findByInternetMessageId(internetMessageId: string): Promis
   }
 }
 
-
 /** Attachment metadata only — no file bytes are copied into Resolve. */
 async function attachmentMeta(messageId: string) {
   try {
     const res = await graph(
-      mailboxMessagesPath(`/${encodeURIComponent(messageId)}/attachments?$select=name,contentType,size`),
+      mailboxMessagesPath(
+        `/${encodeURIComponent(messageId)}/attachments?$select=name,contentType,size`,
+      ),
     );
-    const rows = ((await res.json())?.value ?? []) as { name?: string; contentType?: string; size?: number }[];
+    const rows = ((await res.json())?.value ?? []) as {
+      name?: string;
+      contentType?: string;
+      size?: number;
+    }[];
     return rows.slice(0, 20).map((a) => ({
       name: a.name ?? "attachment",
       contentType: a.contentType ?? null,
@@ -240,8 +252,7 @@ async function fetchTriggerMail(limit: number, since: string) {
   const seen = new Map<string, GraphMessage>();
   for (const tag of [CREATE_TICKET_TAG, CREATE_LEAD_TAG, OWNER_RESPONSE_TAG]) {
     const filter = `receivedDateTime gt ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
-    const query =
-      `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
+    const query = `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
     const res = await graph(mailboxMessagesPath(query));
     for (const m of ((await res.json())?.value ?? []) as GraphMessage[]) {
       if (m?.id && !seen.has(m.id)) seen.set(m.id, m);
@@ -249,7 +260,6 @@ async function fetchTriggerMail(limit: number, since: string) {
   }
   return Array.from(seen.values()).slice(0, limit);
 }
-
 
 export type SkipReason =
   | "not categorised"
@@ -373,7 +383,11 @@ export async function syncMailbox(
   try {
     messages = await fetchTriggerMail(limit, checkpoint);
   } catch (err) {
-    return { ...base, ok: false, error: err instanceof Error ? err.message : "Could not read the mailbox." };
+    return {
+      ...base,
+      ok: false,
+      error: err instanceof Error ? err.message : "Could not read the mailbox.",
+    };
   }
 
   base.scanned = messages.length;
@@ -385,7 +399,6 @@ export async function syncMailbox(
 
   // The checkpoint is the activation line, not a read cursor: it stays where
   // it is so a message categorised days after it arrived is still eligible.
-
 
   if (!dryRun) {
     const settled = await syncTerminalStates(db);
@@ -420,7 +433,11 @@ function applyOutcome(base: MailboxSyncResult, o: MessageOutcome) {
  * Shared by the scheduled sweep and the Graph change-notification handler, so
  * a webhook delivery and a sweep can never disagree about what to do.
  */
-export async function processMessage(db: Db, msg: GraphMessage, dryRun = false): Promise<MessageOutcome> {
+export async function processMessage(
+  db: Db,
+  msg: GraphMessage,
+  dryRun = false,
+): Promise<MessageOutcome> {
   const subject = (msg.subject ?? "").trim() || "(no subject)";
   const from = msg.from?.emailAddress?.address ?? "unknown sender";
   const messageIds = [msg.id, msg.internetMessageId ?? ""].filter(Boolean);
@@ -455,10 +472,15 @@ export async function processMessage(db: Db, msg: GraphMessage, dryRun = false):
   // approval or refusal out of the words.
   if (requestsOwnerResponse(msg.categories)) {
     if (dryRun) return { subject, from, outcome: "skipped", reason: "homeowner reply" };
-    if (!(await claimMessage(db, msg, isStaleClaim(prior ?? ({} as MailboxRecord)) ? prior : null))) {
+    if (
+      !(await claimMessage(db, msg, isStaleClaim(prior ?? ({} as MailboxRecord)) ? prior : null))
+    ) {
       return { subject, from, outcome: "skipped", reason: "claimed by another pass" };
     }
-    const replyBody = plainTextBody(msg.body?.content ?? msg.bodyPreview ?? "", msg.body?.contentType);
+    const replyBody = plainTextBody(
+      msg.body?.content ?? msg.bodyPreview ?? "",
+      msg.body?.contentType,
+    );
     try {
       const { captureOwnerResponse } = await import("./owner-response.server");
       const files = msg.hasAttachments ? await attachmentMeta(msg.id) : [];
@@ -506,7 +528,14 @@ export async function processMessage(db: Db, msg: GraphMessage, dryRun = false):
     // names, and cannot create anything.
     if (!alreadyTagged(msg.categories) && !dryRun) {
       const filed = await fileTaggedReply(db, msg);
-      if (filed) return { subject, from, outcome: "threaded", ref: filed, reason: "filed on the existing ticket" };
+      if (filed)
+        return {
+          subject,
+          from,
+          outcome: "threaded",
+          ref: filed,
+          reason: "filed on the existing ticket",
+        };
     }
     return {
       subject,
@@ -614,7 +643,11 @@ async function fileTaggedReply(db: Db, msg: GraphMessage): Promise<number | null
   const text = `${msg.subject ?? ""}\n${msg.bodyPreview ?? ""}`;
   const tag = text.match(REF_TAG);
   if (!tag) return null;
-  const { data: parent } = await db.from("tickets").select("id, ref").eq("ref", Number(tag[1])).maybeSingle();
+  const { data: parent } = await db
+    .from("tickets")
+    .select("id, ref")
+    .eq("ref", Number(tag[1]))
+    .maybeSingle();
   if (!parent) return null;
   const body = plainTextBody(msg.body?.content ?? msg.bodyPreview ?? "", msg.body?.contentType);
   await db.from("ticket_activity").insert({
@@ -622,14 +655,22 @@ async function fileTaggedReply(db: Db, msg: GraphMessage): Promise<number | null
     kind: "note",
     event_type: "note",
     channel: "email",
-    body: [`Emailed reply from ${msg.from?.emailAddress?.address ?? "unknown sender"}:`, body].join("\n\n"),
+    body: [`Emailed reply from ${msg.from?.emailAddress?.address ?? "unknown sender"}:`, body].join(
+      "\n\n",
+    ),
   });
   await recordEvent(db, msg, "linked", null, { entityType: "ticket", entityId: parent.id });
   return parent.ref;
 }
 
 /** Files the message on the Ticket or Lead the thread already produced. */
-async function linkToExisting(db: Db, row: MailboxRecord, subject: string, body: string, from: string) {
+async function linkToExisting(
+  db: Db,
+  row: MailboxRecord,
+  subject: string,
+  body: string,
+  from: string,
+) {
   if (!row.entity_id) return;
   if (row.entity_type === "lead") {
     await db.from("lead_activity").insert({
@@ -647,7 +688,9 @@ async function linkToExisting(db: Db, row: MailboxRecord, subject: string, body:
     kind: "note",
     event_type: "note",
     channel: "email",
-    body: [`Reply on the same Outlook thread — ${subject}`, `From ${from}`, body].filter(Boolean).join("\n\n"),
+    body: [`Reply on the same Outlook thread — ${subject}`, `From ${from}`, body]
+      .filter(Boolean)
+      .join("\n\n"),
   });
 }
 
@@ -659,7 +702,10 @@ async function linkToExisting(db: Db, row: MailboxRecord, subject: string, body:
  * close made anywhere in Resolve is picked up and a re-run finds nothing left
  * to do.
  */
-export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: number; reopened: number }> {
+export async function syncTerminalStates(
+  db: Db,
+  limit = 25,
+): Promise<{ closed: number; reopened: number }> {
   const { data: events } = await db
     .from("integration_events")
     .select("id, external_id, entity_id, entity_type, status")
@@ -671,15 +717,25 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
     .limit(200);
   if (!events?.length) return { closed: 0, reopened: 0 };
 
-  const ticketIds = events.filter((e) => e.entity_type === "ticket").map((e) => e.entity_id!) as string[];
-  const leadIds = events.filter((e) => e.entity_type === "lead").map((e) => e.entity_id!) as string[];
+  const ticketIds = events
+    .filter((e) => e.entity_type === "ticket")
+    .map((e) => e.entity_id!) as string[];
+  const leadIds = events
+    .filter((e) => e.entity_type === "lead")
+    .map((e) => e.entity_id!) as string[];
 
   const [tickets, leads] = await Promise.all([
     ticketIds.length
-      ? db.from("tickets").select("id, status").in("id", Array.from(new Set(ticketIds)))
+      ? db
+          .from("tickets")
+          .select("id, status")
+          .in("id", Array.from(new Set(ticketIds)))
       : Promise.resolve({ data: [] as { id: string; status: string }[] }),
     leadIds.length
-      ? db.from("leads").select("id, stage").in("id", Array.from(new Set(leadIds)))
+      ? db
+          .from("leads")
+          .select("id, stage")
+          .in("id", Array.from(new Set(leadIds)))
       : Promise.resolve({ data: [] as { id: string; stage: string }[] }),
   ]);
 
@@ -708,34 +764,46 @@ export async function syncTerminalStates(db: Db, limit = 25): Promise<{ closed: 
     let messageId = storedId;
     let current: string[] = [];
     try {
-      const res = await graph(mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`));
+      const res = await graph(
+        mailboxMessagesPath(`/${encodeURIComponent(messageId)}?$select=id,categories`),
+      );
       current = ((await res.json())?.categories ?? []) as string[];
     } catch {
       // The id no longer resolves — almost always because an Outlook rule moved
       // the message into a team folder. Find it again by the id that survives
       // the move rather than abandoning the category lifecycle.
       const twin = events.find(
-        (e) => e.entity_id === event.entity_id && typeof e.external_id === "string" && e.external_id.startsWith("<"),
+        (e) =>
+          e.entity_id === event.entity_id &&
+          typeof e.external_id === "string" &&
+          e.external_id.startsWith("<"),
       );
-      const relocated = twin?.external_id ? await findByInternetMessageId(twin.external_id as string) : null;
+      const relocated = twin?.external_id
+        ? await findByInternetMessageId(twin.external_id as string)
+        : null;
       if (!relocated) continue;
       messageId = relocated.id;
       current = (relocated.categories ?? []) as string[];
     }
 
     if (settled) {
-      if (hasTag(current, CLOSED_TAG) || (await setCategories(messageId, categoriesAfterClose(current)))) {
+      if (
+        hasTag(current, CLOSED_TAG) ||
+        (await setCategories(messageId, categoriesAfterClose(current)))
+      ) {
         await db.from("integration_events").update({ status: "closed" }).eq("id", event.id);
         closed++;
       }
       continue;
     }
     // Reopened: the same mapping goes back to "ticket created". No new record.
-    if (hasTag(current, CREATED_TAG) || (await setCategories(messageId, categoriesAfterReopen(current)))) {
+    if (
+      hasTag(current, CREATED_TAG) ||
+      (await setCategories(messageId, categoriesAfterReopen(current)))
+    ) {
       await db.from("integration_events").update({ status: "created" }).eq("id", event.id);
       reopened++;
     }
-
   }
   return { closed, reopened };
 }
@@ -759,7 +827,9 @@ export async function priorRecord(db: Db, messageIds: string[]): Promise<Mailbox
   if (!messageIds.length) return null;
   const { data } = await db
     .from("integration_events")
-    .select("id, status, error_message, entity_id, entity_type, external_id, conversation_id, created_at")
+    .select(
+      "id, status, error_message, entity_id, entity_type, external_id, conversation_id, created_at",
+    )
     .eq("system", SYSTEM)
     .eq("operation", OPERATION)
     .in("external_id", messageIds)
@@ -782,7 +852,9 @@ export async function conversationRecord(
   if (!conversationId) return null;
   const { data } = await db
     .from("integration_events")
-    .select("id, status, error_message, entity_id, entity_type, external_id, conversation_id, created_at")
+    .select(
+      "id, status, error_message, entity_id, entity_type, external_id, conversation_id, created_at",
+    )
     .eq("system", SYSTEM)
     .eq("operation", OPERATION)
     .eq("conversation_id", conversationId)
@@ -815,7 +887,10 @@ export function isStaleClaim(row: MailboxRecord, now = Date.now()) {
  *              only the category. Never a second record.
  * - `skip`   — a settled decision, or another pass currently holds the claim.
  */
-export function nextActionFor(prior: MailboxRecord | null, now = Date.now()): "create" | "retag" | "skip" {
+export function nextActionFor(
+  prior: MailboxRecord | null,
+  now = Date.now(),
+): "create" | "retag" | "skip" {
   if (!prior) return "create";
   if (isStaleClaim(prior, now)) return "create";
   if (prior.error_message === CATEGORY_PENDING && prior.entity_id) return "retag";
@@ -882,7 +957,8 @@ async function settleClaim(
       entity_id: outcome.entityId,
       conversation_id: outcome.conversationId,
       error_message: outcome.error,
-      request_payload: outcome.source as unknown as Database["public"]["Tables"]["integration_events"]["Row"]["request_payload"],
+      request_payload:
+        outcome.source as unknown as Database["public"]["Tables"]["integration_events"]["Row"]["request_payload"],
       resolved_at: outcome.status === "failed" ? null : new Date().toISOString(),
     })
     .eq("system", SYSTEM)
@@ -897,7 +973,11 @@ async function settleClaim(
  * No record is created or touched here — the row's `entity_id` proves one was
  * already saved, which is precisely why this path is a retag and nothing more.
  */
-export async function retryCategory(db: Db, msg: GraphMessage, prior: MailboxRecord): Promise<RetryOutcome> {
+export async function retryCategory(
+  db: Db,
+  msg: GraphMessage,
+  prior: MailboxRecord,
+): Promise<RetryOutcome> {
   if (!prior.entity_id) return "failed";
   if (!requestsRecord(msg.categories)) {
     // The trigger category is already gone — either a person re-tagged it by
@@ -949,7 +1029,9 @@ async function recordEvent(
 export async function recentMailboxEvents(db: Db, limit = 20) {
   const { data, error } = await db
     .from("integration_events")
-    .select("id, status, error_message, created_at, entity_id, entity_type, external_id, conversation_id, request_payload")
+    .select(
+      "id, status, error_message, created_at, entity_id, entity_type, external_id, conversation_id, request_payload",
+    )
     .eq("system", SYSTEM)
     .eq("operation", OPERATION)
     .not("external_id", "like", "<%")

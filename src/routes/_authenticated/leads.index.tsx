@@ -13,7 +13,14 @@ import { EmptyState, LoadingRows, PageHeader, SectionCard, StatTile } from "@/co
 import { LeadListSection, useLeads, useLeadsWithProperties } from "@/components/leads/LeadList";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
-import { QUEUE_LABELS, QUEUE_ORDER, isOpen, leadSort, queueBucket, type QueueBucket } from "@/lib/leads";
+import {
+  QUEUE_LABELS,
+  QUEUE_ORDER,
+  isOpen,
+  leadSort,
+  queueBucket,
+  type QueueBucket,
+} from "@/lib/leads";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   component: LeadsHome,
@@ -57,7 +64,11 @@ function LeadsHome() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Overdue follow-ups" value={buckets.get("overdue")?.length ?? 0} tone="critical" />
+        <StatTile
+          label="Overdue follow-ups"
+          value={buckets.get("overdue")?.length ?? 0}
+          tone="critical"
+        />
         <StatTile label="Due today" value={buckets.get("today")?.length ?? 0} tone="attention" />
         <StatTile label="New, unanswered" value={buckets.get("new")?.length ?? 0} />
         <StatTile label="My open leads" value={mine.length} hint="Assigned to you" />

@@ -54,7 +54,10 @@ export const Route = createFileRoute("/_authenticated/playbooks")({
         content: "Author, review and approve the guidance that reaches frontline work.",
       },
       { property: "og:title", content: "Playbook administration — Resolve Operations" },
-      { property: "og:description", content: "Draft, review, approve and retire operational guidance." },
+      {
+        property: "og:description",
+        content: "Draft, review, approve and retire operational guidance.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -119,7 +122,8 @@ function PlaybooksPage() {
   const visible = useMemo(() => {
     const rows = (data ?? []).filter((pb) => !isTestPlaybook(pb) || filter === "all");
     if (filter === "all") return rows;
-    if (filter === "attention") return rows.filter((pb) => pb.status === "in_review" || pb.status === "draft");
+    if (filter === "attention")
+      return rows.filter((pb) => pb.status === "in_review" || pb.status === "draft");
     return rows.filter((pb) => pb.status === filter);
   }, [data, filter]);
 
@@ -139,8 +143,9 @@ function PlaybooksPage() {
         <div>
           <h1 className="text-3xl font-semibold">Playbook administration</h1>
           <p className="mt-1 max-w-2xl text-muted-foreground">
-            {counts.in_review} awaiting review · {counts.draft} in draft · {counts.approved} guiding work
-            today. Only approved guidance reaches a coordinator, and only from its effective date.
+            {counts.in_review} awaiting review · {counts.draft} in draft · {counts.approved} guiding
+            work today. Only approved guidance reaches a coordinator, and only from its effective
+            date.
           </p>
         </div>
         {!readOnly && (
@@ -179,7 +184,9 @@ function PlaybooksPage() {
                 {STATUS_LABELS[pb.status]}
               </Badge>
               <span className="font-medium">{pb.title}</span>
-              <span className="text-sm text-muted-foreground">{labelFor(CATEGORIES, pb.category)}</span>
+              <span className="text-sm text-muted-foreground">
+                {labelFor(CATEGORIES, pb.category)}
+              </span>
               {pb.requires_director && (
                 <Badge variant="outline" className="gap-1 text-xs">
                   <ShieldCheck className="size-3" /> Director
@@ -355,8 +362,14 @@ function PlaybookDetail({
         />
         <Row label="Required evidence" value={pb.required_evidence.join(", ")} />
         <Row label="Effective" value={pb.effective_on} />
-        <Row label="Submitted" value={pb.submitted_at ? new Date(pb.submitted_at).toLocaleString() : null} />
-        <Row label="Approved" value={pb.approved_at ? new Date(pb.approved_at).toLocaleString() : null} />
+        <Row
+          label="Submitted"
+          value={pb.submitted_at ? new Date(pb.submitted_at).toLocaleString() : null}
+        />
+        <Row
+          label="Approved"
+          value={pb.approved_at ? new Date(pb.approved_at).toLocaleString() : null}
+        />
         <Row
           label="Matching"
           value={
@@ -373,7 +386,9 @@ function PlaybookDetail({
         <div className="space-y-3 text-sm">
           {pb.risk_flags.length > 0 && (
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Consider</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Consider
+              </p>
               <ul className="list-disc pl-5">
                 {pb.risk_flags.map((f) => (
                   <li key={f.title}>
@@ -386,7 +401,9 @@ function PlaybookDetail({
           )}
           {pb.immediate_actions.length > 0 && (
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Do first</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Do first
+              </p>
               <ul className="list-disc pl-5">
                 {pb.immediate_actions.map((a) => (
                   <li key={a}>{a}</li>
@@ -396,7 +413,9 @@ function PlaybookDetail({
           )}
           {pb.escalate_if.length > 0 && (
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Escalate if</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Escalate if
+              </p>
               <ul className="list-disc pl-5">
                 {pb.escalate_if.map((a) => (
                   <li key={a}>{a}</li>
@@ -434,24 +453,26 @@ function PlaybookDetail({
             placeholder="What you checked, or what needs changing"
           />
           <div className="flex flex-wrap gap-2">
-            {transitions.map((t: { to: PlaybookStatus; label: string; effect: string; directorOnly: boolean }) => {
-              const blocked = t.directorOnly && !isDirector;
-              return (
-                <div key={t.to} className="space-y-1">
-                  <Button
-                    size="sm"
-                    variant={t.to === "approved" ? "default" : "outline"}
-                    disabled={busy || blocked}
-                    onClick={() => move(t.to, t.directorOnly)}
-                  >
-                    {t.label}
-                  </Button>
-                  <p className="max-w-48 text-xs text-muted-foreground">
-                    {blocked ? "Director of Operations only." : t.effect}
-                  </p>
-                </div>
-              );
-            })}
+            {transitions.map(
+              (t: { to: PlaybookStatus; label: string; effect: string; directorOnly: boolean }) => {
+                const blocked = t.directorOnly && !isDirector;
+                return (
+                  <div key={t.to} className="space-y-1">
+                    <Button
+                      size="sm"
+                      variant={t.to === "approved" ? "default" : "outline"}
+                      disabled={busy || blocked}
+                      onClick={() => move(t.to, t.directorOnly)}
+                    >
+                      {t.label}
+                    </Button>
+                    <p className="max-w-48 text-xs text-muted-foreground">
+                      {blocked ? "Director of Operations only." : t.effect}
+                    </p>
+                  </div>
+                );
+              },
+            )}
           </div>
         </div>
       )}
@@ -509,7 +530,11 @@ function NewPlaybook({ onSaved }: { onSaved: () => void }) {
     <div className="mt-5 space-y-4">
       <div className="space-y-2">
         <Label>Title</Label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Hot water heater failure" />
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Hot water heater failure"
+        />
       </div>
       <div className="space-y-2">
         <Label>Category</Label>

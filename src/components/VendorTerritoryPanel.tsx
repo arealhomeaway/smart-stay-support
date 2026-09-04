@@ -28,7 +28,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -127,7 +133,8 @@ export function VendorTerritoryPanel({
 
       {grouped.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No territory yet. Paste the ZIP codes this company covers and homes match automatically as you add them.
+          No territory yet. Paste the ZIP codes this company covers and homes match automatically as
+          you add them.
         </p>
       ) : (
         grouped.map(([key, rows]) => {
@@ -142,7 +149,8 @@ export function VendorTerritoryPanel({
                     {territoryLabel ? ` — ${territoryLabel}` : ""}
                   </p>
                   <p className="text-muted-foreground">
-                    {rows.length} ZIP{rows.length === 1 ? "" : "s"} · {homes} ARHA home{homes === 1 ? "" : "s"} ·{" "}
+                    {rows.length} ZIP{rows.length === 1 ? "" : "s"} · {homes} ARHA home
+                    {homes === 1 ? "" : "s"} ·{" "}
                     {COVERAGE_PRIORITY_LABELS[rows[0]!.coveragePriority as CoveragePriority] ??
                       rows[0]!.coveragePriority}
                   </p>
@@ -210,7 +218,8 @@ export function VendorTerritoryPanel({
             {zipText.trim().length > 0 && (
               <p className="text-xs text-muted-foreground">
                 {preview.zips.length} usable ZIP{preview.zips.length === 1 ? "" : "s"}
-                {preview.rejected.length > 0 && ` · ignoring ${preview.rejected.slice(0, 6).join(", ")}`}
+                {preview.rejected.length > 0 &&
+                  ` · ignoring ${preview.rejected.slice(0, 6).join(", ")}`}
               </p>
             )}
             <Select value={priority} onValueChange={(v) => setPriority(v as CoveragePriority)}>

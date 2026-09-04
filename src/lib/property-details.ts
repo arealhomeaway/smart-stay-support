@@ -61,7 +61,18 @@ export const PROPERTY_DETAIL_GROUPS: GroupSpec[] = [
   {
     id: "access_security",
     title: "Access & Security",
-    keywords: ["access", "gate", "lock", "keypad", "code", "key", "alarm", "camera", "security", "lockbox"],
+    keywords: [
+      "access",
+      "gate",
+      "lock",
+      "keypad",
+      "code",
+      "key",
+      "alarm",
+      "camera",
+      "security",
+      "lockbox",
+    ],
     own: ["access", "security"],
     picks: [[ROW, "access_notes", "Access notes"]],
   },
@@ -92,7 +103,16 @@ export const PROPERTY_DETAIL_GROUPS: GroupSpec[] = [
   {
     id: "utilities_shutoffs",
     title: "Utilities & Shutoffs",
-    keywords: ["utility", "water shutoff", "shut off", "breaker", "breaker box", "electric", "gas", "panel"],
+    keywords: [
+      "utility",
+      "water shutoff",
+      "shut off",
+      "breaker",
+      "breaker box",
+      "electric",
+      "gas",
+      "panel",
+    ],
     own: ["utilities"],
     picks: [
       ["systems", "water_shutoff_indoor", "Water shutoff — indoor"],
@@ -103,7 +123,16 @@ export const PROPERTY_DETAIL_GROUPS: GroupSpec[] = [
   {
     id: "safety",
     title: "Safety / Smoke / CO",
-    keywords: ["smoke", "detector", "carbon monoxide", "co", "safety", "fire", "storm shelter", "tornado"],
+    keywords: [
+      "smoke",
+      "detector",
+      "carbon monoxide",
+      "co",
+      "safety",
+      "fire",
+      "storm shelter",
+      "tornado",
+    ],
     own: ["storm_shelter"],
     picks: [
       ["systems", "smoke", "Smoke detectors"],
@@ -137,7 +166,16 @@ export const PROPERTY_DETAIL_GROUPS: GroupSpec[] = [
   {
     id: "hoa",
     title: "HOA & Community Amenities",
-    keywords: ["hoa", "community", "amenity", "amenities", "covenant", "permit", "restriction", "compliance"],
+    keywords: [
+      "hoa",
+      "community",
+      "amenity",
+      "amenities",
+      "covenant",
+      "permit",
+      "restriction",
+      "compliance",
+    ],
     own: ["hoa", "amenities", "compliance"],
   },
   {
@@ -199,7 +237,16 @@ export function humanizeKey(key: string): string {
 }
 
 /** Import placeholders that carry no information; treated as empty. */
-const PLACEHOLDERS = new Set(["not mentioned", "n/a", "na", "none mentioned", "unknown", "tbd", "-", "--"]);
+const PLACEHOLDERS = new Set([
+  "not mentioned",
+  "n/a",
+  "na",
+  "none mentioned",
+  "unknown",
+  "tbd",
+  "-",
+  "--",
+]);
 
 function isBlank(v: unknown): boolean {
   if (v === null || v === undefined) return true;
@@ -212,7 +259,11 @@ function isBlank(v: unknown): boolean {
 /** Presentation of one raw JSON value. Objects are flattened by the caller. */
 function formatScalar(v: unknown): string {
   if (typeof v === "boolean") return v ? "Yes" : "No";
-  if (Array.isArray(v)) return v.filter((x) => !isBlank(x)).map((x) => formatScalar(x)).join(", ");
+  if (Array.isArray(v))
+    return v
+      .filter((x) => !isBlank(x))
+      .map((x) => formatScalar(x))
+      .join(", ");
   if (typeof v === "number") return String(v);
   return String(v).trim();
 }
@@ -224,24 +275,38 @@ const SKIP_SUFFIXES = ["_precision", "_source_text"];
  * CO) become `Parent — Child` fields so nothing renders as raw JSON.
  * Imprecise dates keep the source text the PID actually recorded.
  */
-function fieldsFrom(keyPath: string, label: string, value: unknown, siblings: Record<string, unknown>): PropertyDetailField[] {
+function fieldsFrom(
+  keyPath: string,
+  label: string,
+  value: unknown,
+  siblings: Record<string, unknown>,
+): PropertyDetailField[] {
   if (isBlank(value)) return [];
   if (SKIP_SUFFIXES.some((s) => keyPath.endsWith(s))) return [];
 
   if (typeof value === "object" && !Array.isArray(value)) {
     const obj = value as Record<string, unknown>;
-    return Object.entries(obj).flatMap(([k, v]) => fieldsFrom(`${keyPath}.${k}`, `${label} — ${humanizeKey(k)}`, v, obj));
+    return Object.entries(obj).flatMap(([k, v]) =>
+      fieldsFrom(`${keyPath}.${k}`, `${label} — ${humanizeKey(k)}`, v, obj),
+    );
   }
 
   const base = keyPath.split(".").pop() ?? keyPath;
   const precision = siblings[`${base}_precision`];
   const sourceText = siblings[`${base}_source_text`];
   let display = formatScalar(value);
-  if (typeof precision === "string" && precision !== "day" && typeof sourceText === "string" && sourceText.trim()) {
+  if (
+    typeof precision === "string" &&
+    precision !== "day" &&
+    typeof sourceText === "string" &&
+    sourceText.trim()
+  ) {
     display = `${sourceText.trim()} (recorded to the ${precision})`;
   }
   if (!display) return [];
-  return [{ key: keyPath, label, value: display, search: `${label} ${display} ${keyPath}`.toLowerCase() }];
+  return [
+    { key: keyPath, label, value: display, search: `${label} ${display} ${keyPath}`.toLowerCase() },
+  ];
 }
 
 type RawRow = Record<string, unknown>;
@@ -313,12 +378,17 @@ export function matchesCredentialSearch(query: string): boolean {
  * title/keywords (so "pool" keeps the whole Pool section) or on individual
  * fields, in which case only the matching fields remain.
  */
-export function filterPropertyDetailGroups(groups: PropertyDetailGroup[], query: string): PropertyDetailGroup[] {
+export function filterPropertyDetailGroups(
+  groups: PropertyDetailGroup[],
+  query: string,
+): PropertyDetailGroup[] {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return groups;
   const out: PropertyDetailGroup[] = [];
   for (const g of groups) {
-    const groupHit = g.title.toLowerCase().includes(q) || g.keywords.some((k) => k.includes(q) || (k.length >= 4 && q.includes(k)));
+    const groupHit =
+      g.title.toLowerCase().includes(q) ||
+      g.keywords.some((k) => k.includes(q) || (k.length >= 4 && q.includes(k)));
     if (groupHit) {
       out.push(g);
       continue;

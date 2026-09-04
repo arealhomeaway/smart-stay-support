@@ -56,14 +56,16 @@ export async function runBreezewayConnectionTest(): Promise<
     const status = await getBreezewayStatus();
     return {
       ...status,
-      message: "Breezeway credentials are not saved yet. Add BREEZEWAY_CLIENT_ID and BREEZEWAY_CLIENT_SECRET.",
+      message:
+        "Breezeway credentials are not saved yet. Add BREEZEWAY_CLIENT_ID and BREEZEWAY_CLIENT_SECRET.",
     };
   }
 
   try {
     const probe = await breezewayIdentityProbe();
     const company =
-      probe.companyName ?? (probe.companyId != null ? `Company ${probe.companyId}` : "Unknown company");
+      probe.companyName ??
+      (probe.companyId != null ? `Company ${probe.companyId}` : "Unknown company");
     await recordBreezewayCheck(true, company, null);
     return {
       ...(await getBreezewayStatus()),

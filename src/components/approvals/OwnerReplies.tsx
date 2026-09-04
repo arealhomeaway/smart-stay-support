@@ -77,7 +77,10 @@ export function OwnerReplies({
         <div className="space-y-2">
           <p className="text-sm font-medium">Homeowner response received</p>
           {rows.map((r) => (
-            <div key={r.id} className="rounded-md border border-border/60 bg-secondary/40 p-3 text-sm">
+            <div
+              key={r.id}
+              className="rounded-md border border-border/60 bg-secondary/40 p-3 text-sm"
+            >
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
                   {r.from_name || r.from_address || "Homeowner"}

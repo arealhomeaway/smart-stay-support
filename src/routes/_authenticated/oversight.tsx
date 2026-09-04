@@ -6,12 +6,16 @@
  * Raw volume stays at the bottom as context: it is never a productivity score
  * for a coordinator.
  */
+import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApprovalDetail } from "@/components/approvals/ApprovalDetail";
 import { UnplacedOwnerReplies } from "@/components/approvals/UnplacedOwnerReplies";
 import { ChevronRight } from "lucide-react";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { StatusBadge, ticketTone } from "@/components/ui/status";
+import { usDate, usDateTime } from "@/lib/dates";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +72,15 @@ type Row = {
   status: string;
   priority: string;
   reported_at: string;
-  properties?: { name: string; nickname: string | null; market?: string | null } | null;
+  next_review_at?: string | null;
+  assigned_to?: string | null;
+  current_action_owner?: string | null;
+  properties?: {
+    name: string;
+    nickname: string | null;
+    market?: string | null;
+    primary_photo_url?: string | null;
+  } | null;
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -87,7 +99,7 @@ function useOversightData() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market, city)")
+        .select("*, properties(name, nickname, market, city, primary_photo_url)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
@@ -102,32 +114,32 @@ function useOversightData() {
     queryFn: async () => {
       const [approvals, routines, claims, recoveries, breezeway, profiles, escalations] =
         await Promise.all([
-        supabase
-          .from("approvals")
-          .select(
-            "id, title, kind, status, due_on, entity_type, entity_id, amount, currency, property_id, approver_role",
-          )
-          .eq("status", "pending")
-          .eq("is_demo", demoMode),
-        supabase
-          .from("routine_controls")
-          .select("id, kind, status, due_at, assigned_to, completed_at")
-          .eq("is_demo", demoMode),
-        supabase.from("claims").select("id, title, stage, deadline_on").eq("is_demo", demoMode),
-        supabase
-          .from("guest_recovery")
-          .select("id, title, stage, approval_status")
-          .eq("is_demo", demoMode),
-        supabase
-          .from("breezeway_outbound_tasks")
-          .select("id, title, status, scheduled_date, ticket_id"),
-        supabase.from("profiles").select("id, full_name, email"),
-        supabase
-          .from("escalations")
-          .select("id, ticket_id, reason, help_needed, urgency, status, created_at, escalated_by")
-          .eq("status", "open")
-          .eq("is_demo", demoMode),
-      ]);
+          supabase
+            .from("approvals")
+            .select(
+              "id, title, kind, status, due_on, entity_type, entity_id, amount, currency, property_id, approver_role",
+            )
+            .eq("status", "pending")
+            .eq("is_demo", demoMode),
+          supabase
+            .from("routine_controls")
+            .select("id, kind, status, due_at, assigned_to, completed_at")
+            .eq("is_demo", demoMode),
+          supabase.from("claims").select("id, title, stage, deadline_on").eq("is_demo", demoMode),
+          supabase
+            .from("guest_recovery")
+            .select("id, title, stage, approval_status")
+            .eq("is_demo", demoMode),
+          supabase
+            .from("breezeway_outbound_tasks")
+            .select("id, title, status, scheduled_date, ticket_id"),
+          supabase.from("profiles").select("id, full_name, email"),
+          supabase
+            .from("escalations")
+            .select("id, ticket_id, reason, help_needed, urgency, status, created_at, escalated_by")
+            .eq("status", "open")
+            .eq("is_demo", demoMode),
+        ]);
       return {
         approvals: approvals.data ?? [],
         routines: routines.data ?? [],
@@ -219,75 +231,112 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       }).required,
   );
 
+  // Every list below feeds one of six judgment groups. The grouping is what a
+  // supervisor is being asked to do about it, not the database table it came
+  // from — that is what turns ~25 stacked cards into a handful of decisions.
+  type ExceptionSection = {
+    title: string;
+    description: string;
+    rows: typeof unackedP1;
+    nextAction: string;
+    timingField: "reported_at" | "next_review_at";
+  };
 
-  const sections = [
-    {
-      title: "P1 not acknowledged",
-      description: "Escalation ladder is running. Someone must respond now.",
-      rows: unackedP1,
-      tone: "danger" as const,
-    },
-    {
-      title: "Response overdue",
-      description: "Acknowledge window passed without a reply.",
-      rows: unacked,
-      tone: "danger" as const,
-    },
-    {
-      title: "Past SLA — acknowledged but not started",
-      description: "Someone replied but no work has begun inside the target.",
-      rows: notStarted,
-      tone: "danger" as const,
-    },
-    {
-      title: "Waiting past its review date",
-      description: "The promised check-in never happened.",
-      rows: reviewOverdue,
-      tone: "warning" as const,
-    },
+  const decisions: ExceptionSection[] = [
     {
       title: "Waiting with no review date",
       description: "These will silently disappear. Give each one a date.",
       rows: waitingNoReview,
-      tone: "warning" as const,
+      nextAction: "Set a review date",
+      timingField: "reported_at",
     },
     {
       title: "Nobody owns this",
       description: "Open work with no assignee and no action owner.",
       rows: unassigned,
-      tone: "warning" as const,
+      nextAction: "Assign an owner",
+      timingField: "reported_at",
+    },
+  ];
+
+  const escalationSections: ExceptionSection[] = [
+    {
+      title: "P1 not acknowledged",
+      description: "Escalation ladder is running. Someone must respond now.",
+      rows: unackedP1,
+      nextAction: "Acknowledge now",
+      timingField: "reported_at",
+    },
+    {
+      title: "Response overdue",
+      description: "Acknowledge window passed without a reply.",
+      rows: unacked,
+      nextAction: "Reply now",
+      timingField: "reported_at",
+    },
+  ];
+
+  const blockers: ExceptionSection[] = [
+    {
+      title: "Past SLA — acknowledged but not started",
+      description: "Someone replied but no work has begun inside the target.",
+      rows: notStarted,
+      nextAction: "Start work",
+      timingField: "reported_at",
     },
     {
       title: "Handoffs waiting to be accepted",
       description: "Ownership has not transferred — the original owner is still accountable.",
       rows: pendingHandoffs,
-      tone: "warning" as const,
+      nextAction: "Accept the handoff",
+      timingField: "reported_at",
+    },
+  ];
+
+  const overdue: ExceptionSection[] = [
+    {
+      title: "Waiting past its review date",
+      description: "The promised check-in never happened.",
+      rows: reviewOverdue,
+      nextAction: "Update the review",
+      timingField: "next_review_at",
     },
     {
       title: "P1 / P2 aging",
       description: "Still open well past where this priority should have landed.",
       rows: agingP12,
-      tone: "warning" as const,
+      nextAction: "Push this forward",
+      timingField: "reported_at",
     },
     {
       title: "Reopened tickets",
       description: "Closed too early, or the fix did not hold. Worth a look at the playbook.",
       rows: reopened,
-      tone: "warning" as const,
+      nextAction: "Check the playbook",
+      timingField: "reported_at",
     },
+  ];
+
+  const reviewBeforeClosing: ExceptionSection[] = [
     {
       title: "Needs review before closing",
       description:
         "Finished work that needs a supervisor's decision before it can close. Routine work closes without you.",
-      rows: finalReview as typeof reopened,
-      tone: "neutral" as const,
+      rows: finalReview as typeof unackedP1,
+      nextAction: "Review and decide",
+      timingField: "reported_at",
     },
-
   ];
 
-  const totalExceptions = sections
-    .filter((sec) => sec.tone !== "neutral")
-    .reduce((n, sec) => n + sec.rows.length, 0);
+  const sections = [
+    ...decisions,
+    ...escalationSections,
+    ...blockers,
+    ...overdue,
+    ...reviewBeforeClosing,
+  ];
+
+  const totalExceptions = sections.reduce((n, sec) => n + sec.rows.length, 0);
 
   /* ---------------- compact linked summaries ---------------- */
 
@@ -433,131 +482,200 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         <OvernightHandoffPanel />
       </div>
 
-      {/* Someone asked for a decision. That outranks any derived exception. */}
-      {(s?.escalations ?? []).length > 0 && (
-        <Card className="border-danger/40">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              Someone is waiting on your decision
-              <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-                {(s?.escalations ?? []).length}
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Escalations are a request for a call, not a handoff — the raiser still owns the work
-              until you take it.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(s?.escalations ?? []).map((e) => (
-              <Link
-                key={e.id}
-                to="/tickets/$ticketId"
-                params={{ ticketId: String(e.ticket_id) }}
-                className="flex items-start justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm hover:bg-muted/50"
-              >
-                <span>
-                  <span className="font-medium">{e.help_needed || e.reason}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    Raised {relativeTime(e.created_at)}
-                  </span>
-                </span>
-                <span className="flex items-center gap-2">
-                  {e.urgency !== "normal" && (
-                    <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-                      {e.urgency}
-                    </Badge>
-                  )}
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                </span>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      {/* Compact exception strip: what needs judgment, at a glance. Each chip
+          jumps straight to its section below. */}
+      <nav aria-label="Exception summary" className="flex flex-wrap gap-2">
+        {[
+          {
+            id: "group-decisions",
+            label: "Decisions needed",
+            count: decisions.reduce((n, sec) => n + sec.rows.length, 0),
+          },
+          {
+            id: "group-escalations",
+            label: "Escalations",
+            count:
+              escalationSections.reduce((n, sec) => n + sec.rows.length, 0) +
+              (s?.escalations ?? []).length,
+          },
+          {
+            id: "group-blockers",
+            label: "Blockers",
+            count: blockers.reduce((n, sec) => n + sec.rows.length, 0),
+          },
+          {
+            id: "group-overdue",
+            label: "Overdue / high-risk",
+            count: overdue.reduce((n, sec) => n + sec.rows.length, 0),
+          },
+          { id: "group-approvals", label: "Approvals", count: approvals.length },
+          {
+            id: "group-review",
+            label: "Review before closing",
+            count: reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0),
+          },
+        ].map((g) => (
+          <a
+            key={g.id}
+            href={`#${g.id}`}
+            className={
+              "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors " +
+              (g.count > 0
+                ? "border-coral/30 bg-coral/8 text-coral hover:bg-coral/14"
+                : "border-border/60 text-muted-foreground hover:bg-secondary/60")
+            }
+          >
+            {g.count > 0 ? <span className="size-1.5 rounded-full bg-coral" /> : null}
+            {g.label}
+            <span className="numeric font-semibold">{g.count}</span>
+          </a>
+        ))}
+      </nav>
 
-      {/* Exceptions first. A section with nothing in it collapses to one line. */}
+      {/* Judgment groups: only groups with something in them get full presence.
+          An empty group collapses to one quiet line — this is where a coordinator
+          spends their attention, not a stat wall. */}
       <div className="space-y-3">
-        {sections.map((section) =>
-          section.rows.length === 0 ? (
-            <div
+        <GroupSection
+          id="group-decisions"
+          title="Decisions needed"
+          count={decisions.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
+          {decisions.map((section) => (
+            <SubList
               key={section.title}
-              className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm text-muted-foreground"
-            >
-              <span className="size-1.5 rounded-full bg-success" />
-              {section.title} — clear
-            </div>
-          ) : (
-            <Card
-              key={section.title}
-              className={section.tone === "danger" ? "border-danger/40" : ""}
-            >
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  {section.title}
-                  <Badge
-                    variant="outline"
-                    className={
-                      section.tone === "danger"
-                        ? "border-danger/40 bg-danger/10 text-danger"
-                        : section.tone === "warning"
-                          ? "border-warning/40 bg-warning/10"
-                          : "border-border"
-                    }
-                  >
-                    {section.rows.length}
-                  </Badge>
-                </CardTitle>
-                <CardDescription>{section.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {section.rows.slice(0, 12).map((t) => (
-                  <ExceptionRow key={t.id} ticket={t as Row} origin={originSearch} />
-                ))}
-                {section.rows.length > 12 && (
-                  <p className="text-xs text-muted-foreground">+{section.rows.length - 12} more</p>
-                )}
-              </CardContent>
-            </Card>
-          ),
-        )}
-      </div>
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
+          ))}
+        </GroupSection>
 
-      {approvals.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Approvals awaiting a decision</CardTitle>
-            <CardDescription>
-              Open one to see the home, the ticket it came from, the amount and who it sits with.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {approvals.slice(0, 12).map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => setOpenApproval(a.id)}
-                className="flex w-full items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2 text-left text-sm transition-colors hover:bg-secondary"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{a.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {a.kind.replace(/_/g, " ")}
-                    {a.amount
-                      ? ` · $${Number(a.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                      : ""}
-                    {a.due_on ? ` · due ${new Date(a.due_on).toLocaleDateString()}` : ""}
+        <GroupSection
+          id="group-escalations"
+          title="Escalations"
+          count={
+            escalationSections.reduce((n, sec) => n + sec.rows.length, 0) +
+            (s?.escalations ?? []).length
+          }
+        >
+          {(s?.escalations ?? []).length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                A request for a call, not a handoff — the raiser still owns the work until you take
+                it.
+              </p>
+              {(s?.escalations ?? []).map((e) => (
+                <Link
+                  key={e.id}
+                  to="/tickets/$ticketId"
+                  params={{ ticketId: String(e.ticket_id) }}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm hover:bg-secondary"
+                >
+                  <span>
+                    <span className="font-medium">{e.help_needed || e.reason}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      Raised {relativeTime(e.created_at)}
+                    </span>
                   </span>
-                </span>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-              </button>
-            ))}
-            {approvals.length > 12 && (
-              <p className="text-xs text-muted-foreground">+{approvals.length - 12} more</p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  <span className="flex items-center gap-2">
+                    {e.urgency !== "normal" && (
+                      <StatusBadge tone="escalated">{e.urgency}</StatusBadge>
+                    )}
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+          {escalationSections.map((section) => (
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
+          ))}
+        </GroupSection>
+
+        <GroupSection
+          id="group-blockers"
+          title="Blockers"
+          count={blockers.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
+          {blockers.map((section) => (
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
+          ))}
+        </GroupSection>
+
+        <GroupSection
+          id="group-overdue"
+          title="Overdue / high-risk"
+          count={overdue.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
+          {overdue.map((section) => (
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
+          ))}
+        </GroupSection>
+
+        <GroupSection id="group-approvals" title="Approvals" count={approvals.length}>
+          {approvals.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Open one to see the home, the ticket it came from, the amount and who it sits with.
+              </p>
+              {approvals.slice(0, 12).map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => setOpenApproval(a.id)}
+                  className="flex w-full items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2 text-left text-sm transition-colors hover:bg-secondary"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{a.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {a.kind.replace(/_/g, " ")}
+                      {a.amount
+                        ? ` · $${Number(a.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                        : ""}
+                      {a.due_on ? ` · due ${usDate(a.due_on)}` : ""}
+                    </span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))}
+              {approvals.length > 12 && (
+                <p className="text-xs text-muted-foreground">+{approvals.length - 12} more</p>
+              )}
+            </div>
+          )}
+        </GroupSection>
+
+        <GroupSection
+          id="group-review"
+          title="Review before closing"
+          count={reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
+          {reviewBeforeClosing.map((section) => (
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
+          ))}
+        </GroupSection>
+      </div>
 
       <UnplacedOwnerReplies onOpenApproval={(id) => setOpenApproval(id)} />
 
@@ -653,7 +771,34 @@ function TrendList({ title, rows }: { title: string; rows: [string, number][] })
   );
 }
 
-function ExceptionRow({ ticket, origin }: { ticket: Row; origin: { from: string } }) {
+type Profile = { id: string; full_name: string | null; email: string | null };
+
+function ownerName(ticket: Row, profiles: Profile[]) {
+  const id = ticket.current_action_owner ?? ticket.assigned_to;
+  if (!id) return "Nobody yet";
+  const p = profiles.find((pr) => pr.id === id);
+  return p?.full_name ?? p?.email ?? "Nobody yet";
+}
+
+/**
+ * One row a supervisor can act on: the property, what's wrong, its state, who
+ * owns it, what to do next and when. Every group renders the same shape so
+ * scanning across judgment areas costs no extra attention.
+ */
+function ExceptionRow({
+  ticket,
+  origin,
+  nextAction,
+  timingField,
+  profiles,
+}: {
+  ticket: Row;
+  origin: { from: string };
+  nextAction: string;
+  timingField: "reported_at" | "next_review_at";
+  profiles: Profile[];
+}) {
+  const when = timingField === "next_review_at" ? ticket.next_review_at : ticket.reported_at;
   return (
     <Link
       to="/tickets/$ticketId"
@@ -661,19 +806,105 @@ function ExceptionRow({ ticket, origin }: { ticket: Row; origin: { from: string 
       search={origin}
       className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-secondary"
     >
-      <Badge variant="outline" className={priorityTone(ticket.priority)}>
-        {priorityMeta(ticket.priority).short}
-      </Badge>
-      <span className="font-medium">{ticket.title}</span>
-      <span className="text-sm text-muted-foreground">
-        {ticket.properties?.nickname ?? ticket.properties?.name ?? "No property"}
+      <PropertyPhoto
+        url={ticket.properties?.primary_photo_url}
+        name={ticket.properties?.nickname ?? ticket.properties?.name}
+      />
+      <span className="min-w-0">
+        <span className="block truncate font-medium">{ticket.title}</span>
+        <span className="text-xs text-muted-foreground">
+          {ticket.properties?.nickname ?? ticket.properties?.name ?? "No property"} ·{" "}
+          {priorityMeta(ticket.priority).short}
+        </span>
       </span>
-      <Badge variant="outline" className={statusTone(ticket.status)}>
+      <StatusBadge tone={ticketTone(ticket.status)}>
         {labelFor(STATUSES, ticket.status)}
-      </Badge>
-      <span className="ml-auto text-sm text-muted-foreground">
-        {relativeTime(ticket.reported_at)}
+      </StatusBadge>
+      <span className="text-sm text-muted-foreground">{ownerName(ticket, profiles)}</span>
+      <span className="ml-auto flex flex-col items-end text-right text-sm">
+        <span className="font-medium text-foreground">{nextAction}</span>
+        <span className="text-xs text-muted-foreground">{usDateTime(when)}</span>
       </span>
     </Link>
+  );
+}
+
+/** One exception list, rendered under its parent judgment group. */
+function SubList({
+  section,
+  origin,
+  profiles,
+}: {
+  section: {
+    title: string;
+    description: string;
+    rows: Row[];
+    nextAction: string;
+    timingField: "reported_at" | "next_review_at";
+  };
+  origin: { from: string };
+  profiles: Profile[];
+}) {
+  if (section.rows.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">
+        {section.title}
+        <span className="ml-1.5 text-muted-foreground">({section.rows.length})</span>
+      </p>
+      <p className="text-xs text-muted-foreground">{section.description}</p>
+      {section.rows.slice(0, 12).map((t) => (
+        <ExceptionRow
+          key={t.id}
+          ticket={t as Row}
+          origin={origin}
+          nextAction={section.nextAction}
+          timingField={section.timingField}
+          profiles={profiles}
+        />
+      ))}
+      {section.rows.length > 12 && (
+        <p className="text-xs text-muted-foreground">+{section.rows.length - 12} more</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A judgment group: a quiet "all clear" line when it is empty, a collapsible
+ * section with full presence when it isn't. Progressive disclosure is the
+ * whole point — a coordinator should never scroll past ten empty cards to
+ * find the one that matters.
+ */
+function GroupSection({
+  id,
+  title,
+  count,
+  children,
+}: {
+  id: string;
+  title: string;
+  count: number;
+  children: ReactNode;
+}) {
+  if (count === 0) {
+    return (
+      <div
+        id={id}
+        className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm text-muted-foreground"
+      >
+        <span className="size-1.5 rounded-full bg-success" />
+        {title} — all clear
+      </div>
+    );
+  }
+  return (
+    <details id={id} open className="surface px-4 py-3">
+      <summary className="flex cursor-pointer list-none items-center gap-2">
+        <h2 className="text-base font-semibold">{title}</h2>
+        <StatusBadge tone="escalated">{count}</StatusBadge>
+      </summary>
+      <div className="mt-3 space-y-4 border-t border-border pt-3">{children}</div>
+    </details>
   );
 }

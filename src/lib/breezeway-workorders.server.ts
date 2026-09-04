@@ -12,7 +12,11 @@
  *     Work Order and, when one exists, the linked Ticket's activity.
  */
 import { BreezewayError, breezewayRequest } from "./breezeway.server";
-import { propertyForHomeId, propertyWriteEligibility, verifiedHomeIds } from "./breezeway-mapping.server";
+import {
+  propertyForHomeId,
+  propertyWriteEligibility,
+  verifiedHomeIds,
+} from "./breezeway-mapping.server";
 import {
   isCurrentWorkOrder,
   type BreezewayWorkOrder,
@@ -98,7 +102,8 @@ type RawTask = {
   type_task_status?: { code?: string | null; name?: string | null; stage?: string | null } | null;
   scheduled_date?: string | null;
   scheduled_time?: string | null;
-  assignments?: { id?: number; name?: string | null; type_task_user_status?: string | null }[] | null;
+  assignments?:
+    { id?: number; name?: string | null; type_task_user_status?: string | null }[] | null;
   photos?: unknown[] | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -217,7 +222,11 @@ export async function listPropertyWorkOrders(propertyId: string): Promise<Breeze
 
 export async function getWorkOrder(workOrderId: string): Promise<BreezewayWorkOrder | null> {
   const db = await admin();
-  const { data } = await db.from("breezeway_work_orders").select(SELECT).eq("id", workOrderId).maybeSingle();
+  const { data } = await db
+    .from("breezeway_work_orders")
+    .select(SELECT)
+    .eq("id", workOrderId)
+    .maybeSingle();
   const row = data as unknown as Row | null;
   return row ? toWorkOrder(row) : null;
 }
@@ -226,7 +235,12 @@ export async function getWorkOrder(workOrderId: string): Promise<BreezewayWorkOr
 /* Comments                                                            */
 /* ------------------------------------------------------------------ */
 
-type RawComment = { id?: number; comment?: string | null; created_at?: string | null; author?: string | null };
+type RawComment = {
+  id?: number;
+  comment?: string | null;
+  created_at?: string | null;
+  author?: string | null;
+};
 
 /**
  * Pulls Breezeway comments for one mirrored work order and deduplicates them
@@ -288,7 +302,9 @@ export async function syncWorkOrderComments(
   return { ok: true, added, total: count ?? 0 };
 }
 
-export async function listWorkOrderComments(workOrderId: string): Promise<BreezewayWorkOrderComment[]> {
+export async function listWorkOrderComments(
+  workOrderId: string,
+): Promise<BreezewayWorkOrderComment[]> {
   const db = await admin();
   const { data } = await db
     .from("breezeway_work_order_comments")
@@ -297,19 +313,21 @@ export async function listWorkOrderComments(workOrderId: string): Promise<Breeze
     )
     .eq("work_order_id", workOrderId)
     .order("commented_at", { ascending: true, nullsFirst: true });
-  return ((data ?? []) as unknown as {
-    id: string;
-    breezeway_comment_id: number | null;
-    author: string | null;
-    body: string;
-    commented_at: string | null;
-    direction: "inbound" | "outbound";
-    resolve_author_name: string | null;
-    identity_mode: string | null;
-    delivery_state: "mirrored" | "sending" | "delivered" | "failed";
-    delivery_error: string | null;
-    posted_at: string | null;
-  }[]).map((c) => ({
+  return (
+    (data ?? []) as unknown as {
+      id: string;
+      breezeway_comment_id: number | null;
+      author: string | null;
+      body: string;
+      commented_at: string | null;
+      direction: "inbound" | "outbound";
+      resolve_author_name: string | null;
+      identity_mode: string | null;
+      delivery_state: "mirrored" | "sending" | "delivered" | "failed";
+      delivery_error: string | null;
+      posted_at: string | null;
+    }[]
+  ).map((c) => ({
     id: c.id,
     breezewayCommentId: c.breezeway_comment_id,
     author: c.author,
@@ -345,7 +363,8 @@ export async function replyToWorkOrder(
 ): Promise<{ ok: boolean; message?: string; identityMode?: "staff" | "integration" }> {
   const wo = await getWorkOrder(workOrderId);
   if (!wo) return { ok: false, message: "That work order is not in Resolve." };
-  if (!(await outboundEnabled())) return { ok: false, message: "Breezeway writes are switched off." };
+  if (!(await outboundEnabled()))
+    return { ok: false, message: "Breezeway writes are switched off." };
   if (!wo.propertyId) return { ok: false, message: "That work order has no Resolve property." };
   const gate = await propertyWriteEligibility(wo.propertyId);
   if (!gate.eligible) return { ok: false, message: gate.reason ?? "Property not eligible." };
@@ -384,12 +403,15 @@ export async function replyToWorkOrder(
   const rowId = (pending.data as { id: string } | null)?.id ?? null;
 
   try {
-    const created = await breezewayRequest<{ id?: number }>(`/task/${wo.breezewayTaskId}/comments`, {
-      method: "POST",
-      allowWrite: true,
-      retry: false,
-      body: { comment: outbound, company_people_id: identity.peopleId },
-    });
+    const created = await breezewayRequest<{ id?: number }>(
+      `/task/${wo.breezewayTaskId}/comments`,
+      {
+        method: "POST",
+        allowWrite: true,
+        retry: false,
+        body: { comment: outbound, company_people_id: identity.peopleId },
+      },
+    );
     if (rowId) {
       await db
         .from("breezeway_work_order_comments")
@@ -456,7 +478,9 @@ export async function syncWorkOrderPhotos(
 
   let raw: RawPhoto[] = [];
   try {
-    const task = await breezewayRequest<{ photos?: RawPhoto[] | null }>(`/task/${wo.breezewayTaskId}`);
+    const task = await breezewayRequest<{ photos?: RawPhoto[] | null }>(
+      `/task/${wo.breezewayTaskId}`,
+    );
     raw = (task.photos ?? []).filter((p): p is RawPhoto => Boolean(p));
   } catch (error) {
     return {
@@ -519,7 +543,10 @@ export async function syncWorkOrderPhotos(
     }
   }
 
-  await db.from("breezeway_work_orders").update({ photo_count: kept } as never).eq("id", wo.id);
+  await db
+    .from("breezeway_work_orders")
+    .update({ photo_count: kept } as never)
+    .eq("id", wo.id);
   if (writeError) {
     return { ok: false, message: `Photos could not be stored: ${writeError}`, photos: 0 };
   }
@@ -531,7 +558,13 @@ export async function syncWorkOrderPhotos(
 /* ------------------------------------------------------------------ */
 
 export const BREEZEWAY_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
-export const BREEZEWAY_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+export const BREEZEWAY_PHOTO_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 
 type UploadResult =
   | { ok: true; photoId: number | null; url: string | null; includeInTaskReport: boolean }
@@ -561,11 +594,13 @@ export async function uploadWorkOrderPhoto(
 ): Promise<UploadResult> {
   const wo = await getWorkOrder(workOrderId);
   if (!wo) return { ok: false, message: "That work order is not in Resolve." };
-  if (!(await outboundEnabled())) return { ok: false, message: "Breezeway writes are switched off." };
+  if (!(await outboundEnabled()))
+    return { ok: false, message: "Breezeway writes are switched off." };
   if (!wo.propertyId) return { ok: false, message: "That work order has no Resolve property." };
   if (!wo.breezewayTaskId) return { ok: false, message: "That work order has no Breezeway task." };
   const gate = await propertyWriteEligibility(wo.propertyId);
-  if (!gate.eligible) return { ok: false, message: gate.reason ?? "Property not eligible for Breezeway writes." };
+  if (!gate.eligible)
+    return { ok: false, message: gate.reason ?? "Property not eligible for Breezeway writes." };
 
   const size = file.bytes.byteLength;
   if (size === 0) return { ok: false, message: "That file is empty." };
@@ -583,10 +618,16 @@ export async function uploadWorkOrderPhoto(
 
   let created: { id?: number; url?: string | null; include_in_task_report?: boolean };
   try {
-    created = await breezewayRequest<{ id?: number; url?: string | null; include_in_task_report?: boolean }>(
-      `/task/${wo.breezewayTaskId}/photos`,
-      { method: "POST", allowWrite: true, retry: false, form },
-    );
+    created = await breezewayRequest<{
+      id?: number;
+      url?: string | null;
+      include_in_task_report?: boolean;
+    }>(`/task/${wo.breezewayTaskId}/photos`, {
+      method: "POST",
+      allowWrite: true,
+      retry: false,
+      form,
+    });
   } catch (error) {
     const message =
       error instanceof BreezewayError
@@ -624,32 +665,37 @@ export async function uploadWorkOrderPhoto(
       .from("breezeway_work_order_photos")
       .select("id", { count: "exact", head: true })
       .eq("work_order_id", wo.id);
-    await db.from("breezeway_work_orders").update({ photo_count: count ?? 0 } as never).eq("id", wo.id);
+    await db
+      .from("breezeway_work_orders")
+      .update({ photo_count: count ?? 0 } as never)
+      .eq("id", wo.id);
   }
 
   return { ok: true, photoId, url, includeInTaskReport: included };
 }
 
-
-
 export async function listWorkOrderPhotos(workOrderId: string): Promise<BreezewayWorkOrderPhoto[]> {
   const db = await admin();
   const { data } = await db
     .from("breezeway_work_order_photos")
-    .select("id, breezeway_photo_id, url, caption, photo_type, uploader, breezeway_created_at, source, evidence_item_id")
+    .select(
+      "id, breezeway_photo_id, url, caption, photo_type, uploader, breezeway_created_at, source, evidence_item_id",
+    )
     .eq("work_order_id", workOrderId)
     .order("breezeway_created_at", { ascending: true, nullsFirst: true });
-  return ((data ?? []) as unknown as {
-    id: string;
-    breezeway_photo_id: number | null;
-    url: string;
-    caption: string | null;
-    photo_type: string | null;
-    uploader: string | null;
-    breezeway_created_at: string | null;
-    source: "breezeway" | "resolve";
-    evidence_item_id: string | null;
-  }[]).map((p) => ({
+  return (
+    (data ?? []) as unknown as {
+      id: string;
+      breezeway_photo_id: number | null;
+      url: string;
+      caption: string | null;
+      photo_type: string | null;
+      uploader: string | null;
+      breezeway_created_at: string | null;
+      source: "breezeway" | "resolve";
+      evidence_item_id: string | null;
+    }[]
+  ).map((p) => ({
     id: p.id,
     breezewayPhotoId: p.breezeway_photo_id,
     url: p.url,
@@ -678,9 +724,12 @@ export async function checkBreezewayPhotoAsEvidence(
     .select("id, url, breezeway_photo_id, breezeway_task_id")
     .eq("id", photoId)
     .maybeSingle();
-  const photo = data as
-    | { id: string; url: string; breezeway_photo_id: number | null; breezeway_task_id: number }
-    | null;
+  const photo = data as {
+    id: string;
+    url: string;
+    breezeway_photo_id: number | null;
+    breezeway_task_id: number;
+  } | null;
   if (!photo) return { ok: false as const, message: "That photo is no longer mirrored." };
 
   const { submitEvidence } = await import("./evidence.server");
@@ -815,7 +864,9 @@ export function approveWorkOrder(workOrderId: string) {
 }
 
 /** Re-reads one task from Breezeway and refreshes the mirror. */
-export async function refreshWorkOrder(breezewayTaskId: number): Promise<BreezewayWorkOrder | null> {
+export async function refreshWorkOrder(
+  breezewayTaskId: number,
+): Promise<BreezewayWorkOrder | null> {
   let raw: RawTask | null = null;
   try {
     raw = await breezewayRequest<RawTask>(`/task/${breezewayTaskId}`);
@@ -899,7 +950,10 @@ export async function syncVerifiedPortfolio(limit = 10) {
   for (const p of (data ?? []) as { id: string }[]) {
     const res = await syncPropertyWorkOrders(p.id);
     if (res.ok) synced += res.synced;
-    await db.from("properties").update({ breezeway_synced_at: new Date().toISOString() }).eq("id", p.id);
+    await db
+      .from("properties")
+      .update({ breezeway_synced_at: new Date().toISOString() })
+      .eq("id", p.id);
   }
   return { properties: (data ?? []).length, verifiedHomes: homeIds.length, synced };
 }

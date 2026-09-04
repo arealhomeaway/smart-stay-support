@@ -34,7 +34,9 @@ export async function loadAuditLog(limit = 200) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("audit_log")
-    .select("id, actor_id, actor_label, action, entity_type, entity_id, entity_label, reason, created_at")
+    .select(
+      "id, actor_id, actor_label, action, entity_type, entity_id, entity_label, reason, created_at",
+    )
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;

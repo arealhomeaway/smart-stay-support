@@ -39,7 +39,11 @@ export function VisitLogPanel({ ticketId }: { ticketId: string }) {
             <div key={v.id} className="space-y-1 rounded-md border border-border px-3 py-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={v.check_in_verified ? "secondary" : "outline"} className="gap-1">
-                  {v.check_in_verified ? <ShieldCheck className="size-3" /> : <ShieldQuestion className="size-3" />}
+                  {v.check_in_verified ? (
+                    <ShieldCheck className="size-3" />
+                  ) : (
+                    <ShieldQuestion className="size-3" />
+                  )}
                   {describeDistance(v.check_in_distance_m, v.check_in_verified)}
                 </Badge>
                 <span className="text-muted-foreground">

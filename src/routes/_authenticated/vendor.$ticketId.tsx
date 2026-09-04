@@ -4,13 +4,14 @@ import { useState } from "react";
 import { ArrowLeft, CheckCircle2, Camera, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { VisitCheckInCard } from "@/components/VisitCheckInCard";
+import { Chip, EmptyState, LoadingRows, SectionBand, SectionCard } from "@/components/ui/page";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { usDateTime } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
   component: VendorJob,
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
       { title: "Work order details | Resolve vendor portal" },
       {
         name: "description",
-        content: "Access details, required steps and sign-off for a work order dispatched by A Real Home Away.",
+        content:
+          "Access details, required steps and sign-off for a work order dispatched by A Real Home Away.",
       },
       { property: "og:title", content: "Work order details | Resolve vendor portal" },
       { property: "og:description", content: "Everything you need on site for this work order." },
@@ -28,6 +30,13 @@ export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
     ],
   }),
 });
+
+const VENDOR_STATE: Record<string, { label: string; tone: StatusTone }> = {
+  on_site: { label: "On site", tone: "progress" },
+  accepted: { label: "In progress", tone: "progress" },
+  dispatched: { label: "New", tone: "waiting" },
+  completed: { label: "Complete", tone: "resolved" },
+};
 
 function VendorJob() {
   const { ticketId } = useParams({ from: "/_authenticated/vendor/$ticketId" });
@@ -41,7 +50,7 @@ function VendorJob() {
         supabase
           .from("tickets")
           .select(
-            "id, ref, title, description, priority, status, category, due_at, vendor_brief, vendor_status, vendor_accepted_at, guest_in_residence, occupancy_status, properties(name, address_line1, city, state, postal_code, unit, access_notes, wifi_notes)",
+            "id, ref, title, description, priority, status, category, due_at, vendor_brief, vendor_status, vendor_accepted_at, guest_in_residence, occupancy_status, properties(name, address_line1, city, state, postal_code, unit, access_notes, wifi_notes, primary_photo_url)",
           )
           .eq("id", ticketId)
           .maybeSingle(),
@@ -137,21 +146,22 @@ function VendorJob() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not mark it complete"),
   });
 
-  if (job.isLoading) return <Skeleton className="h-96 w-full" />;
+  if (job.isLoading) return <LoadingRows rows={5} />;
 
   const ticket = job.data?.ticket;
   if (!ticket) {
     return (
-      <div className="mx-auto max-w-md space-y-4 rounded-lg border border-border p-8 text-center">
-        <ShieldAlert className="mx-auto size-8 text-muted-foreground" />
-        <h1 className="font-display text-xl font-semibold">Work order not available</h1>
-        <p className="text-sm text-muted-foreground">
-          This job is not assigned to you, or it has been reassigned. Reach out to your coordinator if you think
-          that's wrong.
-        </p>
-        <Button asChild variant="outline">
-          <Link to="/vendor">Back to my work orders</Link>
-        </Button>
+      <div className="mx-auto max-w-md">
+        <EmptyState
+          icon={<ShieldAlert className="size-8" />}
+          title="Work order not available"
+          hint="This job is not assigned to you, or it has been reassigned. Reach out to your coordinator if you think that's wrong."
+          action={
+            <Button asChild variant="outline">
+              <Link to="/vendor">Back to my work orders</Link>
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -165,11 +175,16 @@ function VendorJob() {
     unit: string | null;
     access_notes: string | null;
     wifi_notes: string | null;
+    primary_photo_url: string | null;
   } | null;
 
   const steps = job.data?.steps ?? [];
   const requiredOpen = steps.filter((s) => s.required && !s.completed).length;
   const finished = ticket.vendor_status === "completed";
+  const state = VENDOR_STATE[ticket.vendor_status ?? ""] ?? {
+    label: "New",
+    tone: "waiting" as StatusTone,
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -179,44 +194,57 @@ function VendorJob() {
         </Link>
       </Button>
 
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={ticket.priority === "p1" ? "destructive" : "secondary"}>
-            {(ticket.priority ?? "").toUpperCase()}
-          </Badge>
-          <Badge variant="outline" className="capitalize">
-            {ticket.category}
-          </Badge>
-          {ticket.guest_in_residence && <Badge className="bg-amber-500 text-white">Guest in the home</Badge>}
+      <header className="flex items-start gap-3">
+        <PropertyPhoto
+          url={property?.primary_photo_url}
+          name={property?.name}
+          className="size-14"
+        />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Chip
+              className={
+                ticket.priority === "p1" ? "border-danger/40 bg-danger/10 text-danger" : undefined
+              }
+            >
+              {(ticket.priority ?? "").toUpperCase()}
+            </Chip>
+            <Chip>{(ticket.category ?? "").replace(/_/g, " ")}</Chip>
+            <StatusBadge tone={state.tone}>{state.label}</StatusBadge>
+            {ticket.guest_in_residence && (
+              <StatusBadge tone="waiting">Guest in the home</StatusBadge>
+            )}
+          </div>
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+            #{ticket.ref} {ticket.title}
+          </h1>
+          {ticket.due_at && (
+            <p className="text-sm text-muted-foreground">Needed by {usDateTime(ticket.due_at)}</p>
+          )}
         </div>
-        <h1 className="font-display text-2xl font-semibold">
-          #{ticket.ref} {ticket.title}
-        </h1>
-        {ticket.due_at && (
-          <p className="text-sm text-muted-foreground">Needed by {new Date(ticket.due_at).toLocaleString()}</p>
-        )}
       </header>
 
       {ticket.guest_in_residence && (
-        <Card className="border-amber-500/50 bg-amber-500/5">
-          <CardContent className="flex gap-3 pt-6 text-sm">
-            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber-600" />
-            <p>
-              A guest is staying in this home. Knock and announce yourself, keep the work area clean, and never
-              leave an opening in a wall, ceiling or floor unsealed at the end of the visit.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex gap-3 rounded-xl border border-amber/25 bg-amber/8 px-4 py-3 text-sm">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber" />
+          <p>
+            A guest is staying in this home. Knock and announce yourself, keep the work area clean,
+            and never leave an opening in a wall, ceiling or floor unsealed at the end of the visit.
+          </p>
+        </div>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">The home</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+      <SectionCard title="The home">
+        <div className="space-y-2 text-sm">
           <p className="font-medium">{property?.name ?? "Address to be confirmed"}</p>
           <p className="text-muted-foreground">
-            {[property?.address_line1, property?.unit, property?.city, property?.state, property?.postal_code]
+            {[
+              property?.address_line1,
+              property?.unit,
+              property?.city,
+              property?.state,
+              property?.postal_code,
+            ]
               .filter(Boolean)
               .join(", ") || "Ask your coordinator for the address."}
           </p>
@@ -232,39 +260,42 @@ function VendorJob() {
               {property.wifi_notes}
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
-      {!finished && <VisitCheckInCard ticketId={ticketId} homeName={property?.name ?? "the home"} />}
+      {!finished && (
+        <VisitCheckInCard ticketId={ticketId} homeName={property?.name ?? "the home"} />
+      )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">What we need done</CardTitle>
-          <CardDescription>Straight from the coordinator who dispatched this.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {ticket.vendor_brief && <p className="whitespace-pre-wrap font-medium">{ticket.vendor_brief}</p>}
-          {ticket.description && <p className="whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>}
-          {!ticket.vendor_brief && !ticket.description && (
-            <p className="text-muted-foreground">No extra detail was added — call your coordinator if unclear.</p>
+      <SectionCard
+        title="What we need done"
+        description="Straight from the coordinator who dispatched this."
+      >
+        <div className="space-y-3 text-sm">
+          {ticket.vendor_brief && (
+            <p className="whitespace-pre-wrap font-medium">{ticket.vendor_brief}</p>
           )}
-        </CardContent>
-      </Card>
+          {ticket.description && (
+            <p className="whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>
+          )}
+          {!ticket.vendor_brief && !ticket.description && (
+            <p className="text-muted-foreground">
+              No extra detail was added — call your coordinator if unclear.
+            </p>
+          )}
+        </div>
+      </SectionCard>
 
       {steps.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Required steps</CardTitle>
-            <CardDescription>
-              These come from our playbook for this kind of work. Everything marked required has to be done before
-              the job can be signed off.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <SectionCard
+          title="Required steps"
+          description="These come from our playbook for this kind of work. Everything marked required has to be done before the job can be signed off."
+        >
+          <div className="space-y-1.5">
             {steps.map((step) => (
               <label
                 key={step.id}
-                className="flex items-start gap-3 rounded-md border border-border px-3 py-2 text-sm"
+                className="flex items-start gap-3 border-b border-border/60 py-2.5 text-sm last:border-0"
               >
                 <Checkbox
                   checked={step.completed}
@@ -275,9 +306,11 @@ function VendorJob() {
                 <span className="space-y-1">
                   <span className="block font-medium">
                     {step.instruction}
-                    {step.required && <span className="ml-1 text-destructive">*</span>}
+                    {step.required && <span className="ml-1 text-danger">*</span>}
                   </span>
-                  {step.detail && <span className="block text-muted-foreground">{step.detail}</span>}
+                  {step.detail && (
+                    <span className="block text-muted-foreground">{step.detail}</span>
+                  )}
                   {step.photo_required && (
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Camera className="size-3" /> Send a photo of this to your coordinator.
@@ -286,18 +319,15 @@ function VendorJob() {
                 </span>
               </label>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Update the team</CardTitle>
-          <CardDescription>
-            Anything you find that we didn't ask about — tell us here rather than leaving it.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <SectionCard
+        title="Update the team"
+        description="Anything you find that we didn't ask about — tell us here rather than leaving it."
+      >
+        <div className="space-y-3">
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -313,7 +343,11 @@ function VendorJob() {
               Send update
             </Button>
             {ticket.vendor_status === "dispatched" && (
-              <Button variant="secondary" disabled={accept.isPending} onClick={() => accept.mutate()}>
+              <Button
+                variant="secondary"
+                disabled={accept.isPending}
+                onClick={() => accept.mutate()}
+              >
                 Accept job
               </Button>
             )}
@@ -338,26 +372,24 @@ function VendorJob() {
               Marked complete. A coordinator reviews the evidence before the ticket is closed.
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">History on this work order</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {(job.data?.activity ?? []).length === 0 ? (
-            <p className="text-muted-foreground">Nothing logged yet.</p>
-          ) : (
-            (job.data?.activity ?? []).map((a) => (
-              <div key={a.id} className="border-l-2 border-border pl-3">
+      <div className="space-y-3">
+        <SectionBand title="History on this work order" />
+        {(job.data?.activity ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing logged yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {(job.data?.activity ?? []).map((a) => (
+              <div key={a.id} className="border-l-2 border-border pl-3 text-sm">
                 <p className="whitespace-pre-wrap">{a.body}</p>
-                <p className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString()}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{usDateTime(a.created_at)}</p>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

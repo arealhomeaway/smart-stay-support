@@ -42,7 +42,9 @@ describe("ticket next action", () => {
   });
 
   it("never asks to close a ticket that is already signed off", () => {
-    expect(ticketNextAction({ ...base, status: "closed", resolved_at: new Date().toISOString() })).toBeNull();
+    expect(
+      ticketNextAction({ ...base, status: "closed", resolved_at: new Date().toISOString() }),
+    ).toBeNull();
   });
 
   it("checks in with an engaged vendor", () => {
@@ -56,7 +58,9 @@ describe("ticket next action", () => {
   });
 
   it("asks for evidence before closure", () => {
-    expect(ticketNextAction({ ...base, missingClosureEvidence: true })?.label).toContain("evidence");
+    expect(ticketNextAction({ ...base, missingClosureEvidence: true })?.label).toContain(
+      "evidence",
+    );
   });
 
   it("closes out when resolved and unblocked", () => {

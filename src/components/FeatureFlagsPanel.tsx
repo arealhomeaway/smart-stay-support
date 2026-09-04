@@ -28,7 +28,10 @@ export function FeatureFlagsPanel() {
       </CardHeader>
       <CardContent className="space-y-3">
         {flags.map((f) => (
-          <div key={f.key} className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
+          <div
+            key={f.key}
+            className="flex items-start justify-between gap-4 rounded-lg border border-border p-3"
+          >
             <div>
               <p className="text-sm font-medium">{f.label}</p>
               {f.description && <p className="text-xs text-muted-foreground">{f.description}</p>}
@@ -50,7 +53,9 @@ export function FeatureFlagsPanel() {
             />
           </div>
         ))}
-        {flags.length === 0 && <p className="text-sm text-muted-foreground">No controls configured.</p>}
+        {flags.length === 0 && (
+          <p className="text-sm text-muted-foreground">No controls configured.</p>
+        )}
       </CardContent>
     </Card>
   );

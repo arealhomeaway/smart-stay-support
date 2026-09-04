@@ -37,8 +37,10 @@ export function TeamAccessPanel() {
   });
 
   const update = useMutation({
-    mutationFn: (vars: { userId: string; role: "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner" }) =>
-      setFn({ data: vars }),
+    mutationFn: (vars: {
+      userId: string;
+      role: "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
+    }) => setFn({ data: vars }),
     onSuccess: () => {
       toast.success("Access updated.");
       void qc.invalidateQueries({ queryKey: ["team-access"] });
@@ -53,7 +55,9 @@ export function TeamAccessPanel() {
       const line = `Sign in at ${window.location.origin}/auth with ${res.email ?? "your email"} and this temporary password: ${res.password}`;
       try {
         await navigator.clipboard.writeText(line);
-        toast.success("Temporary password copied — paste it to them.", { description: res.password });
+        toast.success("Temporary password copied — paste it to them.", {
+          description: res.password,
+        });
       } catch {
         toast.success(`Temporary password: ${res.password}`);
       }
@@ -70,8 +74,9 @@ export function TeamAccessPanel() {
           <ShieldCheck className="size-4" /> Team access
         </CardTitle>
         <CardDescription>
-          Permission role decides what a person may do. Their seat and team, set on the Seats board below,
-          decide what work they own. Changing a role here takes effect everywhere, including the database.
+          Permission role decides what a person may do. Their seat and team, set on the Seats board
+          below, decide what work they own. Changing a role here takes effect everywhere, including
+          the database.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -105,7 +110,11 @@ export function TeamAccessPanel() {
                     value={current}
                     disabled={update.isPending}
                     onValueChange={(role) =>
-                      update.mutate({ userId: p.id, role: role as "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner" })
+                      update.mutate({
+                        userId: p.id,
+                        role: role as
+                          "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner",
+                      })
                     }
                   >
                     <SelectTrigger>

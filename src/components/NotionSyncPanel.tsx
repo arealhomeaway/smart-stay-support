@@ -5,7 +5,11 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getNotionOverview, resolveNotionConflict, runNotionPropertySync } from "@/lib/notion.functions";
+import {
+  getNotionOverview,
+  resolveNotionConflict,
+  runNotionPropertySync,
+} from "@/lib/notion.functions";
 
 function when(iso: string | null) {
   if (!iso) return "never";
@@ -38,12 +42,14 @@ export function NotionSyncPanel() {
   });
 
   const decide = useMutation({
-    mutationFn: (input: { conflictId: string; choice: "resolve" | "notion" }) => resolveFn({ data: input }),
+    mutationFn: (input: { conflictId: string; choice: "resolve" | "notion" }) =>
+      resolveFn({ data: input }),
     onSuccess: () => {
       toast.success("Value settled.");
       refresh();
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not settle that value."),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Could not settle that value."),
   });
 
   const data = overview.data;
@@ -61,9 +67,9 @@ export function NotionSyncPanel() {
           </Badge>
         </CardTitle>
         <CardDescription>
-          Notion stays the record of truth for property master information and approved SOPs. Resolve keeps a mirror
-          so permissions, workflows and reporting all point at one home record. Read-only for now — nothing is written
-          back to Notion yet.
+          Notion stays the record of truth for property master information and approved SOPs.
+          Resolve keeps a mirror so permissions, workflows and reporting all point at one home
+          record. Read-only for now — nothing is written back to Notion yet.
         </CardDescription>
       </CardHeader>
 
@@ -114,7 +120,11 @@ export function NotionSyncPanel() {
                 </p>
               ) : source.fields.length > 0 ? (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {source.fields.length} fields: {source.fields.slice(0, 8).map((f) => f.name).join(", ")}
+                  {source.fields.length} fields:{" "}
+                  {source.fields
+                    .slice(0, 8)
+                    .map((f) => f.name)
+                    .join(", ")}
                   {source.fields.length > 8 ? "…" : ""}
                 </p>
               ) : null}

@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authenticated/work-orders")({
       { property: "og:title", content: "Work orders — Resolve" },
       {
         property: "og:description",
-        content: "ARHA maintenance work orders with derived authority, warranty routing and closure gates.",
+        content:
+          "ARHA maintenance work orders with derived authority, warranty routing and closure gates.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -24,7 +24,9 @@ export const Route = createFileRoute("/api/public/hooks/breezeway-mirror")({
         const limit = Math.min(Number(url.searchParams.get("limit") ?? "20") || 20, 60);
 
         try {
-          const people = await (await import("@/lib/breezeway-people.server")).syncBreezewayPeople();
+          const people = await (
+            await import("@/lib/breezeway-people.server")
+          ).syncBreezewayPeople();
           const wos = await import("@/lib/breezeway-workorders.server");
           const mirror = await wos.syncVerifiedPortfolio(limit);
           return Response.json({ ok: true, people, mirror });

@@ -16,12 +16,23 @@ import { useServerFn } from "@tanstack/react-start";
 import { FileText, Lock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { fileVendorDocument, verifyVendorIdentity } from "@/lib/vendors.functions";
-import { DOC_TYPE_BY_CODE, IDENTITY_METHODS, VENDOR_DOC_TYPES, docTypeLabel } from "@/lib/vendor-documents";
+import {
+  DOC_TYPE_BY_CODE,
+  IDENTITY_METHODS,
+  VENDOR_DOC_TYPES,
+  docTypeLabel,
+} from "@/lib/vendor-documents";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -88,7 +99,8 @@ export function VendorDocumentsPanel({
   });
 
   const identityMutation = useMutation({
-    mutationFn: () => verifyIdentity({ data: { orgId, subject, method, expiresOn: idExpires || null } }),
+    mutationFn: () =>
+      verifyIdentity({ data: { orgId, subject, method, expiresOn: idExpires || null } }),
     onSuccess: () => {
       toast.success("Identity check recorded. No image was stored.");
       setSubject("");
@@ -180,7 +192,10 @@ export function VendorDocumentsPanel({
               onChange={(e) => setNote(e.target.value)}
               maxLength={1000}
             />
-            <Button onClick={() => fileMutation.mutate()} disabled={title.trim().length < 2 || fileMutation.isPending}>
+            <Button
+              onClick={() => fileMutation.mutate()}
+              disabled={title.trim().length < 2 || fileMutation.isPending}
+            >
               <FileText className="mr-2 h-4 w-4" />
               File as verified
             </Button>
@@ -189,8 +204,8 @@ export function VendorDocumentsPanel({
           <div className="space-y-2 rounded-lg border border-dashed p-3">
             <Label>Identity check</Label>
             <p className="text-xs text-muted-foreground">
-              Look at a government photo ID, then record the check here. Resolve stores the record and never the
-              image — no licence scans, no ID numbers.
+              Look at a government photo ID, then record the check here. Resolve stores the record
+              and never the image — no licence scans, no ID numbers.
             </p>
             <Input
               placeholder="Who did you verify? Use their name as it appears on the ID."
@@ -211,11 +226,14 @@ export function VendorDocumentsPanel({
               </SelectContent>
             </Select>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">ID expiry shown on the document</Label>
+              <Label className="text-xs text-muted-foreground">
+                ID expiry shown on the document
+              </Label>
               <Input type="date" value={idExpires} onChange={(e) => setIdExpires(e.target.value)} />
               {idExpires !== "" && idExpires < today && (
                 <p className="text-xs text-destructive">
-                  That ID is already expired — ask for current identification before recording the check.
+                  That ID is already expired — ask for current identification before recording the
+                  check.
                 </p>
               )}
             </div>

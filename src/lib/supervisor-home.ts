@@ -112,7 +112,8 @@ export function supervisorAttention(input: {
     (e) => e.status === "open" && (isDirector ? true : e.escalated_to_role !== "director"),
   );
   const recentlyCleared = escalations.filter(
-    (e) => e.status !== "open" && e.resolved_at && now - new Date(e.resolved_at).getTime() < 3 * DAY,
+    (e) =>
+      e.status !== "open" && e.resolved_at && now - new Date(e.resolved_at).getTime() < 3 * DAY,
   );
   const recentlyRaised = escalations.filter(
     (e) => now - new Date(e.created_at).getTime() < 3 * DAY,
@@ -198,9 +199,7 @@ export function supervisorAttention(input: {
 
 /** The one-line summary above the band. */
 export function attentionHeadline(buckets: AttentionBucket[]) {
-  const decisions = buckets
-    .filter((b) => b.tone !== "neutral")
-    .reduce((n, b) => n + b.count, 0);
+  const decisions = buckets.filter((b) => b.tone !== "neutral").reduce((n, b) => n + b.count, 0);
   if (decisions === 0) return "Nothing needs your decision right now.";
   return `${decisions} ${decisions === 1 ? "thing needs" : "things need"} your decision.`;
 }

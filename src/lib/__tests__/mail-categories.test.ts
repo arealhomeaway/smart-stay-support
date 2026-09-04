@@ -52,7 +52,11 @@ describe("a message Resolve has already acted on", () => {
 
 describe("category lifecycle", () => {
   it("creating swaps the trigger and keeps every other category", () => {
-    expect(categoriesAfterCreate(["Guest", CREATE_TICKET_TAG, "Urgent"])).toEqual(["Guest", "Urgent", CREATED_TAG]);
+    expect(categoriesAfterCreate(["Guest", CREATE_TICKET_TAG, "Urgent"])).toEqual([
+      "Guest",
+      "Urgent",
+      CREATED_TAG,
+    ]);
     expect(categoriesAfterCreate(["Owner", CREATE_LEAD_TAG])).toEqual(["Owner", CREATED_TAG]);
   });
 
@@ -64,7 +68,10 @@ describe("category lifecycle", () => {
   it("closing replaces the created tag, never duplicating Resolve tags", () => {
     expect(categoriesAfterClose(["Owner", CREATED_TAG])).toEqual(["Owner", CLOSED_TAG]);
     expect(categoriesAfterClose([CLOSED_TAG])).toEqual([CLOSED_TAG]);
-    expect(categoriesAfterClose([CREATE_TICKET_TAG, CREATED_TAG, "Vendor"])).toEqual(["Vendor", CLOSED_TAG]);
+    expect(categoriesAfterClose([CREATE_TICKET_TAG, CREATED_TAG, "Vendor"])).toEqual([
+      "Vendor",
+      CLOSED_TAG,
+    ]);
   });
 
   it("reopening puts the message back to created", () => {
@@ -76,10 +83,8 @@ describe("category lifecycle", () => {
   });
 
   it("unrelated categories survive de-duplication with order intact", () => {
-    expect(categoriesAfterCreate(["Guest", "guest", null, "", "Owner", CREATE_TICKET_TAG])).toEqual([
-      "Guest",
-      "Owner",
-      CREATED_TAG,
-    ]);
+    expect(categoriesAfterCreate(["Guest", "guest", null, "", "Owner", CREATE_TICKET_TAG])).toEqual(
+      ["Guest", "Owner", CREATED_TAG],
+    );
   });
 });

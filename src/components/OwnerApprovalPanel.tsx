@@ -32,7 +32,10 @@ const KIND_LABEL: Record<string, string> = {
 function money(amount: number | null, currency: string) {
   if (amount === null || amount === undefined) return null;
   try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: currency || "USD" }).format(amount);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+    }).format(amount);
   } catch {
     return `${currency} ${amount}`;
   }
@@ -53,7 +56,11 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
     onMutate: (v) => setBusy(v.approvalId),
     onSettled: () => setBusy(null),
     onSuccess: (_r, v) => {
-      toast.success(v.decision === "approved" ? "Decision recorded — thank you." : "Sent back to the team with your note.");
+      toast.success(
+        v.decision === "approved"
+          ? "Decision recorded — thank you."
+          : "Sent back to the team with your note.",
+      );
       setNotes((n) => ({ ...n, [v.approvalId]: "" }));
       void qc.invalidateQueries({ queryKey: ["owner-approvals"] });
     },
@@ -74,13 +81,15 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
           Decisions for your approval
         </CardTitle>
         <CardDescription>
-          Each item shows what is being approved. Your name, the time and any note you add are recorded with the
-          decision.
+          Each item shows what is being approved. Your name, the time and any note you add are
+          recorded with the decision.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {pending.length === 0 && (
-          <p className="text-sm text-muted-foreground">Nothing is waiting for your approval right now.</p>
+          <p className="text-sm text-muted-foreground">
+            Nothing is waiting for your approval right now.
+          </p>
         )}
 
         {pending.map((a) => {
@@ -89,17 +98,23 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
             <div key={a.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">{KIND_LABEL[a.kind] ?? a.kind}</Badge>
-                {a.property_name && <span className="text-xs text-muted-foreground">{a.property_name}</span>}
+                {a.property_name && (
+                  <span className="text-xs text-muted-foreground">{a.property_name}</span>
+                )}
                 {a.active_owner && (
                   <Badge variant="outline" className="border-primary/40 text-primary">
                     Active Owner Program
                   </Badge>
                 )}
                 {amount && <span className="text-sm font-medium">{amount}</span>}
-                {a.due_on && <span className="text-xs text-muted-foreground">Needed by {a.due_on}</span>}
+                {a.due_on && (
+                  <span className="text-xs text-muted-foreground">Needed by {a.due_on}</span>
+                )}
               </div>
               <p className="mt-2 text-sm font-medium">{a.title}</p>
-              {a.detail && <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{a.detail}</p>}
+              {a.detail && (
+                <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{a.detail}</p>
+              )}
               {a.evidence_url && (
                 <a
                   className="mt-1 inline-block text-sm underline"
@@ -148,7 +163,9 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
 
         {decided.length > 0 && (
           <div className="pt-2">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Your decisions</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Your decisions
+            </p>
             <div className="space-y-2">
               {decided.map((a) => (
                 <div key={a.id} className="rounded-md border border-border/60 p-3 text-sm">
@@ -163,7 +180,9 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
                       </span>
                     )}
                   </div>
-                  {a.decision_note && <p className="mt-1 text-muted-foreground">{a.decision_note}</p>}
+                  {a.decision_note && (
+                    <p className="mt-1 text-muted-foreground">{a.decision_note}</p>
+                  )}
                 </div>
               ))}
             </div>

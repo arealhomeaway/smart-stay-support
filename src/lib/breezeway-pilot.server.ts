@@ -19,11 +19,7 @@ import {
 import { listBreezewayProperties, listBreezewayTasksForHome } from "./breezeway.server";
 
 function normalize(value: string | null | undefined) {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/[.,#]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (value ?? "").toLowerCase().replace(/[.,#]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function isoDate(offsetDays: number) {
@@ -102,7 +98,9 @@ export async function saveBreezewayPropertyMapping(resolveId: string, breezewayI
  * Read-only preview of one mapped property's Breezeway tasks. Requires the
  * mapping to already be saved so the preview can never invent a link.
  */
-export async function buildBreezewayPilotPreview(resolveId: string): Promise<BreezewayPilotPreview> {
+export async function buildBreezewayPilotPreview(
+  resolveId: string,
+): Promise<BreezewayPilotPreview> {
   const property = await loadProperty(resolveId);
   const breezewayId = property.breezeway_property_id;
   if (!breezewayId) throw new Error("This property has no saved Breezeway mapping yet.");
@@ -116,7 +114,9 @@ export async function buildBreezewayPilotPreview(resolveId: string): Promise<Bre
   const windowEnd = isoDate(BREEZEWAY_PREVIEW_LOOKAHEAD_DAYS);
 
   const inWindow: BreezewayTaskSummary[] = tasks.items
-    .filter((t) => t.scheduledDate && t.scheduledDate >= windowStart && t.scheduledDate <= windowEnd)
+    .filter(
+      (t) => t.scheduledDate && t.scheduledDate >= windowStart && t.scheduledDate <= windowEnd,
+    )
     .sort((a, b) => (a.scheduledDate ?? "").localeCompare(b.scheduledDate ?? ""));
 
   const unscheduledOpen = tasks.items.filter(
@@ -126,7 +126,12 @@ export async function buildBreezewayPilotPreview(resolveId: string): Promise<Bre
   const breezewayAddress = match
     ? [match.address, match.city, match.state, match.zipcode].filter(Boolean).join(", ")
     : null;
-  const resolveAddress = [property.address_line1, property.city, property.state, property.postal_code]
+  const resolveAddress = [
+    property.address_line1,
+    property.city,
+    property.state,
+    property.postal_code,
+  ]
     .filter(Boolean)
     .join(", ");
 
