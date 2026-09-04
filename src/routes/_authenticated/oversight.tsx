@@ -432,6 +432,49 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         <OvernightHandoffPanel />
       </div>
 
+      {/* Someone asked for a decision. That outranks any derived exception. */}
+      {(s?.escalations ?? []).length > 0 && (
+        <Card className="border-danger/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              Someone is waiting on your decision
+              <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
+                {(s?.escalations ?? []).length}
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              Escalations are a request for a call, not a handoff — the raiser still owns the work
+              until you take it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(s?.escalations ?? []).map((e) => (
+              <Link
+                key={e.id}
+                to="/tickets/$ticketId"
+                params={{ ticketId: String(e.ticket_id) }}
+                className="flex items-start justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm hover:bg-muted/50"
+              >
+                <span>
+                  <span className="font-medium">{e.requested_help || e.reason}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    Raised {relativeTime(e.created_at)}
+                  </span>
+                </span>
+                <span className="flex items-center gap-2">
+                  {e.urgency !== "normal" && (
+                    <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
+                      {e.urgency}
+                    </Badge>
+                  )}
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                </span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Exceptions first. A section with nothing in it collapses to one line. */}
       <div className="space-y-3">
         {sections.map((section) =>
