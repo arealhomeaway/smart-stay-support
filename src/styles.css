@@ -70,10 +70,22 @@
   --color-brand-teal: var(--brand-teal);
   --color-brand-gold: var(--brand-gold);
   --color-brand-ink: var(--brand-ink);
-  /* Surfaces: three levels so major areas never blend into one another. */
+  /* Surfaces: bright working canvas, warm orientation, raised panels. */
   --color-canvas: var(--canvas);
   --color-sunken: var(--sunken);
   --color-elevated: var(--elevated);
+  --color-warm: var(--warm);
+  --color-warm-deep: var(--warm-deep);
+  --color-plate: var(--plate);
+  /* Expressive secondary palette — one meaning each. */
+  --color-sky: var(--sky);
+  --color-sage: var(--sage);
+  --color-amber: var(--amber);
+  --color-coral: var(--coral);
+  --color-lavender: var(--lavender);
+  --color-aqua: var(--aqua);
+  --color-sand: var(--sand);
+  --color-cool-grey: var(--cool-grey);
   /* Who owns the work. */
   --color-team-a: var(--team-a);
   --color-team-b: var(--team-b);
@@ -97,6 +109,7 @@
   --font-display: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
   --font-sans: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
 }
+
 
 
 :root {
