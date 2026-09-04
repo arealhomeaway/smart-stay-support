@@ -40,20 +40,24 @@ export function NotificationBell() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
+  const { demoMode } = useDemo();
+
   const { data } = useQuery({
-    queryKey: ["staff-notifications"],
+    queryKey: ["staff-notifications", demoMode],
     refetchInterval: 60_000,
     staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("staff_notifications")
         .select("id, kind, title, body, link_path, priority, read_at, created_at")
+        .eq("is_demo", demoMode)
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
       return (data ?? []) as Row[];
     },
   });
+
 
   const rows = useMemo(() => data ?? [], [data]);
   const unread = rows.filter((r) => !r.read_at);
