@@ -10,6 +10,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApprovalDetail } from "@/components/approvals/ApprovalDetail";
+import { UnplacedOwnerReplies } from "@/components/approvals/UnplacedOwnerReplies";
 import { ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -557,6 +558,8 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           </CardContent>
         </Card>
       )}
+
+      <UnplacedOwnerReplies onOpenApproval={(id) => setOpenApproval(id)} />
 
       <ApprovalDetail approvalId={openApproval} onClose={() => setOpenApproval(null)} />
 
