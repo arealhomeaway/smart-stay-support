@@ -346,6 +346,7 @@ export async function syncMailbox(
     recategoriseRetried: 0,
     completedTagged: 0,
     reopenedTagged: 0,
+    ownerRepliesFiled: 0,
     mailbox: authorizedMailbox(),
     items: [],
   };
