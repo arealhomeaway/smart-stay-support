@@ -355,14 +355,16 @@ function WorkRow({
  */
 function RoutineWorkDue() {
   const { can } = useRole();
+  const { demoMode } = useDemo();
   const { data } = useQuery({
-    queryKey: ["routine-due"],
+    queryKey: ["routine-due", demoMode],
     enabled: can("routines"),
     staleTime: 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routine_controls")
         .select("id, kind, title, status, due_at, properties(name, nickname)")
+        .eq("is_demo", demoMode)
         .in("status", ["due", "in_progress"])
         .order("due_at", { ascending: true })
         .limit(50);
