@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { endVisit, getVisits, startVisit } from "@/lib/visits.functions";
 import { describeDistance, formatOnSite, readPosition } from "@/lib/visits";
+import { usDateTime, usTime } from "@/lib/dates";
 
 export function VisitCheckInCard({ ticketId, homeName }: { ticketId: string; homeName: string }) {
   const qc = useQueryClient();
@@ -90,9 +91,7 @@ export function VisitCheckInCard({ ticketId, homeName }: { ticketId: string; hom
                 )}
                 {describeDistance(open.check_in_distance_m, open.check_in_verified)}
               </Badge>
-              <span className="text-muted-foreground">
-                Since {new Date(open.checked_in_at).toLocaleTimeString()}
-              </span>
+              <span className="text-muted-foreground">Since {usTime(open.checked_in_at)}</span>
             </div>
             <Textarea
               value={notes}
@@ -117,8 +116,8 @@ export function VisitCheckInCard({ ticketId, homeName }: { ticketId: string; hom
               .filter((v) => v.checked_out_at)
               .map((v) => (
                 <div key={v.id} className="text-muted-foreground">
-                  {new Date(v.checked_in_at).toLocaleString()} · {formatOnSite(v.minutes_on_site)}{" "}
-                  on site · {v.check_in_verified ? "location confirmed" : "location unconfirmed"}
+                  {usDateTime(v.checked_in_at)} · {formatOnSite(v.minutes_on_site)} on site ·{" "}
+                  {v.check_in_verified ? "location confirmed" : "location unconfirmed"}
                 </div>
               ))}
           </div>

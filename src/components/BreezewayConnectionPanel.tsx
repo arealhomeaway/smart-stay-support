@@ -19,6 +19,7 @@ import type {
   BreezewayPilotPreview,
   BreezewayTaskSummary,
 } from "@/lib/breezeway";
+import { usDateTime } from "@/lib/dates";
 
 /** The single approved pilot pair. Nothing else is linked automatically. */
 const PILOT = {
@@ -70,8 +71,7 @@ function errorText(error: unknown) {
 }
 
 function when(iso: string | null) {
-  if (!iso) return "never";
-  return new Date(iso).toLocaleString();
+  return usDateTime(iso, "never");
 }
 
 function MappingList({

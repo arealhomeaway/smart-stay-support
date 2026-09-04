@@ -23,6 +23,7 @@ import {
   priorityTone,
   relativeTime,
 } from "@/lib/tickets";
+import { usDateTime } from "@/lib/dates";
 
 type Ticket = {
   id: string;
@@ -282,7 +283,7 @@ export function HandoffPanel({
               </p>
               <p className="text-muted-foreground">
                 <span className="font-medium text-foreground">Next action:</span> {h.next_action}
-                {h.due_at ? ` by ${new Date(h.due_at).toLocaleString()}` : ""}
+                {h.due_at ? ` by ${usDateTime(h.due_at)}` : ""}
               </p>
               <p className="text-muted-foreground">
                 <span className="font-medium text-foreground">Guest comms:</span>{" "}

@@ -25,6 +25,7 @@ import {
   routineDueLabel,
   type RoutineOutcome,
 } from "@/lib/routine-controls";
+import { usDate } from "@/lib/dates";
 
 export type RoutineRow = {
   id: string;
@@ -159,7 +160,7 @@ export function RoutineDrawer({
             {row.stay_departure && (
               <p>
                 <span className="text-muted-foreground">Departed: </span>
-                {new Date(row.stay_departure).toLocaleDateString()}
+                {usDate(row.stay_departure)}
               </p>
             )}
           </div>

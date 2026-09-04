@@ -36,6 +36,7 @@ import {
 import { VendorDocumentsPanel } from "@/components/VendorDocumentsPanel";
 import { VendorTerritoryPanel } from "@/components/VendorTerritoryPanel";
 import { Badge } from "@/components/ui/badge";
+import { usDateTime } from "@/lib/dates";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -497,7 +498,7 @@ export function VendorOrgSheet({
                       </p>
                       <p className="text-muted-foreground">{e.reason}</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(e.created_at).toLocaleString()} · {e.actor_label ?? "Unknown"}
+                        {usDateTime(e.created_at)} · {e.actor_label ?? "Unknown"}
                       </p>
                     </div>
                   ))

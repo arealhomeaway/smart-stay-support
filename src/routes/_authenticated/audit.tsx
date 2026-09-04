@@ -8,6 +8,7 @@ import { RequireCapability } from "@/components/RequireCapability";
 import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { getAuditLog } from "@/lib/onboarding.functions";
+import { usDateTime } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
@@ -85,9 +86,7 @@ function AuditPage() {
                     <p className="text-xs italic text-muted-foreground">Reason: {e.reason}</p>
                   )}
                 </div>
-                <StatusBadge tone="closed">
-                  {new Date(e.created_at as string).toLocaleString()}
-                </StatusBadge>
+                <StatusBadge tone="closed">{usDateTime(e.created_at as string)}</StatusBadge>
               </div>
             ))}
           </div>

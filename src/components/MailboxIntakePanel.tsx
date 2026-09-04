@@ -11,6 +11,7 @@ import {
   refreshMailboxSubscription,
   runMailboxSync,
 } from "@/lib/mailbox.functions";
+import { usDateTime } from "@/lib/dates";
 
 /**
  * Administrative view of Outlook intake.
@@ -121,7 +122,7 @@ export function MailboxIntakePanel() {
           </Badge>
           {subscription?.expiresAt ? (
             <span className="text-xs text-muted-foreground">
-              renews before {new Date(subscription.expiresAt).toLocaleString()}
+              renews before {usDateTime(subscription.expiresAt)}
             </span>
           ) : null}
           {subscription?.error ? (
@@ -215,7 +216,7 @@ export function MailboxIntakePanel() {
             <ul className="mt-1 space-y-1 text-muted-foreground">
               {failures.slice(0, 5).map((f) => (
                 <li key={f.id} className="truncate">
-                  {new Date(f.created_at).toLocaleString()} · {f.error_message ?? f.status}
+                  {usDateTime(f.created_at)} · {f.error_message ?? f.status}
                 </li>
               ))}
             </ul>
@@ -225,9 +226,8 @@ export function MailboxIntakePanel() {
         {events.length ? (
           <div className="text-sm text-muted-foreground">
             <MailCheck className="mr-1 inline size-4" />
-            Last activity {new Date(status.data?.lastRunAt ?? "").toLocaleString()} ·{" "}
-            {events.length} recent messages handled (
-            {events.filter((e) => e.status === "created").length} created,{" "}
+            Last activity {usDateTime(status.data?.lastRunAt)} · {events.length} recent messages
+            handled ({events.filter((e) => e.status === "created").length} created,{" "}
             {events.filter((e) => e.status === "linked").length} linked to existing records,{" "}
             {events.filter((e) => e.status === "closed").length} closed).
           </div>

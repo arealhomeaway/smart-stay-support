@@ -20,6 +20,7 @@ import {
   startSharePointConnect,
   validateSharePointAccess,
 } from "@/lib/sharepoint.functions";
+import { usDateTime } from "@/lib/dates";
 
 type Inspection = Awaited<ReturnType<typeof inspectSharePointAuthRequest>>;
 type Validation = Awaited<ReturnType<typeof validateSharePointAccess>>;
@@ -161,9 +162,7 @@ export function SharePointConnectionPanel() {
         {connected && status.data?.identity ? (
           <p className="text-muted-foreground">
             Held by <span className="font-medium text-foreground">{status.data.identity}</span>
-            {status.data.updatedAt
-              ? ` · updated ${new Date(status.data.updatedAt).toLocaleString()}`
-              : null}
+            {status.data.updatedAt ? ` · updated ${usDateTime(status.data.updatedAt)}` : null}
           </p>
         ) : null}
 

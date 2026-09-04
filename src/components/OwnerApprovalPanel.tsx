@@ -13,6 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, ClipboardCheck, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { decideOwnerApproval, ownerApprovals } from "@/lib/owner-portal.functions";
+import { usDateTime } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -176,7 +177,7 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
                     <span className="font-medium">{a.title}</span>
                     {a.decided_at && (
                       <span className="text-xs text-muted-foreground">
-                        {new Date(a.decided_at).toLocaleString()}
+                        {usDateTime(a.decided_at)}
                       </span>
                     )}
                   </div>

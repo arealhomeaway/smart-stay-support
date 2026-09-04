@@ -41,6 +41,7 @@ import {
   breezewayOutboundState,
   createBreezewayOutboundTask,
 } from "@/lib/breezeway-outbound.functions";
+import { usDate, usDateTime } from "@/lib/dates";
 
 type Props = {
   sourceType: "ticket" | "onboarding_task";
@@ -223,14 +224,12 @@ export function BreezewayTaskPanel({
             <p className="flex items-center gap-2 text-muted-foreground">
               <CalendarClock className="size-4 shrink-0" />
               {latest.scheduledDate
-                ? `Scheduled ${new Date(latest.scheduledDate).toLocaleDateString()}${latest.scheduledTime ? ` at ${latest.scheduledTime.slice(0, 5)}` : ""}`
+                ? `Scheduled ${usDate(latest.scheduledDate)}${latest.scheduledTime ? ` at ${latest.scheduledTime.slice(0, 5)}` : ""}`
                 : "No date committed"}
             </p>
             <p className="text-xs text-muted-foreground">
               Latest update{" "}
-              {new Date(
-                latest.lastWebhookAt ?? latest.lastSyncedAt ?? latest.createdAt,
-              ).toLocaleString()}
+              {usDateTime(latest.lastWebhookAt ?? latest.lastSyncedAt ?? latest.createdAt)}
               {latest.errorMessage ? ` · ${latest.errorMessage}` : ""}
               {latest.reviewNote ? ` · ${latest.reviewNote}` : ""}
             </p>
@@ -250,7 +249,7 @@ export function BreezewayTaskPanel({
               {links.slice(1).map((link) => (
                 <li key={link.id}>
                   {STATUS_LABEL[link.status] ?? link.status} · {link.title} ·{" "}
-                  {new Date(link.createdAt).toLocaleDateString()}
+                  {usDate(link.createdAt)}
                 </li>
               ))}
             </ul>

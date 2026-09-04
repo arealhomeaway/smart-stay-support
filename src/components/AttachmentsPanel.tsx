@@ -51,6 +51,7 @@ import {
   removeAttachmentFn,
   setAttachmentVisibilityFn,
 } from "@/lib/attachments.functions";
+import { usDate } from "@/lib/dates";
 
 type Props = {
   entityType: AttachmentEntity;
@@ -288,7 +289,7 @@ export function AttachmentsPanel({
                 ) : (
                   <span className="text-muted-foreground">
                     {formatBytes(f.size_bytes ?? 0)} · {f.uploaded_by_name ?? "—"} ·{" "}
-                    {f.uploaded_at ? new Date(f.uploaded_at).toLocaleDateString() : "—"}
+                    {usDate(f.uploaded_at)}
                   </span>
                 )}
                 {f.can_share ? (

@@ -8,6 +8,7 @@ import {
   ownerRezPropertyUrl,
 } from "@/lib/ownerrez-links";
 import { useRole } from "@/hooks/useRole";
+import { usDate, usDateTime } from "@/lib/dates";
 
 /**
  * Reservation context frozen onto the ticket when it was logged.
@@ -33,11 +34,10 @@ function day(value: string | null | undefined) {
   if (!value) return null;
   const parts = value.slice(0, 10).split("-").map(Number);
   if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
-  return new Date(parts[0]!, parts[1]! - 1, parts[2]!).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  // Built from Y/M/D parts (not passed as a string) so this stays a local
+  // midnight instant — feeding the raw date-only string straight to usDate
+  // would let it get parsed as UTC and could display a day early.
+  return usDate(new Date(parts[0]!, parts[1]! - 1, parts[2]!));
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -66,12 +66,7 @@ export function ReservationContextPanel({
   const bookingUrl = ticket.reservation_url ?? ownerRezBookingUrl(ticket.ownerrez_booking_id);
   const propertyUrl = ownerRezPropertyUrl(ownerRezPropertyId);
   const capturedAt = ticket.reservation_snapshot_at
-    ? new Date(ticket.reservation_snapshot_at).toLocaleString(undefined, {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      })
+    ? usDateTime(ticket.reservation_snapshot_at)
     : null;
 
   return (

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { STATUS_TONE, type CommandCenter, type Kpi } from "@/lib/command-center";
 import { buildCompanyHealth, STATUS_SCORE, type DepartmentHealth } from "@/lib/health";
+import { usDateTime } from "@/lib/dates";
 
 const STATUS_WORD: Record<string, string> = {
   green: "On standard",
@@ -56,8 +57,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                 Overall company health
               </CardTitle>
               <CardDescription>
-                Last calculated {new Date(health.generatedAt).toLocaleString()} ·{" "}
-                {health.windowDays}-day window
+                Last calculated {usDateTime(health.generatedAt)} · {health.windowDays}-day window
               </CardDescription>
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -175,7 +175,7 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                 <p className="mb-3 text-xs text-muted-foreground">
                   Department owner: not yet configured · Weight {Math.round(dept.weight * 100)}%
                   (equal split) · Coverage {Math.round(dept.coverage * 100)}% · Updated{" "}
-                  {new Date(health.generatedAt).toLocaleString()}
+                  {usDateTime(health.generatedAt)}
                 </p>
                 <DepartmentKpiTable dept={dept} />
               </AccordionContent>

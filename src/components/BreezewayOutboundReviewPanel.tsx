@@ -13,6 +13,7 @@ import {
   breezewayOutboundReviewQueue,
   reconcileBreezewayOutboundTask,
 } from "@/lib/breezeway-outbound.functions";
+import { usDateTime } from "@/lib/dates";
 
 /**
  * Admin recovery for outbound Breezeway records Resolve could not confirm.
@@ -84,9 +85,7 @@ export function BreezewayOutboundReviewPanel() {
               {row.propertyName ? (
                 <span className="text-muted-foreground">{row.propertyName}</span>
               ) : null}
-              <span className="text-muted-foreground">
-                {new Date(row.createdAt).toLocaleString()}
-              </span>
+              <span className="text-muted-foreground">{usDateTime(row.createdAt)}</span>
             </div>
             {row.errorMessage ? <p className="text-xs text-amber-700">{row.errorMessage}</p> : null}
 

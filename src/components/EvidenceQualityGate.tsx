@@ -53,6 +53,7 @@ import {
   submitEvidenceFn,
 } from "@/lib/evidence.functions";
 import type { AttachmentEntity } from "@/lib/attachments";
+import { usDateTime } from "@/lib/dates";
 import {
   EVIDENCE_KINDS,
   ITEM_STATUS_LABEL,
@@ -185,7 +186,7 @@ function ItemCard({
         <a href={item.url} target="_blank" rel="noreferrer" className="shrink-0">
           <img
             src={item.url}
-            alt={`Evidence photo submitted ${new Date(item.createdAt).toLocaleString()}`}
+            alt={`Evidence photo submitted ${usDateTime(item.createdAt)}`}
             className="size-20 rounded object-cover"
             loading="lazy"
           />
@@ -201,7 +202,7 @@ function ItemCard({
           <Badge variant={itemTone(item.status)}>{ITEM_STATUS_LABEL[item.status]}</Badge>
           {item.source === "breezeway_photo" && <Badge variant="outline">From Breezeway</Badge>}
           <span className="text-xs text-muted-foreground">
-            {new Date(item.createdAt).toLocaleString()}
+            {usDateTime(item.createdAt)}
             {item.uploadedByName ? ` · ${item.uploadedByName}` : ""}
           </span>
         </div>
@@ -228,7 +229,7 @@ function ItemCard({
             <p>
               <span className="font-medium text-foreground">Accepted with exception</span>
               {item.exceptionByName ? ` by ${item.exceptionByName}` : ""}
-              {item.exceptionAt ? ` · ${new Date(item.exceptionAt).toLocaleString()}` : ""}
+              {item.exceptionAt ? ` · ${usDateTime(item.exceptionAt)}` : ""}
             </p>
             {item.exceptionReason && <p className="mt-1">“{item.exceptionReason}”</p>}
             {item.originalRejection && <p className="mt-1">Originally: {item.originalRejection}</p>}

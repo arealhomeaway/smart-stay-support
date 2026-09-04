@@ -53,6 +53,7 @@ import {
   type RecoveryAction,
 } from "@/lib/guest-recovery";
 import type { RecoveryActivityRow, RecoveryRow, RecoveryUpdate } from "@/lib/recovery-types";
+import { usDateTime } from "@/lib/dates";
 
 export function RecoveryDrawer({
   recovery,
@@ -191,7 +192,7 @@ export function RecoveryDrawer({
             </p>
             {updateDue ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                Next guest update due {updateDue.toLocaleString()}
+                Next guest update due {usDateTime(updateDue)}
               </p>
             ) : null}
           </div>
@@ -633,7 +634,7 @@ export function RecoveryDrawer({
               <div key={row.id} className="rounded border px-3 py-1.5 text-xs">
                 <p className="font-medium">{row.body}</p>
                 <p className="text-muted-foreground">
-                  {row.event_type} · {new Date(row.created_at).toLocaleString()}
+                  {row.event_type} · {usDateTime(row.created_at)}
                 </p>
               </div>
             ))}

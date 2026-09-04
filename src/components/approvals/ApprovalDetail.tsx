@@ -16,6 +16,7 @@ import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { relativeTime } from "@/lib/tickets";
+import { usDate } from "@/lib/dates";
 import { OwnerReplies } from "./OwnerReplies";
 
 const KIND_LABEL: Record<string, string> = {
@@ -148,7 +149,7 @@ export function ApprovalDetail({
             label="Decision"
             value={
               a.status === "pending"
-                ? `Still open${a.due_on ? ` · due ${new Date(a.due_on).toLocaleDateString()}` : ""}`
+                ? `Still open${a.due_on ? ` · due ${usDate(a.due_on)}` : ""}`
                 : `${a.status.replace(/_/g, " ")} ${relativeTime(a.decided_at)}`
             }
           />

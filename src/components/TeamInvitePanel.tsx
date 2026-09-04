@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usDate } from "@/lib/dates";
 
 type InviteRole = "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
 
@@ -208,7 +209,7 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
                         ? "Revoked"
                         : expired
                           ? "Expired"
-                          : `Expires ${new Date(i.expires_at).toLocaleDateString()}`}
+                          : `Expires ${usDate(i.expires_at)}`}
                   </span>
                   {!used && !revoked && !expired && i.invitee_email && (
                     <Button

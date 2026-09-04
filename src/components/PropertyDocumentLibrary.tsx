@@ -33,6 +33,7 @@ import {
   type DocumentGroupId,
 } from "@/lib/attachments";
 import { attachmentUrlFn } from "@/lib/attachments.functions";
+import { usDate } from "@/lib/dates";
 
 export type HubDocument = {
   id: string;
@@ -217,7 +218,7 @@ export function PropertyDocumentLibrary({
                         <Badge variant="outline">{documentCategoryLabel(d.category)}</Badge>
                       )}
                       <span>{sourceLabel(d)}</span>
-                      {d.uploadedAt && <span>· {new Date(d.uploadedAt).toLocaleDateString()}</span>}
+                      {d.uploadedAt && <span>· {usDate(d.uploadedAt)}</span>}
                       {d.uploadedByName && <span>· {d.uploadedByName}</span>}
                       {d.visibility === "owner_shared" && (
                         <Badge variant="secondary">Shared with owner</Badge>

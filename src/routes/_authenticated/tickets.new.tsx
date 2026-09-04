@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Clock, Users, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { usTime } from "@/lib/dates";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { Button } from "@/components/ui/button";
@@ -1030,9 +1031,9 @@ function NewMatter() {
                 </Badge>
                 <span className="text-muted-foreground">
                   Acknowledge by{" "}
-                  {new Date(
+                  {usTime(
                     Date.now() + (workType?.response_minutes ?? meta.responseMinutes) * 60_000,
-                  ).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                  )}
                   {" · "}
                   {labelFor(SOURCE_CHANNELS, form.source_channel)}
                 </span>
