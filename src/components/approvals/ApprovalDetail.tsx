@@ -76,10 +76,7 @@ export function ApprovalDetail({
         supabase
           .from("profiles")
           .select("id, full_name, email")
-          .in(
-            "id",
-            [approval.requested_by, approval.approver_id].filter(Boolean) as string[],
-          ),
+          .in("id", [approval.requested_by, approval.approver_id].filter(Boolean) as string[]),
         approval.entity_type === "ticket" && approval.entity_id
           ? supabase
               .from("tickets")
@@ -101,8 +98,7 @@ export function ApprovalDetail({
       );
       return {
         approval,
-        propertyName:
-          property.data?.nickname ?? property.data?.name ?? null,
+        propertyName: property.data?.nickname ?? property.data?.name ?? null,
         ticket: ticket.data,
         workOrder: workOrder.data,
         requestedBy: approval.requested_by ? (names.get(approval.requested_by) ?? null) : null,
@@ -156,9 +152,7 @@ export function ApprovalDetail({
             }
           />
           {a.decision_note ? <PeekRow label="Note" value={a.decision_note} /> : null}
-          {q.data?.workOrder ? (
-            <PeekRow label="Work order" value={q.data.workOrder.title} />
-          ) : null}
+          {q.data?.workOrder ? <PeekRow label="Work order" value={q.data.workOrder.title} /> : null}
 
           {linkedTicketId ? (
             <Link
