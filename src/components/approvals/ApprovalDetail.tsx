@@ -11,7 +11,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { QuickPeek, PeekRow } from "@/components/ui/workspace";
+import { TaskWorkspace, PeekRow } from "@/components/ui/workspace";
 import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -115,11 +115,13 @@ export function ApprovalDetail({
   const linkedTicketId = q.data?.ticket?.id ?? q.data?.workOrder?.ticket_id ?? null;
 
   return (
-    <QuickPeek
+    <TaskWorkspace
       open={Boolean(approvalId)}
-      onOpenChange={(o) => (o ? null : onClose())}
+      onOpenChange={(o: boolean) => {
+        if (!o) onClose();
+      }}
       title={a?.title ?? "Approval"}
-      subtitle={a ? (KIND_LABEL[a.kind] ?? a.kind) : undefined}
+      subtitle={a ? (KIND_LABEL[a.kind] ?? a.kind) : ""}
     >
       {q.isLoading || !a ? (
         <Skeleton className="h-40 w-full" />
@@ -172,6 +174,6 @@ export function ApprovalDetail({
           ) : null}
         </div>
       )}
-    </QuickPeek>
+    </TaskWorkspace>
   );
 }
