@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TaskWorkspace } from "@/components/ui/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -430,13 +430,13 @@ export function WorkOrderDrawer({
   const stamp = () => new Date().toISOString();
 
   return (
-    <Sheet open onOpenChange={(o) => (o ? null : onClose())}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle>{workOrder.title}</SheetTitle>
-        </SheetHeader>
-
-        <div className="space-y-5 py-4 text-sm">
+    <TaskWorkspace
+      open
+      onOpenChange={(o) => (o ? null : onClose())}
+      title={workOrder.title}
+      subtitle={propertyName}
+    >
+      <div className="space-y-5 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <Chip className={stateChip(workOrder.closed_at ? "done" : "active")}>
               {STAGE_LABELS[derivedStage(workOrder)]}
@@ -1006,9 +1006,8 @@ export function WorkOrderDrawer({
               </div>
             ))}
           </section>
-        </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </TaskWorkspace>
   );
 }
 
