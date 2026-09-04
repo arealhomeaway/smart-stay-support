@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TaskWorkspace } from "@/components/ui/workspace";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import {
   OUTCOME_LABELS,
@@ -123,27 +123,25 @@ export function RoutineDrawer({
   const propertyName = row.properties?.nickname ?? row.properties?.name ?? null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-lg">
-        <SheetHeader className="space-y-1.5 text-left">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{config.label}</Badge>
-            {done ? (
-              <Badge variant="outline" className="border-success/40 bg-success/10 text-success">
-                Completed
-              </Badge>
-            ) : (
-              <Badge variant="outline">{routineDueLabel(row)}</Badge>
-            )}
-          </div>
-          <SheetTitle className="text-lg">{row.title}</SheetTitle>
-          <SheetDescription>
-            {propertyName ? `${propertyName} · ` : ""}
-            {config.purpose}
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="space-y-5 py-5">
+    <TaskWorkspace
+      open={open}
+      onOpenChange={onOpenChange}
+      title={row.title}
+      subtitle={`${propertyName ? `${propertyName} · ` : ""}${config.purpose}`}
+      headerExtra={
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{config.label}</Badge>
+          {done ? (
+            <Badge variant="outline" className="border-success/40 bg-success/10 text-success">
+              Completed
+            </Badge>
+          ) : (
+            <Badge variant="outline">{routineDueLabel(row)}</Badge>
+          )}
+        </div>
+      }
+    >
+      <div className="space-y-5">
           {(row.guest_name || row.reservation_confirmation || row.stay_departure) && (
             <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
               {row.guest_name && (
@@ -305,8 +303,7 @@ export function RoutineDrawer({
               </div>
             </>
           )}
-        </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </TaskWorkspace>
   );
 }

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FocusedAction } from "@/components/ui/workspace";
 import {
   Dialog,
   DialogContent,
@@ -385,14 +386,23 @@ function RunRoutineDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Run a routine control</DialogTitle>
-          <DialogDescription>Pick the check you are about to do.</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
+    <FocusedAction
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Run a routine control"
+      description="Pick the check you are about to do."
+      footer={
+        <>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => create.mutate()} disabled={create.isPending}>
+            Start it
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
             {ROUTINE_KINDS.map((k) => (
               <button
@@ -450,17 +460,7 @@ function RunRoutineDialog({
               <Input id="routine-guest" value={guest} onChange={(e) => setGuest(e.target.value)} />
             </div>
           )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={() => create.mutate()} disabled={create.isPending}>
-            Start it
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </FocusedAction>
   );
 }
