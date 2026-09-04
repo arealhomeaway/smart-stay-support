@@ -100,7 +100,8 @@ function useOversightData() {
         supabase
           .from("approvals")
           .select("id, title, kind, status, due_on, entity_type, entity_id")
-          .eq("status", "pending"),
+          .eq("status", "pending")
+          .eq("is_demo", demoMode),
         supabase
           .from("routine_controls")
           .select("id, kind, status, due_at, assigned_to, completed_at")
