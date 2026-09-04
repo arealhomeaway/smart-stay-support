@@ -193,9 +193,23 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
   const reopened = data.filter(
     (t) => (t.reopen_count ?? 0) > 0 && OPEN_STATUSES.includes(t.status),
   );
-  const closureQa = data.filter(
-    (t) => t.status === "resolved" && t.closure_qa_result === "not_reviewed",
+  // Selective review: only elevated-risk work waits on a supervisor, so this
+  // list is the queue that actually needs a decision.
+  const finalReview = data.filter(
+    (t) =>
+      t.status === "resolved" &&
+      (!t.closure_qa_result || t.closure_qa_result === "not_reviewed") &&
+      finalReviewRequirement({
+        priority: t.priority,
+        category: t.category,
+        guest_in_residence: (t as { guest_in_residence?: boolean }).guest_in_residence,
+        guest_impact: t.guest_impact,
+        escalated: Boolean((t as { escalated_at?: string }).escalated_at),
+        escalation_level: t.escalation_level,
+        reopen_count: t.reopen_count,
+      }).required,
   );
+
 
   const sections = [
     {
