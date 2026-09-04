@@ -30,6 +30,7 @@ import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { OnCallNowCard } from "@/components/OnCallNowCard";
 import { OvernightHandoffPanel } from "@/components/OvernightHandoffPanel";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
+import { useDemo } from "@/components/DemoProvider";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -74,13 +75,16 @@ function hoursOld(iso: string | null | undefined) {
 }
 
 function useOversightData() {
+  // Oversight answers the same question in both worlds: while the demo lens is
+  // on, the supervisor sees the demo scenarios; otherwise, live work only.
+  const { demoMode } = useDemo();
   const tickets = useQuery({
-    queryKey: ["oversight"],
+    queryKey: ["oversight", demoMode],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
         .select("*, properties(name, nickname, market, city)")
-        .eq("is_demo", false)
+        .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
         .limit(500);
@@ -90,22 +94,23 @@ function useOversightData() {
   });
 
   const support = useQuery({
-    queryKey: ["oversight-support"],
+    queryKey: ["oversight-support", demoMode],
     queryFn: async () => {
       const [approvals, routines, claims, recoveries, breezeway, profiles] = await Promise.all([
         supabase
           .from("approvals")
           .select("id, title, kind, status, due_on, entity_type, entity_id")
-          .eq("status", "pending"),
+          .eq("status", "pending")
+          .eq("is_demo", demoMode),
         supabase
           .from("routine_controls")
           .select("id, kind, status, due_at, assigned_to, completed_at")
-          .eq("is_demo", false),
-        supabase.from("claims").select("id, title, stage, deadline_on").eq("is_demo", false),
+          .eq("is_demo", demoMode),
+        supabase.from("claims").select("id, title, stage, deadline_on").eq("is_demo", demoMode),
         supabase
           .from("guest_recovery")
           .select("id, title, stage, approval_status")
-          .eq("is_demo", false),
+          .eq("is_demo", demoMode),
         supabase
           .from("breezeway_outbound_tasks")
           .select("id, title, status, scheduled_date, ticket_id"),

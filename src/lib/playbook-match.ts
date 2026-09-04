@@ -74,6 +74,17 @@ function norm(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Whole-word (or whole-phrase) containment, so "water" never hides inside "wateringly". */
+function matchesWholePhrase(haystack: string, keyword: string): boolean {
+  const pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(keyword)}(?:$|[^a-z0-9])`, "i");
+  return pattern.test(haystack);
+}
+
+
 function conditionHolds(condition: PlaybookCondition, ctx: MatchContext): boolean {
   switch (condition) {
     case "guest_in_home":
@@ -154,14 +165,33 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
   }
 
   if (m.keywords?.length) {
+    /*
+     * Specificity decides, not declaration order. QA reported "no hot water in
+     * the shower" pulling up the under-sink leak Playbook, because that
+     * Playbook happened to list the bare word "water" and matched first. Two
+     * corrections: a keyword must hit on whole words (so "water" never fires
+     * inside another phrase by accident), and the best hit wins — a two- or
+     * three-word phrase like "no hot water" outranks a single generic word.
+     */
     const haystack = norm([ctx.text, ctx.workTypeName].filter(Boolean).join(" "));
-    const hit = m.keywords.map(norm).find((k) => k.length > 2 && haystack.includes(k));
-    if (hit) {
+    let best: { keyword: string; weight: number } | null = null;
+    for (const keyword of m.keywords.map(norm)) {
+      if (keyword.length <= 2) continue;
+      if (!matchesWholePhrase(haystack, keyword)) continue;
+      const words = keyword.split(/\s+/).filter(Boolean).length;
+      // One generic word is a weak signal; a phrase is a deliberate one.
+      const weight = words > 1 ? 3 + Math.min(words, 3) : 2;
+      if (!best || weight > best.weight || keyword.length > best.keyword.length) {
+        if (!best || weight >= best.weight) best = { keyword, weight };
+      }
+    }
+    if (best) {
       identityMatched = true;
-      score += 3;
-      reasons.push(`what was reported ("${hit}")`);
+      score += best.weight;
+      reasons.push(`what was reported ("${best.keyword}")`);
     }
   }
+
 
   if (m.categories?.length && ctx.category && m.categories.map(norm).includes(norm(ctx.category))) {
     identityMatched = true;

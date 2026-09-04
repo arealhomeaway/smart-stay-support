@@ -7,12 +7,12 @@
  * Resolve derives the authority, the checkpoints and the gates; the employee
  * supplies the judgement, the amounts and the words.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TaskWorkspace } from "@/components/ui/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +81,19 @@ export function WorkOrderDrawer({
   const { isSupervisor } = useRole();
   const [note, setNote] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
+
+  /*
+   * Every unsaved value belongs to one work order. QA found a quote typed on
+   * one job still sitting in the box after opening another, so the workspace
+   * clears itself whenever the record it is showing changes — belt and braces
+   * alongside the caller remounting it by id.
+   */
+  const shownId = useRef<string | null>(workOrder?.id ?? null);
+  if (workOrder && shownId.current !== workOrder.id) {
+    shownId.current = workOrder.id;
+    if (note) setNote("");
+    if (Object.keys(fields).length) setFields({});
+  }
 
   const requirements = useQuery({
     queryKey: ["work-order-evidence", workOrder?.id],
@@ -400,7 +413,7 @@ export function WorkOrderDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!workOrder) return <Sheet open={false} onOpenChange={() => onClose()} />;
+  if (!workOrder) return null;
 
   const value = (key: keyof WorkOrderRow) =>
     fields[key as string] ??
@@ -417,13 +430,13 @@ export function WorkOrderDrawer({
   const stamp = () => new Date().toISOString();
 
   return (
-    <Sheet open onOpenChange={(o) => (o ? null : onClose())}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle>{workOrder.title}</SheetTitle>
-        </SheetHeader>
-
-        <div className="space-y-5 py-4 text-sm">
+    <TaskWorkspace
+      open
+      onOpenChange={(o) => (o ? null : onClose())}
+      title={workOrder.title}
+      subtitle={propertyName}
+    >
+      <div className="space-y-5 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <Chip className={stateChip(workOrder.closed_at ? "done" : "active")}>
               {STAGE_LABELS[derivedStage(workOrder)]}
@@ -993,9 +1006,8 @@ export function WorkOrderDrawer({
               </div>
             ))}
           </section>
-        </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </TaskWorkspace>
   );
 }
 

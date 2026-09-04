@@ -149,3 +149,60 @@ describe("authored content rules", () => {
     expect(librarySteps.vendor_brief).toBeNull();
   });
 });
+
+describe("the right guidance for the right problem", () => {
+  const leakWords = pb({
+    id: "leak-words",
+    title: "Water leak (under sink / fixture)",
+    category: "water",
+    playbook_key: "water_leak_under_sink",
+    matcher: {
+      categories: ["maintenance"],
+      keywords: ["leak", "leaking", "under sink", "drip", "flood", "burst"],
+    },
+    immediate_actions: ["Shut the local supply off."],
+  });
+
+  const hotWater = pb({
+    id: "hot-water",
+    title: "No hot water / water heater failure",
+    category: "maintenance",
+    playbook_key: "no_hot_water",
+    matcher: {
+      categories: ["maintenance"],
+      keywords: ["no hot water", "hot water", "water heater", "cold shower"],
+    },
+    immediate_actions: ["Confirm gas or electric before dispatching."],
+  });
+
+  const library = [leakWords, hotWater];
+
+  it("a no-hot-water report opens the hot water guidance, not the leak guidance", () => {
+    const result = matchPlaybook(library, {
+      objectType: "ticket",
+      category: "maintenance",
+      text: "Guest says there is no hot water in the shower this morning",
+    });
+    expect(result.primary?.playbook.title).toBe("No hot water / water heater failure");
+  });
+
+  it("an under-sink leak still opens the leak guidance", () => {
+    const result = matchPlaybook(library, {
+      objectType: "ticket",
+      category: "maintenance",
+      text: "Water leaking under the kitchen sink, cabinet is wet",
+    });
+    expect(result.primary?.playbook.title).toBe("Water leak (under sink / fixture)");
+  });
+
+  it("a keyword never fires from inside a longer word", () => {
+    const result = matchPlaybook(library, {
+      objectType: "ticket",
+      category: "maintenance",
+      text: "Guest asked about the dripless candles left in the cupboard",
+    });
+    // The category still makes these Playbooks plausible; the point is that
+    // "drip" did not fire from inside "dripless".
+    expect(result.primary?.reason ?? "").not.toContain("drip");
+  });
+});
