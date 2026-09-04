@@ -211,7 +211,7 @@ function healthScore(s: Stats) {
       label: "Closure quality",
       value: s.qaFailRate === null ? null : 100 - s.qaFailRate,
       weight: 0.2,
-      hint: "Passed closure QA on review",
+      hint: "Passed Final Review",
     },
     {
       label: "Backlog under control",
@@ -358,7 +358,7 @@ function Analytics() {
       goodDirection: "down",
     },
     {
-      label: "Closure QA failures",
+      label: "Final Review returns",
       value: fmtPct(s.qaFailRate),
       hint: `${s.qaReviewed} reviewed · ${s.qaPending} closed but never checked`,
       current: s.qaFailRate,
