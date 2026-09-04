@@ -80,15 +80,22 @@ export function requestsRecord(categories: Categories) {
   return triggerKind(categories) !== null;
 }
 
+/** True when a person marked this message as a homeowner's answer. */
+export function requestsOwnerResponse(categories: Categories) {
+  return hasTag(categories, OWNER_RESPONSE_TAG) && !hasTag(categories, OWNER_RESPONSE_FILED_TAG);
+}
+
 /** True when Resolve has already acted on this message. */
 export function alreadyTagged(categories: Categories) {
   return (
     hasTag(categories, CREATED_TAG) ||
     hasTag(categories, CLOSED_TAG) ||
+    hasTag(categories, OWNER_RESPONSE_FILED_TAG) ||
     hasTag(categories, LEGACY_CREATED_TAG) ||
     hasTag(categories, LEGACY_COMPLETED_TAG)
   );
 }
+
 
 /**
  * Swaps every Resolve category for one, keeping each unrelated category the
