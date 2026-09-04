@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState, LoadingPage, PriorityRail, SectionCard } from "@/components/ui/page";
+import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
+import heroImage from "@/assets/hero-arha-property.jpg";
 import {
   AlertTriangle,
   ArrowRight,
@@ -156,46 +158,45 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-4">
-        <div className="space-y-1">
-          <p className="eyebrow text-muted-foreground">{greeting()}</p>
-          <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">
-            {needsMe.length === 0
-              ? "Nothing needs you right this minute."
-              : `${needsMe.length} ${needsMe.length === 1 ? "thing needs" : "things need"} you now.`}
-          </h1>
-          <p className="text-base text-muted-foreground">
-            {inProgress.length} in progress · {waiting.length} waiting
-            {unclaimed.length > 0 ? ` · ${unclaimed.length} unclaimed in the team queue` : ""}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {role.can("ticket_create") && (
+      <PageHero
+        image={heroImage}
+        eyebrow={greeting()}
+        title={
+          needsMe.length === 0
+            ? "Nothing needs you right this minute."
+            : `${needsMe.length} ${needsMe.length === 1 ? "thing needs" : "things need"} you now.`
+        }
+        description={`${inProgress.length} in progress · ${waiting.length} waiting${
+          unclaimed.length > 0 ? ` · ${unclaimed.length} unclaimed in the team queue` : ""
+        }`}
+        actions={
+          <>
+            {role.can("ticket_create") && (
+              <Link
+                to="/tickets/new"
+                search={{ origin: originSearch.from }}
+                className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+              >
+                <Plus className="size-4" /> Report an issue
+              </Link>
+            )}
             <Link
-              to="/tickets/new"
-              search={{ origin: originSearch.from }}
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              to="/tickets"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
             >
-              <Plus className="size-4" /> Report an issue
+              <ClipboardList className="size-4" /> My work
             </Link>
-          )}
-          <Link
-            to="/tickets"
-            className="inline-flex h-11 items-center gap-2 rounded-lg border border-border px-5 text-base font-medium transition-colors hover:bg-secondary"
-          >
-            <ClipboardList className="size-4" /> My work
-          </Link>
-          {role.can("oversight") && (
-            <Link
-              to="/oversight"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border px-5 text-base font-medium transition-colors hover:bg-secondary"
-            >
-              <ShieldAlert className="size-4" /> Oversight
-            </Link>
-          )}
-        </div>
-      </header>
+            {role.can("oversight") && (
+              <Link
+                to="/oversight"
+                className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+              >
+                <ShieldAlert className="size-4" /> Oversight
+              </Link>
+            )}
+          </>
+        }
+      />
 
       {role.can("oversight") && <SupervisorAttentionBand />}
 
@@ -328,22 +329,20 @@ function WorkRow({
       </span>
 
       {t.status === "waiting" ? (
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium ${
-            waitingLate ? "bg-danger/10 text-danger" : "bg-info/10 text-info"
-          }`}
+        <StatusBadge
+          tone={waitingLate ? "escalated" : "waiting"}
+          icon={<PauseCircle />}
         >
-          <PauseCircle className="size-3.5" />
           {waitingLate ? "Follow up now" : `Follow up ${followUp ?? "—"}`}
-        </span>
+        </StatusBadge>
       ) : overdue ? (
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-danger/10 px-2 py-1 text-sm font-medium text-danger">
-          <AlertTriangle className="size-3.5" /> Overdue
-        </span>
+        <StatusBadge tone="escalated" icon={<AlertTriangle />}>
+          Overdue
+        </StatusBadge>
       ) : t.action_started_at ? (
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-info/10 px-2 py-1 text-sm font-medium text-info">
-          <PlayCircle className="size-3.5" /> In progress
-        </span>
+        <StatusBadge tone="progress" icon={<PlayCircle />}>
+          In progress
+        </StatusBadge>
       ) : (
         <span className="numeric text-sm text-muted-foreground">{relativeTime(t.reported_at)}</span>
       )}
