@@ -99,7 +99,9 @@ function useOversightData() {
       const [approvals, routines, claims, recoveries, breezeway, profiles] = await Promise.all([
         supabase
           .from("approvals")
-          .select("id, title, kind, status, due_on, entity_type, entity_id")
+          .select(
+            "id, title, kind, status, due_on, entity_type, entity_id, amount, currency, property_id, approver_role",
+          )
           .eq("status", "pending")
           .eq("is_demo", demoMode),
         supabase
@@ -283,6 +285,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
     (b) => b.scheduled_date && new Date(b.scheduled_date).getTime() < now - DAY,
   );
   const approvals = s?.approvals ?? [];
+  const [openApproval, setOpenApproval] = useState<string | null>(null);
 
   const summaries = [
     {
@@ -444,6 +447,44 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           ),
         )}
       </div>
+
+      {approvals.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Approvals awaiting a decision</CardTitle>
+            <CardDescription>
+              Open one to see the home, the ticket it came from, the amount and who it sits with.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {approvals.slice(0, 12).map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => setOpenApproval(a.id)}
+                className="flex w-full items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2 text-left text-sm transition-colors hover:bg-secondary"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{a.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {a.kind.replace(/_/g, " ")}
+                    {a.amount
+                      ? ` · $${Number(a.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                      : ""}
+                    {a.due_on ? ` · due ${new Date(a.due_on).toLocaleDateString()}` : ""}
+                  </span>
+                </span>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              </button>
+            ))}
+            {approvals.length > 12 && (
+              <p className="text-xs text-muted-foreground">+{approvals.length - 12} more</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <ApprovalDetail approvalId={openApproval} onClose={() => setOpenApproval(null)} />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Where the work sits</h2>
