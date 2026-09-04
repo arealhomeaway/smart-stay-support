@@ -113,79 +113,96 @@
 
 
 :root {
-  --radius: 0.375rem;
-  /* ARHA core palette: Warm Ivory, Charcoal, ARHA Teal, Burnt Orange, Muted Gold, Deep Teal, Slate */
+  --radius: 0.625rem;
+  /* ARHA core palette + the expressive secondary system. */
   --brand-teal: oklch(0.664 0.113 203.1); /* #03A7B2 */
   --brand-gold: oklch(0.681 0.098 80.5); /* #B8924E */
-  --brand-ink: oklch(0.199 0.01 220); /* #111719 */
-  /* Page canvas sits a step below the card so panels read as objects on it. */
-  --background: oklch(0.955 0.008 88.6);
-  --canvas: oklch(0.955 0.008 88.6);
-  --sunken: oklch(0.928 0.009 88.6);
-  --elevated: oklch(1 0 0);
+  --brand-ink: oklch(0.199 0.01 220);
 
-  --foreground: oklch(0.27 0.013 222.5); /* Charcoal #20282B */
+  /* Expressive secondary palette. Each colour carries one meaning. */
+  --sky: oklch(0.575 0.107 245); /* active work, information */
+  --sage: oklch(0.575 0.088 158); /* success, complete */
+  --amber: oklch(0.655 0.118 74); /* waiting, attention */
+  --coral: oklch(0.585 0.152 24); /* high risk, blocked, escalated */
+  --lavender: oklch(0.565 0.122 300); /* review, decisions */
+  --aqua: oklch(0.605 0.068 195); /* property, context */
+  --sand: oklch(0.955 0.012 84); /* warm surfaces */
+  --cool-grey: oklch(0.555 0.011 240); /* borders, secondary text */
+
+  /* Bright working canvas; warm surfaces are opt-in for orientation pages. */
+  --background: oklch(0.992 0.002 240);
+  --canvas: oklch(0.992 0.002 240);
+  --sunken: oklch(0.972 0.004 240);
+  --elevated: oklch(1 0 0);
+  --warm: oklch(0.972 0.011 84); /* warm ivory orientation surface */
+  --warm-deep: oklch(0.943 0.017 82);
+  --plate: oklch(0.268 0.021 215); /* charcoal hero plate */
+
+  --foreground: oklch(0.315 0.015 220); /* Charcoal */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.27 0.013 222.5);
+  --card-foreground: oklch(0.315 0.015 220);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.27 0.013 222.5);
-  --primary: oklch(0.511 0.082 201.5); /* Deep Teal #13747A */
-  --primary-foreground: oklch(0.99 0.004 88.6);
-  --secondary: oklch(0.92 0.012 84.6);
-  --secondary-foreground: oklch(0.27 0.013 222.5);
-  --muted: oklch(0.945 0.009 88.6);
-  --muted-foreground: oklch(0.545 0.014 223.7); /* Slate #687276 */
-  --accent: oklch(0.61 0.137 48.4); /* Burnt Orange #C3662F */
-  --accent-foreground: oklch(0.99 0.004 88.6);
-  --destructive: oklch(0.52 0.19 27);
-  --destructive-foreground: oklch(0.99 0.004 88.6);
-  --border: oklch(0.895 0.011 88.6);
-  --input: oklch(0.895 0.011 88.6);
-  --ring: oklch(0.511 0.082 201.5);
-  --success: oklch(0.52 0.1 160);
-  --success-foreground: oklch(0.99 0.004 88.6);
-  --warning: oklch(0.681 0.098 80.5);
-  --warning-foreground: oklch(0.199 0.01 220);
-  --danger: oklch(0.52 0.19 27);
-  --danger-foreground: oklch(0.99 0.004 88.6);
-  --info: oklch(0.511 0.082 201.5);
-  --info-foreground: oklch(0.99 0.004 88.6);
-  --chart-1: oklch(0.511 0.082 201.5);
-  --chart-2: oklch(0.61 0.137 48.4);
-  --chart-3: oklch(0.681 0.098 80.5);
-  --chart-4: oklch(0.664 0.113 203.1);
-  --chart-5: oklch(0.27 0.013 222.5);
-  --sidebar: oklch(0.27 0.013 222.5); /* Charcoal anchor */
-  --sidebar-foreground: oklch(0.95 0.006 88.6);
-  --sidebar-primary: oklch(0.664 0.113 203.1);
-  --sidebar-primary-foreground: oklch(0.199 0.01 220);
-  --sidebar-accent: oklch(0.33 0.015 222.5);
-  --sidebar-accent-foreground: oklch(0.97 0.007 88.6);
-  --sidebar-border: oklch(0.38 0.015 222.5);
-  --sidebar-ring: oklch(0.664 0.113 203.1);
+  --popover-foreground: oklch(0.315 0.015 220);
+  --primary: oklch(0.455 0.075 213); /* Brand teal — primary actions only */
+  --primary-foreground: oklch(0.995 0.002 240);
+  --secondary: oklch(0.962 0.004 240);
+  --secondary-foreground: oklch(0.335 0.015 220);
+  --muted: oklch(0.968 0.004 240);
+  --muted-foreground: var(--cool-grey);
+  --accent: var(--amber);
+  --accent-foreground: oklch(0.995 0.002 240);
+  --destructive: var(--coral);
+  --destructive-foreground: oklch(0.995 0.002 240);
+  --border: oklch(0.918 0.005 240); /* cool grey hairline */
+  --input: oklch(0.912 0.005 240);
+  --ring: oklch(0.455 0.075 213);
+  --success: var(--sage);
+  --success-foreground: oklch(0.995 0.002 240);
+  --warning: var(--amber);
+  --warning-foreground: oklch(0.22 0.012 220);
+  --danger: var(--coral);
+  --danger-foreground: oklch(0.995 0.002 240);
+  --info: var(--sky);
+  --info-foreground: oklch(0.995 0.002 240);
+  --chart-1: var(--sky);
+  --chart-2: var(--sage);
+  --chart-3: var(--amber);
+  --chart-4: var(--lavender);
+  --chart-5: var(--aqua);
+
+  /* Navigation shell: warm, light and calm; the selected item carries brand. */
+  --sidebar: oklch(0.975 0.009 84);
+  --sidebar-foreground: oklch(0.34 0.015 220);
+  --sidebar-primary: oklch(0.455 0.075 213);
+  --sidebar-primary-foreground: oklch(0.995 0.002 240);
+  --sidebar-accent: oklch(0.945 0.013 84);
+  --sidebar-accent-foreground: oklch(0.3 0.015 220);
+  --sidebar-border: oklch(0.918 0.011 84);
+  --sidebar-ring: oklch(0.455 0.075 213);
 
   /* --- Ownership -------------------------------------------------------- */
-  --team-a: oklch(0.545 0.128 268); /* Guest Experience — indigo */
-  --team-b: oklch(0.511 0.082 201.5); /* Property Operations — deep teal */
-  --leadership: oklch(0.545 0.115 315); /* Supervisor / leadership — plum */
+  --team-a: oklch(0.555 0.115 262); /* Guest Experience */
+  --team-b: oklch(0.5 0.076 205); /* Property Operations */
+  --leadership: var(--lavender);
 
   /* --- Process state ---------------------------------------------------- */
-  --state-active: oklch(0.53 0.108 232); /* moving right now */
-  --state-waiting: oklch(0.6 0.09 80.5); /* paused on someone else */
-  --state-blocked: oklch(0.55 0.16 32); /* at risk / stopped */
-  --state-done: oklch(0.5 0.1 158); /* finished */
-  --state-info: oklch(0.53 0.03 240); /* reference only */
+  --state-active: var(--sky); /* in progress */
+  --state-waiting: var(--amber); /* paused on someone else */
+  --state-blocked: var(--coral); /* at risk / escalated */
+  --state-done: var(--sage); /* finished */
+  --state-info: var(--aqua); /* reference only */
 
   /* --- Modules ---------------------------------------------------------- */
-  --module-ops: oklch(0.511 0.082 201.5);
-  --module-onboarding: oklch(0.55 0.13 152); /* Onboarding — green */
-  --module-owner: oklch(0.58 0.1 80.5); /* Active Owner — gold */
-  --module-approval: oklch(0.55 0.115 315); /* Approvals — plum */
-  --module-coverage: oklch(0.545 0.128 268);
-  --module-override: oklch(0.61 0.137 48.4); /* Temporary cover — burnt orange */
-  /* Cross-team triage: slate, so it never reads as Team A indigo. */
-  --triage: oklch(0.45 0.024 250);
+  --module-ops: oklch(0.455 0.075 213);
+  --module-onboarding: var(--sage);
+  --module-owner: oklch(0.62 0.095 78); /* Active Owner — warm gold */
+  --module-approval: var(--lavender);
+  --module-coverage: var(--sky);
+  --module-override: var(--amber);
+  /* Cross-team triage: cool grey, so it never reads as a team colour. */
+  --triage: var(--cool-grey);
 }
+
 
 
 
