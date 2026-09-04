@@ -335,6 +335,7 @@ function TicketWorkCard({
   ownerName,
   originSearch,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
   ownerName: string | null;
   originSearch: { from: string };
