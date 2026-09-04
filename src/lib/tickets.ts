@@ -338,30 +338,30 @@ export function formatMinutes(mins: number) {
 export function statusTone(status: string) {
   switch (status) {
     case "open":
-      return "bg-danger/10 text-danger border-danger/30";
+      return "bg-coral/10 text-coral border-transparent";
     case "dispatched":
     case "in_progress":
-      return "bg-info/10 text-info border-info/30";
+      return "bg-sky/12 text-sky border-transparent";
     case "waiting":
-      return "bg-muted text-muted-foreground border-border";
+      return "bg-amber/14 text-amber border-transparent";
     case "awaiting_guest":
-      return "bg-warning/15 text-warning-foreground border-warning/40";
+      return "bg-amber/14 text-amber border-transparent";
     case "resolved":
+      return "bg-sage/12 text-sage border-transparent";
     case "closed":
-      return "bg-success/10 text-success border-success/30";
+      return "bg-cool-grey/12 text-cool-grey border-transparent";
     default:
-      return "bg-muted text-muted-foreground border-border";
+      return "bg-cool-grey/12 text-cool-grey border-transparent";
   }
 }
-
 export function priorityTone(priority: string) {
   switch (priority) {
     case "p1":
-      return "bg-danger text-danger-foreground border-danger";
+      return "bg-coral/12 text-coral border-coral/30 font-semibold";
     case "p2":
-      return "bg-warning text-warning-foreground border-warning";
+      return "bg-amber/14 text-amber border-amber/30 font-semibold";
     default:
-      return "bg-secondary text-secondary-foreground border-border";
+      return "bg-cool-grey/10 text-cool-grey border-transparent font-semibold";
   }
 }
 
