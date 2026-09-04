@@ -55,7 +55,10 @@ export function FinalReviewPanel({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const decided = result && result !== "not_reviewed";
+  // "Changes needed" is a request, not a verdict. Once the work comes back
+  // finished, the reviewer must be able to answer again.
+  const decided = Boolean(result) && result !== "not_reviewed" && result !== "returned";
+
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-4">

@@ -577,11 +577,14 @@ function TicketDetail() {
   async function resolveTicket() {
     // A supervisor exception is the only way past a closure gate, and it is recorded.
     const waived = Boolean(ticket.closure_exception_reason);
+    // The summary already on file counts. Work sent back for changes keeps the
+    // summary it was written with, so nobody has to retype it to close again.
+    const summary = (resolution.trim() || String(ticket.resolution_notes ?? "").trim()).trim();
     if (requiredOpen.length > 0 && !waived) {
       toast.error(`${requiredOpen.length} required step(s) still open.`);
       return;
     }
-    if (!resolution.trim()) {
+    if (!summary) {
       toast.error("Add a resolution summary — what was wrong and what was done.");
       return;
     }
@@ -604,18 +607,23 @@ function TicketDetail() {
 
     const ok = await applyStatus("resolved", {
       outcome_type: outcome,
-      resolution_notes: resolution.trim(),
+      resolution_notes: summary,
       closure_evidence: evidence.trim() || null,
       final_communication_sent: finalComms,
       guest_confirmed: guestConfirmed,
       late_reason: sla.breached ? "SLA target missed" : null,
+      // Finishing the work again puts it back in front of a reviewer; an
+      // earlier "changes needed" answer is history, not a standing decision.
+      closure_qa_result: "not_reviewed",
     });
+
     if (!ok) return;
     await log(
       "resolved",
-      `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${resolution.trim()}`,
+      `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${summary}`,
       "resolved",
     );
+
 
     setResolution("");
     setEvidence("");
