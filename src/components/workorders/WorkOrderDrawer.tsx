@@ -63,6 +63,26 @@ import type { WorkOrderEventRow, WorkOrderRow, WorkOrderUpdate } from "@/lib/wor
 
 const OVERRIDE_REASONS = Object.keys(WARRANTY_OVERRIDE_LABELS) as WarrantyOverrideReason[];
 
+/**
+ * What the approval chip says. The tier decides who has to approve, so the
+ * chip has to agree with it: a $275 repair that needs a supervisor must not
+ * read "no approval needed" just because the owner is not involved.
+ */
+function approvalChipLabel(
+  wo: { approval_status: string; supervisor_approval_status?: string | null },
+  verdict: { ownerApprovalRequired: boolean; supervisorApprovalRequired?: boolean },
+): string {
+  if (verdict.supervisorApprovalRequired && (wo.supervisor_approval_status ?? "not_required") === "not_required")
+    return "Supervisor approval not requested yet";
+  if (verdict.supervisorApprovalRequired && wo.supervisor_approval_status === "pending")
+    return "Waiting on supervisor approval";
+  if (wo.supervisor_approval_status === "approved" && !verdict.ownerApprovalRequired)
+    return "Supervisor approved";
+  if (verdict.ownerApprovalRequired && wo.approval_status === "not_required")
+    return "Owner approval not requested yet";
+  return APPROVAL_STATUS_LABELS[wo.approval_status] ?? wo.approval_status;
+}
+
 export function WorkOrderDrawer({
   workOrder,
   people,
@@ -443,11 +463,7 @@ export function WorkOrderDrawer({
             </Chip>
             <Chip>{PHASE_LABELS[workOrder.phase]}</Chip>
             <Chip>{workOrder.priority.toUpperCase()}</Chip>
-            <Chip>
-              {workOrder.approval_status === "not_required" && verdict.ownerApprovalRequired
-                ? "Owner approval not requested yet"
-                : APPROVAL_STATUS_LABELS[workOrder.approval_status]}
-            </Chip>
+            <Chip>{approvalChipLabel(workOrder, verdict)}</Chip>
             <span className="text-xs text-muted-foreground">
               {propertyName} · {BUCKET_LABELS[workOrderBucket(workOrder)]} · owned by{" "}
               {owner ? displayName(people.find((p) => p.id === owner)) : "nobody yet"}

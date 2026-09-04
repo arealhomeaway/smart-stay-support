@@ -22,7 +22,9 @@ export const Route = createFileRoute("/_authenticated/work-orders")({
     ],
   }),
   component: () => (
-    <RequireCapability capability="claims_work" title="Work orders">
+    // Same capability the navigation uses, so nobody can reach by URL a
+    // portal Resolve does not show them.
+    <RequireCapability capability="work_orders_internal" title="Work orders">
       <WorkOrdersLayout />
     </RequireCapability>
   ),
