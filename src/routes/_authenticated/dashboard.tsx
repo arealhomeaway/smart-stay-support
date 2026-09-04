@@ -157,41 +157,37 @@ function Dashboard() {
   if (isLoading || !data) return <LoadingPage tiles={0} />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHero
         image={heroImage}
-        eyebrow={greeting()}
-        title={
-          needsMe.length === 0
-            ? "Nothing needs you right this minute."
-            : `${needsMe.length} ${needsMe.length === 1 ? "thing needs" : "things need"} you now.`
-        }
-        description={`${inProgress.length} in progress · ${waiting.length} waiting${
-          unclaimed.length > 0 ? ` · ${unclaimed.length} unclaimed in the team queue` : ""
-        }`}
+        eyebrow={new Date().toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })}
+        title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
+        description="Own the outcome. Protect the stay."
         actions={
           <>
+            <Link
+              to="/tickets"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+            >
+              <ClipboardList className="size-4" /> My work
+            </Link>
+            <Link
+              to="/team-queue"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+            >
+              <Users className="size-4" /> Team queue
+            </Link>
             {role.can("ticket_create") && (
               <Link
                 to="/tickets/new"
                 search={{ origin: originSearch.from }}
-                className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-              >
-                <Plus className="size-4" /> Report an issue
-              </Link>
-            )}
-            <Link
-              to="/tickets"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
-            >
-              <ClipboardList className="size-4" /> My work
-            </Link>
-            {role.can("oversight") && (
-              <Link
-                to="/oversight"
                 className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
               >
-                <ShieldAlert className="size-4" /> Oversight
+                <Plus className="size-4" /> Report an issue
               </Link>
             )}
           </>
@@ -208,6 +204,23 @@ function Dashboard() {
         </p>
       )}
 
+      {/* Compact, colourful, meaningful. Only what is worth acting on. */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <DecisionTile
+          value={needsMe.length}
+          label="Needs me now"
+          tone="critical"
+          to="/tickets"
+        />
+        <DecisionTile value={inProgress.length} label="In progress" tone="progress" to="/tickets" />
+        <DecisionTile value={waiting.length} label="Waiting" tone="attention" to="/tickets" />
+        <DecisionTile
+          value={unclaimed.length}
+          label="Unclaimed in team queue"
+          tone="review"
+          to="/team-queue"
+        />
+      </div>
 
       <SectionCard
         tone={needsMe.length > 0 ? "critical" : "default"}
@@ -216,66 +229,91 @@ function Dashboard() {
         bodyClassName="space-y-1.5"
       >
         {needsMe.length === 0 ? (
-          <EmptyState
-            title="Nothing needs you right now."
-            hint="Everything you own is moving or parked with a follow-up time."
-          />
+          <p className="text-sm text-muted-foreground">
+            Nothing needs you right now — everything you own is moving or parked with a follow-up
+            time.
+          </p>
         ) : (
           needsMe.map((t) => <WorkRow key={t.id} t={t} emphasis origin={originSearch} />)
         )}
       </SectionCard>
 
-      <SectionCard
-        title="In progress"
-        description="Work you own and have already started."
-        bodyClassName="space-y-1.5"
-      >
-        {inProgress.length === 0 ? (
-          <EmptyState
-            title="Nothing started yet."
-            hint="Work you begin will appear here until it is closed or parked."
-          />
-        ) : (
-          inProgress.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
-        )}
-      </SectionCard>
-
-      <SectionCard
-        title="Waiting"
-        description="Parked on someone else, soonest follow-up first. The clock is paused, not finished."
-        bodyClassName="space-y-1.5"
-      >
-        {waiting.length === 0 ? (
-          <EmptyState
-            title="Nothing is parked."
-            hint="Waiting work always carries a follow-up time so it comes back to you."
-          />
-        ) : (
-          waiting.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
-        )}
-      </SectionCard>
-
-      <RoutineWorkDue />
-
-      {unclaimed.length > 0 && role.can("matters_all") && (
+      {inProgress.length > 0 && (
         <SectionCard
-          title="Unclaimed in the team queue"
-          description="Nobody has picked these up yet."
+          title="In progress"
+          description="Work you own and have already started."
           bodyClassName="space-y-1.5"
-          actions={
-            <Link to="/tickets" className="text-sm font-medium text-primary hover:underline">
-              Open the queue
-            </Link>
-          }
         >
-          {unclaimed.slice(0, 5).map((t) => (
+          {inProgress.map((t) => (
             <WorkRow key={t.id} t={t} origin={originSearch} />
           ))}
         </SectionCard>
       )}
+
+      {waiting.length > 0 && (
+        <SectionCard
+          title="Waiting"
+          description="Parked on someone else, soonest follow-up first. The clock is paused, not finished."
+          bodyClassName="space-y-1.5"
+        >
+          {waiting.map((t) => (
+            <WorkRow key={t.id} t={t} origin={originSearch} />
+          ))}
+        </SectionCard>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <SectionCard title="Recent activity" description="The last few things that moved.">
+          <ActivityList events={recent} emptyLabel="Nothing has moved in your work yet today." />
+        </SectionCard>
+        <div className="warm-surface flex flex-col justify-center p-6">
+          <p className="eyebrow">The ARHA way</p>
+          <p className="mt-2 font-display text-2xl leading-snug">
+            “Own the outcome. Protect the stay.”
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            A handoff is not complete until someone accepts it.
+          </p>
+        </div>
+      </div>
+
+      <RoutineWorkDue />
     </div>
   );
 }
+
+/** One compact, colourful figure that leads somewhere useful. */
+function DecisionTile({
+  value,
+  label,
+  tone,
+  to,
+}: {
+  value: number;
+  label: string;
+  tone: "critical" | "progress" | "attention" | "review";
+  to: string;
+}) {
+  const plate = {
+    critical: "border-coral/25 bg-coral/8 text-coral",
+    progress: "border-sky/25 bg-sky/8 text-sky",
+    attention: "border-amber/30 bg-amber/10 text-amber",
+    review: "border-lavender/25 bg-lavender/8 text-lavender",
+  }[tone];
+  return (
+    <Link
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      to={to as any}
+      className={`rounded-xl border px-4 py-3.5 transition-colors hover:brightness-[0.98] ${plate} ${
+        value === 0 ? "opacity-60" : ""
+      }`}
+    >
+      <p className="numeric text-3xl font-semibold leading-none">{value}</p>
+      <p className="mt-1.5 text-sm font-medium text-foreground">{label}</p>
+    </Link>
+  );
+}
+
 
 /** One compact line of work: what it is, where, what to do next, and by when. */
 function WorkRow({
