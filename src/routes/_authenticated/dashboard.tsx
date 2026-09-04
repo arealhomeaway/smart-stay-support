@@ -20,6 +20,7 @@ import { ticketNextAction } from "@/lib/ticket-next-action";
 import { OPEN_STATUSES, priorityMeta, priorityTone, relativeTime, slaState } from "@/lib/tickets";
 import { isMine } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
+import { SupervisorAttentionBand } from "@/components/SupervisorAttentionBand";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
