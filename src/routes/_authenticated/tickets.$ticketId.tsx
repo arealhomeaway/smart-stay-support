@@ -28,6 +28,8 @@ import { GuestContextPanel } from "@/components/GuestContextPanel";
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { HandoffPanel } from "@/components/HandoffPanel";
+import { FinalReviewPanel } from "@/components/FinalReviewPanel";
+import { EscalationPanel } from "@/components/EscalationPanel";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
