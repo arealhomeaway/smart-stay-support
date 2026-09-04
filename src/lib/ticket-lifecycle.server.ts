@@ -12,8 +12,10 @@ import {
   type LifecycleFacts,
   isLifecycleException,
   LIFECYCLE_EXCEPTIONS,
+  ticketStatusLabel,
   validateTicketTransition,
 } from "@/lib/ticket-lifecycle";
+
 import { requiresPhotoOrFile } from "@/lib/evidence-requirements";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -213,9 +215,10 @@ export async function applyStatusChange(
     event_type: "status_changed",
     internal: false,
     body: usedException
-      ? `Status changed to ${input.status} under a named exception — ${LIFECYCLE_EXCEPTIONS[usedException]}: ${input.exceptionReason}`
-      : `Status changed to ${input.status}.`,
+      ? `Status changed to ${ticketStatusLabel(input.status)} under a named exception — ${LIFECYCLE_EXCEPTIONS[usedException]}: ${input.exceptionReason}`
+      : `Status changed to ${ticketStatusLabel(input.status)}.`,
   });
+
 
   if (usedException) {
     await db.from("audit_log").insert({

@@ -27,6 +27,22 @@ export function isTicketStatus(value: string): value is TicketStatus {
   return (TICKET_STATUSES as readonly string[]).includes(value);
 }
 
+/** How each status is named to people — never show the raw value. */
+export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
+  open: "Open",
+  dispatched: "Dispatched",
+  in_progress: "In progress",
+  waiting: "Waiting on someone",
+  awaiting_guest: "Awaiting guest confirmation",
+  resolved: "Resolved",
+  closed: "Closed",
+};
+
+export function ticketStatusLabel(status: string): string {
+  return isTicketStatus(status) ? TICKET_STATUS_LABELS[status] : status;
+}
+
+
 /**
  * Resolved vs Closed — one meaning, everywhere.
  *
