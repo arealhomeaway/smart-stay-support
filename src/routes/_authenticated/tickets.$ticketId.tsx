@@ -610,9 +610,10 @@ function TicketDetail() {
     if (!ok) return;
     await log(
       "resolved",
-      `Closed as ${labelFor(OUTCOME_TYPES, outcome)}. ${resolution.trim()}`,
-      "closed",
+      `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${resolution.trim()}`,
+      "resolved",
     );
+
     setResolution("");
     setEvidence("");
     await refresh();
