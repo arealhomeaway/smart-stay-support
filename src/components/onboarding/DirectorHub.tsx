@@ -23,6 +23,7 @@ import {
   type ProjectSummary,
 } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 
 type Lens =
@@ -235,22 +236,31 @@ export function DirectorHub({
       {/* ------------------------------------------------------ pipeline */}
       <section className="surface p-4">
         <p className="eyebrow">Pipeline</p>
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-3 space-y-2">
           {LIFECYCLE_STAGES.map((s) => {
-            const inStage = projects.filter((p) => p.stage === s.value);
+            const inStage = projects.filter((p) => p.stage === s.value).length;
+            const widest = Math.max(
+              1,
+              ...LIFECYCLE_STAGES.map((x) => projects.filter((p) => p.stage === x.value).length),
+            );
             return (
-              <div
-                key={s.value}
-                className={cn("min-w-32 flex-1 rounded-lg border px-3 py-2", s.accent)}
-                title={s.blurb}
-              >
-                <p className="text-xs font-medium">{s.label}</p>
-                <p className="numeric text-xl font-semibold">{inStage.length}</p>
+              <div key={s.value} className="flex items-center gap-3" title={s.blurb}>
+                <span className="w-36 shrink-0 truncate text-sm">{s.label}</span>
+                <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+                  <span
+                    className={cn("block h-full rounded-full", s.accent, "border-0")}
+                    style={{ width: `${(inStage / widest) * 100}%` }}
+                  />
+                </span>
+                <span className="numeric w-8 shrink-0 text-right text-sm font-medium">
+                  {inStage}
+                </span>
               </div>
             );
           })}
         </div>
       </section>
+
 
       {/* -------------------------------------------------------- lenses */}
       <div className="flex flex-wrap items-center gap-2">
@@ -397,6 +407,12 @@ function ProjectRow({ project: p }: { project: ProjectSummary }) {
       params={{ propertyId: p.property.id }}
       className="surface flex flex-col gap-2 p-3 transition hover:bg-muted/40 lg:flex-row lg:items-center lg:gap-4"
     >
+      <PropertyPhoto
+        url={(p.property as { primary_photo_url?: string | null }).primary_photo_url}
+        name={p.property.name}
+        className="size-12 rounded-xl"
+        rounded="rounded-xl"
+      />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <span className="truncate font-medium">{p.property.name}</span>
