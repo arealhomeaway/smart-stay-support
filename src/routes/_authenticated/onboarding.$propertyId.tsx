@@ -66,7 +66,7 @@ import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDraw
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
-import { usDate } from "@/lib/dates";
+import { usDate, usDateTime } from "@/lib/dates";
 import {
   LIFECYCLE,
   ONBOARDING_STAGES,
@@ -613,8 +613,8 @@ function PropertyWorkspace() {
                     <span className="font-medium">{a.title}</span>
                     <span className="text-xs text-muted-foreground">
                       {a.decided_at
-                        ? new Date(a.decided_at).toLocaleString()
-                        : `Requested ${new Date(a.created_at).toLocaleDateString()}`}
+                        ? usDateTime(a.decided_at)
+                        : `Requested ${usDate(a.created_at)}`}
                     </span>
                   </div>
                   {a.decision_note && (

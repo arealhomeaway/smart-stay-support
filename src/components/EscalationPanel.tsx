@@ -68,9 +68,7 @@ export function EscalationPanel({ ticketId }: { ticketId: string }) {
       {openOne ? (
         <div className="rounded-lg border border-danger/40 bg-danger/5 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-              Escalated
-            </Badge>
+            <Badge variant="danger">Escalated</Badge>
             <span className="text-sm font-medium">
               With the{" "}
               {ESCALATION_TARGET_LABELS[openOne.escalated_to_role as EscalationTarget] ??

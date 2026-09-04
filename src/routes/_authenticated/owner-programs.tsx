@@ -1,4 +1,4 @@
-import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
+import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,7 +55,6 @@ import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
 import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -250,98 +249,92 @@ function ProgramsBoard() {
       <ProgramSummary rows={rows} />
 
       {attention.length > 0 && (
-        <Card className="border-amber-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <SectionCard
+          tone="attention"
+          title={
+            <span className="flex items-center gap-2">
               <AlertTriangle className="size-4 text-amber-600" /> Owners needing attention
-            </CardTitle>
-            <CardDescription>
-              Ordered by urgency. Pace first, then property coverage.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {attention.map(({ row, flag }) => (
-              <button
-                key={row.id}
-                type="button"
-                onClick={() => setSelected(row.id)}
-                className="flex w-full flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-left hover:bg-accent"
-              >
-                <div>
-                  <p className="font-medium">{row.ownerName || "Owner not named yet"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {row.properties.map((p) => p.name).join(", ") || "No homes yet"}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700">
-                    {flag.reason}
-                  </Badge>
-                  <span className="text-muted-foreground">
-                    {row.reportedHours} hrs · day {row.day}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </CardContent>
-        </Card>
+            </span>
+          }
+          description="Ordered by urgency. Pace first, then property coverage."
+          bodyClassName="space-y-2"
+        >
+          {attention.map(({ row, flag }) => (
+            <button
+              key={row.id}
+              type="button"
+              onClick={() => setSelected(row.id)}
+              className="flex w-full flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-left hover:bg-accent"
+            >
+              <div>
+                <p className="font-medium">{row.ownerName || "Owner not named yet"}</p>
+                <p className="text-sm text-muted-foreground">
+                  {row.properties.map((p) => p.name).join(", ") || "No homes yet"}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Badge variant="warning">{flag.reason}</Badge>
+                <span className="text-muted-foreground">
+                  {row.reportedHours} hrs · day {row.day}
+                </span>
+              </div>
+            </button>
+          ))}
+        </SectionCard>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+      <SectionCard
+        title={
+          <span className="flex items-center gap-2">
             <Plus className="size-4" /> Create a program
-          </CardTitle>
-          <CardDescription>
-            A program starts as a draft. Closing dates never start the clock on their own — a team
-            member activates it once every home has closed and DFY has confirmed the arrangement.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-4">
-          <div className="space-y-2 md:col-span-2">
-            <Label>First property</Label>
-            <Select value={propertyId} onValueChange={setPropertyId}>
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={available.length ? "Choose a home" : "Every active home is enrolled"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {available.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                    {p.location ? ` · ${p.location}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ownerName">Owner name</Label>
-            <Input
-              id="ownerName"
-              value={ownerName}
-              onChange={(e) => setOwnerName(e.target.value)}
-              maxLength={120}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ownerEmail">Owner email</Label>
-            <Input
-              id="ownerEmail"
-              type="email"
-              value={ownerEmail}
-              onChange={(e) => setOwnerEmail(e.target.value)}
-              maxLength={255}
-            />
-          </div>
-          <div className="flex items-end md:col-span-4">
-            <Button onClick={() => create.mutate()} disabled={!propertyId || create.isPending}>
-              {create.isPending ? "Creating…" : "Create draft program"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </span>
+        }
+        description="A program starts as a draft. Closing dates never start the clock on their own — a team member activates it once every home has closed and DFY has confirmed the arrangement."
+        bodyClassName="grid gap-4 md:grid-cols-4"
+      >
+        <div className="space-y-2 md:col-span-2">
+          <Label>First property</Label>
+          <Select value={propertyId} onValueChange={setPropertyId}>
+            <SelectTrigger>
+              <SelectValue
+                placeholder={available.length ? "Choose a home" : "Every active home is enrolled"}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {available.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                  {p.location ? ` · ${p.location}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="ownerName">Owner name</Label>
+          <Input
+            id="ownerName"
+            value={ownerName}
+            onChange={(e) => setOwnerName(e.target.value)}
+            maxLength={120}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="ownerEmail">Owner email</Label>
+          <Input
+            id="ownerEmail"
+            type="email"
+            value={ownerEmail}
+            onChange={(e) => setOwnerEmail(e.target.value)}
+            maxLength={255}
+          />
+        </div>
+        <div className="flex items-end md:col-span-4">
+          <Button onClick={() => create.mutate()} disabled={!propertyId || create.isPending}>
+            {create.isPending ? "Creating…" : "Create draft program"}
+          </Button>
+        </div>
+      </SectionCard>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
         <div>
@@ -417,12 +410,7 @@ function ProgramSummary({ rows }: { rows: ProgramRow[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {tiles.map((t) => (
-        <Card key={t.label}>
-          <CardContent className="space-y-1 py-5">
-            <p className="text-2xl font-semibold">{t.value}</p>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t.label}</p>
-          </CardContent>
-        </Card>
+        <StatTile key={t.label} label={t.label} value={t.value} />
       ))}
     </div>
   );
@@ -460,88 +448,86 @@ function ProgramCard({
   }
 
   return (
-    <Card>
-      <CardHeader className="gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <CardTitle className="text-lg">{row.ownerName || "Owner not named yet"}</CardTitle>
-            <CardDescription>
-              {row.properties.length === 0
-                ? "No homes yet"
-                : `${row.properties.length} home${row.properties.length === 1 ? "" : "s"}: ${row.properties
-                    .map((p) => p.name)
-                    .join(", ")}`}
-              {row.ownerLinked ? " · portal access active" : " · no portal login yet"}
-            </CardDescription>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={PROGRAM_STATUS_TONE[row.status] ?? "closed"}>
-              {status.label}
-            </StatusBadge>
-            <StatusBadge tone={PROGRESS_STATE_TONE[row.progressState] ?? "closed"}>
-              {progress.label}
-            </StatusBadge>
-            <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
-              <Eye className="size-4" /> Preview as homeowner
-            </Button>
-            <Button size="sm" variant="outline" onClick={onToggle}>
-              {expanded ? "Hide" : "Manage"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-            <span>
-              <span className="text-xl font-semibold">{row.reportedHours}</span>
-              <span className="text-muted-foreground">
-                {" "}
-                hours reported · benchmark {row.benchmark}
-              </span>
-            </span>
+    <SectionCard
+      title={row.ownerName || "Owner not named yet"}
+      description={
+        <>
+          {row.properties.length === 0
+            ? "No homes yet"
+            : `${row.properties.length} home${row.properties.length === 1 ? "" : "s"}: ${row.properties
+                .map((p) => p.name)
+                .join(", ")}`}
+          {row.ownerLinked ? " · portal access active" : " · no portal login yet"}
+        </>
+      }
+      actions={
+        <>
+          <StatusBadge tone={PROGRAM_STATUS_TONE[row.status] ?? "closed"}>
+            {status.label}
+          </StatusBadge>
+          <StatusBadge tone={PROGRESS_STATE_TONE[row.progressState] ?? "closed"}>
+            {progress.label}
+          </StatusBadge>
+          <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
+            <Eye className="size-4" /> Preview as homeowner
+          </Button>
+          <Button size="sm" variant="outline" onClick={onToggle}>
+            {expanded ? "Hide" : "Manage"}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+          <span>
+            <span className="text-xl font-semibold">{row.reportedHours}</span>
             <span className="text-muted-foreground">
-              {row.startedOn
-                ? `Day ${row.day} of ${PROGRAM_TOTAL_DAYS} · ${row.daysLeft} days left`
-                : "Not activated"}
+              {" "}
+              hours reported · benchmark {row.benchmark}
             </span>
-          </div>
-          <Progress value={percent} />
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-            <span>{row.openTasks} owner tasks open</span>
-            <span
-              className={
-                row.availableOpportunities === 0 && row.status === "active"
-                  ? "font-medium text-amber-700"
-                  : undefined
-              }
-            >
-              {row.availableOpportunities === 0 && row.status === "active"
-                ? "No participation opportunities available — needs staff setup"
-                : `${row.availableOpportunities} available · ${row.upcomingOpportunities} upcoming`}
-            </span>
-            <span>
-              Sources: {row.onboardingOpportunities} onboarding · {row.operationsOpportunities}{" "}
-              operations
-            </span>
-            <span>
-              Next milestone: day {row.nextMilestone.day} · {row.nextMilestone.hours} hrs
-            </span>
-            {row.coverageConcerns > 0 ? (
-              <span className="font-medium text-amber-700">
-                {row.coverageConcerns} propert{row.coverageConcerns === 1 ? "y" : "ies"} need
-                attention
-              </span>
-            ) : null}
-            {row.variance < 0 ? (
-              <span className="font-medium text-destructive">
-                {Math.abs(row.variance)} hrs behind benchmark
-              </span>
-            ) : null}
-          </div>
+          </span>
+          <span className="text-muted-foreground">
+            {row.startedOn
+              ? `Day ${row.day} of ${PROGRAM_TOTAL_DAYS} · ${row.daysLeft} days left`
+              : "Not activated"}
+          </span>
         </div>
-      </CardHeader>
+        <Progress value={percent} />
+        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+          <span>{row.openTasks} owner tasks open</span>
+          <span
+            className={
+              row.availableOpportunities === 0 && row.status === "active"
+                ? "font-medium text-amber-700"
+                : undefined
+            }
+          >
+            {row.availableOpportunities === 0 && row.status === "active"
+              ? "No participation opportunities available — needs staff setup"
+              : `${row.availableOpportunities} available · ${row.upcomingOpportunities} upcoming`}
+          </span>
+          <span>
+            Sources: {row.onboardingOpportunities} onboarding · {row.operationsOpportunities}{" "}
+            operations
+          </span>
+          <span>
+            Next milestone: day {row.nextMilestone.day} · {row.nextMilestone.hours} hrs
+          </span>
+          {row.coverageConcerns > 0 ? (
+            <span className="font-medium text-amber-700">
+              {row.coverageConcerns} propert{row.coverageConcerns === 1 ? "y" : "ies"} need
+              attention
+            </span>
+          ) : null}
+          {row.variance < 0 ? (
+            <span className="font-medium text-destructive">
+              {Math.abs(row.variance)} hrs behind benchmark
+            </span>
+          ) : null}
+        </div>
+      </div>
       {expanded ? <ProgramDetail row={row} available={available} /> : null}
-    </Card>
+    </SectionCard>
   );
 }
 
@@ -613,9 +599,9 @@ function ProgramDetail({
 
   if (detail.isLoading) {
     return (
-      <CardContent>
+      <div className="border-t pt-6">
         <Skeleton className="h-40 w-full" />
-      </CardContent>
+      </div>
     );
   }
 
@@ -628,7 +614,7 @@ function ProgramDetail({
   const notActivated = !row.startedOn;
 
   return (
-    <CardContent className="space-y-8 border-t pt-6">
+    <div className="space-y-8 border-t pt-6">
       <section className="space-y-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
           <Home className="size-4" /> Properties in this program
@@ -970,7 +956,9 @@ function ProgramDetail({
                       </Badge>
                     ) : null}
                     {r.respond_by ? (
-                      <span className="text-muted-foreground">Respond by {r.respond_by}</span>
+                      <span className="text-muted-foreground">
+                        Respond by {usDate(r.respond_by)}
+                      </span>
                     ) : null}
                     {r.owner_decision ? (
                       <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700">
@@ -1091,7 +1079,7 @@ function ProgramDetail({
           </div>
         </section>
       )}
-    </CardContent>
+    </div>
   );
 }
 
@@ -1114,51 +1102,47 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
   }, [templates]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
+    <SectionCard
+      title={
+        <span className="flex items-center gap-2">
           <ClipboardCheck className="size-4" /> The owner activity catalog
-        </CardTitle>
-        <CardDescription>
-          The standard activity set every program is seeded from. Planning hours are an internal
-          staffing estimate — they are never shown to a homeowner, so reported participation stays
-          genuinely self-reported.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {loading ? (
-          <Skeleton className="h-48 w-full" />
-        ) : (
-          Object.entries(grouped).map(([key, items]) => {
-            const [phase, stage] = key.split("::");
-            return (
-              <div key={key} className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {PHASE_LABELS[phase as keyof typeof PHASE_LABELS]} · {stage}
-                </p>
-                <div className="grid gap-2 md:grid-cols-2">
-                  {items.map((t) => (
-                    <div key={t.id} className="space-y-1 rounded-md border p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium">{t.title}</p>
-                        <Badge variant="outline" className={DECISION_PATHS[t.decision_path].tone}>
-                          {DECISION_PATHS[t.decision_path].label}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{t.owner_action}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Internal plan {t.planning_hours_low}–{t.planning_hours_high} hrs · respond
-                        within {t.respond_within_days} days
-                        {t.recurring ? " · recurring" : ""}
-                      </p>
+        </span>
+      }
+      description="The standard activity set every program is seeded from. Planning hours are an internal staffing estimate — they are never shown to a homeowner, so reported participation stays genuinely self-reported."
+      bodyClassName="space-y-6"
+    >
+      {loading ? (
+        <Skeleton className="h-48 w-full" />
+      ) : (
+        Object.entries(grouped).map(([key, items]) => {
+          const [phase, stage] = key.split("::");
+          return (
+            <div key={key} className="space-y-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {PHASE_LABELS[phase as keyof typeof PHASE_LABELS]} · {stage}
+              </p>
+              <div className="grid gap-2 md:grid-cols-2">
+                {items.map((t) => (
+                  <div key={t.id} className="space-y-1 rounded-md border p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium">{t.title}</p>
+                      <Badge variant="outline" className={DECISION_PATHS[t.decision_path].tone}>
+                        {DECISION_PATHS[t.decision_path].label}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-sm text-muted-foreground">{t.owner_action}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Internal plan {t.planning_hours_low}–{t.planning_hours_high} hrs · respond
+                      within {t.respond_within_days} days
+                      {t.recurring ? " · recurring" : ""}
+                    </p>
+                  </div>
+                ))}
               </div>
-            );
-          })
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          );
+        })
+      )}
+    </SectionCard>
   );
 }

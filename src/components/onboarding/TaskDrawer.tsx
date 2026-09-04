@@ -32,6 +32,7 @@ import {
   whyThisTaskExists,
   type WorkflowTask,
 } from "@/lib/onboarding-workflow";
+import { usDate, usDateTime } from "@/lib/dates";
 
 export type SaveTaskInput = {
   id: string;
@@ -406,7 +407,7 @@ export function TaskDrawer({
                           : "Changes requested"}
                     </Chip>
                     <span className="numeric text-xs text-muted-foreground">
-                      Sent {new Date(lastApproval.created_at).toLocaleDateString()}
+                      Sent {usDate(lastApproval.created_at)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -415,7 +416,7 @@ export function TaskDrawer({
                       ? "Recorded on the canonical approval record — Active Owner portal or Resolve-generated email."
                       : "Canonical approval record."}
                     {lastApproval.decided_at
-                      ? ` Decided ${new Date(lastApproval.decided_at).toLocaleString()}.`
+                      ? ` Decided ${usDateTime(lastApproval.decided_at)}.`
                       : ""}
                   </p>
                   {lastApproval.decision_note && (

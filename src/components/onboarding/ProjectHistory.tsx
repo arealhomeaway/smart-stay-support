@@ -14,6 +14,7 @@ import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
 import { getPropertyProject } from "@/lib/onboarding.functions";
 import type { WorkflowTask } from "@/lib/onboarding-workflow";
+import { usDateTime } from "@/lib/dates";
 
 type Person = { id: string; full_name: string | null; email: string | null };
 
@@ -180,9 +181,7 @@ export function ProjectHistory({
               {KIND_LABEL[e.kind] ?? e.kind.replace(/_/g, " ")}
             </Chip>
             <span className="min-w-0 flex-1 text-sm font-medium">{e.summary}</span>
-            <span className="numeric text-xs text-muted-foreground">
-              {new Date(e.at).toLocaleString()}
-            </span>
+            <span className="numeric text-xs text-muted-foreground">{usDateTime(e.at)}</span>
           </div>
           {e.detail && <p className="pt-1 text-xs text-muted-foreground">{e.detail}</p>}
           {e.actor && <p className="text-xs text-muted-foreground">by {e.actor}</p>}

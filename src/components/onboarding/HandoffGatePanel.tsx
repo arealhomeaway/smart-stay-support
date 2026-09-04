@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { GATE_STEPS, gateLabel } from "@/lib/onboarding";
+import { usDateTime } from "@/lib/dates";
 
 export type HandoffRow = {
   id: string;
@@ -155,7 +156,7 @@ export function HandoffGatePanel({
             </p>
             {history.map((h) => (
               <p key={h.id} className="text-xs text-muted-foreground">
-                {new Date(h.created_at).toLocaleString()} · {gateLabel(h.step)} ·{" "}
+                {usDateTime(h.created_at)} · {gateLabel(h.step)} ·{" "}
                 {h.decision === "returned" ? "returned" : "approved"} by {nameOf(h.reviewer_id)}
                 {h.note ? ` — ${h.note}` : ""}
                 {h.exception_reason ? ` · exception: ${h.exception_reason}` : ""}

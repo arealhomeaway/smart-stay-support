@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search } from "lucide-react";
 import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
@@ -284,9 +283,12 @@ function PropertiesPage() {
             const openCount = all.filter((t) => OPEN_STATUSES.includes(t.status)).length;
             const owner = p.owner_record_id ? data.ownerName.get(p.owner_record_id) : null;
             return (
-              <Card
+              // A photo-led grid card: the image bleeds to the card edge and the
+              // status badges overlay it, which doesn't fit SectionCard's
+              // padded title/body shape — kept as a `surface` panel instead.
+              <div
                 key={p.id}
-                className="overflow-hidden shadow-card transition-shadow hover:shadow-raised"
+                className="surface overflow-hidden shadow-card transition-shadow hover:shadow-raised"
               >
                 <div className="relative">
                   {p.primary_photo_url ? (
@@ -314,8 +316,8 @@ function PropertiesPage() {
                     )}
                   </div>
                 </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">
+                <div className="flex flex-col space-y-1.5 p-6 pb-2">
+                  <p className="text-base font-semibold leading-none tracking-tight">
                     <Link
                       to="/property/$propertyId"
                       params={{ propertyId: p.id }}
@@ -324,13 +326,13 @@ function PropertiesPage() {
                     >
                       {p.nickname ?? p.name}
                     </Link>
-                  </CardTitle>
-                  <CardDescription>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
                     {[p.address_line1, p.unit, p.city, p.state].filter(Boolean).join(", ") ||
                       "No address on file"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
+                  </p>
+                </div>
+                <div className="space-y-2 p-6 pt-0 text-sm">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
                     {p.market && <span>{p.market}</span>}
                     {p.neighborhood && <span>· {p.neighborhood}</span>}
@@ -368,8 +370,8 @@ function PropertiesPage() {
                       </p>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>

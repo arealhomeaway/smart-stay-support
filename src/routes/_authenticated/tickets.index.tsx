@@ -363,11 +363,7 @@ function TicketWorkCard({
             {priorityMeta(t.priority).short}
           </Badge>
           <StatusBadge tone={ticketTone(t.status)}>{labelFor(STATUSES, t.status)}</StatusBadge>
-          {sla.escalation && (
-            <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-              Escalated
-            </Badge>
-          )}
+          {sla.escalation && <Badge variant="danger">Escalated</Badge>}
           {t.is_demo && (
             <Badge variant="outline" className="border-warning/40 bg-warning/10">
               Demo

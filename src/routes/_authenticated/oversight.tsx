@@ -17,8 +17,8 @@ import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { usDate, usDateTime } from "@/lib/dates";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SectionCard } from "@/components/ui/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
@@ -710,41 +710,37 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Workload by person</CardTitle>
-            <CardDescription>Open work only. This is balance, not output.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-1.5 text-sm">
-            {workload.length === 0 && <p className="text-muted-foreground">Nothing open.</p>}
-            {workload.map((w) => (
-              <div key={w.id} className="flex items-center gap-3">
-                <span className="w-40 truncate">{w.who}</span>
-                <div className="h-2 flex-1 rounded-full bg-secondary">
-                  <div
-                    className="h-2 rounded-full bg-primary"
-                    style={{
-                      width: `${Math.min(100, (w.count / (workload[0]?.count || 1)) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="w-6 text-right text-muted-foreground">{w.count}</span>
+        <SectionCard
+          title="Workload by person"
+          description="Open work only. This is balance, not output."
+          bodyClassName="space-y-1.5 text-sm"
+        >
+          {workload.length === 0 && <p className="text-muted-foreground">Nothing open.</p>}
+          {workload.map((w) => (
+            <div key={w.id} className="flex items-center gap-3">
+              <span className="w-40 truncate">{w.who}</span>
+              <div className="h-2 flex-1 rounded-full bg-secondary">
+                <div
+                  className="h-2 rounded-full bg-primary"
+                  style={{
+                    width: `${Math.min(100, (w.count / (workload[0]?.count || 1)) * 100)}%`,
+                  }}
+                />
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <span className="w-6 text-right text-muted-foreground">{w.count}</span>
+            </div>
+          ))}
+        </SectionCard>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Where issues are coming from</CardTitle>
-            <CardDescription>Open work by property, market and issue type.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 text-sm sm:grid-cols-3">
-            <TrendList title="Property" rows={byProperty} />
-            <TrendList title="Market" rows={byMarket} />
-            <TrendList title="Issue type" rows={byType} />
-          </CardContent>
-        </Card>
+        <SectionCard
+          title="Where issues are coming from"
+          description="Open work by property, market and issue type."
+          bodyClassName="grid gap-4 text-sm sm:grid-cols-3"
+        >
+          <TrendList title="Property" rows={byProperty} />
+          <TrendList title="Market" rows={byMarket} />
+          <TrendList title="Issue type" rows={byType} />
+        </SectionCard>
       </section>
 
       <p className="text-sm text-muted-foreground">

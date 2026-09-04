@@ -10,10 +10,10 @@ import {
   resolveNotionConflict,
   runNotionPropertySync,
 } from "@/lib/notion.functions";
+import { usDateTime } from "@/lib/dates";
 
 function when(iso: string | null) {
-  if (!iso) return "never";
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return usDateTime(iso, "never");
 }
 
 export function NotionSyncPanel() {

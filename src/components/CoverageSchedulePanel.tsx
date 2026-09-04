@@ -39,6 +39,7 @@ import {
   setSeatAvailability,
   setSeatHolder,
 } from "@/lib/coverage-admin.functions";
+import { usDateTime } from "@/lib/dates";
 
 /**
  * The one coverage plan: who holds each seat, the recurring hours they are on
@@ -484,8 +485,7 @@ function SeatsCard({
                         </Badge>
                         {o.kind === "cover" ? nameFor(people, o.user_id) : "Seat off duty"}{" "}
                         <span className="text-muted-foreground">
-                          {new Date(o.starts_at).toLocaleString()} →{" "}
-                          {new Date(o.ends_at).toLocaleString()}
+                          {usDateTime(o.starts_at)} → {usDateTime(o.ends_at)}
                         </span>
                       </span>
                       {canEdit && (

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getOwnerDirectoryStats, syncPrimaryOwners } from "@/lib/owner-directory.functions";
+import { usDateTime } from "@/lib/dates";
 import { useRole } from "@/hooks/useRole";
 
 /**
@@ -68,7 +69,7 @@ export function OwnerDirectoryPanel() {
             </>
           )}
           {data.lastSyncedAt
-            ? `Last import ${new Date(data.lastSyncedAt).toLocaleString()}.`
+            ? `Last import ${usDateTime(data.lastSyncedAt)}.`
             : "No import has run yet."}
           {data.staleCount > 0 && ` ${data.staleCount} record(s) may be out of date.`}
         </p>

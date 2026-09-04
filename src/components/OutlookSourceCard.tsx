@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, Mail, Paperclip } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getOutlookSource } from "@/lib/mailbox.functions";
+import { usDateTime } from "@/lib/dates";
 
 /**
  * "Created from Outlook" — compact provenance for a Ticket or Lead that began
@@ -25,7 +26,7 @@ export function OutlookSourceCard({
 
   if (!data) return null;
 
-  const received = data.receivedAt ? new Date(data.receivedAt).toLocaleString() : null;
+  const received = data.receivedAt ? usDateTime(data.receivedAt) : null;
 
   return (
     <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">

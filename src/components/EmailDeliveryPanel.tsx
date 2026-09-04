@@ -6,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEmailDelivery, resendEmail } from "@/lib/email.functions";
+import { usDateTime } from "@/lib/dates";
 
 function when(iso: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return usDateTime(iso);
 }
 
 const PURPOSE_LABEL: Record<string, string> = {

@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { usDate, usDateTime } from "@/lib/dates";
 import {
   Sheet,
   SheetContent,
@@ -356,20 +356,11 @@ function PlaybookDetail({
         <Row label="Source" value={SOURCE_LABELS[pb.source]} />
         <Row label="Source refs" value={pb.source_refs.join(", ")} />
         <Row label="Source version" value={pb.source_version} />
-        <Row
-          label="Generated"
-          value={pb.generated_at ? new Date(pb.generated_at).toLocaleDateString() : null}
-        />
+        <Row label="Generated" value={pb.generated_at ? usDate(pb.generated_at) : null} />
         <Row label="Required evidence" value={pb.required_evidence.join(", ")} />
-        <Row label="Effective" value={pb.effective_on} />
-        <Row
-          label="Submitted"
-          value={pb.submitted_at ? new Date(pb.submitted_at).toLocaleString() : null}
-        />
-        <Row
-          label="Approved"
-          value={pb.approved_at ? new Date(pb.approved_at).toLocaleString() : null}
-        />
+        <Row label="Effective" value={pb.effective_on ? usDate(pb.effective_on) : null} />
+        <Row label="Submitted" value={pb.submitted_at ? usDateTime(pb.submitted_at) : null} />
+        <Row label="Approved" value={pb.approved_at ? usDateTime(pb.approved_at) : null} />
         <Row
           label="Matching"
           value={
@@ -489,7 +480,7 @@ function PlaybookDetail({
               <li key={h.id} className="text-muted-foreground">
                 {STATUS_LABELS[(h.from_status as PlaybookStatus) ?? "draft"]} →{" "}
                 {STATUS_LABELS[(h.to_status as PlaybookStatus) ?? "draft"]} ·{" "}
-                {new Date(h.created_at).toLocaleString()}
+                {usDateTime(h.created_at)}
                 {h.actor_role ? ` · ${h.actor_role}` : ""}
                 {h.note ? ` · ${h.note}` : ""}
               </li>

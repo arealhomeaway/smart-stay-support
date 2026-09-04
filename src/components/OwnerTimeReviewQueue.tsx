@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useRole } from "@/hooks/useRole";
+import { usDate } from "@/lib/dates";
 
 function hours(minutes: number) {
   return `${Math.round((minutes / 60) * 10) / 10} hr`;
@@ -79,8 +80,7 @@ export function OwnerTimeReviewQueue() {
                 <div className="min-w-0">
                   <p className="font-medium">{e.activity}</p>
                   <p className="text-sm text-muted-foreground">
-                    {e.ownerName || "Owner"} · {new Date(e.entryDate).toLocaleDateString()} ·{" "}
-                    {hours(e.minutes)}
+                    {e.ownerName || "Owner"} · {usDate(e.entryDate)} · {hours(e.minutes)}
                     {e.propertyNames.length > 0 && ` · ${e.propertyNames.join(", ")}`}
                   </p>
                   {e.output && <p className="mt-1 text-sm">{e.output}</p>}

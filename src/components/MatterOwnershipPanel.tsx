@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTeam";
 import { canEditMatter, currentOwnerId, extractMentions } from "@/lib/matters";
+import { usDateTime } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,11 +213,7 @@ export function MatterOwnershipPanel({
             </Badge>
           )}
           {ticket.pending_handoff_to && <Badge variant="outline">Handoff pending</Badge>}
-          {ticket.escalation_level && (
-            <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-              Escalated
-            </Badge>
-          )}
+          {ticket.escalation_level && <Badge variant="danger">Escalated</Badge>}
           {ticket.archived_at && <Badge variant="outline">Archived</Badge>}
         </div>
 
@@ -341,7 +338,7 @@ export function MatterOwnershipPanel({
 
         {ticket.archived_at && (
           <p className="text-xs text-muted-foreground">
-            Archived {new Date(ticket.archived_at).toLocaleString()} — {ticket.archive_reason}
+            Archived {usDateTime(ticket.archived_at)} — {ticket.archive_reason}
           </p>
         )}
       </CardContent>

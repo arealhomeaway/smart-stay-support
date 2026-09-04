@@ -35,6 +35,7 @@ import {
   escalateWorkOrderToTicketFn,
 } from "@/lib/breezeway-workorders.functions";
 import { EvidenceQualityGate } from "@/components/EvidenceQualityGate";
+import { usDateTime } from "@/lib/dates";
 import type { BreezewayWorkOrder } from "@/lib/breezeway-workorders";
 
 function stageTone(stage: string | null) {
@@ -109,7 +110,7 @@ function CommentThread({ workOrderId }: { workOrderId: string }) {
               )}
               {c.commentedAt && (
                 <span className="ml-2 text-xs text-muted-foreground">
-                  {new Date(c.commentedAt).toLocaleString()}
+                  {usDateTime(c.commentedAt)}
                 </span>
               )}
               <p className="whitespace-pre-wrap text-muted-foreground">{c.body}</p>

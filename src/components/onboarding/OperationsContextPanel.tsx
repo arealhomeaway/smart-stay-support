@@ -139,7 +139,7 @@ export function OperationsContextPanel({
           </p>
           {exceptions.map((t) => (
             <p key={t.id} className="text-xs">
-              <Badge variant="outline" className="mr-2 bg-amber-100 text-amber-900">
+              <Badge variant="warning" className="mr-2">
                 Exception
               </Badge>
               {t.title}: {t.exception_reason}

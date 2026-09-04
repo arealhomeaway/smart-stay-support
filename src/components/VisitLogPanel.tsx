@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { getVisits } from "@/lib/visits.functions";
 import { describeDistance, formatOnSite } from "@/lib/visits";
+import { usDateTime, usTime } from "@/lib/dates";
 
 export function VisitLogPanel({ ticketId }: { ticketId: string }) {
   const fetchVisits = useServerFn(getVisits);
@@ -47,9 +48,9 @@ export function VisitLogPanel({ ticketId }: { ticketId: string }) {
                   {describeDistance(v.check_in_distance_m, v.check_in_verified)}
                 </Badge>
                 <span className="text-muted-foreground">
-                  {new Date(v.checked_in_at).toLocaleString()}
+                  {usDateTime(v.checked_in_at)}
                   {v.checked_out_at
-                    ? ` → ${new Date(v.checked_out_at).toLocaleTimeString()} · ${formatOnSite(v.minutes_on_site)} on site`
+                    ? ` → ${usTime(v.checked_out_at)} · ${formatOnSite(v.minutes_on_site)} on site`
                     : " · still on site"}
                 </span>
               </div>

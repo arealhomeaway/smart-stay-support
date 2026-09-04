@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usDateTime } from "@/lib/dates";
 
 export type NoteRow = {
   id: string;
@@ -93,7 +94,7 @@ export function OnboardingNotes({
             <div key={n.id} className="rounded-md border p-3 text-sm">
               <p className="whitespace-pre-wrap">{n.body}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {nameOf(n.author_id)} · {new Date(n.created_at).toLocaleString()}
+                {nameOf(n.author_id)} · {usDateTime(n.created_at)}
               </p>
               {(n.mentions ?? []).length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">

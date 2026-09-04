@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getGuestContext } from "@/lib/guest-context.functions";
+import { usDate } from "@/lib/dates";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 
@@ -18,9 +19,7 @@ import { useDemo } from "@/components/DemoProvider";
 
 function dateRange(arrival: string | null, departure: string | null) {
   if (!arrival || !departure) return "—";
-  const fmt = (v: string) =>
-    new Date(v).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  return `${fmt(arrival)} → ${fmt(departure)}`;
+  return `${usDate(arrival)} → ${usDate(departure)}`;
 }
 
 function Row({ label, value }: { label: string; value: string }) {

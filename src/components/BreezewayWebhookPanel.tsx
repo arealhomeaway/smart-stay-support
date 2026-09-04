@@ -13,6 +13,7 @@ import {
   breezewayWebhookRecoverFailures,
   breezewayWebhookStatus,
 } from "@/lib/breezeway.functions";
+import { usDateTime } from "@/lib/dates";
 
 type Reach = Awaited<ReturnType<typeof breezewayWebhookReachability>>;
 type Fixtures = Awaited<ReturnType<typeof breezewayWebhookFixtures>>;
@@ -243,9 +244,7 @@ export function BreezewayWebhookPanel() {
               <p className="text-muted-foreground">
                 Receiver {status.urlRedacted} · secret{" "}
                 {status.secretConfigured ? "configured" : "missing"}
-                {status.registeredAt
-                  ? ` · registered ${new Date(status.registeredAt).toLocaleString()}`
-                  : ""}
+                {status.registeredAt ? ` · registered ${usDateTime(status.registeredAt)}` : ""}
               </p>
               <p className="font-medium">Live deliveries: {status.liveTotal}</p>
               {status.liveTotal === 0 ? (

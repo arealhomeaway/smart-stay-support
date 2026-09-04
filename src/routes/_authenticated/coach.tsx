@@ -22,7 +22,7 @@ import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functi
 import type { Guidance } from "@/lib/coach-schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionCard } from "@/components/ui/page";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -246,252 +246,245 @@ function CoachPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">What is happening?</CardTitle>
-          <CardDescription>
-            Pick the home so the coach can use its access notes, live occupancy and its own history.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="coach-property">Property</Label>
-            <Select value={propertyId} onValueChange={setPropertyId}>
-              <SelectTrigger id="coach-property">
-                <SelectValue placeholder="Select a property (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {(properties ?? []).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nickname ? `${p.nickname} — ${p.name}` : p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {stay?.ok && (
-              <p className="text-xs text-muted-foreground">
-                Live from the booking system:{" "}
-                {labelFor(OCCUPANCY_STATUS, stay.data.occupancy_status)}
-                {stay.data.guest_name ? ` · ${stay.data.guest_name}` : ""}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="coach-question">The situation</Label>
-            <Textarea
-              id="coach-question"
-              rows={4}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="There is an active leak in a vacant house."
-            />
-            <div className="flex flex-wrap gap-2">
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  type="button"
-                  onClick={() => setQuestion(ex)}
-                  className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition hover:bg-muted"
-                >
-                  {ex}
-                </button>
+      <SectionCard
+        title="What is happening?"
+        description="Pick the home so the coach can use its access notes, live occupancy and its own history."
+        bodyClassName="space-y-4"
+      >
+        <div className="space-y-2">
+          <Label htmlFor="coach-property">Property</Label>
+          <Select value={propertyId} onValueChange={setPropertyId}>
+            <SelectTrigger id="coach-property">
+              <SelectValue placeholder="Select a property (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              {(properties ?? []).map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.nickname ? `${p.nickname} — ${p.name}` : p.name}
+                </SelectItem>
               ))}
-            </div>
-          </div>
+            </SelectContent>
+          </Select>
+          {stay?.ok && (
+            <p className="text-xs text-muted-foreground">
+              Live from the booking system: {labelFor(OCCUPANCY_STATUS, stay.data.occupancy_status)}
+              {stay.data.guest_name ? ` · ${stay.data.guest_name}` : ""}
+            </p>
+          )}
+        </div>
 
-          <Button
-            onClick={() => assess.mutate()}
-            disabled={question.trim().length < 5 || assess.isPending}
-            className="w-full"
-          >
-            {assess.isPending ? "Coaching…" : "Coach me through this"}
-            <ArrowRight className="size-4" />
-          </Button>
-        </CardContent>
-      </Card>
+        <div className="space-y-2">
+          <Label htmlFor="coach-question">The situation</Label>
+          <Textarea
+            id="coach-question"
+            rows={4}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="There is an active leak in a vacant house."
+          />
+          <div className="flex flex-wrap gap-2">
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                onClick={() => setQuestion(ex)}
+                className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition hover:bg-muted"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Button
+          onClick={() => assess.mutate()}
+          disabled={question.trim().length < 5 || assess.isPending}
+          className="w-full"
+        >
+          {assess.isPending ? "Coaching…" : "Coach me through this"}
+          <ArrowRight className="size-4" />
+        </Button>
+      </SectionCard>
 
       {assess.isPending && <Skeleton className="h-96 w-full" />}
 
       {g && (
         <div className="space-y-4">
-          <Card className="border-primary/40">
-            <CardHeader className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
+          <SectionCard
+            className="border-primary/40"
+            title={g.suggested_title}
+            description={g.read_back}
+            actions={
+              <>
                 <Badge className={priorityTone(g.priority)}>{priorityMeta(g.priority).short}</Badge>
                 <Badge variant="outline">{g.work_type_name}</Badge>
                 <Badge variant="outline">{labelFor(GUEST_IMPACT, g.guest_impact)}</Badge>
                 <Badge variant="outline">{labelFor(OCCUPANCY_STATUS, g.occupancy_status)}</Badge>
-              </div>
-              <CardTitle className="text-xl">{g.suggested_title}</CardTitle>
-              <CardDescription>{g.read_back}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="rounded-md bg-muted p-3 text-sm">
-                <span className="font-medium">Why {priorityMeta(g.priority).short}: </span>
-                {g.priority_reason} Acknowledge within {priorityMeta(g.priority).responseMinutes}{" "}
-                minutes, start action within {priorityMeta(g.priority).actionMinutes}.
-              </p>
+              </>
+            }
+            bodyClassName="space-y-4"
+          >
+            <p className="rounded-md bg-muted p-3 text-sm">
+              <span className="font-medium">Why {priorityMeta(g.priority).short}: </span>
+              {g.priority_reason} Acknowledge within {priorityMeta(g.priority).responseMinutes}{" "}
+              minutes, start action within {priorityMeta(g.priority).actionMinutes}.
+            </p>
 
-              {g.risk_flags.length > 0 && (
-                <div className="space-y-2 rounded-md border border-danger/30 bg-danger/5 p-3">
-                  <p className="flex items-center gap-2 text-sm font-medium text-danger">
-                    <AlertTriangle className="size-4" /> Risk to contain
-                  </p>
-                  <ul className="space-y-1 text-sm">
-                    {g.risk_flags.map((r) => (
-                      <li key={r.title}>
-                        <span className="font-medium">{r.title}:</span> {r.why}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <Section icon={CheckCircle2} title="Do this now">
-                <ol className="list-decimal space-y-1 pl-5 text-sm">
-                  {g.immediate_actions.map((a) => (
-                    <li key={a}>{a}</li>
-                  ))}
-                </ol>
-              </Section>
-
-              {g.clarifying_questions.length > 0 && (
-                <Section icon={HelpCircle} title="Confirm before you dispatch">
-                  <ul className="list-disc space-y-1 pl-5 text-sm">
-                    {g.clarifying_questions.map((q) => (
-                      <li key={q}>{q}</li>
-                    ))}
-                  </ul>
-                </Section>
-              )}
-
-              <Section icon={ClipboardCheck} title="Your checklist">
-                <ol className="space-y-2">
-                  {g.steps.map((s, i) => (
-                    <li key={s.instruction} className="rounded-md border border-border p-3">
-                      <p className="text-sm font-medium">
-                        {i + 1}. {s.instruction}
-                      </p>
-                      {s.detail && <p className="mt-1 text-sm text-muted-foreground">{s.detail}</p>}
-                      <div className="mt-2 flex gap-2">
-                        {s.required && (
-                          <Badge variant="outline" className="text-xs">
-                            Required
-                          </Badge>
-                        )}
-                        {s.photo_required && (
-                          <Badge variant="outline" className="gap-1 text-xs">
-                            <Camera className="size-3" /> Photo proof
-                          </Badge>
-                        )}
-                      </div>
+            {g.risk_flags.length > 0 && (
+              <div className="space-y-2 rounded-md border border-danger/30 bg-danger/5 p-3">
+                <p className="flex items-center gap-2 text-sm font-medium text-danger">
+                  <AlertTriangle className="size-4" /> Risk to contain
+                </p>
+                <ul className="space-y-1 text-sm">
+                  {g.risk_flags.map((r) => (
+                    <li key={r.title}>
+                      <span className="font-medium">{r.title}:</span> {r.why}
                     </li>
                   ))}
-                </ol>
+                </ul>
+              </div>
+            )}
+
+            <Section icon={CheckCircle2} title="Do this now">
+              <ol className="list-decimal space-y-1 pl-5 text-sm">
+                {g.immediate_actions.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ol>
+            </Section>
+
+            {g.clarifying_questions.length > 0 && (
+              <Section icon={HelpCircle} title="Confirm before you dispatch">
+                <ul className="list-disc space-y-1 pl-5 text-sm">
+                  {g.clarifying_questions.map((q) => (
+                    <li key={q}>{q}</li>
+                  ))}
+                </ul>
               </Section>
+            )}
 
-              <Section icon={Wrench} title="Brief for the maintenance person">
-                <div className="space-y-3 rounded-md border border-border p-3 text-sm">
-                  <p>{g.vendor_brief.scope}</p>
-                  <BriefList label="Must check" items={g.vendor_brief.must_check} />
-                  <BriefList label="Must NOT do" items={g.vendor_brief.must_not_do} tone="danger" />
-                  <BriefList
-                    label="Bring back as evidence"
-                    items={g.vendor_brief.evidence_required}
-                  />
-                  <BriefList
-                    label="Before leaving the home"
-                    items={g.vendor_brief.before_leaving}
-                  />
-                  <Button size="sm" variant="outline" onClick={() => copy(vendorBriefText(g))}>
-                    <Copy className="size-4" /> Copy brief
-                  </Button>
-                </div>
+            <Section icon={ClipboardCheck} title="Your checklist">
+              <ol className="space-y-2">
+                {g.steps.map((s, i) => (
+                  <li key={s.instruction} className="rounded-md border border-border p-3">
+                    <p className="text-sm font-medium">
+                      {i + 1}. {s.instruction}
+                    </p>
+                    {s.detail && <p className="mt-1 text-sm text-muted-foreground">{s.detail}</p>}
+                    <div className="mt-2 flex gap-2">
+                      {s.required && (
+                        <Badge variant="outline" className="text-xs">
+                          Required
+                        </Badge>
+                      )}
+                      {s.photo_required && (
+                        <Badge variant="outline" className="gap-1 text-xs">
+                          <Camera className="size-3" /> Photo proof
+                        </Badge>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </Section>
+
+            <Section icon={Wrench} title="Brief for the maintenance person">
+              <div className="space-y-3 rounded-md border border-border p-3 text-sm">
+                <p>{g.vendor_brief.scope}</p>
+                <BriefList label="Must check" items={g.vendor_brief.must_check} />
+                <BriefList label="Must NOT do" items={g.vendor_brief.must_not_do} tone="danger" />
+                <BriefList
+                  label="Bring back as evidence"
+                  items={g.vendor_brief.evidence_required}
+                />
+                <BriefList label="Before leaving the home" items={g.vendor_brief.before_leaving} />
+                <Button size="sm" variant="outline" onClick={() => copy(vendorBriefText(g))}>
+                  <Copy className="size-4" /> Copy brief
+                </Button>
+              </div>
+            </Section>
+
+            <Section icon={MessageSquare} title="Message to the guest">
+              <div className="space-y-2 rounded-md border border-border p-3 text-sm">
+                <p className="whitespace-pre-wrap">{g.guest_message}</p>
+                <Button size="sm" variant="outline" onClick={() => copy(g.guest_message)}>
+                  <Copy className="size-4" /> Copy message
+                </Button>
+              </div>
+            </Section>
+
+            {g.owner_note && (
+              <Section icon={MessageSquare} title="If the owner needs to know">
+                <p className="rounded-md border border-border p-3 text-sm whitespace-pre-wrap">
+                  {g.owner_note}
+                </p>
               </Section>
+            )}
 
-              <Section icon={MessageSquare} title="Message to the guest">
-                <div className="space-y-2 rounded-md border border-border p-3 text-sm">
-                  <p className="whitespace-pre-wrap">{g.guest_message}</p>
-                  <Button size="sm" variant="outline" onClick={() => copy(g.guest_message)}>
-                    <Copy className="size-4" /> Copy message
-                  </Button>
-                </div>
+            {g.escalate_if.length > 0 && (
+              <Section icon={AlertTriangle} title="Escalate the moment">
+                <ul className="list-disc space-y-1 pl-5 text-sm">
+                  {g.escalate_if.map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                </ul>
               </Section>
+            )}
 
-              {g.owner_note && (
-                <Section icon={MessageSquare} title="If the owner needs to know">
-                  <p className="rounded-md border border-border p-3 text-sm whitespace-pre-wrap">
-                    {g.owner_note}
-                  </p>
-                </Section>
-              )}
+            <Separator />
+            <Button onClick={openMatter} disabled={creating} className="w-full">
+              {creating ? "Opening…" : "Open a ticket with this plan"}
+              <ArrowRight className="size-4" />
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              The checklist becomes the ticket&apos;s steps, the clocks start, and this coaching
+              session stays attached to the record.
+            </p>
+          </SectionCard>
 
-              {g.escalate_if.length > 0 && (
-                <Section icon={AlertTriangle} title="Escalate the moment">
-                  <ul className="list-disc space-y-1 pl-5 text-sm">
-                    {g.escalate_if.map((e) => (
-                      <li key={e}>{e}</li>
-                    ))}
-                  </ul>
-                </Section>
-              )}
-
-              <Separator />
-              <Button onClick={openMatter} disabled={creating} className="w-full">
-                {creating ? "Opening…" : "Open a ticket with this plan"}
-                <ArrowRight className="size-4" />
-              </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                The checklist becomes the ticket&apos;s steps, the clocks start, and this coaching
-                session stays attached to the record.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Something changed? Keep asking.</CardTitle>
-              <CardDescription>
+          <SectionCard
+            title="Something changed? Keep asking."
+            description={
+              <>
                 &ldquo;The handyman says the shutoff is seized.&rdquo; &middot; &ldquo;Guest wants
                 to leave.&rdquo;
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {chat.map((m, i) => (
-                <div
-                  key={i}
-                  className={
-                    m.role === "user"
-                      ? "ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
-                      : "max-w-[95%] whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm"
-                  }
-                >
-                  {m.content}
-                </div>
-              ))}
-              {follow.isPending && <Skeleton className="h-16 w-full" />}
-              <form
-                className="flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const q = followUp.trim();
-                  if (!q) return;
-                  setFollowUp("");
-                  follow.mutate(q);
-                }}
+              </>
+            }
+            bodyClassName="space-y-3"
+          >
+            {chat.map((m, i) => (
+              <div
+                key={i}
+                className={
+                  m.role === "user"
+                    ? "ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
+                    : "max-w-[95%] whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm"
+                }
               >
-                <Input
-                  value={followUp}
-                  onChange={(e) => setFollowUp(e.target.value)}
-                  placeholder="Ask the coach a follow-up…"
-                />
-                <Button type="submit" disabled={follow.isPending || !followUp.trim()}>
-                  <Send className="size-4" />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                {m.content}
+              </div>
+            ))}
+            {follow.isPending && <Skeleton className="h-16 w-full" />}
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = followUp.trim();
+                if (!q) return;
+                setFollowUp("");
+                follow.mutate(q);
+              }}
+            >
+              <Input
+                value={followUp}
+                onChange={(e) => setFollowUp(e.target.value)}
+                placeholder="Ask the coach a follow-up…"
+              />
+              <Button type="submit" disabled={follow.isPending || !followUp.trim()}>
+                <Send className="size-4" />
+              </Button>
+            </form>
+          </SectionCard>
         </div>
       )}
     </div>
