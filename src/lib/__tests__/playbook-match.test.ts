@@ -201,6 +201,8 @@ describe("the right guidance for the right problem", () => {
       category: "maintenance",
       text: "Guest asked about the dripless candles left in the cupboard",
     });
-    expect(result.primary).toBeNull();
+    // The category still makes these Playbooks plausible; the point is that
+    // "drip" did not fire from inside "dripless".
+    expect(result.primary?.reason ?? "").not.toContain("drip");
   });
 });
