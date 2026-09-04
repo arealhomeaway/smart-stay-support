@@ -210,10 +210,23 @@
   --brand-teal: oklch(0.72 0.108 203.1);
   --brand-gold: oklch(0.74 0.095 80.5);
   --brand-ink: oklch(0.199 0.01 220);
+
+  --sky: oklch(0.72 0.1 245);
+  --sage: oklch(0.72 0.09 158);
+  --amber: oklch(0.78 0.11 74);
+  --coral: oklch(0.7 0.135 24);
+  --lavender: oklch(0.73 0.105 300);
+  --aqua: oklch(0.74 0.06 195);
+  --sand: oklch(0.3 0.012 84);
+  --cool-grey: oklch(0.74 0.01 240);
+
   --background: oklch(0.199 0.01 220); /* Ink */
   --canvas: oklch(0.199 0.01 220);
   --sunken: oklch(0.17 0.01 220);
   --elevated: oklch(0.3 0.014 222.5);
+  --warm: oklch(0.235 0.012 84);
+  --warm-deep: oklch(0.205 0.012 84);
+  --plate: oklch(0.235 0.014 215);
 
   --foreground: oklch(0.95 0.006 88.6);
   --card: oklch(0.27 0.013 222.5); /* Charcoal panel */
@@ -225,27 +238,27 @@
   --secondary: oklch(0.32 0.014 222.5);
   --secondary-foreground: oklch(0.95 0.006 88.6);
   --muted: oklch(0.3 0.013 222.5);
-  --muted-foreground: oklch(0.74 0.01 223.7);
-  --accent: oklch(0.68 0.13 48.4);
+  --muted-foreground: oklch(0.76 0.01 223.7);
+  --accent: var(--amber);
   --accent-foreground: oklch(0.199 0.01 220);
-  --destructive: oklch(0.62 0.18 27);
-  --destructive-foreground: oklch(0.99 0.004 88.6);
+  --destructive: var(--coral);
+  --destructive-foreground: oklch(0.16 0.03 27);
   --border: oklch(1 0 0 / 13%);
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.72 0.108 203.1);
-  --success: oklch(0.66 0.12 160);
+  --success: var(--sage);
   --success-foreground: oklch(0.199 0.01 220);
-  --warning: oklch(0.74 0.095 80.5);
+  --warning: var(--amber);
   --warning-foreground: oklch(0.199 0.01 220);
-  --danger: oklch(0.65 0.18 27);
+  --danger: var(--coral);
   --danger-foreground: oklch(0.16 0.03 27);
-  --info: oklch(0.72 0.108 203.1);
+  --info: var(--sky);
   --info-foreground: oklch(0.199 0.01 220);
-  --chart-1: oklch(0.72 0.108 203.1);
-  --chart-2: oklch(0.68 0.13 48.4);
-  --chart-3: oklch(0.74 0.095 80.5);
-  --chart-4: oklch(0.66 0.12 160);
-  --chart-5: oklch(0.85 0.01 88.6);
+  --chart-1: var(--sky);
+  --chart-2: var(--sage);
+  --chart-3: var(--amber);
+  --chart-4: var(--lavender);
+  --chart-5: var(--aqua);
   --sidebar: oklch(0.24 0.012 222.5);
   --sidebar-foreground: oklch(0.95 0.006 88.6);
   --sidebar-primary: oklch(0.72 0.108 203.1);
@@ -255,22 +268,23 @@
   --sidebar-border: oklch(1 0 0 / 13%);
   --sidebar-ring: oklch(0.72 0.108 203.1);
 
-  --team-a: oklch(0.72 0.11 268);
+  --team-a: oklch(0.72 0.11 262);
   --team-b: oklch(0.72 0.108 203.1);
-  --leadership: oklch(0.72 0.1 315);
-  --state-active: oklch(0.72 0.1 232);
-  --state-waiting: oklch(0.76 0.09 80.5);
-  --state-blocked: oklch(0.7 0.14 32);
-  --state-done: oklch(0.7 0.11 158);
-  --state-info: oklch(0.74 0.025 240);
+  --leadership: var(--lavender);
+  --state-active: var(--sky);
+  --state-waiting: var(--amber);
+  --state-blocked: var(--coral);
+  --state-done: var(--sage);
+  --state-info: var(--aqua);
   --module-ops: oklch(0.72 0.108 203.1);
-  --module-onboarding: oklch(0.72 0.12 152);
-  --module-owner: oklch(0.76 0.095 80.5);
-  --module-approval: oklch(0.72 0.1 315);
-  --module-coverage: oklch(0.72 0.11 268);
-  --module-override: oklch(0.72 0.13 48.4);
-  --triage: oklch(0.79 0.022 250);
+  --module-onboarding: var(--sage);
+  --module-owner: oklch(0.78 0.09 78);
+  --module-approval: var(--lavender);
+  --module-coverage: var(--sky);
+  --module-override: var(--amber);
+  --triage: var(--cool-grey);
 }
+
 
 /**
  * Cross-team triage blocks: slate colour plus a diagonal hatch, so they are
