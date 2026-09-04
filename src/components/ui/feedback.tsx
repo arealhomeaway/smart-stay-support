@@ -122,3 +122,63 @@ export function ProgressSteps({
     </ol>
   );
 }
+
+/**
+ * A brief, tasteful milestone moment.
+ *
+ * Reserved for work that genuinely finished: a ticket closed, a review
+ * completed, a work order finished, an onboarding stage cleared, a home going
+ * live. Never for an ordinary save. The burst fades on its own; the sentence
+ * that explains what happens next stays.
+ */
+export function Celebrate({
+  title,
+  children,
+  action,
+  className,
+}: {
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+}) {
+  const pieces = [
+    { left: "8%", delay: "0ms", tone: "bg-sage" },
+    { left: "22%", delay: "80ms", tone: "bg-sky" },
+    { left: "38%", delay: "40ms", tone: "bg-amber" },
+    { left: "56%", delay: "120ms", tone: "bg-lavender" },
+    { left: "72%", delay: "20ms", tone: "bg-coral" },
+    { left: "88%", delay: "100ms", tone: "bg-aqua" },
+  ];
+  return (
+    <div
+      role="status"
+      className={cn(
+        "relative overflow-hidden rounded-xl border border-sage/25 bg-sage/8 px-4 py-4",
+        className,
+      )}
+    >
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-16">
+        {pieces.map((p) => (
+          <span
+            key={p.left}
+            className={cn("confetti-piece", p.tone)}
+            style={{ left: p.left, animationDelay: p.delay }}
+          />
+        ))}
+      </div>
+      <div className="relative flex items-start gap-3">
+        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-sage text-white">
+          <Check className="size-4.5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-semibold">{title}</p>
+          {children ? (
+            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{children}</p>
+          ) : null}
+        </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
+    </div>
+  );
+}
