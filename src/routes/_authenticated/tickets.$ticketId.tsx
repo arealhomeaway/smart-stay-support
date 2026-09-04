@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { humanizeHistoryText } from "@/lib/ticket-lifecycle";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
