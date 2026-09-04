@@ -347,6 +347,16 @@ export async function routeOwnerDecision(
   const to = contact.data?.owner_email ?? null;
   if (!to) return { channel: "none" as const, to: null };
 
+  // Every approval carries one short reference. Resolve prints it in the
+  // subject and the body, so when the homeowner replies the answer can be filed
+  // against this exact decision rather than guessed at.
+  const { approvalRef } = await import("./approval-reference");
+  let reference: string | null = null;
+  if (input.approvalId) {
+    const row = await supabase.from("approvals").select("ref").eq("id", input.approvalId).maybeSingle();
+    reference = approvalRef(row.data?.ref ?? null);
+  }
+
   const { sendEmail, emailShell } = await import("./email.server");
   const body = [
     `${contact.data?.owner_name ?? "Hello"},`,
@@ -359,7 +369,7 @@ export async function routeOwnerDecision(
     "",
     "Reply to this email with approve or hold, and we will record your answer against this request.",
     "",
-    `Reference: ${input.approvalId ?? ""}`,
+    reference ? `Please keep ${reference} in the subject line so your answer reaches the right request.` : "",
   ]
     .filter((line) => line !== "")
     .join("\n");
@@ -367,14 +377,19 @@ export async function routeOwnerDecision(
   const html = emailShell(`Approval needed for ${home}`, body, undefined, "owner");
   const result = await sendEmail({
     to,
-    subject: `Approval needed — ${input.subject} at ${home}`,
+    subject: `Approval needed — ${input.subject} at ${home}${reference ? ` [${reference}]` : ""}`,
     html,
     purpose: "onboarding_owner_approval",
   });
   if (input.approvalId) {
     await supabase
       .from("approvals")
-      .update({ external_reference: `email:${to}`, detail: `Sent to ${to} (${result.status})` })
+      .update({
+        external_reference: `email:${to}`,
+        detail: `Sent to ${to} (${result.status})`,
+        owner_email_to: to,
+        owner_email_sent_at: new Date().toISOString(),
+      })
       .eq("id", input.approvalId);
   }
   await writeAudit({

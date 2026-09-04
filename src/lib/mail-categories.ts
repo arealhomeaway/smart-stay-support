@@ -19,6 +19,14 @@ export const CREATED_TAG = "Resolve: ticket created";
 export const CLOSED_TAG = "Resolve: ticket closed";
 
 /**
+ * Applied by a person to a homeowner's reply. Files that reply against the
+ * decision it answers. It never decides anything on the homeowner's behalf.
+ */
+export const OWNER_RESPONSE_TAG = "Resolve: Owner Approval Response";
+/** Applied by Resolve once the reply is filed and visible to staff. */
+export const OWNER_RESPONSE_FILED_TAG = "Resolve: owner response received";
+
+/**
  * The retired "task" vocabulary. Never written again, but still recognised so
  * mail handled under the old protocol is never reprocessed into a duplicate.
  */
@@ -32,10 +40,13 @@ export const RESOLVE_TAGS = [
   CREATE_LEAD_TAG,
   CREATED_TAG,
   CLOSED_TAG,
+  OWNER_RESPONSE_TAG,
+  OWNER_RESPONSE_FILED_TAG,
   LEGACY_CREATE_TAG,
   LEGACY_CREATED_TAG,
   LEGACY_COMPLETED_TAG,
 ];
+
 
 export type TriggerKind = "ticket" | "lead";
 
@@ -69,15 +80,22 @@ export function requestsRecord(categories: Categories) {
   return triggerKind(categories) !== null;
 }
 
+/** True when a person marked this message as a homeowner's answer. */
+export function requestsOwnerResponse(categories: Categories) {
+  return hasTag(categories, OWNER_RESPONSE_TAG) && !hasTag(categories, OWNER_RESPONSE_FILED_TAG);
+}
+
 /** True when Resolve has already acted on this message. */
 export function alreadyTagged(categories: Categories) {
   return (
     hasTag(categories, CREATED_TAG) ||
     hasTag(categories, CLOSED_TAG) ||
+    hasTag(categories, OWNER_RESPONSE_FILED_TAG) ||
     hasTag(categories, LEGACY_CREATED_TAG) ||
     hasTag(categories, LEGACY_COMPLETED_TAG)
   );
 }
+
 
 /**
  * Swaps every Resolve category for one, keeping each unrelated category the
@@ -107,4 +125,9 @@ export function categoriesAfterClose(categories: Categories) {
 /** Categories to write when a closed Ticket is reopened. */
 export function categoriesAfterReopen(categories: Categories) {
   return withTag(categories, CREATED_TAG);
+}
+
+/** Categories to write once a homeowner's reply is filed for staff to confirm. */
+export function categoriesAfterOwnerResponse(categories: Categories) {
+  return withTag(categories, OWNER_RESPONSE_FILED_TAG);
 }

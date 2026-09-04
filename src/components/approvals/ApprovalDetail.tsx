@@ -16,6 +16,8 @@ import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { relativeTime } from "@/lib/tickets";
+import { OwnerReplies } from "./OwnerReplies";
+
 
 const KIND_LABEL: Record<string, string> = {
   estimate: "Repair estimate",
@@ -153,6 +155,13 @@ export function ApprovalDetail({
           />
           {a.decision_note ? <PeekRow label="Note" value={a.decision_note} /> : null}
           {q.data?.workOrder ? <PeekRow label="Work order" value={q.data.workOrder.title} /> : null}
+
+          <OwnerReplies
+            approvalId={a.id}
+            pending={a.status === "pending" && a.approver_role === "owner"}
+            onRecorded={() => void q.refetch()}
+          />
+
 
           {linkedTicketId ? (
             <Link

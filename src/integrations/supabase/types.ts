@@ -65,6 +65,83 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_email_responses: {
+        Row: {
+          approval_id: string | null
+          attachments: Json
+          body_text: string | null
+          candidates: Json
+          conversation_id: string | null
+          created_at: string
+          from_address: string | null
+          from_name: string | null
+          has_attachments: boolean
+          id: string
+          internet_message_id: string
+          is_demo: boolean
+          linked_at: string | null
+          linked_by: string | null
+          match_method: string | null
+          message_id: string | null
+          received_at: string | null
+          status: string
+          subject: string | null
+          web_link: string | null
+        }
+        Insert: {
+          approval_id?: string | null
+          attachments?: Json
+          body_text?: string | null
+          candidates?: Json
+          conversation_id?: string | null
+          created_at?: string
+          from_address?: string | null
+          from_name?: string | null
+          has_attachments?: boolean
+          id?: string
+          internet_message_id: string
+          is_demo?: boolean
+          linked_at?: string | null
+          linked_by?: string | null
+          match_method?: string | null
+          message_id?: string | null
+          received_at?: string | null
+          status?: string
+          subject?: string | null
+          web_link?: string | null
+        }
+        Update: {
+          approval_id?: string | null
+          attachments?: Json
+          body_text?: string | null
+          candidates?: Json
+          conversation_id?: string | null
+          created_at?: string
+          from_address?: string | null
+          from_name?: string | null
+          has_attachments?: boolean
+          id?: string
+          internet_message_id?: string
+          is_demo?: boolean
+          linked_at?: string | null
+          linked_by?: string | null
+          match_method?: string | null
+          message_id?: string | null
+          received_at?: string | null
+          status?: string
+          subject?: string | null
+          web_link?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_email_responses_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approvals: {
         Row: {
           amount: number | null
@@ -84,8 +161,12 @@ export type Database = {
           id: string
           is_demo: boolean
           kind: string
+          owner_email_conversation_id: string | null
+          owner_email_sent_at: string | null
+          owner_email_to: string | null
           property_id: string | null
           recorded_by: string | null
+          ref: number | null
           requested_by: string | null
           responded_at: string | null
           response_channel: string | null
@@ -111,8 +192,12 @@ export type Database = {
           id?: string
           is_demo?: boolean
           kind: string
+          owner_email_conversation_id?: string | null
+          owner_email_sent_at?: string | null
+          owner_email_to?: string | null
           property_id?: string | null
           recorded_by?: string | null
+          ref?: number | null
           requested_by?: string | null
           responded_at?: string | null
           response_channel?: string | null
@@ -138,8 +223,12 @@ export type Database = {
           id?: string
           is_demo?: boolean
           kind?: string
+          owner_email_conversation_id?: string | null
+          owner_email_sent_at?: string | null
+          owner_email_to?: string | null
           property_id?: string | null
           recorded_by?: string | null
+          ref?: number | null
           requested_by?: string | null
           responded_at?: string | null
           response_channel?: string | null
