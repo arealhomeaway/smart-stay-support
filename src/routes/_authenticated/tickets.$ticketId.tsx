@@ -1356,15 +1356,28 @@ function MoreActions({
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>More actions</SheetTitle>
-          <SheetDescription>Assignment, handoff and the lanes that are not open.</SheetDescription>
+          <SheetDescription>
+            Assignment, handoff, escalation and the lanes that are not open.
+          </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-8">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           <MatterOwnershipPanel ticket={ticket as any} closed={closed} onChanged={onChanged} />
+          {!closed && (
+            <div className="rounded-lg border border-border/60 p-4">
+              <h3 className="font-medium">Stuck on a decision?</h3>
+              <p className="mb-3 mt-1 text-sm text-muted-foreground">
+                Escalating asks for a decision. You keep the ticket unless the person answering
+                takes it.
+              </p>
+              <EscalationPanel ticketId={String(ticket["id"])} />
+            </div>
+          )}
           {ticket.record_type !== "completed_interaction" && (
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             <HandoffPanel ticket={ticket as any} closed={closed} onChanged={onChanged} />
           )}
+
           {/* Only shows when this property belongs to an Active Owner program. */}
           <OwnerParticipationOffer source="operations" sourceId={String(ticket["id"])} />
           {!branches.recovery && (
