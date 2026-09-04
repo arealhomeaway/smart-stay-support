@@ -9,9 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search } from "lucide-react";
-import { Chip, EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
-import { stateChip } from "@/lib/semantic";
-import { cn } from "@/lib/utils";
+import { EmptyState, LoadingRows, PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import {
   Select,
   SelectContent,
@@ -294,14 +293,14 @@ function PropertiesPage() {
                   )}
                   <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
                     {p.lifecycle_status && p.lifecycle_status !== "live" && (
-                      <Chip className={cn(stateChip("waiting"), "backdrop-blur")}>
+                      <StatusBadge tone="waiting" className="backdrop-blur">
                         {p.lifecycle_status.replace(/_/g, " ")}
-                      </Chip>
+                      </StatusBadge>
                     )}
                     {openCount > 0 && (
-                      <Chip className={cn(stateChip("blocked"), "backdrop-blur")}>
+                      <StatusBadge tone="escalated" className="backdrop-blur">
                         {openCount} open
-                      </Chip>
+                      </StatusBadge>
                     )}
                   </div>
                 </div>

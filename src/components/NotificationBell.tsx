@@ -36,7 +36,7 @@ function timeAgo(iso: string) {
  * The one place Resolve tells a teammate that something is waiting on them.
  * Only actionable events land here — assignment, handoff, approval, reopen.
  */
-export function NotificationBell() {
+export function NotificationBell({ placement = "header" }: { placement?: "header" | "sidebar" } = {}) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -75,25 +75,41 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="relative min-h-11 min-w-11 md:min-h-9 md:min-w-9"
-          aria-label={
-            unread.length
-              ? `Notifications — ${unread.length} waiting on you`
-              : "Notifications"
-          }
-        >
-          <Bell className="size-4" aria-hidden="true" />
-          {unread.length > 0 && (
-            <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-4 text-destructive-foreground">
-              {unread.length > 9 ? "9+" : unread.length}
-            </span>
-          )}
-        </Button>
+        {placement === "sidebar" ? (
+          <button
+            type="button"
+            className="flex h-10 w-full items-center gap-2 rounded-lg px-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+            aria-label={
+              unread.length ? `Notifications — ${unread.length} waiting on you` : "Notifications"
+            }
+          >
+            <Bell className="size-4 shrink-0" aria-hidden="true" />
+            <span className="group-data-[collapsible=icon]:hidden">Notifications</span>
+            {unread.length > 0 && (
+              <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-coral px-1.5 text-[11px] font-semibold leading-5 text-white group-data-[collapsible=icon]:hidden">
+                {unread.length > 9 ? "9+" : unread.length}
+              </span>
+            )}
+          </button>
+        ) : (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="relative min-h-11 min-w-11 md:min-h-9 md:min-w-9"
+            aria-label={
+              unread.length ? `Notifications — ${unread.length} waiting on you` : "Notifications"
+            }
+          >
+            <Bell className="size-4" aria-hidden="true" />
+            {unread.length > 0 && (
+              <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-4 text-destructive-foreground">
+                {unread.length > 9 ? "9+" : unread.length}
+              </span>
+            )}
+          </Button>
+        )}
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[22rem] p-0">
+      <PopoverContent align={placement === "sidebar" ? "start" : "end"} side={placement === "sidebar" ? "right" : "bottom"} className="w-[22rem] p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <p className="text-sm font-semibold">Waiting on you</p>
           {unread.length > 0 && (

@@ -16,10 +16,10 @@ export function PropertyPhoto({
   className,
   rounded = "rounded-lg",
 }: {
-  url?: string | null;
-  name?: string | null;
-  className?: string;
-  rounded?: string;
+  url?: string | null | undefined;
+  name?: string | null | undefined;
+  className?: string | undefined;
+  rounded?: string | undefined;
 }) {
   const label = (name ?? "").trim();
   const initials =

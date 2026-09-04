@@ -2,20 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Sunrise } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OPEN_STATUSES, STATUSES, labelFor, priorityMeta, priorityTone, statusTone } from "@/lib/tickets";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { StatusBadge, ticketTone } from "@/components/ui/status";
+import { usDateTime } from "@/lib/dates";
+import { OPEN_STATUSES, STATUSES, labelFor, priorityMeta } from "@/lib/tickets";
 import { lastAfterHoursWindow, windowLabel, type CoverageConfig } from "@/lib/coverage";
 
 /**
  * Morning handoff: what came out of the last after-hours window still needing
- * daytime Operations. It reads the Ticket record itself — no separate written
- * overnight report is required, because the ticket activity already documents
- * what happened.
- *
- * The view only exists once the coverage window is configured; without hours
- * there is no defined overnight period to report on.
+ * daytime Operations. The Ticket record is the report — nothing separate
+ * needs writing up.
  */
 type Row = {
   id: string;
@@ -30,7 +27,7 @@ type Row = {
   handoff_status: string | null;
   guest_in_residence: boolean | null;
   assignment_note: string | null;
-  properties?: { name: string; nickname: string | null } | null;
+  properties?: { name: string; nickname: string | null; primary_photo_url?: string | null } | null;
 };
 
 /** Why this ticket is on the morning list — plain reasons, not internal codes. */
@@ -45,7 +42,7 @@ function reasons(t: Row) {
   return out;
 }
 
-export function OvernightHandoffPanel({ className }: { className?: string }) {
+export function OvernightHandoffPanel({ className }: { className?: string | undefined }) {
   const { data, isLoading } = useQuery({
     queryKey: ["overnight-handoff"],
     queryFn: async () => {
@@ -60,7 +57,7 @@ export function OvernightHandoffPanel({ className }: { className?: string }) {
       const { data: rows, error } = await supabase
         .from("tickets")
         .select(
-          "id, title, status, priority, reported_at, vendor_status, vendor_dispatched_at, vendor_completed_at, next_review_at, handoff_status, guest_in_residence, assignment_note, properties(name, nickname)",
+          "id, title, status, priority, reported_at, vendor_status, vendor_dispatched_at, vendor_completed_at, next_review_at, handoff_status, guest_in_residence, assignment_note, properties(name, nickname, primary_photo_url)",
         )
         .eq("is_demo", false)
         .is("archived_at", null)
@@ -79,59 +76,62 @@ export function OvernightHandoffPanel({ className }: { className?: string }) {
   if (isLoading || !data) return <Skeleton className={className ?? "h-48 w-full"} />;
 
   const label = windowLabel(data.cfg);
+  const openCount = data.rows.length;
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Sunrise className="size-4" /> Overnight handoff
-          <Badge
-            variant="outline"
-            className={data.rows.length === 0 ? "border-success/30 bg-success/10 text-success" : "border-warning/40 bg-warning/10"}
-          >
-            {data.rows.length}
-          </Badge>
-        </CardTitle>
-        <CardDescription>
-          {data.window
-            ? `Unresolved work from the ${label} window that started ${data.window.rosterDate}. The Ticket record is the report — nothing separate needs writing up.`
-            : "Not available until the after-hours coverage window is configured."}
-        </CardDescription>
-      </CardHeader>
-      {data.window && (
-        <CardContent className="space-y-2 text-sm">
-          {data.rows.length === 0 ? (
-            <p className="text-muted-foreground">Nothing from the overnight window is still open.</p>
-          ) : (
-            data.rows.map((t) => (
-              <Link
-                key={t.id}
-                to="/tickets/$ticketId"
-                params={{ ticketId: t.id }}
-                className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 transition-colors hover:bg-secondary"
-              >
-                <Badge variant="outline" className={priorityTone(t.priority)}>
-                  {priorityMeta(t.priority).short}
-                </Badge>
-                <span className="font-medium">{t.title}</span>
-                <span className="text-muted-foreground">
-                  {t.properties?.nickname ?? t.properties?.name ?? "No property"}
-                </span>
-                <Badge variant="outline" className={statusTone(t.status)}>
-                  {labelFor(STATUSES, t.status)}
-                </Badge>
-                <span className="ml-auto flex flex-wrap gap-1">
-                  {reasons(t).map((r) => (
-                    <Badge key={r} variant="outline" className="font-normal">
-                      {r}
-                    </Badge>
-                  ))}
-                </span>
-              </Link>
-            ))
-          )}
-        </CardContent>
-      )}
-    </Card>
+    <section className={className ? `surface p-4 ${className}` : "surface p-4"}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Sunrise className="size-4 text-amber" />
+        <h2 className="text-base font-semibold tracking-tight">Overnight handoff</h2>
+        <StatusBadge tone={openCount === 0 ? "resolved" : "waiting"}>
+          {openCount} open
+        </StatusBadge>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {data.window
+          ? `Unresolved work from the ${label} window that started ${data.window.rosterDate}.`
+          : "Not available until the after-hours coverage window is configured."}
+      </p>
+
+      {data.window ? (
+        openCount === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Nothing from overnight still needs attention.
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-border">
+            {data.rows.map((t) => (
+              <li key={t.id}>
+                <Link
+                  to="/tickets/$ticketId"
+                  params={{ ticketId: t.id }}
+                  className="flex flex-wrap items-center gap-3 py-2.5 transition-colors hover:bg-secondary/60"
+                >
+                  <PropertyPhoto
+                    url={t.properties?.primary_photo_url}
+                    name={t.properties?.nickname ?? t.properties?.name}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{t.title}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {t.properties?.nickname ?? t.properties?.name ?? "No property"} ·{" "}
+                      {usDateTime(t.reported_at)}
+                    </span>
+                  </span>
+                  <StatusBadge tone={ticketTone(t.status)}>{labelFor(STATUSES, t.status)}</StatusBadge>
+                  <span className="flex flex-wrap gap-1">
+                    {reasons(t).map((r) => (
+                      <span key={r} className="chip border-cool-grey/25 bg-cool-grey/10 text-cool-grey">
+                        {r}
+                      </span>
+                    ))}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+    </section>
   );
 }

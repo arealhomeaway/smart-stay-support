@@ -20,6 +20,8 @@ import {
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge, ticketTone } from "@/components/ui/status";
+import { usDate, usDateTime } from "@/lib/dates";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -233,7 +235,9 @@ function HubHeader({ hub }: { hub: Hub }) {
             <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
               {p.market && <Badge variant="secondary">{p.market}</Badge>}
               {p.neighborhood && <Badge variant="outline">{p.neighborhood}</Badge>}
-              {p.lifecycleStatus && <Badge variant="outline">{label(p.lifecycleStatus)}</Badge>}
+              {p.lifecycleStatus && p.lifecycleStatus !== "live" && (
+                <StatusBadge tone="waiting">{label(p.lifecycleStatus)}</StatusBadge>
+              )}
               {p.minStayMonths ? <Badge variant="outline">{p.minStayMonths}-month minimum</Badge> : null}
               {p.onboardingStage && <Badge variant="outline">Stage: {label(p.onboardingStage)}</Badge>}
               <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Active" : "Inactive"}</Badge>
@@ -355,7 +359,7 @@ function DetailsTab({ hub }: { hub: Hub }) {
                       <div className="font-medium">{fld.label}</div>
                       <div className="text-xs text-muted-foreground">
                         {fld.source}
-                        {fld.asOf ? ` · as of ${fld.asOf.slice(0, 10)}` : ""}
+                        {fld.asOf ? ` · as of ${usDate(fld.asOf)}` : ""}
                       </div>
                     </div>
                     <div className="text-right">
@@ -405,7 +409,7 @@ function ContactsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
             <CardDescription>
               {owner.source === "ownerrez" ? "OwnerRez owner record" : owner.source}
               {owner.propertyCount > 1 ? ` · owns ${owner.propertyCount} homes with ARHA` : " · single home"}
-              {` · as of ${owner.syncedAt.slice(0, 10)}`}
+              {` · as of ${usDate(owner.syncedAt)}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-1 text-sm sm:grid-cols-2">
@@ -433,7 +437,7 @@ function ContactsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
           <CardContent className="space-y-1 text-sm">
             <p>{c.email ?? "No email on file"}</p>
             <p>{c.phone ?? "No phone on file"}</p>
-            {c.syncedAt && <p className="text-xs text-muted-foreground">as of {c.syncedAt.slice(0, 10)}</p>}
+            {c.syncedAt && <p className="text-xs text-muted-foreground">as of {usDate(c.syncedAt)}</p>}
           </CardContent>
         </Card>
       ))}
@@ -507,7 +511,7 @@ function OnboardingTab({ hub }: { hub: Hub }) {
                   <div className="font-medium">{t.title}</div>
                   <div className="text-xs text-muted-foreground">
                     {label(t.stage)}
-                    {t.dueOn ? ` · due ${t.dueOn}` : ""}
+                    {t.dueOn ? ` · due ${usDate(t.dueOn)}` : ""}
                   </div>
                 </div>
                 {hub.viewer.staff && !t.assigned && <Badge variant="outline">Unassigned</Badge>}
@@ -591,8 +595,8 @@ function OperationsTab({ hub }: { hub: Hub }) {
                   <span className="font-medium">ARHA-{t.ref}</span> {t.title}
                 </span>
                 <span className="flex items-center gap-2">
-                  <Badge variant={t.priority === "p1" ? "destructive" : "outline"}>{String(t.priority).toUpperCase()}</Badge>
-                  <Badge variant="secondary">{label(t.status)}</Badge>
+                  <StatusBadge tone={t.priority === "p1" ? "escalated" : "context"}>{String(t.priority).toUpperCase()}</StatusBadge>
+                  <StatusBadge tone={ticketTone(t.status)}>{label(t.status)}</StatusBadge>
                 </span>
               </Link>
             ))
@@ -696,7 +700,7 @@ function ApprovalsTab({ hub }: { hub: Hub }) {
 
 function ActivityTab({ hub }: { hub: Hub }) {
   if (hub.activity.length === 0) {
-    return <Empty text="No Resolve activity recorded for this home yet. Historical Notion, Asana and Breezeway history stays in those systems." />;
+    return <Empty text="No activity recorded for this home yet." />;
   }
   return (
     <Card>
@@ -710,7 +714,7 @@ function ActivityTab({ hub }: { hub: Hub }) {
           <div key={a.id} className="border-b border-border/50 pb-2 last:border-0">
             <div className="font-medium">{label(a.action)}</div>
             <div className="text-xs text-muted-foreground">
-              {a.actor ?? "ARHA"} · {a.at.slice(0, 16).replace("T", " ")}
+              {a.actor ?? "ARHA"} · {usDateTime(a.at)}
               {a.reason ? ` · ${a.reason}` : ""}
             </div>
           </div>

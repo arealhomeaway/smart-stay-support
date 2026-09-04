@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Chip } from "@/components/ui/page";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { usDate } from "@/lib/dates";
 import {
   Select,
   SelectContent,
@@ -66,6 +68,7 @@ type WorkOrderRow = WorkOrderLike & {
   service_category: string | null;
   scope: string | null;
   warranty_contact: string | null;
+  created_at?: string | null;
 };
 
 const EMERGENCY_OPTIONS = Object.keys(EMERGENCY_REASON_LABELS) as EmergencyReason[];
@@ -87,6 +90,13 @@ function bucketState(bucket: ReturnType<typeof workOrderBucket>) {
   if (bucket === "needs_action") return "blocked" as const;
   if (bucket === "permanent_pending" || bucket === "evidence_missing") return "active" as const;
   return "waiting" as const;
+}
+
+function bucketTone(bucket: ReturnType<typeof workOrderBucket>): StatusTone {
+  if (bucket === "closed") return "resolved";
+  if (bucket === "needs_action") return "escalated";
+  if (bucket === "permanent_pending" || bucket === "evidence_missing") return "progress";
+  return "waiting";
 }
 
 export function TicketWorkOrderPanel({
@@ -208,9 +218,7 @@ export function TicketWorkOrderPanel({
     <Card>
       <CardHeader>
         <CardTitle>Send for repair</CardTitle>
-        <CardDescription>
-          The execution and cost record for this repair — authority, warranty and vendor commitments in one place.
-        </CardDescription>
+        <CardDescription>Cost, approval and vendor tracking for this repair.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {existing.map((wo) => {
@@ -220,26 +228,28 @@ export function TicketWorkOrderPanel({
           const advice = secondQuoteAdvice(wo);
           const blockers = closureBlockers(wo);
           return (
-            <div key={wo.id} className="space-y-2 rounded-md border px-3 py-2">
+            <div key={wo.id} className="space-y-2 rounded-lg bg-sunken px-3 py-2.5">
               <div className="flex flex-wrap items-center gap-2">
-                <Chip className={stateChip(bucketState(bucket))}>{BUCKET_LABELS[bucket]}</Chip>
+                <StatusBadge tone={bucketTone(bucket)}>{BUCKET_LABELS[bucket]}</StatusBadge>
                 <Chip>{PHASE_LABELS[wo.phase === "mitigation" ? "mitigation" : "permanent"]}</Chip>
                 <Chip>{STAGE_LABELS[derivedStage(wo)]}</Chip>
                 {wo.service_category ? <Chip>{wo.service_category}</Chip> : null}
+                {wo.created_at ? (
+                  <span className="text-[0.6875rem] text-muted-foreground">Opened {usDate(wo.created_at as string)}</span>
+                ) : null}
               </div>
 
               <p className="font-medium">{nextAction(wo)}</p>
               <p className="text-xs text-muted-foreground">{verdict.reason}</p>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="numeric text-xs text-muted-foreground">
                 Quote {money(wo.quote_amount as number | null)} · approved{" "}
                 {money(wo.approved_amount as number | null)} · final {money(wo.final_cost as number | null)}
               </p>
 
               {wo.warranty_may_apply && !wo.warranty_override_reason ? (
-                <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-xs">
-                  Warranty may apply{wo.warranty_contact ? ` — ${wo.warranty_contact}` : ""}. Confirm coverage before
-                  committing to a paid repair.
+                <p className="rounded-md border border-amber/25 bg-amber/10 px-2 py-1 text-xs">
+                  Warranty may apply{wo.warranty_contact ? ` — ${wo.warranty_contact}` : ""}. Confirm coverage first.
                 </p>
               ) : null}
 

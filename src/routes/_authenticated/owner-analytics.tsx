@@ -16,8 +16,8 @@ import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { useDemo } from "@/components/DemoProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingPage, PageHeader, SectionBand, StatTile } from "@/components/ui/page";
+import { usDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/owner-analytics")({
   head: () => ({
@@ -88,18 +88,6 @@ function download(rows: OwnerProgramMetric[]) {
   URL.revokeObjectURL(url);
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <Card>
-      <CardContent className="space-y-1 p-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="font-display text-2xl font-semibold">{value}</p>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-      </CardContent>
-    </Card>
-  );
-}
-
 function OwnerAnalyticsPage() {
   const load = useServerFn(ownerAnalytics);
   const { demoMode } = useDemo();
@@ -113,21 +101,19 @@ function OwnerAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Active Owner analytics</h1>
-          <p className="text-sm text-muted-foreground">
-            Program goal is {OWNER_GOAL_HOURS}+ hours for the homeowner; ARHA paces to the{" "}
-            {OPERATING_TARGET_HOURS}-hour internal operating target.
-          </p>
-        </div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <PageHeader
+          eyebrow="Insight"
+          title="Active Owner analytics"
+          description={`Program goal is ${OWNER_GOAL_HOURS}+ hours for the homeowner; ARHA paces to the ${OPERATING_TARGET_HOURS}-hour internal operating target.`}
+        />
         <Button variant="outline" disabled={rows.length === 0} onClick={() => download(rows)}>
           <Download className="mr-2 size-4" /> Export CSV
         </Button>
       </div>
 
       {q.isLoading ? (
-        <Skeleton className="h-96 w-full" />
+        <LoadingPage />
       ) : q.error ? (
         <p className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
           {(q.error as Error).message}
@@ -135,125 +121,137 @@ function OwnerAnalyticsPage() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat
+            <StatTile
               label="Active programs"
-              value={String(data?.totals.activePrograms ?? 0)}
+              value={data?.totals.activePrograms ?? 0}
               hint={`${data?.totals.properties ?? 0} homes enrolled`}
             />
-            <Stat
+            <StatTile
               label="Reported hours"
-              value={`${data?.totals.reportedHours ?? 0}`}
+              value={data?.totals.reportedHours ?? 0}
               hint={`${data?.totals.approvedHours ?? 0} ARHA-approved`}
             />
-            <Stat
+            <StatTile
               label="Awaiting review"
               value={`${data?.totals.pendingEntries ?? 0} entries`}
+              tone={(data?.totals.pendingEntries ?? 0) > 0 ? "attention" : "positive"}
               hint={`${data?.totals.pendingHours ?? 0} hours pending`}
             />
-            <Stat
+            <StatTile
               label="Behind pace"
-              value={String(data?.totals.behind ?? 0)}
+              value={data?.totals.behind ?? 0}
+              tone={(data?.totals.behind ?? 0) > 0 ? "attention" : "positive"}
               hint={`${data?.totals.stale ?? 0} with no entry in 14+ days`}
             />
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="size-4" /> Programs
-              </CardTitle>
-              <CardDescription>
-                Average {data?.totals.averageReportedHours ?? 0} reported hours per active program,{" "}
-                {data?.totals.averageVarianceHours ?? 0} hours against benchmark.{" "}
-                {data?.totals.goalMet ?? 0} above the {OWNER_GOAL_HOURS}-hour goal.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {rows.length === 0 ? (
-                <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  No live owner programs yet.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
+          <div>
+            <SectionBand
+              title="Programs"
+              hint={`Average ${data?.totals.averageReportedHours ?? 0} reported hrs/program · ${data?.totals.averageVarianceHours ?? 0} vs benchmark · ${data?.totals.goalMet ?? 0} above the ${OWNER_GOAL_HOURS}-hour goal`}
+              actions={<Users className="size-4 text-muted-foreground" />}
+            />
+            {rows.length === 0 ? (
+              <p className="surface p-6 text-center text-sm text-muted-foreground">No live owner programs yet.</p>
+            ) : (
+              <div className="surface overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="px-5 py-2.5">Owner</th>
+                      <th className="px-5 py-2.5">Status</th>
+                      <th className="px-5 py-2.5">Day</th>
+                      <th className="px-5 py-2.5 text-right">Reported</th>
+                      <th className="px-5 py-2.5 text-right">Variance</th>
+                      <th className="px-5 py-2.5">Pace</th>
+                      <th className="px-5 py-2.5">Last entry</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.programId} className="border-b last:border-0">
+                        <td className="px-5 py-2.5">
+                          <Link
+                            to="/owner-programs"
+                            className="font-medium hover:underline"
+                            title={r.ownerEmail ?? undefined}
+                          >
+                            {r.ownerName}
+                          </Link>
+                          <span className="block text-xs text-muted-foreground">
+                            {r.properties} home{r.properties === 1 ? "" : "s"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-2.5">
+                          <Badge variant="outline" className={PROGRAM_STATUS_META[r.status]?.tone}>
+                            {PROGRAM_STATUS_META[r.status]?.label ?? r.status}
+                          </Badge>
+                        </td>
+                        <td className="numeric px-5 py-2.5 whitespace-nowrap">
+                          {r.day}/90
+                          <span className="block text-xs text-muted-foreground">{r.daysLeft} left</span>
+                        </td>
+                        <td className="numeric px-5 py-2.5 text-right font-medium">{r.reportedHours}</td>
+                        <td
+                          className={`numeric px-5 py-2.5 text-right ${r.varianceHours < 0 ? "text-destructive" : "text-sage"}`}
+                        >
+                          {r.varianceHours > 0 ? "+" : ""}
+                          {r.varianceHours}
+                        </td>
+                        <td className="px-5 py-2.5">
+                          <Badge variant="outline" className={PROGRESS_META[r.state].tone}>
+                            {PROGRESS_META[r.state].label}
+                          </Badge>
+                        </td>
+                        <td className="numeric px-5 py-2.5 whitespace-nowrap text-muted-foreground">
+                          {r.lastEntryAt ? `${usDate(r.lastEntryAt)} (${r.daysSinceLastEntry}d)` : "No entries"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {rows.length > 0 && (
+              <details className="group mt-3">
+                <summary className="cursor-pointer text-sm font-medium text-primary underline-offset-2 hover:underline">
+                  Show full benchmark breakdown
+                </summary>
+                <div className="surface mt-2 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                        <th className="py-2 pr-3">Owner</th>
-                        <th className="py-2 pr-3">Status</th>
-                        <th className="py-2 pr-3">Day</th>
-                        <th className="py-2 pr-3 text-right">Reported</th>
-                        <th className="py-2 pr-3 text-right">Approved</th>
-                        <th className="py-2 pr-3 text-right">Pending</th>
-                        <th className="py-2 pr-3 text-right">Benchmark</th>
-                        <th className="py-2 pr-3 text-right">Variance</th>
-                        <th className="py-2 pr-3 text-right">Hrs/week needed</th>
-                        <th className="py-2 pr-3">Pace</th>
-                        <th className="py-2">Last entry</th>
+                        <th className="px-5 py-2.5">Owner</th>
+                        <th className="px-5 py-2.5 text-right">Approved</th>
+                        <th className="px-5 py-2.5 text-right">Pending</th>
+                        <th className="px-5 py-2.5 text-right">Benchmark</th>
+                        <th className="px-5 py-2.5 text-right">% of target</th>
+                        <th className="px-5 py-2.5 text-right">Hrs/week needed</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r) => (
                         <tr key={r.programId} className="border-b last:border-0">
-                          <td className="py-2 pr-3">
-                            <Link
-                              to="/owner-programs"
-                              className="font-medium hover:underline"
-                              title={r.ownerEmail ?? undefined}
-                            >
-                              {r.ownerName}
-                            </Link>
-                            <span className="block text-xs text-muted-foreground">
-                              {r.properties} home{r.properties === 1 ? "" : "s"}
-                            </span>
-                          </td>
-                          <td className="py-2 pr-3">
-                            <Badge variant="outline" className={PROGRAM_STATUS_META[r.status]?.tone}>
-                              {PROGRAM_STATUS_META[r.status]?.label ?? r.status}
-                            </Badge>
-                          </td>
-                          <td className="py-2 pr-3 whitespace-nowrap">
-                            {r.day}/90
-                            <span className="block text-xs text-muted-foreground">
-                              {r.daysLeft} left
-                            </span>
-                          </td>
-                          <td className="py-2 pr-3 text-right font-medium">{r.reportedHours}</td>
-                          <td className="py-2 pr-3 text-right">{r.approvedHours}</td>
-                          <td className="py-2 pr-3 text-right">{r.pendingHours}</td>
-                          <td className="py-2 pr-3 text-right text-muted-foreground">
-                            {r.benchmarkHours}
-                          </td>
-                          <td
-                            className={`py-2 pr-3 text-right ${r.varianceHours < 0 ? "text-destructive" : "text-emerald-700"}`}
-                          >
-                            {r.varianceHours > 0 ? "+" : ""}
-                            {r.varianceHours}
-                          </td>
-                          <td className="py-2 pr-3 text-right">{r.hoursPerWeekNeeded ?? "—"}</td>
-                          <td className="py-2 pr-3">
-                            <Badge variant="outline" className={PROGRESS_META[r.state].tone}>
-                              {PROGRESS_META[r.state].label}
-                            </Badge>
-                          </td>
-                          <td className="py-2 whitespace-nowrap text-muted-foreground">
-                            {r.lastEntryAt
-                              ? `${new Date(r.lastEntryAt).toLocaleDateString()} (${r.daysSinceLastEntry}d)`
-                              : "No entries"}
-                          </td>
+                          <td className="px-5 py-2.5 font-medium">{r.ownerName}</td>
+                          <td className="numeric px-5 py-2.5 text-right">{r.approvedHours}</td>
+                          <td className="numeric px-5 py-2.5 text-right">{r.pendingHours}</td>
+                          <td className="numeric px-5 py-2.5 text-right text-muted-foreground">{r.benchmarkHours}</td>
+                          <td className="numeric px-5 py-2.5 text-right">{r.percentOfOperatingTarget}%</td>
+                          <td className="numeric px-5 py-2.5 text-right">{r.hoursPerWeekNeeded ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </details>
+            )}
+          </div>
 
           {(data?.totals.flaggedEntries ?? 0) > 0 && (
-            <p className="flex items-center gap-2 text-sm text-amber-700">
+            <p className="flex items-center gap-2 text-sm text-amber">
               <TrendingDown className="size-4" />
-              {data?.totals.flaggedEntries} participation entries are flagged for supervisor
-              attention.
+              {data?.totals.flaggedEntries} participation entries are flagged for supervisor attention.
             </p>
           )}
 

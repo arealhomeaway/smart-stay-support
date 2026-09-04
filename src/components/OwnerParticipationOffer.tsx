@@ -16,8 +16,8 @@ import {
   OPPORTUNITY_STATE_META,
   type OwnerActionType,
 } from "@/lib/owner-opportunity";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +42,13 @@ import {
  * opportunity. The underlying task or ticket is never duplicated or changed —
  * this only creates the owner-facing offer that points back at it.
  */
+const OPPORTUNITY_STATE_TONE: Record<string, StatusTone> = {
+  available: "progress",
+  upcoming: "waiting",
+  completed: "resolved",
+  closed: "closed",
+};
+
 export function OwnerParticipationOffer({
   source,
   sourceId,
@@ -112,15 +119,13 @@ export function OwnerParticipationOffer({
   if (existing) {
     const state = opportunityState(existing);
     return (
-      <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-3">
+      <div className="flex flex-wrap items-center gap-2 py-1">
         <HandHeart className="size-4 text-primary" />
         <span className="text-sm">Offered to {ctx.data.ownerName ?? "the homeowner"}</span>
-        <Badge variant="outline" className={OPPORTUNITY_STATE_META[state].tone}>
+        <StatusBadge tone={OPPORTUNITY_STATE_TONE[state] ?? "context"}>
           {OPPORTUNITY_STATE_META[state].label}
-        </Badge>
-        <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-          {actionLabel(existing.owner_action_type)}
-        </Badge>
+        </StatusBadge>
+        <StatusBadge tone="context">{actionLabel(existing.owner_action_type)}</StatusBadge>
         {state !== "completed" && state !== "closed" && (
           <Button
             size="sm"

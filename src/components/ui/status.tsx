@@ -54,9 +54,9 @@ export function StatusBadge({
   tone: StatusTone;
   children: ReactNode;
   /** Replaces the dot when a symbol communicates more than the dot does. */
-  icon?: ReactNode;
-  className?: string;
-  title?: string;
+  icon?: ReactNode | undefined;
+  className?: string | undefined;
+  title?: string | undefined;
 }) {
   return (
     <span className={cn("chip", TONE[tone], className)} title={title}>

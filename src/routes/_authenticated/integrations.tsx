@@ -3,9 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { PlugZap, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { getInboundStatus, listImportedMatters } from "@/lib/inbound.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
@@ -63,38 +62,26 @@ function IntegrationsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-2xl font-semibold">Integrations & inbound sync</h1>
+      <PageHeader
+        eyebrow="Operations"
+        title="Integrations & inbound sync"
+        description="Work created in OwnerRez or sent in by message lands here with the same ownership and clocks as anything logged directly."
+      />
+
+      <SectionCard
+        title={
+          <span className="flex items-center gap-2">
+            <PlugZap className="size-4" /> OwnerRez
+          </span>
+        }
+        actions={<StatusBadge tone={status.data?.ownerrez ? "resolved" : "closed"}>{status.data?.ownerrez ? "Connected" : "Not connected"}</StatusBadge>}
+        description="Homes and live occupancy sync both ways. Occupancy still sets the starting priority when a ticket opens."
+      >
         <p className="text-sm text-muted-foreground">
-          Resolve is the primary platform. Anything created in OwnerRez or sent in by message is pulled in here so it gets
-          the same ownership, clocks and closure standards as work logged by the team.
+          OwnerRez does not publish maintenance tasks, so there is nothing to import from it directly — use the
+          message intake below to pull its notifications and guest or owner emails into the queue.
         </p>
-      </header>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <PlugZap className="size-4" /> OwnerRez
-              <Badge variant={status.data?.ownerrez ? "default" : "secondary"}>
-                {status.data?.ownerrez ? "Connected" : "Not connected"}
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Homes and live occupancy sync both ways into Resolve. Occupancy still sets the priority floor when a
-              ticket is opened.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            OwnerRez does not publish maintenance tasks through its API, so there is nothing for Resolve to import
-            from it — a task sync will always come back empty. Homes, stays and occupancy keep syncing normally. Use
-            the message intake below to get OwnerRez notifications and guest or owner emails into the queue.
-          </CardContent>
-        </Card>
-
-
-
-      </div>
+      </SectionCard>
 
       <SharePointConnectionPanel />
 
@@ -111,21 +98,19 @@ function IntegrationsPage() {
       <EmailDeliveryPanel />
 
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+      <SectionCard
+        title={
+          <span className="flex items-center gap-2">
             <PlugZap className="size-4" /> Message intake
-            <Badge>Live</Badge>
-          </CardTitle>
-          <CardDescription>
-            The workaround for OwnerRez: anything that arrives as a message can become a ticket automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          </span>
+        }
+        actions={<StatusBadge tone="progress">Live</StatusBadge>}
+        description="Anything that arrives as a message can become a ticket automatically."
+      >
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Point an email forwarding rule or webhook at the intake endpoint below. Resolve reads the subject and
-            body, matches the home by name, sets a starting priority (safety and “urgent” language lands as P1) and
-            drops it in the queue with a full timeline entry.
+            Point an email forwarding rule or webhook at the intake endpoint below. Resolve reads it, matches the
+            home, sets a starting priority and drops it in the queue.
           </p>
           <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs text-foreground">
             POST https://smart-stay-support.lovable.app/api/public/intake/email
@@ -134,49 +119,37 @@ function IntegrationsPage() {
             <br />
             body: {"{ subject, body, from, property }"}
           </code>
-          <p>
-            Duplicate deliveries are ignored when the sender includes an <code>externalId</code>, so retries never
-            create a second ticket.
-          </p>
-        </CardContent>
-      </Card>
+          <p>Duplicate deliveries are ignored automatically, so retries never create a second ticket.</p>
+        </div>
+      </SectionCard>
 
-      <Card>
-
-        <CardHeader>
-          <CardTitle className="text-base">Imported tickets</CardTitle>
-          <CardDescription>The most recent work pulled in from an outside system.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nothing imported yet. Run a sync above once a source system is connected.
-            </p>
-          ) : (
-            rows.map((t) => (
+      <SectionCard title="Imported tickets" description="The most recent work pulled in from an outside system.">
+        {rows.length === 0 ? (
+          <EmptyState title="Nothing imported yet" hint="Run a sync above once a source system is connected." />
+        ) : (
+          <div className="space-y-2">
+            {rows.map((t) => (
               <div
                 key={t.id}
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border px-3 py-2 text-sm"
               >
-                <Badge variant="outline" className="uppercase">
-                  {t.external_source}
-                </Badge>
+                <StatusBadge tone="context">{t.external_source}</StatusBadge>
                 <Link to="/tickets/$ticketId" params={{ ticketId: t.id }} className="font-medium hover:underline">
                   #{t.ref} {t.title}
                 </Link>
                 <span className="text-muted-foreground">
                   {(t.properties as { name: string } | null)?.name ?? "No home linked"}
                 </span>
-                <Badge variant="secondary">{t.priority?.toUpperCase()}</Badge>
+                <StatusBadge tone="closed">{t.priority?.toUpperCase()}</StatusBadge>
                 <span className="text-muted-foreground">{t.external_status ?? t.status}</span>
                 <span className="ml-auto text-xs text-muted-foreground">
                   synced {timeAgo(t.external_synced_at)}
                 </span>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        )}
+      </SectionCard>
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <ExternalLink className="size-3" />

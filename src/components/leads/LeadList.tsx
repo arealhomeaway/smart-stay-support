@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Chip } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { stateChip } from "@/lib/semantic";
 import { displayName, useStaffDirectory } from "@/hooks/useTeam";
 import { LeadDrawer, stageState } from "@/components/leads/LeadDrawer";
@@ -75,9 +76,9 @@ export function LeadRowCard({
         <Chip className={stateChip(stageState(lead.stage))}>{STAGE_LABELS[lead.stage]}</Chip>
         <Chip>{SOURCE_LABELS[lead.source]}</Chip>
         {bucket === "overdue" ? (
-          <Chip className="border-danger/40 bg-danger/10 text-danger">Overdue</Chip>
+          <StatusBadge tone="escalated">Overdue</StatusBadge>
         ) : bucket === "today" ? (
-          <Chip className="border-warning/40 bg-warning/10 text-warning">Due today</Chip>
+          <StatusBadge tone="waiting">Due today</StatusBadge>
         ) : null}
         {flags
           .filter((f) => f.key !== "overdue")

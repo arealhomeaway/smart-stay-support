@@ -1,13 +1,12 @@
-import { EmptyState, LoadingPage, PageHeader } from "@/components/ui/page";
+import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Clock, UserCheck, Utensils } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -129,24 +128,18 @@ function TeamPage() {
                 const p1 = open.filter((t) => t.priority === "p1").length;
                 const backup = data.roles.find((r) => r.code === role.backup_role_code);
                 return (
-                  <Card key={role.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <CardTitle className="text-base">{role.name}</CardTitle>
-                          <CardDescription className="font-mono text-xs">{role.code}</CardDescription>
-                        </div>
-                        <div className="flex gap-2">
-                          {p1 > 0 && (
-                            <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
-                              {p1} P1
-                            </Badge>
-                          )}
-                          <Badge variant="outline">{open.length} open</Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm">
+                  <SectionCard
+                    key={role.id}
+                    title={role.name}
+                    description={role.code}
+                    actions={
+                      <>
+                        {p1 > 0 && <StatusBadge tone="escalated">{p1} P1</StatusBadge>}
+                        <StatusBadge tone="closed">{open.length} open</StatusBadge>
+                      </>
+                    }
+                  >
+                    <div className="space-y-3 text-sm">
                       <Row
                         icon={<UserCheck className="size-4" />}
                         label="Current seat holder"
@@ -192,8 +185,8 @@ function TeamPage() {
                           Update seat &amp; coverage
                         </Button>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </SectionCard>
                 );
               })}
             </div>
@@ -201,17 +194,13 @@ function TeamPage() {
         );
       })}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Single-PC coverage rule</CardTitle>
-              <CardDescription>
-                When only one coordinator is working, that person monitors both queues: acknowledge urgent messages,
-                begin action on urgent tasks, prevent guest-service failures, document incomplete work, and hand
-                unresolved tasks to the next responsible seat. Routine admin never delays urgent guest, access,
-                maintenance, booking or cleaning action.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <SectionCard title="Single-PC coverage rule">
+            <p className="text-sm text-muted-foreground">
+              With one coordinator on, they cover both queues: answer urgent messages first, start urgent work,
+              document anything left undone, and hand it to the next seat. Routine admin never comes before guest,
+              access, maintenance, booking or cleaning urgency.
+            </p>
+          </SectionCard>
         </TabsContent>
       </Tabs>
     </div>

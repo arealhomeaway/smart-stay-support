@@ -49,6 +49,8 @@ import {
   type ProgressState,
 } from "@/lib/owner-participation";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { usDate } from "@/lib/dates";
 import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
 import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
 import { Badge } from "@/components/ui/badge";
@@ -123,6 +125,29 @@ type ProgramRow = {
   upcomingOpportunities: number;
   onboardingOpportunities: number;
   operationsOpportunities: number;
+};
+
+const PROGRAM_STATUS_TONE: Record<string, StatusTone> = {
+  draft: "closed",
+  waiting_for_closing: "closed",
+  ready_for_onboarding: "waiting",
+  active: "brand",
+  target_reached: "resolved",
+  completed: "resolved",
+  paused: "waiting",
+  closed: "closed",
+  pending: "closed",
+  complete: "resolved",
+};
+
+const PROGRESS_STATE_TONE: Record<string, StatusTone> = {
+  not_started: "closed",
+  on_track: "resolved",
+  slightly_behind: "waiting",
+  action_needed: "waiting",
+  significantly_behind: "escalated",
+  target_reached: "resolved",
+  program_completed: "resolved",
 };
 
 /** Attention ordering, mirrored client-side so the queue can sort instantly. */
@@ -451,12 +476,10 @@ function ProgramCard({
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className={status.tone}>
-              {status.label}
-            </Badge>
-            <Badge variant="outline" className={progress.tone}>
+            <StatusBadge tone={PROGRAM_STATUS_TONE[row.status] ?? "closed"}>{status.label}</StatusBadge>
+            <StatusBadge tone={PROGRESS_STATE_TONE[row.progressState] ?? "closed"}>
               {progress.label}
-            </Badge>
+            </StatusBadge>
             <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
               <Eye className="size-4" /> Preview as homeowner
             </Button>
@@ -628,8 +651,8 @@ function ProgramDetail({
                     {p.inclusionStatus !== "included" ? " (removed)" : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {p.address || "No address"} · added {p.addedOn} ·{" "}
-                    {p.closingConfirmed ? `closed ${p.closingDate}` : "closing not confirmed"}
+                    {p.address || "No address"} · added {usDate(p.addedOn)} ·{" "}
+                    {p.closingConfirmed ? `closed ${usDate(p.closingDate)}` : "closing not confirmed"}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -838,7 +861,7 @@ function ProgramDetail({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {row.startedOn} · ends {row.endsOn}
+            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usDate(row.startedOn)} · ends {usDate(row.endsOn)}
           </p>
         )}
         <div className="flex flex-wrap gap-2">
@@ -981,7 +1004,7 @@ function ProgramDetail({
                 <div>
                   <p className="font-medium">{e.activity}</p>
                   <p className="text-xs text-muted-foreground">
-                    {e.entry_date} · {formatDuration(e.minutes)} ·{" "}
+                    {usDate(e.entry_date)} · {formatDuration(e.minutes)} ·{" "}
                     {e.activity_category ?? "uncategorized"}
                     {e.amends_entry_id ? " · correction" : ""}
                   </p>
@@ -1058,7 +1081,7 @@ function ProgramDetail({
           <div className="space-y-1 text-xs text-muted-foreground">
             {history.slice(0, 15).map((h) => (
               <p key={h.id}>
-                {new Date(h.created_at).toLocaleString()} — {h.summary}
+                {usDate(h.created_at)} — {h.summary}
                 {h.reason ? ` (${h.reason})` : ""}
               </p>
             ))}

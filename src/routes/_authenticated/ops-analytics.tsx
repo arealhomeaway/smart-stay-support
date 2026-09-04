@@ -10,9 +10,9 @@ import { ReportingBaselineNote } from "@/components/ReportingBaselineNote";
 import { useDemo } from "@/components/DemoProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingPage, PageHeader, SectionBand, StatTile } from "@/components/ui/page";
 import { EvidenceQualityCard } from "@/components/EvidenceQualityCard";
-import { Skeleton } from "@/components/ui/skeleton";
+import { usDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/ops-analytics")({
   head: () => ({
@@ -82,18 +82,6 @@ function download(rows: ContributorRow[], windowDays: number) {
   URL.revokeObjectURL(url);
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <Card>
-      <CardContent className="space-y-1 p-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="font-display text-2xl font-semibold">{value}</p>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-      </CardContent>
-    </Card>
-  );
-}
-
 function OpsAnalyticsPage() {
   const load = useServerFn(opsAnalytics);
   const { demoMode } = useDemo();
@@ -108,14 +96,12 @@ function OpsAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">Operations performance</h1>
-          <p className="text-sm text-muted-foreground">
-            Volume, SLA compliance and timing for live tickets, with contribution credit taken from
-            the activity log rather than the current assignee.
-          </p>
-        </div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <PageHeader
+          eyebrow="Insight"
+          title="Operations performance"
+          description="Volume, SLA compliance and timing for live tickets, with contribution credit taken from the activity log rather than the current assignee."
+        />
         <div className="flex items-center gap-2">
           {RANGES.map((r) => (
             <Button
@@ -139,7 +125,7 @@ function OpsAnalyticsPage() {
       </div>
 
       {q.isLoading ? (
-        <Skeleton className="h-96 w-full" />
+        <LoadingPage />
       ) : q.error ? (
         <p className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
           {(q.error as Error).message}
@@ -147,167 +133,178 @@ function OpsAnalyticsPage() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat
+            <StatTile
               label="Tickets created"
-              value={String(data?.volume.created ?? 0)}
+              value={data?.volume.created ?? 0}
               hint={`${data?.volume.resolved ?? 0} resolved · ${data?.volume.open ?? 0} open`}
             />
-            <Stat
+            <StatTile
               label="Median response"
               value={fmtDuration(data?.timing.medianResponseMinutes ?? null)}
               hint={`Average ${fmtDuration(data?.timing.averageResponseMinutes ?? null)}`}
             />
-            <Stat
+            <StatTile
               label="Median resolution"
               value={fmtDuration(data?.timing.medianResolutionMinutes ?? null)}
               hint={`Average ${fmtDuration(data?.timing.averageResolutionMinutes ?? null)}`}
             />
-            <Stat
+            <StatTile
               label="Response SLA met"
               value={data?.sla.responseRate == null ? "—" : `${data.sla.responseRate}%`}
+              tone={
+                data?.sla.responseRate == null
+                  ? "neutral"
+                  : data.sla.responseRate >= 90
+                    ? "positive"
+                    : "attention"
+              }
               hint={`${data?.sla.responseOnTime ?? 0} of ${data?.sla.responseScope ?? 0} · ${data?.sla.breachedOpen ?? 0} open past due`}
             />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Timing by priority</CardTitle>
-                <CardDescription>Median time from report to first response and to resolution.</CardDescription>
-              </CardHeader>
-              <CardContent>
+          <div>
+            <SectionBand title="Timing by priority" hint="Median time from report to first response and to resolution" />
+            <div className="surface overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-5 py-2.5">Priority</th>
+                    <th className="px-5 py-2.5 text-right">Responded</th>
+                    <th className="px-5 py-2.5 text-right">Median response</th>
+                    <th className="px-5 py-2.5 text-right">Resolved</th>
+                    <th className="px-5 py-2.5 text-right">Median resolution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.timing.responseByPriority ?? []).map((r) => {
+                    const res = data?.timing.resolutionByPriority.find(
+                      (x) => x.priority === r.priority,
+                    );
+                    return (
+                      <tr key={r.priority} className="border-b last:border-0">
+                        <td className="px-5 py-2.5 font-medium uppercase">{r.priority}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{r.count}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{fmtDuration(r.median)}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{res?.count ?? 0}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{fmtDuration(res?.median ?? null)}</td>
+                      </tr>
+                    );
+                  })}
+                  {(data?.timing.responseByPriority.length ?? 0) === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-6 text-center text-muted-foreground">
+                        No live tickets in this window.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <SectionBand
+              title="Where the work comes from"
+              hint={`${data?.volume.unassigned ?? 0} open tickets have no current owner`}
+            />
+            <div className="surface space-y-4 p-4 text-sm">
+              {[
+                { label: "Priority", buckets: data?.volume.byPriority ?? [] },
+                { label: "Status", buckets: data?.volume.byStatus ?? [] },
+                { label: "Source", buckets: data?.volume.bySource ?? [] },
+              ].map((group) => (
+                <div key={group.label} className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{group.label}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.buckets.length === 0 ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      group.buckets.map((b) => (
+                        <Badge key={b.key} variant="outline">
+                          {b.label} · {b.count}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <SectionBand
+              title="Contribution credit"
+              hint="Drawn from the immutable activity log — a record of contribution and current load, not a ranking"
+              actions={<Gauge className="size-4 text-muted-foreground" />}
+            />
+            {people.length === 0 ? (
+              <p className="surface p-6 text-center text-sm text-muted-foreground">
+                No logged activity on live tickets in this window.
+              </p>
+            ) : (
+              <div className="surface overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="py-2">Priority</th>
-                      <th className="py-2 text-right">Responded</th>
-                      <th className="py-2 text-right">Median response</th>
-                      <th className="py-2 text-right">Resolved</th>
-                      <th className="py-2 text-right">Median resolution</th>
+                      <th className="px-5 py-2.5">Team member</th>
+                      <th className="px-5 py-2.5 text-right">Touched</th>
+                      <th className="px-5 py-2.5 text-right">Resolved</th>
+                      <th className="px-5 py-2.5 text-right">First responses</th>
+                      <th className="px-5 py-2.5 text-right">Median response</th>
+                      <th className="px-5 py-2.5 text-right">Open owned</th>
+                      <th className="px-5 py-2.5 text-right">Overdue</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(data?.timing.responseByPriority ?? []).map((r) => {
-                      const res = data?.timing.resolutionByPriority.find(
-                        (x) => x.priority === r.priority,
-                      );
-                      return (
-                        <tr key={r.priority} className="border-b last:border-0">
-                          <td className="py-2 font-medium uppercase">{r.priority}</td>
-                          <td className="py-2 text-right">{r.count}</td>
-                          <td className="py-2 text-right">{fmtDuration(r.median)}</td>
-                          <td className="py-2 text-right">{res?.count ?? 0}</td>
-                          <td className="py-2 text-right">{fmtDuration(res?.median ?? null)}</td>
-                        </tr>
-                      );
-                    })}
-                    {(data?.timing.responseByPriority.length ?? 0) === 0 && (
-                      <tr>
-                        <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                          No live tickets in this window.
+                    {people.map((p) => (
+                      <tr key={p.userId} className="border-b last:border-0">
+                        <td className="px-5 py-2.5 font-medium">{p.name}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{p.ticketsTouched}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{p.resolved}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{p.firstResponses}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{fmtDuration(p.medianResponseMinutes)}</td>
+                        <td className="numeric px-5 py-2.5 text-right">{p.currentlyOwned}</td>
+                        <td
+                          className={`numeric px-5 py-2.5 text-right ${p.currentlyOverdue > 0 ? "text-destructive" : ""}`}
+                        >
+                          {p.currentlyOverdue}
                         </td>
                       </tr>
-                    )}
+                    ))}
                   </tbody>
                 </table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Where the work comes from</CardTitle>
-                <CardDescription>
-                  {data?.volume.unassigned ?? 0} open tickets have no current owner.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                {[
-                  { label: "Priority", buckets: data?.volume.byPriority ?? [] },
-                  { label: "Status", buckets: data?.volume.byStatus ?? [] },
-                  { label: "Source", buckets: data?.volume.bySource ?? [] },
-                ].map((group) => (
-                  <div key={group.label} className="space-y-1">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {group.label}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {group.buckets.length === 0 ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : (
-                        group.buckets.map((b) => (
-                          <Badge key={b.key} variant="outline">
-                            {b.label} · {b.count}
-                          </Badge>
-                        ))
-                      )}
+              </div>
+            )}
+            <details className="group mt-3">
+              <summary className="cursor-pointer text-sm font-medium text-primary underline-offset-2 hover:underline">
+                Show detailed contributor breakdown
+              </summary>
+              <div className="surface mt-2 divide-y">
+                {people.map((p) => (
+                  <div key={p.userId} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="font-medium">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {p.actionsStarted} actions started · {p.notes} notes · {p.handoffsAccepted}/{p.handoffsGiven} handoffs accepted/given
+                      </p>
                     </div>
+                    <p className="numeric shrink-0 text-xs text-muted-foreground">
+                      Last active {usDate(p.lastActivityAt)}
+                    </p>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </details>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Gauge className="size-4" /> Contribution credit
-              </CardTitle>
-              <CardDescription>
-                Drawn from the immutable activity log. This is a record of contribution and current
-                load — not a productivity score or ranking.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {people.length === 0 ? (
-                <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  No logged activity on live tickets in this window.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                        <th className="py-2 pr-3">Team member</th>
-                        <th className="py-2 pr-3 text-right">Touched</th>
-                        <th className="py-2 pr-3 text-right">Resolved</th>
-                        <th className="py-2 pr-3 text-right">First responses</th>
-                        <th className="py-2 pr-3 text-right">Actions started</th>
-                        <th className="py-2 pr-3 text-right">Handoffs in/out</th>
-                        <th className="py-2 pr-3 text-right">Median response</th>
-                        <th className="py-2 pr-3 text-right">Open owned</th>
-                        <th className="py-2 text-right">Overdue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {people.map((p) => (
-                        <tr key={p.userId} className="border-b last:border-0">
-                          <td className="py-2 pr-3 font-medium">{p.name}</td>
-                          <td className="py-2 pr-3 text-right">{p.ticketsTouched}</td>
-                          <td className="py-2 pr-3 text-right">{p.resolved}</td>
-                          <td className="py-2 pr-3 text-right">{p.firstResponses}</td>
-                          <td className="py-2 pr-3 text-right">{p.actionsStarted}</td>
-                          <td className="py-2 pr-3 text-right">
-                            {p.handoffsAccepted}/{p.handoffsGiven}
-                          </td>
-                          <td className="py-2 pr-3 text-right">
-                            {fmtDuration(p.medianResponseMinutes)}
-                          </td>
-                          <td className="py-2 pr-3 text-right">{p.currentlyOwned}</td>
-                          <td
-                            className={`py-2 text-right ${p.currentlyOverdue > 0 ? "text-destructive" : ""}`}
-                          >
-                            {p.currentlyOverdue}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <EvidenceQualityCard />
+          <details className="group">
+            <summary className="cursor-pointer text-sm font-medium text-primary underline-offset-2 hover:underline">
+              Evidence quality
+            </summary>
+            <div className="mt-2">
+              <EvidenceQualityCard />
+            </div>
+          </details>
 
           <ReportingBaselineNote />
         </>

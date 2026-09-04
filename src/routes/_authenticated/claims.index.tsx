@@ -13,6 +13,7 @@ import {
   useClaimRequirements,
   useClaims,
   usePropertyNames,
+  usePropertyPhotos,
 } from "@/components/claims/ClaimList";
 import { useRole } from "@/hooks/useRole";
 import {
@@ -45,6 +46,7 @@ function ClaimsHome() {
   const claims = useClaims();
   const requirements = useClaimRequirements();
   const propertyNames = usePropertyNames();
+  const propertyPhotos = usePropertyPhotos();
   const { readOnly } = useRole();
 
   const reqMap = requirements.data ?? new Map<string, never[]>();
@@ -96,6 +98,7 @@ function ClaimsHome() {
                 claims={rows}
                 requirements={reqMap as Map<string, never[]>}
                 propertyNames={propertyNames.data ?? new Map()}
+                propertyPhotos={propertyPhotos.data ?? new Map()}
                 canEdit={!readOnly}
               />
             </SectionCard>

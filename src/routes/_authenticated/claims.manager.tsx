@@ -14,6 +14,7 @@ import {
   useClaimRequirements,
   useClaims,
   usePropertyNames,
+  usePropertyPhotos,
 } from "@/components/claims/ClaimList";
 import { useRole } from "@/hooks/useRole";
 import { RequireCapability } from "@/components/RequireCapability";
@@ -52,6 +53,7 @@ function ClaimsManager() {
   const claims = useClaims();
   const requirements = useClaimRequirements();
   const propertyNames = usePropertyNames();
+  const propertyPhotos = usePropertyPhotos();
   const { readOnly } = useRole();
   const [active, setActive] = useState<ManagerFilter | null>(null);
   const reqMap = requirements.data ?? new Map<string, never[]>();
@@ -120,6 +122,7 @@ function ClaimsManager() {
             claims={rows}
             requirements={reqMap as Map<string, never[]>}
             propertyNames={propertyNames.data ?? new Map()}
+            propertyPhotos={propertyPhotos.data ?? new Map()}
             canEdit={!readOnly}
           />
         </SectionCard>

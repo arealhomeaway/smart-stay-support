@@ -19,7 +19,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { StatusBadge } from "@/components/ui/status";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { propertyAddressLabel } from "@/lib/property-address";
 import { useRole } from "@/hooks/useRole";
 
@@ -54,22 +56,32 @@ export function PropertyContextDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+        <div className="relative h-32 w-full overflow-hidden rounded-lg bg-sunken">
+          <PropertyPhoto
+            url={data?.primary_photo_url ?? null}
+            name={data?.nickname ?? data?.name ?? null}
+            rounded="rounded-none"
+            className="size-full"
+          />
+        </div>
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle className="flex flex-wrap items-center gap-2">
             <Building2 className="size-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{data?.nickname ?? data?.name ?? "Property"}</span>
+            {data?.lifecycle_status && data.lifecycle_status !== "live" && (
+              <StatusBadge tone="waiting">{data.lifecycle_status.replace(/_/g, " ")}</StatusBadge>
+            )}
           </SheetTitle>
           <SheetDescription>{address}</SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-4 px-4 pb-6">
+        <div className="space-y-5 px-4 pb-6">
           <SpecialHandlingNotice propertyId={propertyId} moment="maintenance" />
 
           <Facts
             rows={[
               ["Market", data?.market],
               ["Neighbourhood", data?.neighborhood],
-              ["Status", data?.lifecycle_status?.replace(/_/g, " ")],
               ["Check-in", data?.check_in_time],
               ["Check-out", data?.check_out_time],
               ["Bedrooms", data?.bedrooms != null ? String(data.bedrooms) : null],
@@ -110,11 +122,11 @@ function Facts({ rows }: { rows: [string, string | null | undefined][] }) {
   const visible = rows.filter(([, v]) => Boolean(v));
   if (visible.length === 0) return null;
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
       {visible.map(([k, v]) => (
         <div key={k} className="min-w-0">
-          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{k}</dt>
-          <dd className="truncate">{v}</dd>
+          <dt className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">{k}</dt>
+          <dd className="mt-0.5 truncate text-[0.9375rem]">{v}</dd>
         </div>
       ))}
     </dl>
@@ -124,8 +136,8 @@ function Facts({ rows }: { rows: [string, string | null | undefined][] }) {
 function Block({ title, body }: { title: string; body: string }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{title}</p>
-      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{body}</p>
+      <p className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">{title}</p>
+      <p className="mt-1 whitespace-pre-wrap text-[0.9375rem] leading-relaxed">{body}</p>
     </div>
   );
 }

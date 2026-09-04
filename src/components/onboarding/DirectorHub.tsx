@@ -11,6 +11,7 @@ import { Link } from "@tanstack/react-router";
 import { Chip, ProgressRing } from "@/components/ui/page";
 import { Input } from "@/components/ui/input";
 import { stateChip } from "@/lib/semantic";
+import { usDate } from "@/lib/dates";
 import {
   LIFECYCLE_STAGES,
   RISK_LABEL,
@@ -46,7 +47,7 @@ export type HubViewer = {
 };
 
 const LENSES: { key: Lens; label: string; hint: string }[] = [
-  { key: "attention", label: "Needs attention", hint: "Something an ARHA person must do today." },
+  { key: "attention", label: "Needs attention now", hint: "Something an ARHA person must do today." },
   {
     key: "mine",
     label: "Awaiting my review",
@@ -63,7 +64,7 @@ const LENSES: { key: Lens; label: string; hint: string }[] = [
   { key: "all", label: "All projects", hint: "The whole pipeline." },
 ];
 
-/** Lenses shown as chips; the day-window lenses are reached from the tiles. */
+/** Lenses shown as chips; the day-window lenses are reached from secondary detail. */
 const CHIP_LENSES: Lens[] = [
   "attention",
   "mine",
@@ -164,167 +165,153 @@ export function DirectorHub({
   const active = projects.filter((p) => !p.accepted && p.stage !== "live");
   const bottleneck = bottleneckStage(active);
   const workload = workloadByOwner(active);
-
+  const activeLensMeta = LENSES.find((l) => l.key === lens);
 
   return (
-    <div className="space-y-5">
-      {/* ------------------------------------------------------- rollups */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat
-          label="Active projects"
-          value={active.length}
-          hint="Homes not yet live with Operations."
-          onClick={() => setLens("all")}
-        />
-        <Stat
-          label="At risk or blocked"
-          value={counts.at_risk + counts.blocked}
-          hint="Derived, not self-reported."
-          tone="blocked"
-          onClick={() => setLens("at_risk")}
-        />
-        <Stat
-          label="Awaiting my review"
-          value={counts.mine}
-          hint="Gate decisions that are yours."
-          tone="waiting"
-          onClick={() => setLens("mine")}
-        />
-        <Stat
-          label="Bottleneck stage"
-          value={bottleneck ? lifecycleStageMeta(bottleneck).label : "—"}
-          hint={
-            bottleneck
-              ? `${active.filter((p) => p.stage === bottleneck).length} project(s) sitting here.`
-              : "Where most projects are sitting."
-          }
-        />
-      </div>
-
-      {/* ----------------------------------------------- forward windows */}
-      <section className="surface p-4">
-        <p className="eyebrow">Expected handoffs</p>
-        <div className="mt-2 grid gap-3 sm:grid-cols-3">
-          {([7, 14, 30] as const).map((d) => {
-            const n = active.filter((p) => withinDays(p.target, d)).length;
-            const risky = active.filter(
-              (p) => withinDays(p.target, d) && p.risk.level !== "on_track",
-            ).length;
-            const key = (d === 7 ? "up7" : d === 14 ? "up14" : "up30") as Lens;
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setLens(key)}
-                className={cn(
-                  "rounded-lg border bg-card/60 p-3 text-left transition hover:bg-muted/40",
-                  lens === key ? "border-primary" : "border-border",
-                )}
-              >
-                <p className="text-2xl font-semibold">{n}</p>
-                <p className="text-sm text-muted-foreground">next {d} days</p>
-                {risky > 0 && (
-                  <p className="pt-1 text-xs text-state-blocked">{risky} not currently on track</p>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-
-      {/* ------------------------------------------------------ pipeline */}
-      <section className="surface p-4">
-        <p className="eyebrow">Pipeline</p>
-        <div className="mt-3 space-y-2">
-          {LIFECYCLE_STAGES.map((s) => {
-            const inStage = projects.filter((p) => p.stage === s.value).length;
-            const widest = Math.max(
-              1,
-              ...LIFECYCLE_STAGES.map((x) => projects.filter((p) => p.stage === x.value).length),
-            );
-            return (
-              <div key={s.value} className="flex items-center gap-3" title={s.blurb}>
-                <span className="w-36 shrink-0 truncate text-sm">{s.label}</span>
-                <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
-                  <span
-                    className={cn("block h-full rounded-full", s.accent, "border-0")}
-                    style={{ width: `${(inStage / widest) * 100}%` }}
-                  />
-                </span>
-                <span className="numeric w-8 shrink-0 text-right text-sm font-medium">
-                  {inStage}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-
-      {/* -------------------------------------------------------- lenses */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          value={find}
-          onChange={(e) => setFind(e.target.value)}
-          placeholder="Find a home or project manager"
-          className="w-full max-w-xs"
-        />
-        {LENSES.filter((l) => CHIP_LENSES.includes(l.key)).map((l) => (
-          <button
-            key={l.key}
-            type="button"
-            title={l.hint}
-            onClick={() => setLens(l.key)}
-            className={cn(
-              "rounded-md border px-2.5 py-1 text-xs font-medium",
-              lens === l.key
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {l.label} ({counts[l.key]})
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setShowTest((v) => !v)}
-          title="Test homes are excluded from every count above."
-          className={cn(
-            "rounded-md border px-2.5 py-1 text-xs font-medium",
-            showTest
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border text-muted-foreground hover:text-foreground",
+    <div className="space-y-6">
+      {/* ---------------------------------------------------- needs attention */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            value={find}
+            onChange={(e) => setFind(e.target.value)}
+            placeholder="Find a home or project manager"
+            className="w-full max-w-xs"
+          />
+          {LENSES.filter((l) => CHIP_LENSES.includes(l.key)).map((l) => (
+            <button
+              key={l.key}
+              type="button"
+              title={l.hint}
+              onClick={() => setLens(l.key)}
+              className={cn(
+                "rounded-md border px-2.5 py-1 text-xs font-medium",
+                lens === l.key
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {l.label} ({counts[l.key]})
+            </button>
+          ))}
+          {owner && (
+            <button
+              type="button"
+              onClick={() => setOwner(null)}
+              className="rounded-md border border-primary bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+            >
+              {owner} · clear
+            </button>
           )}
-        >
-          {showTest ? "Hide" : "Show"} test projects ({testCount})
-        </button>
-        {owner && (
-          <button
-            type="button"
-            onClick={() => setOwner(null)}
-            className="rounded-md border border-primary bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-          >
-            {owner} · clear
-          </button>
-        )}
-      </div>
+        </div>
 
-      <div className="space-y-2">
-        {visible.length === 0 && (
-          <p className="surface p-4 text-sm text-muted-foreground">
-            Nothing in this view. {LENSES.find((l) => l.key === lens)?.hint}
-          </p>
-        )}
-        {visible.map((p) => (
-          <ProjectRow key={p.property.id} project={p} />
-        ))}
-      </div>
+        <div className="space-y-2">
+          {visible.length === 0 && (
+            <p className="surface p-4 text-sm text-muted-foreground">
+              Nothing in this view. {activeLensMeta?.hint}
+            </p>
+          )}
+          {visible.map((p) => (
+            <ProjectRow key={p.property.id} project={p} />
+          ))}
+        </div>
+      </section>
 
-      {/* ------------------------------------------------------ workload */}
-      <section className="surface p-4">
-        <p className="eyebrow">Workload by project manager</p>
-        <p className="text-xs text-muted-foreground">
+      {/* -------------------------------------------------- pipeline forecast */}
+      <section className="surface space-y-3 p-4">
+        <p className="eyebrow">Pipeline forecast</p>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+          <span>
+            <span className="font-semibold">{active.length}</span>{" "}
+            <span className="text-muted-foreground">active</span>
+          </span>
+          <span>
+            <span className={cn("font-semibold", counts.at_risk + counts.blocked > 0 && "text-state-blocked")}>
+              {counts.at_risk + counts.blocked}
+            </span>{" "}
+            <span className="text-muted-foreground">at risk or blocked</span>
+          </span>
+          <span>
+            <span className="font-semibold">{counts.mine}</span>{" "}
+            <span className="text-muted-foreground">awaiting my review</span>
+          </span>
+          <span>
+            <span className="font-semibold">{bottleneck ? lifecycleStageMeta(bottleneck).label : "—"}</span>{" "}
+            <span className="text-muted-foreground">is the bottleneck stage</span>
+          </span>
+          <span className="ml-auto flex items-center gap-3 text-muted-foreground">
+            {([7, 14, 30] as const).map((d) => {
+              const n = active.filter((p) => withinDays(p.target, d)).length;
+              const key = (d === 7 ? "up7" : d === 14 ? "up14" : "up30") as Lens;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setLens(key)}
+                  className={cn(
+                    "underline-offset-2 hover:underline",
+                    lens === key && "font-medium text-foreground",
+                  )}
+                >
+                  {n} in {d}d
+                </button>
+              );
+            })}
+          </span>
+        </div>
+
+        {/* stage distribution — one slim bar, not equal-sized tiles */}
+        <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted" title="Where active projects sit">
+          {LIFECYCLE_STAGES.filter((s) => s.value !== "live").map((s) => {
+            const inStage = active.filter((p) => p.stage === s.value).length;
+            const pct = active.length > 0 ? (inStage / active.length) * 100 : 0;
+            if (pct === 0) return null;
+            return (
+              <span
+                key={s.value}
+                title={`${s.label} · ${inStage}`}
+                className={cn("h-full", s.accent, "border-0")}
+                style={{ width: `${pct}%` }}
+              />
+            );
+          })}
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {LIFECYCLE_STAGES.filter((s) => s.value !== "live").map((s) => {
+            const inStage = active.filter((p) => p.stage === s.value).length;
+            if (inStage === 0) return null;
+            return (
+              <span key={s.value}>
+                {s.label} · {inStage}
+              </span>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- portfolio */}
+      <section className="space-y-3">
+        <p className="eyebrow">Project portfolio</p>
+        {active.length === 0 ? (
+          <p className="surface p-4 text-sm text-muted-foreground">No active onboarding projects.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {active
+              .slice()
+              .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"))
+              .map((p) => (
+                <PortfolioCard key={p.property.id} project={p} />
+              ))}
+          </div>
+        )}
+      </section>
+
+      {/* ------------------------------------------------------- secondary */}
+      <details className="surface p-4">
+        <summary className="cursor-pointer text-sm font-semibold">
+          Workload by project manager
+        </summary>
+        <p className="pt-1 text-xs text-muted-foreground">
           Select a project manager to filter the list above.
         </p>
         <div className="mt-2 space-y-1.5">
@@ -353,51 +340,63 @@ export function DirectorHub({
             </button>
           ))}
         </div>
-      </section>
+      </details>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setShowTest((v) => !v)}
+          title="Test homes are excluded from every count above."
+          className={cn(
+            "rounded-md border px-2.5 py-1 text-xs font-medium",
+            showTest
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {showTest ? "Hide" : "Show"} test projects ({testCount})
+        </button>
+      </div>
     </div>
   );
 }
 
-function Stat({
-  label,
-  value,
-  hint,
-  tone,
-  onClick,
-}: {
-  label: string;
-  value: number | string;
-  hint: string;
-  tone?: "blocked" | "waiting";
-  onClick?: () => void;
-}) {
-  const body = (
-    <>
-      <p className="eyebrow">{label}</p>
-      <p
-        className={cn(
-          "text-2xl font-semibold",
-          tone === "blocked" && Number(value) > 0 && "text-state-blocked",
-        )}
-      >
-        {value}
-      </p>
-      <p className="text-xs text-muted-foreground">{hint}</p>
-    </>
-  );
-  if (!onClick) return <div className="surface p-4">{body}</div>;
+function PortfolioCard({ project: p }: { project: ProjectSummary }) {
+  const stage = lifecycleStageMeta(p.stage);
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="surface p-4 text-left transition hover:bg-muted/40"
+    <Link
+      to="/onboarding/$propertyId"
+      params={{ propertyId: p.property.id }}
+      className="surface group block overflow-hidden transition hover:bg-muted/40"
     >
-      {body}
-    </button>
+      <div className="relative aspect-[4/3] w-full overflow-hidden">
+        <PropertyPhoto
+          url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
+          name={p.property.name}
+          className="size-full rounded-none"
+          rounded="rounded-none"
+        />
+        <span className="absolute right-2 top-2">
+          <ProgressRing value={p.progress} size={40} tone="onboarding" />
+        </span>
+      </div>
+      <div className="space-y-1 p-3">
+        <p className="truncate text-sm font-semibold">{p.property.name}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={cn("rounded-md border px-2 py-0.5 text-xs font-medium", stage.accent)}>
+            {stage.label}
+          </span>
+          {p.risk.level !== "on_track" && (
+            <Chip className={stateChip(RISK_STATE[p.risk.level])}>{RISK_LABEL[p.risk.level]}</Chip>
+          )}
+        </div>
+        <p className="truncate text-xs text-muted-foreground">
+          {p.owner ?? "Unassigned"} · {p.target ? `Handoff ${usDate(p.target)}` : "No target date"}
+        </p>
+      </div>
+    </Link>
   );
 }
-
 
 function ProjectRow({ project: p }: { project: ProjectSummary }) {
   const stage = lifecycleStageMeta(p.stage);
@@ -440,7 +439,7 @@ function ProjectRow({ project: p }: { project: ProjectSummary }) {
         <span className="text-right text-xs text-muted-foreground">
           <span className="block truncate">{p.owner ?? "Unassigned"}</span>
           <span className="numeric block">
-            {p.target ? `Handoff ${p.target}` : "No target date"}
+            {p.target ? `Handoff ${usDate(p.target)}` : "No target date"}
           </span>
         </span>
         {p.hasProject && <ProgressRing value={p.progress} size={44} tone="onboarding" />}

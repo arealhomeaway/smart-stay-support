@@ -12,6 +12,7 @@ import {
   RecoveryListSection,
   useRecoveries,
   useRecoveryPropertyNames,
+  useRecoveryPropertyPhotos,
   useRecoveryRequirements,
 } from "@/components/recovery/RecoveryList";
 import { useRole } from "@/hooks/useRole";
@@ -51,6 +52,7 @@ function RecoveryHome() {
   const recoveries = useRecoveries();
   const requirements = useRecoveryRequirements();
   const propertyNames = useRecoveryPropertyNames();
+  const propertyPhotos = useRecoveryPropertyPhotos();
   const { readOnly } = useRole();
 
   const reqMap = requirements.data ?? new Map<string, RequirementLike[]>();
@@ -102,6 +104,7 @@ function RecoveryHome() {
                 recoveries={rows}
                 requirements={reqMap}
                 propertyNames={propertyNames.data ?? new Map()}
+                propertyPhotos={propertyPhotos.data ?? new Map()}
                 canEdit={!readOnly}
                 initialOpenId={deepLinkId ?? null}
               />

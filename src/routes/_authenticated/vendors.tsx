@@ -19,9 +19,9 @@ import {
 import { useRole } from "@/hooks/useRole";
 import { VendorImportPanel } from "@/components/VendorImportPanel";
 import { VendorOrgSheet } from "@/components/VendorOrgSheet";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Chip, EmptyState, LoadingRows, PageHeader, StatTile } from "@/components/ui/page";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +34,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -59,15 +58,15 @@ export const Route = createFileRoute("/_authenticated/vendors")({
   component: GatedVendorsPage,
 });
 
-const STATUS_TONE: Record<VendorStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  potential: "outline",
-  screening: "secondary",
-  trial: "secondary",
-  approved: "default",
-  restricted: "destructive",
-  paused: "outline",
-  removed: "outline",
-  legacy: "outline",
+const STATUS_TONE: Record<VendorStatus, StatusTone> = {
+  potential: "closed",
+  screening: "waiting",
+  trial: "progress",
+  approved: "resolved",
+  restricted: "escalated",
+  paused: "closed",
+  removed: "closed",
+  legacy: "context",
 };
 
 function GatedVendorsPage() {
@@ -165,14 +164,11 @@ function VendorsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Vendor management</h1>
-          <p className="text-muted-foreground">
-            Companies, not contacts. Screening decides who can be dispatched; the coverage map decides where.
-          </p>
-        </div>
-        {canManage && (
+      <PageHeader
+        eyebrow="Vendors"
+        title="Vendor management"
+        description="Companies, not contacts. Screening decides who can be dispatched; the coverage map decides where."
+        actions={canManage ? (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -258,28 +254,13 @@ function VendorsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Vendor companies</CardDescription>
-            <CardTitle className="text-3xl">{orgs.length}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Approved for dispatch</CardDescription>
-            <CardTitle className="text-3xl">{approved}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Screening incomplete</CardDescription>
-            <CardTitle className="text-3xl">{needsScreening}</CardTitle>
-          </CardHeader>
-        </Card>
+        <StatTile label="Vendor companies" value={orgs.length} />
+        <StatTile label="Approved for dispatch" value={approved} tone="positive" />
+        <StatTile label="Screening incomplete" value={needsScreening} tone={needsScreening > 0 ? "attention" : "neutral"} />
       </div>
 
       <Tabs defaultValue="directory">
@@ -315,36 +296,28 @@ function VendorsPage() {
           </div>
 
           {directory.isLoading ? (
-            <Skeleton className="h-40 w-full" />
+            <LoadingRows rows={4} />
           ) : filtered.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-                <Building2 className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  {orgs.length === 0
-                    ? "No vendor companies yet. Add one, or paste your legacy list under Legacy import."
-                    : "No vendors match that filter."}
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={<Building2 className="size-8" />}
+              title={orgs.length === 0 ? "No vendor companies yet" : "No vendors match that filter"}
+              hint={orgs.length === 0 ? "Add one, or paste your legacy list under Legacy import." : undefined}
+            />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {filtered.map((o) => (
                 <button
                   key={o.id}
                   onClick={() => setOpenOrg(o.id)}
-                  className="w-full rounded-lg border p-4 text-left transition-colors hover:bg-accent"
+                  className="surface-row w-full py-3 pl-4 pr-4 text-left"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{o.displayName}</span>
-                    <Badge variant={STATUS_TONE[o.status]}>{VENDOR_STATUS_LABELS[o.status]}</Badge>
+                    <StatusBadge tone={STATUS_TONE[o.status]}>{VENDOR_STATUS_LABELS[o.status]}</StatusBadge>
                     {!o.gatekeeperClear && (
-                      <Badge variant="outline" className="gap-1">
-                        <ShieldAlert className="h-3 w-3" />
-                        Screening open
-                      </Badge>
+                      <Chip icon={<ShieldAlert className="h-3 w-3" />}>Screening open</Chip>
                     )}
-                    {o.emergencyAvailable && <Badge variant="secondary">Emergency</Badge>}
+                    {o.emergencyAvailable && <Chip>Emergency</Chip>}
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {o.serviceCategories.length > 0 ? o.serviceCategories.join(", ") : "No services recorded"} ·{" "}

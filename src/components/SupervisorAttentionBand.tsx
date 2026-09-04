@@ -15,11 +15,26 @@ import {
   attentionHeadline,
   supervisorAttention,
   type AttentionApproval,
+  type AttentionBucket,
   type AttentionEscalation,
   type AttentionTicket,
 } from "@/lib/supervisor-home";
 
-export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean }) {
+function tileTone(bucket: AttentionBucket) {
+  if (bucket.count === 0) return "border-border bg-card";
+  if (bucket.tone === "critical") return "border-coral/30 bg-coral/8";
+  if (bucket.tone === "warning") return "border-amber/30 bg-amber/8";
+  return "border-border bg-card";
+}
+
+function countTone(bucket: AttentionBucket) {
+  if (bucket.count === 0) return "text-muted-foreground";
+  if (bucket.tone === "critical") return "text-coral";
+  if (bucket.tone === "warning") return "text-amber";
+  return "text-foreground";
+}
+
+export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean | undefined }) {
   const { demoMode } = useDemo();
 
   const { data } = useQuery({
@@ -68,10 +83,7 @@ export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean }
   });
 
   return (
-    <section
-      aria-label="Needs my decision"
-      className="rounded-xl border border-border bg-secondary/30 p-4"
-    >
+    <section aria-label="Needs my decision" className="surface p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="eyebrow text-muted-foreground">Needs my decision</p>
@@ -87,23 +99,11 @@ export function SupervisorAttentionBand({ isDirector }: { isDirector?: boolean }
             <Link
               to={b.to as never}
               search={(b.search ?? {}) as never}
-              className={`flex h-full flex-col justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-secondary/60 ${
-                b.count > 0 && b.tone === "critical"
-                  ? "border-destructive/40"
-                  : b.count > 0 && b.tone === "warning"
-                    ? "border-primary/30"
-                    : "border-border"
-              }`}
+              className={`flex h-full flex-col justify-between rounded-lg border p-3 transition-colors hover:brightness-[0.98] ${tileTone(b)}`}
             >
               <span className="flex items-baseline justify-between gap-2">
                 <span className="text-sm font-semibold">{b.title}</span>
-                <span
-                  className={`text-xl font-semibold tabular-nums ${
-                    b.count === 0 ? "text-muted-foreground" : ""
-                  }`}
-                >
-                  {b.count}
-                </span>
+                <span className={`numeric text-xl font-semibold ${countTone(b)}`}>{b.count}</span>
               </span>
               <span className="mt-1 text-xs text-muted-foreground">{b.hint}</span>
             </Link>

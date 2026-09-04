@@ -313,12 +313,30 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /*
+   * Typography: sans for work, serif for personality.
+   *
+   * Headings are operational UI, so they use the clean sans by default. The
+   * editorial serif is opt-in through `font-display` and reserved for hero
+   * greetings, large headlines and quotes.
+   */
   h1,
   h2,
   h3 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  h1.font-display,
+  h2.font-display,
+  h3.font-display,
+  .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.015em;
   }
+
 
   /* One visible, consistent focus treatment for every interactive control. */
   :focus-visible {

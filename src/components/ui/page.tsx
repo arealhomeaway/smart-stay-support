@@ -33,9 +33,9 @@ export function PageHeader({
     <div className={cn("flex flex-wrap items-end justify-between gap-x-6 gap-y-3", className)}>
       <div className="min-w-0">
         {eyebrow ? <p className="eyebrow mb-1.5">{eyebrow}</p> : null}
-        <h1 className="text-2xl font-semibold tracking-tight md:text-[1.75rem]">{title}</h1>
+        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight md:text-[2rem]">{title}</h1>
         {description ? (
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{description}</p>
+          <p className="mt-1.5 max-w-2xl text-[0.9375rem] leading-relaxed text-muted-foreground">{description}</p>
         ) : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -81,14 +81,14 @@ export function SectionCard({
           <div className="min-w-0">
             <h2
               className={cn(
-                "text-sm font-semibold tracking-tight",
+                "text-[1.0625rem] font-semibold tracking-tight",
                 tone === "critical" && "text-danger",
               )}
             >
               {title}
             </h2>
             {description ? (
-              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+              <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">{description}</p>
             ) : null}
           </div>
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
@@ -166,12 +166,12 @@ export function PageHero({
   className,
 }: {
   /** A real ARHA property photograph. */
-  image?: string;
-  eyebrow?: string;
+  image?: string | undefined;
+  eyebrow?: string | undefined;
   title: ReactNode;
-  description?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
+  description?: ReactNode | undefined;
+  actions?: ReactNode | undefined;
+  className?: string | undefined;
 }) {
   return (
     <section
@@ -202,7 +202,7 @@ export function PageHero({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="max-w-2xl font-display text-3xl font-semibold leading-tight tracking-tight md:text-[2.5rem]">
+        <h1 className="max-w-2xl font-display text-[2.25rem] font-normal leading-[1.1] tracking-tight md:text-[2.875rem]">
           {title}
         </h1>
         {description ? (
@@ -247,7 +247,7 @@ export function EmptyState({
       )}
     >
       {icon ? <div className="mb-3 text-muted-foreground/70">{icon}</div> : null}
-      <p className="text-sm font-medium">{title}</p>
+      <p className="text-[0.9375rem] font-semibold">{title}</p>
       {hint ? <p className="mt-1 max-w-md text-sm text-muted-foreground">{hint}</p> : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
@@ -313,9 +313,9 @@ export function Chip({
   title,
 }: {
   children: ReactNode;
-  className?: string;
-  icon?: ReactNode;
-  title?: string;
+  className?: string | undefined;
+  icon?: ReactNode | undefined;
+  title?: string | undefined;
 }) {
   return (
     <span className={cn("chip", className)} title={title}>
@@ -444,8 +444,8 @@ export function SectionBand({
   return (
     <div className={cn("band justify-between", className)}>
       <div className="flex flex-wrap items-baseline gap-2.5">
-        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+        <h2 className="text-[1.1875rem] font-semibold tracking-tight">{title}</h2>
+        {hint ? <span className="text-[0.8125rem] text-muted-foreground">{hint}</span> : null}
       </div>
       {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
     </div>

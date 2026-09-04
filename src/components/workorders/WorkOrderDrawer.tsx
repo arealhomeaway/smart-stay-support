@@ -19,6 +19,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Chip } from "@/components/ui/page";
+import { StatusBadge, type StatusTone } from "@/components/ui/status";
+import { ProgressSteps, Celebrate } from "@/components/ui/feedback";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
+import { usDate, usDateTime } from "@/lib/dates";
 import {
   Select,
   SelectContent,
@@ -85,17 +90,47 @@ function approvalChipLabel(
   );
 }
 
+function stageTone(closed: boolean, bucket: string): StatusTone {
+  if (closed) return "resolved";
+  if (bucket === "needs_action") return "escalated";
+  if (bucket === "permanent_pending" || bucket === "evidence_missing") return "progress";
+  return "waiting";
+}
+
+/** Five plain-English milestones, derived from the checkpoints already on the record. */
+function timelineSteps(wo: WorkOrderRow) {
+  const steps = [
+    { key: "created", label: "Created", hint: usDate(wo.created_at) },
+    {
+      key: "assigned",
+      label: "Assigned",
+      hint: usDate(wo.vendor_contacted_at ?? (wo.vendor_name ? wo.created_at : null)),
+    },
+    { key: "scheduled", label: "Scheduled", hint: usDate(wo.vendor_eta_at ?? wo.scheduled_for) },
+    { key: "in_progress", label: "In progress", hint: usDate(wo.vendor_arrived_at) },
+    { key: "completed", label: "Completed", hint: usDate(wo.closed_at) },
+  ];
+  let currentIndex = 0;
+  if (wo.vendor_contacted_at || wo.vendor_name) currentIndex = 1;
+  if (wo.scheduled_for || wo.vendor_eta_at) currentIndex = 2;
+  if (wo.vendor_arrived_at) currentIndex = 3;
+  if (wo.closed_at) currentIndex = 4;
+  return { steps, currentIndex };
+}
+
 export function WorkOrderDrawer({
   workOrder,
   people,
   canEdit,
   propertyName,
+  propertyPhotoUrl,
   onClose,
 }: {
   workOrder: WorkOrderRow | null;
   people: TeamMember[];
   canEdit: boolean;
   propertyName: string;
+  propertyPhotoUrl?: string | null;
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -451,26 +486,43 @@ export function WorkOrderDrawer({
   const owner = workOrder.assigned_to;
   const stamp = () => new Date().toISOString();
 
+  const { steps, currentIndex } = timelineSteps(workOrder);
+
   return (
     <TaskWorkspace
       open
       onOpenChange={(o) => (o ? null : onClose())}
-      title={workOrder.title}
+      width="full"
+      title={
+        <span className="flex items-center gap-2">
+          <PropertyPhoto url={propertyPhotoUrl ?? null} name={propertyName} className="size-8" />
+          {workOrder.title}
+        </span>
+      }
       subtitle={propertyName}
+      headerExtra={
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge tone={stageTone(!!workOrder.closed_at, workOrderBucket(workOrder))}>
+            {STAGE_LABELS[derivedStage(workOrder)]}
+          </StatusBadge>
+          <Chip>{PHASE_LABELS[workOrder.phase]}</Chip>
+          <Chip>{workOrder.priority.toUpperCase()}</Chip>
+          <Chip>{approvalChipLabel(workOrder, verdict)}</Chip>
+          <span className="text-xs text-muted-foreground">
+            owned by {owner ? displayName(people.find((p) => p.id === owner)) : "nobody yet"}
+          </span>
+        </div>
+      }
     >
       <div className="space-y-5 text-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <Chip className={stateChip(workOrder.closed_at ? "done" : "active")}>
-              {STAGE_LABELS[derivedStage(workOrder)]}
-            </Chip>
-            <Chip>{PHASE_LABELS[workOrder.phase]}</Chip>
-            <Chip>{workOrder.priority.toUpperCase()}</Chip>
-            <Chip>{approvalChipLabel(workOrder, verdict)}</Chip>
-            <span className="text-xs text-muted-foreground">
-              {propertyName} · {BUCKET_LABELS[workOrderBucket(workOrder)]} · owned by{" "}
-              {owner ? displayName(people.find((p) => p.id === owner)) : "nobody yet"}
-            </span>
-          </div>
+          {workOrder.closed_at ? (
+            <Celebrate title="Work order completed">
+              Closed {usDate(workOrder.closed_at)}
+              {workOrder.closure_note ? ` — ${workOrder.closure_note}` : ""}
+            </Celebrate>
+          ) : (
+            <ProgressSteps steps={steps} currentIndex={currentIndex} />
+          )}
 
           <div className="rounded-md border bg-muted/40 p-3">
             <p className="font-medium">{nextAction(workOrder)}</p>
@@ -481,8 +533,7 @@ export function WorkOrderDrawer({
               Next checkpoint: {CHECKPOINT_LABELS[nextCheckpoint(workOrder)]}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              You remain responsible for this work until it is resolved or another employee accepts a
-              handoff on the ticket. Consulting James or waiting on the owner does not move ownership.
+              Stays yours until it's resolved or handed off — asking for advice doesn't change that.
             </p>
           </div>
 
@@ -613,7 +664,7 @@ export function WorkOrderDrawer({
                   </div>
                 ) : null}
                 {workOrder.owner_fyi_at ? (
-                  <p className="text-xs text-muted-foreground">Homeowner told on {new Date(workOrder.owner_fyi_at as string).toLocaleDateString()}.</p>
+                  <p className="text-xs text-muted-foreground">Homeowner told on {usDate(workOrder.owner_fyi_at as string)}.</p>
                 ) : null}
               </section>
               <Separator />
@@ -624,8 +675,8 @@ export function WorkOrderDrawer({
           <section className="space-y-3">
             <h3 className="font-display text-sm font-semibold">Owner approval</h3>
             <p className="text-xs text-muted-foreground">
-              Permanent repairs over the policy threshold are the owner's decision. Emergency mitigation may
-              proceed regardless — approval covers the permanent repair. Owner notified is not owner approved.
+              Repairs over the policy threshold need the owner's sign-off. Emergency mitigation can proceed
+              anyway — approval is for the permanent fix. Notified is not the same as approved.
             </p>
 
             {verdict.ownerApprovalRequired ? (
@@ -684,10 +735,8 @@ export function WorkOrderDrawer({
             <>
               <section className="space-y-3">
                 <h3 className="font-display text-sm font-semibold">Warranty</h3>
-                <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-xs">
-                  Warranty may apply
-                  {workOrder.warranty_contact ? ` — ${workOrder.warranty_contact}` : ""}. Resolve never bypasses
-                  the warranty by itself.
+                <p className="rounded-md border border-amber/25 bg-amber/10 px-2 py-1 text-xs">
+                  Warranty may apply{workOrder.warranty_contact ? ` — ${workOrder.warranty_contact}` : ""}.
                 </p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-1">
@@ -873,22 +922,37 @@ export function WorkOrderDrawer({
           <section className="space-y-2">
             <h3 className="font-display text-sm font-semibold">Evidence</h3>
             {reqs.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No checklist recorded for this work order.</p>
+              <p className="text-xs text-muted-foreground">Nothing required on this job.</p>
             ) : (
-              reqs.map((r) => (
-                <div key={r.slot_key} className="flex items-center justify-between rounded border px-3 py-1.5">
-                  <span className="text-xs">
-                    {r.label}
-                    {r.required ? "" : " (optional)"}
-                  </span>
-                  <Chip>{r.status}</Chip>
-                </div>
-              ))
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {reqs.map((r) => {
+                  const done = r.status === "provided" || r.status === "waived";
+                  return (
+                    <div
+                      key={r.slot_key}
+                      className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ${
+                        done ? "bg-sage/8 text-foreground" : "bg-sunken text-foreground"
+                      }`}
+                    >
+                      <span className="truncate">
+                        {r.label}
+                        {r.required ? "" : " (optional)"}
+                      </span>
+                      <StatusBadge tone={done ? "resolved" : "waiting"}>{r.status}</StatusBadge>
+                    </div>
+                  );
+                })}
+              </div>
             )}
+            <PhotoStrip
+              entityType="ticket"
+              entityId={workOrder.ticket_id ?? workOrder.id}
+              title="Job photos"
+              emptyHint="No photos uploaded from the ticket yet."
+            />
             {progress.blocking.length > 0 ? (
               <p className="text-xs text-muted-foreground">
-                {progress.blocking.length} required item(s) outstanding. Linked claims and guest recovery read
-                these same items — never upload the job twice.
+                {progress.blocking.length} required item(s) still outstanding.
               </p>
             ) : null}
             <div className="flex flex-wrap gap-2">
@@ -1019,7 +1083,7 @@ export function WorkOrderDrawer({
               <div key={row.id} className="rounded border px-3 py-1.5 text-xs">
                 <p className="font-medium">{row.body}</p>
                 <p className="text-muted-foreground">
-                  {row.event_type} · {new Date(row.created_at).toLocaleString()}
+                  {row.event_type} · {usDateTime(row.created_at)}
                 </p>
               </div>
             ))}

@@ -5,6 +5,7 @@ import {
   RecoveryListSection,
   useRecoveries,
   useRecoveryPropertyNames,
+  useRecoveryPropertyPhotos,
   useRecoveryRequirements,
 } from "@/components/recovery/RecoveryList";
 import { useRole } from "@/hooks/useRole";
@@ -20,6 +21,7 @@ function MyRecoveries() {
   const recoveries = useRecoveries();
   const requirements = useRecoveryRequirements();
   const propertyNames = useRecoveryPropertyNames();
+  const propertyPhotos = useRecoveryPropertyPhotos();
   const { readOnly } = useRole();
   const userId = useCurrentUserId();
 
@@ -44,6 +46,7 @@ function MyRecoveries() {
           recoveries={rows}
           requirements={requirements.data ?? new Map<string, RequirementLike[]>()}
           propertyNames={propertyNames.data ?? new Map()}
+          propertyPhotos={propertyPhotos.data ?? new Map()}
           canEdit={!readOnly}
         />
       )}

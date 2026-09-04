@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PortalCard } from "@/components/PortalCard";
+import { EmptyState } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { ROLE_LABELS } from "@/lib/permissions";
@@ -82,7 +81,7 @@ function Hub() {
           Welcome back{name ? `, ${name.split(" ")[0]}` : ""}
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-muted-foreground">
-          <Badge variant="secondary">{ROLE_LABELS[primary]}</Badge>
+          <StatusBadge tone="brand">{ROLE_LABELS[primary]}</StatusBadge>
           <span>A Real Home Away</span>
         </div>
 
@@ -93,14 +92,11 @@ function Hub() {
             <Skeleton className="h-64" />
           </div>
         ) : portals.length === 0 ? (
-          <div className="mt-10 rounded-xl border border-border bg-card p-8">
-            <ShieldAlert className="size-6 text-primary" aria-hidden="true" />
-            <h2 className="mt-4 text-lg font-semibold">No portal is assigned to you yet</h2>
-            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Your account is active, but nobody has granted it access to a workspace. Ask a
-              Platform Owner or your supervisor to assign your access, then sign in again.
-            </p>
-          </div>
+          <EmptyState
+            className="mt-10 border border-border bg-card"
+            title="No portal is assigned to you yet"
+            hint="Ask a Platform Owner or your supervisor to give you access, then sign in again."
+          />
         ) : (
           <>
             <h2 className="mt-12 text-xl font-semibold">Portals you can open</h2>

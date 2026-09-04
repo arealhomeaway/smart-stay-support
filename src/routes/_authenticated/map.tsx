@@ -2,16 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { MapPinned, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { jobMap, geocodeProperties } from "@/lib/geo.functions";
 import type { MapPin } from "@/lib/geo";
-import { priorityMeta, priorityTone, relativeTime } from "@/lib/tickets";
+import { priorityMeta, relativeTime } from "@/lib/tickets";
 import { JobMap } from "@/components/JobMap";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
-import { Badge } from "@/components/ui/badge";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
+import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/map")({
@@ -63,26 +64,17 @@ function MapPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="flex items-center gap-2 font-display text-2xl font-semibold">
-            <MapPinned className="size-6" /> Work map
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Every managed home with a pin, sized and coloured by the work waiting there. Use it to dispatch the
-            partner who is already nearby instead of the one who answers first.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => run.mutate(false)}
-          disabled={run.isPending}
-          className="gap-2"
-        >
-          <RefreshCw className={`size-4 ${run.isPending ? "animate-spin" : ""}`} />
-          {run.isPending ? "Looking up addresses…" : `Pin ${unpinned || "new"} home${unpinned === 1 ? "" : "s"}`}
-        </Button>
-      </header>
+      <PageHeader
+        eyebrow="Operations"
+        title="Work map"
+        description="Every managed home, sized and coloured by the work waiting there. Dispatch whoever is already nearby."
+        actions={
+          <Button variant="outline" onClick={() => run.mutate(false)} disabled={run.isPending} className="gap-2">
+            <RefreshCw className={`size-4 ${run.isPending ? "animate-spin" : ""}`} />
+            {run.isPending ? "Looking up addresses…" : `Pin ${unpinned || "new"} home${unpinned === 1 ? "" : "s"}`}
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
         <span>{pins.length} homes pinned</span>
@@ -101,42 +93,43 @@ function MapPage() {
       {map.isLoading ? (
         <Skeleton className="h-[420px] w-full" />
       ) : pins.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">No pins yet</CardTitle>
-            <CardDescription>
-              Homes need a street address before they can be placed. Add addresses on the Properties page, then
-              run the lookup above.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link to="/properties" className="text-sm font-medium underline underline-offset-4">
-              Go to Properties
-            </Link>
-          </CardContent>
-        </Card>
+        <SectionCard>
+          <EmptyState
+            title="No pins yet"
+            hint="Homes need a street address before they can be placed. Add one on the Properties page, then run the lookup above."
+            action={
+              <Link to="/properties" className="text-sm font-medium underline underline-offset-4">
+                Go to Properties
+              </Link>
+            }
+          />
+        </SectionCard>
       ) : (
         <JobMap pins={pins} onSelect={setSelected} />
       )}
 
       {selected && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{selected.name}</CardTitle>
-            <CardDescription>{selected.address || "No address on file"}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {selected.openJobs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing open here right now.</p>
-            ) : (
-              selected.openJobs.map((job) => (
+        <SectionCard
+          title={
+            <span className="flex items-center gap-2">
+              <PropertyPhoto name={selected.name} className="size-8" />
+              {selected.name}
+            </span>
+          }
+          description={selected.address || "No address on file"}
+        >
+          {selected.openJobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nothing open here right now.</p>
+          ) : (
+            <div className="space-y-2">
+              {selected.openJobs.map((job) => (
                 <Link
                   key={job.id}
                   to="/tickets/$ticketId"
                   params={{ ticketId: job.id }}
                   className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/40"
                 >
-                  <Badge className={priorityTone(job.priority)}>{priorityMeta(job.priority).label}</Badge>
+                  <StatusBadge tone={ticketTone(job.status)}>{priorityMeta(job.priority).label}</StatusBadge>
                   <span className="font-medium">#{job.ref}</span>
                   <span className="truncate">{job.title}</span>
                   <span className="ml-auto text-muted-foreground">
@@ -144,10 +137,10 @@ function MapPage() {
                     {job.dueAt ? `due ${relativeTime(job.dueAt)}` : job.status}
                   </span>
                 </Link>
-              ))
-            )}
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          )}
+        </SectionCard>
       )}
     </div>
   );

@@ -6,6 +6,7 @@ import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import heroImage from "@/assets/hero-arha-property.jpg";
 import {
@@ -84,7 +85,7 @@ type Row = {
   accountable_owner: string | null;
   created_by: string | null;
   pending_handoff_to: string | null;
-  properties: { name: string | null; nickname: string | null } | null;
+  properties: { name: string | null; nickname: string | null; primary_photo_url?: string | null } | null;
 };
 
 function Dashboard() {
@@ -96,7 +97,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname)")
+        .select("*, properties(name, nickname, primary_photo_url)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false })
@@ -284,13 +285,12 @@ function Dashboard() {
       <SectionCard
         tone={needsMe.length > 0 ? "critical" : "default"}
         title="Needs me now"
-        description="Actionable this minute — unacknowledged, not started, past a clock, or back from waiting."
+        description="Ready for you right now."
         bodyClassName="space-y-1.5"
       >
         {needsMe.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nothing needs you right now — everything you own is moving or parked with a follow-up
-            time.
+            You are clear. Everything you own is moving or has a follow-up time.
           </p>
         ) : (
           needsMe.map((t) => <WorkRow key={t.id} t={t} emphasis origin={originSearch} />)
@@ -300,7 +300,7 @@ function Dashboard() {
       {inProgress.length > 0 && (
         <SectionCard
           title="In progress"
-          description="Work you own and have already started."
+          description="Started and moving."
           bodyClassName="space-y-1.5"
         >
           {inProgress.map((t) => (
@@ -312,7 +312,7 @@ function Dashboard() {
       {waiting.length > 0 && (
         <SectionCard
           title="Waiting"
-          description="Parked on someone else, soonest follow-up first. The clock is paused, not finished."
+          description="Parked on someone else. Soonest follow-up first."
           bodyClassName="space-y-1.5"
         >
           {waiting.map((t) => (
@@ -409,6 +409,11 @@ function WorkRow({
       }`}
     >
       <PriorityRail priority={t.priority} />
+      <PropertyPhoto
+        url={t.properties?.primary_photo_url ?? null}
+        name={t.properties?.nickname ?? t.properties?.name ?? null}
+        className="size-11"
+      />
       <Badge variant="outline" className={priorityTone(t.priority)}>
         {priorityMeta(t.priority).short}
       </Badge>
@@ -481,7 +486,7 @@ function RoutineWorkDue() {
   return (
     <SectionCard
       title="Routine work due"
-      description="Cleaning Reviews, Guest Reviews, Checkouts and Guest Touch Bases. Scheduled work, not reported problems."
+      description="Cleaning Reviews, Guest Reviews, Checkouts and Guest Touch Bases."
       tone={late > 0 ? "attention" : "default"}
       bodyClassName="space-y-1.5"
       actions={
@@ -496,7 +501,7 @@ function RoutineWorkDue() {
       {rows.length === 0 ? (
         <EmptyState
           title="No routine checks due right now."
-          hint="Cleaning Reviews appear here on their own once a departure clean is finished."
+          hint="Cleaning Reviews appear once a departure clean is finished."
         />
       ) : (
         rows.map((r) => {

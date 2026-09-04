@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { stateChip } from "@/lib/semantic";
 import { displayName, useCurrentUserId, useStaffDirectory } from "@/hooks/useTeam";
 import { RecoveryDrawer } from "@/components/recovery/RecoveryDrawer";
@@ -70,10 +72,27 @@ export function useRecoveryPropertyNames() {
     queryKey: ["recovery-property-names"],
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("properties").select("id, name, nickname, city");
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id, name, nickname, city, primary_photo_url");
       if (error) throw error;
       const map = new Map<string, string>();
       for (const p of data ?? []) map.set(p.id, p.nickname || p.name || p.city || "Property");
+      return map;
+    },
+  });
+}
+
+/** Property photos for the rows on screen, keyed by property id. */
+export function useRecoveryPropertyPhotos() {
+  return useQuery({
+    queryKey: ["recovery-property-photos"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("properties").select("id, primary_photo_url");
+      if (error) throw error;
+      const map = new Map<string, string | null>();
+      for (const p of data ?? []) map.set(p.id, p.primary_photo_url ?? null);
       return map;
     },
   });
@@ -83,6 +102,7 @@ export function RecoveryRowCard({
   recovery,
   requirements,
   propertyName,
+  propertyPhoto,
   ownerName,
   canEdit,
   onOpen,
@@ -90,6 +110,7 @@ export function RecoveryRowCard({
   recovery: RecoveryRow;
   requirements: RequirementLike[];
   propertyName: string;
+  propertyPhoto?: string | null | undefined;
   ownerName: string;
   canEdit: boolean;
   onOpen: () => void;
@@ -127,8 +148,9 @@ export function RecoveryRowCard({
 
   return (
     <div className="rounded-lg border bg-card shadow-card transition-colors hover:bg-muted/50">
-      <div className="flex items-start gap-2">
-        <button type="button" onClick={onOpen} className="resolve-press flex-1 px-4 py-3 text-left">
+      <div className="flex items-start gap-3">
+        <PropertyPhoto url={propertyPhoto} name={propertyName} className="mt-3 ml-4" />
+        <button type="button" onClick={onOpen} className="resolve-press flex-1 px-0 py-3 text-left">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">{propertyName}</span>
             <Chip className={stateChip(stageState(recovery.stage))}>
@@ -139,11 +161,9 @@ export function RecoveryRowCard({
               <Chip>{RECOVERY_ACTION_LABELS[recovery.recovery_action]}</Chip>
             ) : null}
             {recovery.within_airbnb_policy === false ? (
-              <Chip className="border-danger/40 bg-danger/10 text-danger">{OUTSIDE_POLICY_BADGE}</Chip>
+              <StatusBadge tone="escalated">{OUTSIDE_POLICY_BADGE}</StatusBadge>
             ) : null}
-            {overdue ? (
-              <Chip className="border-warning/40 bg-warning/10 text-warning">Guest update due</Chip>
-            ) : null}
+            {overdue ? <StatusBadge tone="waiting">Guest update due</StatusBadge> : null}
             {handoffPending(recovery) ? <Chip>Handoff not accepted</Chip> : null}
           </div>
           <p className="mt-1 text-sm font-medium text-foreground/90">
@@ -180,12 +200,14 @@ export function RecoveryListSection({
   recoveries,
   requirements,
   propertyNames,
+  propertyPhotos,
   canEdit,
   initialOpenId,
 }: {
   recoveries: RecoveryRow[];
   requirements: Map<string, RequirementLike[]>;
   propertyNames: Map<string, string>;
+  propertyPhotos?: Map<string, string | null>;
   canEdit: boolean;
   /** Deep link from an approval notification — opens the exact recovery once. */
   initialOpenId?: string | null;
@@ -221,6 +243,7 @@ export function RecoveryListSection({
             recovery={recovery}
             requirements={requirements.get(recovery.id) ?? []}
             propertyName={propertyNames.get(recovery.property_id ?? "") ?? "Property unlinked"}
+            propertyPhoto={propertyPhotos?.get(recovery.property_id ?? "")}
             ownerName={nameFor(effectiveOwner(recovery))}
             canEdit={canEdit}
             onOpen={() => setOpenId(recovery.id)}
