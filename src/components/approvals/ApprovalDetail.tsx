@@ -16,6 +16,8 @@ import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { relativeTime } from "@/lib/tickets";
+import { OwnerReplies } from "./OwnerReplies";
+
 
 const KIND_LABEL: Record<string, string> = {
   estimate: "Repair estimate",
