@@ -17,8 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FocusedAction } from "@/components/ui/workspace";
-import {
-} from "@/components/ui/dialog";
 import { EmptyState, LoadingPage, PageHeader, SectionCard } from "@/components/ui/page";
 import { RoutineDrawer, type RoutineRow } from "@/components/routines/RoutineDrawer";
 import { useDemo } from "@/components/DemoProvider";
