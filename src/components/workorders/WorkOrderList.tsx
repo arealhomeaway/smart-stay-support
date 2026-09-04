@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/components/DemoProvider";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/page";
 import { stateChip } from "@/lib/semantic";
@@ -30,12 +31,16 @@ import {
 import type { WorkOrderRow } from "@/lib/work-order-types";
 
 export function useWorkOrders() {
+  // Demo work orders belong to the demo lens only: live queues, counts and
+  // supervisor views never mix the two.
+  const { demoMode } = useDemo();
   return useQuery({
-    queryKey: ["work-orders"],
+    queryKey: ["work-orders", demoMode],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("work_orders")
         .select("*")
+        .eq("is_demo", demoMode)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as unknown as WorkOrderRow[];
@@ -222,6 +227,7 @@ export function WorkOrderListSection({
         ))}
       </div>
       <WorkOrderDrawer
+        key={open?.id ?? "none"}
         workOrder={open}
         people={people}
         canEdit={canEdit}

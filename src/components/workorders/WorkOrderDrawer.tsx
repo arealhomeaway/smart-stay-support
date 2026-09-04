@@ -7,7 +7,7 @@
  * Resolve derives the authority, the checkpoints and the gates; the employee
  * supplies the judgement, the amounts and the words.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -81,6 +81,19 @@ export function WorkOrderDrawer({
   const { isSupervisor } = useRole();
   const [note, setNote] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
+
+  /*
+   * Every unsaved value belongs to one work order. QA found a quote typed on
+   * one job still sitting in the box after opening another, so the workspace
+   * clears itself whenever the record it is showing changes — belt and braces
+   * alongside the caller remounting it by id.
+   */
+  const shownId = useRef<string | null>(workOrder?.id ?? null);
+  if (workOrder && shownId.current !== workOrder.id) {
+    shownId.current = workOrder.id;
+    if (note) setNote("");
+    if (Object.keys(fields).length) setFields({});
+  }
 
   const requirements = useQuery({
     queryKey: ["work-order-evidence", workOrder?.id],
