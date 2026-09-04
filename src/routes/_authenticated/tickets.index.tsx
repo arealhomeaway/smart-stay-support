@@ -154,23 +154,32 @@ function TicketsPage() {
   void token;
 
   const activeTab = QUEUE_TABS.find((t) => t.value === tab);
-  // The exception views belong to whoever oversees the work, not to the person
-  // doing it — a coordinator should never have to filter their day.
-  const visibleTabs = QUEUE_TABS.filter((t) => !t.supervisory || isSupervisor);
+  // My work is exactly that: what this person is carrying, and what they have
+  // finished. Everyone else's work lives in Team Queue; exceptions live in
+  // Oversight. A coordinator should never have to filter their own day.
+  const visibleTabs = QUEUE_TABS.filter(
+    (t) => t.value === "mine" || t.value === "closed" || (t.supervisory && isSupervisor),
+  );
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tickets"
+        title="My work"
         description={activeTab?.hint}
         actions={
-          <Button asChild>
-            <Link to="/tickets/new" search={{ origin: token }}>
-              Report an issue
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/team-queue">Team Queue</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/tickets/new" search={{ origin: token }}>
+                Report an issue
+              </Link>
+            </Button>
+          </div>
         }
       />
+
 
       {demoMode && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">

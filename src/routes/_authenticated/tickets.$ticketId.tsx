@@ -1076,17 +1076,30 @@ function TicketDetail() {
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">
                     {ticket.status === "resolved"
-                      ? "Work is finished — closure review is next"
+                      ? "Work is finished"
                       : "This ticket is closed"}
                   </h2>
-                  {ticket.status === "resolved" && (
-                    <p className="text-sm text-muted-foreground">
-                      Nothing more is needed from the frontline. A supervisor checks the closing
-                      record before it is closed for good.
-                    </p>
-                  )}
                   {ticket.resolution_notes && (
                     <p className="text-sm text-muted-foreground">{ticket.resolution_notes}</p>
+                  )}
+                  {ticket.status === "resolved" && (
+                    <FinalReviewPanel
+                      ticketId={String(ticket["id"])}
+                      result={ticket["closure_qa_result"] as string | null}
+                      note={ticket["final_review_note"] as string | null}
+                      facts={{
+                        priority: ticket["priority"] as string,
+                        category: ticket["category"] as string,
+                        guest_in_residence: ticket["guest_in_residence"] as boolean,
+                        guest_impact: ticket["guest_impact"] as string,
+                        escalated: Boolean(ticket["escalated_at"]),
+                        escalation_level: ticket["escalation_level"] as string,
+                        reopen_count: ticket["reopen_count"] as number,
+                        hasClaim: activeBranch.claim,
+                        hasRecovery: activeBranch.recovery,
+                      }}
+                    />
+
                   )}
                   {ticket.record_type !== "completed_interaction" && (
                     <Button variant="outline" onClick={reopen}>
@@ -1095,6 +1108,7 @@ function TicketDetail() {
                   )}
                 </div>
               )}
+
 
 
               {/* Special Handling belongs with the decision, never as page furniture. */}

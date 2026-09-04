@@ -17,6 +17,7 @@ import {
 } from "@/lib/ticket-lifecycle";
 
 import { requiresPhotoOrFile } from "@/lib/evidence-requirements";
+import { finalReviewRequirement } from "@/lib/final-review";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Db = SupabaseClient<any, any, any>;
@@ -44,7 +45,7 @@ export async function gatherLifecycleFacts(
   const { data: ticket, error } = await db.from("tickets").select("*").eq("id", ticketId).single();
   if (error || !ticket) throw new Error(error?.message ?? "That ticket could not be found.");
 
-  const [workType, steps, orders, files, comms] = await Promise.all([
+  const [workType, steps, orders, files, comms, claims, recoveries] = await Promise.all([
     ticket.work_type_id
       ? db
           .from("work_types")
@@ -56,7 +57,7 @@ export async function gatherLifecycleFacts(
     db
       .from("work_orders")
       .select(
-        "id, scope, vendor_org_id, vendor_name, approval_status, quote_amount, approved_amount",
+        "id, scope, vendor_org_id, vendor_name, approval_status, quote_amount, approved_amount, emergency",
       )
       .eq("ticket_id", ticketId),
     db
@@ -69,7 +70,13 @@ export async function gatherLifecycleFacts(
       .select("id, kind, internal")
       .eq("ticket_id", ticketId)
       .in("kind", ["guest_message", "communication", "guest_update"]),
+    db.from("claims").select("id", { count: "exact", head: true }).eq("ticket_id", ticketId),
+    db
+      .from("guest_recovery")
+      .select("id", { count: "exact", head: true })
+      .eq("ticket_id", ticketId),
   ]);
+
 
   const wt = (workType as any)?.data as {
     name?: string;
@@ -81,7 +88,10 @@ export async function gatherLifecycleFacts(
     vendor_org_id: string | null;
     vendor_name: string | null;
     approval_status: string | null;
+    quote_amount: number | null;
+    approved_amount: number | null;
   }[];
+
   const fileRows = (
     (files.data ?? []) as {
       upload_status: string | null;
@@ -134,7 +144,24 @@ export async function gatherLifecycleFacts(
     requiredStepsComplete: stepRows.every((s) => !s.required || s.completed),
 
     closureQaResult: ticket.closure_qa_result,
+    finalReviewRequired: finalReviewRequirement({
+      priority: ticket.priority,
+      category: ticket.category,
+      guest_in_residence: ticket.guest_in_residence,
+      guest_impact: ticket.guest_impact,
+      escalated: Boolean(ticket.escalated_at),
+      escalation_level: ticket.escalation_level,
+      reopen_count: ticket.reopen_count,
+      hasClaim: (claims as any)?.count ? true : false,
+      hasRecovery: (recoveries as any)?.count ? true : false,
+      repairAmount: orderRows.reduce(
+        (max, o) => Math.max(max, Number(o.approved_amount ?? o.quote_amount ?? 0)),
+        0,
+      ),
+      ownerSensitive: Boolean(ticket.owner_notified || ticket.owner_approval_required),
+    }).required,
   };
+
 
   return { facts, ticket };
 }

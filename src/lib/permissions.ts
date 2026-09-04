@@ -118,15 +118,15 @@ const SUPERVISOR_CAPS: Capability[] = [
   "vendor_admin",
   "audit_history",
   "user_management",
+  // Supervisors carry vendor work end to end, so the Work Orders workspace is
+  // part of the job — not a platform-owner tool.
+  "work_orders_internal",
 ];
 
 export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   admin: [
     ...SUPERVISOR_CAPS,
     "command_center",
-    // The internal Work Order / Vendor Portal system is not live for the beta.
-    // Kept reachable for platform owners only; frontline sees Breezeway repair.
-    "work_orders_internal",
     "role_management",
     "settings",
     "integrations",
@@ -135,8 +135,10 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   ],
   manager: SUPERVISOR_CAPS,
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
-  // Operations coordinators can see current guest/tenant contact details.
-  tech: [...STAFF_BASE, "guest_contact"],
+  // Operations coordinators can see current guest/tenant contact details, the
+  // shared Team Queue, and the work orders attached to what they are running.
+  tech: [...STAFF_BASE, "guest_contact", "work_orders_internal"],
+
   vendor: [],
   owner: [],
 };

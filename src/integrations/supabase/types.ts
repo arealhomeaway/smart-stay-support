@@ -85,7 +85,10 @@ export type Database = {
           is_demo: boolean
           kind: string
           property_id: string | null
+          recorded_by: string | null
           requested_by: string | null
+          responded_at: string | null
+          response_channel: string | null
           status: string
           title: string
           updated_at: string
@@ -109,7 +112,10 @@ export type Database = {
           is_demo?: boolean
           kind: string
           property_id?: string | null
+          recorded_by?: string | null
           requested_by?: string | null
+          responded_at?: string | null
+          response_channel?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -133,7 +139,10 @@ export type Database = {
           is_demo?: boolean
           kind?: string
           property_id?: string | null
+          recorded_by?: string | null
           requested_by?: string | null
+          responded_at?: string | null
+          response_channel?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -1432,6 +1441,94 @@ export type Database = {
           ticket_id?: string | null
         }
         Relationships: []
+      }
+      escalations: {
+        Row: {
+          already_tried: string | null
+          created_at: string
+          escalated_by: string
+          escalated_to: string | null
+          escalated_to_role: string
+          help_needed: string | null
+          id: string
+          is_demo: boolean
+          outcome: string | null
+          outcome_note: string | null
+          property_id: string | null
+          reason: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          ticket_id: string | null
+          updated_at: string
+          urgency: string
+          work_order_id: string | null
+        }
+        Insert: {
+          already_tried?: string | null
+          created_at?: string
+          escalated_by: string
+          escalated_to?: string | null
+          escalated_to_role: string
+          help_needed?: string | null
+          id?: string
+          is_demo?: boolean
+          outcome?: string | null
+          outcome_note?: string | null
+          property_id?: string | null
+          reason: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          ticket_id?: string | null
+          updated_at?: string
+          urgency?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          already_tried?: string | null
+          created_at?: string
+          escalated_by?: string
+          escalated_to?: string | null
+          escalated_to_role?: string
+          help_needed?: string | null
+          id?: string
+          is_demo?: boolean
+          outcome?: string | null
+          outcome_note?: string | null
+          property_id?: string | null
+          reason?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          ticket_id?: string | null
+          updated_at?: string
+          urgency?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalations_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       evidence_events: {
         Row: {
@@ -5957,6 +6054,9 @@ export type Database = {
           external_synced_at: string | null
           external_url: string | null
           final_communication_sent: boolean
+          final_review_at: string | null
+          final_review_by: string | null
+          final_review_note: string | null
           functional_role_code: string | null
           guest_comm_owner: string | null
           guest_confirmed: boolean
@@ -6062,6 +6162,9 @@ export type Database = {
           external_synced_at?: string | null
           external_url?: string | null
           final_communication_sent?: boolean
+          final_review_at?: string | null
+          final_review_by?: string | null
+          final_review_note?: string | null
           functional_role_code?: string | null
           guest_comm_owner?: string | null
           guest_confirmed?: boolean
@@ -6167,6 +6270,9 @@ export type Database = {
           external_synced_at?: string | null
           external_url?: string | null
           final_communication_sent?: boolean
+          final_review_at?: string | null
+          final_review_by?: string | null
+          final_review_note?: string | null
           functional_role_code?: string | null
           guest_comm_owner?: string | null
           guest_confirmed?: boolean
