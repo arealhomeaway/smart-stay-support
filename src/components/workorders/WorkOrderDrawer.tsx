@@ -80,7 +80,9 @@ function approvalChipLabel(
     return "Supervisor approved";
   if (verdict.ownerApprovalRequired && wo.approval_status === "not_required")
     return "Owner approval not requested yet";
-  return APPROVAL_STATUS_LABELS[wo.approval_status] ?? wo.approval_status;
+  return (
+    (APPROVAL_STATUS_LABELS as Record<string, string>)[wo.approval_status] ?? wo.approval_status
+  );
 }
 
 export function WorkOrderDrawer({
