@@ -44,7 +44,7 @@ export function FinalReviewPanel({
       recordFinalReviewFn({ data: { ticketId, decision, note: reviewNote || null } }),
     onSuccess: (_r, decision) => {
       toast.success(
-        decision === "approve" ? "Final Review approved — ticket closed." : "Sent back for correction.",
+        decision === "approve" ? "Approved and closed." : "Sent back for changes.",
       );
       setReviewNote("");
       setMode("idle");
@@ -60,12 +60,12 @@ export function FinalReviewPanel({
   return (
     <div className="rounded-lg border border-border/60 bg-card p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="font-medium">Final Review</h3>
+        <h3 className="font-medium">Review before closing</h3>
         {decided ? (
           <Badge variant="outline">{finalReviewResultLabel(result)}</Badge>
         ) : requirement.required ? (
           <Badge variant="outline" className="border-warning/40 bg-warning/10">
-            Needed before closing
+            Needs review
           </Badge>
         ) : (
           <Badge variant="outline">Not needed</Badge>
@@ -87,7 +87,7 @@ export function FinalReviewPanel({
       {!decided && requirement.required && isSupervisor && !readOnly && (
         <div className="mt-4 space-y-3">
           <Label htmlFor="final-review-note">
-            {mode === "return" ? "What needs correcting?" : "Note (optional)"}
+            {mode === "return" ? "What needs to change?" : "Note (optional)"}
           </Label>
           <Textarea
             id="final-review-note"
@@ -104,7 +104,7 @@ export function FinalReviewPanel({
               disabled={submit.isPending || (mode === "return" && reviewNote.trim().length < 5)}
               onClick={() => (mode === "return" ? submit.mutate("return") : setMode("return"))}
             >
-              {mode === "return" ? "Send it back" : "Return for correction"}
+              {mode === "return" ? "Send it back" : "Send back for changes"}
             </Button>
           </div>
         </div>

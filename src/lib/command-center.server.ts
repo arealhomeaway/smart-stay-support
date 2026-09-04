@@ -293,7 +293,7 @@ export async function loadCommandCenter(
         target: "100%",
         status: grade(pct(closureEvidence.length, closedCurrent.length), { good: 98, warn: 90, higherIsBetter: true }),
         denominator: `${closedCurrent.length} resolved tickets`,
-        drill: { to: "/oversight", label: "Final Review" },
+        drill: { to: "/oversight", label: "Needs review" },
       }),
       kpi({
         key: "supervisor_intervention",

@@ -37,7 +37,7 @@ export const recordFinalReviewFn = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
     const roles = (roleRows ?? []).map((r) => String(r.role));
     if (!roles.some((r) => r === "admin" || r === "manager"))
-      throw new Error("Only a supervisor can complete Final Review.");
+      throw new Error("Only a supervisor can review a ticket before closing.");
 
     if (data.decision === "return") {
       if (!data.note || data.note.trim().length < 5)
@@ -61,7 +61,7 @@ export const recordFinalReviewFn = createServerFn({ method: "POST" })
         kind: "status",
         event_type: "final_review_returned",
         internal: false,
-        body: `Final Review returned this work for correction — ${data.note}`,
+        body: `Changes needed on this ticket — ${data.note}`,
       });
       return { ok: true as const, decision: "return" as const };
     }
@@ -91,8 +91,8 @@ export const recordFinalReviewFn = createServerFn({ method: "POST" })
       event_type: "final_review_approved",
       internal: false,
       body: data.note
-        ? `Final Review approved — ${data.note}`
-        : "Final Review approved and the ticket was closed.",
+        ? `Reviewed and closed — ${data.note}`
+        : "Reviewed and closed.",
     });
 
     return { ok: true as const, decision: "approve" as const };
