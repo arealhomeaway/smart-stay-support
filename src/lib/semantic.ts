@@ -28,31 +28,32 @@ export type ModuleKey =
   | "override";
 
 const OWNERSHIP_CHIP: Record<Ownership, string> = {
-  team_a: "border-team-a/35 bg-team-a/10 text-team-a",
-  team_b: "border-team-b/35 bg-team-b/10 text-team-b",
-  leadership: "border-leadership/35 bg-leadership/10 text-leadership",
-  vendor: "border-module-override/35 bg-module-override/10 text-module-override",
-  owner: "border-module-owner/40 bg-module-owner/10 text-module-owner",
-  unassigned: "border-state-blocked/40 bg-state-blocked/10 text-state-blocked",
+  team_a: "bg-team-a/10 text-team-a",
+  team_b: "bg-team-b/10 text-team-b",
+  leadership: "bg-leadership/10 text-leadership",
+  vendor: "bg-module-override/12 text-module-override",
+  owner: "bg-module-owner/12 text-module-owner",
+  unassigned: "bg-cool-grey/12 text-cool-grey",
 };
 
 const STATE_CHIP: Record<WorkState, string> = {
-  new: "border-state-blocked/35 bg-state-blocked/10 text-state-blocked",
-  active: "border-state-active/35 bg-state-active/10 text-state-active",
-  waiting: "border-state-waiting/40 bg-state-waiting/12 text-state-waiting",
-  blocked: "border-state-blocked/40 bg-state-blocked/12 text-state-blocked",
-  done: "border-state-done/35 bg-state-done/10 text-state-done",
-  info: "border-state-info/30 bg-state-info/10 text-state-info",
+  new: "bg-sky/10 text-sky",
+  active: "bg-state-active/12 text-state-active",
+  waiting: "bg-state-waiting/14 text-state-waiting",
+  blocked: "bg-state-blocked/12 text-state-blocked",
+  done: "bg-state-done/12 text-state-done",
+  info: "bg-state-info/12 text-state-info",
 };
 
 const MODULE_CHIP: Record<ModuleKey, string> = {
-  operations: "border-module-ops/35 bg-module-ops/10 text-module-ops",
-  onboarding: "border-module-onboarding/35 bg-module-onboarding/10 text-module-onboarding",
-  owner: "border-module-owner/40 bg-module-owner/12 text-module-owner",
-  approval: "border-module-approval/35 bg-module-approval/10 text-module-approval",
-  coverage: "border-module-coverage/35 bg-module-coverage/10 text-module-coverage",
-  override: "border-module-override/40 bg-module-override/12 text-module-override",
+  operations: "bg-module-ops/10 text-module-ops",
+  onboarding: "bg-module-onboarding/12 text-module-onboarding",
+  owner: "bg-module-owner/12 text-module-owner",
+  approval: "bg-module-approval/12 text-module-approval",
+  coverage: "bg-module-coverage/12 text-module-coverage",
+  override: "bg-module-override/14 text-module-override",
 };
+
 
 export function ownershipChip(kind: Ownership) {
   return OWNERSHIP_CHIP[kind];
