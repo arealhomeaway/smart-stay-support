@@ -307,3 +307,20 @@ export function allowedTransitions(
     return Boolean(opts.allowExceptions) && verdict.exception !== null;
   });
 }
+
+/**
+ * History is written by many code paths over a long beta, and a few older
+ * rows stored the raw system word ("in_progress", "awaiting_guest"). Nobody
+ * should ever read those, so history text is humanized at render time as well
+ * as at write time — that repairs the rows already on file instead of leaving
+ * a permanent mixed feed.
+ */
+export function humanizeHistoryText(body: string | null | undefined): string {
+  if (!body) return "";
+  let out = body;
+  for (const status of TICKET_STATUSES) {
+    if (!status.includes("_")) continue;
+    out = out.replace(new RegExp(`\\b${status}\\b`, "g"), TICKET_STATUS_LABELS[status]);
+  }
+  return out;
+}
