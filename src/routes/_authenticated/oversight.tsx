@@ -203,7 +203,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       finalReviewRequirement({
         priority: t.priority,
         category: t.category,
-        guest_in_residence: (t as { guest_in_residence?: boolean }).guest_in_residence,
+        guest_in_residence: (t as { guest_in_residence?: boolean }).guest_in_residence ?? null,
         guest_impact: t.guest_impact,
         escalated: Boolean((t as { escalated_at?: string }).escalated_at),
         escalation_level: t.escalation_level,
