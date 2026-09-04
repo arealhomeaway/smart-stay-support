@@ -23,6 +23,7 @@ import {
   type ProjectSummary,
 } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 
 type Lens =
@@ -406,6 +407,12 @@ function ProjectRow({ project: p }: { project: ProjectSummary }) {
       params={{ propertyId: p.property.id }}
       className="surface flex flex-col gap-2 p-3 transition hover:bg-muted/40 lg:flex-row lg:items-center lg:gap-4"
     >
+      <PropertyPhoto
+        url={(p.property as { primary_photo_url?: string | null }).primary_photo_url}
+        name={p.property.name}
+        className="size-12 rounded-xl"
+        rounded="rounded-xl"
+      />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <span className="truncate font-medium">{p.property.name}</span>
