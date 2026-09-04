@@ -196,6 +196,8 @@ function Dashboard() {
         </div>
       </header>
 
+      {role.can("oversight") && <SupervisorAttentionBand />}
+
       {sampleQueue && (
         <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
           You are previewing the {role.previewRole?.replace(/_/g, " ")} view. Nothing is assigned to
@@ -203,6 +205,7 @@ function Dashboard() {
           person&apos;s real queue.
         </p>
       )}
+
 
       <SectionCard
         tone={needsMe.length > 0 ? "critical" : "default"}
