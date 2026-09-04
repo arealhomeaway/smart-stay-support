@@ -249,7 +249,7 @@ function TicketDetail() {
     queryFn: async () => {
       const { data } = await supabase
         .from("work_orders")
-        .select("id, status, completed_at")
+        .select("id, phase, closed_at, vendor_completed_at")
         .eq("ticket_id", ticketId);
       return data ?? [];
     },
@@ -302,7 +302,11 @@ function TicketDetail() {
   });
   // A guest message can only be required when there is a guest to write to.
   const guestPresent = Boolean(
-    ticket.guest_in_residence || ticket.guest_name || ticket.reservation_id || ticket.guest_email,
+    ticket.guest_in_residence ||
+      ticket.guest_name ||
+      ticket.guest_contact ||
+      ticket.reservation_confirmation ||
+      ticket.reservation_guest_name,
   );
   const guestCommsRequired = (workType?.guest_communication_required ?? false) && guestPresent;
   // Readiness is a read of the same gates the close action enforces — no new
@@ -642,14 +646,18 @@ function TicketDetail() {
 
   /* ---------------- where this ticket is in the work ---------------- */
   const repairLinks = (repairState?.links ?? []) as { status: string }[];
-  const orders = (workOrders ?? []) as { status: string | null; completed_at: string | null }[];
-  const openOrders = orders.filter((o) => o.status !== "cancelled");
-  const repairExists = repairLinks.length > 0 || openOrders.length > 0;
+  const orders = (workOrders ?? []) as {
+    phase: string | null;
+    closed_at: string | null;
+    vendor_completed_at: string | null;
+  }[];
+  const liveOrders = orders.filter((o) => o.phase !== "cancelled");
+  const repairExists = repairLinks.length > 0 || liveOrders.length > 0;
   const repairComplete =
     ticket.vendor_status === "completed" ||
     repairLinks.some((l) => l.status === "completed") ||
-    (openOrders.length > 0 &&
-      openOrders.every((o) => Boolean(o.completed_at) || o.status === "completed" || o.status === "closed"));
+    (liveOrders.length > 0 &&
+      liveOrders.every((o) => Boolean(o.closed_at) || Boolean(o.vendor_completed_at)));
   const verified = !ticket.guest_in_residence || Boolean(ticket.guest_confirmed);
   const rawStage = ticketStage({
     status: ticket.status,
