@@ -66,7 +66,9 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
 
   const issue = useMutation({
     mutationFn: () =>
-      createFn({ data: { role, email: email.trim(), name: name.trim(), note: "", expiresInDays: 30 } }),
+      createFn({
+        data: { role, email: email.trim(), name: name.trim(), note: "", expiresInDays: 30 },
+      }),
     onSuccess: (res) => {
       void navigator.clipboard?.writeText(inviteMessage(res.code));
       if (res.emailed?.status === "sent") {
@@ -83,7 +85,6 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
 
     onError: (e: Error) => toast.error(e.message),
   });
-
 
   const resend = useMutation({
     mutationFn: (inviteId: string) => emailFn({ data: { inviteId } }),
@@ -114,12 +115,11 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
           <Ticket className="size-4" /> Invite codes
         </CardTitle>
         <CardDescription>
-          Issue a single-use code for a new coordinator, supervisor or vendor. Codes are not emailed yet — copy
-          the invite message and send it to them yourself. They create an account on the normal login screen,
-          then enter the code at <span className="font-mono">/join</span> to set their access. Codes expire
-          after 30 days.
+          Issue a single-use code for a new coordinator, supervisor or vendor. Codes are not emailed
+          yet — copy the invite message and send it to them yourself. They create an account on the
+          normal login screen, then enter the code at <span className="font-mono">/join</span> to
+          set their access. Codes expire after 30 days.
         </CardDescription>
-
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-4">
@@ -140,7 +140,11 @@ Your access is set the moment the code is redeemed. Codes are single-use and exp
           </div>
           <div className="space-y-1.5">
             <Label>Name (optional)</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jordan Reyes" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jordan Reyes"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Lock to email (optional)</Label>

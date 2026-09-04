@@ -21,7 +21,9 @@ export const vendorOrgDetail = createServerFn({ method: "GET" })
     const { assertStaff } = await import("./vendor.server");
     const { loadVendorOrg } = await import("./vendors.server");
     await assertStaff(context.supabase, context.userId);
-    const { data: supervisor } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    const { data: supervisor } = await context.supabase.rpc("is_supervisor", {
+      _user_id: context.userId,
+    });
     return loadVendorOrg(context.supabase, data.orgId, Boolean(supervisor));
   });
 
@@ -36,7 +38,14 @@ export const createVendor = createServerFn({ method: "POST" })
         serviceCategories: z.array(z.string().max(60)).max(20),
         markets: z.array(z.string().max(60)).max(20),
         primaryContactName: z.string().trim().max(120).optional().nullable(),
-        primaryContactEmail: z.string().trim().email().max(180).optional().nullable().or(z.literal("")),
+        primaryContactEmail: z
+          .string()
+          .trim()
+          .email()
+          .max(180)
+          .optional()
+          .nullable()
+          .or(z.literal("")),
         primaryContactPhone: z.string().trim().max(40).optional().nullable(),
         website: z.string().trim().max(200).optional().nullable(),
         emergencyAvailable: z.boolean(),

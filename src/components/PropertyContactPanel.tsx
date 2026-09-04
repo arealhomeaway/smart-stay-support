@@ -27,7 +27,11 @@ function dateRange(arrival: string | null, departure: string | null) {
 
 function formatDate(v: string | null) {
   if (!v) return null;
-  return new Date(v).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(v).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -72,8 +76,8 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
           <UserRound className="size-4" /> Owner &amp; guest context
         </CardTitle>
         <CardDescription>
-          Guest detail is live from OwnerRez; the designated primary owner comes from the imported owner
-          directory. Read-only — nothing here is saved or sent.
+          Guest detail is live from OwnerRez; the designated primary owner comes from the imported
+          owner directory. Read-only — nothing here is saved or sent.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -101,8 +105,8 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
 
           {owner.status === "unmatched" && (
             <p className="text-muted-foreground">
-              No owner is mapped to this home in the owner directory.{" "}
-              {owner.detail ?? ""} This is a gap in the directory, not a statement that the home has no owner.
+              No owner is mapped to this home in the owner directory. {owner.detail ?? ""} This is a
+              gap in the directory, not a statement that the home has no owner.
             </p>
           )}
 
@@ -115,23 +119,25 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
 
           {owner.status === "source_error" && (
             <p className="text-danger">
-              The owner directory could not be read for this home. {owner.detail ?? ""} Treat this as unknown, not
-              as "no owner".
+              The owner directory could not be read for this home. {owner.detail ?? ""} Treat this
+              as unknown, not as "no owner".
             </p>
           )}
 
           {owner.status === "not_synced" && (
             <p className="text-muted-foreground">
-              This home has not been through an owner-directory import yet, so no primary owner can be shown.
+              This home has not been through an owner-directory import yet, so no primary owner can
+              be shown.
             </p>
           )}
         </div>
 
-
         <div className="space-y-2 border-t border-border pt-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Guest</p>
           {guest.status === "not_linked" && (
-            <p className="text-muted-foreground">This home is not linked to an OwnerRez listing yet.</p>
+            <p className="text-muted-foreground">
+              This home is not linked to an OwnerRez listing yet.
+            </p>
           )}
           {guest.status === "vacant" && (
             <p className="text-muted-foreground">
@@ -143,11 +149,14 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
           )}
           {guest.status === "ambiguous" && (
             <p className="text-muted-foreground">
-              More than one reservation matches right now — verify the guest directly in OwnerRez before contacting anyone.
+              More than one reservation matches right now — verify the guest directly in OwnerRez
+              before contacting anyone.
             </p>
           )}
           {guest.status === "source_error" && (
-            <p className="text-muted-foreground">Guest contact unavailable — verify in OwnerRez. ({guest.message})</p>
+            <p className="text-muted-foreground">
+              Guest contact unavailable — verify in OwnerRez. ({guest.message})
+            </p>
           )}
           {guest.status === "occupied" && (
             <>

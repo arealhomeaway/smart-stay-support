@@ -18,7 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { relativeTime } from "@/lib/tickets";
 import { OwnerReplies } from "./OwnerReplies";
 
-
 const KIND_LABEL: Record<string, string> = {
   estimate: "Repair estimate",
   spend: "Spending approval",
@@ -161,7 +160,6 @@ export function ApprovalDetail({
             pending={a.status === "pending" && a.approver_role === "owner"}
             onRecorded={() => void q.refetch()}
           />
-
 
           {linkedTicketId ? (
             <Link

@@ -35,7 +35,10 @@ export const Route = createFileRoute("/api/public/intake/email")({
 
         const parsed = payloadSchema.safeParse(raw);
         if (!parsed.success) {
-          return Response.json({ ok: false, error: parsed.error.issues[0]?.message ?? "Invalid payload" }, { status: 400 });
+          return Response.json(
+            { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid payload" },
+            { status: 400 },
+          );
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

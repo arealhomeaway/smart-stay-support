@@ -1,11 +1,24 @@
 /** My leads — the same opportunities, filtered to the person looking. */
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { EmptyState, LoadingRows, PageHeader, SectionCard, SegmentedControl } from "@/components/ui/page";
+import {
+  EmptyState,
+  LoadingRows,
+  PageHeader,
+  SectionCard,
+  SegmentedControl,
+} from "@/components/ui/page";
 import { LeadListSection, useLeads, useLeadsWithProperties } from "@/components/leads/LeadList";
 import { useCurrentUserId } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
-import { QUEUE_LABELS, QUEUE_ORDER, isOpen, leadSort, queueBucket, type QueueBucket } from "@/lib/leads";
+import {
+  QUEUE_LABELS,
+  QUEUE_ORDER,
+  isOpen,
+  leadSort,
+  queueBucket,
+  type QueueBucket,
+} from "@/lib/leads";
 
 export const Route = createFileRoute("/_authenticated/leads/my-leads")({
   component: MyLeads,

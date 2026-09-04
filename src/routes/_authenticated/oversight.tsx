@@ -114,32 +114,32 @@ function useOversightData() {
     queryFn: async () => {
       const [approvals, routines, claims, recoveries, breezeway, profiles, escalations] =
         await Promise.all([
-        supabase
-          .from("approvals")
-          .select(
-            "id, title, kind, status, due_on, entity_type, entity_id, amount, currency, property_id, approver_role",
-          )
-          .eq("status", "pending")
-          .eq("is_demo", demoMode),
-        supabase
-          .from("routine_controls")
-          .select("id, kind, status, due_at, assigned_to, completed_at")
-          .eq("is_demo", demoMode),
-        supabase.from("claims").select("id, title, stage, deadline_on").eq("is_demo", demoMode),
-        supabase
-          .from("guest_recovery")
-          .select("id, title, stage, approval_status")
-          .eq("is_demo", demoMode),
-        supabase
-          .from("breezeway_outbound_tasks")
-          .select("id, title, status, scheduled_date, ticket_id"),
-        supabase.from("profiles").select("id, full_name, email"),
-        supabase
-          .from("escalations")
-          .select("id, ticket_id, reason, help_needed, urgency, status, created_at, escalated_by")
-          .eq("status", "open")
-          .eq("is_demo", demoMode),
-      ]);
+          supabase
+            .from("approvals")
+            .select(
+              "id, title, kind, status, due_on, entity_type, entity_id, amount, currency, property_id, approver_role",
+            )
+            .eq("status", "pending")
+            .eq("is_demo", demoMode),
+          supabase
+            .from("routine_controls")
+            .select("id, kind, status, due_at, assigned_to, completed_at")
+            .eq("is_demo", demoMode),
+          supabase.from("claims").select("id, title, stage, deadline_on").eq("is_demo", demoMode),
+          supabase
+            .from("guest_recovery")
+            .select("id, title, stage, approval_status")
+            .eq("is_demo", demoMode),
+          supabase
+            .from("breezeway_outbound_tasks")
+            .select("id, title, status, scheduled_date, ticket_id"),
+          supabase.from("profiles").select("id, full_name, email"),
+          supabase
+            .from("escalations")
+            .select("id, ticket_id, reason, help_needed, urgency, status, created_at, escalated_by")
+            .eq("status", "open")
+            .eq("is_demo", demoMode),
+        ]);
       return {
         approvals: approvals.data ?? [],
         routines: routines.data ?? [],
@@ -230,7 +230,6 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         reopen_count: t.reopen_count,
       }).required,
   );
-
 
   // Every list below feeds one of six judgment groups. The grouping is what a
   // supervisor is being asked to do about it, not the database table it came
@@ -487,12 +486,34 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           jumps straight to its section below. */}
       <nav aria-label="Exception summary" className="flex flex-wrap gap-2">
         {[
-          { id: "group-decisions", label: "Decisions needed", count: decisions.reduce((n, sec) => n + sec.rows.length, 0) },
-          { id: "group-escalations", label: "Escalations", count: escalationSections.reduce((n, sec) => n + sec.rows.length, 0) + (s?.escalations ?? []).length },
-          { id: "group-blockers", label: "Blockers", count: blockers.reduce((n, sec) => n + sec.rows.length, 0) },
-          { id: "group-overdue", label: "Overdue / high-risk", count: overdue.reduce((n, sec) => n + sec.rows.length, 0) },
+          {
+            id: "group-decisions",
+            label: "Decisions needed",
+            count: decisions.reduce((n, sec) => n + sec.rows.length, 0),
+          },
+          {
+            id: "group-escalations",
+            label: "Escalations",
+            count:
+              escalationSections.reduce((n, sec) => n + sec.rows.length, 0) +
+              (s?.escalations ?? []).length,
+          },
+          {
+            id: "group-blockers",
+            label: "Blockers",
+            count: blockers.reduce((n, sec) => n + sec.rows.length, 0),
+          },
+          {
+            id: "group-overdue",
+            label: "Overdue / high-risk",
+            count: overdue.reduce((n, sec) => n + sec.rows.length, 0),
+          },
           { id: "group-approvals", label: "Approvals", count: approvals.length },
-          { id: "group-review", label: "Review before closing", count: reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0) },
+          {
+            id: "group-review",
+            label: "Review before closing",
+            count: reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0),
+          },
         ].map((g) => (
           <a
             key={g.id}
@@ -515,13 +536,29 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           An empty group collapses to one quiet line — this is where a coordinator
           spends their attention, not a stat wall. */}
       <div className="space-y-3">
-        <GroupSection id="group-decisions" title="Decisions needed" count={decisions.reduce((n, sec) => n + sec.rows.length, 0)}>
+        <GroupSection
+          id="group-decisions"
+          title="Decisions needed"
+          count={decisions.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
           {decisions.map((section) => (
-            <SubList key={section.title} section={section} origin={originSearch} profiles={s?.profiles ?? []} />
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
           ))}
         </GroupSection>
 
-        <GroupSection id="group-escalations" title="Escalations" count={escalationSections.reduce((n, sec) => n + sec.rows.length, 0) + (s?.escalations ?? []).length}>
+        <GroupSection
+          id="group-escalations"
+          title="Escalations"
+          count={
+            escalationSections.reduce((n, sec) => n + sec.rows.length, 0) +
+            (s?.escalations ?? []).length
+          }
+        >
           {(s?.escalations ?? []).length > 0 && (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
@@ -542,7 +579,9 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
                     </span>
                   </span>
                   <span className="flex items-center gap-2">
-                    {e.urgency !== "normal" && <StatusBadge tone="escalated">{e.urgency}</StatusBadge>}
+                    {e.urgency !== "normal" && (
+                      <StatusBadge tone="escalated">{e.urgency}</StatusBadge>
+                    )}
                     <ChevronRight className="size-4 text-muted-foreground" />
                   </span>
                 </Link>
@@ -550,19 +589,42 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
             </div>
           )}
           {escalationSections.map((section) => (
-            <SubList key={section.title} section={section} origin={originSearch} profiles={s?.profiles ?? []} />
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
           ))}
         </GroupSection>
 
-        <GroupSection id="group-blockers" title="Blockers" count={blockers.reduce((n, sec) => n + sec.rows.length, 0)}>
+        <GroupSection
+          id="group-blockers"
+          title="Blockers"
+          count={blockers.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
           {blockers.map((section) => (
-            <SubList key={section.title} section={section} origin={originSearch} profiles={s?.profiles ?? []} />
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
           ))}
         </GroupSection>
 
-        <GroupSection id="group-overdue" title="Overdue / high-risk" count={overdue.reduce((n, sec) => n + sec.rows.length, 0)}>
+        <GroupSection
+          id="group-overdue"
+          title="Overdue / high-risk"
+          count={overdue.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
           {overdue.map((section) => (
-            <SubList key={section.title} section={section} origin={originSearch} profiles={s?.profiles ?? []} />
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
           ))}
         </GroupSection>
 
@@ -599,9 +661,18 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
           )}
         </GroupSection>
 
-        <GroupSection id="group-review" title="Review before closing" count={reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0)}>
+        <GroupSection
+          id="group-review"
+          title="Review before closing"
+          count={reviewBeforeClosing.reduce((n, sec) => n + sec.rows.length, 0)}
+        >
           {reviewBeforeClosing.map((section) => (
-            <SubList key={section.title} section={section} origin={originSearch} profiles={s?.profiles ?? []} />
+            <SubList
+              key={section.title}
+              section={section}
+              origin={originSearch}
+              profiles={s?.profiles ?? []}
+            />
           ))}
         </GroupSection>
       </div>
@@ -746,7 +817,9 @@ function ExceptionRow({
           {priorityMeta(ticket.priority).short}
         </span>
       </span>
-      <StatusBadge tone={ticketTone(ticket.status)}>{labelFor(STATUSES, ticket.status)}</StatusBadge>
+      <StatusBadge tone={ticketTone(ticket.status)}>
+        {labelFor(STATUSES, ticket.status)}
+      </StatusBadge>
       <span className="text-sm text-muted-foreground">{ownerName(ticket, profiles)}</span>
       <span className="ml-auto flex flex-col items-end text-right text-sm">
         <span className="font-medium text-foreground">{nextAction}</span>
@@ -762,7 +835,13 @@ function SubList({
   origin,
   profiles,
 }: {
-  section: { title: string; description: string; rows: Row[]; nextAction: string; timingField: "reported_at" | "next_review_at" };
+  section: {
+    title: string;
+    description: string;
+    rows: Row[];
+    nextAction: string;
+    timingField: "reported_at" | "next_review_at";
+  };
   origin: { from: string };
   profiles: Profile[];
 }) {

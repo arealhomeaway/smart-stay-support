@@ -85,6 +85,8 @@ export function findPossibleDuplicate(
   return (
     matches
       .slice()
-      .sort((a, b) => Math.abs(a.minutes - candidate.minutes) - Math.abs(b.minutes - candidate.minutes))[0] ?? null
+      .sort(
+        (a, b) => Math.abs(a.minutes - candidate.minutes) - Math.abs(b.minutes - candidate.minutes),
+      )[0] ?? null
   );
 }

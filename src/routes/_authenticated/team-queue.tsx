@@ -151,7 +151,6 @@ function TeamQueuePage() {
     [all, JSON.stringify(filters), homeTeamOf],
   );
 
-
   const properties = useMemo(() => {
     const map = new Map<string, string>();
     for (const t of all)
@@ -185,11 +184,31 @@ function TeamQueuePage() {
   const flagButtons: { key: string; label: string; count: number }[] = useMemo(() => {
     const active = all.filter((t) => !["resolved", "closed"].includes(t.status));
     return [
-      { key: "unassigned", label: "Unassigned", count: active.filter((t) => !currentOwnerId(t)).length },
-      { key: "waiting", label: "Waiting", count: active.filter((t) => t.status === "waiting").length },
-      { key: "blocked", label: "Blocked", count: active.filter((t) => isBlocked(t as never)).length },
-      { key: "escalated", label: "Escalated", count: active.filter((t) => isEscalated(t as never)).length },
-      { key: "overdue", label: "Overdue", count: active.filter((t) => slaState(t).breached).length },
+      {
+        key: "unassigned",
+        label: "Unassigned",
+        count: active.filter((t) => !currentOwnerId(t)).length,
+      },
+      {
+        key: "waiting",
+        label: "Waiting",
+        count: active.filter((t) => t.status === "waiting").length,
+      },
+      {
+        key: "blocked",
+        label: "Blocked",
+        count: active.filter((t) => isBlocked(t as never)).length,
+      },
+      {
+        key: "escalated",
+        label: "Escalated",
+        count: active.filter((t) => isEscalated(t as never)).length,
+      },
+      {
+        key: "overdue",
+        label: "Overdue",
+        count: active.filter((t) => slaState(t).breached).length,
+      },
     ];
   }, [all]);
 
@@ -244,7 +263,9 @@ function TeamQueuePage() {
         <Button
           size="sm"
           variant={filters.assignee === userId ? "default" : "outline"}
-          onClick={() => setParam({ assignee: filters.assignee === userId ? undefined : (userId ?? undefined) })}
+          onClick={() =>
+            setParam({ assignee: filters.assignee === userId ? undefined : (userId ?? undefined) })
+          }
         >
           Only mine
         </Button>
@@ -262,7 +283,10 @@ function TeamQueuePage() {
               <SlidersHorizontal className="size-3.5" />
               Filter
               {filterCount > 0 && (
-                <Badge variant="outline" className="ml-1 border-primary/40 bg-primary/10 text-primary">
+                <Badge
+                  variant="outline"
+                  className="ml-1 border-primary/40 bg-primary/10 text-primary"
+                >
                   {filterCount}
                 </Badge>
               )}
@@ -374,14 +398,22 @@ function TeamQueuePage() {
                     <Badge variant="outline" className={priorityTone(t.priority)}>
                       {priorityMeta(t.priority).short}
                     </Badge>
-                    <StatusBadge tone={ticketTone(t.status)}>{labelFor(STATUSES, t.status)}</StatusBadge>
+                    <StatusBadge tone={ticketTone(t.status)}>
+                      {labelFor(STATUSES, t.status)}
+                    </StatusBadge>
                     {blocked && (
-                      <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
+                      <Badge
+                        variant="outline"
+                        className="border-danger/40 bg-danger/10 text-danger"
+                      >
                         Blocked
                       </Badge>
                     )}
                     {escalated && (
-                      <Badge variant="outline" className="border-danger/40 bg-danger/10 text-danger">
+                      <Badge
+                        variant="outline"
+                        className="border-danger/40 bg-danger/10 text-danger"
+                      >
                         Escalated
                       </Badge>
                     )}

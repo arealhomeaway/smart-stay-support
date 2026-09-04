@@ -35,8 +35,8 @@ export function LaunchStateGate({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">
-        Nothing has been removed. An administrator can enable this from
-        Integrations → Feature flags when the workstream is ready.
+        Nothing has been removed. An administrator can enable this from Integrations → Feature flags
+        when the workstream is ready.
       </CardContent>
     </Card>
   );

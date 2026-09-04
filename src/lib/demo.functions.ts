@@ -21,7 +21,6 @@ async function assertAdmin(userId: string) {
   if (!data) throw new Error("Only a Platform Admin can manage the demo environment.");
 }
 
-
 export const getDemoStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -45,7 +44,6 @@ export const getDemoStatus = createServerFn({ method: "GET" })
       scenarioCount: data?.scenario_count ?? demoTickets,
     };
   });
-
 
 export const seedDemoEnvironment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

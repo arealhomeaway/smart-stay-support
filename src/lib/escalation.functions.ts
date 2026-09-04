@@ -55,7 +55,10 @@ export const raiseEscalationFn = createServerFn({ method: "POST" })
     const roles = await rolesOf(context.supabase, context.userId);
     if (!roles.some((r: string) => ["admin", "manager", "onboarding", "tech"].includes(r)))
       throw new Error("Only Resolve staff can escalate a ticket.");
-    if (data.escalated_to_role === "director" && !roles.some((r: string) => ["admin", "manager"].includes(r)))
+    if (
+      data.escalated_to_role === "director" &&
+      !roles.some((r: string) => ["admin", "manager"].includes(r))
+    )
       throw new Error("Escalate to your Supervisor first — they take it to the Director.");
 
     const { data: ticket, error: readError } = await context.supabase

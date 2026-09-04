@@ -28,7 +28,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   GUEST_IMPACT,
   OCCUPANCY_STATUS,
@@ -114,13 +120,15 @@ function CoachPage() {
       setSession({ id: res.sessionId, guidance: res.guidance as Guidance });
       setChat([]);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "The coach could not answer that."),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "The coach could not answer that."),
   });
 
   const follow = useMutation({
     mutationFn: (q: string) => askFollowUpFn({ data: { sessionId: session!.id, question: q } }),
     onSuccess: (res) => setChat(res.history as { role: "user" | "assistant"; content: string }[]),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not answer that follow-up."),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not answer that follow-up."),
   });
 
   const g = session?.guidance;
@@ -232,9 +240,9 @@ function CoachPage() {
           <Sparkles className="size-7 text-primary" /> Ask the Coach
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Describe what is happening in plain language. The coach reads it against our SOP, sets the priority,
-          gives you the checklist, and writes the brief for whoever you dispatch — before anyone leaves a hole
-          in a wall.
+          Describe what is happening in plain language. The coach reads it against our SOP, sets the
+          priority, gives you the checklist, and writes the brief for whoever you dispatch — before
+          anyone leaves a hole in a wall.
         </p>
       </div>
 
@@ -262,7 +270,8 @@ function CoachPage() {
             </Select>
             {stay?.ok && (
               <p className="text-xs text-muted-foreground">
-                Live from the booking system: {labelFor(OCCUPANCY_STATUS, stay.data.occupancy_status)}
+                Live from the booking system:{" "}
+                {labelFor(OCCUPANCY_STATUS, stay.data.occupancy_status)}
                 {stay.data.guest_name ? ` · ${stay.data.guest_name}` : ""}
               </p>
             )}
@@ -320,8 +329,8 @@ function CoachPage() {
             <CardContent className="space-y-4">
               <p className="rounded-md bg-muted p-3 text-sm">
                 <span className="font-medium">Why {priorityMeta(g.priority).short}: </span>
-                {g.priority_reason} Acknowledge within {priorityMeta(g.priority).responseMinutes} minutes, start
-                action within {priorityMeta(g.priority).actionMinutes}.
+                {g.priority_reason} Acknowledge within {priorityMeta(g.priority).responseMinutes}{" "}
+                minutes, start action within {priorityMeta(g.priority).actionMinutes}.
               </p>
 
               {g.risk_flags.length > 0 && (
@@ -387,8 +396,14 @@ function CoachPage() {
                   <p>{g.vendor_brief.scope}</p>
                   <BriefList label="Must check" items={g.vendor_brief.must_check} />
                   <BriefList label="Must NOT do" items={g.vendor_brief.must_not_do} tone="danger" />
-                  <BriefList label="Bring back as evidence" items={g.vendor_brief.evidence_required} />
-                  <BriefList label="Before leaving the home" items={g.vendor_brief.before_leaving} />
+                  <BriefList
+                    label="Bring back as evidence"
+                    items={g.vendor_brief.evidence_required}
+                  />
+                  <BriefList
+                    label="Before leaving the home"
+                    items={g.vendor_brief.before_leaving}
+                  />
                   <Button size="sm" variant="outline" onClick={() => copy(vendorBriefText(g))}>
                     <Copy className="size-4" /> Copy brief
                   </Button>
@@ -406,7 +421,9 @@ function CoachPage() {
 
               {g.owner_note && (
                 <Section icon={MessageSquare} title="If the owner needs to know">
-                  <p className="rounded-md border border-border p-3 text-sm whitespace-pre-wrap">{g.owner_note}</p>
+                  <p className="rounded-md border border-border p-3 text-sm whitespace-pre-wrap">
+                    {g.owner_note}
+                  </p>
                 </Section>
               )}
 
@@ -426,8 +443,8 @@ function CoachPage() {
                 <ArrowRight className="size-4" />
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                The checklist becomes the ticket&apos;s steps, the clocks start, and this coaching session stays
-                attached to the record.
+                The checklist becomes the ticket&apos;s steps, the clocks start, and this coaching
+                session stays attached to the record.
               </p>
             </CardContent>
           </Card>
@@ -436,7 +453,8 @@ function CoachPage() {
             <CardHeader>
               <CardTitle className="text-lg">Something changed? Keep asking.</CardTitle>
               <CardDescription>
-                &ldquo;The handyman says the shutoff is seized.&rdquo; &middot; &ldquo;Guest wants to leave.&rdquo;
+                &ldquo;The handyman says the shutoff is seized.&rdquo; &middot; &ldquo;Guest wants
+                to leave.&rdquo;
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -503,7 +521,9 @@ function BriefList({ label, items, tone }: { label: string; items: string[]; ton
   if (!items.length) return null;
   return (
     <div>
-      <p className={`text-xs font-semibold uppercase tracking-wide ${tone === "danger" ? "text-danger" : "text-muted-foreground"}`}>
+      <p
+        className={`text-xs font-semibold uppercase tracking-wide ${tone === "danger" ? "text-danger" : "text-muted-foreground"}`}
+      >
         {label}
       </p>
       <ul className="mt-1 list-disc space-y-1 pl-5">

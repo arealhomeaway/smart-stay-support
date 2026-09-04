@@ -26,7 +26,6 @@ export function PortalCard({
 }) {
   const Icon = portal.icon;
 
-
   return (
     <article
       className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all duration-200 focus-within:shadow-lg hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg${
@@ -45,18 +44,14 @@ export function PortalCard({
       </div>
 
       <h3 className="mt-4 text-lg font-semibold">{portal.name}</h3>
-      {portal.tagline && (
-        <p className="mt-1 text-sm font-medium text-primary">{portal.tagline}</p>
-      )}
+      {portal.tagline && <p className="mt-1 text-sm font-medium text-primary">{portal.tagline}</p>}
       <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
         {portal.audience}
       </p>
       <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
         {portal.description}
       </p>
-      {attention && (
-        <p className="mt-3 text-sm font-medium text-foreground">{attention}</p>
-      )}
+      {attention && <p className="mt-3 text-sm font-medium text-foreground">{attention}</p>}
       {wholeCardLink ? (
         <>
           <span
@@ -105,8 +100,6 @@ export function PortalCard({
           )}
         </Button>
       )}
-
-
     </article>
   );
 }

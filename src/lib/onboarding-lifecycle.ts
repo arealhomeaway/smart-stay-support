@@ -569,7 +569,6 @@ export type ProjectSummary = {
   /** Which handoff gate the readiness record is sitting at, when open. */
   gateStep: string | null;
   owner: string | null;
-
 };
 
 export function summarizeProject(input: ProjectInput, ownerName: string | null): ProjectSummary {

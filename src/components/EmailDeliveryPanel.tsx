@@ -48,13 +48,16 @@ export function EmailDeliveryPanel() {
           </Badge>
         </CardTitle>
         <CardDescription>
-          Everything Resolve sends goes out of the shared mailbox and is recorded here, so a homeowner alert or
-          invite that never arrived is visible instead of silent. Throttles and outages retry automatically.
+          Everything Resolve sends goes out of the shared mailbox and is recorded here, so a
+          homeowner alert or invite that never arrived is visible instead of silent. Throttles and
+          outages retry automatically.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4 text-sm">
-        {delivery.isLoading ? <p className="text-muted-foreground">Loading recent messages…</p> : null}
+        {delivery.isLoading ? (
+          <p className="text-muted-foreground">Loading recent messages…</p>
+        ) : null}
 
         {data ? (
           <div className="grid gap-2 sm:grid-cols-3">
@@ -75,11 +78,20 @@ export function EmailDeliveryPanel() {
             <div key={row.id} className="rounded-md border border-border px-3 py-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{row.recipient}</span>
-                <Badge variant={row.status === "sent" ? "outline" : row.status === "failed" ? "destructive" : "secondary"}>
+                <Badge
+                  variant={
+                    row.status === "sent"
+                      ? "outline"
+                      : row.status === "failed"
+                        ? "destructive"
+                        : "secondary"
+                  }
+                >
                   {row.status}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
-                  {PURPOSE_LABEL[row.purpose] ?? row.purpose} · {when(row.sent_at ?? row.created_at)}
+                  {PURPOSE_LABEL[row.purpose] ?? row.purpose} ·{" "}
+                  {when(row.sent_at ?? row.created_at)}
                   {row.attempts > 1 ? ` · ${row.attempts} attempts` : ""}
                 </span>
                 {row.status !== "sent" ? (

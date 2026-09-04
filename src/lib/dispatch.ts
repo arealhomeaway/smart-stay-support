@@ -83,11 +83,14 @@ export function candidateReasons(c: {
           ? " (above average)"
           : " (below average)"
         : "";
-    reasons.push(`${c.averageOverall.toFixed(1)}/5 across ${c.ratedJobs} scored job${c.ratedJobs === 1 ? "" : "s"}${vsFleet}`);
+    reasons.push(
+      `${c.averageOverall.toFixed(1)}/5 across ${c.ratedJobs} scored job${c.ratedJobs === 1 ? "" : "s"}${vsFleet}`,
+    );
   } else {
     reasons.push("No scored jobs yet");
   }
-  if (c.openJobs > 0) reasons.push(`${c.openJobs} open job${c.openJobs === 1 ? "" : "s"} right now`);
+  if (c.openJobs > 0)
+    reasons.push(`${c.openJobs} open job${c.openJobs === 1 ? "" : "s"} right now`);
   return reasons;
 }
 

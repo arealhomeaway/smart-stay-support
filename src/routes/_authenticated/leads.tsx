@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authenticated/leads")({
       { property: "og:title", content: "Tenant leads — Resolve" },
       {
         property: "og:description",
-        content: "ARHA's direct and non-OTA booking pipeline, with follow-up timing Resolve remembers for you.",
+        content:
+          "ARHA's direct and non-OTA booking pipeline, with follow-up timing Resolve remembers for you.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

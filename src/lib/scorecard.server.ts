@@ -147,7 +147,10 @@ async function loadAllRatings(): Promise<RatingRow[]> {
   return excludeNonLiveTicketRows((data ?? []) as RatingRow[], liveTicketIds);
 }
 
-function build(vendorUserId: string, all: RatingRow[]): Omit<VendorScorecard, "recent" | "completedJobs"> {
+function build(
+  vendorUserId: string,
+  all: RatingRow[],
+): Omit<VendorScorecard, "recent" | "completedJobs"> {
   const fleetAverage = avg(all.map((r) => Number(r.overall)));
   const mine = all.filter((r) => r.vendor_user_id === vendorUserId);
   const overalls = mine.map((r) => Number(r.overall));
@@ -183,8 +186,12 @@ function build(vendorUserId: string, all: RatingRow[]): Omit<VendorScorecard, "r
     averageOverall: avg(overalls),
     fleetAverage,
     thoroughnessAverage: avg(mine.map((r) => r.thoroughness)),
-    photoRate: mine.length ? Math.round((mine.filter((r) => r.photos_complete).length / mine.length) * 100) : null,
-    onTimeRate: mine.length ? Math.round((mine.filter((r) => r.on_time).length / mine.length) * 100) : null,
+    photoRate: mine.length
+      ? Math.round((mine.filter((r) => r.photos_complete).length / mine.length) * 100)
+      : null,
+    onTimeRate: mine.length
+      ? Math.round((mine.filter((r) => r.on_time).length / mine.length) * 100)
+      : null,
     reopenCount: mine.filter((r) => r.reopened).length,
     streak,
     tier,
@@ -234,7 +241,10 @@ export async function loadVendorScorecard(vendorUserId: string): Promise<VendorS
 /** Staff view: every vendor's scorecard, named (internal only). */
 export async function loadVendorScoreboard() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "vendor");
+  const { data: roles } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "vendor");
   const ids = (roles ?? []).map((r) => r.user_id);
   if (ids.length === 0) return { vendors: [] };
 

@@ -13,9 +13,7 @@ export const ownerContactAlerts = createServerFn({ method: "GET" })
 export const resolveOwnerContactAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z
-      .object({ id: z.string().uuid(), note: z.string().trim().max(500).default("") })
-      .parse(data),
+    z.object({ id: z.string().uuid(), note: z.string().trim().max(500).default("") }).parse(data),
   )
   .handler(async ({ context, data }) => {
     const { markContactAlertHandled } = await import("./owner-alerts.server");

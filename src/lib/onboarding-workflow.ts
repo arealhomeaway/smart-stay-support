@@ -99,7 +99,6 @@ export type TaskView = {
   canComplete: boolean;
 };
 
-
 export type Marker = { key: string; label: string; explain: string };
 
 const templateByTitle = new Map<string, TemplateTask>(
@@ -138,7 +137,6 @@ export function viewTask(
   all: WorkflowTask[],
   release?: ReleaseContext,
 ): TaskView {
-
   const template = templateFor(task.title);
   const waitingIds = dependencyBlocked(task, all);
   const waitingOn = waitingIds
@@ -210,7 +208,8 @@ export function viewTask(
     markers.push({
       key: "owner",
       label: "Owner",
-      explain: "Sent to the Owner Portal for a recorded homeowner decision. Sending alone does not complete the step.",
+      explain:
+        "Sent to the Owner Portal for a recorded homeowner decision. Sending alone does not complete the step.",
     });
   }
   if (task.evidence_required) {
@@ -267,7 +266,6 @@ export function viewTask(
   };
 }
 
-
 /* ---------------------------------------------------------------- sections */
 
 export type SectionState = "complete" | "active" | "blocked" | "not_ready" | "empty";
@@ -286,10 +284,7 @@ export type WorkflowSection = {
  * phases. Any stage value that is not in the canonical list still gets its own
  * section at the end so nothing is ever hidden.
  */
-export function buildSections(
-  tasks: WorkflowTask[],
-  release?: ReleaseContext,
-): WorkflowSection[] {
+export function buildSections(tasks: WorkflowTask[], release?: ReleaseContext): WorkflowSection[] {
   const views = tasks.map((t) => viewTask(t, tasks, release));
   const order = ONBOARDING_STAGES.map((s) => s.value as string);
   const stages = [
@@ -308,8 +303,10 @@ export function buildSections(
     if (total > 0) {
       if (done === total) state = "complete";
       else if (inStage.some((v) => v.status === "correction")) state = "blocked";
-      else if (inStage.some((v) => v.status === "ready" || v.status === "in_progress")) state = "active";
-      else if (inStage.some((v) => v.status === "blocked" || v.status === "needs_review")) state = "blocked";
+      else if (inStage.some((v) => v.status === "ready" || v.status === "in_progress"))
+        state = "active";
+      else if (inStage.some((v) => v.status === "blocked" || v.status === "needs_review"))
+        state = "blocked";
       else state = "not_ready";
     }
 
@@ -354,9 +351,7 @@ export function whyThisTaskExists(view: TaskView, all: WorkflowTask[]): string[]
     lines.push("Release conditions are met — every prerequisite task is complete.");
   }
 
-  const downstream = all
-    .filter((t) => (t.depends_on ?? []).includes(task.id))
-    .map((t) => t.title);
+  const downstream = all.filter((t) => (t.depends_on ?? []).includes(task.id)).map((t) => t.title);
   if (downstream.length > 0) {
     lines.push(`Completing this releases ${downstream.join(", ")}.`);
   }
@@ -451,8 +446,9 @@ export function rollupProperty(tasks: WorkflowTask[], release?: ReleaseContext):
     ownerPending: open.filter(
       (v) => v.task.requires_owner_approval && v.task.owner_approval_status !== "approved",
     ).length,
-    missingEvidence: open.filter((v) => v.task.evidence_required && !(v.task.evidence_note ?? "").trim())
-      .length,
+    missingEvidence: open.filter(
+      (v) => v.task.evidence_required && !(v.task.evidence_note ?? "").trim(),
+    ).length,
     overdue: open.filter((v) => v.overdue).length,
     carryover: views.filter((v) => v.status === "carryover").length,
     nextMilestone: next?.task.title ?? null,

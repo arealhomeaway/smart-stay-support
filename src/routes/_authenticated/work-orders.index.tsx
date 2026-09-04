@@ -76,7 +76,11 @@ function WorkOrdersHome() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Needs action" value={buckets.get("needs_action")?.length ?? 0} tone="critical" />
+        <StatTile
+          label="Needs action"
+          value={buckets.get("needs_action")?.length ?? 0}
+          tone="critical"
+        />
         <StatTile label="Waiting on owner" value={buckets.get("waiting_owner")?.length ?? 0} />
         <StatTile label="Open work orders" value={open.length} />
         <StatTile label="Committed spend, open" value={money(committed)} />
@@ -94,7 +98,11 @@ function WorkOrdersHome() {
           const rows = buckets.get(bucket) ?? [];
           if (rows.length === 0) return null;
           return (
-            <SectionCard key={bucket} title={BUCKET_LABELS[bucket]} description={BUCKET_HELP[bucket]}>
+            <SectionCard
+              key={bucket}
+              title={BUCKET_LABELS[bucket]}
+              description={BUCKET_HELP[bucket]}
+            >
               <WorkOrderListSection
                 workOrders={rows}
                 requirements={reqMap}

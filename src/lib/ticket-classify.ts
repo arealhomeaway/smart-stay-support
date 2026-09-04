@@ -21,7 +21,11 @@ export type Classification = {
 };
 
 function normalise(text: string) {
-  return ` ${text.toLowerCase().replace(/[\u2019']/g, "'").replace(/[^a-z0-9'/ ]+/g, " ").replace(/\s+/g, " ")} `;
+  return ` ${text
+    .toLowerCase()
+    .replace(/[\u2019']/g, "'")
+    .replace(/[^a-z0-9'/ ]+/g, " ")
+    .replace(/\s+/g, " ")} `;
 }
 
 /**
@@ -40,7 +44,9 @@ export function classifyTicketText(text: string | null | undefined): Classificat
   for (const situation of SITUATIONS) {
     const keywords = situation.keywords ?? [];
     if (!keywords.length) continue;
-    const matched = keywords.filter((k) => hay.includes(` ${normalise(k).trim()} `) || hay.includes(normalise(k)));
+    const matched = keywords.filter(
+      (k) => hay.includes(` ${normalise(k).trim()} `) || hay.includes(normalise(k)),
+    );
     if (!matched.length) continue;
     // Longer, more specific phrases carry more weight than single words.
     const weight = matched.reduce((sum, k) => sum + (k.includes(" ") ? 2 : 1), 0);

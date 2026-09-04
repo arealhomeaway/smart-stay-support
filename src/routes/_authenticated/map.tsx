@@ -21,10 +21,14 @@ export const Route = createFileRoute("/_authenticated/map")({
       { title: "Work map — Resolve Operations" },
       {
         name: "description",
-        content: "See every managed home on a map with its open work, so you can dispatch by who is closest.",
+        content:
+          "See every managed home on a map with its open work, so you can dispatch by who is closest.",
       },
       { property: "og:title", content: "Work map — Resolve Operations" },
-      { property: "og:description", content: "Managed homes and open work plotted for smarter dispatch." },
+      {
+        property: "og:description",
+        content: "Managed homes and open work plotted for smarter dispatch.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -69,9 +73,16 @@ function MapPage() {
         title="Work map"
         description="Every managed home, sized and coloured by the work waiting there. Dispatch whoever is already nearby."
         actions={
-          <Button variant="outline" onClick={() => run.mutate(false)} disabled={run.isPending} className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => run.mutate(false)}
+            disabled={run.isPending}
+            className="gap-2"
+          >
             <RefreshCw className={`size-4 ${run.isPending ? "animate-spin" : ""}`} />
-            {run.isPending ? "Looking up addresses…" : `Pin ${unpinned || "new"} home${unpinned === 1 ? "" : "s"}`}
+            {run.isPending
+              ? "Looking up addresses…"
+              : `Pin ${unpinned || "new"} home${unpinned === 1 ? "" : "s"}`}
           </Button>
         }
       />
@@ -129,7 +140,9 @@ function MapPage() {
                   params={{ ticketId: job.id }}
                   className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/40"
                 >
-                  <StatusBadge tone={ticketTone(job.status)}>{priorityMeta(job.priority).label}</StatusBadge>
+                  <StatusBadge tone={ticketTone(job.status)}>
+                    {priorityMeta(job.priority).label}
+                  </StatusBadge>
                   <span className="font-medium">#{job.ref}</span>
                   <span className="truncate">{job.title}</span>
                   <span className="ml-auto text-muted-foreground">

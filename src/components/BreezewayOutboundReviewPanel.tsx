@@ -88,9 +88,7 @@ export function BreezewayOutboundReviewPanel() {
                 {new Date(row.createdAt).toLocaleString()}
               </span>
             </div>
-            {row.errorMessage ? (
-              <p className="text-xs text-amber-700">{row.errorMessage}</p>
-            ) : null}
+            {row.errorMessage ? <p className="text-xs text-amber-700">{row.errorMessage}</p> : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">

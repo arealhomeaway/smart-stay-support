@@ -45,7 +45,11 @@ export const STAGE_DEFAULT_SEAT: Record<string, SeatCode> = {
 export const FINAL_FALLBACK_SEAT: SeatCode = "director_onboarding";
 
 /** Resolve the owning seat for one template row. */
-export function seatForTask(input: { role?: string | null; stage: string; blocksHandoff?: boolean }): SeatCode {
+export function seatForTask(input: {
+  role?: string | null;
+  stage: string;
+  blocksHandoff?: boolean;
+}): SeatCode {
   const byRole = input.role ? TEMPLATE_ROLE_TO_SEAT[input.role.trim()] : undefined;
   if (byRole) return byRole;
   return STAGE_DEFAULT_SEAT[input.stage] ?? FINAL_FALLBACK_SEAT;

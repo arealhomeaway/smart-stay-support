@@ -3,7 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export type NoteRow = {
   id: string;
@@ -32,13 +38,17 @@ export function OnboardingNotes({
   const [body, setBody] = useState("");
   const [mention, setMention] = useState("none");
   const nameOf = (id: string | null) =>
-    people.find((p) => p.id === id)?.full_name || people.find((p) => p.id === id)?.email || "Teammate";
+    people.find((p) => p.id === id)?.full_name ||
+    people.find((p) => p.id === id)?.email ||
+    "Teammate";
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Internal notes</CardTitle>
-        <CardDescription>Onboarding staff and supervisors only. Homeowners and vendors never see these.</CardDescription>
+        <CardDescription>
+          Onboarding staff and supervisors only. Homeowners and vendors never see these.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <Textarea
@@ -76,7 +86,9 @@ export function OnboardingNotes({
         </div>
 
         <div className="space-y-2 pt-2">
-          {notes.length === 0 && <p className="text-sm text-muted-foreground">No notes yet for this home.</p>}
+          {notes.length === 0 && (
+            <p className="text-sm text-muted-foreground">No notes yet for this home.</p>
+          )}
           {notes.map((n) => (
             <div key={n.id} className="rounded-md border p-3 text-sm">
               <p className="whitespace-pre-wrap">{n.body}</p>

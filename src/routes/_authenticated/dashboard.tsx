@@ -85,7 +85,11 @@ type Row = {
   accountable_owner: string | null;
   created_by: string | null;
   pending_handoff_to: string | null;
-  properties: { name: string | null; nickname: string | null; primary_photo_url?: string | null } | null;
+  properties: {
+    name: string | null;
+    nickname: string | null;
+    primary_photo_url?: string | null;
+  } | null;
 };
 
 function Dashboard() {
@@ -215,7 +219,6 @@ function Dashboard() {
 
   if (isLoading || !data) return <LoadingPage tiles={0} />;
 
-
   return (
     <div className="space-y-8">
       <PageHero
@@ -266,12 +269,7 @@ function Dashboard() {
 
       {/* Compact, colourful, meaningful. Only what is worth acting on. */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <DecisionTile
-          value={needsMe.length}
-          label="Needs me now"
-          tone="critical"
-          to="/tickets"
-        />
+        <DecisionTile value={needsMe.length} label="Needs me now" tone="critical" to="/tickets" />
         <DecisionTile value={inProgress.length} label="In progress" tone="progress" to="/tickets" />
         <DecisionTile value={waiting.length} label="Waiting" tone="attention" to="/tickets" />
         <DecisionTile
@@ -373,7 +371,6 @@ function DecisionTile({
   );
 }
 
-
 /** One compact line of work: what it is, where, what to do next, and by when. */
 function WorkRow({
   t,
@@ -431,10 +428,7 @@ function WorkRow({
       </span>
 
       {t.status === "waiting" ? (
-        <StatusBadge
-          tone={waitingLate ? "escalated" : "waiting"}
-          icon={<PauseCircle />}
-        >
+        <StatusBadge tone={waitingLate ? "escalated" : "waiting"} icon={<PauseCircle />}>
           {waitingLate ? "Follow up now" : `Follow up ${followUp ?? "—"}`}
         </StatusBadge>
       ) : overdue ? (

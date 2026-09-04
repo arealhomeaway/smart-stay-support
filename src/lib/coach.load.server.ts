@@ -19,7 +19,10 @@ export async function loadCatalog(
 
       .eq("active", true)
       .order("sort_order"),
-    supabase.from("playbooks").select("title, category, summary, playbook_steps(instruction, position)").eq("active", true),
+    supabase
+      .from("playbooks")
+      .select("title, category, summary, playbook_steps(instruction, position)")
+      .eq("active", true),
   ]);
 
   let property = null;
@@ -41,13 +44,15 @@ export async function loadCatalog(
         .is("archived_at", null)
         .order("created_at", { ascending: false })
         .limit(8),
-
     ]);
     if (propRes.data) {
       property = {
         name: propRes.data.name,
         nickname: propRes.data.nickname,
-        address: [propRes.data.address_line1, propRes.data.city, propRes.data.state].filter(Boolean).join(", ") || null,
+        address:
+          [propRes.data.address_line1, propRes.data.city, propRes.data.state]
+            .filter(Boolean)
+            .join(", ") || null,
         access_notes: propRes.data.access_notes,
         wifi_notes: propRes.data.wifi_notes,
         notes: propRes.data.notes,
@@ -67,7 +72,9 @@ export async function loadCatalog(
       title: p.title,
       category: p.category,
       summary: p.summary,
-      steps: [...(p.playbook_steps ?? [])].sort((a, b) => a.position - b.position).map((s) => s.instruction),
+      steps: [...(p.playbook_steps ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .map((s) => s.instruction),
     })),
     property,
     occupancyHint: opts.occupancyHint,

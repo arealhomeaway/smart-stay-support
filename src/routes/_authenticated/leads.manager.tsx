@@ -104,11 +104,20 @@ function Manager() {
             <StatTile
               label="Avg days to conversion"
               value={
-                analytics.avgDaysToConversion === null ? "—" : analytics.avgDaysToConversion.toFixed(1)
+                analytics.avgDaysToConversion === null
+                  ? "—"
+                  : analytics.avgDaysToConversion.toFixed(1)
               }
             />
-            <StatTile label="Quoted revenue converted" value={formatMoney(analytics.convertedRevenue)} />
-            <StatTile label="Unassigned" value={unassigned.length} tone={unassigned.length ? "critical" : "neutral"} />
+            <StatTile
+              label="Quoted revenue converted"
+              value={formatMoney(analytics.convertedRevenue)}
+            />
+            <StatTile
+              label="Unassigned"
+              value={unassigned.length}
+              tone={unassigned.length ? "critical" : "neutral"}
+            />
           </div>
 
           <SectionCard
@@ -117,17 +126,30 @@ function Manager() {
             tone={needsAttention.length ? "critical" : "default"}
           >
             {needsAttention.length === 0 ? (
-              <EmptyState title="Nothing flagged" hint="Every open lead is inside its follow-up window." />
+              <EmptyState
+                title="Nothing flagged"
+                hint="Every open lead is inside its follow-up window."
+              />
             ) : (
-              <LeadListSection leads={needsAttention} withProperties={withProperties} canEdit={!readOnly} />
+              <LeadListSection
+                leads={needsAttention}
+                withProperties={withProperties}
+                canEdit={!readOnly}
+              />
             )}
           </SectionCard>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <SectionCard title="Workload" description="Open, overdue and converted per coordinator.">
+            <SectionCard
+              title="Workload"
+              description="Open, overdue and converted per coordinator."
+            >
               <ul className="space-y-1.5 text-sm">
                 {byOwner.map(([id, v]) => (
-                  <li key={id ?? "unassigned"} className="flex justify-between gap-3 border-b border-border/40 pb-1">
+                  <li
+                    key={id ?? "unassigned"}
+                    className="flex justify-between gap-3 border-b border-border/40 pb-1"
+                  >
                     <span>{id ? displayName(people.find((p) => p.id === id)) : "Unassigned"}</span>
                     <span className="text-muted-foreground">
                       {v.open} open · {v.overdue} overdue · {v.converted} converted
@@ -137,38 +159,54 @@ function Manager() {
               </ul>
             </SectionCard>
 
-            <SectionCard title="Where leads come from" description="Volume and conversions by source.">
+            <SectionCard
+              title="Where leads come from"
+              description="Volume and conversions by source."
+            >
               <ul className="space-y-1.5 text-sm">
                 {analytics.bySource.map((s) => (
-                  <li key={s.key} className="flex justify-between gap-3 border-b border-border/40 pb-1">
+                  <li
+                    key={s.key}
+                    className="flex justify-between gap-3 border-b border-border/40 pb-1"
+                  >
                     <span>{s.label}</span>
                     <span className="text-muted-foreground">
                       {s.count} leads · {s.converted} converted
                     </span>
                   </li>
                 ))}
-                {analytics.bySource.length === 0 && <li className="text-muted-foreground">No data yet.</li>}
+                {analytics.bySource.length === 0 && (
+                  <li className="text-muted-foreground">No data yet.</li>
+                )}
               </ul>
             </SectionCard>
 
             <SectionCard title="Markets" description="Demand by area requested.">
               <ul className="space-y-1.5 text-sm">
                 {analytics.byMarket.map((m) => (
-                  <li key={m.key} className="flex justify-between gap-3 border-b border-border/40 pb-1">
+                  <li
+                    key={m.key}
+                    className="flex justify-between gap-3 border-b border-border/40 pb-1"
+                  >
                     <span>{m.key}</span>
                     <span className="text-muted-foreground">
                       {m.count} leads · {m.converted} converted
                     </span>
                   </li>
                 ))}
-                {analytics.byMarket.length === 0 && <li className="text-muted-foreground">No data yet.</li>}
+                {analytics.byMarket.length === 0 && (
+                  <li className="text-muted-foreground">No data yet.</li>
+                )}
               </ul>
             </SectionCard>
 
             <SectionCard title="Why we lose" description="Loss reasons recorded at close.">
               <ul className="space-y-1.5 text-sm">
                 {analytics.lossReasons.map((r) => (
-                  <li key={r.key} className="flex justify-between gap-3 border-b border-border/40 pb-1">
+                  <li
+                    key={r.key}
+                    className="flex justify-between gap-3 border-b border-border/40 pb-1"
+                  >
                     <span>{r.label}</span>
                     <span className="text-muted-foreground">{r.count}</span>
                   </li>

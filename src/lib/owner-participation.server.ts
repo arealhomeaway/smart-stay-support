@@ -223,7 +223,8 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     if (direct.length + shared.length === 0) coverage = "no_activity";
     else if (overdue.length > 0) coverage = "needs_attention";
     else if (open.length === 0 && mine.length > 0) coverage = "complete";
-    else if (l.launch_status === "launched" || l.launch_status === "ready") coverage = "launch_ready";
+    else if (l.launch_status === "launched" || l.launch_status === "ready")
+      coverage = "launch_ready";
     else coverage = "in_progress";
 
     return {
@@ -270,7 +271,6 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
   const returnedMinutes = combinedMinutes(
     entryRows.filter((e) => e.review_status === "returned" && !supersededIds.has(e.id)),
   );
-
 
   const snapshot = progressSnapshot({
     status: p.status as ProgramStatus,

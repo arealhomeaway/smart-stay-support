@@ -15,12 +15,7 @@
 export const FINAL_REVIEW_LABEL = "Review before closing";
 
 /** Stored outcomes that mean Final Review is satisfied. */
-export const FINAL_REVIEW_SATISFIED = new Set([
-  "pass",
-  "corrected",
-  "not_required",
-  "waived",
-]);
+export const FINAL_REVIEW_SATISFIED = new Set(["pass", "corrected", "not_required", "waived"]);
 
 export type FinalReviewDecision = "approve" | "return";
 

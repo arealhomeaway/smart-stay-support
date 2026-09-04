@@ -78,7 +78,11 @@ function write(token: string, snap: OriginSnapshot) {
  * Record (or refresh) the workspace the employee is currently in.
  * Returns the token to hand to any record opened from here.
  */
-export function rememberOrigin(input: { label: string; href: string; queue?: QueueItem[] }): string {
+export function rememberOrigin(input: {
+  label: string;
+  href: string;
+  queue?: QueueItem[];
+}): string {
   const token = originToken(input.href);
   const previous = readOrigin(token);
   const queue = input.queue ? input.queue.slice(0, MAX_QUEUE) : previous?.queue;

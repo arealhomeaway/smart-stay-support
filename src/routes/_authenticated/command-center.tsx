@@ -124,37 +124,63 @@ function CommandCenter() {
         <div className="flex flex-wrap items-end gap-3">
           <Filter label="Window">
             <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {RANGES.map((r) => (
-                  <SelectItem key={r} value={String(r)}>{r} days</SelectItem>
+                  <SelectItem key={r} value={String(r)}>
+                    {r} days
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Filter>
           <Filter label="Market">
-            <Picker value={market} onChange={setMarket} placeholder="All markets"
-              options={data.filters.markets.map((m) => ({ value: m, label: m }))} />
+            <Picker
+              value={market}
+              onChange={setMarket}
+              placeholder="All markets"
+              options={data.filters.markets.map((m) => ({ value: m, label: m }))}
+            />
           </Filter>
           <Filter label="Property">
-            <Picker value={propertyId} onChange={setPropertyId} placeholder="All properties" wide
-              options={data.filters.properties.map((p) => ({ value: p.id, label: p.name }))} />
+            <Picker
+              value={propertyId}
+              onChange={setPropertyId}
+              placeholder="All properties"
+              wide
+              options={data.filters.properties.map((p) => ({ value: p.id, label: p.name }))}
+            />
           </Filter>
           <Filter label="Priority">
-            <Picker value={priority} onChange={(v) => setPriority(v as "p1" | "p2" | "p3" | null)} placeholder="All priorities"
+            <Picker
+              value={priority}
+              onChange={(v) => setPriority(v as "p1" | "p2" | "p3" | null)}
+              placeholder="All priorities"
               options={[
                 { value: "p1", label: "P1" },
                 { value: "p2", label: "P2" },
                 { value: "p3", label: "P3" },
-              ]} />
+              ]}
+            />
           </Filter>
           <Filter label="Team">
-            <Picker value={team} onChange={setTeam} placeholder="All teams"
-              options={data.filters.teams.map((t) => ({ value: t, label: t }))} />
+            <Picker
+              value={team}
+              onChange={setTeam}
+              placeholder="All teams"
+              options={data.filters.teams.map((t) => ({ value: t, label: t }))}
+            />
           </Filter>
           <Filter label="Vendor">
-            <Picker value={vendorId} onChange={setVendorId} placeholder="All vendors" wide
-              options={data.filters.vendors.map((v) => ({ value: v.id, label: v.name }))} />
+            <Picker
+              value={vendorId}
+              onChange={setVendorId}
+              placeholder="All vendors"
+              wide
+              options={data.filters.vendors.map((v) => ({ value: v.id, label: v.name }))}
+            />
           </Filter>
           <Button
             variant={exceptionsOnly ? "default" : "outline"}
@@ -171,12 +197,18 @@ function CommandCenter() {
           <div className="flex items-center gap-2 border-b border-coral/20 px-5 py-3.5">
             <TriangleAlert className="size-4 shrink-0 text-coral" aria-hidden="true" />
             <div>
-              <h2 className="text-[1.0625rem] font-semibold tracking-tight text-coral">Needs leadership attention now</h2>
-              <p className="text-[0.8125rem] text-muted-foreground">Red metrics across every area, in one place.</p>
+              <h2 className="text-[1.0625rem] font-semibold tracking-tight text-coral">
+                Needs leadership attention now
+              </h2>
+              <p className="text-[0.8125rem] text-muted-foreground">
+                Red metrics across every area, in one place.
+              </p>
             </div>
           </div>
           <div className="divide-y">
-            {offStandard.map((k) => <MetricRow key={k.key} kpi={k} />)}
+            {offStandard.map((k) => (
+              <MetricRow key={k.key} kpi={k} />
+            ))}
           </div>
         </section>
       )}
@@ -190,7 +222,9 @@ function CommandCenter() {
           <section key={section.key} className="space-y-2">
             <SectionBand title={section.label} hint={section.blurb} />
             <div className="surface divide-y">
-              {kpis.map((k) => <MetricRow key={k.key} kpi={k} />)}
+              {kpis.map((k) => (
+                <MetricRow key={k.key} kpi={k} />
+              ))}
             </div>
           </section>
         );
@@ -200,7 +234,10 @@ function CommandCenter() {
         <SectionBand title="Vendor coverage risk by market" />
         <div className="surface divide-y">
           {data.coverage.map((row) => (
-            <div key={row.market} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
+            <div
+              key={row.market}
+              className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm"
+            >
               <span className="font-medium">{row.market}</span>
               <span className="text-muted-foreground">
                 {row.properties} propert{row.properties === 1 ? "y" : "ies"} · {row.vendors} vendor
@@ -254,7 +291,9 @@ function Picker({
       <SelectContent>
         <SelectItem value={ALL}>{placeholder}</SelectItem>
         {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
         ))}
       </SelectContent>
     </Select>
@@ -262,7 +301,8 @@ function Picker({
 }
 
 function MetricRow({ kpi }: { kpi: Kpi }) {
-  const TrendIcon = kpi.trend === "up" ? ArrowUpRight : kpi.trend === "down" ? ArrowDownRight : Minus;
+  const TrendIcon =
+    kpi.trend === "up" ? ArrowUpRight : kpi.trend === "down" ? ArrowDownRight : Minus;
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-3.5">
       <div className="min-w-0 flex-1">
@@ -278,9 +318,8 @@ function MetricRow({ kpi }: { kpi: Kpi }) {
             {kpi.denominator && <span>Of {kpi.denominator}</span>}
             {kpi.previous != null && (
               <span className="flex items-center gap-1">
-                <TrendIcon className="size-3" /> prior period {kpi.unit === "percent"
-                  ? `${kpi.previous.toFixed(1)}%`
-                  : Math.round(kpi.previous)}
+                <TrendIcon className="size-3" /> prior period{" "}
+                {kpi.unit === "percent" ? `${kpi.previous.toFixed(1)}%` : Math.round(kpi.previous)}
               </span>
             )}
           </div>

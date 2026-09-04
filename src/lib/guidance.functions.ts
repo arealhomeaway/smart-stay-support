@@ -49,7 +49,9 @@ export const recordGuidanceEvent = createServerFn({ method: "POST" })
       entityType: data.subjectType,
       entityId: data.subjectId,
       entityLabel: data.playbookKey ?? null,
-      after: data.playbookKey ? { playbook_key: data.playbookKey, version: data.playbookVersion ?? null } : null,
+      after: data.playbookKey
+        ? { playbook_key: data.playbookKey, version: data.playbookVersion ?? null }
+        : null,
     });
     return { recorded: true };
   });

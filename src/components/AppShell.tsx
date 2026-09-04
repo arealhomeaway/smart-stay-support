@@ -123,7 +123,6 @@ const frontlineGroup: NavGroup = {
   ],
 };
 
-
 const navGroups: NavGroup[] = [
   frontlineGroup,
   {
@@ -164,7 +163,6 @@ const navGroups: NavGroup[] = [
         capability: "onboarding_workspace",
       },
       { to: "/map", label: "Map", icon: MapPinned, tour: "map", capability: "matters_all" },
-
     ],
   },
   {

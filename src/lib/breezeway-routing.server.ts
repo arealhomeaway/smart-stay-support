@@ -49,7 +49,10 @@ export async function weightedLoad(userId: string): Promise<number> {
     .not("status", "in", "(resolved,closed)")
     .is("archived_at", null)
     .eq("is_demo", false);
-  return ((data ?? []) as { priority: string | null }[]).reduce((sum, t) => sum + weightOf(t.priority), 0);
+  return ((data ?? []) as { priority: string | null }[]).reduce(
+    (sum, t) => sum + weightOf(t.priority),
+    0,
+  );
 }
 
 /** Coverage config (timezone + after-hours window). */
@@ -85,7 +88,10 @@ async function assignable(userId: string | null): Promise<boolean> {
 /** Seat is on duty right now, honouring availability and temporary overrides. */
 async function seatEligible(roleCode: string, at: Date): Promise<boolean> {
   const db = await admin();
-  const { data } = await db.rpc("seat_eligible_now", { _role_code: roleCode, _at: at.toISOString() });
+  const { data } = await db.rpc("seat_eligible_now", {
+    _role_code: roleCode,
+    _at: at.toISOString(),
+  });
   return data === true;
 }
 
@@ -161,7 +167,8 @@ export async function routeBreezewayTicket(now: Date = new Date()): Promise<Rout
   if (teamB.length === 0 && !triage && !(afterHours && onCallUserId)) {
     if (await seatEligible("ops_supervisor", now)) {
       const holder = await seatHolder("ops_supervisor", now);
-      if (await assignable(holder)) supervisorOnDuty = { userId: holder!, roleCode: "ops_supervisor" };
+      if (await assignable(holder))
+        supervisorOnDuty = { userId: holder!, roleCode: "ops_supervisor" };
     }
   }
 
@@ -178,7 +185,10 @@ export async function routeBreezewayTicket(now: Date = new Date()): Promise<Rout
       )
       .order("created_at", { ascending: false })
       .limit(200);
-    for (const row of (recent ?? []) as { current_action_owner: string | null; created_at: string }[]) {
+    for (const row of (recent ?? []) as {
+      current_action_owner: string | null;
+      created_at: string;
+    }[]) {
       if (row.current_action_owner && !lastRouted.has(row.current_action_owner)) {
         lastRouted.set(row.current_action_owner, row.created_at);
       }
@@ -187,7 +197,6 @@ export async function routeBreezewayTicket(now: Date = new Date()): Promise<Rout
 
   return decideRoute({ afterHours, onCallUserId, teamB, lastRouted, triage, supervisorOnDuty });
 }
-
 
 export type EscalateResult =
   | { ok: true; ticketId: string; ref: number | null; assignedTo: string | null; note: string }
@@ -207,10 +216,19 @@ export async function createTicketFromWorkOrder(
   const { getWorkOrder, linkWorkOrderToTicket } = await import("./breezeway-workorders.server");
   const wo = await getWorkOrder(workOrderId);
   if (!wo) return { ok: false, message: "That work order is not in Resolve." };
-  if (!wo.propertyId) return { ok: false, message: "Link the work order to a Resolve property first." };
+  if (!wo.propertyId)
+    return { ok: false, message: "Link the work order to a Resolve property first." };
   if (wo.linkedTicketId) {
-    const { data } = await db.from("tickets").select("id, ref, current_action_owner").eq("id", wo.linkedTicketId).maybeSingle();
-    const t = data as { id: string; ref: number | null; current_action_owner: string | null } | null;
+    const { data } = await db
+      .from("tickets")
+      .select("id, ref, current_action_owner")
+      .eq("id", wo.linkedTicketId)
+      .maybeSingle();
+    const t = data as {
+      id: string;
+      ref: number | null;
+      current_action_owner: string | null;
+    } | null;
     if (t) {
       return {
         ok: true,
@@ -239,7 +257,9 @@ export async function createTicketFromWorkOrder(
       initiator_type: "external",
       external_source: "breezeway",
       external_id: String(wo.breezewayTaskId),
-      external_url: wo.breezewayTaskId ? `https://app.breezeway.io/tasks/${wo.breezewayTaskId}` : null,
+      external_url: wo.breezewayTaskId
+        ? `https://app.breezeway.io/tasks/${wo.breezewayTaskId}`
+        : null,
       external_synced_at: now,
       breezeway_task_id: wo.breezewayTaskId,
       reported_at: now,

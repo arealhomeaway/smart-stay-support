@@ -74,12 +74,17 @@ function IntegrationsPage() {
             <PlugZap className="size-4" /> OwnerRez
           </span>
         }
-        actions={<StatusBadge tone={status.data?.ownerrez ? "resolved" : "closed"}>{status.data?.ownerrez ? "Connected" : "Not connected"}</StatusBadge>}
+        actions={
+          <StatusBadge tone={status.data?.ownerrez ? "resolved" : "closed"}>
+            {status.data?.ownerrez ? "Connected" : "Not connected"}
+          </StatusBadge>
+        }
         description="Homes and live occupancy sync both ways. Occupancy still sets the starting priority when a ticket opens."
       >
         <p className="text-sm text-muted-foreground">
-          OwnerRez does not publish maintenance tasks, so there is nothing to import from it directly — use the
-          message intake below to pull its notifications and guest or owner emails into the queue.
+          OwnerRez does not publish maintenance tasks, so there is nothing to import from it
+          directly — use the message intake below to pull its notifications and guest or owner
+          emails into the queue.
         </p>
       </SectionCard>
 
@@ -97,7 +102,6 @@ function IntegrationsPage() {
 
       <EmailDeliveryPanel />
 
-
       <SectionCard
         title={
           <span className="flex items-center gap-2">
@@ -109,8 +113,8 @@ function IntegrationsPage() {
       >
         <div className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Point an email forwarding rule or webhook at the intake endpoint below. Resolve reads it, matches the
-            home, sets a starting priority and drops it in the queue.
+            Point an email forwarding rule or webhook at the intake endpoint below. Resolve reads
+            it, matches the home, sets a starting priority and drops it in the queue.
           </p>
           <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs text-foreground">
             POST https://smart-stay-support.lovable.app/api/public/intake/email
@@ -119,13 +123,21 @@ function IntegrationsPage() {
             <br />
             body: {"{ subject, body, from, property }"}
           </code>
-          <p>Duplicate deliveries are ignored automatically, so retries never create a second ticket.</p>
+          <p>
+            Duplicate deliveries are ignored automatically, so retries never create a second ticket.
+          </p>
         </div>
       </SectionCard>
 
-      <SectionCard title="Imported tickets" description="The most recent work pulled in from an outside system.">
+      <SectionCard
+        title="Imported tickets"
+        description="The most recent work pulled in from an outside system."
+      >
         {rows.length === 0 ? (
-          <EmptyState title="Nothing imported yet" hint="Run a sync above once a source system is connected." />
+          <EmptyState
+            title="Nothing imported yet"
+            hint="Run a sync above once a source system is connected."
+          />
         ) : (
           <div className="space-y-2">
             {rows.map((t) => (
@@ -134,7 +146,11 @@ function IntegrationsPage() {
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border px-3 py-2 text-sm"
               >
                 <StatusBadge tone="context">{t.external_source}</StatusBadge>
-                <Link to="/tickets/$ticketId" params={{ ticketId: t.id }} className="font-medium hover:underline">
+                <Link
+                  to="/tickets/$ticketId"
+                  params={{ ticketId: t.id }}
+                  className="font-medium hover:underline"
+                >
                   #{t.ref} {t.title}
                 </Link>
                 <span className="text-muted-foreground">
@@ -152,8 +168,8 @@ function IntegrationsPage() {
       </SectionCard>
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ExternalLink className="size-3" />
-        A scheduled job can call the inbound sync automatically so the queue stays current without anyone clicking.
+        <ExternalLink className="size-3" />A scheduled job can call the inbound sync automatically
+        so the queue stays current without anyone clicking.
       </p>
     </div>
   );

@@ -103,13 +103,13 @@ export function ParticipationReportPanel() {
         </div>
         <p className="text-xs leading-relaxed text-muted-foreground">
           Period {data.program.startedOn ? usDate(data.program.startedOn) : "not started"} to{" "}
-          {data.program.endsOn ? usDate(data.program.endsOn) : "n/a"} · {data.entries.length} entries
-          in period
+          {data.program.endsOn ? usDate(data.program.endsOn) : "n/a"} · {data.entries.length}{" "}
+          entries in period
           {data.outsidePeriod.length > 0
             ? ` · ${data.outsidePeriod.length} entries dated outside the period are listed separately`
             : ""}
-          . These are your own reported hours; ARHA does not certify them. This report is a record of
-          participation, not a tax certification.
+          . These are your own reported hours; ARHA does not certify them. This report is a record
+          of participation, not a tax certification.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => void download("pdf")} disabled={busy !== null}>

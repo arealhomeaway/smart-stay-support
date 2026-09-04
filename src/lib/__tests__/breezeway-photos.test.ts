@@ -17,7 +17,10 @@ class FakeBreezewayError extends Error {
   }
 }
 
-type Captured = { path: string; options: { method?: string; form?: FormData; retry?: boolean; allowWrite?: boolean } };
+type Captured = {
+  path: string;
+  options: { method?: string; form?: FormData; retry?: boolean; allowWrite?: boolean };
+};
 let captured: Captured | null = null;
 let responder: () => unknown = () => ({
   id: 873177778,
@@ -34,7 +37,12 @@ mock.module("@/lib/breezeway.server", () => ({
 }));
 
 mock.module("@/lib/breezeway-mapping.server", () => ({
-  propertyWriteEligibility: async () => ({ eligible: true, homeId: "555", reason: null, state: "verified" }),
+  propertyWriteEligibility: async () => ({
+    eligible: true,
+    homeId: "555",
+    reason: null,
+    state: "verified",
+  }),
   propertyForHomeId: async () => null,
   verifiedHomeIds: async () => [],
 }));
@@ -82,7 +90,11 @@ mock.module("@/integrations/supabase/client.server", () => ({
 const { uploadWorkOrderPhoto } = await import("@/lib/breezeway-workorders.server");
 
 const WO = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-const png = () => ({ name: "shot.png", type: "image/png", bytes: new Uint8Array([1, 2, 3, 4]).buffer });
+const png = () => ({
+  name: "shot.png",
+  type: "image/png",
+  bytes: new Uint8Array([1, 2, 3, 4]).buffer,
+});
 
 describe("Breezeway task photo upload", () => {
   beforeEach(() => {

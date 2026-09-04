@@ -120,7 +120,6 @@ function titleize(value: string) {
   return value.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
-
 export async function loadOpsAnalytics(
   supabase: Client,
   options: { windowDays?: number; demo?: boolean } = {},
@@ -136,7 +135,9 @@ export async function loadOpsAnalytics(
     )
     .is("archived_at", null)
     .gte("reported_at", since);
-  const tickets = await (demo ? base.eq("is_demo", true) : base.or("is_demo.is.null,is_demo.eq.false"));
+  const tickets = await (demo
+    ? base.eq("is_demo", true)
+    : base.or("is_demo.is.null,is_demo.eq.false"));
   if (tickets.error) throw tickets.error;
   const rows = tickets.data ?? [];
   const ids = rows.map((t) => t.id);
@@ -325,7 +326,10 @@ export async function loadOpsAnalytics(
       open: open.length,
       overdue: overdue.length,
       unassigned: open.filter((t) => !(t.current_action_owner ?? t.assigned_to)).length,
-      byPriority: tally(rows.map((t) => t.priority), (k) => k.toUpperCase()),
+      byPriority: tally(
+        rows.map((t) => t.priority),
+        (k) => k.toUpperCase(),
+      ),
       byStatus: tally(rows.map((t) => t.status)),
       byCategory: tally(rows.map((t) => t.category)),
       bySource: tally(rows.map((t) => t.source_channel)),
@@ -349,7 +353,10 @@ export async function loadOpsAnalytics(
       actionScope: actScope.length,
       actionRate: actScope.length ? Math.round((actOnTime.length / actScope.length) * 100) : null,
       breachedOpen: overdue.length,
-      breachedByPriority: tally(overdue.map((t) => t.priority), (k) => k.toUpperCase()),
+      breachedByPriority: tally(
+        overdue.map((t) => t.priority),
+        (k) => k.toUpperCase(),
+      ),
     },
     contributors,
   };

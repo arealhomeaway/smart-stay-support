@@ -92,7 +92,9 @@ export function matchOwnerResponse(input: {
   }
 
   if (input.conversationId) {
-    const byThread = open.filter((c) => c.conversationId && c.conversationId === input.conversationId);
+    const byThread = open.filter(
+      (c) => c.conversationId && c.conversationId === input.conversationId,
+    );
     if (byThread.length === 1) {
       return { approvalId: byThread[0]!.id, method: "thread", reason: null, candidates: [] };
     }

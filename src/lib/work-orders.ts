@@ -61,7 +61,8 @@ export const STAGE_LABELS: Record<WorkOrderStage, string> = {
   closed: "Closed",
 };
 
-export type ApprovalStatus = "not_required" | "pending" | "approved" | "declined" | "info_requested";
+export type ApprovalStatus =
+  "not_required" | "pending" | "approved" | "declined" | "info_requested";
 
 export const APPROVAL_STATUS_LABELS: Record<ApprovalStatus, string> = {
   not_required: "No approval required",
@@ -178,7 +179,8 @@ export function evaluateAuthority(input: WorkOrderLike): AuthorityVerdict {
     return {
       level: "self",
       label: "Get the quote",
-      reason: "A coordinator may request quotes and dispatch an approved vendor. Authority is evaluated once an amount is known.",
+      reason:
+        "A coordinator may request quotes and dispatch an approved vendor. Authority is evaluated once an amount is known.",
       ownerApprovalRequired: false,
       supervisorApprovalRequired: false,
       ownerFyiRequired: false,
@@ -263,7 +265,15 @@ export type WarrantyHint = {
 };
 
 const FURNITURE_CATEGORIES = ["furniture", "furnishing", "mattress", "sofa", "bed"];
-const BUILDER_CATEGORIES = ["plumbing", "electrical", "hvac", "roof", "structural", "foundation", "appliance"];
+const BUILDER_CATEGORIES = [
+  "plumbing",
+  "electrical",
+  "hvac",
+  "roof",
+  "structural",
+  "foundation",
+  "appliance",
+];
 
 function unexpired(date: string | null | undefined, now: Date) {
   if (!date) return false;
@@ -300,7 +310,8 @@ export function warrantyHint(
   const cat = (category ?? "").toLowerCase();
   const contact = usableContact(warranty["claim_process + external_links"]);
 
-  const builderLive = warranty.builder_present === true && unexpired(warranty.builder_expires_on, now);
+  const builderLive =
+    warranty.builder_present === true && unexpired(warranty.builder_expires_on, now);
   const furnitureLive = unexpired(warranty.furniture_expires_on, now);
 
   const builderFit = !cat || BUILDER_CATEGORIES.some((c) => cat.includes(c));
@@ -342,7 +353,11 @@ export function warrantyBypassed(wo: WorkOrderLike) {
 /* Second quote                                                        */
 /* ------------------------------------------------------------------ */
 
-export type SecondQuoteAdvice = { recommended: boolean; signals: SecondQuoteSignal[]; reason: string };
+export type SecondQuoteAdvice = {
+  recommended: boolean;
+  signals: SecondQuoteSignal[];
+  reason: string;
+};
 
 /**
  * Advice, never a block. Signals are the ones a coordinator would notice; no
@@ -372,7 +387,11 @@ export function secondQuoteAdvice(input: {
   if (input.owner_requested_comparison) signals.push("owner_requested");
 
   if (!signals.length) {
-    return { recommended: false, signals, reason: "Nothing suggests a comparison quote is needed." };
+    return {
+      recommended: false,
+      signals,
+      reason: "Nothing suggests a comparison quote is needed.",
+    };
   }
   return {
     recommended: true,
@@ -404,7 +423,6 @@ export function commitmentStatus(wo: WorkOrderLike, now = new Date()): Commitmen
     !wo.vendor_acknowledged_at &&
     sinceContact != null &&
     sinceContact > MAINTENANCE_POLICY.vendorAcknowledgeMinutes[priority];
-
 
   const etaMissed =
     Boolean(wo.vendor_eta_at) &&
@@ -500,10 +518,16 @@ export function waitingOn(wo: WorkOrderLike): WaitingOn {
   const authority = evaluateAuthority(wo);
   if (authority.ownerApprovalRequired && wo.approval_status !== "approved") return "owner";
   if (authority.supervisorApprovalRequired && !supervisorApproved(wo)) return "supervisor";
-  if (wo.warranty_may_apply && wo.warranty_contacted_at && !warrantyBypassed(wo) && !wo.vendor_completed_at) {
+  if (
+    wo.warranty_may_apply &&
+    wo.warranty_contacted_at &&
+    !warrantyBypassed(wo) &&
+    !wo.vendor_completed_at
+  ) {
     return "warranty";
   }
-  if (wo.quote_requested_at && !wo.quote_received_at && num(wo.quote_amount) == null) return "quote";
+  if (wo.quote_requested_at && !wo.quote_received_at && num(wo.quote_amount) == null)
+    return "quote";
   if (wo.vendor_contacted_at && !wo.vendor_completed_at) return "vendor";
   return null;
 }
@@ -518,7 +542,12 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
   if (wo.warranty_may_apply && !wo.warranty_contacted_at && !warrantyBypassed(wo)) {
     return "Warranty may apply — contact the warranty provider before committing to a paid repair.";
   }
-  if (wo.warranty_may_apply && wo.warranty_contacted_at && !wo.warranty_eta_at && !warrantyBypassed(wo)) {
+  if (
+    wo.warranty_may_apply &&
+    wo.warranty_contacted_at &&
+    !wo.warranty_eta_at &&
+    !warrantyBypassed(wo)
+  ) {
     return "Record the warranty appointment or next available ETA, then judge the impact on the stay.";
   }
 
@@ -529,25 +558,30 @@ export function nextAction(wo: WorkOrderLike, now = new Date()): string {
     return "Mitigation is done — scope the permanent repair and evaluate approval on its own amount.";
   }
   if (verdict.ownerApprovalRequired) {
-    if (status === "pending") return "Waiting on the owner's decision. Owner notified is not owner approved.";
-    if (status === "info_requested") return "Owner asked for more information — send the detail they need.";
-    if (status === "declined") return "Owner declined — record the alternative or close with the reason.";
+    if (status === "pending")
+      return "Waiting on the owner's decision. Owner notified is not owner approved.";
+    if (status === "info_requested")
+      return "Owner asked for more information — send the detail they need.";
+    if (status === "declined")
+      return "Owner declined — record the alternative or close with the reason.";
     if (status !== "approved") return verdict.reason;
   }
   if (verdict.supervisorApprovalRequired && !supervisorApproved(wo)) {
     const sup = (wo.supervisor_approval_status ?? "not_required") as ApprovalStatus;
     if (sup === "pending") return "Waiting on the supervisor's decision on this amount.";
-    if (sup === "declined") return "Supervisor declined — record the alternative before going further.";
+    if (sup === "declined")
+      return "Supervisor declined — record the alternative before going further.";
     return "Request supervisor approval for this amount, then tell the homeowner once it is authorised.";
   }
   if (verdict.ownerFyiRequired && supervisorApproved(wo) && !wo.owner_fyi_at && !wo.closed_at) {
     return "Approved — send the homeowner the FYI that this work is going ahead.";
   }
 
-
   const stage = derivedStage(wo);
-  if (stage === "needs_diagnosis") return "Diagnose the issue or request a quote from an approved vendor.";
-  if (stage === "quote_requested") return "Chase the quote — nothing can be authorised without an amount.";
+  if (stage === "needs_diagnosis")
+    return "Diagnose the issue or request a quote from an approved vendor.";
+  if (stage === "quote_requested")
+    return "Chase the quote — nothing can be authorised without an amount.";
   if (stage === "quote_received") return verdict.reason;
   if (stage === "approved" || stage === "scheduled" || stage === "in_progress") {
     return CHECKPOINT_LABELS[nextCheckpoint(wo, now)];
@@ -577,7 +611,8 @@ export function closureBlockers(
   }
   if (!wo.evidence_complete) blockers.push("Completion photo or video evidence is missing.");
   if (num(wo.final_cost) == null) blockers.push("Final cost has not been recorded.");
-  if (wo.occupied_now && !wo.guest_notified_at) blockers.push("The guest in the home has not been updated.");
+  if (wo.occupied_now && !wo.guest_notified_at)
+    blockers.push("The guest in the home has not been updated.");
 
   const verdict = evaluateAuthority(wo);
   if (verdict.ownerApprovalRequired && wo.approval_status !== "approved") {
@@ -779,7 +814,10 @@ export type WorkOrderEvidenceSlot = {
  * Work Order evidence reuses the shared evidence architecture. Linked Claims
  * and Guest Recovery reference these same items rather than re-uploading.
  */
-export function workOrderEvidenceSlots(phase: WorkOrderPhase, warrantyMayApply = false): WorkOrderEvidenceSlot[] {
+export function workOrderEvidenceSlots(
+  phase: WorkOrderPhase,
+  warrantyMayApply = false,
+): WorkOrderEvidenceSlot[] {
   const slots: WorkOrderEvidenceSlot[] = [
     {
       key: "diagnostic_photos",
@@ -866,7 +904,11 @@ export function isOpenWorkOrder(wo: WorkOrderLike) {
 }
 
 /** Closed inside the window — visible, but never crowding out live work. */
-export function recentlyCompleted(wo: WorkOrderLike & { closed_at?: string | null }, days = 30, now = new Date()) {
+export function recentlyCompleted(
+  wo: WorkOrderLike & { closed_at?: string | null },
+  days = 30,
+  now = new Date(),
+) {
   if (!wo.closed_at) return false;
   const closed = new Date(wo.closed_at).getTime();
   return Number.isFinite(closed) && now.getTime() - closed <= days * 86400000;

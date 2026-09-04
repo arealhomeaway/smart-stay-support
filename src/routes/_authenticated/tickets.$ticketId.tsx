@@ -642,7 +642,6 @@ function TicketDetail() {
       "resolved",
     );
 
-
     setResolution("");
     setEvidence("");
     await refresh();
@@ -1137,7 +1136,9 @@ function TicketDetail() {
                 <div className="mt-2 space-y-3">
                   {showCelebrate ? (
                     <Celebrate
-                      title={ticket.status === "resolved" ? "Work is finished" : "This ticket is closed"}
+                      title={
+                        ticket.status === "resolved" ? "Work is finished" : "This ticket is closed"
+                      }
                     >
                       {ticket.resolution_notes ?? "Nice work."}
                     </Celebrate>
@@ -1170,7 +1171,6 @@ function TicketDetail() {
                         hasRecovery: activeBranch.recovery,
                       }}
                     />
-
                   )}
                   {ticket.record_type !== "completed_interaction" && (
                     <Button variant="outline" onClick={reopen}>
@@ -1179,8 +1179,6 @@ function TicketDetail() {
                   )}
                 </div>
               )}
-
-
 
               {/* Special Handling belongs with the decision, never as page furniture. */}
               {(stage === "repair" || stage === "repair_active" || stage === "steps") && (
@@ -1352,9 +1350,7 @@ function TicketDetail() {
               )}
               {ticket.closure_evidence && (
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Evidence
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Evidence</p>
                   <p className="mt-1 whitespace-pre-wrap">{ticket.closure_evidence}</p>
                 </div>
               )}
@@ -1381,7 +1377,9 @@ function TicketDetail() {
                   <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
                 )}
                 {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-                {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} readOnly />}
+                {role.can("work_orders_internal") && (
+                  <TicketWorkOrderPanel ticket={ticket} readOnly />
+                )}
               </div>
             </details>
           </TabsContent>
@@ -1688,9 +1686,17 @@ function laneOf(kind: string | null, eventType: string | null, body: string | nu
 }
 
 /** Which Activity List icon/colour a logged event gets. */
-function activityKindFor(kind: string | null, eventType: string | null, body: string | null): ActivityKind {
+function activityKindFor(
+  kind: string | null,
+  eventType: string | null,
+  body: string | null,
+): ActivityKind {
   if (kind === "note") return "note";
-  if (kind === "resolved" || eventType === "status_changed" && body?.toLowerCase().includes("closed")) return "completed";
+  if (
+    kind === "resolved" ||
+    (eventType === "status_changed" && body?.toLowerCase().includes("closed"))
+  )
+    return "completed";
   if (kind === "waiting") return "waiting";
   const text = `${kind ?? ""} ${eventType ?? ""}`.toLowerCase();
   if (text.includes("escalat")) return "escalation";

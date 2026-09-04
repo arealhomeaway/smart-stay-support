@@ -20,7 +20,8 @@ export const Route = createFileRoute("/_authenticated/vendor/$ticketId")({
       { title: "Work order details | Resolve vendor portal" },
       {
         name: "description",
-        content: "Access details, required steps and sign-off for a work order dispatched by A Real Home Away.",
+        content:
+          "Access details, required steps and sign-off for a work order dispatched by A Real Home Away.",
       },
       { property: "og:title", content: "Work order details | Resolve vendor portal" },
       { property: "og:description", content: "Everything you need on site for this work order." },
@@ -180,7 +181,10 @@ function VendorJob() {
   const steps = job.data?.steps ?? [];
   const requiredOpen = steps.filter((s) => s.required && !s.completed).length;
   const finished = ticket.vendor_status === "completed";
-  const state = VENDOR_STATE[ticket.vendor_status ?? ""] ?? { label: "New", tone: "waiting" as StatusTone };
+  const state = VENDOR_STATE[ticket.vendor_status ?? ""] ?? {
+    label: "New",
+    tone: "waiting" as StatusTone,
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -191,15 +195,25 @@ function VendorJob() {
       </Button>
 
       <header className="flex items-start gap-3">
-        <PropertyPhoto url={property?.primary_photo_url} name={property?.name} className="size-14" />
+        <PropertyPhoto
+          url={property?.primary_photo_url}
+          name={property?.name}
+          className="size-14"
+        />
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <Chip className={ticket.priority === "p1" ? "border-danger/40 bg-danger/10 text-danger" : undefined}>
+            <Chip
+              className={
+                ticket.priority === "p1" ? "border-danger/40 bg-danger/10 text-danger" : undefined
+              }
+            >
               {(ticket.priority ?? "").toUpperCase()}
             </Chip>
             <Chip>{(ticket.category ?? "").replace(/_/g, " ")}</Chip>
             <StatusBadge tone={state.tone}>{state.label}</StatusBadge>
-            {ticket.guest_in_residence && <StatusBadge tone="waiting">Guest in the home</StatusBadge>}
+            {ticket.guest_in_residence && (
+              <StatusBadge tone="waiting">Guest in the home</StatusBadge>
+            )}
           </div>
           <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
             #{ticket.ref} {ticket.title}
@@ -214,8 +228,8 @@ function VendorJob() {
         <div className="flex gap-3 rounded-xl border border-amber/25 bg-amber/8 px-4 py-3 text-sm">
           <ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber" />
           <p>
-            A guest is staying in this home. Knock and announce yourself, keep the work area clean, and never
-            leave an opening in a wall, ceiling or floor unsealed at the end of the visit.
+            A guest is staying in this home. Knock and announce yourself, keep the work area clean,
+            and never leave an opening in a wall, ceiling or floor unsealed at the end of the visit.
           </p>
         </div>
       )}
@@ -224,7 +238,13 @@ function VendorJob() {
         <div className="space-y-2 text-sm">
           <p className="font-medium">{property?.name ?? "Address to be confirmed"}</p>
           <p className="text-muted-foreground">
-            {[property?.address_line1, property?.unit, property?.city, property?.state, property?.postal_code]
+            {[
+              property?.address_line1,
+              property?.unit,
+              property?.city,
+              property?.state,
+              property?.postal_code,
+            ]
               .filter(Boolean)
               .join(", ") || "Ask your coordinator for the address."}
           </p>
@@ -243,14 +263,25 @@ function VendorJob() {
         </div>
       </SectionCard>
 
-      {!finished && <VisitCheckInCard ticketId={ticketId} homeName={property?.name ?? "the home"} />}
+      {!finished && (
+        <VisitCheckInCard ticketId={ticketId} homeName={property?.name ?? "the home"} />
+      )}
 
-      <SectionCard title="What we need done" description="Straight from the coordinator who dispatched this.">
+      <SectionCard
+        title="What we need done"
+        description="Straight from the coordinator who dispatched this."
+      >
         <div className="space-y-3 text-sm">
-          {ticket.vendor_brief && <p className="whitespace-pre-wrap font-medium">{ticket.vendor_brief}</p>}
-          {ticket.description && <p className="whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>}
+          {ticket.vendor_brief && (
+            <p className="whitespace-pre-wrap font-medium">{ticket.vendor_brief}</p>
+          )}
+          {ticket.description && (
+            <p className="whitespace-pre-wrap text-muted-foreground">{ticket.description}</p>
+          )}
           {!ticket.vendor_brief && !ticket.description && (
-            <p className="text-muted-foreground">No extra detail was added — call your coordinator if unclear.</p>
+            <p className="text-muted-foreground">
+              No extra detail was added — call your coordinator if unclear.
+            </p>
           )}
         </div>
       </SectionCard>
@@ -262,7 +293,10 @@ function VendorJob() {
         >
           <div className="space-y-1.5">
             {steps.map((step) => (
-              <label key={step.id} className="flex items-start gap-3 border-b border-border/60 py-2.5 text-sm last:border-0">
+              <label
+                key={step.id}
+                className="flex items-start gap-3 border-b border-border/60 py-2.5 text-sm last:border-0"
+              >
                 <Checkbox
                   checked={step.completed}
                   disabled={finished || toggleStep.isPending}
@@ -274,7 +308,9 @@ function VendorJob() {
                     {step.instruction}
                     {step.required && <span className="ml-1 text-danger">*</span>}
                   </span>
-                  {step.detail && <span className="block text-muted-foreground">{step.detail}</span>}
+                  {step.detail && (
+                    <span className="block text-muted-foreground">{step.detail}</span>
+                  )}
                   {step.photo_required && (
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Camera className="size-3" /> Send a photo of this to your coordinator.
@@ -287,7 +323,10 @@ function VendorJob() {
         </SectionCard>
       )}
 
-      <SectionCard title="Update the team" description="Anything you find that we didn't ask about — tell us here rather than leaving it.">
+      <SectionCard
+        title="Update the team"
+        description="Anything you find that we didn't ask about — tell us here rather than leaving it."
+      >
         <div className="space-y-3">
           <Textarea
             value={note}
@@ -304,7 +343,11 @@ function VendorJob() {
               Send update
             </Button>
             {ticket.vendor_status === "dispatched" && (
-              <Button variant="secondary" disabled={accept.isPending} onClick={() => accept.mutate()}>
+              <Button
+                variant="secondary"
+                disabled={accept.isPending}
+                onClick={() => accept.mutate()}
+              >
                 Accept job
               </Button>
             )}

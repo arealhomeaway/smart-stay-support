@@ -53,7 +53,9 @@ function TaskRows({ tasks }: { tasks: BreezewayTaskSummary[] }) {
               <td className="py-1">
                 {t.assignments.length === 0
                   ? "Unassigned"
-                  : t.assignments.map((a) => `${a.name ?? "Unnamed"} (${a.status ?? "—"})`).join(", ")}
+                  : t.assignments
+                      .map((a) => `${a.name ?? "Unnamed"} (${a.status ?? "—"})`)
+                      .join(", ")}
               </td>
             </tr>
           ))}
@@ -62,7 +64,6 @@ function TaskRows({ tasks }: { tasks: BreezewayTaskSummary[] }) {
     </div>
   );
 }
-
 
 function errorText(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong. Try again.";
@@ -73,7 +74,15 @@ function when(iso: string | null) {
   return new Date(iso).toLocaleString();
 }
 
-function MappingList({ title, rows, limit = 8 }: { title: string; rows: BreezewayMappingRow[]; limit?: number }) {
+function MappingList({
+  title,
+  rows,
+  limit = 8,
+}: {
+  title: string;
+  rows: BreezewayMappingRow[];
+  limit?: number;
+}) {
   if (rows.length === 0) return null;
   return (
     <div className="space-y-1">
@@ -82,7 +91,10 @@ function MappingList({ title, rows, limit = 8 }: { title: string; rows: Breezewa
       </p>
       <ul className="space-y-1 text-xs text-muted-foreground">
         {rows.slice(0, limit).map((r, i) => (
-          <li key={`${r.breezewayId ?? r.resolveId ?? i}`} className="rounded border border-border px-2 py-1">
+          <li
+            key={`${r.breezewayId ?? r.resolveId ?? i}`}
+            className="rounded border border-border px-2 py-1"
+          >
             <span className="text-foreground">{r.breezewayName ?? r.resolveName ?? "Unnamed"}</span>
             {r.resolveName && r.breezewayName ? ` → ${r.resolveName}` : ""} — {r.note}
           </li>
@@ -111,7 +123,6 @@ export function BreezewayConnectionPanel() {
   const [report, setReport] = useState<BreezewayInventoryReport | null>(null);
   const [preview, setPreview] = useState<BreezewayPilotPreview | null>(null);
 
-
   const status = useQuery({
     queryKey: ["breezeway-status"],
     queryFn: () => statusFn(),
@@ -138,7 +149,8 @@ export function BreezewayConnectionPanel() {
   });
 
   const saveMapping = useMutation({
-    mutationFn: () => saveMappingFn({ data: { resolveId: PILOT.resolveId, breezewayId: PILOT.breezewayId } }),
+    mutationFn: () =>
+      saveMappingFn({ data: { resolveId: PILOT.resolveId, breezewayId: PILOT.breezewayId } }),
     onSuccess: () => {
       setPanelError(null);
       setMessage(`Pilot mapping saved for ${PILOT.label}. Lifecycle stage unchanged.`);
@@ -154,8 +166,6 @@ export function BreezewayConnectionPanel() {
     },
     onError: (error) => setPanelError(errorText(error)),
   });
-
-
 
   const s = status.data;
   const statusError = status.error ? errorText(status.error) : null;
@@ -174,8 +184,8 @@ export function BreezewayConnectionPanel() {
         </CardTitle>
         <CardDescription>
           Read-only connection check. Breezeway credentials grant full read and write access to the
-          Breezeway account — Resolve restricts itself to reads. No webhook is registered and nothing is
-          imported.
+          Breezeway account — Resolve restricts itself to reads. No webhook is registered and
+          nothing is imported.
         </CardDescription>
       </CardHeader>
 
@@ -215,8 +225,8 @@ export function BreezewayConnectionPanel() {
 
         {message ? (
           <p className="flex items-start gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="mt-0.5 size-3.5 shrink-0" /> {message} A passing sign-in test does not
-            mean synchronization or write access has been tested.
+            <ShieldCheck className="mt-0.5 size-3.5 shrink-0" /> {message} A passing sign-in test
+            does not mean synchronization or write access has been tested.
           </p>
         ) : null}
 
@@ -225,10 +235,18 @@ export function BreezewayConnectionPanel() {
             <RefreshCw className={`size-4 ${test.isPending ? "animate-spin" : ""}`} />
             Test connection
           </Button>
-          <Button variant="outline" onClick={() => inventory.mutate()} disabled={inventory.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => inventory.mutate()}
+            disabled={inventory.isPending}
+          >
             {inventory.isPending ? "Comparing…" : "Compare property inventory"}
           </Button>
-          <Button variant="outline" onClick={() => saveMapping.mutate()} disabled={saveMapping.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => saveMapping.mutate()}
+            disabled={saveMapping.isPending}
+          >
             {saveMapping.isPending ? "Saving…" : "Save pilot mapping"}
           </Button>
           <Button variant="outline" onClick={() => pilot.mutate()} disabled={pilot.isPending}>
@@ -253,7 +271,8 @@ export function BreezewayConnectionPanel() {
                 <div className="flex justify-between gap-2">
                   <dt className="text-muted-foreground">Breezeway</dt>
                   <dd className="text-right">
-                    {preview.breezewayName ?? "—"} · {preview.breezewayId} ({preview.breezewayStatus ?? "—"})
+                    {preview.breezewayName ?? "—"} · {preview.breezewayId} (
+                    {preview.breezewayStatus ?? "—"})
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">
@@ -267,14 +286,19 @@ export function BreezewayConnectionPanel() {
               </dl>
               <p className="text-xs text-muted-foreground">
                 Scheduled between <strong>{preview.windowStart}</strong> and{" "}
-                <strong>{preview.windowEnd}</strong>. {preview.tasksTotalForProperty} task(s) exist for this
-                property in Breezeway; read {preview.pagesFetched} of {preview.totalPages} page(s).{" "}
-                {preview.pagesRemaining ? "Additional pages remain." : "No additional pages remain."}
+                <strong>{preview.windowEnd}</strong>. {preview.tasksTotalForProperty} task(s) exist
+                for this property in Breezeway; read {preview.pagesFetched} of {preview.totalPages}{" "}
+                page(s).{" "}
+                {preview.pagesRemaining
+                  ? "Additional pages remain."
+                  : "No additional pages remain."}
               </p>
               {preview.tasksInWindow.length > 0 ? (
                 <TaskRows tasks={preview.tasksInWindow} />
               ) : (
-                <p className="text-xs text-muted-foreground">No tasks scheduled inside the window.</p>
+                <p className="text-xs text-muted-foreground">
+                  No tasks scheduled inside the window.
+                </p>
               )}
               {preview.unscheduledOpenTasks.length > 0 ? (
                 <>
@@ -285,13 +309,12 @@ export function BreezewayConnectionPanel() {
                 </>
               ) : null}
               <p className="text-xs text-muted-foreground">
-                Preview only. No matters were created, no vendors assigned, no notifications sent, and
-                nothing was written back to Breezeway.
+                Preview only. No matters were created, no vendors assigned, no notifications sent,
+                and nothing was written back to Breezeway.
               </p>
             </div>
           </>
         ) : null}
-
 
         {report ? (
           <>
@@ -299,10 +322,9 @@ export function BreezewayConnectionPanel() {
             <div className="space-y-3">
               <p className="text-sm">
                 Breezeway lists <strong>{report.breezewayTotal}</strong> properties (
-                {report.breezewayActive} active, {report.breezewayInactive} inactive,
-                {" "}
-                {report.breezewayOther} other). Resolve has <strong>{report.resolveTotal}</strong>, of which{" "}
-                {report.resolveWithBreezewayId} already store a Breezeway ID. Fetched in{" "}
+                {report.breezewayActive} active, {report.breezewayInactive} inactive,{" "}
+                {report.breezewayOther} other). Resolve has <strong>{report.resolveTotal}</strong>,
+                of which {report.resolveWithBreezewayId} already store a Breezeway ID. Fetched in{" "}
                 {report.pagesFetched} page(s).
               </p>
               {report.breezewayDuplicates.length > 0 ? (

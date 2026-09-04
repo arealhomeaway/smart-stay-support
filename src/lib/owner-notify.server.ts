@@ -17,7 +17,13 @@ const APP_URL = "https://smart-stay-support.lovable.app/owner";
 // Texting is handled by people, not an SMS provider. When an alert asks for a
 // text we raise an internal "reach this homeowner" task instead.
 
-async function sendEmail(to: string, subject: string, body: string, ticketRef?: number | null, ticketId?: string | null) {
+async function sendEmail(
+  to: string,
+  subject: string,
+  body: string,
+  ticketRef?: number | null,
+  ticketId?: string | null,
+) {
   const { sendEmail: send, emailShell } = await import("./email.server");
   const { refTag } = await import("./intake.server");
   // The tag lets an owner's reply land back on the ticket instead of an inbox.
@@ -31,14 +37,14 @@ async function sendEmail(to: string, subject: string, body: string, ticketRef?: 
   });
 }
 
-
 /** True when the channel is live. Texting is a human task, never automated. */
 export function channelStatus() {
   // Loaded lazily so this module stays import-light for callers that only read status.
-  const configured = Boolean(process.env["LOVABLE_API_KEY"] && process.env["MICROSOFT_OUTLOOK_API_KEY"]);
+  const configured = Boolean(
+    process.env["LOVABLE_API_KEY"] && process.env["MICROSOFT_OUTLOOK_API_KEY"],
+  );
   return { email: configured, sms: false as const };
 }
-
 
 /** Sends every alert still waiting on a channel. Safe to run on a schedule. */
 export async function drainOwnerAlerts(supabase: Client, limit = 50) {
@@ -61,7 +67,11 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
     if (row.is_demo) {
       await supabase
         .from("owner_notifications")
-        .update({ email_status: "skipped", sms_status: "skipped", delivery_error: "Demo notification — external delivery blocked." })
+        .update({
+          email_status: "skipped",
+          sms_status: "skipped",
+          delivery_error: "Demo notification — external delivery blocked.",
+        })
         .eq("id", row.id);
       continue;
     }
@@ -81,10 +91,20 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
       } else {
         let ticketRef: number | null = null;
         if (row.ticket_id) {
-          const { data: t } = await supabase.from("tickets").select("ref").eq("id", row.ticket_id).maybeSingle();
+          const { data: t } = await supabase
+            .from("tickets")
+            .select("ref")
+            .eq("id", row.ticket_id)
+            .maybeSingle();
           ticketRef = t?.ref ?? null;
         }
-        const result = await sendEmail(program.owner_email, row.title, row.body, ticketRef, row.ticket_id);
+        const result = await sendEmail(
+          program.owner_email,
+          row.title,
+          row.body,
+          ticketRef,
+          row.ticket_id,
+        );
         patch.email_status = result.status;
         if (result.error) patch.delivery_error = result.error;
         if (result.status === "sent") emailed++;

@@ -336,13 +336,12 @@ export function deriveLifecycle(input: StateInput): LifecycleState {
       lockedAt: null,
       chainKey: "pm_readiness",
       staleHandoff: false,
-      explain: "Every applicable step is finished. The project manager can submit the readiness record.",
+      explain:
+        "Every applicable step is finished. The project manager can submit the readiness record.",
     };
   }
 
-  const earliest = open
-    .map((t) => workPhaseIndex(t.stage))
-    .sort((a, b) => a - b)[0];
+  const earliest = open.map((t) => workPhaseIndex(t.stage)).sort((a, b) => a - b)[0];
   const phase =
     earliest == null ? "access_ready" : (PHASE_OF_STAGE[WORK_PHASES[earliest]!] ?? "setup");
   return {
@@ -465,7 +464,11 @@ export type ReleaseVerdict = {
   canComplete: boolean;
 };
 
-export function releaseState(task: WorkflowTask, all: WorkflowTask[], ctx: ReleaseContext): ReleaseVerdict {
+export function releaseState(
+  task: WorkflowTask,
+  all: WorkflowTask[],
+  ctx: ReleaseContext,
+): ReleaseVerdict {
   if (task.status === "complete" || task.status === "carryover")
     return { state: "complete", reason: null, canComplete: false };
 
@@ -597,8 +600,7 @@ export function handoffReadiness(
   const reasons: ReadinessReason[] = [];
 
   for (const c of baseChecks) {
-    if (c.blocking && !c.passed)
-      reasons.push({ key: c.key, label: c.label, detail: c.detail });
+    if (c.blocking && !c.passed) reasons.push({ key: c.key, label: c.label, detail: c.detail });
   }
 
   const plan = input.tasks.filter((t) => !isPostLock(t, ctx.lockedAt));

@@ -9,13 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SlidersHorizontal } from "lucide-react";
-import {
-  Chip,
-  EmptyState,
-  LoadingRows,
-  PageHeader,
-  SegmentedControl,
-} from "@/components/ui/page";
+import { Chip, EmptyState, LoadingRows, PageHeader, SegmentedControl } from "@/components/ui/page";
 import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { ownershipChip } from "@/lib/semantic";
@@ -184,7 +178,6 @@ function TicketsPage() {
         }
       />
 
-
       {demoMode && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">
           <span className="font-medium">Demo data.</span> These tickets are seeded examples. They
@@ -270,7 +263,10 @@ function FilterPopover({
             <SlidersHorizontal className="size-3.5" />
             Filter
             {activeCount > 0 && (
-              <Badge variant="outline" className="ml-1 border-primary/40 bg-primary/10 text-primary">
+              <Badge
+                variant="outline"
+                className="ml-1 border-primary/40 bg-primary/10 text-primary"
+              >
                 {activeCount}
               </Badge>
             )}
@@ -354,7 +350,10 @@ function TicketWorkCard({
       search={originSearch}
       className="surface-row flex items-start gap-3 py-3 pl-4 pr-4"
     >
-      <PropertyPhoto url={t.properties?.primary_photo_url} name={t.properties?.nickname ?? t.properties?.name} />
+      <PropertyPhoto
+        url={t.properties?.primary_photo_url}
+        name={t.properties?.nickname ?? t.properties?.name}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="numeric text-xs text-muted-foreground">#{t.ref}</span>

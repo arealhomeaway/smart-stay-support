@@ -38,8 +38,8 @@ export function EvidenceQualityCard({ windowDays = 30 }: { windowDays?: number }
           <Camera className="size-4" /> Evidence quality
         </CardTitle>
         <CardDescription>
-          Last {windowDays} days. A low first-attempt rate usually means the request was unclear, not
-          that someone did poor work.
+          Last {windowDays} days. A low first-attempt rate usually means the request was unclear,
+          not that someone did poor work.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -94,7 +94,10 @@ export function EvidenceQualityCard({ windowDays = 30 }: { windowDays?: number }
               <div className="space-y-1">
                 <p className="font-medium">Where evidence is being asked for</p>
                 {data.bySubject.map((s) => (
-                  <div key={s.subject} className="flex justify-between text-xs text-muted-foreground">
+                  <div
+                    key={s.subject}
+                    className="flex justify-between text-xs text-muted-foreground"
+                  >
                     <span>{SUBJECT_LABEL[s.subject] ?? s.subject}</span>
                     <span>
                       {s.satisfied} of {s.requirements} satisfied

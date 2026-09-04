@@ -9,14 +9,7 @@
  */
 
 export type TicketStage =
-  | "closed"
-  | "start"
-  | "waiting"
-  | "repair_active"
-  | "verify"
-  | "steps"
-  | "repair"
-  | "closure";
+  "closed" | "start" | "waiting" | "repair_active" | "verify" | "steps" | "repair" | "closure";
 
 export type TicketStageInput = {
   status: string | null | undefined;
@@ -58,7 +51,10 @@ const REPAIRABLE = new Set([
   "safety",
 ]);
 
-export function repairIsPossible(category: string | null | undefined, workTypeName?: string | null) {
+export function repairIsPossible(
+  category: string | null | undefined,
+  workTypeName?: string | null,
+) {
   const text = `${category ?? ""} ${workTypeName ?? ""}`.toLowerCase();
   if (!text.trim()) return false;
   return [...REPAIRABLE].some((c) => text.includes(c));

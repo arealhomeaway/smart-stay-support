@@ -160,7 +160,9 @@ export type FollowUpBucket = "overdue" | "today" | "upcoming" | "none";
 
 function sameDay(a: Date, b: Date) {
   return (
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
   );
 }
 
@@ -219,7 +221,8 @@ export function nextAction(lead: LeadLike, ctx: NextActionContext = {}): string 
     case "first_contact":
     case "follow_up_1": {
       const bucket = followUpBucket(lead, now);
-      if (bucket === "overdue") return `Follow up now — ${followUpNumber(lead.stage)} sent, response overdue`;
+      if (bucket === "overdue")
+        return `Follow up now — ${followUpNumber(lead.stage)} sent, response overdue`;
       if (bucket === "today") return "Follow up today";
       if (!ctx.hasProperty) return "Find available properties";
       return "Waiting on prospect";
@@ -267,13 +270,18 @@ export function attentionFlags(
     flags.push({ key: "overdue", label: "Follow-up significantly overdue", tone: "critical" });
   }
   if (!lead.assigned_to) flags.push({ key: "unassigned", label: "Unassigned", tone: "critical" });
-  if (isStale(lead, now)) flags.push({ key: "stale", label: "No recent activity", tone: "attention" });
+  if (isStale(lead, now))
+    flags.push({ key: "stale", label: "No recent activity", tone: "attention" });
 
   const moveIn = lead.desired_move_in ? new Date(lead.desired_move_in) : null;
   if (moveIn && !Number.isNaN(moveIn.getTime())) {
     const days = Math.ceil((moveIn.getTime() - now.getTime()) / DAY);
     if (days >= 0 && days <= 7 && !ctx.hasProperty) {
-      flags.push({ key: "move_in", label: "Move-in approaching, no property match", tone: "critical" });
+      flags.push({
+        key: "move_in",
+        label: "Move-in approaching, no property match",
+        tone: "critical",
+      });
     } else if (days >= 0 && days <= 3) {
       flags.push({ key: "urgent", label: "Urgent move-in", tone: "attention" });
     }
@@ -407,7 +415,8 @@ export function leadAnalytics(leads: AnalyticsLead[], now = new Date()): LeadAna
   const firstContactHours = leads
     .map((l) => {
       if (!l.first_contact_at) return null;
-      const h = (new Date(l.first_contact_at).getTime() - new Date(l.created_at).getTime()) / 3_600_000;
+      const h =
+        (new Date(l.first_contact_at).getTime() - new Date(l.created_at).getTime()) / 3_600_000;
       return Number.isFinite(h) && h >= 0 ? h : null;
     })
     .filter((v): v is number => v !== null);
@@ -440,7 +449,11 @@ export function leadAnalytics(leads: AnalyticsLead[], now = new Date()): LeadAna
       count: v.count,
       converted: v.converted,
     })),
-    byMarket: group((l) => l.market).map(([key, v]) => ({ key, count: v.count, converted: v.converted })),
+    byMarket: group((l) => l.market).map(([key, v]) => ({
+      key,
+      count: v.count,
+      converted: v.converted,
+    })),
     lossReasons: [
       ...lost.reduce((m, l) => {
         const k = l.lost_reason ?? "other";
@@ -449,7 +462,11 @@ export function leadAnalytics(leads: AnalyticsLead[], now = new Date()): LeadAna
       }, new Map<string, number>()),
     ]
       .sort((a, b) => b[1] - a[1])
-      .map(([key, count]) => ({ key, label: LOSS_REASON_LABELS[key as LeadLossReason] ?? key, count })),
+      .map(([key, count]) => ({
+        key,
+        label: LOSS_REASON_LABELS[key as LeadLossReason] ?? key,
+        count,
+      })),
     avgHoursToFirstContact: avg(firstContactHours),
     avgDaysToConversion: avg(conversionDays),
     followUpCompliance: open.length ? onTime / open.length : null,

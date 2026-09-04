@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertSupervisor(context: { supabase: { rpc: Function }; userId: string }) {
-  const { data } = await (context.supabase as any).rpc("is_supervisor", { _user_id: context.userId });
+  const { data } = await (context.supabase as any).rpc("is_supervisor", {
+    _user_id: context.userId,
+  });
   if (!data) throw new Error("Only supervisors and platform owners can see email delivery.");
 }
 
@@ -12,7 +14,9 @@ export const getEmailDelivery = createServerFn({ method: "GET" })
     await assertSupervisor(context as never);
     const { data } = await context.supabase
       .from("email_log")
-      .select("id, recipient, subject, purpose, status, attempts, error_message, sent_at, created_at")
+      .select(
+        "id, recipient, subject, purpose, status, attempts, error_message, sent_at, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(50);
 

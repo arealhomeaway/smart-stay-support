@@ -104,7 +104,9 @@ export function LeadDrawer({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("lead_properties")
-        .select("id, property_id, note, properties(name, nickname, city, bedrooms, lifecycle_status)")
+        .select(
+          "id, property_id, note, properties(name, nickname, city, bedrooms, lifecycle_status)",
+        )
         .eq("lead_id", leadId!);
       if (error) throw error;
       return data;
@@ -249,7 +251,12 @@ export function LeadDrawer({
           converted_property_id: candidates.data?.[0]?.property_id ?? null,
           reservation_ref: reservationRef || null,
         },
-        log: { channel: "stage_change", outcome: "Booking converted", from: lead.stage, to: "converted" },
+        log: {
+          channel: "stage_change",
+          outcome: "Booking converted",
+          from: lead.stage,
+          to: "converted",
+        },
       },
       { onSuccess: () => toast.success("✓ Booking converted") },
     );
@@ -349,11 +356,17 @@ export function LeadDrawer({
               ["Email", lead.email ?? "—"],
               ["Assigned to", displayName(assignee)],
               ["Move-in", formatDate(lead.desired_move_in)],
-              ["Length of stay", lead.length_of_stay_days ? `${lead.length_of_stay_days} days` : "—"],
+              [
+                "Length of stay",
+                lead.length_of_stay_days ? `${lead.length_of_stay_days} days` : "—",
+              ],
               ["Bedrooms", lead.bedrooms ? String(lead.bedrooms) : "—"],
               ["Budget", formatMoney(lead.budget_monthly)],
               ["Pets", lead.pets === null ? "—" : lead.pets ? "Yes" : "No"],
-              ["Dates flexible", lead.date_flexible === null ? "—" : lead.date_flexible ? "Yes" : "No"],
+              [
+                "Dates flexible",
+                lead.date_flexible === null ? "—" : lead.date_flexible ? "Yes" : "No",
+              ],
             ]}
           />
 
@@ -384,7 +397,9 @@ export function LeadDrawer({
                 <dd className="text-right font-medium">{lead.reservation_ref ?? "Not recorded"}</dd>
                 <dt className="text-muted-foreground">Converted by</dt>
                 <dd className="text-right font-medium">
-                  {lead.converted_by ? displayName(people.find((p) => p.id === lead.converted_by)) : "Not recorded"}
+                  {lead.converted_by
+                    ? displayName(people.find((p) => p.id === lead.converted_by))
+                    : "Not recorded"}
                 </dd>
               </dl>
             </section>
@@ -440,7 +455,12 @@ export function LeadDrawer({
                   ? ` and move the stage to ${STAGE_LABELS[proposeStage(lead.stage, channel)]}.`
                   : "."}
               </p>
-              <Button size="sm" className="resolve-press" onClick={logContact} disabled={patchLead.isPending}>
+              <Button
+                size="sm"
+                className="resolve-press"
+                onClick={logContact}
+                disabled={patchLead.isPending}
+              >
                 Log contact
               </Button>
             </section>
@@ -454,7 +474,12 @@ export function LeadDrawer({
                 onValueChange={(v) =>
                   patchLead.mutate({
                     patch: { stage: v as LeadStage },
-                    log: { channel: "stage_change", from: lead.stage, to: v as LeadStage, outcome: "Stage changed" },
+                    log: {
+                      channel: "stage_change",
+                      from: lead.stage,
+                      to: v as LeadStage,
+                      outcome: "Stage changed",
+                    },
                   })
                 }
               >
@@ -480,11 +505,16 @@ export function LeadDrawer({
               <ul className="space-y-1.5">
                 {(candidates.data ?? []).map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <Link to="/property/$propertyId" params={{ propertyId: c.property_id }} className="underline-offset-2 hover:underline">
+                    <Link
+                      to="/property/$propertyId"
+                      params={{ propertyId: c.property_id }}
+                      className="underline-offset-2 hover:underline"
+                    >
                       {c.properties?.nickname ?? c.properties?.name}
                     </Link>
                     <span className="text-xs text-muted-foreground">
-                      {c.properties?.city ?? "—"} · {c.properties?.bedrooms ?? "?"} bd · {c.properties?.lifecycle_status ?? "—"}
+                      {c.properties?.city ?? "—"} · {c.properties?.bedrooms ?? "?"} bd ·{" "}
+                      {c.properties?.lifecycle_status ?? "—"}
                     </span>
                   </li>
                 ))}
@@ -531,7 +561,9 @@ export function LeadDrawer({
                   <span className="font-medium">{CHANNEL_LABELS[a.channel as LeadChannel]}</span>
                   {a.outcome ? ` — ${a.outcome}` : ""}
                   {a.to_stage ? ` → ${STAGE_LABELS[a.to_stage as LeadStage]}` : ""}
-                  <span className="ml-2 text-xs text-muted-foreground">{formatDate(a.occurred_at)}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {formatDate(a.occurred_at)}
+                  </span>
                   {a.note ? <p className="text-xs text-muted-foreground">{a.note}</p> : null}
                 </li>
               ))}
@@ -551,11 +583,18 @@ export function LeadDrawer({
                   value={reservationRef}
                   onChange={(e) => setReservationRef(e.target.value)}
                 />
-                <Button className="resolve-press w-full" onClick={convert} disabled={patchLead.isPending}>
+                <Button
+                  className="resolve-press w-full"
+                  onClick={convert}
+                  disabled={patchLead.isPending}
+                >
                   Convert — booking confirmed
                 </Button>
 
-                <Select value={lossReason} onValueChange={(v) => setLossReason(v as LeadLossReason)}>
+                <Select
+                  value={lossReason}
+                  onValueChange={(v) => setLossReason(v as LeadLossReason)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Loss reason" />
                   </SelectTrigger>
@@ -573,15 +612,20 @@ export function LeadDrawer({
                   onChange={(e) => setLossNote(e.target.value)}
                   rows={2}
                 />
-                <Button variant="outline" className="resolve-press w-full" onClick={closeLost} disabled={patchLead.isPending}>
+                <Button
+                  variant="outline"
+                  className="resolve-press w-full"
+                  onClick={closeLost}
+                  disabled={patchLead.isPending}
+                >
                   Close as lost
                 </Button>
 
                 {lead.stage === "final_follow_up" && followUpBucket(lead) === "overdue" && (
                   <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2">
                     <p className="text-xs">
-                      The final follow-up has lapsed. Close it as lost, or keep it open with a reason — Resolve will
-                      not close a legitimate opportunity for you.
+                      The final follow-up has lapsed. Close it as lost, or keep it open with a
+                      reason — Resolve will not close a legitimate opportunity for you.
                     </p>
                     <Input
                       placeholder="Reason to keep this open"
@@ -595,7 +639,10 @@ export function LeadDrawer({
                       onClick={() =>
                         patchLead.mutate(
                           {
-                            patch: { keep_open_reason: keepOpen, last_contact_at: new Date().toISOString() },
+                            patch: {
+                              keep_open_reason: keepOpen,
+                              last_contact_at: new Date().toISOString(),
+                            },
                             log: { channel: "note", outcome: "Kept open", note: keepOpen },
                           },
                           { onSuccess: () => toast.success("Kept open — follow-up clock reset.") },

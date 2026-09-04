@@ -192,7 +192,9 @@ export function SpecialHandlingPanel({
                   {severityLabel(rule.severity)}
                 </span>
               </div>
-              <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed">{rule.instruction}</p>
+              <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed">
+                {rule.instruction}
+              </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 {rule.vendor_name && <span>Vendor: {rule.vendor_name}</span>}
                 {rule.threshold_amount != null && (
@@ -250,7 +252,8 @@ function RuleForm({
   onSave: () => void;
   onCancel: () => void;
 }) {
-  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft({ ...draft, [key]: value });
+  const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
+    setDraft({ ...draft, [key]: value });
 
   return (
     <div className="space-y-3 rounded-lg border border-dashed border-border p-4">
@@ -345,7 +348,9 @@ function RuleForm({
                   )
                 }
                 className={`h-9 rounded-lg border px-3 text-sm transition-colors ${
-                  on ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-secondary"
+                  on
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border hover:bg-secondary"
                 }`}
               >
                 {MOMENT_LABELS[m]}

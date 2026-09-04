@@ -7,7 +7,10 @@ export const opsAnalytics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
-      .object({ windowDays: z.number().int().min(1).max(365).optional(), demo: z.boolean().optional() })
+      .object({
+        windowDays: z.number().int().min(1).max(365).optional(),
+        demo: z.boolean().optional(),
+      })
       .parse(data ?? {}),
   )
   .handler(async ({ context, data }) => {

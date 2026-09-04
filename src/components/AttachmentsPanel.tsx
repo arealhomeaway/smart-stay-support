@@ -9,7 +9,17 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Eye, FileText, Film, Image as ImageIcon, Loader2, Paperclip, Trash2, Upload } from "lucide-react";
+import {
+  Download,
+  Eye,
+  FileText,
+  Film,
+  Image as ImageIcon,
+  Loader2,
+  Paperclip,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +36,13 @@ import {
   MAX_FILE_BYTES,
   validateFile,
 } from "@/lib/attachments";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   attachmentUrlFn,
   beginUploadFn,
@@ -76,7 +92,10 @@ export function AttachmentsPanel({
   const share = useServerFn(setAttachmentVisibilityFn);
 
   const key = ["attachments", entityType, entityId];
-  const files = useQuery({ queryKey: key, queryFn: () => list({ data: { entityType, entityId } }) });
+  const files = useQuery({
+    queryKey: key,
+    queryFn: () => list({ data: { entityType, entityId } }),
+  });
 
   const upload = useMutation({
     mutationFn: async (file: File) => {
@@ -132,23 +151,29 @@ export function AttachmentsPanel({
     mutationFn: async (v: { documentId: string; download: boolean }) =>
       urlFor({ data: { documentId: v.documentId, download: v.download } }),
     onSuccess: (r) => window.open(r.url, "_blank", "noopener,noreferrer"),
-    onError: (err) => toast.error(err instanceof Error ? err.message : "That file could not be opened."),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "That file could not be opened."),
   });
 
   const del = useMutation({
-    mutationFn: async (documentId: string) => remove({ data: { documentId, reason: "Removed from the record" } }),
+    mutationFn: async (documentId: string) =>
+      remove({ data: { documentId, reason: "Removed from the record" } }),
     onSuccess: () => {
       toast.success("File removed. The removal is on the record.");
       void qc.invalidateQueries({ queryKey: key });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "That file could not be removed."),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "That file could not be removed."),
   });
 
   const toggleShare = useMutation({
     mutationFn: async (v: { documentId: string; shared: boolean }) =>
-      share({ data: { documentId: v.documentId, visibility: v.shared ? "owner_shared" : "internal" } }),
+      share({
+        data: { documentId: v.documentId, visibility: v.shared ? "owner_shared" : "internal" },
+      }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: key }),
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Sharing could not be changed."),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Sharing could not be changed."),
   });
 
   const data = files.data;
@@ -166,7 +191,6 @@ export function AttachmentsPanel({
                 "Photos, video and documents stay attached to this record through assignment, review, handoff and closure. Homeowners see only what is marked shared."}{" "}
               Each file can be up to {formatBytes(MAX_FILE_BYTES)}.
             </CardDescription>
-
           </div>
           {data?.canUpload && propertyLevel ? (
             <Select value={category} onValueChange={setCategory}>
@@ -184,7 +208,12 @@ export function AttachmentsPanel({
           ) : null}
           {data?.canUpload && !readOnly ? (
             <Button size="sm" disabled={upload.isPending} onClick={() => inputRef.current?.click()}>
-              {upload.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />} Add file
+              {upload.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Upload className="size-4" />
+              )}{" "}
+              Add file
             </Button>
           ) : null}
         </div>
@@ -224,21 +253,31 @@ export function AttachmentsPanel({
           <Skeleton className="h-16 w-full" />
         ) : files.isError ? (
           <p className="text-sm text-muted-foreground">
-            {files.error instanceof Error ? files.error.message : "These files could not be loaded."}
+            {files.error instanceof Error
+              ? files.error.message
+              : "These files could not be loaded."}
           </p>
         ) : data && data.files.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No files yet.{" "}
-            {data.recordClosed ? "This record is closed." : data.canUpload ? "Add the first one above." : ""}
+            {data.recordClosed
+              ? "This record is closed."
+              : data.canUpload
+                ? "Add the first one above."
+                : ""}
           </p>
         ) : (
           <ul className="divide-y divide-border rounded-md border border-border">
             {(data?.files ?? []).map((f) => (
               <li key={f.id} className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm">
                 <span className="text-muted-foreground">{iconFor(f.kind)}</span>
-                <span className="min-w-0 flex-1 truncate font-medium">{f.original_filename ?? f.title}</span>
+                <span className="min-w-0 flex-1 truncate font-medium">
+                  {f.original_filename ?? f.title}
+                </span>
                 {documentCategoryLabel((f as { category?: string | null }).category) ? (
-                  <Badge variant="outline">{documentCategoryLabel((f as { category?: string | null }).category)}</Badge>
+                  <Badge variant="outline">
+                    {documentCategoryLabel((f as { category?: string | null }).category)}
+                  </Badge>
                 ) : null}
                 {f.upload_status === "pending" ? (
                   <Badge variant="secondary">
@@ -248,8 +287,7 @@ export function AttachmentsPanel({
                   <Badge variant="secondary">Request completed</Badge>
                 ) : (
                   <span className="text-muted-foreground">
-                    {formatBytes(f.size_bytes ?? 0)} ·{" "}
-                    {f.uploaded_by_name ?? "—"} ·{" "}
+                    {formatBytes(f.size_bytes ?? 0)} · {f.uploaded_by_name ?? "—"} ·{" "}
                     {f.uploaded_at ? new Date(f.uploaded_at).toLocaleDateString() : "—"}
                   </span>
                 )}
@@ -264,10 +302,18 @@ export function AttachmentsPanel({
                 ) : null}
                 {f.upload_status === "stored" && f.original_filename ? (
                   <>
-                    <Button size="icon" variant="ghost" onClick={() => open.mutate({ documentId: f.id, download: false })}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => open.mutate({ documentId: f.id, download: false })}
+                    >
                       <Eye className="size-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => open.mutate({ documentId: f.id, download: true })}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => open.mutate({ documentId: f.id, download: true })}
+                    >
                       <Download className="size-4" />
                     </Button>
                   </>

@@ -44,7 +44,9 @@ export function VisitCheckInCard({ ticketId, homeName }: { ticketId: string; hom
     },
     onSuccess: (res) => {
       toast.success(
-        res.verified ? "Checked in at the home — thank you." : "Checked in. Location wasn't confirmed.",
+        res.verified
+          ? "Checked in at the home — thank you."
+          : "Checked in. Location wasn't confirmed.",
       );
       refresh();
     },
@@ -115,8 +117,8 @@ export function VisitCheckInCard({ ticketId, homeName }: { ticketId: string; hom
               .filter((v) => v.checked_out_at)
               .map((v) => (
                 <div key={v.id} className="text-muted-foreground">
-                  {new Date(v.checked_in_at).toLocaleString()} · {formatOnSite(v.minutes_on_site)} on site ·{" "}
-                  {v.check_in_verified ? "location confirmed" : "location unconfirmed"}
+                  {new Date(v.checked_in_at).toLocaleString()} · {formatOnSite(v.minutes_on_site)}{" "}
+                  on site · {v.check_in_verified ? "location confirmed" : "location unconfirmed"}
                 </div>
               ))}
           </div>

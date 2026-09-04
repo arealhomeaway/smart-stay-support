@@ -143,7 +143,9 @@ export async function auditPortfolioMapping(
       ownerrezPropertyId: ownerrez,
       breezewayHomeId:
         homeId ??
-        (state === "verified" && ownerrez ? String((byReference.get(ownerrez) ?? [])[0]?.id) : null),
+        (state === "verified" && ownerrez
+          ? String((byReference.get(ownerrez) ?? [])[0]?.id)
+          : null),
       state,
       note,
     });
@@ -201,16 +203,34 @@ export async function propertyWriteEligibility(propertyId: string): Promise<{
   if (error) throw new Error("Could not read the property.");
   const p = data as unknown as PropertyRow | null;
   if (!p) {
-    return { eligible: false, reason: "That property does not exist.", homeId: null, propertyName: null, state: null };
+    return {
+      eligible: false,
+      reason: "That property does not exist.",
+      homeId: null,
+      propertyName: null,
+      state: null,
+    };
   }
   const state = (p.breezeway_mapping_state ?? "unmapped") as BreezewayMappingState;
   const homeId = (p.breezeway_property_id ?? "").trim() || null;
   const name = p.name;
   if (p.is_demo) {
-    return { eligible: false, reason: "Demo properties are never sent to Breezeway.", homeId, propertyName: name, state };
+    return {
+      eligible: false,
+      reason: "Demo properties are never sent to Breezeway.",
+      homeId,
+      propertyName: name,
+      state,
+    };
   }
   if (p.archived_at || p.active === false) {
-    return { eligible: false, reason: "Archived properties are never sent to Breezeway.", homeId, propertyName: name, state };
+    return {
+      eligible: false,
+      reason: "Archived properties are never sent to Breezeway.",
+      homeId,
+      propertyName: name,
+      state,
+    };
   }
   if (state !== "verified") {
     return {
@@ -222,7 +242,13 @@ export async function propertyWriteEligibility(propertyId: string): Promise<{
     };
   }
   if (!homeId) {
-    return { eligible: false, reason: "This property has no Breezeway home id.", homeId: null, propertyName: name, state };
+    return {
+      eligible: false,
+      reason: "This property has no Breezeway home id.",
+      homeId: null,
+      propertyName: name,
+      state,
+    };
   }
   return { eligible: true, reason: null, homeId, propertyName: name, state };
 }
@@ -242,7 +268,9 @@ export async function verifiedHomeIds(): Promise<string[]> {
 }
 
 /** Resolve property for a verified Breezeway home id, if one exists. */
-export async function propertyForHomeId(homeId: number | string): Promise<{ id: string; name: string | null } | null> {
+export async function propertyForHomeId(
+  homeId: number | string,
+): Promise<{ id: string; name: string | null } | null> {
   const db = await admin();
   const { data } = await db
     .from("properties")
@@ -254,7 +282,11 @@ export async function propertyForHomeId(homeId: number | string): Promise<{ id: 
 }
 
 /** Admin decision: keep a property out of Breezeway, or return it to the audit. */
-export async function setMappingExclusion(propertyId: string, excluded: boolean, note: string | null) {
+export async function setMappingExclusion(
+  propertyId: string,
+  excluded: boolean,
+  note: string | null,
+) {
   const db = await admin();
   const { error } = await db
     .from("properties")

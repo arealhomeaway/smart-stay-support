@@ -7,7 +7,12 @@
  */
 import { useMemo, useState } from "react";
 import { KeyRound, Search } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/page";
@@ -91,8 +96,12 @@ export function PropertyDetailSections({
                 <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
                   {g.fields.map((f) => (
                     <div key={f.key} className="min-w-0">
-                      <dt className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">{f.label}</dt>
-                      <dd className="mt-0.5 whitespace-pre-line text-[0.9375rem] leading-snug">{f.value}</dd>
+                      <dt className="text-[0.6875rem] uppercase tracking-wide text-muted-foreground">
+                        {f.label}
+                      </dt>
+                      <dd className="mt-0.5 whitespace-pre-line text-[0.9375rem] leading-snug">
+                        {f.value}
+                      </dd>
                     </div>
                   ))}
                 </dl>

@@ -47,7 +47,11 @@ export type HubViewer = {
 };
 
 const LENSES: { key: Lens; label: string; hint: string }[] = [
-  { key: "attention", label: "Needs attention now", hint: "Something an ARHA person must do today." },
+  {
+    key: "attention",
+    label: "Needs attention now",
+    hint: "Something an ARHA person must do today.",
+  },
   {
     key: "mine",
     label: "Awaiting my review",
@@ -226,7 +230,12 @@ export function DirectorHub({
             <span className="text-muted-foreground">active</span>
           </span>
           <span>
-            <span className={cn("font-semibold", counts.at_risk + counts.blocked > 0 && "text-state-blocked")}>
+            <span
+              className={cn(
+                "font-semibold",
+                counts.at_risk + counts.blocked > 0 && "text-state-blocked",
+              )}
+            >
               {counts.at_risk + counts.blocked}
             </span>{" "}
             <span className="text-muted-foreground">at risk or blocked</span>
@@ -236,7 +245,9 @@ export function DirectorHub({
             <span className="text-muted-foreground">awaiting my review</span>
           </span>
           <span>
-            <span className="font-semibold">{bottleneck ? lifecycleStageMeta(bottleneck).label : "—"}</span>{" "}
+            <span className="font-semibold">
+              {bottleneck ? lifecycleStageMeta(bottleneck).label : "—"}
+            </span>{" "}
             <span className="text-muted-foreground">is the bottleneck stage</span>
           </span>
           <span className="ml-auto flex items-center gap-3 text-muted-foreground">
@@ -261,7 +272,10 @@ export function DirectorHub({
         </div>
 
         {/* stage distribution — one slim bar, not equal-sized tiles */}
-        <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted" title="Where active projects sit">
+        <div
+          className="flex h-2 w-full overflow-hidden rounded-full bg-muted"
+          title="Where active projects sit"
+        >
           {LIFECYCLE_STAGES.filter((s) => s.value !== "live").map((s) => {
             const inStage = active.filter((p) => p.stage === s.value).length;
             const pct = active.length > 0 ? (inStage / active.length) * 100 : 0;
@@ -293,7 +307,9 @@ export function DirectorHub({
       <section className="space-y-3">
         <p className="eyebrow">Project portfolio</p>
         {active.length === 0 ? (
-          <p className="surface p-4 text-sm text-muted-foreground">No active onboarding projects.</p>
+          <p className="surface p-4 text-sm text-muted-foreground">
+            No active onboarding projects.
+          </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {active

@@ -71,8 +71,12 @@ function VendorQueue() {
 
   const showScorecard = flagEnabled("vendor_portal");
 
-  const open = (jobs.data ?? []).filter((j) => j.vendor_status !== "completed" && j.status !== "closed");
-  const done = (jobs.data ?? []).filter((j) => j.vendor_status === "completed" || j.status === "closed");
+  const open = (jobs.data ?? []).filter(
+    (j) => j.vendor_status !== "completed" && j.status !== "closed",
+  );
+  const done = (jobs.data ?? []).filter(
+    (j) => j.vendor_status === "completed" || j.status === "closed",
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -116,10 +120,20 @@ function VendorQueue() {
                 params={{ ticketId: job.id }}
                 className="surface-row flex items-start gap-3 py-3 pl-4 pr-4"
               >
-                <PropertyPhoto url={property?.primary_photo_url} name={property?.name} className="mt-0.5 size-12" />
+                <PropertyPhoto
+                  url={property?.primary_photo_url}
+                  name={property?.name}
+                  className="mt-0.5 size-12"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Chip className={job.priority === "p1" ? "border-danger/40 bg-danger/10 text-danger" : undefined}>
+                    <Chip
+                      className={
+                        job.priority === "p1"
+                          ? "border-danger/40 bg-danger/10 text-danger"
+                          : undefined
+                      }
+                    >
                       {(job.priority ?? "").toUpperCase()}
                     </Chip>
                     <span className="numeric text-xs text-muted-foreground">#{job.ref}</span>
@@ -129,10 +143,13 @@ function VendorQueue() {
                     </StatusBadge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {property?.name ?? "Home to be confirmed"} · {(job.category ?? "").replace(/_/g, " ")}
+                    {property?.name ?? "Home to be confirmed"} ·{" "}
+                    {(job.category ?? "").replace(/_/g, " ")}
                     {job.due_at ? ` · due ${usDateTime(job.due_at)}` : ""}
                   </p>
-                  <p className="mt-1 text-[0.8125rem] font-medium text-foreground/80">{nextAction(job)}</p>
+                  <p className="mt-1 text-[0.8125rem] font-medium text-foreground/80">
+                    {nextAction(job)}
+                  </p>
                 </div>
               </Link>
             );

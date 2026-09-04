@@ -69,4 +69,3 @@ export function inboxMessagesPath(query = ""): string {
 export function sendMailPath(): string {
   return `${mailboxRoot()}/sendMail`;
 }
-

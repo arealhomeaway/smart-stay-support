@@ -147,7 +147,8 @@ export function RecoveryDrawer({
   if (!recovery) return <Sheet open={false} onOpenChange={() => onClose()} />;
 
   const value = (key: keyof RecoveryRow) =>
-    fields[key as string] ?? (recovery[key] === null || recovery[key] === undefined ? "" : String(recovery[key]));
+    fields[key as string] ??
+    (recovery[key] === null || recovery[key] === undefined ? "" : String(recovery[key]));
   const set = (key: string, v: string) => setFields((f) => ({ ...f, [key]: v }));
 
   const verdict = evaluateAuthority({
@@ -204,7 +205,8 @@ export function RecoveryDrawer({
                 ))}
               </ul>
               <p className="mt-1 text-muted-foreground">
-                Escalation is guidance and approval — you remain the owner until a handoff is accepted.
+                Escalation is guidance and approval — you remain the owner until a handoff is
+                accepted.
               </p>
             </div>
           ) : null}
@@ -225,10 +227,15 @@ export function RecoveryDrawer({
           <section className="space-y-2">
             <h3 className="font-display text-sm font-semibold">Evidence</h3>
             {reqs.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No checklist recorded for this recovery.</p>
+              <p className="text-xs text-muted-foreground">
+                No checklist recorded for this recovery.
+              </p>
             ) : (
               reqs.map((r) => (
-                <div key={r.slot_key} className="flex items-center justify-between rounded border px-3 py-1.5">
+                <div
+                  key={r.slot_key}
+                  className="flex items-center justify-between rounded border px-3 py-1.5"
+                >
                   <span className="text-xs">
                     {r.label}
                     {r.required ? "" : " (optional)"}
@@ -239,8 +246,8 @@ export function RecoveryDrawer({
             )}
             {progress.blocking.length > 0 ? (
               <p className="text-xs text-muted-foreground">
-                {progress.blocking.length} required item(s) outstanding. Record an exception rather than
-                skipping one silently.
+                {progress.blocking.length} required item(s) outstanding. Record an exception rather
+                than skipping one silently.
               </p>
             ) : null}
           </section>
@@ -269,10 +276,14 @@ export function RecoveryDrawer({
                   value={value("recovery_action")}
                   onValueChange={(v) => set("recovery_action", v)}
                 >
-                  <SelectTrigger><SelectValue placeholder="Not decided" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Not decided" />
+                  </SelectTrigger>
                   <SelectContent>
                     {RECOVERY_ACTIONS.map((a) => (
-                      <SelectItem key={a} value={a}>{RECOVERY_ACTION_LABELS[a]}</SelectItem>
+                      <SelectItem key={a} value={a}>
+                        {RECOVERY_ACTION_LABELS[a]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -289,7 +300,9 @@ export function RecoveryDrawer({
                   }
                   onValueChange={(v) => set("within_airbnb_policy", v)}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unknown">Not confirmed yet</SelectItem>
                     <SelectItem value="within">Within normal policy</SelectItem>
@@ -300,7 +313,13 @@ export function RecoveryDrawer({
             </div>
 
             <div className="grid gap-2 sm:grid-cols-3">
-              <MoneyField label="Guest asked for" k="guest_requested_amount" value={value} set={set} readOnly={readOnly} />
+              <MoneyField
+                label="Guest asked for"
+                k="guest_requested_amount"
+                value={value}
+                set={set}
+                readOnly={readOnly}
+              />
               <MoneyField
                 label="Proposed"
                 k="proposed_amount"
@@ -308,7 +327,13 @@ export function RecoveryDrawer({
                 set={set}
                 readOnly={readOnly || !isMonetary(recovery.recovery_action)}
               />
-              <MoneyField label="Approved" k="approved_amount" value={value} set={set} readOnly={readOnly} />
+              <MoneyField
+                label="Approved"
+                k="approved_amount"
+                value={value}
+                set={set}
+                readOnly={readOnly}
+              />
             </div>
 
             <div className="rounded-md border bg-muted/40 p-3 text-xs">
@@ -347,7 +372,9 @@ export function RecoveryDrawer({
                       authority_level: verdict.level,
                       escalation_flags: verdict.escalations,
                       ...(policy
-                        ? { within_airbnb_policy: policy === "unknown" ? null : policy === "within" }
+                        ? {
+                            within_airbnb_policy: policy === "unknown" ? null : policy === "within",
+                          }
                         : {}),
                     },
                     event: "decision",
@@ -413,7 +440,12 @@ export function RecoveryDrawer({
             <h3 className="font-display text-sm font-semibold">Guest communication</h3>
             <div className="space-y-1">
               <Label className="text-xs">Update sent to the guest</Label>
-              <Textarea rows={2} disabled={readOnly} value={note} onChange={(e) => setNote(e.target.value)} />
+              <Textarea
+                rows={2}
+                disabled={readOnly}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -422,7 +454,10 @@ export function RecoveryDrawer({
                 disabled={readOnly || !note || save.isPending}
                 onClick={() =>
                   save.mutate({
-                    patch: { last_guest_update_at: new Date().toISOString(), promised_update_at: null },
+                    patch: {
+                      last_guest_update_at: new Date().toISOString(),
+                      promised_update_at: null,
+                    },
                     event: "guest_update",
                     body: note,
                   })
@@ -456,11 +491,17 @@ export function RecoveryDrawer({
           <section className="space-y-3">
             <h3 className="font-display text-sm font-semibold">Delivery and closure</h3>
             <p className="text-xs text-muted-foreground">
-              Refunds and credits are issued in OwnerRez; record here what was actually sent. QuickBooks
-              remains the accounting record.
+              Refunds and credits are issued in OwnerRez; record here what was actually sent.
+              QuickBooks remains the accounting record.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <MoneyField label="Amount issued" k="delivered_amount" value={value} set={set} readOnly={readOnly} />
+              <MoneyField
+                label="Amount issued"
+                k="delivered_amount"
+                value={value}
+                set={set}
+                readOnly={readOnly}
+              />
               <div className="space-y-1">
                 <Label className="text-xs">Issued via</Label>
                 <Input
@@ -500,7 +541,9 @@ export function RecoveryDrawer({
                       corrective_action: value("corrective_action") || null,
                       unresolved_concern: value("unresolved_concern") || null,
                       issued_by: userId,
-                      issued_on: value("delivered_amount") ? new Date().toISOString().slice(0, 10) : null,
+                      issued_on: value("delivered_amount")
+                        ? new Date().toISOString().slice(0, 10)
+                        : null,
                     },
                     event: "delivered",
                     body: `Recorded ${formatMoney(numOrNull(value("delivered_amount")))} issued to the guest`,
@@ -571,12 +614,13 @@ export function RecoveryDrawer({
               {recovery.claim_id ? " · linked to a claim" : " · no claim linked"}
             </p>
             <p className="text-muted-foreground">
-              A recovery gives the guest something back; a claim recovers cost from someone else. Link one
-              only when both are genuinely running.
+              A recovery gives the guest something back; a claim recovers cost from someone else.
+              Link one only when both are genuinely running.
             </p>
             {handoffPending(recovery) ? (
               <p className="text-warning">
-                Handoff requested and not yet accepted — you are still responsible for this recovery.
+                Handoff requested and not yet accepted — you are still responsible for this
+                recovery.
               </p>
             ) : null}
           </section>
@@ -616,7 +660,12 @@ function MoneyField({
   return (
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
-      <Input type="number" disabled={readOnly} value={value(k)} onChange={(e) => set(k, e.target.value)} />
+      <Input
+        type="number"
+        disabled={readOnly}
+        value={value(k)}
+        onChange={(e) => set(k, e.target.value)}
+      />
     </div>
   );
 }

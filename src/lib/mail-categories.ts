@@ -47,7 +47,6 @@ export const RESOLVE_TAGS = [
   LEGACY_COMPLETED_TAG,
 ];
 
-
 export type TriggerKind = "ticket" | "lead";
 
 type Categories = readonly (string | null | undefined)[] | null | undefined;
@@ -96,13 +95,14 @@ export function alreadyTagged(categories: Categories) {
   );
 }
 
-
 /**
  * Swaps every Resolve category for one, keeping each unrelated category the
  * team applied — de-duplicated, order preserved.
  */
 export function withTag(categories: Categories, tag: string): string[] {
-  const keep = clean(categories).filter((c) => !RESOLVE_TAGS.some((t) => t.toLowerCase() === c.toLowerCase()));
+  const keep = clean(categories).filter(
+    (c) => !RESOLVE_TAGS.some((t) => t.toLowerCase() === c.toLowerCase()),
+  );
   const seen = new Set<string>();
   return [...keep, tag].filter((c) => {
     const key = c.toLowerCase();

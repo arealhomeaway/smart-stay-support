@@ -172,7 +172,8 @@ export function authorityTier(
 ): AuthorityTier {
   if (options.emergency) return "emergency";
   const value = Number(amount ?? 0);
-  if (!Number.isFinite(value) || value < MAINTENANCE_POLICY.supervisorApprovalThreshold) return "proceed";
+  if (!Number.isFinite(value) || value < MAINTENANCE_POLICY.supervisorApprovalThreshold)
+    return "proceed";
   if (value <= MAINTENANCE_POLICY.ownerApprovalThreshold) return "supervisor";
   return "owner";
 }

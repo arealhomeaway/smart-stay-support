@@ -6,7 +6,12 @@
  * entry ids so a shared multi-property activity counts once.
  */
 
-import { BADGE_BY_CODE, benchmarkHours, hoursFromMinutes, OWNER_GOAL_HOURS } from "./owner-participation";
+import {
+  BADGE_BY_CODE,
+  benchmarkHours,
+  hoursFromMinutes,
+  OWNER_GOAL_HOURS,
+} from "./owner-participation";
 import { recordEvent, type Client, type ProgramAggregate } from "./owner-participation.server";
 
 const CLOSED = new Set(["answered", "closed"]);
@@ -42,11 +47,13 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
     add("onboarding_champion", "60 reported hours with all onboarding activities complete");
   }
 
-  if (agg.reviews.some((r) => r.owner_decision)) add("decision_maker", "First owner decision completed");
+  if (agg.reviews.some((r) => r.owner_decision))
+    add("decision_maker", "First owner decision completed");
 
   if (agg.program.startedOn) {
     const weeks = new Set(entries.map((e) => programWeek(agg.program.startedOn!, e.entry_date)));
-    if (weeks.size >= 3) add("consistent_participation", `Activity reported in ${weeks.size} program weeks`);
+    if (weeks.size >= 3)
+      add("consistent_participation", `Activity reported in ${weeks.size} program weeks`);
 
     // Three consecutive weekly checkpoints where cumulative reported hours met the pace benchmark.
     const sorted = [...entries].sort((a, b) => a.entry_date.localeCompare(b.entry_date));
@@ -70,11 +77,15 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
     (r) => r.responded_at && r.respond_by && r.responded_at.slice(0, 10) <= r.respond_by,
   );
   if (onTimeResponses.length >= 10) {
-    add("responsive_partner", `${onTimeResponses.length} activities completed by their response dates`);
+    add(
+      "responsive_partner",
+      `${onTimeResponses.length} activities completed by their response dates`,
+    );
   }
 
   const launchReady = included.filter(
-    (p) => ["ready", "launched"].includes(p.launchStatus) && p.openTasks === 0 && p.requiredTasks > 0,
+    (p) =>
+      ["ready", "launched"].includes(p.launchStatus) && p.openTasks === 0 && p.requiredTasks > 0,
   );
   if (launchReady.length > 0) {
     add("property_launch_partner", `Pre-launch decisions complete for ${launchReady[0]!.name}`);
@@ -88,7 +99,10 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
       add("portfolio_decision_maker", "Required owner decisions completed across all properties");
     }
     if (launchReady.length === included.length) {
-      add("portfolio_launch_partner", "Every included property met its launch-readiness requirements");
+      add(
+        "portfolio_launch_partner",
+        "Every included property met its launch-readiness requirements",
+      );
     }
   }
 

@@ -4,7 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export type ExternalDatabase = {
   key: string;
@@ -76,14 +82,17 @@ export function ExternalRecordsPanel({
         <CardHeader>
           <CardTitle className="text-base">Source databases</CardTitle>
           <CardDescription>
-            Notion stays the editable source of truth during the transition. Synchronisation is read-only
-            configuration and stays disabled until the connection and exact database IDs are verified —
-            Resolve never writes to Notion.
+            Notion stays the editable source of truth during the transition. Synchronisation is
+            read-only configuration and stays disabled until the connection and exact database IDs
+            are verified — Resolve never writes to Notion.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {databases.map((d) => (
-            <div key={d.key} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3">
+            <div
+              key={d.key}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+            >
               <div>
                 <p className="text-sm font-medium">{d.label}</p>
                 <p className="text-xs text-muted-foreground">
@@ -93,7 +102,10 @@ export function ExternalRecordsPanel({
               </div>
               <div className="flex gap-2">
                 <Badge variant="outline">{d.read_only ? "Read-only" : "Writable"}</Badge>
-                <Badge variant="outline" className={d.sync_enabled ? "bg-emerald-100 text-emerald-900" : ""}>
+                <Badge
+                  variant="outline"
+                  className={d.sync_enabled ? "bg-emerald-100 text-emerald-900" : ""}
+                >
                   {d.sync_enabled ? "Sync on" : "Sync disabled"}
                 </Badge>
                 <Badge variant="outline">{d.verified ? "Verified" : "Unverified"}</Badge>
@@ -102,7 +114,8 @@ export function ExternalRecordsPanel({
           ))}
           {!syncConfigured && (
             <p className="text-xs text-muted-foreground">
-              The onboarding external-sync workflow control is off, so nothing is imported automatically.
+              The onboarding external-sync workflow control is off, so nothing is imported
+              automatically.
             </p>
           )}
         </CardContent>
@@ -117,7 +130,9 @@ export function ExternalRecordsPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="w-64">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Database</Label>
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Database
+            </Label>
             <Select value={dbKey} onValueChange={setDbKey}>
               <SelectTrigger>
                 <SelectValue />
@@ -136,7 +151,13 @@ export function ExternalRecordsPanel({
             <p className="text-sm text-muted-foreground">Nothing is waiting for review.</p>
           )}
           {queue.map((r) => (
-            <RecordRow key={r.id} record={r} properties={properties} disabled={disabled} onResolve={onResolve} />
+            <RecordRow
+              key={r.id}
+              record={r}
+              properties={properties}
+              disabled={disabled}
+              onResolve={onResolve}
+            />
           ))}
         </CardContent>
       </Card>

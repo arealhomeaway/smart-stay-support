@@ -35,7 +35,6 @@ export const FIRST_INSPECTION_DAYS = 30;
 /** Days between inspections after the first one. */
 export const INSPECTION_INTERVAL_DAYS = 90;
 
-
 /** Whole days from today until the due date (negative when overdue). */
 export function daysUntil(dueOn: string) {
   const due = new Date(`${dueOn}T00:00:00`);
@@ -54,7 +53,10 @@ export function quarterlyStatus(dueOn: string, hasOpenReview: boolean): Quarterl
 }
 
 export const QUARTERLY_LABELS: Record<QuarterlyState, { label: string; tone: string }> = {
-  in_progress: { label: "Review in progress", tone: "bg-primary/10 text-primary border-primary/20" },
+  in_progress: {
+    label: "Review in progress",
+    tone: "bg-primary/10 text-primary border-primary/20",
+  },
   overdue: { label: "Overdue", tone: "bg-destructive/10 text-destructive border-destructive/20" },
   due: { label: "Due today", tone: "bg-destructive/10 text-destructive border-destructive/20" },
   upcoming: { label: "Coming up", tone: "bg-amber-500/10 text-amber-700 border-amber-500/20" },

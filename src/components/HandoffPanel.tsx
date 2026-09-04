@@ -78,7 +78,10 @@ export function HandoffPanel({
   const { data: people } = useQuery({
     queryKey: ["profiles-lite"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name, email").order("full_name");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .order("full_name");
       if (error) throw error;
       return data;
     },
@@ -176,7 +179,11 @@ export function HandoffPanel({
     const { data: userData } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("handoffs")
-      .update({ status: "accepted", responded_at: new Date().toISOString(), to_user: userData.user?.id ?? null })
+      .update({
+        status: "accepted",
+        responded_at: new Date().toISOString(),
+        to_user: userData.user?.id ?? null,
+      })
       .eq("id", handoffId);
     if (error) {
       toast.error(error.message);
@@ -219,7 +226,10 @@ export function HandoffPanel({
       .from("tickets")
       .update({ handoff_status: "rejected", pending_handoff_to: null })
       .eq("id", ticket.id);
-    await log(`Handoff rejected: ${rejectReason.trim()} — returned to the original owner.`, "handoff_rejected");
+    await log(
+      `Handoff rejected: ${rejectReason.trim()} — returned to the original owner.`,
+      "handoff_rejected",
+    );
     setRejecting(null);
     setRejectReason("");
     await refetch();
@@ -227,7 +237,8 @@ export function HandoffPanel({
     toast.success("Handoff rejected and returned.");
   }
 
-  const roleName = (code: string | null) => (roles ?? []).find((r) => r.code === code)?.name ?? code ?? "—";
+  const roleName = (code: string | null) =>
+    (roles ?? []).find((r) => r.code === code)?.name ?? code ?? "—";
   const personName = (id: string | null) => {
     const p = (people ?? []).find((x) => x.id === id);
     return p?.full_name ?? p?.email ?? null;
@@ -240,13 +251,16 @@ export function HandoffPanel({
           <ArrowRightLeft className="size-4" /> Handoffs
         </CardTitle>
         <CardDescription>
-          Tagging someone is not a handoff. It is not complete until the receiver accepts it — until then you
-          remain accountable.
+          Tagging someone is not a handoff. It is not complete until the receiver accepts it — until
+          then you remain accountable.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {pending.map((h) => (
-          <div key={h.id} className="space-y-3 rounded-lg border border-warning/40 bg-warning/10 p-3">
+          <div
+            key={h.id}
+            className="space-y-3 rounded-lg border border-warning/40 bg-warning/10 p-3"
+          >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className={priorityTone(h.priority)}>
                 {h.priority.toUpperCase()}
@@ -260,7 +274,8 @@ export function HandoffPanel({
             <div className="space-y-1 text-sm">
               <p>{h.summary}</p>
               <p className="text-muted-foreground">
-                <span className="font-medium text-foreground">Done so far:</span> {h.actions_completed}
+                <span className="font-medium text-foreground">Done so far:</span>{" "}
+                {h.actions_completed}
               </p>
               <p className="text-muted-foreground">
                 <span className="font-medium text-foreground">Status:</span> {h.current_status}
@@ -281,7 +296,8 @@ export function HandoffPanel({
             </div>
             {h.priority === "p1" && (
               <p className="flex items-center gap-2 text-xs font-medium text-danger">
-                <ShieldAlert className="size-3.5" /> Unaccepted P1 handoff — the Operations Supervisor is notified.
+                <ShieldAlert className="size-3.5" /> Unaccepted P1 handoff — the Operations
+                Supervisor is notified.
               </p>
             )}
             {rejecting === h.id ? (
@@ -317,10 +333,14 @@ export function HandoffPanel({
           <div key={h.id} className="rounded-lg border border-border p-3 text-sm">
             <p className="font-medium">
               {h.status === "accepted" ? "Accepted" : "Rejected"} · {roleName(h.to_role_code)}{" "}
-              <span className="font-normal text-muted-foreground">{relativeTime(h.responded_at)}</span>
+              <span className="font-normal text-muted-foreground">
+                {relativeTime(h.responded_at)}
+              </span>
             </p>
             <p className="text-muted-foreground">{h.summary}</p>
-            {h.response_reason && <p className="text-muted-foreground">Reason: {h.response_reason}</p>}
+            {h.response_reason && (
+              <p className="text-muted-foreground">Reason: {h.response_reason}</p>
+            )}
           </div>
         ))}
 
@@ -348,7 +368,10 @@ export function HandoffPanel({
                 </div>
                 <div className="space-y-1.5">
                   <Label>Person (optional)</Label>
-                  <Select value={form.to_user} onValueChange={(v) => setForm({ ...form, to_user: v })}>
+                  <Select
+                    value={form.to_user}
+                    onValueChange={(v) => setForm({ ...form, to_user: v })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Whoever is on duty" />
                     </SelectTrigger>

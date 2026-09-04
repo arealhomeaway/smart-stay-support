@@ -82,7 +82,9 @@ export function FinancialPanel({
   const invoice = useMutation(run(useServerFn(recordInvoiceFn), "Invoice recorded."));
   const accounting = useMutation(run(useServerFn(sendToAccountingFn), "Sent to accounting."));
   const settle = useMutation(run(useServerFn(settleFinancialRequestFn), "Marked settled."));
-  const recipient = useMutation(run(useServerFn(setAccountingRecipientFn), "Accounting recipient saved."));
+  const recipient = useMutation(
+    run(useServerFn(setAccountingRecipientFn), "Accounting recipient saved."),
+  );
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -121,7 +123,10 @@ export function FinancialPanel({
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label>Kind</Label>
-                      <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v })}>
+                      <Select
+                        value={form.kind}
+                        onValueChange={(v) => setForm({ ...form, kind: v })}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -145,11 +150,17 @@ export function FinancialPanel({
                   </div>
                   <div className="space-y-1.5">
                     <Label>What is it for</Label>
-                    <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                    <Input
+                      value={form.title}
+                      onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Vendor (optional)</Label>
-                    <Input value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} />
+                    <Input
+                      value={form.vendor}
+                      onChange={(e) => setForm({ ...form, vendor: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Detail (optional)</Label>
@@ -241,7 +252,9 @@ export function FinancialPanel({
               <Button
                 variant="outline"
                 disabled={recipient.isPending || !recipientEmail.includes("@")}
-                onClick={() => recipient.mutate({ data: { email: recipientEmail.trim() } } as never)}
+                onClick={() =>
+                  recipient.mutate({ data: { email: recipientEmail.trim() } } as never)
+                }
               >
                 Save recipient
               </Button>
@@ -261,10 +274,14 @@ export function FinancialPanel({
               canEdit={canEdit}
               onSend={() => send.mutate({ data: { requestId: r.id } } as never)}
               onDecide={(approved, note, approvedAmount) =>
-                decide.mutate({ data: { requestId: r.id, approved, note, approvedAmount } } as never)
+                decide.mutate({
+                  data: { requestId: r.id, approved, note, approvedAmount },
+                } as never)
               }
               onInvoice={(invoiceAmount, invoiceRef, varianceNote) =>
-                invoice.mutate({ data: { requestId: r.id, invoiceAmount, invoiceRef, varianceNote } } as never)
+                invoice.mutate({
+                  data: { requestId: r.id, invoiceAmount, invoiceRef, varianceNote },
+                } as never)
               }
               onAccounting={() => accounting.mutate({ data: { requestId: r.id } } as never)}
               onSettle={(note) => settle.mutate({ data: { requestId: r.id, note } } as never)}
@@ -320,7 +337,11 @@ function RequestCard({
 
         {canEdit && status === "estimate" ? (
           <Button size="sm" onClick={onSend}>
-            {tier === "owner" ? "Send to homeowner" : tier === "supervisor" ? "Send to supervisor" : "Record and continue"}
+            {tier === "owner"
+              ? "Send to homeowner"
+              : tier === "supervisor"
+                ? "Send to supervisor"
+                : "Record and continue"}
           </Button>
         ) : null}
 
@@ -333,7 +354,11 @@ function RequestCard({
               onChange={(e) => setNote(e.target.value)}
             />
             <div className="flex gap-2">
-              <Button size="sm" disabled={note.trim().length < 3} onClick={() => onDecide(true, note.trim(), null)}>
+              <Button
+                size="sm"
+                disabled={note.trim().length < 3}
+                onClick={() => onDecide(true, note.trim(), null)}
+              >
                 Approve
               </Button>
               <Button
@@ -389,7 +414,11 @@ function RequestCard({
                   variant="outline"
                   disabled={note.trim().length < 3}
                   onClick={() =>
-                    onInvoice(Number(request.invoice_amount ?? 0), request.invoice_ref ?? null, note.trim())
+                    onInvoice(
+                      Number(request.invoice_amount ?? 0),
+                      request.invoice_ref ?? null,
+                      note.trim(),
+                    )
                   }
                 >
                   Save variance note
@@ -411,7 +440,11 @@ function RequestCard({
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
-            <Button size="sm" disabled={note.trim().length < 3} onClick={() => onSettle(note.trim())}>
+            <Button
+              size="sm"
+              disabled={note.trim().length < 3}
+              onClick={() => onSettle(note.trim())}
+            >
               Mark settled
             </Button>
           </div>

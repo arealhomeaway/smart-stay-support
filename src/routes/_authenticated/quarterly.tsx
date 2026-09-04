@@ -61,7 +61,11 @@ function dueText(row: QuarterlyRow) {
 
 function GatedQuarterlyPage() {
   return (
-    <LaunchStateGate flag="quarterly_reviews" title="Quarterly reviews are not part of the Operations beta" description="Quarterly property reviews launch later, alongside the mature Vendor Portal.">
+    <LaunchStateGate
+      flag="quarterly_reviews"
+      title="Quarterly reviews are not part of the Operations beta"
+      description="Quarterly property reviews launch later, alongside the mature Vendor Portal."
+    >
       <QuarterlyPage />
     </LaunchStateGate>
   );
@@ -82,7 +86,11 @@ function QuarterlyPage() {
   const openOne = useMutation({
     mutationFn: (propertyId: string) => startOne({ data: { propertyId } }),
     onSuccess: (r) => {
-      toast.success(r.alreadyOpen ? "That review is already open." : "Quarterly review opened with its checklist.");
+      toast.success(
+        r.alreadyOpen
+          ? "That review is already open."
+          : "Quarterly review opened with its checklist.",
+      );
       invalidate();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not open the review"),
@@ -93,7 +101,8 @@ function QuarterlyPage() {
     onSuccess: (r) =>
       r.created === 0
         ? toast.info("Nothing is due right now.")
-        : (toast.success(`${r.created} quarterly review${r.created === 1 ? "" : "s"} opened.`), invalidate()),
+        : (toast.success(`${r.created} quarterly review${r.created === 1 ? "" : "s"} opened.`),
+          invalidate()),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not open the reviews"),
   });
 
@@ -115,7 +124,10 @@ function QuarterlyPage() {
                 </Link>
               </Button>
             ) : null}
-            <Button onClick={() => openAll.mutate()} disabled={openAll.isPending || needsWork.length === 0}>
+            <Button
+              onClick={() => openAll.mutate()}
+              disabled={openAll.isPending || needsWork.length === 0}
+            >
               <Play className="mr-2 size-4" />
               Open all due ({needsWork.length})
             </Button>
@@ -124,14 +136,21 @@ function QuarterlyPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile label="Due or overdue" value={needsWork.length} tone={needsWork.length ? "attention" : "neutral"} />
+        <StatTile
+          label="Due or overdue"
+          value={needsWork.length}
+          tone={needsWork.length ? "attention" : "neutral"}
+        />
         <StatTile label="Reviews in progress" value={inFlight.length} tone="progress" />
         <StatTile label="Homes on the cycle" value={rows.length} />
       </div>
 
       <CleaningRegionsPanel />
 
-      <SectionCard title="The cycle" description="Sorted by what needs a supervisor on site soonest.">
+      <SectionCard
+        title="The cycle"
+        description="Sorted by what needs a supervisor on site soonest."
+      >
         {reviews.isLoading ? (
           <LoadingRows rows={3} />
         ) : rows.length === 0 ? (
@@ -156,7 +175,9 @@ function QuarterlyPage() {
                         {row.market ? `${row.market} · ` : ""}
                         {row.inspector ?? "No regional manager set"} ·{" "}
                         {row.location || "No address on file"} ·{" "}
-                        {row.lastReviewedAt ? `Last reviewed ${usDate(row.lastReviewedAt)}` : "Never reviewed in Resolve"}{" "}
+                        {row.lastReviewedAt
+                          ? `Last reviewed ${usDate(row.lastReviewedAt)}`
+                          : "Never reviewed in Resolve"}{" "}
                         · {dueText(row)}
                       </p>
                     </div>

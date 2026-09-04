@@ -224,8 +224,12 @@ export function TaskRow({
             </span>
           ))}
         </span>
-        {showProperty && <span className="block truncate text-xs text-muted-foreground">{showProperty}</span>}
-        {view.reason && <span className="block truncate text-xs text-muted-foreground">{view.reason}</span>}
+        {showProperty && (
+          <span className="block truncate text-xs text-muted-foreground">{showProperty}</span>
+        )}
+        {view.reason && (
+          <span className="block truncate text-xs text-muted-foreground">{view.reason}</span>
+        )}
       </span>
 
       <span className="truncate text-xs text-muted-foreground md:text-sm">
@@ -234,7 +238,9 @@ export function TaskRow({
 
       <span className="text-xs md:text-sm">
         {t.due_on ? (
-          <span className={cn("numeric", view.overdue && "font-medium text-state-blocked")}>{t.due_on}</span>
+          <span className={cn("numeric", view.overdue && "font-medium text-state-blocked")}>
+            {t.due_on}
+          </span>
         ) : (
           <span className="text-muted-foreground">—</span>
         )}

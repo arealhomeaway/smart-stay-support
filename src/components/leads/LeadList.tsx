@@ -72,7 +72,9 @@ export function LeadRowCard({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold">{lead.contact_name}</span>
-        {lead.company ? <span className="text-sm text-muted-foreground">· {lead.company}</span> : null}
+        {lead.company ? (
+          <span className="text-sm text-muted-foreground">· {lead.company}</span>
+        ) : null}
         <Chip className={stateChip(stageState(lead.stage))}>{STAGE_LABELS[lead.stage]}</Chip>
         <Chip>{SOURCE_LABELS[lead.source]}</Chip>
         {bucket === "overdue" ? (
@@ -89,10 +91,13 @@ export function LeadRowCard({
             </Chip>
           ))}
       </div>
-      <p className="mt-1 text-sm font-medium text-foreground/90">{nextAction(lead, { hasProperty })}</p>
+      <p className="mt-1 text-sm font-medium text-foreground/90">
+        {nextAction(lead, { hasProperty })}
+      </p>
       <p className="mt-0.5 text-xs text-muted-foreground">
         {lead.market ?? "Market unspecified"} · move-in {formatDate(lead.desired_move_in)} ·{" "}
-        {formatMoney(lead.budget_monthly)}/mo · {assigneeName} · last contact {relativeDays(lead.last_contact_at)}
+        {formatMoney(lead.budget_monthly)}/mo · {assigneeName} · last contact{" "}
+        {relativeDays(lead.last_contact_at)}
       </p>
     </button>
   );

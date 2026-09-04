@@ -118,7 +118,9 @@ export async function startOnboardingProject(
 
   const property = await supabase
     .from("properties")
-    .select("id, name, is_demo, lifecycle_status, planned_closing_on, actual_access_on, onboarding_owner")
+    .select(
+      "id, name, is_demo, lifecycle_status, planned_closing_on, actual_access_on, onboarding_owner",
+    )
     .eq("id", input.propertyId)
     .single();
   if (property.error) throw property.error;
@@ -289,8 +291,7 @@ export async function updateProject(
     .single();
   if (error) throw error;
 
-  const scopeChanged =
-    input.modules !== undefined || input.furnishingScope !== undefined;
+  const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
   if (scopeChanged) {
     await recordProjectEvent(supabase, {
       projectId: data.id,
@@ -322,7 +323,8 @@ export async function updateProject(
 }
 
 function describeScope(row: ProjectRow) {
-  const furnishing = row.furnishing_scope === "no_furnishing" ? "No furnishings" : "Full furnishing";
+  const furnishing =
+    row.furnishing_scope === "no_furnishing" ? "No furnishings" : "Full furnishing";
   return [furnishing, ...(row.modules ?? [])].join(", ");
 }
 

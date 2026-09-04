@@ -23,7 +23,16 @@ export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
         dueOn: z.string().date().nullable().default(null),
         blocker: z.string().trim().max(500).default(""),
         requiresOwnerApproval: z.boolean().default(false),
-        ownerApprovalStatus: z.enum(["not_required", "pending", "awaiting_owner", "changes_requested", "approved", "declined"]).default("pending"),
+        ownerApprovalStatus: z
+          .enum([
+            "not_required",
+            "pending",
+            "awaiting_owner",
+            "changes_requested",
+            "approved",
+            "declined",
+          ])
+          .default("pending"),
         evidenceRequired: z.boolean().default(false),
         evidenceNote: z.string().trim().max(1000).default(""),
         status: z.enum(["open", "blocked", "complete", "carryover"]).default("open"),
@@ -221,7 +230,10 @@ export const setTaskScheduleFn = createServerFn({ method: "POST" })
     z
       .object({
         taskId: z.string().uuid(),
-        anchor: z.enum(["planned_closing", "actual_closing", "actual_access"]).nullable().default(null),
+        anchor: z
+          .enum(["planned_closing", "actual_closing", "actual_access"])
+          .nullable()
+          .default(null),
         offsetDays: z.number().int().min(-365).max(365).nullable().default(null),
         manualOverride: z.boolean().default(false),
       })
@@ -280,7 +292,6 @@ export const recordOwnerTaskDecisionFn = createServerFn({ method: "POST" })
     const { recordOwnerTaskDecision } = await import("./onboarding.server");
     return recordOwnerTaskDecision(context.supabase, context.userId, data);
   });
-
 
 export const confirmApprovalRequirementFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

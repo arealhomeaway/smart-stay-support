@@ -42,10 +42,18 @@ function summarize(status: number, body: string): { detail: string; code: string
       };
     }
     if (Array.isArray(parsed.value)) {
-      return { detail: parsed.value.map((v) => v.name ?? v.id ?? "?").join(", ") || "(empty)", code: null };
+      return {
+        detail: parsed.value.map((v) => v.name ?? v.id ?? "?").join(", ") || "(empty)",
+        code: null,
+      };
     }
     const name =
-      parsed.mail ?? parsed.userPrincipalName ?? parsed.displayName ?? parsed.name ?? parsed.id ?? "";
+      parsed.mail ??
+      parsed.userPrincipalName ??
+      parsed.displayName ??
+      parsed.name ??
+      parsed.id ??
+      "";
     return { detail: [name, parsed.webUrl].filter(Boolean).join(" · ").slice(0, 300), code: null };
   } catch {
     return { detail: `${status} (non-JSON response)`, code: null };
@@ -101,14 +109,29 @@ export async function runSharePointReadOnlyValidation(userId: string) {
 
   // 1. Live identity of the saved connection.
   probes.push(
-    await probe(key, "Live identity (/me)", "/me?$select=mail,userPrincipalName,displayName", "allow"),
+    await probe(
+      key,
+      "Live identity (/me)",
+      "/me?$select=mail,userPrincipalName,displayName",
+      "allow",
+    ),
   );
 
   // 2. Granted site + its Documents library.
-  const site = await probe(key, "ARHA Resolve site", `${ARHA_RESOLVE_SITE}?$select=id,displayName,webUrl`, "allow");
+  const site = await probe(
+    key,
+    "ARHA Resolve site",
+    `${ARHA_RESOLVE_SITE}?$select=id,displayName,webUrl`,
+    "allow",
+  );
   probes.push(site);
   probes.push(
-    await probe(key, "ARHA Resolve document libraries", `${ARHA_RESOLVE_SITE}:/drives?$select=name,id`, "allow"),
+    await probe(
+      key,
+      "ARHA Resolve document libraries",
+      `${ARHA_RESOLVE_SITE}:/drives?$select=name,id`,
+      "allow",
+    ),
   );
   probes.push(
     await probe(
@@ -121,7 +144,14 @@ export async function runSharePointReadOnlyValidation(userId: string) {
 
   // 3. Denial probes against known, valid resource identifiers. Metadata only —
   //    no listing of children, so nothing inside them is enumerated or read.
-  probes.push(await probe(key, "Josh's OneDrive (known UPN)", `/users/${JOSH_UPN}/drive?$select=id,name`, "deny"));
+  probes.push(
+    await probe(
+      key,
+      "Josh's OneDrive (known UPN)",
+      `/users/${JOSH_UPN}/drive?$select=id,name`,
+      "deny",
+    ),
+  );
   probes.push(
     await probe(key, "Service account's own OneDrive", "/me/drive?$select=id,name", "deny"),
   );
@@ -137,7 +167,12 @@ export async function runSharePointReadOnlyValidation(userId: string) {
     ),
   );
   probes.push(
-    await probe(key, "Cross-site discovery (search all sites)", "/sites?search=*&$select=id,displayName", "deny"),
+    await probe(
+      key,
+      "Cross-site discovery (search all sites)",
+      "/sites?search=*&$select=id,displayName",
+      "deny",
+    ),
   );
 
   return { ranAt: new Date().toISOString(), connectionFound: true as const, probes };

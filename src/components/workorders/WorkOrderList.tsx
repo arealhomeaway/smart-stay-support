@@ -94,7 +94,8 @@ export function useWorkOrderPropertyPhotos() {
       const { data, error } = await supabase.from("properties").select("id, primary_photo_url");
       if (error) throw error;
       const map = new Map<string, string | null>();
-      for (const p of data ?? []) map.set(p.id, (p as { primary_photo_url: string | null }).primary_photo_url);
+      for (const p of data ?? [])
+        map.set(p.id, (p as { primary_photo_url: string | null }).primary_photo_url);
       return map;
     },
   });
@@ -161,8 +162,16 @@ export function WorkOrderRowCard({
 
   return (
     <div className="flex items-start gap-3 rounded-lg transition-colors hover:bg-muted/40">
-      <button type="button" onClick={onOpen} className="resolve-press flex flex-1 items-start gap-3 px-2 py-3 text-left">
-        <PropertyPhoto url={propertyPhotoUrl ?? null} name={propertyName} className="mt-0.5 size-11" />
+      <button
+        type="button"
+        onClick={onOpen}
+        className="resolve-press flex flex-1 items-start gap-3 px-2 py-3 text-left"
+      >
+        <PropertyPhoto
+          url={propertyPhotoUrl ?? null}
+          name={propertyName}
+          className="mt-0.5 size-11"
+        />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">{propertyName}</span>
@@ -186,7 +195,12 @@ export function WorkOrderRowCard({
       </button>
       <div className="flex shrink-0 flex-col items-end gap-1 py-3 pr-2 text-xs">
         {canAssignToMe ? (
-          <Button size="sm" variant="outline" disabled={assignToMe.isPending} onClick={() => assignToMe.mutate()}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={assignToMe.isPending}
+            onClick={() => assignToMe.mutate()}
+          >
             {assignToMe.isPending ? "Assigning…" : "Assign to me"}
           </Button>
         ) : null}
@@ -229,7 +243,8 @@ export function WorkOrderListSection({
     if (!openId) lastOpen.current = null;
   }, [openId]);
 
-  const nameFor = (id: string | null) => (id ? displayName(people.find((p) => p.id === id)) : "Unassigned");
+  const nameFor = (id: string | null) =>
+    id ? displayName(people.find((p) => p.id === id)) : "Unassigned";
 
   return (
     <>
@@ -252,7 +267,9 @@ export function WorkOrderListSection({
         workOrder={open}
         people={people}
         canEdit={canEdit}
-        propertyName={open ? (propertyNames.get(open.property_id ?? "") ?? "Property unlinked") : ""}
+        propertyName={
+          open ? (propertyNames.get(open.property_id ?? "") ?? "Property unlinked") : ""
+        }
         propertyPhotoUrl={open ? (propertyPhotos.get(open.property_id ?? "") ?? null) : null}
         onClose={() => setOpenId(null)}
       />

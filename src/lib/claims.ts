@@ -194,8 +194,23 @@ const OWNER_APPROVAL: EvidenceSlot = {
 };
 
 export const EVIDENCE_BY_TYPE: Record<ClaimType, EvidenceSlot[]> = {
-  channel_aircover: [DAMAGE_PHOTOS, VENDOR_ESTIMATE, INVOICE, GUEST_COMMS, RESERVATION_PROOF, PLATFORM_CORRESPONDENCE, CLEANING_REPORT],
-  channel_vrbo: [DAMAGE_PHOTOS, VENDOR_ESTIMATE, INVOICE, GUEST_COMMS, RESERVATION_PROOF, PLATFORM_CORRESPONDENCE],
+  channel_aircover: [
+    DAMAGE_PHOTOS,
+    VENDOR_ESTIMATE,
+    INVOICE,
+    GUEST_COMMS,
+    RESERVATION_PROOF,
+    PLATFORM_CORRESPONDENCE,
+    CLEANING_REPORT,
+  ],
+  channel_vrbo: [
+    DAMAGE_PHOTOS,
+    VENDOR_ESTIMATE,
+    INVOICE,
+    GUEST_COMMS,
+    RESERVATION_PROOF,
+    PLATFORM_CORRESPONDENCE,
+  ],
   guest_damage: [DAMAGE_PHOTOS, VENDOR_ESTIMATE, INVOICE, GUEST_COMMS, RESERVATION_PROOF],
   deposit_recovery: [DAMAGE_PHOTOS, INVOICE, RESERVATION_PROOF, GUEST_COMMS],
   insurance: [DAMAGE_PHOTOS, VENDOR_ESTIMATE, INVOICE, CLEANING_REPORT],
@@ -206,7 +221,8 @@ export function evidenceSlots(type: ClaimType): EvidenceSlot[] {
   return EVIDENCE_BY_TYPE[type] ?? [];
 }
 
-export type EvidenceStatus = "awaiting" | "checking" | "verified" | "rejected" | "accepted_exception";
+export type EvidenceStatus =
+  "awaiting" | "checking" | "verified" | "rejected" | "accepted_exception";
 
 export type RequirementLike = {
   slot_key: string;
@@ -234,7 +250,13 @@ export function evidenceProgress(requirements: RequirementLike[]): EvidenceProgr
   const met = requirements.filter(isMet);
   const missing = requirements.filter((r) => !isMet(r));
   const blocking = required.filter((r) => !isMet(r));
-  return { required, met, missing, blocking, complete: blocking.length === 0 && required.length > 0 };
+  return {
+    required,
+    met,
+    missing,
+    blocking,
+    complete: blocking.length === 0 && required.length > 0,
+  };
 }
 
 /* -------------------------------------------------------------------------
@@ -258,7 +280,10 @@ export type DeadlineState = "none" | "overdue" | "today" | "approaching" | "sche
 /** Approaching means "start worrying" — seven days out. */
 export const APPROACHING_DAYS = 7;
 
-export function deadlineState(deadline: string | null | undefined, now = new Date()): DeadlineState {
+export function deadlineState(
+  deadline: string | null | undefined,
+  now = new Date(),
+): DeadlineState {
   const d = daysUntil(deadline, now);
   if (d === null) return "none";
   if (d < 0) return "overdue";
@@ -348,15 +373,20 @@ export function nextAction(claim: ClaimLike, ctx: NextActionContext = {}): strin
     case "submitted":
     case "waiting_external": {
       const follow = daysUntil(claim.follow_up_on, now);
-      if (follow !== null && follow <= 0) return `Follow up with ${RECOVERY_SOURCE[claim.claim_type]}`;
+      if (follow !== null && follow <= 0)
+        return `Follow up with ${RECOVERY_SOURCE[claim.claim_type]}`;
       return `Waiting on ${RECOVERY_SOURCE[claim.claim_type]}`;
     }
     case "ready_to_submit":
       return `Submit ${CLAIM_TYPE_LABELS[claim.claim_type]} claim`;
     case "costing":
-      return num(claim.actual_cost) !== null ? "Confirm the final amount and submit" : "Get vendor estimate or invoice";
+      return num(claim.actual_cost) !== null
+        ? "Confirm the final amount and submit"
+        : "Get vendor estimate or invoice";
     case "gathering":
-      return firstMissing ? `Upload ${firstMissing.label ?? firstMissing.slot_key}` : "Confirm the repair or cleaning cost";
+      return firstMissing
+        ? `Upload ${firstMissing.label ?? firstMissing.slot_key}`
+        : "Confirm the repair or cleaning cost";
     case "potential":
     default:
       if (firstMissing) return `Upload ${firstMissing.label ?? firstMissing.slot_key}`;
@@ -422,7 +452,10 @@ export function claimBucket(
 
   if (!isOpenClaim(claim.stage)) {
     // Recoveries stay visible for a month so the team can see the wins land.
-    if (claim.stage === "recovered" && isRecent(claim.recovered_on ?? claim.updated_at ?? null, now)) {
+    if (
+      claim.stage === "recovered" &&
+      isRecent(claim.recovered_on ?? claim.updated_at ?? null, now)
+    ) {
       return "recently_recovered";
     }
     return null;
@@ -440,7 +473,8 @@ export function claimBucket(
   if (claim.stage === "ready_to_submit") return "ready_to_submit";
 
   const progress = evidenceProgress(ctx.requirements ?? []);
-  if (progress.blocking.length > 0 || (ctx.requirements ?? []).length === 0) return "evidence_missing";
+  if (progress.blocking.length > 0 || (ctx.requirements ?? []).length === 0)
+    return "evidence_missing";
   return "ready_to_submit";
 }
 
@@ -499,9 +533,14 @@ export function matchesFilter(
     case "overdue":
       return isOpenClaim(claim.stage) && deadlineState(claim.deadline_on, now) === "overdue";
     case "high_value":
-      return isOpenClaim(claim.stage) && (amountAtRisk(claim) ?? 0) >= (ctx.highValueFrom ?? HIGH_VALUE_FROM);
+      return (
+        isOpenClaim(claim.stage) &&
+        (amountAtRisk(claim) ?? 0) >= (ctx.highValueFrom ?? HIGH_VALUE_FROM)
+      );
     case "evidence_missing":
-      return isOpenClaim(claim.stage) && evidenceProgress(ctx.requirements ?? []).blocking.length > 0;
+      return (
+        isOpenClaim(claim.stage) && evidenceProgress(ctx.requirements ?? []).blocking.length > 0
+      );
     case "long_wait": {
       if (!isExternalWait(claim.stage) || !claim.submitted_on) return false;
       const d = daysUntil(claim.submitted_on, now);
@@ -521,7 +560,10 @@ export function matchesFilter(
  * (an insurance claim and a guest charge, for example).
  * ---------------------------------------------------------------------- */
 
-export type DuplicateCandidate = ClaimLike & { title?: string | null; ownerrez_booking_id?: string | null };
+export type DuplicateCandidate = ClaimLike & {
+  title?: string | null;
+  ownerrez_booking_id?: string | null;
+};
 
 export type DuplicateMatch = {
   claim: DuplicateCandidate;

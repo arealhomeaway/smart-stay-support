@@ -16,7 +16,8 @@ import {
 
 describe("reading the message body", () => {
   it("keeps the new message and drops the quoted history and markup", () => {
-    const html = "<p>We need housing for a family of four.</p><br>From: someone\nSent: Tuesday\nold thread";
+    const html =
+      "<p>We need housing for a family of four.</p><br>From: someone\nSent: Tuesday\nold thread";
     expect(plainTextBody(html, "html")).toBe("We need housing for a family of four.");
   });
 
@@ -46,13 +47,18 @@ describe("lead source", () => {
   it("classifies only what the email states plainly", () => {
     expect(guessLeadSource({ subject: "Insurance claim housing request" })).toBe("insurance");
     expect(guessLeadSource({ subject: "Relocation for a new hire" })).toBe("relocation");
-    expect(guessLeadSource({ fromAddress: "team@keller-williams-austin.com", subject: "Client needs a place" })).toBe(
-      "realtor",
-    );
+    expect(
+      guessLeadSource({
+        fromAddress: "team@keller-williams-austin.com",
+        subject: "Client needs a place",
+      }),
+    ).toBe("realtor");
   });
 
   it("stays silent when the email does not say", () => {
-    expect(guessLeadSource({ subject: "Question about your place", body: "Is it available in May?" })).toBeNull();
+    expect(
+      guessLeadSource({ subject: "Question about your place", body: "Is it available in May?" }),
+    ).toBeNull();
   });
 });
 
@@ -73,7 +79,11 @@ describe("the derived lead", () => {
   });
 
   it("still produces a usable lead when the email is nearly empty", () => {
-    const lead = deriveLeadFromEmail({ subject: "(no subject)", body: "", fromAddress: "j.smith@gmail.com" });
+    const lead = deriveLeadFromEmail({
+      subject: "(no subject)",
+      body: "",
+      fromAddress: "j.smith@gmail.com",
+    });
     expect(lead.contact_name).toBe("j smith");
     expect(lead.source).toBeNull();
     expect(lead.phone).toBeNull();

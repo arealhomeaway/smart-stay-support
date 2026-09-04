@@ -60,9 +60,7 @@ export function OwnerBadges({
             return (
               <div
                 key={def.code}
-                className={`flex gap-3 rounded-lg p-3 ${
-                  got ? "bg-sage/8" : "bg-sunken"
-                }`}
+                className={`flex gap-3 rounded-lg p-3 ${got ? "bg-sage/8" : "bg-sunken"}`}
               >
                 <div
                   className={`flex size-9 shrink-0 items-center justify-center rounded-full ${
@@ -77,9 +75,7 @@ export function OwnerBadges({
                     {got?.needs_review && <StatusBadge tone="waiting">Under review</StatusBadge>}
                   </div>
                   <p className="text-xs text-muted-foreground">{def.requirement}</p>
-                  {got && (
-                    <p className="text-xs text-sage">Earned {usDate(got.awarded_at)}</p>
-                  )}
+                  {got && <p className="text-xs text-sage">Earned {usDate(got.awarded_at)}</p>}
                 </div>
               </div>
             );

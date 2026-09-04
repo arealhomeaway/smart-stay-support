@@ -125,7 +125,10 @@ export function ClaimRowCard({
   const assignToMe = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("No signed-in user");
-      const { error } = await supabase.from("claims").update({ assigned_to: userId }).eq("id", claim.id);
+      const { error } = await supabase
+        .from("claims")
+        .update({ assigned_to: userId })
+        .eq("id", claim.id);
       if (error) throw error;
       await supabase.from("claim_activity").insert({
         claim_id: claim.id,
@@ -153,7 +156,9 @@ export function ClaimRowCard({
         <button type="button" onClick={onOpen} className="resolve-press flex-1 px-0 py-3 text-left">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">{propertyName}</span>
-            <Chip className={stateChip(stageState(claim.stage))}>{CLAIM_STAGE_LABELS[claim.stage]}</Chip>
+            <Chip className={stateChip(stageState(claim.stage))}>
+              {CLAIM_STAGE_LABELS[claim.stage]}
+            </Chip>
             <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
             {deadline === "overdue" ? (
               <StatusBadge tone="escalated">Deadline passed</StatusBadge>
@@ -164,7 +169,9 @@ export function ClaimRowCard({
               <Chip className="border-border/60">{progress.blocking.length} evidence missing</Chip>
             ) : null}
           </div>
-          <p className="mt-1 text-sm font-medium text-foreground/90">{nextAction(claim, { requirements })}</p>
+          <p className="mt-1 text-sm font-medium text-foreground/90">
+            {nextAction(claim, { requirements })}
+          </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {claim.title} · {claim.guest_name ?? "Guest unrecorded"} · at risk {formatMoney(risk)} ·{" "}
             {assigneeName} · {deadlineLabel(claim.deadline_on)}
@@ -246,7 +253,9 @@ export function ClaimListSection({
         claim={open}
         people={people}
         canEdit={canEdit}
-        propertyName={open ? (propertyNames.get(open.property_id ?? "") ?? "Property unlinked") : ""}
+        propertyName={
+          open ? (propertyNames.get(open.property_id ?? "") ?? "Property unlinked") : ""
+        }
         onClose={() => setOpenId(null)}
       />
     </>

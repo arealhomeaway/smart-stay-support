@@ -53,13 +53,20 @@ export function scoreProperty(query: string, row: PropertySearchRow): number {
 }
 
 /** Ranked, de-duplicated matches — best first, stable by name for ties. */
-export function rankProperties<T extends PropertySearchRow>(query: string, rows: T[], limit = 8): T[] {
+export function rankProperties<T extends PropertySearchRow>(
+  query: string,
+  rows: T[],
+  limit = 8,
+): T[] {
   const seen = new Set<string>();
   return rows
     .filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
     .map((r) => ({ r, s: scoreProperty(query, r) }))
     .filter((x) => x.s > 0)
-    .sort((a, b) => b.s - a.s || norm(a.r.nickname ?? a.r.name).localeCompare(norm(b.r.nickname ?? b.r.name)))
+    .sort(
+      (a, b) =>
+        b.s - a.s || norm(a.r.nickname ?? a.r.name).localeCompare(norm(b.r.nickname ?? b.r.name)),
+    )
     .slice(0, limit)
     .map((x) => x.r);
 }

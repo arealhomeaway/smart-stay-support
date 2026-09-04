@@ -20,12 +20,13 @@ import {
   POLICY_VERSION,
 } from "@/lib/guest-recovery";
 
-const req = (slot: string, status: string, required = true) => ({
-  slot_key: slot,
-  label: slot,
-  status,
-  required,
-}) as never;
+const req = (slot: string, status: string, required = true) =>
+  ({
+    slot_key: slot,
+    label: slot,
+    status,
+    required,
+  }) as never;
 
 describe("policy authority", () => {
   it("carries the policy version on every verdict", () => {
@@ -101,7 +102,11 @@ describe("policy authority", () => {
 
   it("multi-night, full-stay and relocation are always Director decisions", () => {
     for (const action of ["full_refund", "shorten_stay", "relocation"] as const) {
-      const v = evaluateAuthority({ recovery_action: action, proposed_amount: 25, within_airbnb_policy: true });
+      const v = evaluateAuthority({
+        recovery_action: action,
+        proposed_amount: 25,
+        within_airbnb_policy: true,
+      });
       expect(v.level).toBe("director");
     }
   });
@@ -117,7 +122,9 @@ describe("policy authority", () => {
   });
 
   it("emergency proceeds and notifies", () => {
-    expect(evaluateAuthority({ recovery_action: "relocation", emergency: true }).level).toBe("emergency");
+    expect(evaluateAuthority({ recovery_action: "relocation", emergency: true }).level).toBe(
+      "emergency",
+    );
   });
 
   it("thresholds come from the central policy", () => {
@@ -144,13 +151,15 @@ describe("supervisor escalation triggers", () => {
   });
 
   it("a P2 without a plan after 30 minutes goes to James", () => {
-    expect(supervisorTriggers({ priority: "p2", created_at: "2026-03-10T11:00:00Z" }, now)).toContain(
-      "p2_no_plan",
-    );
+    expect(
+      supervisorTriggers({ priority: "p2", created_at: "2026-03-10T11:00:00Z" }, now),
+    ).toContain("p2_no_plan");
   });
 
   it("a guest asking for more than $50 exceeds coordinator authority", () => {
-    expect(supervisorTriggers({ guest_requested_amount: 120 }, now)).toContain("monetary_beyond_pc");
+    expect(supervisorTriggers({ guest_requested_amount: 120 }, now)).toContain(
+      "monetary_beyond_pc",
+    );
   });
 
   it("two missed vendor commitments escalate", () => {
@@ -161,14 +170,20 @@ describe("supervisor escalation triggers", () => {
 
   it("an active stay unresolved over two hours escalates", () => {
     const t = supervisorTriggers(
-      { created_at: "2026-03-10T09:00:00Z", stay_arrival: "2026-03-08", stay_departure: "2026-03-12" },
+      {
+        created_at: "2026-03-10T09:00:00Z",
+        stay_arrival: "2026-03-08",
+        stay_departure: "2026-03-12",
+      },
       now,
     );
     expect(t).toContain("unresolved_two_hours");
   });
 
   it("a reopened issue escalates", () => {
-    expect(supervisorTriggers({ reopened_at: "2026-03-09T00:00:00Z" }, now)).toContain("reopened_issue");
+    expect(supervisorTriggers({ reopened_at: "2026-03-09T00:00:00Z" }, now)).toContain(
+      "reopened_issue",
+    );
   });
 });
 
@@ -179,7 +194,10 @@ describe("communication SLA", () => {
   });
 
   it("ongoing P3 updates are every two hours", () => {
-    const due = nextGuestUpdateDue({ priority: "p3", last_guest_update_at: "2026-03-10T12:00:00Z" });
+    const due = nextGuestUpdateDue({
+      priority: "p3",
+      last_guest_update_at: "2026-03-10T12:00:00Z",
+    });
     expect(due?.toISOString()).toBe("2026-03-10T14:00:00.000Z");
   });
 
@@ -208,7 +226,9 @@ describe("evidence", () => {
   });
 
   it("food loss asks for the guest receipt", () => {
-    expect(evidenceSlots("partial_refund", "food_loss").map((s) => s.key)).toContain("guest_receipt");
+    expect(evidenceSlots("partial_refund", "food_loss").map((s) => s.key)).toContain(
+      "guest_receipt",
+    );
   });
 
   it("a maintenance failure asks for the vendor diagnosis", () => {
@@ -299,9 +319,9 @@ describe("next action", () => {
   });
 
   it("a returned approval asks for the missing information", () => {
-    expect(nextAction({ ...base, stage: "awaiting_approval", approval_status: "returned" }, { now })).toContain(
-      "Returned for information",
-    );
+    expect(
+      nextAction({ ...base, stage: "awaiting_approval", approval_status: "returned" }, { now }),
+    ).toContain("Returned for information");
   });
 
   it("checkout within a day raises urgency", () => {
@@ -320,9 +340,9 @@ describe("next action", () => {
   });
 
   it("a disputed guest gets a call, whatever the stage", () => {
-    expect(nextAction({ ...base, stage: "guest_offered", outcome: "guest_disputed" }, { now })).toContain(
-      "Call them",
-    );
+    expect(
+      nextAction({ ...base, stage: "guest_offered", outcome: "guest_disputed" }, { now }),
+    ).toContain("Call them");
   });
 
   it("closed recoveries have nothing outstanding", () => {
@@ -344,25 +364,35 @@ describe("closure gates", () => {
   });
 
   it("missing corrective action blocks closure", () => {
-    expect(closureBlockers({ ...complete, corrective_action: null })[0]).toContain("corrective action");
+    expect(closureBlockers({ ...complete, corrective_action: null })[0]).toContain(
+      "corrective action",
+    );
   });
 
   it("approved money that was never issued blocks closure", () => {
-    expect(closureBlockers({ ...complete, delivered_amount: null })[0]).toContain("actual amount issued");
+    expect(closureBlockers({ ...complete, delivered_amount: null })[0]).toContain(
+      "actual amount issued",
+    );
   });
 
   it("an unaccepted handoff blocks closure", () => {
-    expect(closureBlockers({ ...complete, handoff_status: "requested" }).join(" ")).toContain("handoff");
+    expect(closureBlockers({ ...complete, handoff_status: "requested" }).join(" ")).toContain(
+      "handoff",
+    );
   });
 });
 
 describe("ownership", () => {
   it("a requested handoff leaves the original owner responsible", () => {
-    expect(effectiveOwner({ assigned_to: "a", handoff_to: "b", handoff_status: "requested" })).toBe("a");
+    expect(effectiveOwner({ assigned_to: "a", handoff_to: "b", handoff_status: "requested" })).toBe(
+      "a",
+    );
   });
 
   it("an accepted handoff transfers ownership", () => {
-    expect(effectiveOwner({ assigned_to: "a", handoff_to: "b", handoff_status: "accepted" })).toBe("b");
+    expect(effectiveOwner({ assigned_to: "a", handoff_to: "b", handoff_status: "accepted" })).toBe(
+      "b",
+    );
   });
 });
 
@@ -370,9 +400,16 @@ describe("queue buckets", () => {
   const now = new Date("2026-03-10T12:00:00Z");
 
   it("awaiting approval lands in approval required", () => {
-    expect(recoveryBucket({ stage: "awaiting_approval", priority: "p3", last_guest_update_at: "2026-03-10T11:55:00Z" }, { now })).toBe(
-      "approval_required",
-    );
+    expect(
+      recoveryBucket(
+        {
+          stage: "awaiting_approval",
+          priority: "p3",
+          last_guest_update_at: "2026-03-10T11:55:00Z",
+        },
+        { now },
+      ),
+    ).toBe("approval_required");
   });
 
   it("an approved recovery needs action", () => {
@@ -400,25 +437,41 @@ describe("manager oversight", () => {
 
   it("finds approvals above the supervisor limit", () => {
     expect(
-      matchesManagerFilter({ stage: "awaiting_approval", proposed_amount: 800 }, "above_supervisor_limit", now),
+      matchesManagerFilter(
+        { stage: "awaiting_approval", proposed_amount: 800 },
+        "above_supervisor_limit",
+        now,
+      ),
     ).toBe(true);
   });
 
   it("finds approvals over $300 with no written reason", () => {
     expect(
-      matchesManagerFilter({ stage: "awaiting_approval", proposed_amount: 400 }, "documentation_missing", now),
+      matchesManagerFilter(
+        { stage: "awaiting_approval", proposed_amount: 400 },
+        "documentation_missing",
+        now,
+      ),
     ).toBe(true);
   });
 
   it("finds approved money that was never delivered", () => {
     expect(
-      matchesManagerFilter({ stage: "approved", approved_amount: 300 }, "approved_not_delivered", now),
+      matchesManagerFilter(
+        { stage: "approved", approved_amount: 300 },
+        "approved_not_delivered",
+        now,
+      ),
     ).toBe(true);
   });
 
   it("finds cases outside standard policy", () => {
     expect(
-      matchesManagerFilter({ stage: "evidence", within_airbnb_policy: false }, "outside_policy", now),
+      matchesManagerFilter(
+        { stage: "evidence", within_airbnb_policy: false },
+        "outside_policy",
+        now,
+      ),
     ).toBe(true);
   });
 });
@@ -438,7 +491,9 @@ describe("stage proposal and duplicates", () => {
   });
 
   it("a closed recovery does not warn", () => {
-    expect(findDuplicates({ ticket_id: "t1" }, [{ stage: "closed", ticket_id: "t1" }]).length).toBe(0);
+    expect(findDuplicates({ ticket_id: "t1" }, [{ stage: "closed", ticket_id: "t1" }]).length).toBe(
+      0,
+    );
   });
 });
 

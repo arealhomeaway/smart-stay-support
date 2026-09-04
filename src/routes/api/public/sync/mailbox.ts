@@ -18,7 +18,9 @@ export const Route = createFileRoute("/api/public/sync/mailbox")({
         // project key, the same way the other scheduled jobs do.
         const apikey = request.headers.get("apikey") ?? "";
         const projectKey =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "";
+          process.env["SUPABASE_PUBLISHABLE_KEY"] ??
+          process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+          "";
         const authorised =
           (!!secret && provided === secret) || (!!projectKey && apikey === projectKey);
         if (!authorised) {

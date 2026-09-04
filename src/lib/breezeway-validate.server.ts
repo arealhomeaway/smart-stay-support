@@ -27,7 +27,10 @@ function normalize(value: string | null | undefined) {
   return (value ?? "")
     .toLowerCase()
     .replace(/[.,#]/g, " ")
-    .replace(/\b(street|st|road|rd|avenue|ave|drive|dr|lane|ln|court|ct|circle|cir|boulevard|blvd|place|pl|terrace|ter|way|unit|apt|suite|ste|north|n|south|s|east|e|west|w)\b/g, "")
+    .replace(
+      /\b(street|st|road|rd|avenue|ave|drive|dr|lane|ln|court|ct|circle|cir|boulevard|blvd|place|pl|terrace|ter|way|unit|apt|suite|ste|north|n|south|s|east|e|west|w)\b/g,
+      "",
+    )
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -118,7 +121,11 @@ export async function buildBreezewayInventoryReport(): Promise<BreezewayInventor
     // 3. Suggestions only — a human confirms these.
     const addrKey = normalize(`${p.address ?? ""} ${p.city ?? ""}`);
     const addrHits = addrKey
-      ? resolve.filter((r) => normalize(`${r.address_line1 ?? r.formatted_address ?? ""} ${r.city ?? ""}`) === addrKey)
+      ? resolve.filter(
+          (r) =>
+            normalize(`${r.address_line1 ?? r.formatted_address ?? ""} ${r.city ?? ""}`) ===
+            addrKey,
+        )
       : [];
     if (addrHits.length === 1 && addrHits[0]) {
       const hit = addrHits[0];
@@ -158,7 +165,10 @@ export async function buildBreezewayInventoryReport(): Promise<BreezewayInventor
     }
     if (nameHits.length > 1) {
       ambiguous.push(
-        row({ confidence: "suggested_name", note: `${nameHits.length} Resolve homes share this name.` }),
+        row({
+          confidence: "suggested_name",
+          note: `${nameHits.length} Resolve homes share this name.`,
+        }),
       );
       continue;
     }

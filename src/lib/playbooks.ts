@@ -45,7 +45,6 @@ export const SOURCE_LABELS: Record<PlaybookSource, string> = {
 /** Operational objects a Playbook may attach to. */
 export type PlaybookSubject = "ticket" | "work_order" | "recovery" | "claim";
 
-
 /** A short "consider this" prompt. Same shape as the Coach's risk flags. */
 export type RiskFlag = { title: string; why: string | null };
 
@@ -136,12 +135,13 @@ export type AuthoredPlaybook = {
   review_note: string | null;
 };
 
-
 const SUBJECTS: PlaybookSubject[] = ["ticket", "work_order", "recovery", "claim"];
 
 function asStringList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((v): v is string => typeof v === "string" && v.trim().length > 0).map((v) => v.trim());
+  return value
+    .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+    .map((v) => v.trim());
 }
 
 function asRiskFlags(value: unknown): RiskFlag[] {
@@ -149,9 +149,14 @@ function asRiskFlags(value: unknown): RiskFlag[] {
   return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
-    const title = typeof row['title'] === "string" ? row['title'].trim() : "";
+    const title = typeof row["title"] === "string" ? row["title"].trim() : "";
     if (!title) return [];
-    return [{ title, why: typeof row['why'] === "string" && row['why'].trim() ? row['why'].trim() : null }];
+    return [
+      {
+        title,
+        why: typeof row["why"] === "string" && row["why"].trim() ? row["why"].trim() : null,
+      },
+    ];
   });
 }
 
@@ -159,11 +164,11 @@ function asVendorBrief(value: unknown): VendorBrief | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
   const brief: VendorBrief = {
-    scope: typeof row['scope'] === "string" && row['scope'].trim() ? row['scope'].trim() : null,
-    must_check: asStringList(row['must_check']),
-    must_not_do: asStringList(row['must_not_do']),
-    evidence_required: asStringList(row['evidence_required']),
-    before_leaving: asStringList(row['before_leaving']),
+    scope: typeof row["scope"] === "string" && row["scope"].trim() ? row["scope"].trim() : null,
+    must_check: asStringList(row["must_check"]),
+    must_not_do: asStringList(row["must_not_do"]),
+    evidence_required: asStringList(row["evidence_required"]),
+    before_leaving: asStringList(row["before_leaving"]),
   };
   const empty =
     !brief.scope &&
@@ -178,23 +183,23 @@ function asMatcher(value: unknown): PlaybookMatcher {
   if (!value || typeof value !== "object") return {};
   const row = value as Record<string, unknown>;
   const matcher: PlaybookMatcher = {};
-  const objects = asStringList(row['objects']).filter((o): o is PlaybookSubject =>
+  const objects = asStringList(row["objects"]).filter((o): o is PlaybookSubject =>
     (SUBJECTS as string[]).includes(o),
   );
   if (objects.length) matcher.objects = objects;
-  const workTypes = asStringList(row['work_types']);
+  const workTypes = asStringList(row["work_types"]);
   if (workTypes.length) matcher.work_types = workTypes;
-  const categories = asStringList(row['categories']);
+  const categories = asStringList(row["categories"]);
   if (categories.length) matcher.categories = categories;
-  const situations = asStringList(row['situations']);
+  const situations = asStringList(row["situations"]);
   if (situations.length) matcher.situations = situations;
-  const keywords = asStringList(row['keywords']);
+  const keywords = asStringList(row["keywords"]);
   if (keywords.length) matcher.keywords = keywords;
-  const priorities = asStringList(row['priorities']).filter(
+  const priorities = asStringList(row["priorities"]).filter(
     (p): p is "p1" | "p2" | "p3" => p === "p1" || p === "p2" || p === "p3",
   );
   if (priorities.length) matcher.priorities = priorities;
-  const requires = asStringList(row['requires']) as PlaybookCondition[];
+  const requires = asStringList(row["requires"]) as PlaybookCondition[];
   if (requires.length) matcher.requires = requires;
   return matcher;
 }
@@ -260,7 +265,7 @@ export function parsePlaybook(row: PlaybookRow): AuthoredPlaybook {
     playbook_key: row.playbook_key ?? row.id,
     version: row.version ?? 1,
     status,
-    title: row['title'],
+    title: row["title"],
     category: row.category,
     summary: row.summary ?? null,
     effective_on: row.effective_on ?? null,
@@ -353,15 +358,14 @@ export function nextTransitions(pb: {
   }
 }
 
-
 /** True when a Playbook carries approved judgment content, not just steps. */
 export function hasAuthoredGuidance(pb: AuthoredPlaybook): boolean {
   return Boolean(
     pb.priority_reason ||
-      pb.risk_flags.length ||
-      pb.immediate_actions.length ||
-      pb.escalate_if.length ||
-      pb.vendor_brief,
+    pb.risk_flags.length ||
+    pb.immediate_actions.length ||
+    pb.escalate_if.length ||
+    pb.vendor_brief,
   );
 }
 

@@ -4,7 +4,13 @@ import { MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { cleaningRegions, assignCleaningManager } from "@/lib/quarterly.functions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const UNASSIGNED = "__none__";
@@ -40,7 +46,8 @@ export function CleaningRegionsPanel() {
           <MapPin className="size-5" /> Regional cleaning managers
         </CardTitle>
         <CardDescription>
-          Every inspection is opened for the manager who covers that market — automatically, as each date arrives.
+          Every inspection is opened for the manager who covers that market — automatically, as each
+          date arrives.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -64,7 +71,10 @@ export function CleaningRegionsPanel() {
               <Select
                 value={region.managerId ?? UNASSIGNED}
                 onValueChange={(value) =>
-                  save.mutate({ market: region.market, managerId: value === UNASSIGNED ? null : value })
+                  save.mutate({
+                    market: region.market,
+                    managerId: value === UNASSIGNED ? null : value,
+                  })
                 }
               >
                 <SelectTrigger className="w-64">

@@ -146,7 +146,11 @@ async function writeTokenRow(patch: Record<string, unknown>) {
 }
 
 /** Records the outcome of a connection check for the admin panel. */
-export async function recordBreezewayCheck(ok: boolean, company: string | null, error: string | null) {
+export async function recordBreezewayCheck(
+  ok: boolean,
+  company: string | null,
+  error: string | null,
+) {
   await writeTokenRow({
     last_check_at: new Date().toISOString(),
     last_check_ok: ok,
@@ -255,7 +259,6 @@ type RequestOptions = {
   retry?: boolean;
 };
 
-
 export async function breezewayRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const base = options.base ?? BREEZEWAY_INVENTORY_BASE;
   const method = options.method ?? "GET";
@@ -311,13 +314,11 @@ export async function breezewayRequest<T>(path: string, options: RequestOptions 
       continue;
     }
 
-
     const body = await res.text();
     console.error(`[breezeway] ${method} ${path} failed [${res.status}]: ${body.slice(0, 300)}`);
     throw new BreezewayError(res.status, sanitizeError(res.status, path));
   }
 }
-
 
 /** User-facing error text: never includes tokens, credentials or raw payloads. */
 export function sanitizeError(status: number, path: string) {
@@ -401,7 +402,10 @@ export async function listBreezewayProperties(pageSize = 500) {
 type CompanyRaw = { id?: number; name?: string | null };
 
 /** Connected company identity. `/companies` is documented on the inventory API. */
-export async function breezewayCompanyIdentity(): Promise<{ id: number | null; name: string | null }> {
+export async function breezewayCompanyIdentity(): Promise<{
+  id: number | null;
+  name: string | null;
+}> {
   try {
     const data = await breezewayRequest<CompanyRaw[] | { results?: CompanyRaw[] }>("/companies");
     const list = Array.isArray(data) ? data : (data.results ?? []);
@@ -439,7 +443,8 @@ type BreezewayTaskRaw = {
   type_department?: string | null;
   type_priority?: string | null;
   type_task_status?: { code?: string | null; name?: string | null; stage?: string | null } | null;
-  assignments?: { id: number; name?: string | null; type_task_user_status?: string | null }[] | null;
+  assignments?:
+    { id: number; name?: string | null; type_task_user_status?: string | null }[] | null;
   created_at?: string | null;
   finished_at?: string | null;
 };
@@ -564,10 +569,9 @@ export type BreezewaySubscriptionRaw = {
 
 /** Existing subscriptions on the account. Read-only. */
 export async function listBreezewaySubscriptions(): Promise<BreezewaySubscriptionRaw[]> {
-  const data = await breezewayRequest<BreezewaySubscriptionRaw[] | { results?: BreezewaySubscriptionRaw[] }>(
-    "/webhooks",
-    { base: BREEZEWAY_WEBHOOK_BASE },
-  );
+  const data = await breezewayRequest<
+    BreezewaySubscriptionRaw[] | { results?: BreezewaySubscriptionRaw[] }
+  >("/webhooks", { base: BREEZEWAY_WEBHOOK_BASE });
   return Array.isArray(data) ? data : (data.results ?? []);
 }
 

@@ -163,7 +163,10 @@ function OpsAnalyticsPage() {
           </div>
 
           <div>
-            <SectionBand title="Timing by priority" hint="Median time from report to first response and to resolution" />
+            <SectionBand
+              title="Timing by priority"
+              hint="Median time from report to first response and to resolution"
+            />
             <div className="surface overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -186,7 +189,9 @@ function OpsAnalyticsPage() {
                         <td className="numeric px-5 py-2.5 text-right">{r.count}</td>
                         <td className="numeric px-5 py-2.5 text-right">{fmtDuration(r.median)}</td>
                         <td className="numeric px-5 py-2.5 text-right">{res?.count ?? 0}</td>
-                        <td className="numeric px-5 py-2.5 text-right">{fmtDuration(res?.median ?? null)}</td>
+                        <td className="numeric px-5 py-2.5 text-right">
+                          {fmtDuration(res?.median ?? null)}
+                        </td>
                       </tr>
                     );
                   })}
@@ -214,7 +219,9 @@ function OpsAnalyticsPage() {
                 { label: "Source", buckets: data?.volume.bySource ?? [] },
               ].map((group) => (
                 <div key={group.label} className="space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{group.label}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {group.label}
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {group.buckets.length === 0 ? (
                       <span className="text-muted-foreground">—</span>
@@ -262,7 +269,9 @@ function OpsAnalyticsPage() {
                         <td className="numeric px-5 py-2.5 text-right">{p.ticketsTouched}</td>
                         <td className="numeric px-5 py-2.5 text-right">{p.resolved}</td>
                         <td className="numeric px-5 py-2.5 text-right">{p.firstResponses}</td>
-                        <td className="numeric px-5 py-2.5 text-right">{fmtDuration(p.medianResponseMinutes)}</td>
+                        <td className="numeric px-5 py-2.5 text-right">
+                          {fmtDuration(p.medianResponseMinutes)}
+                        </td>
                         <td className="numeric px-5 py-2.5 text-right">{p.currentlyOwned}</td>
                         <td
                           className={`numeric px-5 py-2.5 text-right ${p.currentlyOverdue > 0 ? "text-destructive" : ""}`}
@@ -281,11 +290,15 @@ function OpsAnalyticsPage() {
               </summary>
               <div className="surface mt-2 divide-y">
                 {people.map((p) => (
-                  <div key={p.userId} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
+                  <div
+                    key={p.userId}
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm"
+                  >
                     <div className="min-w-0">
                       <p className="font-medium">{p.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {p.actionsStarted} actions started · {p.notes} notes · {p.handoffsAccepted}/{p.handoffsGiven} handoffs accepted/given
+                        {p.actionsStarted} actions started · {p.notes} notes · {p.handoffsAccepted}/
+                        {p.handoffsGiven} handoffs accepted/given
                       </p>
                     </div>
                     <p className="numeric shrink-0 text-xs text-muted-foreground">

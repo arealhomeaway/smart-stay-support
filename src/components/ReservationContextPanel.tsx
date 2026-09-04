@@ -82,8 +82,8 @@ export function ReservationContextPanel({
           <Badge variant="secondary">Snapshot</Badge>
         </CardTitle>
         <CardDescription>
-          Captured from OwnerRez when this ticket was logged{capturedAt ? ` (${capturedAt})` : ""}. OwnerRez stays the
-          system of record — change the booking there.
+          Captured from OwnerRez when this ticket was logged{capturedAt ? ` (${capturedAt})` : ""}.
+          OwnerRez stays the system of record — change the booking there.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">

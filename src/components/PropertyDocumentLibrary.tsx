@@ -17,7 +17,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import {
   DOCUMENT_GROUPS,
@@ -90,9 +96,10 @@ export function PropertyDocumentLibrary({
 
   const quickLinks = useMemo(
     () =>
-      DOCUMENT_QUICK_LINKS.map((q) => ({ ...q, doc: ready.find((d) => d.category === q.category) })).filter(
-        (q) => q.doc,
-      ),
+      DOCUMENT_QUICK_LINKS.map((q) => ({
+        ...q,
+        doc: ready.find((d) => d.category === q.category),
+      })).filter((q) => q.doc),
     [ready],
   );
 
@@ -136,12 +143,18 @@ export function PropertyDocumentLibrary({
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Quick links</CardTitle>
-            <CardDescription>The documents people ask for most, when this home has them.</CardDescription>
+            <CardDescription>
+              The documents people ask for most, when this home has them.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             {quickLinks.map((q) => (
               <Button key={q.category} size="sm" variant="outline" onClick={() => open(q.doc!.id)}>
-                {opening === q.doc!.id ? <Loader2 className="size-4 animate-spin" /> : iconFor(q.doc!.kind)}
+                {opening === q.doc!.id ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  iconFor(q.doc!.kind)
+                )}
                 {q.label}
               </Button>
             ))}
@@ -200,14 +213,23 @@ export function PropertyDocumentLibrary({
                       {d.title}
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      {documentCategoryLabel(d.category) && <Badge variant="outline">{documentCategoryLabel(d.category)}</Badge>}
+                      {documentCategoryLabel(d.category) && (
+                        <Badge variant="outline">{documentCategoryLabel(d.category)}</Badge>
+                      )}
                       <span>{sourceLabel(d)}</span>
                       {d.uploadedAt && <span>· {new Date(d.uploadedAt).toLocaleDateString()}</span>}
                       {d.uploadedByName && <span>· {d.uploadedByName}</span>}
-                      {d.visibility === "owner_shared" && <Badge variant="secondary">Shared with owner</Badge>}
+                      {d.visibility === "owner_shared" && (
+                        <Badge variant="secondary">Shared with owner</Badge>
+                      )}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" disabled={opening === d.id} onClick={() => open(d.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={opening === d.id}
+                    onClick={() => open(d.id)}
+                  >
                     {opening === d.id ? <Loader2 className="size-4 animate-spin" /> : null}
                     Open
                   </Button>
@@ -223,8 +245,8 @@ export function PropertyDocumentLibrary({
           <CardHeader className="pb-3">
             <CardTitle className="text-base">External links</CardTitle>
             <CardDescription>
-              Links that live outside Resolve. Legacy personal-drive links are not canonical and will move to the ARHA
-              document library later.
+              Links that live outside Resolve. Legacy personal-drive links are not canonical and
+              will move to the ARHA document library later.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">

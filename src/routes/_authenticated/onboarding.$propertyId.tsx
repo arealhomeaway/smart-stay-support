@@ -162,7 +162,6 @@ function PropertyWorkspace() {
   );
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
 
-
   const current = data?.properties.find((p) => p.id === propertyId) ?? null;
   const allTasks = useMemo(
     () =>
@@ -393,7 +392,13 @@ function PropertyWorkspace() {
             const release2 = release;
             const nextThree = tasks
               .map((t) => viewTask(t, tasks, release2))
-              .filter((v) => v.canComplete && v.status !== "future" && v.status !== "complete" && v.status !== "carryover")
+              .filter(
+                (v) =>
+                  v.canComplete &&
+                  v.status !== "future" &&
+                  v.status !== "complete" &&
+                  v.status !== "carryover",
+              )
               .sort((a, b) => (a.task.due_on ?? "9999").localeCompare(b.task.due_on ?? "9999"))
               .slice(0, 3);
             if (nextThree.length === 0) return null;
@@ -413,7 +418,9 @@ function PropertyWorkspace() {
                         {assigneeLabel(v.task, data.people)}
                       </span>
                       {v.task.due_on && (
-                        <span className="numeric text-xs text-muted-foreground">{usDate(v.task.due_on)}</span>
+                        <span className="numeric text-xs text-muted-foreground">
+                          {usDate(v.task.due_on)}
+                        </span>
                       )}
                     </button>
                   ))}
@@ -617,7 +624,6 @@ function PropertyWorkspace() {
               ))}
             </div>
           </section>
-
         </TabsContent>
 
         {/* ------------------------------------------------------- Workflow */}
@@ -638,9 +644,9 @@ function PropertyWorkspace() {
           <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
           {life.locked && (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              This onboarding plan is locked{life.lockedAt ? ` (${life.lockedAt.slice(0, 10)})` : ""}.
-              Template changes cannot inject new work here — record a correction or report an issue
-              instead.
+              This onboarding plan is locked
+              {life.lockedAt ? ` (${life.lockedAt.slice(0, 10)})` : ""}. Template changes cannot
+              inject new work here — record a correction or report an issue instead.
             </p>
           )}
           {postAcceptance.length > 0 && (
@@ -666,7 +672,11 @@ function PropertyWorkspace() {
             onSelect={(t) => setOpenTaskId(t.id)}
           />
           {!life.locked && (
-            <TemplatePanel propertyId={current.id} propertyName={current.name} readOnly={!canEdit} />
+            <TemplatePanel
+              propertyId={current.id}
+              propertyName={current.name}
+              readOnly={!canEdit}
+            />
           )}
         </TabsContent>
 
@@ -677,7 +687,11 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------ Financial */}
         <TabsContent value="financial" className="space-y-4">
-          <FinancialPanel propertyId={current.id} canEdit={canEdit} isAdmin={roles.includes("admin")} />
+          <FinancialPanel
+            propertyId={current.id}
+            canEdit={canEdit}
+            isAdmin={roles.includes("admin")}
+          />
         </TabsContent>
 
         {/* -------------------------------------------------------- Handoff */}
@@ -746,7 +760,9 @@ function PropertyWorkspace() {
             </div>
             {readiness.reasons.length > 0 && (
               <div className="mt-3 rounded-md border border-state-blocked/40 bg-state-blocked/5 p-3">
-                <p className="text-sm font-medium">Handoff is blocked ({readiness.reasons.length})</p>
+                <p className="text-sm font-medium">
+                  Handoff is blocked ({readiness.reasons.length})
+                </p>
                 <ul className="mt-1 space-y-1 text-sm">
                   {readiness.reasons.map((r) => (
                     <li key={r.key}>
@@ -764,24 +780,25 @@ function PropertyWorkspace() {
                 </Chip>
               ) : (
                 <>
-                {readiness.blocked && (
-                  <p className="mb-2 text-sm text-muted-foreground">
-                    Ready for handoff is unavailable until the blockers above are cleared.
-                  </p>
-                )}
-                <RequestHandoffDialog
-                  ready={readiness.ready}
-                  blockedReasons={readiness.hardReasons}
-                  disabled={!canEdit || readiness.blocked}
-                  carryoverCount={
-                    tasks.filter((t) => t.status !== "complete" && t.status !== "carryover").length
-                  }
-                  onRequest={(notes2, carryoverAccepted) =>
-                    requestHandoff.mutate({
-                      data: { propertyId: current.id, notes: notes2, carryoverAccepted },
-                    } as never)
-                  }
-                />
+                  {readiness.blocked && (
+                    <p className="mb-2 text-sm text-muted-foreground">
+                      Ready for handoff is unavailable until the blockers above are cleared.
+                    </p>
+                  )}
+                  <RequestHandoffDialog
+                    ready={readiness.ready}
+                    blockedReasons={readiness.hardReasons}
+                    disabled={!canEdit || readiness.blocked}
+                    carryoverCount={
+                      tasks.filter((t) => t.status !== "complete" && t.status !== "carryover")
+                        .length
+                    }
+                    onRequest={(notes2, carryoverAccepted) =>
+                      requestHandoff.mutate({
+                        data: { propertyId: current.id, notes: notes2, carryoverAccepted },
+                      } as never)
+                    }
+                  />
                 </>
               )}
             </div>
@@ -875,9 +892,7 @@ function PropertyWorkspace() {
             approvals={approvals as never}
             reviews={
               data.reviews.filter((r) =>
-                data.handoffs.some(
-                  (h) => h.id === r.handoff_id && h.property_id === current.id,
-                ),
+                data.handoffs.some((h) => h.id === r.handoff_id && h.property_id === current.id),
               ) as never
             }
             people={data.people}

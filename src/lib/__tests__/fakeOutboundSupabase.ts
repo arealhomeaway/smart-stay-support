@@ -109,7 +109,10 @@ export function createFakeOutboundStore() {
 
     const api = {
       insert: (payload: Row) => {
-        const result = table === "breezeway_outbound_tasks" ? insertOutbound(payload) : { data: payload, error: null };
+        const result =
+          table === "breezeway_outbound_tasks"
+            ? insertOutbound(payload)
+            : { data: payload, error: null };
         const chain = {
           select: () => chain,
           single: () => Promise.resolve(result),

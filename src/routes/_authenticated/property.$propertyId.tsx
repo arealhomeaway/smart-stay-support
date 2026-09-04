@@ -42,10 +42,14 @@ export const Route = createFileRoute("/_authenticated/property/$propertyId")({
       { title: "Property Hub — Resolve" },
       {
         name: "description",
-        content: "One home in Resolve: onboarding progress, operations, contacts, documents and approvals.",
+        content:
+          "One home in Resolve: onboarding progress, operations, contacts, documents and approvals.",
       },
       { property: "og:title", content: "Property Hub — Resolve" },
-      { property: "og:description", content: "Onboarding, operations, documents and approvals for one home." },
+      {
+        property: "og:description",
+        content: "Onboarding, operations, documents and approvals for one home.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -81,7 +85,9 @@ function PropertyHubPage() {
         <CardHeader>
           <CardTitle className="text-base">This home could not be opened</CardTitle>
           <CardDescription>
-            {q.error instanceof Error ? q.error.message : "Resolve could not load this property right now."}
+            {q.error instanceof Error
+              ? q.error.message
+              : "Resolve could not load this property right now."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,11 +136,6 @@ function PropertyHubPage() {
           <PropertyCredentialsPanel propertyId={propertyId} />
         </div>
       )}
-
-
-
-
-
 
       <Tabs defaultValue="overview">
         <TabsList className="flex h-auto flex-wrap justify-start">
@@ -226,9 +227,14 @@ function HubHeader({ hub }: { hub: Hub }) {
             {hub.viewer.staff && hub.ownerRecord && (
               <p className="mt-2 text-sm">
                 <span className="text-muted-foreground">Owner: </span>
-                <span className="font-medium">{hub.ownerRecord.name ?? "Unnamed owner record"}</span>
+                <span className="font-medium">
+                  {hub.ownerRecord.name ?? "Unnamed owner record"}
+                </span>
                 {hub.ownerRecord.propertyCount > 1 && (
-                  <span className="text-muted-foreground"> · {hub.ownerRecord.propertyCount} homes</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {hub.ownerRecord.propertyCount} homes
+                  </span>
                 )}
               </p>
             )}
@@ -238,14 +244,22 @@ function HubHeader({ hub }: { hub: Hub }) {
               {p.lifecycleStatus && p.lifecycleStatus !== "live" && (
                 <StatusBadge tone="waiting">{label(p.lifecycleStatus)}</StatusBadge>
               )}
-              {p.minStayMonths ? <Badge variant="outline">{p.minStayMonths}-month minimum</Badge> : null}
-              {p.onboardingStage && <Badge variant="outline">Stage: {label(p.onboardingStage)}</Badge>}
-              <Badge variant={p.active ? "secondary" : "outline"}>{p.active ? "Active" : "Inactive"}</Badge>
+              {p.minStayMonths ? (
+                <Badge variant="outline">{p.minStayMonths}-month minimum</Badge>
+              ) : null}
+              {p.onboardingStage && (
+                <Badge variant="outline">Stage: {label(p.onboardingStage)}</Badge>
+              )}
+              <Badge variant={p.active ? "secondary" : "outline"}>
+                {p.active ? "Active" : "Inactive"}
+              </Badge>
             </div>
             {hub.viewer.staff && p.operatingNotes && (
               <div className="mt-4 max-w-2xl rounded-lg border border-warning/40 bg-warning/5 p-3">
                 <div className="eyebrow">Special handling</div>
-                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed">{p.operatingNotes}</p>
+                <p className="mt-1 whitespace-pre-line text-sm leading-relaxed">
+                  {p.operatingNotes}
+                </p>
               </div>
             )}
           </div>
@@ -253,11 +267,18 @@ function HubHeader({ hub }: { hub: Hub }) {
         </div>
       </div>
     </div>
-
   );
 }
 
-function Stat({ label: l, value, tone }: { label: string; value: string | number; tone?: "danger" | "ok" | undefined }) {
+function Stat({
+  label: l,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "danger" | "ok" | undefined;
+}) {
   return (
     <div className="rounded-lg border border-border p-4">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{l}</div>
@@ -275,15 +296,33 @@ function OverviewTab({ hub }: { hub: Hub }) {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {hub.viewer.staff && <Stat label="Open tickets" value={o.openTickets} tone={o.openTickets ? "danger" : undefined} />}
-        {hub.viewer.staff && <Stat label="P1 open" value={o.p1Tickets} tone={o.p1Tickets ? "danger" : undefined} />}
+        {hub.viewer.staff && (
+          <Stat
+            label="Open tickets"
+            value={o.openTickets}
+            tone={o.openTickets ? "danger" : undefined}
+          />
+        )}
+        {hub.viewer.staff && (
+          <Stat label="P1 open" value={o.p1Tickets} tone={o.p1Tickets ? "danger" : undefined} />
+        )}
         <Stat label="Onboarding complete" value={`${o.onboardingComplete}/${o.onboardingTotal}`} />
-        <Stat label="Waiting on you" value={o.ownerActions} tone={o.ownerActions ? "danger" : "ok"} />
-        {hub.viewer.staff && <Stat label="Blockers" value={o.blockers} tone={o.blockers ? "danger" : undefined} />}
+        <Stat
+          label="Waiting on you"
+          value={o.ownerActions}
+          tone={o.ownerActions ? "danger" : "ok"}
+        />
+        {hub.viewer.staff && (
+          <Stat label="Blockers" value={o.blockers} tone={o.blockers ? "danger" : undefined} />
+        )}
         {hub.viewer.staff && <Stat label="Handoff gates open" value={o.handoffGatesOpen} />}
         <Stat label="Documents you can see" value={o.documents} />
         {hub.viewer.staff && o.unassignedTasks != null && (
-          <Stat label="Unassigned tasks" value={o.unassignedTasks} tone={o.unassignedTasks ? "danger" : "ok"} />
+          <Stat
+            label="Unassigned tasks"
+            value={o.unassignedTasks}
+            tone={o.unassignedTasks ? "danger" : "ok"}
+          />
         )}
       </div>
 
@@ -311,7 +350,11 @@ function OverviewTab({ hub }: { hub: Hub }) {
           </CardHeader>
           <CardContent className="space-y-1 text-sm text-muted-foreground">
             <p>
-              Your home is {o.onboardingTotal ? `${Math.round((o.onboardingComplete / Math.max(o.onboardingTotal, 1)) * 100)}% through onboarding` : "being prepared"}.
+              Your home is{" "}
+              {o.onboardingTotal
+                ? `${Math.round((o.onboardingComplete / Math.max(o.onboardingTotal, 1)) * 100)}% through onboarding`
+                : "being prepared"}
+              .
             </p>
             <p>
               {o.ownerActions
@@ -336,7 +379,9 @@ function DetailsTab({ hub }: { hub: Hub }) {
       {groups.length > 0 && (
         <PropertyDetailSections
           groups={groups}
-          onGoToCredentials={() => document.getElementById("credentials")?.scrollIntoView({ behavior: "smooth" })}
+          onGoToCredentials={() =>
+            document.getElementById("credentials")?.scrollIntoView({ behavior: "smooth" })
+          }
         />
       )}
 
@@ -349,7 +394,9 @@ function DetailsTab({ hub }: { hub: Hub }) {
                 {s.blurb && <CardDescription>{s.blurb}</CardDescription>}
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                {s.fields.length === 0 && <p className="text-muted-foreground">Nothing recorded yet.</p>}
+                {s.fields.length === 0 && (
+                  <p className="text-muted-foreground">Nothing recorded yet.</p>
+                )}
                 {s.fields.map((fld) => (
                   <div
                     key={fld.key}
@@ -366,7 +413,9 @@ function DetailsTab({ hub }: { hub: Hub }) {
                       {fld.pending ? (
                         <Badge variant="outline">Awaiting field map</Badge>
                       ) : (
-                        <span className={fld.value ? "" : "text-muted-foreground"}>{fld.value ?? "Not recorded"}</span>
+                        <span className={fld.value ? "" : "text-muted-foreground"}>
+                          {fld.value ?? "Not recorded"}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -408,7 +457,9 @@ function ContactsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
             </CardTitle>
             <CardDescription>
               {owner.source === "ownerrez" ? "OwnerRez owner record" : owner.source}
-              {owner.propertyCount > 1 ? ` · owns ${owner.propertyCount} homes with ARHA` : " · single home"}
+              {owner.propertyCount > 1
+                ? ` · owns ${owner.propertyCount} homes with ARHA`
+                : " · single home"}
               {` · as of ${usDate(owner.syncedAt)}`}
             </CardDescription>
           </CardHeader>
@@ -422,25 +473,27 @@ function ContactsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
         </Card>
       )}
       <div className="grid gap-3 md:grid-cols-2">
-      {hub.contacts.map((c) => (
-        <Card key={c.id}>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="size-4 text-primary" />
-              {c.name ?? "Homeowner"}
-            </CardTitle>
-            <CardDescription>
-              {c.source ?? "Resolve"}
-              {c.matchStatus ? ` · ${label(c.matchStatus)}` : ""}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p>{c.email ?? "No email on file"}</p>
-            <p>{c.phone ?? "No phone on file"}</p>
-            {c.syncedAt && <p className="text-xs text-muted-foreground">as of {usDate(c.syncedAt)}</p>}
-          </CardContent>
-        </Card>
-      ))}
+        {hub.contacts.map((c) => (
+          <Card key={c.id}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="size-4 text-primary" />
+                {c.name ?? "Homeowner"}
+              </CardTitle>
+              <CardDescription>
+                {c.source ?? "Resolve"}
+                {c.matchStatus ? ` · ${label(c.matchStatus)}` : ""}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              <p>{c.email ?? "No email on file"}</p>
+              <p>{c.phone ?? "No phone on file"}</p>
+              {c.syncedAt && (
+                <p className="text-xs text-muted-foreground">as of {usDate(c.syncedAt)}</p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
@@ -458,9 +511,7 @@ function OnboardingTab({ hub }: { hub: Hub }) {
           </CardTitle>
           <CardDescription>
             {o.complete} of {o.total} steps complete{o.stage ? ` · stage ${label(o.stage)}` : ""}
-            {o.subtaskTotal
-              ? ` · ${o.subtaskComplete} of ${o.subtaskTotal} subtasks complete`
-              : ""}
+            {o.subtaskTotal ? ` · ${o.subtaskComplete} of ${o.subtaskTotal} subtasks complete` : ""}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -498,7 +549,9 @@ function OnboardingTab({ hub }: { hub: Hub }) {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{hub.viewer.staff ? "Current tasks" : "What ARHA is working on"}</CardTitle>
+          <CardTitle className="text-base">
+            {hub.viewer.staff ? "Current tasks" : "What ARHA is working on"}
+          </CardTitle>
           <CardDescription>The active work, not the full plan.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
@@ -506,7 +559,10 @@ function OnboardingTab({ hub }: { hub: Hub }) {
             <p className="text-muted-foreground">Every task is complete.</p>
           ) : (
             o.current.map((t) => (
-              <div key={t.id} className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0">
+              <div
+                key={t.id}
+                className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0"
+              >
                 <div>
                   <div className="font-medium">{t.title}</div>
                   <div className="text-xs text-muted-foreground">
@@ -571,7 +627,6 @@ function OperationsTab({ hub }: { hub: Hub }) {
         </section>
       )}
 
-
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -595,7 +650,9 @@ function OperationsTab({ hub }: { hub: Hub }) {
                   <span className="font-medium">ARHA-{t.ref}</span> {t.title}
                 </span>
                 <span className="flex items-center gap-2">
-                  <StatusBadge tone={t.priority === "p1" ? "escalated" : "context"}>{String(t.priority).toUpperCase()}</StatusBadge>
+                  <StatusBadge tone={t.priority === "p1" ? "escalated" : "context"}>
+                    {String(t.priority).toUpperCase()}
+                  </StatusBadge>
                   <StatusBadge tone={ticketTone(t.status)}>{label(t.status)}</StatusBadge>
                 </span>
               </Link>
@@ -611,10 +668,15 @@ function OperationsTab({ hub }: { hub: Hub }) {
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {ops.workOrders.length === 0 ? (
-            <p className="text-muted-foreground">No work orders have been dispatched for this home.</p>
+            <p className="text-muted-foreground">
+              No work orders have been dispatched for this home.
+            </p>
           ) : (
             ops.workOrders.map((w) => (
-              <div key={w.id} className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0">
+              <div
+                key={w.id}
+                className="flex items-center justify-between gap-4 border-b border-border/50 pb-2 last:border-0"
+              >
                 <span>{w.title}</span>
                 <Badge variant="outline">{label(w.status)}</Badge>
               </div>

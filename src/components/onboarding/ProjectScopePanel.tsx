@@ -292,7 +292,9 @@ function ScopeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{editing ? "Edit project scope" : `Start onboarding — ${propertyName}`}</DialogTitle>
+          <DialogTitle>
+            {editing ? "Edit project scope" : `Start onboarding — ${propertyName}`}
+          </DialogTitle>
           <DialogDescription>
             Scope decides what Resolve asks for. Anything switched off is never shown as missing
             work for this home.
@@ -355,7 +357,10 @@ function ScopeDialog({
               onChange={(id) => setV((p) => ({ ...p, director: id }))}
             />
             <Field label="Branch / market">
-              <Input value={v.branch} onChange={(e) => setV((p) => ({ ...p, branch: e.target.value }))} />
+              <Input
+                value={v.branch}
+                onChange={(e) => setV((p) => ({ ...p, branch: e.target.value }))}
+              />
             </Field>
             <Field label="Planned closing">
               <Input

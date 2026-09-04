@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authenticated/recovery")({
       { property: "og:title", content: "Guest recovery — Resolve" },
       {
         property: "og:description",
-        content: "ARHA's guest service recovery queue, with approval authority derived from policy.",
+        content:
+          "ARHA's guest service recovery queue, with approval authority derived from policy.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -26,7 +27,9 @@ export const Route = createFileRoute("/_authenticated/recovery")({
       <RecoveryLayout />
     </RequireCapability>
   ),
-  errorComponent: () => <p className="text-muted-foreground">Guest recovery could not be loaded.</p>,
+  errorComponent: () => (
+    <p className="text-muted-foreground">Guest recovery could not be loaded.</p>
+  ),
 });
 
 function RecoveryLayout() {

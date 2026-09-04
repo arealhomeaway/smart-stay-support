@@ -43,10 +43,18 @@ describe("follow-up clock", () => {
   });
 
   it("uses the approved intervals per stage", () => {
-    expect(followUpBucket(lead({ stage: "follow_up_1", last_contact_at: daysAgo(3) }), NOW)).toBe("upcoming");
-    expect(followUpBucket(lead({ stage: "follow_up_1", last_contact_at: daysAgo(5) }), NOW)).toBe("overdue");
-    expect(followUpBucket(lead({ stage: "final_follow_up", last_contact_at: daysAgo(6) }), NOW)).toBe("upcoming");
-    expect(followUpBucket(lead({ stage: "engaged", last_contact_at: daysAgo(4) }), NOW)).toBe("overdue");
+    expect(followUpBucket(lead({ stage: "follow_up_1", last_contact_at: daysAgo(3) }), NOW)).toBe(
+      "upcoming",
+    );
+    expect(followUpBucket(lead({ stage: "follow_up_1", last_contact_at: daysAgo(5) }), NOW)).toBe(
+      "overdue",
+    );
+    expect(
+      followUpBucket(lead({ stage: "final_follow_up", last_contact_at: daysAgo(6) }), NOW),
+    ).toBe("upcoming");
+    expect(followUpBucket(lead({ stage: "engaged", last_contact_at: daysAgo(4) }), NOW)).toBe(
+      "overdue",
+    );
   });
 });
 
@@ -85,7 +93,11 @@ describe("next action", () => {
   });
 
   it("respects a recorded decision to keep the lead open", () => {
-    const l = lead({ stage: "final_follow_up", last_contact_at: daysAgo(9), keep_open_reason: "Awaiting adjuster" });
+    const l = lead({
+      stage: "final_follow_up",
+      last_contact_at: daysAgo(9),
+      keep_open_reason: "Awaiting adjuster",
+    });
     expect(nextAction(l, { now: NOW })).toContain("Still open by decision");
   });
 
@@ -106,20 +118,32 @@ describe("attention flags", () => {
   });
 
   it("flags an imminent move-in with no property match", () => {
-    const l = lead({ stage: "engaged", last_contact_at: daysAgo(1), desired_move_in: "2026-09-14" });
-    expect(attentionFlags(l, { now: NOW, hasProperty: false }).map((f) => f.key)).toContain("move_in");
+    const l = lead({
+      stage: "engaged",
+      last_contact_at: daysAgo(1),
+      desired_move_in: "2026-09-14",
+    });
+    expect(attentionFlags(l, { now: NOW, hasProperty: false }).map((f) => f.key)).toContain(
+      "move_in",
+    );
   });
 
   it("says nothing about closed leads", () => {
-    expect(attentionFlags(lead({ stage: "converted", assigned_to: null }), { now: NOW }).length).toBe(0);
+    expect(
+      attentionFlags(lead({ stage: "converted", assigned_to: null }), { now: NOW }).length,
+    ).toBe(0);
   });
 });
 
 describe("queue", () => {
   it("puts overdue work first and closed leads nowhere", () => {
-    expect(queueBucket(lead({ stage: "first_contact", last_contact_at: daysAgo(5) }), NOW)).toBe("overdue");
+    expect(queueBucket(lead({ stage: "first_contact", last_contact_at: daysAgo(5) }), NOW)).toBe(
+      "overdue",
+    );
     expect(queueBucket(lead({ stage: "new", created_at: NOW.toISOString() }), NOW)).toBe("new");
-    expect(queueBucket(lead({ stage: "booking_pending", last_contact_at: daysAgo(1) }), NOW)).toBe("waiting");
+    expect(queueBucket(lead({ stage: "booking_pending", last_contact_at: daysAgo(1) }), NOW)).toBe(
+      "waiting",
+    );
     expect(queueBucket(lead({ stage: "lost" }), NOW)).toBeNull();
   });
 
@@ -132,9 +156,27 @@ describe("queue", () => {
 
 describe("analytics", () => {
   const rows = [
-    { ...lead({ stage: "converted" }), source: "insurance", market: "Houston", lost_reason: null, quote_amount: 5000, converted_at: NOW.toISOString(), created_at: daysAgo(10) },
-    { ...lead({ stage: "lost" }), source: "website", market: "Houston", lost_reason: "budget_too_low" },
-    { ...lead({ stage: "first_contact", last_contact_at: daysAgo(5) }), source: "insurance", market: "Dallas", lost_reason: null },
+    {
+      ...lead({ stage: "converted" }),
+      source: "insurance",
+      market: "Houston",
+      lost_reason: null,
+      quote_amount: 5000,
+      converted_at: NOW.toISOString(),
+      created_at: daysAgo(10),
+    },
+    {
+      ...lead({ stage: "lost" }),
+      source: "website",
+      market: "Houston",
+      lost_reason: "budget_too_low",
+    },
+    {
+      ...lead({ stage: "first_contact", last_contact_at: daysAgo(5) }),
+      source: "insurance",
+      market: "Dallas",
+      lost_reason: null,
+    },
   ] as never[];
 
   it("reports conversion, revenue and compliance from real rows only", () => {

@@ -8,7 +8,10 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
 export const ownerPrograms = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ demo: z.boolean().optional() }).optional().parse(data ?? {}),
+    z
+      .object({ demo: z.boolean().optional() })
+      .optional()
+      .parse(data ?? {}),
   )
   .handler(async ({ context, data }) => {
     const { assertStaff } = await import("./vendor.server");
@@ -16,7 +19,6 @@ export const ownerPrograms = createServerFn({ method: "GET" })
     await assertStaff(context.supabase, context.userId);
     return loadPrograms(context.supabase, data?.demo === true);
   });
-
 
 /** Staff: the roadmap catalog behind every program. */
 export const ownerTaskRoadmap = createServerFn({ method: "GET" })
@@ -139,7 +141,13 @@ export const setOwnerProgramStatus = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
-        status: z.enum(["draft", "waiting_for_closing", "ready_for_onboarding", "paused", "active"]),
+        status: z.enum([
+          "draft",
+          "waiting_for_closing",
+          "ready_for_onboarding",
+          "paused",
+          "active",
+        ]),
       })
       .parse(data),
   )
@@ -271,7 +279,10 @@ export const saveOwnerProgramRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
-      .object({ key: z.string().trim().min(2).max(60), value: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])) })
+      .object({
+        key: z.string().trim().min(2).max(60),
+        value: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {

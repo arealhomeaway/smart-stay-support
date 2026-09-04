@@ -137,12 +137,14 @@ export const setSeatHolder = createServerFn({ method: "POST" })
 /** Temporarily mark a seat unavailable (or bring it back). */
 export const setSeatAvailability = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { roleCode: string; available: boolean; note?: string; until?: string | null }) => ({
-    roleCode: code(input?.roleCode),
-    available: Boolean(input?.available),
-    note: String(input?.note ?? "").slice(0, 400),
-    until: input?.until ? new Date(input.until).toISOString() : null,
-  }))
+  .inputValidator(
+    (input: { roleCode: string; available: boolean; note?: string; until?: string | null }) => ({
+      roleCode: code(input?.roleCode),
+      available: Boolean(input?.available),
+      note: String(input?.note ?? "").slice(0, 400),
+      until: input?.until ? new Date(input.until).toISOString() : null,
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
     const db = await admin();
@@ -156,7 +158,10 @@ export const setSeatAvailability = createServerFn({ method: "POST" })
       unavailable_note: data.available ? null : data.note || null,
       unavailable_until: data.available ? null : data.until,
     };
-    const { error } = await db.from("functional_roles").update(after as never).eq("code", data.roleCode);
+    const { error } = await db
+      .from("functional_roles")
+      .update(after as never)
+      .eq("code", data.roleCode);
     if (error) throw error;
     await audit({
       actorId: context.userId,
@@ -206,9 +211,16 @@ export const saveShift = createServerFn({ method: "POST" })
     };
     let before: unknown = null;
     if (data.id) {
-      const { data: prev } = await db.from("coverage_shifts").select("*").eq("id", data.id).maybeSingle();
+      const { data: prev } = await db
+        .from("coverage_shifts")
+        .select("*")
+        .eq("id", data.id)
+        .maybeSingle();
       before = prev;
-      const { error } = await db.from("coverage_shifts").update(row as never).eq("id", data.id);
+      const { error } = await db
+        .from("coverage_shifts")
+        .update(row as never)
+        .eq("id", data.id);
       if (error) throw error;
     } else {
       const { error } = await db
@@ -234,7 +246,11 @@ export const deleteShift = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
     const db = await admin();
-    const { data: before } = await db.from("coverage_shifts").select("*").eq("id", data.id).maybeSingle();
+    const { data: before } = await db
+      .from("coverage_shifts")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await db.from("coverage_shifts").delete().eq("id", data.id);
     if (error) throw error;
     await audit({
@@ -270,7 +286,8 @@ export const saveOverride = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
-    if (new Date(data.endsAt) <= new Date(data.startsAt)) throw new Error("The override needs an end after its start.");
+    if (new Date(data.endsAt) <= new Date(data.startsAt))
+      throw new Error("The override needs an end after its start.");
     if (data.kind === "cover" && !data.userId) throw new Error("Choose who is covering.");
     const db = await admin();
     const row = {
@@ -303,7 +320,11 @@ export const deleteOverride = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
     const db = await admin();
-    const { data: before } = await db.from("coverage_overrides").select("*").eq("id", data.id).maybeSingle();
+    const { data: before } = await db
+      .from("coverage_overrides")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await db.from("coverage_overrides").delete().eq("id", data.id);
     if (error) throw error;
     await audit({
@@ -320,29 +341,52 @@ export const deleteOverride = createServerFn({ method: "POST" })
 /** On-call roster write — the same table after-hours routing reads. */
 export const saveOnCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id?: string | null; userId: string; startsOn: string; endsOn: string; label?: string }) => ({
-    id: uuidOrNull(input?.id),
-    userId: uuidOrNull(input?.userId)!,
-    startsOn: String(input?.startsOn ?? "").slice(0, 10),
-    endsOn: String(input?.endsOn ?? "").slice(0, 10),
-    label: String(input?.label ?? "On-call").slice(0, 80),
-  }))
+  .inputValidator(
+    (input: {
+      id?: string | null;
+      userId: string;
+      startsOn: string;
+      endsOn: string;
+      label?: string;
+    }) => ({
+      id: uuidOrNull(input?.id),
+      userId: uuidOrNull(input?.userId)!,
+      startsOn: String(input?.startsOn ?? "").slice(0, 10),
+      endsOn: String(input?.endsOn ?? "").slice(0, 10),
+      label: String(input?.label ?? "On-call").slice(0, 80),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data.startsOn) || !/^\d{4}-\d{2}-\d{2}$/.test(data.endsOn)) {
       throw new Error("Pick a start and end date.");
     }
-    if (data.endsOn < data.startsOn) throw new Error("The end date cannot be before the start date.");
+    if (data.endsOn < data.startsOn)
+      throw new Error("The end date cannot be before the start date.");
     const db = await admin();
-    const row = { user_id: data.userId, starts_on: data.startsOn, ends_on: data.endsOn, label: data.label };
+    const row = {
+      user_id: data.userId,
+      starts_on: data.startsOn,
+      ends_on: data.endsOn,
+      label: data.label,
+    };
     let before: unknown = null;
     if (data.id) {
-      const { data: prev } = await db.from("oncall_roster").select("*").eq("id", data.id).maybeSingle();
+      const { data: prev } = await db
+        .from("oncall_roster")
+        .select("*")
+        .eq("id", data.id)
+        .maybeSingle();
       before = prev;
-      const { error } = await db.from("oncall_roster").update(row as never).eq("id", data.id);
+      const { error } = await db
+        .from("oncall_roster")
+        .update(row as never)
+        .eq("id", data.id);
       if (error) throw error;
     } else {
-      const { error } = await db.from("oncall_roster").insert({ ...row, created_by: context.userId } as never);
+      const { error } = await db
+        .from("oncall_roster")
+        .insert({ ...row, created_by: context.userId } as never);
       if (error) throw error;
     }
     await audit({
@@ -362,7 +406,11 @@ export const deleteOnCall = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
     const db = await admin();
-    const { data: before } = await db.from("oncall_roster").select("*").eq("id", data.id).maybeSingle();
+    const { data: before } = await db
+      .from("oncall_roster")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await db.from("oncall_roster").delete().eq("id", data.id);
     if (error) throw error;
     await audit({

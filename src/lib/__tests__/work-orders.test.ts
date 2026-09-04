@@ -55,7 +55,11 @@ describe("maintenance authority", () => {
   });
 
   it("a recorded contractual exception keeps a large repair with James", () => {
-    const v = evaluateAuthority({ phase: "permanent", quote_amount: 650, contractual_exception: true });
+    const v = evaluateAuthority({
+      phase: "permanent",
+      quote_amount: 650,
+      contractual_exception: true,
+    });
     expect(v.ownerApprovalRequired).toBe(false);
     expect(v.reason).toContain("contractual exception");
   });
@@ -65,7 +69,11 @@ describe("maintenance authority", () => {
   });
 
   it("D — emergency mitigation proceeds but never carries the permanent repair", () => {
-    const v = evaluateAuthority({ phase: "mitigation", emergency_reason: "water_intrusion", quote_amount: 1500 });
+    const v = evaluateAuthority({
+      phase: "mitigation",
+      emergency_reason: "water_intrusion",
+      quote_amount: 1500,
+    });
     expect(v.level).toBe("emergency");
     expect(v.mitigationOnly).toBe(true);
     expect(v.ownerApprovalRequired).toBe(false);
@@ -119,13 +127,19 @@ describe("warranty", () => {
   });
 
   it("warranty work waits on the provider until a human decides otherwise", () => {
-    const wo = { warranty_may_apply: true, warranty_contacted_at: ago(60), warranty_eta_at: ahead(2880) };
+    const wo = {
+      warranty_may_apply: true,
+      warranty_contacted_at: ago(60),
+      warranty_eta_at: ahead(2880),
+    };
     expect(waitingOn(wo)).toBe("warranty");
     expect(workOrderBucket(wo, NOW)).toBe("warranty_pending");
   });
 
   it("asks for the provider call before a paid repair is committed", () => {
-    expect(nextAction({ warranty_may_apply: true }, NOW)).toContain("contact the warranty provider");
+    expect(nextAction({ warranty_may_apply: true }, NOW)).toContain(
+      "contact the warranty provider",
+    );
   });
 });
 
@@ -178,9 +192,14 @@ describe("vendor commitments and checkpoints", () => {
 
   it("checkpoints derive in order", () => {
     expect(nextCheckpoint({}, NOW)).toBe("contact_vendor");
-    expect(nextCheckpoint({ vendor_name: "Ace", vendor_contacted_at: ago(5) }, NOW)).toBe("await_acknowledgment");
+    expect(nextCheckpoint({ vendor_name: "Ace", vendor_contacted_at: ago(5) }, NOW)).toBe(
+      "await_acknowledgment",
+    );
     expect(
-      nextCheckpoint({ vendor_name: "Ace", vendor_contacted_at: ago(5), vendor_acknowledged_at: ago(4) }, NOW),
+      nextCheckpoint(
+        { vendor_name: "Ace", vendor_contacted_at: ago(5), vendor_acknowledged_at: ago(4) },
+        NOW,
+      ),
     ).toBe("confirm_eta");
     expect(
       nextCheckpoint(
@@ -202,7 +221,9 @@ describe("stage, queue and closure", () => {
     expect(derivedStage({ quote_requested_at: ago(60) })).toBe("quote_requested");
     expect(derivedStage({ quote_amount: 150 })).toBe("quote_received");
     expect(derivedStage({ quote_amount: 275 })).toBe("awaiting_approval");
-    expect(derivedStage({ quote_amount: 275, supervisor_approval_status: "approved" })).toBe("quote_received");
+    expect(derivedStage({ quote_amount: 275, supervisor_approval_status: "approved" })).toBe(
+      "quote_received",
+    );
     expect(derivedStage({ quote_amount: 900 })).toBe("awaiting_approval");
     expect(derivedStage({ quote_amount: 900, approval_status: "approved" })).toBe("approved");
     expect(derivedStage({ vendor_arrived_at: ago(30) })).toBe("in_progress");
@@ -213,9 +234,14 @@ describe("stage, queue and closure", () => {
     const wo = { quote_amount: 900, approval_status: "pending" };
     expect(nextAction(wo, NOW)).toContain("not owner approved");
     expect(workOrderBucket(wo, NOW)).toBe("waiting_owner");
-    expect(closureBlockers({ ...wo, vendor_completed_at: ago(1), evidence_complete: true, final_cost: 900 })).toContain(
-      "Owner approval for this repair is not documented.",
-    );
+    expect(
+      closureBlockers({
+        ...wo,
+        vendor_completed_at: ago(1),
+        evidence_complete: true,
+        final_cost: 900,
+      }),
+    ).toContain("Owner approval for this repair is not documented.");
   });
 
   it("I — vendor saying done with no evidence cannot close", () => {
@@ -226,7 +252,12 @@ describe("stage, queue and closure", () => {
   });
 
   it("an occupied home needs the guest update before closure", () => {
-    const wo = { vendor_completed_at: ago(10), evidence_complete: true, final_cost: 220, occupied_now: true };
+    const wo = {
+      vendor_completed_at: ago(10),
+      evidence_complete: true,
+      final_cost: 220,
+      occupied_now: true,
+    };
     expect(closureBlockers(wo)).toContain("The guest in the home has not been updated.");
   });
 
@@ -277,7 +308,9 @@ describe("owner approval, evidence and oversight", () => {
   });
 
   it("a declined approval keeps the consequence visible", () => {
-    expect(declineConsequence({ ...base, approval_status: "declined", occupied_now: true })).toContain("guest");
+    expect(
+      declineConsequence({ ...base, approval_status: "declined", occupied_now: true }),
+    ).toContain("guest");
     expect(declineConsequence({ ...base, approval_status: "approved" })).toBeNull();
   });
 
@@ -303,11 +336,18 @@ describe("owner approval, evidence and oversight", () => {
   });
 
   it("manager filters surface outstanding approvals and unrepaired homes", () => {
-    expect(matchesManagerFilter({ ...base, approval_status: "pending" }, "owner_approval_pending")).toBe(true);
     expect(
-      matchesManagerFilter({ ...base, phase: "mitigation", permanent_repair_needed: true }, "mitigated_not_repaired"),
+      matchesManagerFilter({ ...base, approval_status: "pending" }, "owner_approval_pending"),
     ).toBe(true);
-    expect(matchesManagerFilter({ ...base, closed_at: "2026-01-01" }, "owner_approval_pending")).toBe(false);
+    expect(
+      matchesManagerFilter(
+        { ...base, phase: "mitigation", permanent_repair_needed: true },
+        "mitigated_not_repaired",
+      ),
+    ).toBe(true);
+    expect(
+      matchesManagerFilter({ ...base, closed_at: "2026-01-01" }, "owner_approval_pending"),
+    ).toBe(false);
   });
 
   it("repeat maintenance is counted per home inside the window", () => {

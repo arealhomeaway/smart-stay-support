@@ -171,14 +171,19 @@ export function RecoveryRowCard({
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {recovery.title} · {recovery.guest_name ?? "Guest unrecorded"} · proposed{" "}
-            {formatMoney(recovery.proposed_amount)} · issued {formatMoney(recovery.delivered_amount)} ·{" "}
-            {ownerName}
+            {formatMoney(recovery.proposed_amount)} · issued{" "}
+            {formatMoney(recovery.delivered_amount)} · {ownerName}
             {checkout !== null ? ` · checkout in ${checkout} day${checkout === 1 ? "" : "s"}` : ""}
           </p>
         </button>
         <div className="flex shrink-0 flex-col items-end gap-1 py-3 pr-4 text-xs">
           {canAssignToMe ? (
-            <Button size="sm" variant="outline" disabled={assignToMe.isPending} onClick={() => assignToMe.mutate()}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={assignToMe.isPending}
+              onClick={() => assignToMe.mutate()}
+            >
               {assignToMe.isPending ? "Assigning…" : "Assign to me"}
             </Button>
           ) : null}
@@ -254,7 +259,9 @@ export function RecoveryListSection({
         recovery={open}
         people={people}
         canEdit={canEdit}
-        propertyName={open ? (propertyNames.get(open.property_id ?? "") ?? "Property unlinked") : ""}
+        propertyName={
+          open ? (propertyNames.get(open.property_id ?? "") ?? "Property unlinked") : ""
+        }
         onClose={() => setOpenId(null)}
       />
     </>

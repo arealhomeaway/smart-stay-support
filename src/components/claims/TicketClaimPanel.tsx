@@ -196,7 +196,8 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
       <CardHeader>
         <CardTitle>Cost recovery (claim)</CardTitle>
         <CardDescription>
-          Open a claim when the cost of this ticket should come back from a guest, platform, insurer or owner.
+          Open a claim when the cost of this ticket should come back from a guest, platform, insurer
+          or owner.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -207,7 +208,9 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
             className="block rounded-md border px-3 py-2 transition-colors hover:bg-muted/50"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <Chip className={stateChip(stageState(claim.stage))}>{CLAIM_STAGE_LABELS[claim.stage]}</Chip>
+              <Chip className={stateChip(stageState(claim.stage))}>
+                {CLAIM_STAGE_LABELS[claim.stage]}
+              </Chip>
               <Chip>{CLAIM_TYPE_LABELS[claim.claim_type]}</Chip>
             </div>
             <p className="mt-1 font-medium">{nextAction(claim)}</p>
@@ -226,19 +229,30 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
             <div className="space-y-1">
               <Label className="text-xs">Recover from</Label>
               <Select value={type} onValueChange={(v) => setType(v as ClaimType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{CLAIM_TYPE_LABELS[t]}</SelectItem>
+                    <SelectItem key={t} value={t}>
+                      {CLAIM_TYPE_LABELS[t]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-muted-foreground">
-                Sets the evidence checklist: {evidenceSlots(type).filter((s) => s.required).map((s) => s.label).join(", ")}.
+                Sets the evidence checklist:{" "}
+                {evidenceSlots(type)
+                  .filter((s) => s.required)
+                  .map((s) => s.label)
+                  .join(", ")}
+                .
               </p>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs" htmlFor="claim-new-deadline">Submission deadline (optional)</Label>
+              <Label className="text-xs" htmlFor="claim-new-deadline">
+                Submission deadline (optional)
+              </Label>
               <Input
                 id="claim-new-deadline"
                 type="date"
@@ -253,7 +267,9 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
             {duplicates.length > 0 ? (
               <div className="rounded-md border border-warning/40 bg-warning/10 p-3">
                 <p className="text-sm font-medium">Possible duplicate</p>
-                <p className="text-xs text-muted-foreground">{duplicates[0]?.reason} Review before opening another.</p>
+                <p className="text-xs text-muted-foreground">
+                  {duplicates[0]?.reason} Review before opening another.
+                </p>
                 <label className="mt-2 flex items-center gap-2 text-xs">
                   <input
                     type="checkbox"
@@ -266,10 +282,19 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
             ) : null}
 
             <div className="flex gap-2">
-              <Button disabled={create.isPending || blockedByWarning} onClick={() => create.mutate()}>
+              <Button
+                disabled={create.isPending || blockedByWarning}
+                onClick={() => create.mutate()}
+              >
                 Open claim
               </Button>
-              <Button variant="ghost" onClick={() => { setOpen(false); setAcknowledgedDuplicate(false); }}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setOpen(false);
+                  setAcknowledgedDuplicate(false);
+                }}
+              >
                 Cancel
               </Button>
             </div>

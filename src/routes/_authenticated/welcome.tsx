@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_authenticated/welcome")({
       { property: "og:title", content: "How Resolve Works | ARHA Coordinator Training" },
       {
         property: "og:description",
-        content: "A 65-second executive walkthrough of intake, inbound sync, triage, playbook enforcement, handoffs and oversight in Resolve.",
+        content:
+          "A 65-second executive walkthrough of intake, inbound sync, triage, playbook enforcement, handoffs and oversight in Resolve.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -99,14 +100,24 @@ function WelcomePage() {
 
       <section className="grid gap-4 md:grid-cols-2">
         {basics.map((b) => (
-          <div key={b.title} className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
+          <div
+            key={b.title}
+            className="flex items-start gap-3 rounded-lg border border-border bg-card p-4"
+          >
             <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-secondary text-secondary-foreground">
               <b.icon className="size-4" />
             </span>
             <div className="min-w-0">
               <p className="text-base font-semibold">{b.title}</p>
-              <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">{b.body}</p>
-              <Button asChild variant="ghost" size="sm" className="-ml-3 mt-1 px-3 hover:bg-transparent hover:underline">
+              <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                {b.body}
+              </p>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="-ml-3 mt-1 px-3 hover:bg-transparent hover:underline"
+              >
                 <Link to={b.to}>{b.cta} →</Link>
               </Button>
             </div>
@@ -116,8 +127,8 @@ function WelcomePage() {
 
       <SectionBand title="The rule behind all of it" />
       <p className="-mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-        If a step has to be remembered, it will eventually be missed. So Resolve writes it into the playbook, on the
-        clock, in front of the person who owns the ticket.
+        If a step has to be remembered, it will eventually be missed. So Resolve writes it into the
+        playbook, on the clock, in front of the person who owns the ticket.
       </p>
     </div>
   );

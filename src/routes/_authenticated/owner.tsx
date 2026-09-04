@@ -11,13 +11,7 @@ import {
   MessageSquare,
   ShieldCheck,
 } from "lucide-react";
-import {
-  EmptyState,
-  LoadingPage,
-  PageHero,
-  ProgressRing,
-  SectionCard,
-} from "@/components/ui/page";
+import { EmptyState, LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
@@ -126,7 +120,8 @@ function OwnerHubBody({
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
   const percent = snapshot.percentOfTarget;
-  const targetReached = snapshot.state === "target_reached" || snapshot.state === "program_completed";
+  const targetReached =
+    snapshot.state === "target_reached" || snapshot.state === "program_completed";
 
   const events: ActivityEvent[] = useMemo(() => {
     const fromAlerts: ActivityEvent[] = alerts.slice(0, 8).map((a) => ({
@@ -163,7 +158,8 @@ function OwnerHubBody({
 
       {targetReached ? (
         <Celebrate title="You've passed 100 hours of reported participation.">
-          Thank you for the time you've put in. Your final report will be ready when your 90 days close.
+          Thank you for the time you've put in. Your final report will be ready when your 90 days
+          close.
         </Celebrate>
       ) : null}
 
@@ -205,7 +201,14 @@ function OwnerHubBody({
         ) : (
           <div className="space-y-3">
             {openReviews.map((r) => (
-              <ReviewRow key={r.id} review={r} properties={properties} programId={program.id} onDone={invalidate} readOnly={preview} />
+              <ReviewRow
+                key={r.id}
+                review={r}
+                properties={properties}
+                programId={program.id}
+                onDone={invalidate}
+                readOnly={preview}
+              />
             ))}
           </div>
         )}

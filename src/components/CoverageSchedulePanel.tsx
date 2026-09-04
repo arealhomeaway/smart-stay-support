@@ -2,7 +2,16 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, CalendarClock, Moon, Pause, Play, Plus, Trash2, UserCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  Moon,
+  Pause,
+  Play,
+  Plus,
+  Trash2,
+  UserCheck,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,7 +88,13 @@ type Role = {
   unavailable_note?: string | null;
   sort_order?: number | null;
 };
-type Shift = { id: string; role_code: string; weekday: number; start_minute: number; end_minute: number };
+type Shift = {
+  id: string;
+  role_code: string;
+  weekday: number;
+  start_minute: number;
+  end_minute: number;
+};
 type Override = {
   id: string;
   role_code: string;
@@ -89,9 +104,27 @@ type Override = {
   ends_at: string;
   note: string | null;
 };
-type Triage = { id: string; weekday: number; start_minute: number; end_minute: number; role_code: string; note: string | null };
-type Roster = { id: string; user_id: string; starts_on: string; ends_on: string; label: string | null };
-type Person = { id: string; full_name: string | null; email: string | null; oncall_eligible?: boolean | null };
+type Triage = {
+  id: string;
+  weekday: number;
+  start_minute: number;
+  end_minute: number;
+  role_code: string;
+  note: string | null;
+};
+type Roster = {
+  id: string;
+  user_id: string;
+  starts_on: string;
+  ends_on: string;
+  label: string | null;
+};
+type Person = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  oncall_eligible?: boolean | null;
+};
 
 export function CoverageSchedulePanel() {
   const qc = useQueryClient();
@@ -250,7 +283,10 @@ function WeekCalendar({
             const pending = Boolean(role.current_seat_name && !role.current_seat_holder);
             const covered = activeOverrides.filter((o) => o.role_code === role.code);
             return (
-              <div key={role.code} className="grid grid-cols-[16rem_repeat(7,1fr)] items-stretch gap-1.5">
+              <div
+                key={role.code}
+                className="grid grid-cols-[16rem_repeat(7,1fr)] items-stretch gap-1.5"
+              >
                 <div className="flex flex-col justify-center rounded-md border border-border bg-sunken px-3 py-2">
                   <span className="truncate text-xs font-semibold">
                     {SEAT_LABELS[role.code] ?? role.name}
@@ -258,7 +294,9 @@ function WeekCalendar({
                   <span className="truncate text-xs text-muted-foreground">
                     {holder ?? <span className="text-danger">Seat unfilled</span>}
                     {pending && <span className="text-warning"> · invite pending</span>}
-                    {role.available === false && <span className="text-warning"> · unavailable</span>}
+                    {role.available === false && (
+                      <span className="text-warning"> · unavailable</span>
+                    )}
                   </span>
                   {covered.length > 0 && (
                     <span className="truncate text-xs text-module-override">
@@ -319,17 +357,17 @@ function WeekCalendar({
           <div className="mt-3 flex items-center gap-3 rounded-md border border-module-override/40 bg-module-override/10 px-3 py-2 text-xs text-module-override">
             <Moon className="size-3.5 shrink-0" />
             <span>
-              <span className="font-semibold">On-call, every night {clock(nightStart)}–{clock(nightEnd)} Central.</span>{" "}
+              <span className="font-semibold">
+                On-call, every night {clock(nightStart)}–{clock(nightEnd)} Central.
+              </span>{" "}
               The overnight roster takes precedence over every seat schedule above.
             </span>
           </div>
         </div>
       </div>
-
     </section>
   );
 }
-
 
 function nameFor(people: Person[], id: string | null) {
   if (!id) return null;
@@ -361,20 +399,25 @@ function SeatsCard({
           <CalendarClock className="size-4" /> Seats &amp; coverage windows
         </CardTitle>
         <CardDescription>
-          The hours each seat is on duty, in Central time and adjusted automatically for daylight saving. This is
-          the same plan the routing engine uses — a change takes effect on the next new ticket and never moves
-          work somebody already owns.
+          The hours each seat is on duty, in Central time and adjusted automatically for daylight
+          saving. This is the same plan the routing engine uses — a change takes effect on the next
+          new ticket and never moves work somebody already owns.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {roles.map((role) => {
-          const rows = shifts.filter((s) => s.role_code === role.code).sort((a, b) => a.weekday - b.weekday);
+          const rows = shifts
+            .filter((s) => s.role_code === role.code)
+            .sort((a, b) => a.weekday - b.weekday);
           const active = overrides.filter(
             (o) => o.role_code === role.code && new Date(o.ends_at) > new Date(),
           );
           const unavailable = role.available === false;
           return (
-            <div key={role.code} className="space-y-2 border-b border-border pb-3 last:border-0 last:pb-0">
+            <div
+              key={role.code}
+              className="space-y-2 border-b border-border pb-3 last:border-0 last:pb-0"
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">{SEAT_LABELS[role.code] ?? role.name}</p>
@@ -383,23 +426,29 @@ function SeatsCard({
                   </p>
                   {role.current_seat_name && !role.current_seat_holder && (
                     <p className="text-warning">
-                      Pending — this person has not redeemed their invitation yet, so work cannot route to the
-                      seat until their account exists. It is seated automatically the moment they join.
+                      Pending — this person has not redeemed their invitation yet, so work cannot
+                      route to the seat until their account exists. It is seated automatically the
+                      moment they join.
                     </p>
                   )}
                   {unavailable && (
                     <p className="text-warning">
-                      Marked unavailable{role.unavailable_note ? ` — ${role.unavailable_note}` : ""}.
+                      Marked unavailable{role.unavailable_note ? ` — ${role.unavailable_note}` : ""}
+                      .
                     </p>
                   )}
                 </div>
                 <div className="text-right">
                   {rows.length === 0 ? (
-                    <span className="text-muted-foreground">No schedule — available by exception</span>
+                    <span className="text-muted-foreground">
+                      No schedule — available by exception
+                    </span>
                   ) : (
                     rows.map((s) => (
                       <p key={s.id}>
-                        <span className="text-muted-foreground">{DAYS[s.weekday]?.slice(0, 3)}</span>{" "}
+                        <span className="text-muted-foreground">
+                          {DAYS[s.weekday]?.slice(0, 3)}
+                        </span>{" "}
                         {clock(s.start_minute)}–{clock(s.end_minute)}
                         {canEdit && (
                           <Button
@@ -435,7 +484,8 @@ function SeatsCard({
                         </Badge>
                         {o.kind === "cover" ? nameFor(people, o.user_id) : "Seat off duty"}{" "}
                         <span className="text-muted-foreground">
-                          {new Date(o.starts_at).toLocaleString()} → {new Date(o.ends_at).toLocaleString()}
+                          {new Date(o.starts_at).toLocaleString()} →{" "}
+                          {new Date(o.ends_at).toLocaleString()}
                         </span>
                       </span>
                       {canEdit && (
@@ -463,7 +513,12 @@ function SeatsCard({
 
               {canEdit &&
                 (open === role.code ? (
-                  <SeatEditor role={role} people={people} onDone={onChanged} onClose={() => setOpen(null)} />
+                  <SeatEditor
+                    role={role}
+                    people={people}
+                    onDone={onChanged}
+                    onClose={() => setOpen(null)}
+                  />
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" variant="secondary" onClick={() => setOpen(role.code)}>
@@ -475,16 +530,26 @@ function SeatsCard({
                       onClick={async () => {
                         try {
                           await setSeatAvailability({
-                            data: { roleCode: role.code, available: unavailable, note: "Temporarily unavailable" },
+                            data: {
+                              roleCode: role.code,
+                              available: unavailable,
+                              note: "Temporarily unavailable",
+                            },
                           });
-                          toast.success(unavailable ? "Seat is available again." : "Seat marked unavailable.");
+                          toast.success(
+                            unavailable ? "Seat is available again." : "Seat marked unavailable.",
+                          );
                           onChanged();
                         } catch (e) {
                           toast.error((e as Error).message);
                         }
                       }}
                     >
-                      {unavailable ? <Play className="mr-1 size-3" /> : <Pause className="mr-1 size-3" />}
+                      {unavailable ? (
+                        <Play className="mr-1 size-3" />
+                      ) : (
+                        <Pause className="mr-1 size-3" />
+                      )}
                       {unavailable ? "Mark available" : "Mark unavailable"}
                     </Button>
                   </div>
@@ -551,7 +616,12 @@ function SeatEditor({
           <Button
             size="sm"
             disabled={busy || !holder}
-            onClick={() => run(() => setSeatHolder({ data: { roleCode: role.code, userId: holder } }), "Seat updated.")}
+            onClick={() =>
+              run(
+                () => setSeatHolder({ data: { roleCode: role.code, userId: holder } }),
+                "Seat updated.",
+              )
+            }
           >
             <UserCheck className="mr-1 size-3" /> Seat
           </Button>
@@ -559,14 +629,19 @@ function SeatEditor({
             size="sm"
             variant="ghost"
             disabled={busy}
-            onClick={() => run(() => setSeatHolder({ data: { roleCode: role.code, userId: null } }), "Seat cleared.")}
+            onClick={() =>
+              run(
+                () => setSeatHolder({ data: { roleCode: role.code, userId: null } }),
+                "Seat cleared.",
+              )
+            }
           >
             Clear
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Only people with a Resolve account appear here. Invited staff are seated automatically when they redeem
-          their invitation — no second account is ever created.
+          Only people with a Resolve account appear here. Invited staff are seated automatically
+          when they redeem their invitation — no second account is ever created.
         </p>
       </div>
 
@@ -636,7 +711,11 @@ function SeatEditor({
               </SelectContent>
             </Select>
           )}
-          <Input type="datetime-local" value={ovStart} onChange={(e) => setOvStart(e.target.value)} />
+          <Input
+            type="datetime-local"
+            value={ovStart}
+            onChange={(e) => setOvStart(e.target.value)}
+          />
           <Input type="datetime-local" value={ovEnd} onChange={(e) => setOvEnd(e.target.value)} />
         </div>
         <Button
@@ -673,7 +752,10 @@ function TriageCard({ windows, roles }: { windows: Triage[]; roles: Role[] }) {
   const label = (code: string) =>
     SEAT_LABELS[code] ?? roles.find((r) => r.code === code)?.name ?? code;
   const ordered = useMemo(
-    () => [...windows].sort((a, b) => ((a.weekday + 6) % 7) - ((b.weekday + 6) % 7) || a.start_minute - b.start_minute),
+    () =>
+      [...windows].sort(
+        (a, b) => ((a.weekday + 6) % 7) - ((b.weekday + 6) % 7) || a.start_minute - b.start_minute,
+      ),
     [windows],
   );
   return (
@@ -681,8 +763,8 @@ function TriageCard({ windows, roles }: { windows: Triage[]; roles: Role[] }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Approved cross-team triage windows</CardTitle>
         <CardDescription>
-          Hours where Property Operations is off duty on purpose and a Guest Experience seat handles triage. These
-          are covered hours, not gaps — new Breezeway work routes to the named seat.
+          Hours where Property Operations is off duty on purpose and a Guest Experience seat handles
+          triage. These are covered hours, not gaps — new Breezeway work routes to the named seat.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-1 text-sm">
@@ -754,21 +836,25 @@ function OnCallCard({
           <Moon className="size-4" /> After-hours on-call roster
         </CardTitle>
         <CardDescription>
-          One named person per date, held in Central time. Inside the after-hours window the rostered person is the
-          active escalation owner and takes precedence over normal routing; priority is still judged on impact, so
-          overnight is never automatically P1.
+          One named person per date, held in Central time. Inside the after-hours window the
+          rostered person is the active escalation owner and takes precedence over normal routing;
+          priority is still judged on impact, so overnight is never automatically P1.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-border bg-secondary/40 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">On call today ({today})</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              On call today ({today})
+            </p>
             <p className="text-lg font-semibold">
               {onCallToday ? nameFor(people, onCallToday.user_id) : "No one scheduled"}
             </p>
           </div>
           <div className="rounded-lg border border-border bg-secondary/40 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">After-hours window</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              After-hours window
+            </p>
             <p className="font-medium">{windowLabel(config) ?? "Not configured"}</p>
           </div>
         </div>
@@ -787,7 +873,10 @@ function OnCallCard({
             {roster.map((r) => {
               const current = r.starts_on <= today && r.ends_on >= today;
               return (
-                <li key={r.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-2">
+                <li
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-2"
+                >
                   <span>
                     <span className="font-medium">{nameFor(people, r.user_id)}</span>{" "}
                     <span className="text-muted-foreground">
@@ -882,8 +971,8 @@ function OnCallCard({
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              A one-night override is just a period with the same start and end date. The routing engine reads this
-              exact roster, so there is no second on-call list.
+              A one-night override is just a period with the same start and end date. The routing
+              engine reads this exact roster, so there is no second on-call list.
             </p>
           </div>
         )}

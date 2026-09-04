@@ -32,7 +32,7 @@ import type { RecoveryRow } from "@/lib/recovery-types";
 export const Route = createFileRoute("/_authenticated/recovery/")({
   // Approval notifications deep-link straight to the recovery being decided.
   validateSearch: (search: Record<string, unknown>) => ({
-    open: typeof search['open'] === "string" ? (search['open'] as string) : undefined,
+    open: typeof search["open"] === "string" ? (search["open"] as string) : undefined,
   }),
   component: RecoveryHome,
 });
@@ -81,7 +81,11 @@ function RecoveryHome() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Needs attention" value={buckets.get("needs_attention")?.length ?? 0} tone="critical" />
+        <StatTile
+          label="Needs attention"
+          value={buckets.get("needs_attention")?.length ?? 0}
+          tone="critical"
+        />
         <StatTile label="Approval required" value={buckets.get("approval_required")?.length ?? 0} />
         <StatTile label="Proposed, open" value={formatMoney(proposed)} />
         <StatTile label="Issued to guests" value={formatMoney(issued)} />
@@ -99,7 +103,11 @@ function RecoveryHome() {
           const rows = buckets.get(bucket) ?? [];
           if (rows.length === 0) return null;
           return (
-            <SectionCard key={bucket} title={BUCKET_LABELS[bucket]} description={BUCKET_HELP[bucket]}>
+            <SectionCard
+              key={bucket}
+              title={BUCKET_LABELS[bucket]}
+              description={BUCKET_HELP[bucket]}
+            >
               <RecoveryListSection
                 recoveries={rows}
                 requirements={reqMap}

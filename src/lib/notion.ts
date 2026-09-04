@@ -51,7 +51,6 @@ export const NOTION_SOURCES: NotionSource[] = [
   },
 ];
 
-
 export type NotionProbe = {
   key: string;
   label: string;

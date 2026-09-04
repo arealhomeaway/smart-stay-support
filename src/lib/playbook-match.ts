@@ -21,7 +21,6 @@ import {
   type PlaybookSubject,
 } from "@/lib/playbooks";
 
-
 export type MatchContext = {
   objectType: PlaybookSubject;
   /** Work type name as stored on the object, if known. */
@@ -83,7 +82,6 @@ function matchesWholePhrase(haystack: string, keyword: string): boolean {
   const pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(keyword)}(?:$|[^a-z0-9])`, "i");
   return pattern.test(haystack);
 }
-
 
 function conditionHolds(condition: PlaybookCondition, ctx: MatchContext): boolean {
   switch (condition) {
@@ -152,13 +150,21 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
     Boolean(m.keywords?.length);
   let identityMatched = false;
 
-  if (m.situations?.length && ctx.situationId && m.situations.map(norm).includes(norm(ctx.situationId))) {
+  if (
+    m.situations?.length &&
+    ctx.situationId &&
+    m.situations.map(norm).includes(norm(ctx.situationId))
+  ) {
     identityMatched = true;
     score += 5;
     reasons.push("the situation selected at intake");
   }
 
-  if (m.work_types?.length && ctx.workTypeName && m.work_types.map(norm).includes(norm(ctx.workTypeName))) {
+  if (
+    m.work_types?.length &&
+    ctx.workTypeName &&
+    m.work_types.map(norm).includes(norm(ctx.workTypeName))
+  ) {
     identityMatched = true;
     score += 4;
     reasons.push(`the work type "${ctx.workTypeName}"`);
@@ -192,7 +198,6 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
     }
   }
 
-
   if (m.categories?.length && ctx.category && m.categories.map(norm).includes(norm(ctx.category))) {
     identityMatched = true;
     score += 2;
@@ -221,7 +226,6 @@ function scoreOne(pb: AuthoredPlaybook, ctx: MatchContext): MatchedPlaybook | nu
     score += 1;
     reasons.push("the kind of work this is");
   }
-
 
   // A Playbook with no matcher at all is a library entry, not contextual.
   if (score === 0) return null;

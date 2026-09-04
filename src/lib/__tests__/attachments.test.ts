@@ -64,7 +64,9 @@ describe("what counts as an acceptable file", () => {
   });
 
   it("refuses an executable and an empty file", () => {
-    expect(validateFile({ name: "x.exe", type: "application/x-msdownload", size: 10 }).ok).toBe(false);
+    expect(validateFile({ name: "x.exe", type: "application/x-msdownload", size: 10 }).ok).toBe(
+      false,
+    );
     expect(validateFile({ name: "x.jpg", type: "image/jpeg", size: 0 }).ok).toBe(false);
   });
 
@@ -78,7 +80,9 @@ describe("what counts as an acceptable file", () => {
 describe("where the bytes are filed", () => {
   it("the path carries the record, so the file survives handoff and closure", () => {
     expect(storagePathFor("ticket", "abc", "key1", "roof.jpg")).toBe("ticket/abc/key1-roof.jpg");
-    expect(storagePathFor("onboarding_task", "t9", "k2", "deed.pdf")).toBe("onboarding_task/t9/k2-deed.pdf");
+    expect(storagePathFor("onboarding_task", "t9", "k2", "deed.pdf")).toBe(
+      "onboarding_task/t9/k2-deed.pdf",
+    );
   });
 
   it("a filename cannot escape its folder", () => {
@@ -111,12 +115,21 @@ describe("who may attach a file", () => {
   const open = { ownerOfProperty: true, requestSlotOpen: true, recordClosed: false };
 
   it("staff may attach to an open record", () => {
-    expect(canUpload(staff, { ownerOfProperty: false, requestSlotOpen: false, recordClosed: false }).allow).toBe(true);
+    expect(
+      canUpload(staff, { ownerOfProperty: false, requestSlotOpen: false, recordClosed: false })
+        .allow,
+    ).toBe(true);
   });
 
   it("a closed record is read-only for staff, but a supervisor can still add", () => {
-    expect(canUpload(staff, { ownerOfProperty: false, requestSlotOpen: false, recordClosed: true }).allow).toBe(false);
-    expect(canUpload(supervisor, { ownerOfProperty: false, requestSlotOpen: false, recordClosed: true }).allow).toBe(true);
+    expect(
+      canUpload(staff, { ownerOfProperty: false, requestSlotOpen: false, recordClosed: true })
+        .allow,
+    ).toBe(false);
+    expect(
+      canUpload(supervisor, { ownerOfProperty: false, requestSlotOpen: false, recordClosed: true })
+        .allow,
+    ).toBe(true);
   });
 
   it("an owner uploads only where a document was asked of them", () => {

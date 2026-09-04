@@ -75,7 +75,11 @@ function ClaimsHome() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Needs attention" value={buckets.get("needs_attention")?.length ?? 0} tone="critical" />
+        <StatTile
+          label="Needs attention"
+          value={buckets.get("needs_attention")?.length ?? 0}
+          tone="critical"
+        />
         <StatTile label="Ready to submit" value={buckets.get("ready_to_submit")?.length ?? 0} />
         <StatTile label="Open value at risk" value={formatMoney(atRisk)} />
         <StatTile label="Submitted, not yet recovered" value={formatMoney(outstanding)} />
@@ -93,7 +97,11 @@ function ClaimsHome() {
           const rows = buckets.get(bucket) ?? [];
           if (rows.length === 0) return null;
           return (
-            <SectionCard key={bucket} title={`${BUCKET_LABELS[bucket]} (${rows.length})`} description={BUCKET_HELP[bucket]}>
+            <SectionCard
+              key={bucket}
+              title={`${BUCKET_LABELS[bucket]} (${rows.length})`}
+              description={BUCKET_HELP[bucket]}
+            >
               <ClaimListSection
                 claims={rows}
                 requirements={reqMap as Map<string, never[]>}

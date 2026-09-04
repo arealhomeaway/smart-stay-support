@@ -9,7 +9,16 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, Camera, MessageSquare, RefreshCw, Send, ShieldCheck, Ticket as TicketIcon, Upload } from "lucide-react";
+import {
+  CalendarClock,
+  Camera,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  ShieldCheck,
+  Ticket as TicketIcon,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,7 +92,9 @@ function CommentThread({ workOrderId }: { workOrderId: string }) {
         <ul className="space-y-2">
           {comments.map((c) => (
             <li key={c.id} className="text-sm">
-              <span className="font-medium">{c.author ?? (c.direction === "outbound" ? "Resolve" : "Breezeway")}</span>
+              <span className="font-medium">
+                {c.author ?? (c.direction === "outbound" ? "Resolve" : "Breezeway")}
+              </span>
               {c.direction === "outbound" && (
                 <span className="ml-2 text-xs text-muted-foreground">
                   {c.identityMode === "staff" ? "sent as themselves" : "sent as ARHA Resolve"}
@@ -197,10 +208,19 @@ function PhotoStrip({ workOrderId, writable }: { workOrderId: string; writable: 
           {data?.notice && <p className="text-xs text-muted-foreground">{data.notice}</p>}
           <div className="flex flex-wrap gap-2">
             {photos.map((p) => (
-              <a key={p.id} href={p.url} target="_blank" rel="noreferrer" title={p.caption ?? "Breezeway photo"}>
+              <a
+                key={p.id}
+                href={p.url}
+                target="_blank"
+                rel="noreferrer"
+                title={p.caption ?? "Breezeway photo"}
+              >
                 <img
                   src={p.url}
-                  alt={p.caption ?? `Breezeway work order photo${p.uploader ? ` from ${p.uploader}` : ""}`}
+                  alt={
+                    p.caption ??
+                    `Breezeway work order photo${p.uploader ? ` from ${p.uploader}` : ""}`
+                  }
                   className="size-24 rounded object-cover"
                   loading="lazy"
                 />
@@ -302,7 +322,10 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
             <WhenLine order={order} />
             {order.assignees.length > 0 && (
               <span className="text-xs text-muted-foreground">
-                {order.assignees.map((a) => a.name).filter(Boolean).join(", ")}
+                {order.assignees
+                  .map((a) => a.name)
+                  .filter(Boolean)
+                  .join(", ")}
               </span>
             )}
           </div>
@@ -333,13 +356,28 @@ function WorkOrderCard({ order, writable }: { order: BreezewayWorkOrder; writabl
         </Button>
         {writable && (
           <>
-            <Button variant="outline" size="sm" disabled={lifecycle.isPending} onClick={() => lifecycle.mutate("close")}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={lifecycle.isPending}
+              onClick={() => lifecycle.mutate("close")}
+            >
               Close in Breezeway
             </Button>
-            <Button variant="outline" size="sm" disabled={lifecycle.isPending} onClick={() => lifecycle.mutate("reopen")}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={lifecycle.isPending}
+              onClick={() => lifecycle.mutate("reopen")}
+            >
               Reopen
             </Button>
-            <Button variant="outline" size="sm" disabled={lifecycle.isPending} onClick={() => lifecycle.mutate("approve")}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={lifecycle.isPending}
+              onClick={() => lifecycle.mutate("approve")}
+            >
               Approve
             </Button>
           </>

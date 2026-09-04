@@ -28,12 +28,7 @@ export type SpecialHandlingSeverity = "critical" | "standard" | "info";
 
 /** The moments a rule can be surfaced before someone acts. */
 export type SpecialHandlingMoment =
-  | "maintenance"
-  | "vendor_dispatch"
-  | "cleaning"
-  | "guest_access"
-  | "owner_contact"
-  | "any";
+  "maintenance" | "vendor_dispatch" | "cleaning" | "guest_access" | "owner_contact" | "any";
 
 export type SpecialHandlingRow = {
   id: string;
@@ -110,7 +105,8 @@ const BLOCKING_TYPES: SpecialHandlingRuleType[] = [
 
 export function isBlocking(rule: SpecialHandlingRow): boolean {
   return (
-    rule.severity === "critical" || BLOCKING_TYPES.includes(rule.rule_type as SpecialHandlingRuleType)
+    rule.severity === "critical" ||
+    BLOCKING_TYPES.includes(rule.rule_type as SpecialHandlingRuleType)
   );
 }
 
@@ -142,7 +138,9 @@ export function rulesForMoment(
       if (r.trade && wantedTrade && r.trade.trim().toLowerCase() !== wantedTrade) return false;
       return true;
     })
-    .sort((a, b) => Number(isBlocking(b)) - Number(isBlocking(a)) || a.title.localeCompare(b.title));
+    .sort(
+      (a, b) => Number(isBlocking(b)) - Number(isBlocking(a)) || a.title.localeCompare(b.title),
+    );
 }
 
 /**

@@ -39,7 +39,8 @@ export async function drainStaffNotifications(supabase: Client, limit = 50) {
   if (error) throw error;
 
   const rows = data ?? [];
-  if (rows.length === 0) return { ok: true as const, considered: 0, emailed: 0, notes: [] as string[] };
+  if (rows.length === 0)
+    return { ok: true as const, considered: 0, emailed: 0, notes: [] as string[] };
 
   const { sendEmail, emailShell, isEmailAddress } = await import("./email.server");
 
@@ -58,7 +59,10 @@ export async function drainStaffNotifications(supabase: Client, limit = 50) {
     if (row.is_demo) {
       await supabase
         .from("staff_notifications")
-        .update({ email_status: "skipped", email_error: "Demo notification — external delivery blocked." })
+        .update({
+          email_status: "skipped",
+          email_error: "Demo notification — external delivery blocked.",
+        })
         .eq("id", row.id);
       continue;
     }
@@ -67,7 +71,10 @@ export async function drainStaffNotifications(supabase: Client, limit = 50) {
     if (!isEmailAddress(to)) {
       await supabase
         .from("staff_notifications")
-        .update({ email_status: "skipped", email_error: "No email address on file for this teammate." })
+        .update({
+          email_status: "skipped",
+          email_error: "No email address on file for this teammate.",
+        })
         .eq("id", row.id);
       continue;
     }

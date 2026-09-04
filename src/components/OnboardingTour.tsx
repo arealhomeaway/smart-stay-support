@@ -73,7 +73,6 @@ const steps: TourStep[] = [
     title: "You're set",
     body: "Log a real ticket to try it end to end. You can replay this tour any time from “Take the tour” in the header.",
   },
-
 ];
 
 function useTargetRect(selector: string | null, tick: number) {

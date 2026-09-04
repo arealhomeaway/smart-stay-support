@@ -38,7 +38,6 @@ export const Route = createFileRoute("/_authenticated/claims/manager")({
   ),
 });
 
-
 const FILTERS: ManagerFilter[] = [
   "unsubmitted",
   "deadline_risk",
@@ -63,7 +62,9 @@ function ClaimsManager() {
     for (const f of FILTERS) {
       map.set(
         f,
-        (claims.data ?? []).filter((c) => matchesFilter(c, f, { requirements: reqMap.get(c.id) ?? [] })).length,
+        (claims.data ?? []).filter((c) =>
+          matchesFilter(c, f, { requirements: reqMap.get(c.id) ?? [] }),
+        ).length,
       );
     }
     return map;
@@ -88,7 +89,10 @@ function ClaimsManager() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Open claims" value={open.length} />
-        <StatTile label="Value at risk" value={formatMoney(open.reduce((s, c) => s + (amountAtRisk(c) ?? 0), 0))} />
+        <StatTile
+          label="Value at risk"
+          value={formatMoney(open.reduce((s, c) => s + (amountAtRisk(c) ?? 0), 0))}
+        />
         <StatTile
           label="Submitted, outstanding"
           value={formatMoney(open.reduce((s, c) => s + (unrecovered(c) ?? 0), 0))}
@@ -97,7 +101,11 @@ function ClaimsManager() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant={active === null ? "default" : "outline"} onClick={() => setActive(null)}>
+        <Button
+          size="sm"
+          variant={active === null ? "default" : "outline"}
+          onClick={() => setActive(null)}
+        >
           All open ({open.length})
         </Button>
         {FILTERS.map((f) => (
@@ -117,7 +125,9 @@ function ClaimsManager() {
       ) : rows.length === 0 ? (
         <EmptyState title="Nothing matches" hint="No claims fall into this view right now." />
       ) : (
-        <SectionCard title={`${active ? MANAGER_FILTER_LABELS[active] : "All open claims"} (${rows.length})`}>
+        <SectionCard
+          title={`${active ? MANAGER_FILTER_LABELS[active] : "All open claims"} (${rows.length})`}
+        >
           <ClaimListSection
             claims={rows}
             requirements={reqMap as Map<string, never[]>}

@@ -10,7 +10,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
-import { decideVendorImportRow, stageLegacyVendors, vendorImportQueue } from "@/lib/vendors.functions";
+import {
+  decideVendorImportRow,
+  stageLegacyVendors,
+  vendorImportQueue,
+} from "@/lib/vendors.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +50,11 @@ export function VendorImportPanel() {
   });
 
   const decideMutation = useMutation({
-    mutationFn: (input: { rowId: string; action: "create" | "match" | "skip"; orgId?: string | null }) =>
+    mutationFn: (input: {
+      rowId: string;
+      action: "create" | "match" | "skip";
+      orgId?: string | null;
+    }) =>
       decide({ data: { rowId: input.rowId, action: input.action, orgId: input.orgId ?? null } }),
     onSuccess: () => {
       toast.success("Decision recorded.");
@@ -63,17 +71,23 @@ export function VendorImportPanel() {
         <CardHeader>
           <CardTitle>Import a legacy vendor list</CardTitle>
           <CardDescription>
-            One vendor per line: name, role, email, phone, departments, groups — tab or comma separated. A CSV export
-            from the old system pastes straight in. The Breezeway people directory export and the Notion Vendor Database
-            export are each recognised on their own and read by column name — Breezeway brings across departments,
-            groups and export notes; Notion brings across specialty, market, pricing, contact and compliance notes.
-            Nothing imports as approved.
+            One vendor per line: name, role, email, phone, departments, groups — tab or comma
+            separated. A CSV export from the old system pastes straight in. The Breezeway people
+            directory export and the Notion Vendor Database export are each recognised on their own
+            and read by column name — Breezeway brings across departments, groups and export notes;
+            Notion brings across specialty, market, pricing, contact and compliance notes. Nothing
+            imports as approved.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1">
             <Label htmlFor="import-label">Batch name</Label>
-            <Input id="import-label" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={120} />
+            <Input
+              id="import-label"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              maxLength={120}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="import-file">Or pick a CSV file</Label>
@@ -100,7 +114,10 @@ export function VendorImportPanel() {
               onChange={(e) => setText(e.target.value)}
             />
           </div>
-          <Button onClick={() => stageMutation.mutate()} disabled={text.trim().length < 3 || stageMutation.isPending}>
+          <Button
+            onClick={() => stageMutation.mutate()}
+            disabled={text.trim().length < 3 || stageMutation.isPending}
+          >
             <Upload className="mr-2 h-4 w-4" />
             Stage for review
           </Button>
@@ -111,7 +128,9 @@ export function VendorImportPanel() {
         <CardHeader>
           <CardTitle>Waiting on a decision</CardTitle>
           <CardDescription>
-            {rows.length === 0 ? "Nothing pending." : `${rows.length} row${rows.length === 1 ? "" : "s"} to review.`}
+            {rows.length === 0
+              ? "Nothing pending."
+              : `${rows.length} row${rows.length === 1 ? "" : "s"} to review.`}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -172,7 +191,9 @@ export function VendorImportPanel() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => decideMutation.mutate({ rowId: r.id, action: "match", orgId: r.matchOrgId })}
+                      onClick={() =>
+                        decideMutation.mutate({ rowId: r.id, action: "match", orgId: r.matchOrgId })
+                      }
                       disabled={decideMutation.isPending}
                     >
                       Attach to {r.matchOrgName}

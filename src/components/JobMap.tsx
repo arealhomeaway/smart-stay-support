@@ -86,7 +86,12 @@ export function JobMap({ pins, onSelect }: Props) {
         position: { lat: pin.lat, lng: pin.lng },
         title: `${pin.name} — ${pin.openJobs.length} open`,
         label: pin.openJobs.length
-          ? { text: String(pin.openJobs.length), color: "#ffffff", fontSize: "11px", fontWeight: "700" }
+          ? {
+              text: String(pin.openJobs.length),
+              color: "#ffffff",
+              fontSize: "11px",
+              fontWeight: "700",
+            }
           : undefined,
         icon: {
           path: g.maps.SymbolPath.CIRCLE,

@@ -180,7 +180,12 @@ export default function NewLead() {
         title="What they need"
         description="Optional — Resolve will prompt for anything missing when it matters."
         actions={
-          <Button variant="ghost" size="sm" className="resolve-press" onClick={() => setMore((m) => !m)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="resolve-press"
+            onClick={() => setMore((m) => !m)}
+          >
             {more ? "Hide details" : "Add details"}
           </Button>
         }
@@ -194,13 +199,25 @@ export default function NewLead() {
               <Input type="date" value={moveIn} onChange={(e) => setMoveIn(e.target.value)} />
             </Field>
             <Field label="Length of stay (days)">
-              <Input value={stayDays} onChange={(e) => setStayDays(e.target.value)} inputMode="numeric" />
+              <Input
+                value={stayDays}
+                onChange={(e) => setStayDays(e.target.value)}
+                inputMode="numeric"
+              />
             </Field>
             <Field label="Bedrooms">
-              <Input value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} inputMode="numeric" />
+              <Input
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+                inputMode="numeric"
+              />
             </Field>
             <Field label="Monthly budget">
-              <Input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="numeric" />
+              <Input
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                inputMode="numeric"
+              />
             </Field>
             <div className="flex items-center gap-6 pt-6">
               <label className="flex items-center gap-2 text-sm">
@@ -212,13 +229,18 @@ export default function NewLead() {
             </div>
             <div className="sm:col-span-2">
               <Field label="Requirements / notes">
-                <Textarea value={requirements} onChange={(e) => setRequirements(e.target.value)} rows={3} />
+                <Textarea
+                  value={requirements}
+                  onChange={(e) => setRequirements(e.target.value)}
+                  rows={3}
+                />
               </Field>
             </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Save now and keep the caller moving — stay dates, budget and requirements can be added from the lead.
+            Save now and keep the caller moving — stay dates, budget and requirements can be added
+            from the lead.
           </p>
         )}
       </SectionCard>
@@ -231,12 +253,18 @@ export default function NewLead() {
         >
           {create.isPending ? "Saving…" : "Save lead"}
         </Button>
-        <Button variant="outline" className="resolve-press" onClick={() => void router.navigate({ to: "/leads" })}>
+        <Button
+          variant="outline"
+          className="resolve-press"
+          onClick={() => void router.navigate({ to: "/leads" })}
+        >
           Cancel
         </Button>
       </div>
       {!canSave && (
-        <p className="text-xs text-muted-foreground">A name plus a phone number or email is enough to save.</p>
+        <p className="text-xs text-muted-foreground">
+          A name plus a phone number or email is enough to save.
+        </p>
       )}
     </div>
   );

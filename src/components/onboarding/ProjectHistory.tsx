@@ -176,7 +176,9 @@ export function ProjectHistory({
       {entries.map((e, i) => (
         <div key={`${e.at}-${i}`} className="border-b border-border/60 px-3 py-2 last:border-b-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Chip className={stateChip("info")}>{KIND_LABEL[e.kind] ?? e.kind.replace(/_/g, " ")}</Chip>
+            <Chip className={stateChip("info")}>
+              {KIND_LABEL[e.kind] ?? e.kind.replace(/_/g, " ")}
+            </Chip>
             <span className="min-w-0 flex-1 text-sm font-medium">{e.summary}</span>
             <span className="numeric text-xs text-muted-foreground">
               {new Date(e.at).toLocaleString()}

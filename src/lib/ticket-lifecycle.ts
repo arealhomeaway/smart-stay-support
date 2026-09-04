@@ -44,7 +44,6 @@ export function ticketStatusLabel(status: string): string {
   return isTicketStatus(status) ? TICKET_STATUS_LABELS[status] : status;
 }
 
-
 /**
  * Resolved vs Closed — one meaning, everywhere.
  *
@@ -88,7 +87,6 @@ export function isLifecycleException(value: string): value is LifecycleException
   return Object.prototype.hasOwnProperty.call(LIFECYCLE_EXCEPTIONS, value);
 }
 
-
 /** Everything the validator needs to judge a transition, gathered by the caller. */
 export type LifecycleFacts = {
   status: string;
@@ -131,7 +129,6 @@ export type LifecycleFacts = {
    * worked the rule out yet.
    */
   finalReviewRequired?: boolean;
-
 };
 
 export type LifecycleVerdict =
@@ -147,7 +144,10 @@ function fail(
 }
 
 /** Is the review date usable — present, parseable and in the future? */
-export function reviewDateProblem(value: string | null | undefined, now = new Date()): string | null {
+export function reviewDateProblem(
+  value: string | null | undefined,
+  now = new Date(),
+): string | null {
   if (!value || !String(value).trim()) return "Set a review date so this doesn't disappear.";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "That review date could not be read. Pick it again.";
@@ -289,7 +289,6 @@ export function validateTicketTransition(
       return { ok: true };
     }
 
-
     default:
       return fail("unknown_status", `"${to}" is not a ticket status.`);
   }
@@ -325,13 +324,10 @@ export function humanizeHistoryText(body: string | null | undefined): string {
   // Single-word system statuses ("waiting", "resolved") are ordinary English
   // elsewhere in a sentence, so they are only repaired where the sentence is
   // plainly reporting a status change.
-  out = out.replace(
-    /\bStatus changed to ([a-z_]+)\b/g,
-    (whole, word: string) =>
-      (TICKET_STATUSES as readonly string[]).includes(word)
-        ? `Status changed to ${TICKET_STATUS_LABELS[word as TicketStatus]}`
-        : whole,
+  out = out.replace(/\bStatus changed to ([a-z_]+)\b/g, (whole, word: string) =>
+    (TICKET_STATUSES as readonly string[]).includes(word)
+      ? `Status changed to ${TICKET_STATUS_LABELS[word as TicketStatus]}`
+      : whole,
   );
   return out;
 }
-

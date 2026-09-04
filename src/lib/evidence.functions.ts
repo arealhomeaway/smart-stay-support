@@ -8,7 +8,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { EVIDENCE_KINDS, EVIDENCE_SUBJECTS, type EvidenceKind, type EvidenceSubject } from "@/lib/evidence";
+import {
+  EVIDENCE_KINDS,
+  EVIDENCE_SUBJECTS,
+  type EvidenceKind,
+  type EvidenceSubject,
+} from "@/lib/evidence";
 
 async function actorFor(supabase: SupabaseClient<Database>, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -37,7 +42,8 @@ function uuid(value: unknown, label = "record") {
 
 function subject(value: unknown): EvidenceSubject {
   const s = String(value ?? "");
-  if (!(EVIDENCE_SUBJECTS as readonly string[]).includes(s)) throw new Error("Unknown record type.");
+  if (!(EVIDENCE_SUBJECTS as readonly string[]).includes(s))
+    throw new Error("Unknown record type.");
   return s as EvidenceSubject;
 }
 
@@ -72,8 +78,11 @@ export const addEvidenceRequirementFn = createServerFn({ method: "POST" })
       required?: boolean;
     }) => {
       const kind = String(input?.kind ?? "general");
-      if (!(EVIDENCE_KINDS as readonly string[]).includes(kind)) throw new Error("Unknown evidence type.");
-      const slotKey = String(input?.slotKey ?? "").trim().slice(0, 60);
+      if (!(EVIDENCE_KINDS as readonly string[]).includes(kind))
+        throw new Error("Unknown evidence type.");
+      const slotKey = String(input?.slotKey ?? "")
+        .trim()
+        .slice(0, 60);
       if (!slotKey) throw new Error("Give the evidence request a short key.");
       return {
         subjectType: subject(input?.subjectType),
@@ -152,7 +161,9 @@ export const acceptEvidenceExceptionFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { itemId: string; reason: string }) => ({
     itemId: uuid(input?.itemId, "photo"),
-    reason: String(input?.reason ?? "").trim().slice(0, 800),
+    reason: String(input?.reason ?? "")
+      .trim()
+      .slice(0, 800),
   }))
   .handler(async ({ data, context }) => {
     const actor = await actorFor(context.supabase, context.userId);

@@ -20,7 +20,9 @@ export const unplacedOwnerRepliesFn = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("approval_email_responses")
-      .select("id, subject, from_name, from_address, received_at, body_text, web_link, candidates, is_demo")
+      .select(
+        "id, subject, from_name, from_address, received_at, body_text, web_link, candidates, is_demo",
+      )
       .eq("status", "needs_review")
       .order("received_at", { ascending: false })
       .limit(50);
@@ -31,11 +33,15 @@ export const unplacedOwnerRepliesFn = createServerFn({ method: "GET" })
 /** The homeowner replies filed against one decision. */
 export const ownerRepliesForApprovalFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { approvalId: string }) => ({ approvalId: uuid(input?.approvalId, "approval") }))
+  .inputValidator((input: { approvalId: string }) => ({
+    approvalId: uuid(input?.approvalId, "approval"),
+  }))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("approval_email_responses")
-      .select("id, subject, from_name, from_address, received_at, body_text, web_link, has_attachments, attachments, status, match_method")
+      .select(
+        "id, subject, from_name, from_address, received_at, body_text, web_link, has_attachments, attachments, status, match_method",
+      )
       .eq("approval_id", data.approvalId)
       .order("received_at", { ascending: false });
     if (error) throw error;

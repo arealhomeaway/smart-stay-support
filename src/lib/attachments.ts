@@ -69,17 +69,49 @@ export type DocumentGroupId =
   | "unfiled";
 
 export const DOCUMENT_GROUPS: { id: DocumentGroupId; label: string; blurb: string }[] = [
-  { id: "property_ownership", label: "Property & Ownership", blurb: "PMA, insurance and ownership records." },
-  { id: "hoa_compliance", label: "HOA & Compliance", blurb: "HOA documents, covenants, permits, licences and compliance references." },
-  { id: "systems_manuals", label: "Property Systems & Manuals", blurb: "Appliance manuals, HVAC, warranties and equipment references." },
-  { id: "access_security", label: "Access & Security", blurb: "Non-secret operational access documents. Codes and passwords never live here." },
-  { id: "onboarding", label: "Onboarding", blurb: "Measurements, design references and onboarding evidence." },
-  { id: "operations", label: "Operations", blurb: "Assessments, operating references and maintenance documentation." },
-  { id: "media", label: "Media", blurb: "Property media that is not OwnerRez listing photography." },
+  {
+    id: "property_ownership",
+    label: "Property & Ownership",
+    blurb: "PMA, insurance and ownership records.",
+  },
+  {
+    id: "hoa_compliance",
+    label: "HOA & Compliance",
+    blurb: "HOA documents, covenants, permits, licences and compliance references.",
+  },
+  {
+    id: "systems_manuals",
+    label: "Property Systems & Manuals",
+    blurb: "Appliance manuals, HVAC, warranties and equipment references.",
+  },
+  {
+    id: "access_security",
+    label: "Access & Security",
+    blurb: "Non-secret operational access documents. Codes and passwords never live here.",
+  },
+  {
+    id: "onboarding",
+    label: "Onboarding",
+    blurb: "Measurements, design references and onboarding evidence.",
+  },
+  {
+    id: "operations",
+    label: "Operations",
+    blurb: "Assessments, operating references and maintenance documentation.",
+  },
+  {
+    id: "media",
+    label: "Media",
+    blurb: "Property media that is not OwnerRez listing photography.",
+  },
   { id: "unfiled", label: "Other & Unfiled", blurb: "Anything not yet filed on a shelf." },
 ];
 
-export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; group: DocumentGroupId }[] = [
+export const DOCUMENT_CATEGORIES: {
+  value: DocumentCategory;
+  label: string;
+  group: DocumentGroupId;
+}[] = [
   { value: "pma", label: "Property management agreement (PMA)", group: "property_ownership" },
   { value: "insurance", label: "Insurance", group: "property_ownership" },
   { value: "ownership", label: "Ownership / property document", group: "property_ownership" },
@@ -91,7 +123,11 @@ export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; grou
   { value: "hvac_doc", label: "HVAC document", group: "systems_manuals" },
   { value: "warranty", label: "Warranty", group: "systems_manuals" },
   { value: "equipment", label: "Equipment reference", group: "systems_manuals" },
-  { value: "access_security", label: "Access & security document (non-secret)", group: "access_security" },
+  {
+    value: "access_security",
+    label: "Access & security document (non-secret)",
+    group: "access_security",
+  },
   { value: "measurements", label: "Measurements", group: "onboarding" },
   { value: "design", label: "Design / reference material", group: "onboarding" },
   { value: "onboarding_evidence", label: "Onboarding evidence", group: "onboarding" },
@@ -123,7 +159,6 @@ export const DOCUMENT_QUICK_LINKS: { category: DocumentCategory; label: string }
   { category: "warranty", label: "Warranty" },
   { category: "manual", label: "Property manual" },
 ];
-
 
 /** Exactly what staff and owners may attach. Anything else is refused. */
 export const ALLOWED_MIME_TYPES = [
@@ -167,8 +202,13 @@ export type ValidationResult = { ok: true } | { ok: false; message: string };
  * One place that decides whether a file may be attached at all.
  * Returns the exact sentence shown to the person uploading.
  */
-export function validateFile(input: { name: string; type: string; size: number }): ValidationResult {
-  if (!input.name.trim()) return { ok: false, message: "That file has no name Resolve can record." };
+export function validateFile(input: {
+  name: string;
+  type: string;
+  size: number;
+}): ValidationResult {
+  if (!input.name.trim())
+    return { ok: false, message: "That file has no name Resolve can record." };
   if (input.size <= 0) return { ok: false, message: "That file is empty — nothing to upload." };
   if (input.size > MAX_FILE_BYTES) {
     return {
@@ -200,6 +240,11 @@ export function safeFilename(name: string): string {
  * The path carries the record, not the person or the status, so a file stays
  * attached through assignment, review, handoff and closure.
  */
-export function storagePathFor(entityType: AttachmentEntity, entityId: string, uploadKey: string, filename: string) {
+export function storagePathFor(
+  entityType: AttachmentEntity,
+  entityId: string,
+  uploadKey: string,
+  filename: string,
+) {
   return `${entityType}/${entityId}/${uploadKey}-${safeFilename(filename)}`;
 }

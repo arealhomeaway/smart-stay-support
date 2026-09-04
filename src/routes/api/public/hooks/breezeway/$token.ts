@@ -16,9 +16,8 @@ export const Route = createFileRoute("/api/public/hooks/breezeway/$token")({
     handlers: {
       GET: async () => new Response("ok", { status: 200 }),
       POST: async ({ request, params }) => {
-        const { secretMatches, webhookPathToken, processBreezewayWebhook } = await import(
-          "@/lib/breezeway-webhook.server"
-        );
+        const { secretMatches, webhookPathToken, processBreezewayWebhook } =
+          await import("@/lib/breezeway-webhook.server");
 
         const expected = webhookPathToken();
         if (!expected || !secretMatches(params.token ?? "", expected)) {

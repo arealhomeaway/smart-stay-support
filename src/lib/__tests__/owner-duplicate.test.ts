@@ -33,7 +33,12 @@ describe("owner near-duplicate detection", () => {
 
   it("does not flag genuinely different work on the same day", () => {
     const hit = findPossibleDuplicate(
-      { entryDate: "2026-09-01", minutes: 60, activity: "Met the landscaper on site", activityCategory: "Review" },
+      {
+        entryDate: "2026-09-01",
+        minutes: 60,
+        activity: "Met the landscaper on site",
+        activityCategory: "Review",
+      },
       [base],
     );
     expect(hit).toBeNull();
@@ -49,7 +54,12 @@ describe("owner near-duplicate detection", () => {
 
   it("does not flag a materially different duration", () => {
     const hit = findPossibleDuplicate(
-      { entryDate: "2026-09-01", minutes: 180, activity: base.activity, activityCategory: "Review" },
+      {
+        entryDate: "2026-09-01",
+        minutes: 180,
+        activity: base.activity,
+        activityCategory: "Review",
+      },
       [base],
     );
     expect(hit).toBeNull();
@@ -57,7 +67,12 @@ describe("owner near-duplicate detection", () => {
 
   it("does not flag when the recorded category differs", () => {
     const hit = findPossibleDuplicate(
-      { entryDate: "2026-09-01", minutes: 60, activity: base.activity, activityCategory: "Vendor coordination" },
+      {
+        entryDate: "2026-09-01",
+        minutes: 60,
+        activity: base.activity,
+        activityCategory: "Vendor coordination",
+      },
       [base],
     );
     expect(hit).toBeNull();

@@ -95,7 +95,11 @@ export async function captureOwnerResponse(
 
   let isDemo = false;
   if (match.approvalId) {
-    const parent = await db.from("approvals").select("is_demo").eq("id", match.approvalId).maybeSingle();
+    const parent = await db
+      .from("approvals")
+      .select("is_demo")
+      .eq("id", match.approvalId)
+      .maybeSingle();
     isDemo = Boolean(parent.data?.is_demo);
   }
 
@@ -150,7 +154,12 @@ export async function captureOwnerResponse(
 }
 
 /** Places a held reply against the decision a person says it answers. */
-export async function linkOwnerResponse(db: Db, userId: string, responseId: string, approvalId: string) {
+export async function linkOwnerResponse(
+  db: Db,
+  userId: string,
+  responseId: string,
+  approvalId: string,
+) {
   const row = await db
     .from("approval_email_responses")
     .select("id, approval_id, subject")
@@ -160,7 +169,11 @@ export async function linkOwnerResponse(db: Db, userId: string, responseId: stri
   if (!row.data) throw new Error("That homeowner reply is not available.");
   if (row.data.approval_id) throw new Error("This reply is already filed against a decision.");
 
-  const approval = await db.from("approvals").select("id, is_demo, title").eq("id", approvalId).maybeSingle();
+  const approval = await db
+    .from("approvals")
+    .select("id, is_demo, title")
+    .eq("id", approvalId)
+    .maybeSingle();
   if (approval.error) throw approval.error;
   if (!approval.data) throw new Error("That decision is not available.");
 
@@ -203,7 +216,8 @@ export async function recordOwnerEmailDecision(
   input: { approvalId: string; decision: OwnerDecision; note: string; responseId?: string | null },
 ) {
   const note = (input.note ?? "").trim();
-  if (note.length < 3) throw new Error("Record what the homeowner said before saving the decision.");
+  if (note.length < 3)
+    throw new Error("Record what the homeowner said before saving the decision.");
 
   const approval = await db
     .from("approvals")

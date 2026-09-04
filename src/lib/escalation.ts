@@ -96,8 +96,7 @@ export function validateEscalation(draft: Partial<EscalationDraft>): string | nu
   if (String(draft.reason ?? "").trim().length < 10)
     return "Give a bit more detail about the problem.";
   if (!String(draft.already_tried ?? "").trim()) return "Say what you have already tried.";
-  if (!String(draft.help_needed ?? "").trim())
-    return "Say what decision or help you need.";
+  if (!String(draft.help_needed ?? "").trim()) return "Say what decision or help you need.";
   return null;
 }
 

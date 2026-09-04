@@ -110,8 +110,6 @@
   --font-sans: Carlito, Calibri, ui-sans-serif, system-ui, sans-serif;
 }
 
-
-
 :root {
   --radius: 0.625rem;
   /* ARHA core palette + the expressive secondary system. */
@@ -203,9 +201,6 @@
   --triage: var(--cool-grey);
 }
 
-
-
-
 .dark {
   --brand-teal: oklch(0.72 0.108 203.1);
   --brand-gold: oklch(0.74 0.095 80.5);
@@ -285,7 +280,6 @@
   --triage: var(--cool-grey);
 }
 
-
 /**
  * Cross-team triage blocks: slate colour plus a diagonal hatch, so they are
  * distinguishable from a solid team block without relying on colour alone.
@@ -298,8 +292,6 @@
     transparent 2px 6px
   );
 }
-
-
 
 @layer base {
   * {
@@ -337,7 +329,6 @@
     letter-spacing: -0.015em;
   }
 
-
   /* One visible, consistent focus treatment for every interactive control. */
   :focus-visible {
     outline: 2px solid var(--color-ring);
@@ -355,7 +346,8 @@
  */
 @theme inline {
   --shadow-card: 0 1px 2px oklch(0.32 0.015 220 / 5%);
-  --shadow-raised: 0 6px 20px -10px oklch(0.32 0.015 220 / 18%), 0 1px 2px oklch(0.32 0.015 220 / 5%);
+  --shadow-raised:
+    0 6px 20px -10px oklch(0.32 0.015 220 / 18%), 0 1px 2px oklch(0.32 0.015 220 / 5%);
 }
 
 /* Standard page section surface: card background, hairline border, soft rest. */
@@ -421,7 +413,6 @@
   letter-spacing: -0.01em;
 }
 
-
 /*
  * Workflow language.
  *
@@ -451,7 +442,6 @@
   flex: none;
 }
 
-
 /* A section band: a heading strip that separates major page regions. */
 @utility band {
   display: flex;
@@ -472,13 +462,16 @@
 /* Charcoal hero plate used for branded and executive surfaces. */
 @utility plate {
   background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in oklab, var(--color-brand-teal) 26%, transparent), transparent 60%),
+    radial-gradient(
+      120% 140% at 100% 0%,
+      color-mix(in oklab, var(--color-brand-teal) 26%, transparent),
+      transparent 60%
+    ),
     var(--color-plate);
   color: oklch(0.96 0.006 88.6);
   border: 1px solid color-mix(in oklab, white 12%, transparent);
   border-radius: var(--radius-2xl);
 }
-
 
 /* --------------------------------------------------------------------------
    Motion: one ease, two durations. Feedback and momentum, never decoration.
@@ -544,15 +537,27 @@
 
 /* Route transition feedback: a calm indeterminate sweep, never a blocking overlay. */
 @keyframes route-progress {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
 }
 
 /* Short, tasteful milestone burst. Respects reduced-motion. */
 @keyframes confetti-fall {
-  0% { transform: translateY(-14px) rotate(0deg); opacity: 0; }
-  15% { opacity: 1; }
-  100% { transform: translateY(56px) rotate(220deg); opacity: 0; }
+  0% {
+    transform: translateY(-14px) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(56px) rotate(220deg);
+    opacity: 0;
+  }
 }
 
 @utility confetti-piece {
@@ -565,5 +570,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .confetti-piece { animation: none; opacity: 0; }
+  .confetti-piece {
+    animation: none;
+    opacity: 0;
+  }
 }

@@ -123,24 +123,38 @@ function computeStats(rows: Ticket[]) {
   const open = rows.filter((t) => OPEN_STATUSES.includes(t.status));
   const guestImpacting = rows.filter(isGuestImpacting);
 
-  const ackMinutes = rows.filter((t) => t.acknowledged_at).map((t) => minutesBetween(t.reported_at, t.acknowledged_at!));
+  const ackMinutes = rows
+    .filter((t) => t.acknowledged_at)
+    .map((t) => minutesBetween(t.reported_at, t.acknowledged_at!));
   const closeMinutes = resolved.map((t) => minutesBetween(t.reported_at, t.resolved_at!));
 
   const respScope = rows.filter((t) => t.response_due_at && t.acknowledged_at);
-  const respOnTime = respScope.filter((t) => new Date(t.acknowledged_at!) <= new Date(t.response_due_at!));
+  const respOnTime = respScope.filter(
+    (t) => new Date(t.acknowledged_at!) <= new Date(t.response_due_at!),
+  );
   const guestRespScope = respScope.filter(isGuestImpacting);
-  const guestRespOnTime = guestRespScope.filter((t) => new Date(t.acknowledged_at!) <= new Date(t.response_due_at!));
+  const guestRespOnTime = guestRespScope.filter(
+    (t) => new Date(t.acknowledged_at!) <= new Date(t.response_due_at!),
+  );
 
   const actionScope = rows.filter((t) => t.action_due_at && t.action_started_at);
-  const actionOnTime = actionScope.filter((t) => new Date(t.action_started_at!) <= new Date(t.action_due_at!));
+  const actionOnTime = actionScope.filter(
+    (t) => new Date(t.action_started_at!) <= new Date(t.action_due_at!),
+  );
 
   const reopened = rows.filter((t) => (t.reopen_count ?? 0) > 0);
   const avoidableReopens = reopened.filter((t) => t.avoidable_reopen);
-  const firstTimeFix = resolved.length ? rate(resolved.length - reopened.filter((t) => t.resolved_at).length, resolved.length) : null;
+  const firstTimeFix = resolved.length
+    ? rate(resolved.length - reopened.filter((t) => t.resolved_at).length, resolved.length)
+    : null;
 
-  const qaReviewed = resolved.filter((t) => t.closure_qa_result && t.closure_qa_result !== "not_reviewed");
+  const qaReviewed = resolved.filter(
+    (t) => t.closure_qa_result && t.closure_qa_result !== "not_reviewed",
+  );
   const qaFailed = qaReviewed.filter((t) => t.closure_qa_result !== "pass");
-  const qaPending = resolved.filter((t) => !t.closure_qa_result || t.closure_qa_result === "not_reviewed");
+  const qaPending = resolved.filter(
+    (t) => !t.closure_qa_result || t.closure_qa_result === "not_reviewed",
+  );
 
   const escalated = rows.filter((t) => t.escalation_level && t.escalation_level !== "none");
   const supervisorCaught = rows.filter((t) => t.supervisor_caught);
@@ -213,18 +227,32 @@ function healthScore(s: Stats) {
     },
     {
       label: "Backlog under control",
-      value: s.open.length === 0 ? 100 : Math.max(0, 100 - Math.round((s.breachedOpen.length / s.open.length) * 100)),
+      value:
+        s.open.length === 0
+          ? 100
+          : Math.max(0, 100 - Math.round((s.breachedOpen.length / s.open.length) * 100)),
       weight: 0.15,
       hint: "Open tickets not currently past a clock",
     },
   ];
   const scored = parts.filter((p) => p.value !== null);
   const weight = scored.reduce((sum, p) => sum + p.weight, 0);
-  const score = weight === 0 ? null : Math.round(scored.reduce((sum, p) => sum + (p.value as number) * p.weight, 0) / weight);
+  const score =
+    weight === 0
+      ? null
+      : Math.round(scored.reduce((sum, p) => sum + (p.value as number) * p.weight, 0) / weight);
   return { score, parts };
 }
 
-function Delta({ current, previous, goodDirection }: { current: number | null; previous: number | null; goodDirection: "up" | "down" }) {
+function Delta({
+  current,
+  previous,
+  goodDirection,
+}: {
+  current: number | null;
+  previous: number | null;
+  goodDirection: "up" | "down";
+}) {
   if (current === null || previous === null) return null;
   const diff = Math.round(current - previous);
   if (diff === 0) {
@@ -237,7 +265,9 @@ function Delta({ current, previous, goodDirection }: { current: number | null; p
   const good = goodDirection === "up" ? diff > 0 : diff < 0;
   const Icon = diff > 0 ? ArrowUpRight : ArrowDownRight;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs ${good ? "text-primary" : "text-destructive"}`}>
+    <span
+      className={`inline-flex items-center gap-1 text-xs ${good ? "text-primary" : "text-destructive"}`}
+    >
       <Icon className="size-3" />
       {diff > 0 ? "+" : ""}
       {diff} vs prior period
@@ -245,7 +275,13 @@ function Delta({ current, previous, goodDirection }: { current: number | null; p
   );
 }
 
-function Bars({ rows, empty }: { rows: { label: string; count: number; sub?: string }[]; empty: string }) {
+function Bars({
+  rows,
+  empty,
+}: {
+  rows: { label: string; count: number; sub?: string }[];
+  empty: string;
+}) {
   if (rows.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
@@ -257,7 +293,10 @@ function Bars({ rows, empty }: { rows: { label: string; count: number; sub?: str
             <span className="shrink-0 text-muted-foreground">{r.sub ?? r.count}</span>
           </div>
           <div className="h-2 rounded-full bg-secondary">
-            <div className="h-2 rounded-full bg-accent" style={{ width: `${(r.count / max) * 100}%` }} />
+            <div
+              className="h-2 rounded-full bg-accent"
+              style={{ width: `${(r.count / max) * 100}%` }}
+            />
           </div>
         </div>
       ))}
@@ -374,9 +413,13 @@ function Analytics() {
   ];
 
   // --- Root cause -----------------------------------------------------------
-  const propertyKey = (t: Ticket) => t.properties?.nickname ?? t.properties?.name ?? "No home linked";
+  const propertyKey = (t: Ticket) =>
+    t.properties?.nickname ?? t.properties?.name ?? "No home linked";
 
-  const recurring = new Map<string, { home: string; category: string; count: number; reopens: number; p1: number }>();
+  const recurring = new Map<
+    string,
+    { home: string; category: string; count: number; reopens: number; p1: number }
+  >();
   for (const t of rows) {
     if (!t.property_id) continue;
     const key = `${t.property_id}:${t.category}`;
@@ -444,14 +487,18 @@ function Analytics() {
     const inP = rows.filter((t) => t.priority === pr.value);
     const closed = inP.filter((t) => t.resolved_at);
     const scope = inP.filter((t) => t.response_due_at && t.acknowledged_at);
-    const onTime = scope.filter((t) => new Date(t.acknowledged_at!) <= new Date(t.response_due_at!));
+    const onTime = scope.filter(
+      (t) => new Date(t.acknowledged_at!) <= new Date(t.response_due_at!),
+    );
     return {
       key: pr.value,
       label: priorityMeta(pr.value).short,
       count: inP.length,
       openCount: inP.filter((t) => OPEN_STATUSES.includes(t.status)).length,
       sla: rate(onTime.length, scope.length),
-      medianClose: fmtDuration(median(closed.map((t) => minutesBetween(t.reported_at, t.resolved_at!)))),
+      medianClose: fmtDuration(
+        median(closed.map((t) => minutesBetween(t.reported_at, t.resolved_at!))),
+      ),
     };
   });
 
@@ -507,15 +554,17 @@ function Analytics() {
           <div>
             <h2 className="text-[1.0625rem] font-semibold tracking-tight">Operational health</h2>
             <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">
-              Weighted toward what actually hurts the business: guest-impacting response, work that stays
-              fixed, closure quality and a backlog that isn't quietly aging.
+              Weighted toward what actually hurts the business: guest-impacting response, work that
+              stays fixed, closure quality and a backlog that isn't quietly aging.
             </p>
           </div>
           <Delta current={health.score} previous={priorHealth.score} goodDirection="up" />
         </header>
         <div className="grid gap-6 px-5 py-4 lg:grid-cols-[10rem_1fr]">
           <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-sunken py-4 text-center">
-            <p className="numeric text-5xl font-semibold">{health.score === null ? "—" : health.score}</p>
+            <p className="numeric text-5xl font-semibold">
+              {health.score === null ? "—" : health.score}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">out of 100</p>
           </div>
           <div className="space-y-3">
@@ -526,7 +575,10 @@ function Analytics() {
                   <span className="numeric text-sm font-semibold">{fmtPct(part.value)}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 rounded-full bg-secondary">
-                  <div className="h-1.5 rounded-full bg-primary" style={{ width: `${part.value ?? 0}%` }} />
+                  <div
+                    className="h-1.5 rounded-full bg-primary"
+                    style={{ width: `${part.value ?? 0}%` }}
+                  />
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{part.hint}</p>
               </div>
@@ -543,11 +595,25 @@ function Analytics() {
               key={k.label}
               label={k.label}
               value={k.value}
-              tone={k.current == null ? "neutral" : k.goodDirection === "up" ? (k.current >= (k.previous ?? k.current) ? "positive" : "attention") : (k.current <= (k.previous ?? k.current) ? "positive" : "attention")}
+              tone={
+                k.current == null
+                  ? "neutral"
+                  : k.goodDirection === "up"
+                    ? k.current >= (k.previous ?? k.current)
+                      ? "positive"
+                      : "attention"
+                    : k.current <= (k.previous ?? k.current)
+                      ? "positive"
+                      : "attention"
+              }
               hint={
                 <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <span>{k.hint}</span>
-                  <Delta current={k.current} previous={k.previous} goodDirection={k.goodDirection} />
+                  <Delta
+                    current={k.current}
+                    previous={k.previous}
+                    goodDirection={k.goodDirection}
+                  />
                 </span>
               }
             />
@@ -559,14 +625,21 @@ function Analytics() {
           </summary>
           <div className="surface mt-2 divide-y">
             {moreKpis.map((k) => (
-              <div key={k.label} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+              <div
+                key={k.label}
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+              >
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{k.label}</p>
                   <p className="text-xs text-muted-foreground">{k.hint}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <p className="numeric text-lg font-semibold">{k.value}</p>
-                  <Delta current={k.current} previous={k.previous} goodDirection={k.goodDirection} />
+                  <Delta
+                    current={k.current}
+                    previous={k.previous}
+                    goodDirection={k.goodDirection}
+                  />
                 </div>
               </div>
             ))}
@@ -578,10 +651,12 @@ function Analytics() {
         <SectionBand title="Root cause" hint="Where the same problem keeps coming back" />
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="surface p-4">
-            <h3 className="text-[0.9375rem] font-semibold">Repeat failures — same home, same problem</h3>
+            <h3 className="text-[0.9375rem] font-semibold">
+              Repeat failures — same home, same problem
+            </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Two or more of the same category at one home in this window. This is where a permanent fix
-              or a vendor conversation pays for itself.
+              Two or more of the same category at one home in this window. This is where a permanent
+              fix or a vendor conversation pays for itself.
             </p>
             <div className="mt-3 space-y-1.5">
               {repeatFailures.length === 0 ? (
@@ -622,8 +697,8 @@ function Analytics() {
           <div className="surface p-4">
             <h3 className="text-[0.9375rem] font-semibold">What open work is stuck on</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Every open ticket in a waiting state, grouped by who or what we're waiting for. Chronic
-              entries here are process problems, not people problems.
+              Every open ticket in a waiting state, grouped by who or what we're waiting for.
+              Chronic entries here are process problems, not people problems.
             </p>
             <div className="mt-3">
               <Bars rows={waitingOn} empty="Nothing is parked in a waiting state right now." />
@@ -632,7 +707,9 @@ function Analytics() {
 
           <div className="surface p-4">
             <h3 className="text-[0.9375rem] font-semibold">Why we ran late</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Recorded late reasons on tickets that missed a clock.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Recorded late reasons on tickets that missed a clock.
+            </p>
             <div className="mt-3">
               <Bars rows={lateReasons} empty="No late reasons recorded in this window." />
             </div>
@@ -643,17 +720,35 @@ function Analytics() {
       <div>
         <SectionBand title="Right now" hint="Live exposure, not history" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatTile label="Open past a clock" value={s.breachedOpen.length} tone={s.breachedOpen.length > 0 ? "critical" : "positive"} />
-          <StatTile label="Promised update overdue" value={s.promiseOverdue.length} tone={s.promiseOverdue.length > 0 ? "attention" : "positive"} />
-          <StatTile label="Closed without final message" value={s.commsMissed.length} tone={s.commsMissed.length > 0 ? "attention" : "positive"} />
-          <StatTile label="Closed but never QA'd" value={s.qaPending} tone={s.qaPending > 0 ? "attention" : "positive"} />
+          <StatTile
+            label="Open past a clock"
+            value={s.breachedOpen.length}
+            tone={s.breachedOpen.length > 0 ? "critical" : "positive"}
+          />
+          <StatTile
+            label="Promised update overdue"
+            value={s.promiseOverdue.length}
+            tone={s.promiseOverdue.length > 0 ? "attention" : "positive"}
+          />
+          <StatTile
+            label="Closed without final message"
+            value={s.commsMissed.length}
+            tone={s.commsMissed.length > 0 ? "attention" : "positive"}
+          />
+          <StatTile
+            label="Closed but never QA'd"
+            value={s.qaPending}
+            tone={s.qaPending > 0 ? "attention" : "positive"}
+          />
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="surface p-4">
           <h3 className="text-[0.9375rem] font-semibold">Backlog aging</h3>
-          <p className="mt-1 text-xs text-muted-foreground">How long open tickets have been sitting.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            How long open tickets have been sitting.
+          </p>
           <div className="mt-3">
             <Bars rows={ageBuckets.filter((b) => b.count > 0)} empty="Nothing open right now." />
           </div>
@@ -669,7 +764,10 @@ function Analytics() {
       </div>
 
       <div>
-        <SectionBand title="By priority" hint="Volume, response compliance and median time to close" />
+        <SectionBand
+          title="By priority"
+          hint="Volume, response compliance and median time to close"
+        />
         <div className="surface overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -684,7 +782,9 @@ function Analytics() {
             <tbody>
               {byPriority.map((pr) => (
                 <tr key={pr.key} className="border-b last:border-0">
-                  <td className="px-5 py-2.5"><Badge variant="outline">{pr.label}</Badge></td>
+                  <td className="px-5 py-2.5">
+                    <Badge variant="outline">{pr.label}</Badge>
+                  </td>
                   <td className="numeric px-5 py-2.5 text-right">{pr.count}</td>
                   <td className="numeric px-5 py-2.5 text-right">{pr.openCount}</td>
                   <td className="numeric px-5 py-2.5 text-right">{fmtPct(pr.sla)}</td>
@@ -697,15 +797,18 @@ function Analytics() {
       </div>
 
       <div>
-        <SectionBand title="Homes costing us the most" hint="Ranked by weight, not raw count — a P1 and a reopen count for more than a routine request" />
+        <SectionBand
+          title="Homes costing us the most"
+          hint="Ranked by weight, not raw count — a P1 and a reopen count for more than a routine request"
+        />
         <div className="surface p-4">
           <Bars rows={byProperty} empty="Nothing logged in this window yet." />
         </div>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Tickets reported in the last {days} days, compared with the {days} days before that. {s.open.length} are still
-        open right now.
+        Tickets reported in the last {days} days, compared with the {days} days before that.{" "}
+        {s.open.length} are still open right now.
       </p>
     </div>
   );

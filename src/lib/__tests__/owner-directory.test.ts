@@ -2,7 +2,13 @@ import { describe, expect, it } from "bun:test";
 import { resolvePrimaryOwners } from "@/lib/owner-directory.server";
 
 const owners = [
-  { id: 1, first_name: "Dana", last_name: "Reyes", email_address: "dana@example.com", phone: { number: "555-0100" } },
+  {
+    id: 1,
+    first_name: "Dana",
+    last_name: "Reyes",
+    email_address: "dana@example.com",
+    phone: { number: "555-0100" },
+  },
   { id: 2, first_name: "Sam", last_name: "Okafor", email_address: "sam@example.com", phone: null },
 ];
 

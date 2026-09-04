@@ -15,9 +15,21 @@ import { Badge } from "@/components/ui/badge";
 type Props = { ticketId: string; priority: string | null };
 
 const SCALES = [
-  { key: "thoroughness", label: "Thoroughness", help: "Finished the whole job — no holes left open, no follow-up needed." },
-  { key: "communication", label: "Communication", help: "Kept the coordinator and guest informed without being chased." },
-  { key: "timeliness", label: "Timeliness", help: "Responded and arrived inside the window we promised the guest." },
+  {
+    key: "thoroughness",
+    label: "Thoroughness",
+    help: "Finished the whole job — no holes left open, no follow-up needed.",
+  },
+  {
+    key: "communication",
+    label: "Communication",
+    help: "Kept the coordinator and guest informed without being chased.",
+  },
+  {
+    key: "timeliness",
+    label: "Timeliness",
+    help: "Responded and arrived inside the window we promised the guest.",
+  },
 ] as const;
 
 /** Staff-side scoring of a finished vendor job. Feeds the vendor's private scorecard. */
@@ -77,8 +89,8 @@ export function VendorRatingPanel({ ticketId, priority }: Props) {
           {rating && <Badge variant="outline">Scored</Badge>}
         </CardTitle>
         <CardDescription>
-          Scores are private to the vendor — they see their own points and an anonymous ranking, never anyone
-          else's. Thoroughness carries the most weight.
+          Scores are private to the vendor — they see their own points and an anonymous ranking,
+          never anyone else's. Thoroughness carries the most weight.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -107,7 +119,10 @@ export function VendorRatingPanel({ ticketId, priority }: Props) {
 
         <div className="grid gap-2 sm:grid-cols-3">
           <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={photosComplete} onCheckedChange={(v) => setPhotosComplete(v === true)} />
+            <Checkbox
+              checked={photosComplete}
+              onCheckedChange={(v) => setPhotosComplete(v === true)}
+            />
             Photos complete
           </label>
           <label className="flex items-center gap-2 text-sm">

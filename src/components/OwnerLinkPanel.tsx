@@ -86,8 +86,8 @@ export function OwnerLinkPanel({
         <DialogHeader>
           <DialogTitle>Owner of record</DialogTitle>
           <DialogDescription>
-            Search the canonical owner list first. Resolve reuses the same owner record when a person
-            owns more than one home, so a duplicate is never created.
+            Search the canonical owner list first. Resolve reuses the same owner record when a
+            person owns more than one home, so a duplicate is never created.
           </DialogDescription>
         </DialogHeader>
 

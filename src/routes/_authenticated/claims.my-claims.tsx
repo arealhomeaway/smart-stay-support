@@ -36,7 +36,9 @@ function MyClaims() {
     [claims.data, userId],
   );
 
-  const urgent = mine.filter((c) => ["overdue", "today", "approaching"].includes(deadlineState(c.deadline_on)));
+  const urgent = mine.filter((c) =>
+    ["overdue", "today", "approaching"].includes(deadlineState(c.deadline_on)),
+  );
 
   return (
     <div className="space-y-5">
@@ -47,7 +49,11 @@ function MyClaims() {
       />
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile label="Open claims" value={mine.length} />
-        <StatTile label="Deadline within a week" value={urgent.length} tone={urgent.length ? "critical" : "neutral"} />
+        <StatTile
+          label="Deadline within a week"
+          value={urgent.length}
+          tone={urgent.length ? "critical" : "neutral"}
+        />
         <StatTile
           label="Value at risk"
           value={formatMoney(mine.reduce((s, c) => s + (amountAtRisk(c) ?? 0), 0))}

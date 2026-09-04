@@ -49,17 +49,72 @@ export const SCOPE_MODULES: {
   /** Default for a new project when Resolve has no better signal. */
   defaultOn: boolean;
 }[] = [
-  { key: "utilities", label: "Utility setup", blurb: "Accounts, transfers, autopay and billing owner.", defaultOn: true },
-  { key: "repairs", label: "Repair work", blurb: "Make-ready repairs, estimates and approvals.", defaultOn: true },
-  { key: "smart_lock", label: "Smart lock / access", blurb: "Access devices, codes and handover to Operations.", defaultOn: true },
-  { key: "existing_appliances", label: "Existing appliances", blurb: "Document and assess appliances already in the home.", defaultOn: true },
-  { key: "new_appliances", label: "New appliances", blurb: "Purchase, delivery, install and warranty capture.", defaultOn: false },
-  { key: "pool", label: "Pool / hot tub", blurb: "Service vendor, safety, chemicals and equipment records.", defaultOn: false },
-  { key: "hoa", label: "HOA / covenants", blurb: "Covenant evidence, restrictions and registration.", defaultOn: false },
-  { key: "cameras", label: "Cameras / security", blurb: "Exterior cameras, alarm and monitoring setup.", defaultOn: false },
-  { key: "furniture_warranty", label: "Furniture warranty", blurb: "Warranty registration and claim references.", defaultOn: false },
-  { key: "landscaping", label: "Landscaping", blurb: "Recurring yard care and responsibility split.", defaultOn: false },
-  { key: "active_owner", label: "Active Owner program", blurb: "This property participates in owner participation.", defaultOn: false },
+  {
+    key: "utilities",
+    label: "Utility setup",
+    blurb: "Accounts, transfers, autopay and billing owner.",
+    defaultOn: true,
+  },
+  {
+    key: "repairs",
+    label: "Repair work",
+    blurb: "Make-ready repairs, estimates and approvals.",
+    defaultOn: true,
+  },
+  {
+    key: "smart_lock",
+    label: "Smart lock / access",
+    blurb: "Access devices, codes and handover to Operations.",
+    defaultOn: true,
+  },
+  {
+    key: "existing_appliances",
+    label: "Existing appliances",
+    blurb: "Document and assess appliances already in the home.",
+    defaultOn: true,
+  },
+  {
+    key: "new_appliances",
+    label: "New appliances",
+    blurb: "Purchase, delivery, install and warranty capture.",
+    defaultOn: false,
+  },
+  {
+    key: "pool",
+    label: "Pool / hot tub",
+    blurb: "Service vendor, safety, chemicals and equipment records.",
+    defaultOn: false,
+  },
+  {
+    key: "hoa",
+    label: "HOA / covenants",
+    blurb: "Covenant evidence, restrictions and registration.",
+    defaultOn: false,
+  },
+  {
+    key: "cameras",
+    label: "Cameras / security",
+    blurb: "Exterior cameras, alarm and monitoring setup.",
+    defaultOn: false,
+  },
+  {
+    key: "furniture_warranty",
+    label: "Furniture warranty",
+    blurb: "Warranty registration and claim references.",
+    defaultOn: false,
+  },
+  {
+    key: "landscaping",
+    label: "Landscaping",
+    blurb: "Recurring yard care and responsibility split.",
+    defaultOn: false,
+  },
+  {
+    key: "active_owner",
+    label: "Active Owner program",
+    blurb: "This property participates in owner participation.",
+    defaultOn: false,
+  },
 ];
 
 export function moduleLabel(key: string) {
@@ -183,7 +238,6 @@ export function splitByScope<T extends { title: string }>(tasks: T[], scope: Pro
 }
 
 /* --------------------------------------------------- repair spend authority */
-
 
 /**
  * Onboarding repairs follow the same authority policy Operations uses — the

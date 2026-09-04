@@ -34,7 +34,13 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 /** Staff-side dispatch: hand a ticket to a vendor and it appears in their portal. */
-export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendorStatus, onChanged }: Props) {
+export function VendorDispatchPanel({
+  ticketId,
+  vendorUserId,
+  vendorBrief,
+  vendorStatus,
+  onChanged,
+}: Props) {
   const qc = useQueryClient();
   const rankFn = useServerFn(rankVendors);
   const assignFn = useServerFn(assignVendor);
@@ -71,14 +77,15 @@ export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendo
           )}
         </CardTitle>
         <CardDescription>
-          Send this to a vendor and it lands in their portal with the address, access notes and the required steps
-          — no separate text thread to chase.
+          Send this to a vendor and it lands in their portal with the address, access notes and the
+          required steps — no separate text thread to chase.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No vendor logins yet. Have the vendor sign up, then set them to “Vendor” on the Seats page.
+            No vendor logins yet. Have the vendor sign up, then set them to “Vendor” on the Seats
+            page.
           </p>
         ) : (
           <>
@@ -106,7 +113,9 @@ export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendo
                       <span className="flex items-center gap-1">
                         {i === 0 && v.id === best?.id && <Badge>Recommended</Badge>}
                         {v.tier === "gold" && <Badge variant="secondary">Gold Standard</Badge>}
-                        {v.tier === "trusted" && <Badge variant="outline">{TIER_LABEL.trusted}</Badge>}
+                        {v.tier === "trusted" && (
+                          <Badge variant="outline">{TIER_LABEL.trusted}</Badge>
+                        )}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -138,7 +147,10 @@ export function VendorDispatchPanel({ ticketId, vendorUserId, vendorBrief, vendo
               placeholder="What you need done, what good looks like, and anything not to do — e.g. do not leave the wall open, seal and paint before you leave."
             />
             <div className="flex flex-wrap gap-2">
-              <Button disabled={!selected || save.isPending} onClick={() => save.mutate({ vendorUserId: selected })}>
+              <Button
+                disabled={!selected || save.isPending}
+                onClick={() => save.mutate({ vendorUserId: selected })}
+              >
                 {vendorUserId ? "Update dispatch" : "Dispatch to vendor"}
               </Button>
               {vendorUserId && (

@@ -77,7 +77,6 @@ export async function gatherLifecycleFacts(
       .eq("ticket_id", ticketId),
   ]);
 
-
   const wt = (workType as any)?.data as {
     name?: string;
     required_closure_evidence?: string;
@@ -99,7 +98,12 @@ export async function gatherLifecycleFacts(
       deleted_at: string | null;
       mime_type: string | null;
     }[]
-  ).filter((d) => !d.deleted_at && (d.upload_status === "stored" || d.upload_status === "uploaded") && Number(d.size_bytes ?? 0) > 0);
+  ).filter(
+    (d) =>
+      !d.deleted_at &&
+      (d.upload_status === "stored" || d.upload_status === "uploaded") &&
+      Number(d.size_bytes ?? 0) > 0,
+  );
 
   const evidenceLabel = wt?.required_closure_evidence ?? null;
   const dispatchable = orderRows.filter((o) => o.vendor_org_id || o.vendor_name);
@@ -161,7 +165,6 @@ export async function gatherLifecycleFacts(
       ownerSensitive: Boolean(ticket.owner_notified || ticket.owner_approval_required),
     }).required,
   };
-
 
   return { facts, ticket };
 }
@@ -245,7 +248,6 @@ export async function applyStatusChange(
       ? `Status changed to ${ticketStatusLabel(input.status)} under a named exception — ${LIFECYCLE_EXCEPTIONS[usedException]}: ${input.exceptionReason}`
       : `Status changed to ${ticketStatusLabel(input.status)}.`,
   });
-
 
   if (usedException) {
     await db.from("audit_log").insert({

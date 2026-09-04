@@ -1,10 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import {
-  SITUATIONS,
-  priorityReason,
-  resolveWorkType,
-  situationById,
-} from "../situations";
+import { SITUATIONS, priorityReason, resolveWorkType, situationById } from "../situations";
 import { mechanicalPriority } from "../tickets";
 
 /** The live catalog names this map depends on. */

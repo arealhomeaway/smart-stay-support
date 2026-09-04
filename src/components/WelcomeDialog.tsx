@@ -52,11 +52,14 @@ export function WelcomeDialog({
         >
           <X className="size-4" />
         </button>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">New here?</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          New here?
+        </p>
         <h2 className="mt-1 font-display text-2xl font-semibold">Welcome to Resolve</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Resolve turns a guest message into one tracked ticket with an owner, a response clock and a playbook that has
-          to be finished before anything can be closed. Take two minutes and see how it works.
+          Resolve turns a guest message into one tracked ticket with an owner, a response clock and
+          a playbook that has to be finished before anything can be closed. Take two minutes and see
+          how it works.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <Button
@@ -90,7 +93,10 @@ export function WelcomeDialog({
             </span>
           </Button>
         </div>
-        <button onClick={onDismiss} className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:underline">
+        <button
+          onClick={onDismiss}
+          className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:underline"
+        >
           Skip for now — I'll find it under Help
         </button>
       </div>

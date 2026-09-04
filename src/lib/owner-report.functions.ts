@@ -33,9 +33,8 @@ export const ownerReportFile = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ format: z.enum(["pdf", "csv"]) }).parse(d))
   .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }) => {
-    const { buildOwnerReport, reportCsv, reportPdf, reportFileNames } = await import(
-      "./owner-report.server"
-    );
+    const { buildOwnerReport, reportCsv, reportPdf, reportFileNames } =
+      await import("./owner-report.server");
     const programId = await ownProgramId(context.supabase as never, context.userId);
     const report = await buildOwnerReport(context.supabase as never, programId);
     const names = reportFileNames(report);

@@ -20,36 +20,45 @@ type Client = SupabaseClient<Database>;
 const PROPERTY_FIELDS =
   "id, name, nickname, address_line1, city, state, postal_code, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, planned_closing_on, actual_closing_on, actual_access_on, handoff_accepted_at, quarterly_review_due_on, active, is_demo";
 
-async function assertCap(supabase: Client, userId: string, fn: "is_supervisor" | "is_onboarding_staff") {
+async function assertCap(
+  supabase: Client,
+  userId: string,
+  fn: "is_supervisor" | "is_onboarding_staff",
+) {
   const { data, error } = await supabase.rpc(fn, { _user_id: userId });
   if (error) throw new Error("Could not verify your access level.");
   if (!data) throw new Error("You do not have access to this action.");
 }
 
 export async function loadOnboardingWorkspace(supabase: Client) {
-  const [props, tasks, handoffs, people, notes, reviews, extDbs, extRecords, docs] = await Promise.all([
-    supabase.from("properties").select(PROPERTY_FIELDS).order("name"),
-    supabase.from("onboarding_tasks").select("*").is("archived_at", null).order("sort_order"),
-    supabase
-      .from("property_handoffs")
-      .select("*")
-      .is("archived_at", null)
-      .order("requested_at", { ascending: false }),
-    supabase.from("profiles").select("id, full_name, email").order("full_name"),
-    supabase
-      .from("onboarding_notes")
-      .select("*")
-      .is("archived_at", null)
-      .order("created_at", { ascending: false }),
-    supabase.from("handoff_reviews").select("*").order("created_at", { ascending: false }),
-    supabase.from("external_databases").select("*").is("archived_at", null).order("label"),
-    supabase.from("external_records").select("*").is("archived_at", null).order("created_at", { ascending: false }),
-    supabase
-      .from("documents")
-      .select("id, entity_type, entity_id, title, kind, external_url, required, note, created_at")
-      .eq("entity_type", "property")
-      .is("archived_at", null),
-  ]);
+  const [props, tasks, handoffs, people, notes, reviews, extDbs, extRecords, docs] =
+    await Promise.all([
+      supabase.from("properties").select(PROPERTY_FIELDS).order("name"),
+      supabase.from("onboarding_tasks").select("*").is("archived_at", null).order("sort_order"),
+      supabase
+        .from("property_handoffs")
+        .select("*")
+        .is("archived_at", null)
+        .order("requested_at", { ascending: false }),
+      supabase.from("profiles").select("id, full_name, email").order("full_name"),
+      supabase
+        .from("onboarding_notes")
+        .select("*")
+        .is("archived_at", null)
+        .order("created_at", { ascending: false }),
+      supabase.from("handoff_reviews").select("*").order("created_at", { ascending: false }),
+      supabase.from("external_databases").select("*").is("archived_at", null).order("label"),
+      supabase
+        .from("external_records")
+        .select("*")
+        .is("archived_at", null)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("documents")
+        .select("id, entity_type, entity_id, title, kind, external_url, required, note, created_at")
+        .eq("entity_type", "property")
+        .is("archived_at", null),
+    ]);
   if (props.error) throw props.error;
   if (tasks.error) throw tasks.error;
   if (handoffs.error) throw handoffs.error;
@@ -117,8 +126,6 @@ export async function loadOnboardingWorkspace(supabase: Client) {
     ownerApprovals: ownerApprovals.data ?? [],
   };
 }
-
-
 
 export async function saveOnboardingTask(
   supabase: Client,
@@ -188,9 +195,7 @@ export async function saveOnboardingTask(
       });
       const verdict = releaseState(target as never, all, ctx);
       if (!verdict.canComplete)
-        throw new Error(
-          verdict.reason ?? "This step is not released yet and cannot be completed.",
-        );
+        throw new Error(verdict.reason ?? "This step is not released yet and cannot be completed.");
     }
   }
 
@@ -201,7 +206,9 @@ export async function saveOnboardingTask(
     input.requiresOwnerApproval &&
     input.ownerApprovalStatus !== "approved"
   ) {
-    throw new Error("This step is waiting on the homeowner's approval and cannot be completed yet.");
+    throw new Error(
+      "This step is waiting on the homeowner's approval and cannot be completed yet.",
+    );
   }
   const row = {
     property_id: input.propertyId,
@@ -354,7 +361,6 @@ export async function ensureOwnerApprovalRequest(
   return { approvalId, channel: routed.channel };
 }
 
-
 /**
  * Send (or re-send) one task to the enrolled homeowner for approval.
  *
@@ -370,7 +376,9 @@ export async function submitOwnerApproval(
   await assertCap(supabase, userId, "is_onboarding_staff");
   const task = await supabase
     .from("onboarding_tasks")
-    .select("id, property_id, title, detail, due_on, is_demo, requires_owner_approval, owner_approval_status")
+    .select(
+      "id, property_id, title, detail, due_on, is_demo, requires_owner_approval, owner_approval_status",
+    )
     .eq("id", input.taskId)
     .maybeSingle();
   if (task.error) throw task.error;
@@ -460,7 +468,9 @@ export async function recordOwnerTaskDecision(
   if (pending.error) throw pending.error;
   const approvalId = pending.data?.[0]?.id ?? null;
   if (!approvalId) {
-    throw new Error("There is no open homeowner request on this step — send it for approval first.");
+    throw new Error(
+      "There is no open homeowner request on this step — send it for approval first.",
+    );
   }
 
   const now = new Date().toISOString();
@@ -493,7 +503,6 @@ export async function recordOwnerTaskDecision(
   return { ok: true as const, approvalId };
 }
 
-
 /**
  * Staff-confirmed reconciliation after a participation change.
  *
@@ -511,7 +520,9 @@ export async function confirmApprovalRequirement(
   await assertCap(supabase, userId, "is_onboarding_staff");
   const task = await supabase
     .from("onboarding_tasks")
-    .select("id, property_id, title, detail, due_on, is_demo, status, requires_owner_approval, owner_approval_status")
+    .select(
+      "id, property_id, title, detail, due_on, is_demo, status, requires_owner_approval, owner_approval_status",
+    )
     .eq("id", input.taskId)
     .maybeSingle();
   if (task.error) throw task.error;
@@ -574,7 +585,6 @@ export async function confirmApprovalRequirement(
   });
   return { ok: true as const };
 }
-
 
 export async function setPropertyLifecycle(
   supabase: Client,
@@ -774,7 +784,6 @@ export async function reviewHandoff(
     }
   }
 
-
   const now = new Date().toISOString();
 
   // Immutable history entry for every decision at every gate.
@@ -820,33 +829,38 @@ export async function reviewHandoff(
   const next = nextGateStep(step);
   const patch: Record<string, unknown> = { gate_step: next };
   if (input.exceptionReason) {
-    const existing = Array.isArray(handoff.data.exceptions) ? (handoff.data.exceptions as unknown[]) : [];
-    patch['exceptions'] = [...existing, { step, reason: input.exceptionReason, by: userId, at: now }];
+    const existing = Array.isArray(handoff.data.exceptions)
+      ? (handoff.data.exceptions as unknown[])
+      : [];
+    patch["exceptions"] = [
+      ...existing,
+      { step, reason: input.exceptionReason, by: userId, at: now },
+    ];
   }
   if (step === "kati_review") {
-    patch['kati_reviewer'] = userId;
-    patch['kati_decision'] = "approved";
-    patch['kati_note'] = input.corrections || null;
-    patch['kati_at'] = now;
+    patch["kati_reviewer"] = userId;
+    patch["kati_decision"] = "approved";
+    patch["kati_note"] = input.corrections || null;
+    patch["kati_at"] = now;
   }
   if (step === "micah_review") {
-    patch['micah_reviewer'] = userId;
-    patch['micah_decision'] = "approved";
-    patch['micah_note'] = input.corrections || null;
-    patch['micah_at'] = now;
+    patch["micah_reviewer"] = userId;
+    patch["micah_decision"] = "approved";
+    patch["micah_note"] = input.corrections || null;
+    patch["micah_at"] = now;
   }
   if (step === "operations_acceptance") {
-    patch['accepted_by'] = userId;
-    patch['accepted_at'] = now;
-    patch['reviewed_by'] = userId;
-    patch['reviewed_at'] = now;
+    patch["accepted_by"] = userId;
+    patch["accepted_at"] = now;
+    patch["reviewed_by"] = userId;
+    patch["reviewed_at"] = now;
     // Operations has taken ownership, but the home is not live yet.
-    patch['status'] = "accepted_pending_live";
+    patch["status"] = "accepted_pending_live";
   }
   if (step === "live_confirmation") {
-    patch['live_confirmed_by'] = userId;
-    patch['live_confirmed_at'] = now;
-    patch['status'] = "accepted";
+    patch["live_confirmed_by"] = userId;
+    patch["live_confirmed_at"] = now;
+    patch["status"] = "accepted";
   }
 
   const upd = await supabase
@@ -898,7 +912,6 @@ export async function reviewHandoff(
   };
 }
 
-
 /* ------------------------------------------------------------------ *
  * Stage 2 additions: internal notes, exceptions, ticket links,
  * archiving and the standard external-record review queue.
@@ -907,7 +920,12 @@ export async function reviewHandoff(
 export async function addOnboardingNote(
   supabase: Client,
   userId: string,
-  input: { propertyId: string; taskId?: string | null | undefined; body: string; mentions: string[] },
+  input: {
+    propertyId: string;
+    taskId?: string | null | undefined;
+    body: string;
+    mentions: string[];
+  },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
   const { data, error } = await supabase
@@ -959,9 +977,8 @@ export async function reopenOnboardingTask(
     .eq("id", input.taskId);
   if (error) throw error;
 
-  const { loadProjectForProperty, recordProjectEvent } = await import(
-    "./onboarding-project.server"
-  );
+  const { loadProjectForProperty, recordProjectEvent } =
+    await import("./onboarding-project.server");
   const { project } = await loadProjectForProperty(supabase, task.property_id);
   if (project) {
     await recordProjectEvent(supabase, {

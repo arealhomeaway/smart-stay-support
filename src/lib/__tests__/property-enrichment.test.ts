@@ -31,7 +31,9 @@ const owner = {
   active: true,
 };
 
-function prop(over: Partial<{ id: string; name: string; ownerrez_property_id: string | null }> = {}) {
+function prop(
+  over: Partial<{ id: string; name: string; ownerrez_property_id: string | null }> = {},
+) {
   return {
     id: "p1",
     name: "Foxtail",
@@ -99,7 +101,12 @@ describe("planEnrichment", () => {
   });
 
   it("does not fabricate a photo when the listing has none", () => {
-    const bare = { ...listing, thumbnail_url: null, thumbnail_url_medium: null, thumbnail_url_large: null };
+    const bare = {
+      ...listing,
+      thumbnail_url: null,
+      thumbnail_url_medium: null,
+      thumbnail_url_large: null,
+    };
     const plan = planEnrichment([prop()], [bare], [owner], now);
     expect(plan.patches[0]!.values["primary_photo_url"] === undefined).toBe(true);
     expect(plan.counts.photosMissing).toBe(1);

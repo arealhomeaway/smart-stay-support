@@ -4,11 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDemo } from "@/components/DemoProvider";
 
@@ -36,7 +32,9 @@ function timeAgo(iso: string) {
  * The one place Resolve tells a teammate that something is waiting on them.
  * Only actionable events land here — assignment, handoff, approval, reopen.
  */
-export function NotificationBell({ placement = "header" }: { placement?: "header" | "sidebar" } = {}) {
+export function NotificationBell({
+  placement = "header",
+}: { placement?: "header" | "sidebar" } = {}) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -58,7 +56,6 @@ export function NotificationBell({ placement = "header" }: { placement?: "header
       return (data ?? []) as Row[];
     },
   });
-
 
   const rows = useMemo(() => data ?? [], [data]);
   const unread = rows.filter((r) => !r.read_at);
@@ -109,7 +106,11 @@ export function NotificationBell({ placement = "header" }: { placement?: "header
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent align={placement === "sidebar" ? "start" : "end"} side={placement === "sidebar" ? "right" : "bottom"} className="w-[22rem] p-0">
+      <PopoverContent
+        align={placement === "sidebar" ? "start" : "end"}
+        side={placement === "sidebar" ? "right" : "bottom"}
+        className="w-[22rem] p-0"
+      >
         <div className="flex items-center justify-between border-b px-4 py-3">
           <p className="text-sm font-semibold">Waiting on you</p>
           {unread.length > 0 && (
@@ -125,9 +126,7 @@ export function NotificationBell({ placement = "header" }: { placement?: "header
         </div>
         <ScrollArea className="max-h-96">
           {rows.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-muted-foreground">
-              Nothing needs you right now.
-            </p>
+            <p className="px-4 py-6 text-sm text-muted-foreground">Nothing needs you right now.</p>
           ) : (
             <ul className="divide-y">
               {rows.map((row) => {

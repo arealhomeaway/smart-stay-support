@@ -77,7 +77,8 @@ function TeamPage() {
 
   const openByRole = (code: string) =>
     data.tickets.filter(
-      (t) => t.functional_role_code === code && !["resolved", "closed", "cancelled"].includes(t.status),
+      (t) =>
+        t.functional_role_code === code && !["resolved", "closed", "cancelled"].includes(t.status),
     );
 
   return (
@@ -113,99 +114,105 @@ function TeamPage() {
         </TabsContent>
 
         <TabsContent value="seats" className="space-y-6">
-
-
-
-      {TEAMS.map((team) => {
-        const roles = data.roles.filter((r) => r.team === team.value);
-        if (roles.length === 0) return null;
-        return (
-          <div key={team.value} className="space-y-3">
-            <h2 className="text-lg font-semibold">{team.label}</h2>
-            <div className="grid gap-4 lg:grid-cols-2">
-              {roles.map((role) => {
-                const open = openByRole(role.code);
-                const p1 = open.filter((t) => t.priority === "p1").length;
-                const backup = data.roles.find((r) => r.code === role.backup_role_code);
-                return (
-                  <SectionCard
-                    key={role.id}
-                    title={role.name}
-                    description={role.code}
-                    actions={
-                      <>
-                        {p1 > 0 && <StatusBadge tone="escalated">{p1} P1</StatusBadge>}
-                        <StatusBadge tone="closed">{open.length} open</StatusBadge>
-                      </>
-                    }
-                  >
-                    <div className="space-y-3 text-sm">
-                      <Row
-                        icon={<UserCheck className="size-4" />}
-                        label="Current seat holder"
-                        value={
-                          role.current_seat_holder
-                            ? (role.current_seat_name ??
-                              data.people.find((p) => p.id === role.current_seat_holder)?.full_name ??
-                              "Unassigned")
-                            : role.current_seat_name
-                              ? `${role.current_seat_name} — invitation pending`
-                              : "Unassigned"
+          {TEAMS.map((team) => {
+            const roles = data.roles.filter((r) => r.team === team.value);
+            if (roles.length === 0) return null;
+            return (
+              <div key={team.value} className="space-y-3">
+                <h2 className="text-lg font-semibold">{team.label}</h2>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {roles.map((role) => {
+                    const open = openByRole(role.code);
+                    const p1 = open.filter((t) => t.priority === "p1").length;
+                    const backup = data.roles.find((r) => r.code === role.backup_role_code);
+                    return (
+                      <SectionCard
+                        key={role.id}
+                        title={role.name}
+                        description={role.code}
+                        actions={
+                          <>
+                            {p1 > 0 && <StatusBadge tone="escalated">{p1} P1</StatusBadge>}
+                            <StatusBadge tone="closed">{open.length} open</StatusBadge>
+                          </>
                         }
-                      />
-                      <Row
-                        icon={<Clock className="size-4" />}
-                        label="Coverage window"
-                        value={role.coverage_window ?? "—"}
-                      />
-                      <Row
-                        icon={<Utensils className="size-4" />}
-                        label="Lunch"
-                        value={role.lunch_window ?? "—"}
-                      />
-                      <p className="text-muted-foreground">
-                        During lunch, new P1 and time-sensitive P2 work is covered by{" "}
-                        <span className="font-medium text-foreground">{role.lunch_coverage ?? "the on-duty seat"}</span>.
-                        Backup / coverage seat:{" "}
-                        <span className="font-medium text-foreground">{backup?.name ?? "—"}</span>.
-                      </p>
+                      >
+                        <div className="space-y-3 text-sm">
+                          <Row
+                            icon={<UserCheck className="size-4" />}
+                            label="Current seat holder"
+                            value={
+                              role.current_seat_holder
+                                ? (role.current_seat_name ??
+                                  data.people.find((p) => p.id === role.current_seat_holder)
+                                    ?.full_name ??
+                                  "Unassigned")
+                                : role.current_seat_name
+                                  ? `${role.current_seat_name} — invitation pending`
+                                  : "Unassigned"
+                            }
+                          />
+                          <Row
+                            icon={<Clock className="size-4" />}
+                            label="Coverage window"
+                            value={role.coverage_window ?? "—"}
+                          />
+                          <Row
+                            icon={<Utensils className="size-4" />}
+                            label="Lunch"
+                            value={role.lunch_window ?? "—"}
+                          />
+                          <p className="text-muted-foreground">
+                            During lunch, new P1 and time-sensitive P2 work is covered by{" "}
+                            <span className="font-medium text-foreground">
+                              {role.lunch_coverage ?? "the on-duty seat"}
+                            </span>
+                            . Backup / coverage seat:{" "}
+                            <span className="font-medium text-foreground">
+                              {backup?.name ?? "—"}
+                            </span>
+                            .
+                          </p>
 
-                      {editing === role.id ? (
-                        <SeatEditor
-                          role={role}
-                          people={data.people}
-                          onDone={async () => {
-                            setEditing(null);
-                            await qc.invalidateQueries({ queryKey: ["functional-roles-full"] });
-                            await qc.invalidateQueries({ queryKey: ["functional-roles"] });
-                          }}
-                        />
-                      ) : (
-                        <Button size="sm" variant="secondary" onClick={() => setEditing(role.id)}>
-                          Update seat &amp; coverage
-                        </Button>
-                      )}
-                    </div>
-                  </SectionCard>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+                          {editing === role.id ? (
+                            <SeatEditor
+                              role={role}
+                              people={data.people}
+                              onDone={async () => {
+                                setEditing(null);
+                                await qc.invalidateQueries({ queryKey: ["functional-roles-full"] });
+                                await qc.invalidateQueries({ queryKey: ["functional-roles"] });
+                              }}
+                            />
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setEditing(role.id)}
+                            >
+                              Update seat &amp; coverage
+                            </Button>
+                          )}
+                        </div>
+                      </SectionCard>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
 
           <SectionCard title="Single-PC coverage rule">
             <p className="text-sm text-muted-foreground">
-              With one coordinator on, they cover both queues: answer urgent messages first, start urgent work,
-              document anything left undone, and hand it to the next seat. Routine admin never comes before guest,
-              access, maintenance, booking or cleaning urgency.
+              With one coordinator on, they cover both queues: answer urgent messages first, start
+              urgent work, document anything left undone, and hand it to the next seat. Routine
+              admin never comes before guest, access, maintenance, booking or cleaning urgency.
             </p>
           </SectionCard>
         </TabsContent>
       </Tabs>
     </div>
   );
-
 }
 
 function SeatEditor({
@@ -272,11 +279,19 @@ function SeatEditor({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label>Coverage window</Label>
-          <Input value={coverage} onChange={(e) => setCoverage(e.target.value)} placeholder="Mon–Fri 8a–5p" />
+          <Input
+            value={coverage}
+            onChange={(e) => setCoverage(e.target.value)}
+            placeholder="Mon–Fri 8a–5p"
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Lunch window</Label>
-          <Input value={lunch} onChange={(e) => setLunch(e.target.value)} placeholder="1:00–2:00 p.m." />
+          <Input
+            value={lunch}
+            onChange={(e) => setLunch(e.target.value)}
+            placeholder="1:00–2:00 p.m."
+          />
         </div>
       </div>
       <div className="space-y-1.5">

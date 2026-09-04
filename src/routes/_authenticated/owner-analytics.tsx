@@ -152,7 +152,9 @@ function OwnerAnalyticsPage() {
               actions={<Users className="size-4 text-muted-foreground" />}
             />
             {rows.length === 0 ? (
-              <p className="surface p-6 text-center text-sm text-muted-foreground">No live owner programs yet.</p>
+              <p className="surface p-6 text-center text-sm text-muted-foreground">
+                No live owner programs yet.
+              </p>
             ) : (
               <div className="surface overflow-x-auto">
                 <table className="w-full text-sm">
@@ -189,9 +191,13 @@ function OwnerAnalyticsPage() {
                         </td>
                         <td className="numeric px-5 py-2.5 whitespace-nowrap">
                           {r.day}/90
-                          <span className="block text-xs text-muted-foreground">{r.daysLeft} left</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {r.daysLeft} left
+                          </span>
                         </td>
-                        <td className="numeric px-5 py-2.5 text-right font-medium">{r.reportedHours}</td>
+                        <td className="numeric px-5 py-2.5 text-right font-medium">
+                          {r.reportedHours}
+                        </td>
                         <td
                           className={`numeric px-5 py-2.5 text-right ${r.varianceHours < 0 ? "text-destructive" : "text-sage"}`}
                         >
@@ -204,7 +210,9 @@ function OwnerAnalyticsPage() {
                           </Badge>
                         </td>
                         <td className="numeric px-5 py-2.5 whitespace-nowrap text-muted-foreground">
-                          {r.lastEntryAt ? `${usDate(r.lastEntryAt)} (${r.daysSinceLastEntry}d)` : "No entries"}
+                          {r.lastEntryAt
+                            ? `${usDate(r.lastEntryAt)} (${r.daysSinceLastEntry}d)`
+                            : "No entries"}
                         </td>
                       </tr>
                     ))}
@@ -236,9 +244,15 @@ function OwnerAnalyticsPage() {
                           <td className="px-5 py-2.5 font-medium">{r.ownerName}</td>
                           <td className="numeric px-5 py-2.5 text-right">{r.approvedHours}</td>
                           <td className="numeric px-5 py-2.5 text-right">{r.pendingHours}</td>
-                          <td className="numeric px-5 py-2.5 text-right text-muted-foreground">{r.benchmarkHours}</td>
-                          <td className="numeric px-5 py-2.5 text-right">{r.percentOfOperatingTarget}%</td>
-                          <td className="numeric px-5 py-2.5 text-right">{r.hoursPerWeekNeeded ?? "—"}</td>
+                          <td className="numeric px-5 py-2.5 text-right text-muted-foreground">
+                            {r.benchmarkHours}
+                          </td>
+                          <td className="numeric px-5 py-2.5 text-right">
+                            {r.percentOfOperatingTarget}%
+                          </td>
+                          <td className="numeric px-5 py-2.5 text-right">
+                            {r.hoursPerWeekNeeded ?? "—"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -251,7 +265,8 @@ function OwnerAnalyticsPage() {
           {(data?.totals.flaggedEntries ?? 0) > 0 && (
             <p className="flex items-center gap-2 text-sm text-amber">
               <TrendingDown className="size-4" />
-              {data?.totals.flaggedEntries} participation entries are flagged for supervisor attention.
+              {data?.totals.flaggedEntries} participation entries are flagged for supervisor
+              attention.
             </p>
           )}
 

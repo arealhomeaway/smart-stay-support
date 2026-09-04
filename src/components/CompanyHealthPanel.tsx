@@ -56,8 +56,8 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                 Overall company health
               </CardTitle>
               <CardDescription>
-                Last calculated {new Date(health.generatedAt).toLocaleString()} · {health.windowDays}-day
-                window
+                Last calculated {new Date(health.generatedAt).toLocaleString()} ·{" "}
+                {health.windowDays}-day window
               </CardDescription>
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
@@ -70,19 +70,20 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
                 <DialogHeader>
                   <DialogTitle>How the health score is calculated</DialogTitle>
                   <DialogDescription>
-                    Every contributing measure, its department, its weight and its source. No metric is
-                    scored unless it could be computed from live records.
+                    Every contributing measure, its department, its weight and its source. No metric
+                    is scored unless it could be computed from live records.
                   </DialogDescription>
                 </DialogHeader>
                 <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
                   <li>
-                    Each KPI is scored against its own configured thresholds: on standard {STATUS_SCORE.green},
-                    watch {STATUS_SCORE.yellow}, off standard {STATUS_SCORE.red}.
+                    Each KPI is scored against its own configured thresholds: on standard{" "}
+                    {STATUS_SCORE.green}, watch {STATUS_SCORE.yellow}, off standard{" "}
+                    {STATUS_SCORE.red}.
                   </li>
                   <li>A department score is the average of the KPIs that could be computed.</li>
                   <li>
-                    Company health is the average of the department scores. Weights are equal until a
-                    Platform Owner approves a weighting, which is why the score reads{" "}
+                    Company health is the average of the department scores. Weights are equal until
+                    a Platform Owner approves a weighting, which is why the score reads{" "}
                     <strong>Provisional</strong>.
                   </li>
                   <li>Missing data is excluded and reported, never counted as healthy.</li>
@@ -119,13 +120,19 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
 
           {health.criticalBreaches.length > 0 && (
             <div className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
-              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+              <TriangleAlert
+                className="mt-0.5 size-4 shrink-0 text-destructive"
+                aria-hidden="true"
+              />
               <div className="text-sm">
                 <p className="font-medium text-destructive">
                   Critical threshold breached ({health.criticalBreaches.length})
                 </p>
                 <p className="text-muted-foreground">
-                  {health.criticalBreaches.slice(0, 3).map((k) => k.label).join(" · ")}
+                  {health.criticalBreaches
+                    .slice(0, 3)
+                    .map((k) => k.label)
+                    .join(" · ")}
                   {health.criticalBreaches.length > 3
                     ? ` and ${health.criticalBreaches.length - 3} more`
                     : ""}
@@ -166,8 +173,8 @@ export function CompanyHealthPanel({ data }: { data: CommandCenter }) {
               <AccordionContent>
                 <p className="mb-3 text-sm text-muted-foreground">{dept.blurb}</p>
                 <p className="mb-3 text-xs text-muted-foreground">
-                  Department owner: not yet configured · Weight {Math.round(dept.weight * 100)}% (equal
-                  split) · Coverage {Math.round(dept.coverage * 100)}% · Updated{" "}
+                  Department owner: not yet configured · Weight {Math.round(dept.weight * 100)}%
+                  (equal split) · Coverage {Math.round(dept.coverage * 100)}% · Updated{" "}
                   {new Date(health.generatedAt).toLocaleString()}
                 </p>
                 <DepartmentKpiTable dept={dept} />
@@ -204,10 +211,20 @@ function DepartmentKpiTable({ dept }: { dept: DepartmentHealth }) {
                 <p className="text-xs font-normal text-muted-foreground">{kpi.unavailable}</p>
               )}
             </TableCell>
-            <TableCell className="tabular-nums">{kpi.unavailable ? "Not measured" : kpi.display}</TableCell>
-            <TableCell className="text-muted-foreground">{kpi.target ?? "Target not configured"}</TableCell>
+            <TableCell className="tabular-nums">
+              {kpi.unavailable ? "Not measured" : kpi.display}
+            </TableCell>
             <TableCell className="text-muted-foreground">
-              {kpi.trend === "up" ? "Improving" : kpi.trend === "down" ? "Declining" : kpi.trend ? "Flat" : "—"}
+              {kpi.target ?? "Target not configured"}
+            </TableCell>
+            <TableCell className="text-muted-foreground">
+              {kpi.trend === "up"
+                ? "Improving"
+                : kpi.trend === "down"
+                  ? "Declining"
+                  : kpi.trend
+                    ? "Flat"
+                    : "—"}
             </TableCell>
             <TableCell>
               <Badge variant="outline" className={STATUS_TONE[kpi.status]}>
@@ -216,7 +233,10 @@ function DepartmentKpiTable({ dept }: { dept: DepartmentHealth }) {
             </TableCell>
             <TableCell>
               {kpi.drill ? (
-                <Link to={kpi.drill.to} className="inline-flex items-center gap-1 text-sm underline">
+                <Link
+                  to={kpi.drill.to}
+                  className="inline-flex items-center gap-1 text-sm underline"
+                >
                   {kpi.drill.label}
                   <ArrowRight className="size-3" aria-hidden="true" />
                 </Link>

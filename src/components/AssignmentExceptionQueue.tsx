@@ -42,8 +42,8 @@ export function AssignmentExceptionQueue() {
           {(data?.length ?? 0) > 0 && <Badge variant="outline">{data!.length}</Badge>}
         </CardTitle>
         <CardDescription>
-          Work the routing rules could not place. Each entry records why, so nothing sits unassigned without a
-          reason. Assign these by hand from the ticket.
+          Work the routing rules could not place. Each entry records why, so nothing sits unassigned
+          without a reason. Assign these by hand from the ticket.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">

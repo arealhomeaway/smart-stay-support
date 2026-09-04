@@ -33,9 +33,13 @@ export function PageHeader({
     <div className={cn("flex flex-wrap items-end justify-between gap-x-6 gap-y-3", className)}>
       <div className="min-w-0">
         {eyebrow ? <p className="eyebrow mb-1.5">{eyebrow}</p> : null}
-        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight md:text-[2rem]">{title}</h1>
+        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight md:text-[2rem]">
+          {title}
+        </h1>
         {description ? (
-          <p className="mt-1.5 max-w-2xl text-[0.9375rem] leading-relaxed text-muted-foreground">{description}</p>
+          <p className="mt-1.5 max-w-2xl text-[0.9375rem] leading-relaxed text-muted-foreground">
+            {description}
+          </p>
         ) : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -88,7 +92,9 @@ export function SectionCard({
               {title}
             </h2>
             {description ? (
-              <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">{description}</p>
+              <p className="mt-1 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                {description}
+              </p>
             ) : null}
           </div>
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
@@ -192,16 +198,7 @@ export function PageHero({
           image ? "text-white" : "text-foreground",
         )}
       >
-        {eyebrow ? (
-          <p
-            className={cn(
-              "eyebrow mb-2",
-              image && "text-white/70",
-            )}
-          >
-            {eyebrow}
-          </p>
-        ) : null}
+        {eyebrow ? <p className={cn("eyebrow mb-2", image && "text-white/70")}>{eyebrow}</p> : null}
         <h1 className="max-w-2xl font-display text-[2.25rem] font-normal leading-[1.1] tracking-tight md:text-[2.875rem]">
           {title}
         </h1>
@@ -220,7 +217,6 @@ export function PageHero({
     </section>
   );
 }
-
 
 /**
  * What staff see when there is genuinely nothing to show. Always says what is
@@ -292,11 +288,7 @@ export function PriorityRail({ priority }: { priority: string | null | undefined
       aria-hidden="true"
       className={cn(
         "absolute inset-y-0 left-0 w-1 rounded-l-lg",
-        priority === "p1"
-          ? "bg-danger"
-          : priority === "p2"
-            ? "bg-warning"
-            : "bg-border",
+        priority === "p1" ? "bg-danger" : priority === "p2" ? "bg-warning" : "bg-border",
       )}
     />
   );
@@ -319,7 +311,11 @@ export function Chip({
 }) {
   return (
     <span className={cn("chip", className)} title={title}>
-      {icon ? <span aria-hidden="true" className="[&>svg]:size-3">{icon}</span> : null}
+      {icon ? (
+        <span aria-hidden="true" className="[&>svg]:size-3">
+          {icon}
+        </span>
+      ) : null}
       {children}
     </span>
   );
@@ -349,9 +345,17 @@ export function StageRail({
   className?: string;
 }) {
   const bar =
-    tone === "onboarding" ? "bg-module-onboarding" : tone === "owner" ? "bg-module-owner" : "bg-primary";
+    tone === "onboarding"
+      ? "bg-module-onboarding"
+      : tone === "owner"
+        ? "bg-module-owner"
+        : "bg-primary";
   const text =
-    tone === "onboarding" ? "text-module-onboarding" : tone === "owner" ? "text-module-owner" : "text-primary";
+    tone === "onboarding"
+      ? "text-module-onboarding"
+      : tone === "owner"
+        ? "text-module-owner"
+        : "text-primary";
   return (
     <ol className={cn("flex w-full min-w-0 gap-1.5", className)} aria-label="Process stage">
       {stages.map((s, i) => {
@@ -360,12 +364,19 @@ export function StageRail({
         return (
           <li key={s.key} className="min-w-0 flex-1" aria-current={current ? "step" : undefined}>
             <div
-              className={cn("h-1.5 rounded-full", done ? cn(bar, "opacity-45") : current ? bar : "bg-border")}
+              className={cn(
+                "h-1.5 rounded-full",
+                done ? cn(bar, "opacity-45") : current ? bar : "bg-border",
+              )}
             />
             <p
               className={cn(
                 "mt-1.5 truncate text-xs",
-                current ? cn("font-semibold", text) : done ? "text-foreground/70" : "text-muted-foreground",
+                current
+                  ? cn("font-semibold", text)
+                  : done
+                    ? "text-foreground/70"
+                    : "text-muted-foreground",
               )}
               title={s.label}
             >
@@ -397,7 +408,11 @@ export function ProgressRing({
 }) {
   const pct = Math.max(0, Math.min(100, Math.round(value)));
   const stroke =
-    tone === "owner" ? "var(--module-owner)" : tone === "onboarding" ? "var(--module-onboarding)" : "var(--primary)";
+    tone === "owner"
+      ? "var(--module-owner)"
+      : tone === "onboarding"
+        ? "var(--module-onboarding)"
+        : "var(--primary)";
   const r = (size - 10) / 2;
   const c = 2 * Math.PI * r;
   return (
@@ -408,7 +423,14 @@ export function ProgressRing({
       aria-label={`${pct}% ${label ?? "complete"}`}
     >
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth="8" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="var(--border)"
+          strokeWidth="8"
+        />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -423,7 +445,11 @@ export function ProgressRing({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="numeric text-xl font-semibold leading-none">{pct}%</span>
-        {label ? <span className="mt-0.5 text-[0.625rem] uppercase tracking-wide text-muted-foreground">{label}</span> : null}
+        {label ? (
+          <span className="mt-0.5 text-[0.625rem] uppercase tracking-wide text-muted-foreground">
+            {label}
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -473,7 +499,10 @@ export function SegmentedControl<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={cn("inline-flex flex-wrap gap-0.5 rounded-lg border border-border bg-sunken p-1", className)}
+      className={cn(
+        "inline-flex flex-wrap gap-0.5 rounded-lg border border-border bg-sunken p-1",
+        className,
+      )}
     >
       {options.map((o) => {
         const active = o.value === value;
@@ -492,7 +521,9 @@ export function SegmentedControl<T extends string>({
             )}
           >
             {o.label}
-            {o.count != null ? <span className="numeric ml-1.5 text-xs opacity-70">{o.count}</span> : null}
+            {o.count != null ? (
+              <span className="numeric ml-1.5 text-xs opacity-70">{o.count}</span>
+            ) : null}
           </button>
         );
       })}

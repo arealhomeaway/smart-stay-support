@@ -250,7 +250,8 @@ export function BreezewayWebhookPanel() {
               <p className="font-medium">Live deliveries: {status.liveTotal}</p>
               {status.liveTotal === 0 ? (
                 <p className="text-muted-foreground">
-                  Nothing delivered yet. Waiting for a naturally occurring Breezeway work order event.
+                  Nothing delivered yet. Waiting for a naturally occurring Breezeway work order
+                  event.
                 </p>
               ) : (
                 <ul className="space-y-0.5">

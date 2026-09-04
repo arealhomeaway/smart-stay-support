@@ -7,7 +7,7 @@
  */
 
 function requireApiKey(): string {
-  const key = process.env['LOVABLE_API_KEY'];
+  const key = process.env["LOVABLE_API_KEY"];
   if (!key) {
     throw new Error(
       "LOVABLE_API_KEY is not set. App User Connector calls require a server-side workspace token.",

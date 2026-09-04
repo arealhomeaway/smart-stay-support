@@ -69,7 +69,9 @@ export function OperationsContextPanel({
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <section className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Property</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Property
+          </p>
           <p>Resolve property ID: {property.id}</p>
           <p>OwnerRez Property ID: {property.ownerrez_property_id ?? "not linked"}</p>
           <p>
@@ -80,7 +82,9 @@ export function OperationsContextPanel({
         </section>
 
         <section className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Access</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Access
+          </p>
           <p>{property.access_notes?.trim() || "No access instructions recorded."}</p>
           {access.map((r) => (
             <p key={r.id} className="text-xs text-muted-foreground">
@@ -90,7 +94,9 @@ export function OperationsContextPanel({
         </section>
 
         <section className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Utilities</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Utilities
+          </p>
           {utilities.length === 0 ? (
             <p className="text-muted-foreground">No matched utility record for this home yet.</p>
           ) : (
@@ -103,11 +109,13 @@ export function OperationsContextPanel({
         </section>
 
         <section className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Documents</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Documents
+          </p>
           {!documentsEnabled ? (
             <p className="text-muted-foreground">
-              Document links are turned off until the SharePoint connection is confirmed scoped to the
-              approved folder.
+              Document links are turned off until the SharePoint connection is confirmed scoped to
+              the approved folder.
             </p>
           ) : documents.filter((d) => d.entity_id === property.id).length === 0 ? (
             <p className="text-muted-foreground">No documents linked yet.</p>
@@ -140,9 +148,13 @@ export function OperationsContextPanel({
         </section>
 
         <section className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Linked tickets</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Linked tickets
+          </p>
           {linked.length === 0 ? (
-            <p className="text-muted-foreground">No onboarding item is linked to an Operations ticket.</p>
+            <p className="text-muted-foreground">
+              No onboarding item is linked to an Operations ticket.
+            </p>
           ) : (
             linked.map((t) => (
               <p key={t.id} className="text-xs">

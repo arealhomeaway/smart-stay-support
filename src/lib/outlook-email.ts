@@ -83,19 +83,38 @@ export function companyFromAddress(address: string | null | undefined): string |
 
 /** Domains and wording we can classify with confidence. Anything else is left blank. */
 const SOURCE_RULES: { source: string; test: RegExp }[] = [
-  { source: "insurance", test: /(insurance|claims?|adjuster|alacrity|sedgwick|crawford|allstate|statefarm|state farm|usaa|farmers|travelers|alestate|cat team)/i },
-  { source: "relocation", test: /(relocation|reloc|moving services|corporate move|sirva|cartus|graebel|aires)/i },
-  { source: "corporate", test: /(corporate housing|per ?diem|crew housing|travel department|project team housing)/i },
-  { source: "realtor", test: /(realtor|real estate|brokerage|keller[ -]?williams|remax|re\/max|coldwell|compass\.com)/i },
+  {
+    source: "insurance",
+    test: /(insurance|claims?|adjuster|alacrity|sedgwick|crawford|allstate|statefarm|state farm|usaa|farmers|travelers|alestate|cat team)/i,
+  },
+  {
+    source: "relocation",
+    test: /(relocation|reloc|moving services|corporate move|sirva|cartus|graebel|aires)/i,
+  },
+  {
+    source: "corporate",
+    test: /(corporate housing|per ?diem|crew housing|travel department|project team housing)/i,
+  },
+  {
+    source: "realtor",
+    test: /(realtor|real estate|brokerage|keller[ -]?williams|remax|re\/max|coldwell|compass\.com)/i,
+  },
   { source: "referral", test: /(referred by|referral|recommended us|your name came up)/i },
-  { source: "website", test: /(website inquiry|contact form|submitted through|web inquiry|arealhomeaway\.com\/contact)/i },
+  {
+    source: "website",
+    test: /(website inquiry|contact form|submitted through|web inquiry|arealhomeaway\.com\/contact)/i,
+  },
 ];
 
 /**
  * The lead source, only when the email says so plainly. An unclear source is
  * better left for the coordinator than guessed.
  */
-export function guessLeadSource(input: { fromAddress?: string | null; subject?: string; body?: string }): string | null {
+export function guessLeadSource(input: {
+  fromAddress?: string | null;
+  subject?: string;
+  body?: string;
+}): string | null {
   const haystack = `${input.fromAddress ?? ""}\n${input.subject ?? ""}\n${(input.body ?? "").slice(0, 1500)}`;
   for (const rule of SOURCE_RULES) {
     if (rule.test.test(haystack)) return rule.source;
@@ -121,7 +140,10 @@ export function deriveLeadFromEmail(input: {
   fromAddress?: string | null;
 }): DerivedLead {
   const address = input.fromAddress?.trim() || null;
-  const name = (input.fromName ?? "").trim() || address?.split("@")[0]?.replace(/[._-]+/g, " ") || "Unknown contact";
+  const name =
+    (input.fromName ?? "").trim() ||
+    address?.split("@")[0]?.replace(/[._-]+/g, " ") ||
+    "Unknown contact";
   return {
     contact_name: name.slice(0, 120),
     email: address ? address.toLowerCase() : null,

@@ -30,9 +30,15 @@ export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
     meta: [
       { title: "Properties — Resolve Operations" },
-      { name: "description", content: "Every managed home with access notes and its live issue count." },
+      {
+        name: "description",
+        content: "Every managed home with access notes and its live issue count.",
+      },
       { property: "og:title", content: "Properties — Resolve Operations" },
-      { property: "og:description", content: "Managed homes with access notes and live issue counts." },
+      {
+        property: "og:description",
+        content: "Managed homes with access notes and live issue counts.",
+      },
     ],
   }),
   // Search and filters live in the URL so the list a coordinator built is
@@ -58,7 +64,6 @@ type PropertySearch = {
   status?: string | undefined;
   test?: boolean | undefined;
 };
-
 
 function PropertiesPage() {
   const qc = useQueryClient();
@@ -112,7 +117,11 @@ function PropertiesPage() {
     queryFn: async () => {
       const [properties, tickets, owners] = await Promise.all([
         supabase.from("properties").select("*").order("name"),
-        supabase.from("tickets").select("id, property_id, status").eq("is_demo", false).is("archived_at", null),
+        supabase
+          .from("tickets")
+          .select("id, property_id, status")
+          .eq("is_demo", false)
+          .is("archived_at", null),
         supabase.from("property_owners").select("id, name"),
       ]);
       if (properties.error) throw properties.error;
@@ -184,7 +193,6 @@ function PropertiesPage() {
       .some((v) => String(v).toLowerCase().includes(q));
   });
 
-
   const { originSearch } = useWorkspaceOrigin(
     "Properties",
     visible.map((p) => ({ id: p.id, label: p.nickname ?? p.name, sub: p.market ?? undefined })),
@@ -197,21 +205,20 @@ function PropertiesPage() {
         title="Properties"
         description="Every ticket, project and owner action links back to one of these homes."
         actions={
-        <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
-          {enriching ? "Refreshing…" : "Refresh property info & photos"}
-        </Button>
-        {testCount > 0 && (
-          <Button
-            variant={showTest ? "secondary" : "ghost"}
-            onClick={() => setParam({ test: showTest ? undefined : true })}
-          >
-            {showTest ? "Hide" : "Show"} QA / test homes ({testCount})
-          </Button>
-        )}
-        <AddPropertyDialog />
-        </div>
-
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={refreshInfo} disabled={enriching}>
+              {enriching ? "Refreshing…" : "Refresh property info & photos"}
+            </Button>
+            {testCount > 0 && (
+              <Button
+                variant={showTest ? "secondary" : "ghost"}
+                onClick={() => setParam({ test: showTest ? undefined : true })}
+              >
+                {showTest ? "Hide" : "Show"} QA / test homes ({testCount})
+              </Button>
+            )}
+            <AddPropertyDialog />
+          </div>
         }
       />
 
@@ -277,7 +284,10 @@ function PropertiesPage() {
             const openCount = all.filter((t) => OPEN_STATUSES.includes(t.status)).length;
             const owner = p.owner_record_id ? data.ownerName.get(p.owner_record_id) : null;
             return (
-              <Card key={p.id} className="overflow-hidden shadow-card transition-shadow hover:shadow-raised">
+              <Card
+                key={p.id}
+                className="overflow-hidden shadow-card transition-shadow hover:shadow-raised"
+              >
                 <div className="relative">
                   {p.primary_photo_url ? (
                     <img
@@ -316,7 +326,8 @@ function PropertiesPage() {
                     </Link>
                   </CardTitle>
                   <CardDescription>
-                    {[p.address_line1, p.unit, p.city, p.state].filter(Boolean).join(", ") || "No address on file"}
+                    {[p.address_line1, p.unit, p.city, p.state].filter(Boolean).join(", ") ||
+                      "No address on file"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">

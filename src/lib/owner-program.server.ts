@@ -108,7 +108,11 @@ export type AdminProgramRow = {
 export async function loadPrograms(supabase: Client, demo = false) {
   const [properties, programs, links, reviews, entries, entryProps, badges, notifications] =
     await Promise.all([
-      supabase.from("properties").select("id, name, nickname, city, state").eq("active", true).order("name"),
+      supabase
+        .from("properties")
+        .select("id, name, nickname, city, state")
+        .eq("active", true)
+        .order("name"),
       supabase
         .from("owner_programs")
         .select(
@@ -125,7 +129,10 @@ export async function loadPrograms(supabase: Client, demo = false) {
       supabase
         .from("owner_reviews")
         .select("id, program_id, property_id, status, respond_by, source_type, available_from"),
-      supabase.from("owner_time_entries").select("id, program_id, minutes, review_status").eq("is_demo", demo),
+      supabase
+        .from("owner_time_entries")
+        .select("id, program_id, minutes, review_status")
+        .eq("is_demo", demo),
       supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
       supabase.from("owner_badges").select("program_id, code"),
       supabase
@@ -134,7 +141,16 @@ export async function loadPrograms(supabase: Client, demo = false) {
         .order("created_at", { ascending: false })
         .limit(500),
     ]);
-  for (const r of [properties, programs, links, reviews, entries, entryProps, badges, notifications]) {
+  for (const r of [
+    properties,
+    programs,
+    links,
+    reviews,
+    entries,
+    entryProps,
+    badges,
+    notifications,
+  ]) {
     if (r.error) throw r.error;
   }
 
@@ -174,7 +190,11 @@ export async function loadPrograms(supabase: Client, demo = false) {
       return {
         id: l.property_id,
         name: prop ? prop.nickname || prop.name : "Property",
-        coverage: hasActivity ? (overdue.length ? "needs_attention" : "in_progress") : "no_activity",
+        coverage: hasActivity
+          ? overdue.length
+            ? "needs_attention"
+            : "in_progress"
+          : "no_activity",
         openTasks: open.length,
         overdue: overdue.length,
       };
@@ -197,7 +217,8 @@ export async function loadPrograms(supabase: Client, demo = false) {
       progressState: snapshot.state,
       lastOwnerActivityAt: p.last_owner_activity_at,
       openTasks: openTasks.length,
-      coverageConcerns: propertyRows.filter((x) => x.coverage !== "in_progress" || x.overdue > 0).length,
+      coverageConcerns: propertyRows.filter((x) => x.coverage !== "in_progress" || x.overdue > 0)
+        .length,
       nextMilestone: snapshot.next,
       badgeCount: (badges.data ?? []).filter((b) => b.program_id === p.id).length,
       onboardingLead: p.onboarding_lead,
@@ -231,9 +252,12 @@ export function attentionRank(row: AdminProgramRow) {
   if (row.status !== "active" && row.status !== "target_reached") return null;
   if (behind >= 10) return { rank: 1, reason: "10+ hours behind pace" };
   if (behind >= 5) return { rank: 2, reason: "5+ hours behind pace" };
-  if (quietDays >= 7 && row.openTasks > 0) return { rank: 3, reason: "No activity for 7 days with open tasks" };
-  if (row.daysLeft < 10 && row.reportedHours <= 100) return { rank: 4, reason: "Under 10 days without 100+ hours" };
-  if (row.properties.some((p) => p.overdue > 0)) return { rank: 5, reason: "Overdue property decisions" };
+  if (quietDays >= 7 && row.openTasks > 0)
+    return { rank: 3, reason: "No activity for 7 days with open tasks" };
+  if (row.daysLeft < 10 && row.reportedHours <= 100)
+    return { rank: 4, reason: "Under 10 days without 100+ hours" };
+  if (row.properties.some((p) => p.overdue > 0))
+    return { rank: 5, reason: "Overdue property decisions" };
   if (row.properties.some((p) => p.coverage === "no_activity"))
     return { rank: 6, reason: "A property has no owner activity" };
   if (behind >= 1) return { rank: 7, reason: "Slightly behind pace" };
@@ -315,13 +339,16 @@ export async function addProgramProperty(
     .eq("inclusion_status", "included")
     .maybeSingle();
   if (alreadyElsewhere.error) throw alreadyElsewhere.error;
-  if (alreadyElsewhere.data) throw new Error("That property is already part of a participation program.");
+  if (alreadyElsewhere.data)
+    throw new Error("That property is already part of a participation program.");
 
   const started = Boolean(program.data.started_on);
   if (started) {
     const admin = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     if (admin.error || !admin.data) {
-      throw new Error("Adding a property to a program already underway needs administrator approval.");
+      throw new Error(
+        "Adding a property to a program already underway needs administrator approval.",
+      );
     }
     if (!input.closingDate) {
       throw new Error("Confirm the property's closing date before adding it to an active program.");
@@ -461,7 +488,8 @@ export async function activateProgram(
     .eq("program_id", input.programId)
     .eq("inclusion_status", "included");
   if (links.error) throw links.error;
-  if ((links.data ?? []).length === 0) throw new Error("Add at least one property before activating.");
+  if ((links.data ?? []).length === 0)
+    throw new Error("Add at least one property before activating.");
   if ((links.data ?? []).some((l) => !l.closing_confirmed)) {
     throw new Error("Every property must have a confirmed closing date before activation.");
   }
@@ -529,7 +557,9 @@ export async function recordTimeCorrection(
 ) {
   const original = await supabase
     .from("owner_time_entries")
-    .select("id, program_id, owner_user_id, phase, entry_date, minutes, activity, review_id, ticket_id")
+    .select(
+      "id, program_id, owner_user_id, phase, entry_date, minutes, activity, review_id, ticket_id",
+    )
     .eq("id", input.entryId)
     .single();
   if (original.error) throw original.error;
@@ -692,7 +722,8 @@ export function completionChecklist(agg: Awaited<ReturnType<typeof loadProgramAg
 export async function completeProgram(supabase: Client, userId: string, programId: string) {
   const agg = await loadProgramAggregate(supabase, programId);
   const check = completionChecklist(agg);
-  if (!check.hoursExceeded) throw new Error("The homeowner has not yet reported more than 100 hours.");
+  if (!check.hoursExceeded)
+    throw new Error("The homeowner has not yet reported more than 100 hours.");
   if (!check.propertyTasksComplete) {
     throw new Error("Required owner tasks are still open on one or more properties.");
   }
@@ -717,7 +748,8 @@ export async function completeProgram(supabase: Client, userId: string, programI
 /** The single combined participation report for the whole program. */
 export async function buildProgramReport(supabase: Client, programId: string) {
   const agg = await loadProgramAggregate(supabase, programId);
-  const nameOf = (id: string) => agg.properties.find((p) => p.propertyId === id)?.name ?? "Property";
+  const nameOf = (id: string) =>
+    agg.properties.find((p) => p.propertyId === id)?.name ?? "Property";
   const reviewTitle = new Map(agg.reviews.map((r) => [r.id, r.title]));
 
   const log = [...agg.entries]
@@ -778,7 +810,10 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 — read
 
 function newInviteCode() {
   const pick = () =>
-    Array.from({ length: 4 }, () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]).join("");
+    Array.from(
+      { length: 4 },
+      () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)],
+    ).join("");
   return `${pick()}-${pick()}`;
 }
 

@@ -284,7 +284,8 @@ function resultForExisting(row: Row): CreateOutboundResult {
   if (row.status === "abandoned") {
     return {
       ok: false,
-      message: "This attempt was reviewed and closed. Start a new send if the work is still needed.",
+      message:
+        "This attempt was reviewed and closed. Start a new send if the work is still needed.",
       link,
       retryable: true,
     };
@@ -355,15 +356,18 @@ export async function createOutboundTask(
   // An operator must never be able to send an id Breezeway will not honour —
   // a silently dropped assignment reads in Resolve as "assigned" while nobody
   // in Breezeway ever receives the work.
-  const { listBreezewayTemplates, listAssignableBreezewayPeople } = await import(
-    "./breezeway-directory.server"
-  );
+  const { listBreezewayTemplates, listAssignableBreezewayPeople } =
+    await import("./breezeway-directory.server");
   let templateId: number | null = null;
   let templateName: string | null = null;
   if (input.templateId) {
     const template = (await listBreezewayTemplates()).find((t) => t.id === input.templateId);
     if (!template) {
-      return { ok: false, message: "That Breezeway template is no longer available.", retryable: true };
+      return {
+        ok: false,
+        message: "That Breezeway template is no longer available.",
+        retryable: true,
+      };
     }
     templateId = template.id;
     templateName = template.name;
@@ -449,7 +453,12 @@ export async function createOutboundTask(
         ...(assigneeIds.length ? { assignments: assigneeIds } : {}),
         ...(input.scheduledDate ? { scheduled_date: input.scheduledDate } : {}),
         ...(input.scheduledTime
-          ? { scheduled_time: input.scheduledTime.length === 5 ? `${input.scheduledTime}:00` : input.scheduledTime }
+          ? {
+              scheduled_time:
+                input.scheduledTime.length === 5
+                  ? `${input.scheduledTime}:00`
+                  : input.scheduledTime,
+            }
           : {}),
       },
     });
@@ -468,7 +477,9 @@ export async function createOutboundTask(
     if (update.error) {
       // The task exists in Breezeway; only our bookkeeping failed. Never retry
       // the write on the back of this — that is how duplicates happen.
-      console.error(`[breezeway-outbound] created task but could not record id (${update.error.code})`);
+      console.error(
+        `[breezeway-outbound] created task but could not record id (${update.error.code})`,
+      );
       await markNeedsReview(
         row.id,
         "Breezeway accepted the task but Resolve could not record the task id.",
@@ -483,16 +494,18 @@ export async function createOutboundTask(
     }
     return { ok: true, link: toLink(update.data as unknown as Row) };
   } catch (error) {
-    const message =
-      error instanceof BreezewayError ? error.message : "Breezeway did not respond.";
+    const message = error instanceof BreezewayError ? error.message : "Breezeway did not respond.";
     // A 4xx is a definite refusal — nothing was created, so the row is closed
     // as an error and the operator may safely try again. Anything else
     // (timeout, network drop, 429/5xx) is UNCERTAIN: the task may exist in
     // Breezeway. Those are never retried automatically and never reported as
     // a plain failure — they go to the admin review queue.
     const certainRefusal =
-      error instanceof BreezewayError && error.status >= 400 && error.status < 500 &&
-      error.status !== 408 && error.status !== 429;
+      error instanceof BreezewayError &&
+      error.status >= 400 &&
+      error.status < 500 &&
+      error.status !== 408 &&
+      error.status !== 429;
 
     if (certainRefusal) {
       await db
@@ -507,8 +520,7 @@ export async function createOutboundTask(
     const uncertain = await rowById(row.id);
     return {
       ok: false,
-      message:
-        `${message} Resolve cannot tell whether the task was created, so it is flagged for admin review. Do not send it again until someone checks Breezeway.`,
+      message: `${message} Resolve cannot tell whether the task was created, so it is flagged for admin review. Do not send it again until someone checks Breezeway.`,
       ...(uncertain ? { link: toLink(uncertain) } : {}),
     };
   }

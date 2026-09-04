@@ -35,10 +35,7 @@ import { displayName, useCurrentUserId, type TeamMember } from "@/hooks/useTeam"
 import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
 import { evidenceProgress, type RequirementLike } from "@/lib/claims";
-import {
-  WARRANTY_OVERRIDE_LABELS,
-  type WarrantyOverrideReason,
-} from "@/lib/maintenance-policy";
+import { WARRANTY_OVERRIDE_LABELS, type WarrantyOverrideReason } from "@/lib/maintenance-policy";
 import {
   APPROVAL_STATUS_LABELS,
   BUCKET_LABELS,
@@ -77,7 +74,10 @@ function approvalChipLabel(
   wo: { approval_status: string; supervisor_approval_status?: string | null },
   verdict: { ownerApprovalRequired: boolean; supervisorApprovalRequired?: boolean },
 ): string {
-  if (verdict.supervisorApprovalRequired && (wo.supervisor_approval_status ?? "not_required") === "not_required")
+  if (
+    verdict.supervisorApprovalRequired &&
+    (wo.supervisor_approval_status ?? "not_required") === "not_required"
+  )
     return "Supervisor approval not requested yet";
   if (verdict.supervisorApprovalRequired && wo.supervisor_approval_status === "pending")
     return "Waiting on supervisor approval";
@@ -192,7 +192,19 @@ export function WorkOrderDrawer({
         .eq("property_id", workOrder!.property_id as string)
         .limit(5);
       const row = (data ?? [])
-        .map((r) => (r as { owner_programs: { id: string; owner_user_id: string | null; owner_name: string | null; status: string | null } }).owner_programs)
+        .map(
+          (r) =>
+            (
+              r as {
+                owner_programs: {
+                  id: string;
+                  owner_user_id: string | null;
+                  owner_name: string | null;
+                  status: string | null;
+                };
+              }
+            ).owner_programs,
+        )
         .find((p) => p && p.status !== "archived" && p.owner_user_id);
       return row ?? null;
     },
@@ -304,14 +316,17 @@ export function WorkOrderDrawer({
       const decidedAt = new Date().toISOString();
       const approvedAmount =
         outcome === "approved"
-          ? (fields["approved_amount"] ? Number(fields["approved_amount"]) : workOrder.quote_amount)
+          ? fields["approved_amount"]
+            ? Number(fields["approved_amount"])
+            : workOrder.quote_amount
           : null;
 
       if (workOrder.approval_id) {
         const { error } = await supabase
           .from("approvals")
           .update({
-            status: outcome === "approved" ? "approved" : outcome === "declined" ? "declined" : "pending",
+            status:
+              outcome === "approved" ? "approved" : outcome === "declined" ? "declined" : "pending",
             decision_note: note,
             decided_at: outcome === "info_requested" ? null : decidedAt,
             approver_role: "owner",
@@ -515,202 +530,233 @@ export function WorkOrderDrawer({
       }
     >
       <div className="space-y-5 text-sm">
-          {workOrder.closed_at ? (
-            <Celebrate title="Work order completed">
-              Closed {usDate(workOrder.closed_at)}
-              {workOrder.closure_note ? ` — ${workOrder.closure_note}` : ""}
-            </Celebrate>
-          ) : (
-            <ProgressSteps steps={steps} currentIndex={currentIndex} />
-          )}
+        {workOrder.closed_at ? (
+          <Celebrate title="Work order completed">
+            Closed {usDate(workOrder.closed_at)}
+            {workOrder.closure_note ? ` — ${workOrder.closure_note}` : ""}
+          </Celebrate>
+        ) : (
+          <ProgressSteps steps={steps} currentIndex={currentIndex} />
+        )}
 
-          <div className="rounded-md border bg-muted/40 p-3">
-            <p className="font-medium">{nextAction(workOrder)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {verdict.label} · {verdict.reason}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Next checkpoint: {CHECKPOINT_LABELS[nextCheckpoint(workOrder)]}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Stays yours until it's resolved or handed off — asking for advice doesn't change that.
-            </p>
+        <div className="rounded-md border bg-muted/40 p-3">
+          <p className="font-medium">{nextAction(workOrder)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {verdict.label} · {verdict.reason}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Next checkpoint: {CHECKPOINT_LABELS[nextCheckpoint(workOrder)]}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Stays yours until it's resolved or handed off — asking for advice doesn't change that.
+          </p>
+        </div>
+
+        {consequence ? (
+          <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-xs text-danger">
+            {consequence}
           </div>
+        ) : null}
 
-          {consequence ? (
-            <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-xs text-danger">
-              {consequence}
-            </div>
-          ) : null}
+        {commitments.action ? (
+          <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
+            {commitments.action}
+          </div>
+        ) : null}
 
-          {commitments.action ? (
-            <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
-              {commitments.action}
-            </div>
-          ) : null}
+        <Separator />
 
-          <Separator />
-
-          {/* Money and authority ---------------------------------------- */}
-          <section className="space-y-3">
-            <h3 className="font-display text-sm font-semibold">Cost and authority</h3>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <MoneyField label="Quote" k="quote_amount" value={value} set={set} readOnly={readOnly} />
-              <MoneyField label="Second quote" k="second_quote_amount" value={value} set={set} readOnly={readOnly} />
-              <MoneyField label="Final cost" k="final_cost" value={value} set={set} readOnly={readOnly} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Scope of work</Label>
-              <Textarea
-                rows={2}
-                disabled={readOnly}
-                value={value("scope")}
-                onChange={(e) => set("scope", e.target.value)}
-              />
-            </div>
-            {advice.recommended ? (
-              <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-xs">
-                {advice.reason} This is guidance, not a block.
-              </p>
-            ) : null}
-            <Button
-              size="sm"
-              disabled={readOnly || save.isPending}
-              onClick={() =>
-                save.mutate({
-                  patch: {
-                    quote_amount: numOrNull(value("quote_amount")),
-                    second_quote_amount: numOrNull(value("second_quote_amount")),
-                    final_cost: numOrNull(value("final_cost")),
-                    scope: value("scope") || null,
-                    quote_received_at: value("quote_amount") ? (workOrder.quote_received_at ?? stamp()) : null,
-                    authority_level: verdict.level,
-                  },
-                  event: "cost",
-                  body: `Cost updated — quote ${money(numOrNull(value("quote_amount")))}`,
-                  detail: { authority: verdict.level, reason: verdict.reason },
-                })
-              }
-            >
-              Save cost
-            </Button>
-          </section>
-
-          <Separator />
-
-          {/* Supervisor approval ----------------------------------------- */}
-          {verdict.supervisorApprovalRequired ? (
-            <>
-              <section className="space-y-3">
-                <h3 className="font-display text-sm font-semibold">Supervisor approval</h3>
-                <p className="text-xs text-muted-foreground">{verdict.reason}</p>
-
-                {!workOrder.supervisor_approval_id ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={readOnly || requestSupervisorApproval.isPending}
-                    onClick={() => requestSupervisorApproval.mutate()}
-                  >
-                    Request supervisor approval
-                  </Button>
-                ) : (
-                  <div className="space-y-2">
-                    <Chip className={stateChip(supervisorApproved(workOrder) ? "done" : "waiting")}>
-                      {APPROVAL_STATUS_LABELS[
-                        (workOrder.supervisor_approval_status ?? "pending") as keyof typeof APPROVAL_STATUS_LABELS
-                      ] ?? "Pending"}
-                    </Chip>
-                    {isSupervisor && workOrder.supervisor_approval_status === "pending" ? (
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          disabled={readOnly || !note || recordSupervisorDecision.isPending}
-                          onClick={() => recordSupervisorDecision.mutate("approved")}
-                        >
-                          Approve this amount
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={readOnly || !note || recordSupervisorDecision.isPending}
-                          onClick={() => recordSupervisorDecision.mutate("declined")}
-                        >
-                          Decline
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-
-                {supervisorApproved(workOrder) && !workOrder.owner_fyi_at ? (
-                  <div className="space-y-2">
-                    <Label className="text-xs">What the homeowner was told, and where</Label>
-                    <Textarea
-                      rows={2}
-                      disabled={readOnly}
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Emailed the homeowner on 12 Aug — $275 disposal replacement going ahead."
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={readOnly || sendOwnerFyi.isPending}
-                      onClick={() => sendOwnerFyi.mutate()}
-                    >
-                      Record homeowner FYI
-                    </Button>
-                  </div>
-                ) : null}
-                {workOrder.owner_fyi_at ? (
-                  <p className="text-xs text-muted-foreground">Homeowner told on {usDate(workOrder.owner_fyi_at as string)}.</p>
-                ) : null}
-              </section>
-              <Separator />
-            </>
-          ) : null}
-
-          {/* Owner approval --------------------------------------------- */}
-          <section className="space-y-3">
-            <h3 className="font-display text-sm font-semibold">Owner approval</h3>
-            <p className="text-xs text-muted-foreground">
-              Repairs over the policy threshold need the owner's sign-off. Emergency mitigation can proceed
-              anyway — approval is for the permanent fix. Notified is not the same as approved.
+        {/* Money and authority ---------------------------------------- */}
+        <section className="space-y-3">
+          <h3 className="font-display text-sm font-semibold">Cost and authority</h3>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <MoneyField
+              label="Quote"
+              k="quote_amount"
+              value={value}
+              set={set}
+              readOnly={readOnly}
+            />
+            <MoneyField
+              label="Second quote"
+              k="second_quote_amount"
+              value={value}
+              set={set}
+              readOnly={readOnly}
+            />
+            <MoneyField
+              label="Final cost"
+              k="final_cost"
+              value={value}
+              set={set}
+              readOnly={readOnly}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Scope of work</Label>
+            <Textarea
+              rows={2}
+              disabled={readOnly}
+              value={value("scope")}
+              onChange={(e) => set("scope", e.target.value)}
+            />
+          </div>
+          {advice.recommended ? (
+            <p className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-xs">
+              {advice.reason} This is guidance, not a block.
             </p>
+          ) : null}
+          <Button
+            size="sm"
+            disabled={readOnly || save.isPending}
+            onClick={() =>
+              save.mutate({
+                patch: {
+                  quote_amount: numOrNull(value("quote_amount")),
+                  second_quote_amount: numOrNull(value("second_quote_amount")),
+                  final_cost: numOrNull(value("final_cost")),
+                  scope: value("scope") || null,
+                  quote_received_at: value("quote_amount")
+                    ? (workOrder.quote_received_at ?? stamp())
+                    : null,
+                  authority_level: verdict.level,
+                },
+                event: "cost",
+                body: `Cost updated — quote ${money(numOrNull(value("quote_amount")))}`,
+                detail: { authority: verdict.level, reason: verdict.reason },
+              })
+            }
+          >
+            Save cost
+          </Button>
+        </section>
 
-            {verdict.ownerApprovalRequired ? (
-              <>
-                <div className="flex flex-wrap gap-2">
-                  {workOrder.approval_status === "not_required" || !workOrder.approval_id ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={readOnly || requestApproval.isPending}
-                      onClick={() => requestApproval.mutate()}
-                    >
-                      Request owner approval
-                    </Button>
+        <Separator />
+
+        {/* Supervisor approval ----------------------------------------- */}
+        {verdict.supervisorApprovalRequired ? (
+          <>
+            <section className="space-y-3">
+              <h3 className="font-display text-sm font-semibold">Supervisor approval</h3>
+              <p className="text-xs text-muted-foreground">{verdict.reason}</p>
+
+              {!workOrder.supervisor_approval_id ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={readOnly || requestSupervisorApproval.isPending}
+                  onClick={() => requestSupervisorApproval.mutate()}
+                >
+                  Request supervisor approval
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Chip className={stateChip(supervisorApproved(workOrder) ? "done" : "waiting")}>
+                    {APPROVAL_STATUS_LABELS[
+                      (workOrder.supervisor_approval_status ??
+                        "pending") as keyof typeof APPROVAL_STATUS_LABELS
+                    ] ?? "Pending"}
+                  </Chip>
+                  {isSupervisor && workOrder.supervisor_approval_status === "pending" ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        disabled={readOnly || !note || recordSupervisorDecision.isPending}
+                        onClick={() => recordSupervisorDecision.mutate("approved")}
+                      >
+                        Approve this amount
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={readOnly || !note || recordSupervisorDecision.isPending}
+                        onClick={() => recordSupervisorDecision.mutate("declined")}
+                      >
+                        Decline
+                      </Button>
+                    </div>
                   ) : null}
                 </div>
+              )}
 
-                <div className="space-y-1">
-                  <Label className="text-xs">
-                    Owner's answer, and where it was recorded (required to log a decision)
-                  </Label>
+              {supervisorApproved(workOrder) && !workOrder.owner_fyi_at ? (
+                <div className="space-y-2">
+                  <Label className="text-xs">What the homeowner was told, and where</Label>
                   <Textarea
                     rows={2}
                     disabled={readOnly}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Email from the owner on 12 Aug approving the $650 water heater replacement."
+                    placeholder="Emailed the homeowner on 12 Aug — $275 disposal replacement going ahead."
                   />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={readOnly || sendOwnerFyi.isPending}
+                    onClick={() => sendOwnerFyi.mutate()}
+                  >
+                    Record homeowner FYI
+                  </Button>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <MoneyField label="Amount approved" k="approved_amount" value={value} set={set} readOnly={readOnly} />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(["approved", "declined", "info_requested"] as OwnerApprovalOutcome[]).map((outcome) => (
+              ) : null}
+              {workOrder.owner_fyi_at ? (
+                <p className="text-xs text-muted-foreground">
+                  Homeowner told on {usDate(workOrder.owner_fyi_at as string)}.
+                </p>
+              ) : null}
+            </section>
+            <Separator />
+          </>
+        ) : null}
+
+        {/* Owner approval --------------------------------------------- */}
+        <section className="space-y-3">
+          <h3 className="font-display text-sm font-semibold">Owner approval</h3>
+          <p className="text-xs text-muted-foreground">
+            Repairs over the policy threshold need the owner's sign-off. Emergency mitigation can
+            proceed anyway — approval is for the permanent fix. Notified is not the same as
+            approved.
+          </p>
+
+          {verdict.ownerApprovalRequired ? (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {workOrder.approval_status === "not_required" || !workOrder.approval_id ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={readOnly || requestApproval.isPending}
+                    onClick={() => requestApproval.mutate()}
+                  >
+                    Request owner approval
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">
+                  Owner's answer, and where it was recorded (required to log a decision)
+                </Label>
+                <Textarea
+                  rows={2}
+                  disabled={readOnly}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Email from the owner on 12 Aug approving the $650 water heater replacement."
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <MoneyField
+                  label="Amount approved"
+                  k="approved_amount"
+                  value={value}
+                  set={set}
+                  readOnly={readOnly}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(["approved", "declined", "info_requested"] as OwnerApprovalOutcome[]).map(
+                  (outcome) => (
                     <Button
                       key={outcome}
                       size="sm"
@@ -720,374 +766,416 @@ export function WorkOrderDrawer({
                     >
                       {OWNER_APPROVAL_OUTCOME_LABELS[outcome]}
                     </Button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground">{verdict.reason}</p>
-            )}
-          </section>
-
-          <Separator />
-
-          {/* Warranty ---------------------------------------------------- */}
-          {workOrder.warranty_may_apply ? (
-            <>
-              <section className="space-y-3">
-                <h3 className="font-display text-sm font-semibold">Warranty</h3>
-                <p className="rounded-md border border-amber/25 bg-amber/10 px-2 py-1 text-xs">
-                  Warranty may apply{workOrder.warranty_contact ? ` — ${workOrder.warranty_contact}` : ""}.
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Warranty appointment or ETA</Label>
-                    <Input
-                      type="datetime-local"
-                      disabled={readOnly}
-                      value={local(fields["warranty_eta_at"] ?? workOrder.warranty_eta_at)}
-                      onChange={(e) => set("warranty_eta_at", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Reason for going around the warranty</Label>
-                    <Select
-                      disabled={readOnly}
-                      value={value("warranty_override_reason")}
-                      onValueChange={(v) => set("warranty_override_reason", v)}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Still on the warranty route" /></SelectTrigger>
-                      <SelectContent>
-                        {OVERRIDE_REASONS.map((r) => (
-                          <SelectItem key={r} value={r}>{WARRANTY_OVERRIDE_LABELS[r]}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={readOnly || save.isPending}
-                    onClick={() =>
-                      save.mutate({
-                        patch: { warranty_contacted_at: stamp() },
-                        event: "warranty_contacted",
-                        body: "Warranty provider contacted",
-                      })
-                    }
-                  >
-                    Provider contacted
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={readOnly || save.isPending || !fields["warranty_eta_at"]}
-                    onClick={() =>
-                      save.mutate({
-                        patch: { warranty_eta_at: new Date(fields["warranty_eta_at"] as string).toISOString() },
-                        event: "warranty_eta",
-                        body: "Warranty appointment recorded",
-                      })
-                    }
-                  >
-                    Record warranty ETA
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={readOnly || save.isPending || !fields["warranty_override_reason"]}
-                    onClick={() =>
-                      save.mutate({
-                        patch: {
-                          warranty_override_reason: fields["warranty_override_reason"] as string,
-                          warranty_override_at: stamp(),
-                          warranty_override_by: userId,
-                        },
-                        event: "warranty_override",
-                        body: `Alternate vendor chosen — ${
-                          WARRANTY_OVERRIDE_LABELS[fields["warranty_override_reason"] as WarrantyOverrideReason]
-                        }`,
-                      })
-                    }
-                  >
-                    Choose an alternate vendor
-                  </Button>
-                </div>
-              </section>
-              <Separator />
+                  ),
+                )}
+              </div>
             </>
-          ) : null}
+          ) : (
+            <p className="text-xs text-muted-foreground">{verdict.reason}</p>
+          )}
+        </section>
 
-          {/* Vendor commitments ------------------------------------------ */}
-          <section className="space-y-3">
-            <h3 className="font-display text-sm font-semibold">Vendor</h3>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Vendor</Label>
-                <Input
-                  disabled={readOnly}
-                  value={value("vendor_name")}
-                  onChange={(e) => set("vendor_name", e.target.value)}
-                />
+        <Separator />
+
+        {/* Warranty ---------------------------------------------------- */}
+        {workOrder.warranty_may_apply ? (
+          <>
+            <section className="space-y-3">
+              <h3 className="font-display text-sm font-semibold">Warranty</h3>
+              <p className="rounded-md border border-amber/25 bg-amber/10 px-2 py-1 text-xs">
+                Warranty may apply
+                {workOrder.warranty_contact ? ` — ${workOrder.warranty_contact}` : ""}.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Warranty appointment or ETA</Label>
+                  <Input
+                    type="datetime-local"
+                    disabled={readOnly}
+                    value={local(fields["warranty_eta_at"] ?? workOrder.warranty_eta_at)}
+                    onChange={(e) => set("warranty_eta_at", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Reason for going around the warranty</Label>
+                  <Select
+                    disabled={readOnly}
+                    value={value("warranty_override_reason")}
+                    onValueChange={(v) => set("warranty_override_reason", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Still on the warranty route" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {OVERRIDE_REASONS.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {WARRANTY_OVERRIDE_LABELS[r]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Arrival ETA</Label>
-                <Input
-                  type="datetime-local"
-                  disabled={readOnly}
-                  value={local(fields["vendor_eta_at"] ?? workOrder.vendor_eta_at)}
-                  onChange={(e) => set("vendor_eta_at", e.target.value)}
-                />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={readOnly || save.isPending}
+                  onClick={() =>
+                    save.mutate({
+                      patch: { warranty_contacted_at: stamp() },
+                      event: "warranty_contacted",
+                      body: "Warranty provider contacted",
+                    })
+                  }
+                >
+                  Provider contacted
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={readOnly || save.isPending || !fields["warranty_eta_at"]}
+                  onClick={() =>
+                    save.mutate({
+                      patch: {
+                        warranty_eta_at: new Date(
+                          fields["warranty_eta_at"] as string,
+                        ).toISOString(),
+                      },
+                      event: "warranty_eta",
+                      body: "Warranty appointment recorded",
+                    })
+                  }
+                >
+                  Record warranty ETA
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={readOnly || save.isPending || !fields["warranty_override_reason"]}
+                  onClick={() =>
+                    save.mutate({
+                      patch: {
+                        warranty_override_reason: fields["warranty_override_reason"] as string,
+                        warranty_override_at: stamp(),
+                        warranty_override_by: userId,
+                      },
+                      event: "warranty_override",
+                      body: `Alternate vendor chosen — ${
+                        WARRANTY_OVERRIDE_LABELS[
+                          fields["warranty_override_reason"] as WarrantyOverrideReason
+                        ]
+                      }`,
+                    })
+                  }
+                >
+                  Choose an alternate vendor
+                </Button>
               </div>
+            </section>
+            <Separator />
+          </>
+        ) : null}
+
+        {/* Vendor commitments ------------------------------------------ */}
+        <section className="space-y-3">
+          <h3 className="font-display text-sm font-semibold">Vendor</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Vendor</Label>
+              <Input
+                disabled={readOnly}
+                value={value("vendor_name")}
+                onChange={(e) => set("vendor_name", e.target.value)}
+              />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Stamp label="Contacted" k="vendor_contacted_at" wo={workOrder} save={save} readOnly={readOnly} />
-              <Stamp label="Acknowledged" k="vendor_acknowledged_at" wo={workOrder} save={save} readOnly={readOnly} />
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={readOnly || save.isPending || !fields["vendor_eta_at"]}
-                onClick={() =>
-                  save.mutate({
-                    patch: {
-                      vendor_name: value("vendor_name") || null,
-                      vendor_eta_at: new Date(fields["vendor_eta_at"] as string).toISOString(),
-                      scheduled_for: new Date(fields["vendor_eta_at"] as string).toISOString(),
-                    },
-                    event: "vendor_scheduled",
-                    body: "Appointment and ETA recorded",
-                  })
-                }
-              >
-                Record appointment
-              </Button>
-              <Stamp label="Arrived" k="vendor_arrived_at" wo={workOrder} save={save} readOnly={readOnly} />
-              <Stamp label="Vendor says complete" k="vendor_completed_at" wo={workOrder} save={save} readOnly={readOnly} />
+            <div className="space-y-1">
+              <Label className="text-xs">Arrival ETA</Label>
+              <Input
+                type="datetime-local"
+                disabled={readOnly}
+                value={local(fields["vendor_eta_at"] ?? workOrder.vendor_eta_at)}
+                onChange={(e) => set("vendor_eta_at", e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Stamp
+              label="Contacted"
+              k="vendor_contacted_at"
+              wo={workOrder}
+              save={save}
+              readOnly={readOnly}
+            />
+            <Stamp
+              label="Acknowledged"
+              k="vendor_acknowledged_at"
+              wo={workOrder}
+              save={save}
+              readOnly={readOnly}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={readOnly || save.isPending || !fields["vendor_eta_at"]}
+              onClick={() =>
+                save.mutate({
+                  patch: {
+                    vendor_name: value("vendor_name") || null,
+                    vendor_eta_at: new Date(fields["vendor_eta_at"] as string).toISOString(),
+                    scheduled_for: new Date(fields["vendor_eta_at"] as string).toISOString(),
+                  },
+                  event: "vendor_scheduled",
+                  body: "Appointment and ETA recorded",
+                })
+              }
+            >
+              Record appointment
+            </Button>
+            <Stamp
+              label="Arrived"
+              k="vendor_arrived_at"
+              wo={workOrder}
+              save={save}
+              readOnly={readOnly}
+            />
+            <Stamp
+              label="Vendor says complete"
+              k="vendor_completed_at"
+              wo={workOrder}
+              save={save}
+              readOnly={readOnly}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={readOnly || save.isPending}
+              onClick={() =>
+                save.mutate({
+                  patch: { missed_commitments: (workOrder.missed_commitments ?? 0) + 1 },
+                  event: "missed_commitment",
+                  body: `Missed commitment recorded (${(workOrder.missed_commitments ?? 0) + 1})`,
+                })
+              }
+            >
+              Record a missed commitment
+            </Button>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Vendor report</Label>
+            <Textarea
+              rows={2}
+              disabled={readOnly}
+              value={value("vendor_report")}
+              onChange={(e) => set("vendor_report", e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Temporary mitigation in place</Label>
+            <Input
+              disabled={readOnly}
+              value={value("temporary_mitigation")}
+              onChange={(e) => set("temporary_mitigation", e.target.value)}
+              placeholder="Mini-fridge delivered; water shut off at the valve…"
+            />
+          </div>
+          <Button
+            size="sm"
+            disabled={readOnly || save.isPending}
+            onClick={() =>
+              save.mutate({
+                patch: {
+                  vendor_name: value("vendor_name") || null,
+                  vendor_report: value("vendor_report") || null,
+                  temporary_mitigation: value("temporary_mitigation") || null,
+                },
+                event: "vendor_detail",
+                body: "Vendor detail updated",
+              })
+            }
+          >
+            Save vendor detail
+          </Button>
+        </section>
+
+        <Separator />
+
+        {/* Evidence ---------------------------------------------------- */}
+        <section className="space-y-2">
+          <h3 className="font-display text-sm font-semibold">Evidence</h3>
+          {reqs.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nothing required on this job.</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {reqs.map((r) => {
+                const done = r.status === "provided" || r.status === "waived";
+                return (
+                  <div
+                    key={r.slot_key}
+                    className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ${
+                      done ? "bg-sage/8 text-foreground" : "bg-sunken text-foreground"
+                    }`}
+                  >
+                    <span className="truncate">
+                      {r.label}
+                      {r.required ? "" : " (optional)"}
+                    </span>
+                    <StatusBadge tone={done ? "resolved" : "waiting"}>{r.status}</StatusBadge>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <PhotoStrip
+            entityType="ticket"
+            entityId={workOrder.ticket_id ?? workOrder.id}
+            title="Job photos"
+            emptyHint="No photos uploaded from the ticket yet."
+          />
+          {progress.blocking.length > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {progress.blocking.length} required item(s) still outstanding.
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={readOnly || save.isPending || workOrder.evidence_complete}
+              onClick={() =>
+                save.mutate({
+                  patch: { evidence_complete: true },
+                  event: "evidence_complete",
+                  body: "Completion evidence confirmed",
+                })
+              }
+            >
+              Confirm completion evidence
+            </Button>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Closure ----------------------------------------------------- */}
+        <section className="space-y-3">
+          <h3 className="font-display text-sm font-semibold">Closure</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Invoice reference</Label>
+              <Input
+                disabled={readOnly}
+                value={value("invoice_reference")}
+                onChange={(e) => set("invoice_reference", e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Closure note</Label>
+              <Input
+                disabled={readOnly}
+                value={value("closure_note")}
+                onChange={(e) => set("closure_note", e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {workOrder.occupied_now && !workOrder.guest_notified_at ? (
+              <Stamp
+                label="Guest updated"
+                k="guest_notified_at"
+                wo={workOrder}
+                save={save}
+                readOnly={readOnly}
+              />
+            ) : null}
+            <Button
+              size="sm"
+              disabled={readOnly || save.isPending || !canClose(workOrder, reqs)}
+              onClick={() =>
+                save.mutate({
+                  patch: {
+                    invoice_reference: value("invoice_reference") || null,
+                    closure_note: value("closure_note") || null,
+                    closed_at: stamp(),
+                    closed_by: userId,
+                  },
+                  event: "closed",
+                  body: "Work order closed",
+                })
+              }
+            >
+              Close work order
+            </Button>
+            {workOrder.closed_at && isSupervisor ? (
               <Button
                 size="sm"
                 variant="ghost"
                 disabled={readOnly || save.isPending}
                 onClick={() =>
                   save.mutate({
-                    patch: { missed_commitments: (workOrder.missed_commitments ?? 0) + 1 },
-                    event: "missed_commitment",
-                    body: `Missed commitment recorded (${(workOrder.missed_commitments ?? 0) + 1})`,
-                  })
-                }
-              >
-                Record a missed commitment
-              </Button>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Vendor report</Label>
-              <Textarea
-                rows={2}
-                disabled={readOnly}
-                value={value("vendor_report")}
-                onChange={(e) => set("vendor_report", e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Temporary mitigation in place</Label>
-              <Input
-                disabled={readOnly}
-                value={value("temporary_mitigation")}
-                onChange={(e) => set("temporary_mitigation", e.target.value)}
-                placeholder="Mini-fridge delivered; water shut off at the valve…"
-              />
-            </div>
-            <Button
-              size="sm"
-              disabled={readOnly || save.isPending}
-              onClick={() =>
-                save.mutate({
-                  patch: {
-                    vendor_name: value("vendor_name") || null,
-                    vendor_report: value("vendor_report") || null,
-                    temporary_mitigation: value("temporary_mitigation") || null,
-                  },
-                  event: "vendor_detail",
-                  body: "Vendor detail updated",
-                })
-              }
-            >
-              Save vendor detail
-            </Button>
-          </section>
-
-          <Separator />
-
-          {/* Evidence ---------------------------------------------------- */}
-          <section className="space-y-2">
-            <h3 className="font-display text-sm font-semibold">Evidence</h3>
-            {reqs.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nothing required on this job.</p>
-            ) : (
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {reqs.map((r) => {
-                  const done = r.status === "provided" || r.status === "waived";
-                  return (
-                    <div
-                      key={r.slot_key}
-                      className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ${
-                        done ? "bg-sage/8 text-foreground" : "bg-sunken text-foreground"
-                      }`}
-                    >
-                      <span className="truncate">
-                        {r.label}
-                        {r.required ? "" : " (optional)"}
-                      </span>
-                      <StatusBadge tone={done ? "resolved" : "waiting"}>{r.status}</StatusBadge>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <PhotoStrip
-              entityType="ticket"
-              entityId={workOrder.ticket_id ?? workOrder.id}
-              title="Job photos"
-              emptyHint="No photos uploaded from the ticket yet."
-            />
-            {progress.blocking.length > 0 ? (
-              <p className="text-xs text-muted-foreground">
-                {progress.blocking.length} required item(s) still outstanding.
-              </p>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={readOnly || save.isPending || workOrder.evidence_complete}
-                onClick={() =>
-                  save.mutate({
-                    patch: { evidence_complete: true },
-                    event: "evidence_complete",
-                    body: "Completion evidence confirmed",
-                  })
-                }
-              >
-                Confirm completion evidence
-              </Button>
-            </div>
-          </section>
-
-          <Separator />
-
-          {/* Closure ----------------------------------------------------- */}
-          <section className="space-y-3">
-            <h3 className="font-display text-sm font-semibold">Closure</h3>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Invoice reference</Label>
-                <Input
-                  disabled={readOnly}
-                  value={value("invoice_reference")}
-                  onChange={(e) => set("invoice_reference", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Closure note</Label>
-                <Input
-                  disabled={readOnly}
-                  value={value("closure_note")}
-                  onChange={(e) => set("closure_note", e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {workOrder.occupied_now && !workOrder.guest_notified_at ? (
-                <Stamp label="Guest updated" k="guest_notified_at" wo={workOrder} save={save} readOnly={readOnly} />
-              ) : null}
-              <Button
-                size="sm"
-                disabled={readOnly || save.isPending || !canClose(workOrder, reqs)}
-                onClick={() =>
-                  save.mutate({
                     patch: {
-                      invoice_reference: value("invoice_reference") || null,
-                      closure_note: value("closure_note") || null,
-                      closed_at: stamp(),
-                      closed_by: userId,
+                      closed_at: null,
+                      reopened_at: stamp(),
+                      reopened_by: userId,
+                      reopen_reason: note || "Reopened for review",
                     },
-                    event: "closed",
-                    body: "Work order closed",
+                    event: "reopened",
+                    body: note || "Reopened for review",
                   })
                 }
               >
-                Close work order
+                Reopen
               </Button>
-              {workOrder.closed_at && isSupervisor ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={readOnly || save.isPending}
-                  onClick={() =>
-                    save.mutate({
-                      patch: {
-                        closed_at: null,
-                        reopened_at: stamp(),
-                        reopened_by: userId,
-                        reopen_reason: note || "Reopened for review",
-                      },
-                      event: "reopened",
-                      body: note || "Reopened for review",
-                    })
-                  }
-                >
-                  Reopen
-                </Button>
-              ) : null}
-            </div>
-            {blockers.length > 0 ? (
-              <ul className="list-disc pl-4 text-xs text-muted-foreground">
-                {blockers.map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
             ) : null}
-          </section>
+          </div>
+          {blockers.length > 0 ? (
+            <ul className="list-disc pl-4 text-xs text-muted-foreground">
+              {blockers.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
 
-          <Separator />
+        <Separator />
 
-          {/* Related ----------------------------------------------------- */}
-          <section className="space-y-2 text-xs">
-            <h3 className="font-display text-sm font-semibold">Related</h3>
-            {workOrder.ticket_id ? (
-              <p>
-                <Link
-                  to="/tickets/$ticketId"
-                  params={{ ticketId: workOrder.ticket_id }}
-                  className="underline underline-offset-2"
-                >
-                  Originating ticket
-                </Link>
-                {" — start a guest recovery or a claim from there so the stay context comes with it."}
-              </p>
-            ) : null}
-            <p className="text-muted-foreground">
-              {workOrder.recovery_id ? "Linked to a guest recovery." : "No guest recovery linked."}{" "}
-              {workOrder.claim_id ? "Linked to a claim." : "No claim linked."} A work order fixes the home; a
-              recovery gives the guest something back; a claim recovers the cost from someone else. Link one
-              only when it is genuinely running.
+        {/* Related ----------------------------------------------------- */}
+        <section className="space-y-2 text-xs">
+          <h3 className="font-display text-sm font-semibold">Related</h3>
+          {workOrder.ticket_id ? (
+            <p>
+              <Link
+                to="/tickets/$ticketId"
+                params={{ ticketId: workOrder.ticket_id }}
+                className="underline underline-offset-2"
+              >
+                Originating ticket
+              </Link>
+              {" — start a guest recovery or a claim from there so the stay context comes with it."}
             </p>
-            <LinkRelated workOrder={workOrder} canEdit={canEdit} onSaved={refresh} />
-          </section>
+          ) : null}
+          <p className="text-muted-foreground">
+            {workOrder.recovery_id ? "Linked to a guest recovery." : "No guest recovery linked."}{" "}
+            {workOrder.claim_id ? "Linked to a claim." : "No claim linked."} A work order fixes the
+            home; a recovery gives the guest something back; a claim recovers the cost from someone
+            else. Link one only when it is genuinely running.
+          </p>
+          <LinkRelated workOrder={workOrder} canEdit={canEdit} onSaved={refresh} />
+        </section>
 
-          <Separator />
+        <Separator />
 
-          <section className="space-y-2">
-            <h3 className="font-display text-sm font-semibold">History</h3>
-            {(activity.data ?? []).map((row) => (
-              <div key={row.id} className="rounded border px-3 py-1.5 text-xs">
-                <p className="font-medium">{row.body}</p>
-                <p className="text-muted-foreground">
-                  {row.event_type} · {usDateTime(row.created_at)}
-                </p>
-              </div>
-            ))}
-          </section>
+        <section className="space-y-2">
+          <h3 className="font-display text-sm font-semibold">History</h3>
+          {(activity.data ?? []).map((row) => (
+            <div key={row.id} className="rounded border px-3 py-1.5 text-xs">
+              <p className="font-medium">{row.body}</p>
+              <p className="text-muted-foreground">
+                {row.event_type} · {usDateTime(row.created_at)}
+              </p>
+            </div>
+          ))}
+        </section>
       </div>
     </TaskWorkspace>
   );
@@ -1160,14 +1248,23 @@ function LinkRelated({
       {recoveryOptions.length && !workOrder.recovery_id ? (
         <div className="flex items-center gap-2">
           <Select value={recoveryId} onValueChange={setRecoveryId}>
-            <SelectTrigger><SelectValue placeholder="Link a guest recovery" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Link a guest recovery" />
+            </SelectTrigger>
             <SelectContent>
               {recoveryOptions.map((r) => (
-                <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>
+                <SelectItem key={r.id} value={r.id}>
+                  {r.title}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="outline" disabled={!recoveryId} onClick={() => link.mutate({ recovery_id: recoveryId })}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!recoveryId}
+            onClick={() => link.mutate({ recovery_id: recoveryId })}
+          >
             Link
           </Button>
         </div>
@@ -1175,14 +1272,23 @@ function LinkRelated({
       {claimOptions.length && !workOrder.claim_id ? (
         <div className="flex items-center gap-2">
           <Select value={claimId} onValueChange={setClaimId}>
-            <SelectTrigger><SelectValue placeholder="Link a claim" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Link a claim" />
+            </SelectTrigger>
             <SelectContent>
               {claimOptions.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>
+                  {c.title}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="outline" disabled={!claimId} onClick={() => link.mutate({ claim_id: claimId })}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!claimId}
+            onClick={() => link.mutate({ claim_id: claimId })}
+          >
             Link
           </Button>
         </div>
@@ -1201,7 +1307,10 @@ function Stamp({
   label: string;
   k: keyof WorkOrderRow & string;
   wo: WorkOrderRow;
-  save: { mutate: (v: { patch: WorkOrderUpdate; event: string; body: string }) => void; isPending: boolean };
+  save: {
+    mutate: (v: { patch: WorkOrderUpdate; event: string; body: string }) => void;
+    isPending: boolean;
+  };
   readOnly: boolean;
 }) {
   const done = Boolean(wo[k]);
@@ -1210,7 +1319,13 @@ function Stamp({
       size="sm"
       variant="outline"
       disabled={readOnly || save.isPending || done}
-      onClick={() => save.mutate({ patch: { [k]: new Date().toISOString() } as WorkOrderUpdate, event: k, body: `${label} recorded` })}
+      onClick={() =>
+        save.mutate({
+          patch: { [k]: new Date().toISOString() } as WorkOrderUpdate,
+          event: k,
+          body: `${label} recorded`,
+        })
+      }
     >
       {done ? `${label} ✓` : label}
     </Button>
@@ -1233,7 +1348,12 @@ function MoneyField({
   return (
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
-      <Input type="number" disabled={readOnly} value={value(k)} onChange={(e) => set(k, e.target.value)} />
+      <Input
+        type="number"
+        disabled={readOnly}
+        value={value(k)}
+        onChange={(e) => set(k, e.target.value)}
+      />
     </div>
   );
 }

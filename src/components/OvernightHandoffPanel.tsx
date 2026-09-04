@@ -33,7 +33,8 @@ type Row = {
 /** Why this ticket is on the morning list — plain reasons, not internal codes. */
 function reasons(t: Row) {
   const out: string[] = [];
-  if (t.priority === "p1" || t.priority === "p2") out.push(`Unresolved ${priorityMeta(t.priority).short}`);
+  if (t.priority === "p1" || t.priority === "p2")
+    out.push(`Unresolved ${priorityMeta(t.priority).short}`);
   if (t.vendor_dispatched_at && !t.vendor_completed_at) out.push("Vendor action pending");
   if (t.next_review_at) out.push("Promised follow-up");
   if (t.handoff_status === "pending") out.push("Handed into Operations — not accepted");
@@ -52,7 +53,8 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
         .maybeSingle();
 
       const window = lastAfterHoursWindow(cfg as CoverageConfig | null);
-      if (!window) return { cfg: (cfg ?? null) as CoverageConfig | null, window: null, rows: [] as Row[] };
+      if (!window)
+        return { cfg: (cfg ?? null) as CoverageConfig | null, window: null, rows: [] as Row[] };
 
       const { data: rows, error } = await supabase
         .from("tickets")
@@ -67,7 +69,9 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
         .limit(200);
       if (error) throw error;
 
-      const open = ((rows ?? []) as unknown as Row[]).filter((t) => OPEN_STATUSES.includes(t.status));
+      const open = ((rows ?? []) as unknown as Row[]).filter((t) =>
+        OPEN_STATUSES.includes(t.status),
+      );
       return { cfg: (cfg ?? null) as CoverageConfig | null, window, rows: open };
     },
     refetchInterval: 5 * 60 * 1000,
@@ -83,9 +87,7 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
       <div className="flex flex-wrap items-center gap-2">
         <Sunrise className="size-4 text-amber" />
         <h2 className="text-base font-semibold tracking-tight">Overnight handoff</h2>
-        <StatusBadge tone={openCount === 0 ? "resolved" : "waiting"}>
-          {openCount} open
-        </StatusBadge>
+        <StatusBadge tone={openCount === 0 ? "resolved" : "waiting"}>{openCount} open</StatusBadge>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
         {data.window
@@ -118,10 +120,15 @@ export function OvernightHandoffPanel({ className }: { className?: string | unde
                       {usDateTime(t.reported_at)}
                     </span>
                   </span>
-                  <StatusBadge tone={ticketTone(t.status)}>{labelFor(STATUSES, t.status)}</StatusBadge>
+                  <StatusBadge tone={ticketTone(t.status)}>
+                    {labelFor(STATUSES, t.status)}
+                  </StatusBadge>
                   <span className="flex flex-wrap gap-1">
                     {reasons(t).map((r) => (
-                      <span key={r} className="chip border-cool-grey/25 bg-cool-grey/10 text-cool-grey">
+                      <span
+                        key={r}
+                        className="chip border-cool-grey/25 bg-cool-grey/10 text-cool-grey"
+                      >
                         {r}
                       </span>
                     ))}

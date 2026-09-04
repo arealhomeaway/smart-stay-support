@@ -19,8 +19,14 @@ const FIELD_MAP: Record<string, string[]> = {
   state: ["state", "region"],
   postal_code: ["zip", "zip code", "postal code"],
   onboarding_stage: ["stage", "onboarding stage", "status", "phase"],
-  onboarding_owner: ["owner", "responsible", "assignee", "onboarding owner", "point person", "project manager"],
-
+  onboarding_owner: [
+    "owner",
+    "responsible",
+    "assignee",
+    "onboarding owner",
+    "point person",
+    "project manager",
+  ],
 };
 
 /** Fields Resolve people may edit locally — a difference here becomes a conflict. */
@@ -55,7 +61,10 @@ export type NotionSyncResult = {
   error: string | null;
 };
 
-export async function syncNotionProperties(sourceKey: string, actorId: string): Promise<NotionSyncResult> {
+export async function syncNotionProperties(
+  sourceKey: string,
+  actorId: string,
+): Promise<NotionSyncResult> {
   const source = NOTION_SOURCES.find((s) => s.key === sourceKey);
   if (!source) throw new Error("Unknown Notion source.");
 
@@ -154,7 +163,9 @@ export async function syncNotionProperties(sourceKey: string, actorId: string): 
       } else {
         const current = await supabaseAdmin
           .from("properties")
-          .select("id, name, address_line1, city, state, postal_code, onboarding_stage, onboarding_owner")
+          .select(
+            "id, name, address_line1, city, state, postal_code, onboarding_stage, onboarding_owner",
+          )
           .eq("id", propertyId)
           .maybeSingle();
         if (!current.data) continue;

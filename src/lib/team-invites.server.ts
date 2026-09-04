@@ -8,14 +8,19 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 — read
 
 function newInviteCode() {
   const pick = () =>
-    Array.from({ length: 4 }, () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]).join("");
+    Array.from(
+      { length: 4 },
+      () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)],
+    ).join("");
   return `${pick()}-${pick()}`;
 }
 
 export async function loadTeamInvites(supabase: Client) {
   const { data, error } = await supabase
     .from("team_invites")
-    .select("id, code, role, invitee_email, invitee_name, note, expires_at, revoked_at, redeemed_at")
+    .select(
+      "id, code, role, invitee_email, invitee_name, note, expires_at, revoked_at, redeemed_at",
+    )
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw error;
@@ -118,7 +123,6 @@ export async function sendInviteEmail(input: {
   });
   return { status: result.status, error: result.error };
 }
-
 
 export async function revokeTeamInvite(supabase: Client, userId: string, inviteId: string) {
   await assertAdmin(supabase, userId);
@@ -229,7 +233,8 @@ export async function resendTeamInvite(supabase: Client, userId: string, inviteI
   if (!data) throw new Error("That invite no longer exists.");
   if (data.redeemed_at) throw new Error("That code has already been redeemed.");
   if (data.revoked_at) throw new Error("That code was revoked.");
-  if (!data.invitee_email) throw new Error("That code has no email address on it — copy the message instead.");
+  if (!data.invitee_email)
+    throw new Error("That code has no email address on it — copy the message instead.");
 
   return sendInviteEmail({
     email: data.invitee_email,

@@ -64,14 +64,20 @@ export type QueueTab = "mine" | "team" | "unassigned" | "escalated" | "closed" |
  * `supervisory` views are the exception board — useful to whoever oversees the
  * work, noise to whoever is doing it.
  */
-export const QUEUE_TABS: { value: QueueTab; label: string; hint: string; supervisory?: boolean }[] = [
-  { value: "mine", label: "My work", hint: "Tickets you own or must act on next." },
-  { value: "unassigned", label: "Unclaimed", hint: "Open tickets nobody has picked up." },
-  { value: "team", label: "Everyone's work", hint: "Every open ticket across the portfolio." },
-  { value: "closed", label: "Closed", hint: "Resolved and closed tickets." },
-  { value: "escalated", label: "Overdue & escalated", hint: "Past a response standard or escalated.", supervisory: true },
-  { value: "all", label: "All", hint: "Everything not archived.", supervisory: true },
-];
+export const QUEUE_TABS: { value: QueueTab; label: string; hint: string; supervisory?: boolean }[] =
+  [
+    { value: "mine", label: "My work", hint: "Tickets you own or must act on next." },
+    { value: "unassigned", label: "Unclaimed", hint: "Open tickets nobody has picked up." },
+    { value: "team", label: "Everyone's work", hint: "Every open ticket across the portfolio." },
+    { value: "closed", label: "Closed", hint: "Resolved and closed tickets." },
+    {
+      value: "escalated",
+      label: "Overdue & escalated",
+      hint: "Past a response standard or escalated.",
+      supervisory: true,
+    },
+    { value: "all", label: "All", hint: "Everything not archived.", supervisory: true },
+  ];
 
 type QueueTicket = MatterOwnership & {
   status: string;
@@ -128,8 +134,10 @@ export function extractMentions(
       const handles = [p.full_name, p.email?.split("@")[0]]
         .filter(Boolean)
         .map((h) => `@${String(h).toLowerCase().replace(/\s+/g, "")}`);
-      return handles.some((h) => lowered.replace(/\s+/g, " ").includes(h)) ||
-        (p.full_name ? lowered.includes(`@${p.full_name.toLowerCase()}`) : false);
+      return (
+        handles.some((h) => lowered.replace(/\s+/g, " ").includes(h)) ||
+        (p.full_name ? lowered.includes(`@${p.full_name.toLowerCase()}`) : false)
+      );
     })
     .map((p) => p.id);
 }

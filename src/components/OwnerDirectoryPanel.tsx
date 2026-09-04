@@ -48,8 +48,8 @@ export function OwnerDirectoryPanel() {
           <Home className="size-4" /> Primary owner directory
         </CardTitle>
         <CardDescription>
-          The designated primary owner for every home, imported read-only from OwnerRez. Nothing is sent back to
-          OwnerRez or Notion, and ambiguous homes are never resolved by guessing.
+          The designated primary owner for every home, imported read-only from OwnerRez. Nothing is
+          sent back to OwnerRez or Notion, and ambiguous homes are never resolved by guessing.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -62,8 +62,9 @@ export function OwnerDirectoryPanel() {
         <p className="text-muted-foreground">
           {data.notLinked > 0 && (
             <>
-              {data.notLinked} home{data.notLinked === 1 ? " is" : "s are"} not linked to an OwnerRez listing, so no
-              owner can be resolved for {data.notLinked === 1 ? "it" : "them"} yet.{" "}
+              {data.notLinked} home{data.notLinked === 1 ? " is" : "s are"} not linked to an
+              OwnerRez listing, so no owner can be resolved for{" "}
+              {data.notLinked === 1 ? "it" : "them"} yet.{" "}
             </>
           )}
           {data.lastSyncedAt

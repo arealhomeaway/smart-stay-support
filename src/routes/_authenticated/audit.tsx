@@ -69,7 +69,10 @@ function AuditPage() {
         ) : (
           <div className="divide-y">
             {entries.map((e) => (
-              <div key={e.id} className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
+              <div
+                key={e.id}
+                className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm"
+              >
                 <div className="space-y-1">
                   <p className="font-medium">
                     {e.actor} · <span className="font-normal">{e.action.replace(/_/g, " ")}</span>
@@ -78,9 +81,13 @@ function AuditPage() {
                     {e.entity_type}
                     {e.entity_label ? ` — ${e.entity_label}` : ""}
                   </p>
-                  {e.reason && <p className="text-xs italic text-muted-foreground">Reason: {e.reason}</p>}
+                  {e.reason && (
+                    <p className="text-xs italic text-muted-foreground">Reason: {e.reason}</p>
+                  )}
                 </div>
-                <StatusBadge tone="closed">{new Date(e.created_at as string).toLocaleString()}</StatusBadge>
+                <StatusBadge tone="closed">
+                  {new Date(e.created_at as string).toLocaleString()}
+                </StatusBadge>
               </div>
             ))}
           </div>

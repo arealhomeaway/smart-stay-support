@@ -18,7 +18,9 @@ type Client = SupabaseClient<Database>;
 async function quarterlyWorkType(db: Client) {
   const { data, error } = await db
     .from("work_types")
-    .select("id, name, playbook_id, response_minutes, action_start_minutes, default_priority, category, bucket")
+    .select(
+      "id, name, playbook_id, response_minutes, action_start_minutes, default_priority, category, bucket",
+    )
     .eq("name", QUARTERLY_WORK_TYPE)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -47,17 +49,30 @@ export async function loadCleaningRegions(db: Client) {
     })),
     ...[...counts.keys()]
       .filter((m) => !known.has(m))
-      .map((m) => ({ market: m, managerId: null, managerName: null, propertyCount: counts.get(m) ?? 0 })),
+      .map((m) => ({
+        market: m,
+        managerId: null,
+        managerName: null,
+        propertyCount: counts.get(m) ?? 0,
+      })),
   ].sort((a, b) => a.market.localeCompare(b.market));
 
   return rows;
 }
 
 /** Supervisor action: point a market at the regional cleaning manager who inspects it. */
-export async function setCleaningRegionManager(db: Client, market: string, managerId: string | null) {
+export async function setCleaningRegionManager(
+  db: Client,
+  market: string,
+  managerId: string | null,
+) {
   let managerName: string | null = null;
   if (managerId) {
-    const { data } = await db.from("profiles").select("full_name, email").eq("id", managerId).maybeSingle();
+    const { data } = await db
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", managerId)
+      .maybeSingle();
     managerName = data?.full_name ?? data?.email ?? null;
   }
   const { error } = await db
@@ -71,22 +86,27 @@ export async function setCleaningRegionManager(db: Client, market: string, manag
 export async function loadQuarterlyReviews(db: Client) {
   const wt = await quarterlyWorkType(db);
 
-  const [{ data: props, error: propsError }, { data: tickets, error: ticketsError }, regions] = await Promise.all([
-    db
-      .from("properties")
-      .select("id, name, nickname, city, state, market, last_quarterly_review_at, quarterly_review_due_on")
-      .eq("active", true)
-      .order("quarterly_review_due_on"),
-    db
-      .from("tickets")
-      .select("id, ref, property_id, status, due_at, assigned_to, current_action_owner, created_at")
-      .eq("work_type_id", wt.id)
-      .eq("is_demo", false)
-      .is("archived_at", null)
-      .in("status", OPEN_STATUSES),
+  const [{ data: props, error: propsError }, { data: tickets, error: ticketsError }, regions] =
+    await Promise.all([
+      db
+        .from("properties")
+        .select(
+          "id, name, nickname, city, state, market, last_quarterly_review_at, quarterly_review_due_on",
+        )
+        .eq("active", true)
+        .order("quarterly_review_due_on"),
+      db
+        .from("tickets")
+        .select(
+          "id, ref, property_id, status, due_at, assigned_to, current_action_owner, created_at",
+        )
+        .eq("work_type_id", wt.id)
+        .eq("is_demo", false)
+        .is("archived_at", null)
+        .in("status", OPEN_STATUSES),
 
-    loadCleaningRegions(db),
-  ]);
+      loadCleaningRegions(db),
+    ]);
   if (propsError) throw new Error(propsError.message);
   if (ticketsError) throw new Error(ticketsError.message);
 
@@ -112,7 +132,6 @@ export async function loadQuarterlyReviews(db: Client) {
 
   return { rows, regions, checklistPlaybookId: wt.playbook_id };
 }
-
 
 /** Opens the quarterly review ticket for one home, checklist attached. */
 export async function openQuarterlyReview(db: Client, userId: string | null, propertyId: string) {
@@ -147,7 +166,6 @@ export async function openQuarterlyReview(db: Client, userId: string | null, pro
     inspectorName = region?.manager_name ?? null;
   }
   const owner = inspectorId ?? userId;
-
 
   const now = new Date();
   const responseDue = new Date(now.getTime() + (wt.response_minutes ?? 120) * 60_000);
@@ -185,7 +203,6 @@ export async function openQuarterlyReview(db: Client, userId: string | null, pro
       accountable_owner: owner,
       current_action_owner: owner,
       assigned_to: inspectorId,
-
     })
     .select("id")
     .single();
@@ -215,7 +232,6 @@ export async function openQuarterlyReview(db: Client, userId: string | null, pro
       ? `Quarterly inspection opened with the cleaning review checklist attached and assigned to ${inspectorName}, regional cleaning manager for ${property.market}.`
       : "Quarterly inspection opened with the cleaning review checklist attached. No regional cleaning manager is set for this market yet.",
   });
-
 
   return { ticketId: ticket.id, alreadyOpen: false };
 }

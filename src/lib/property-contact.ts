@@ -43,7 +43,6 @@ export type PrimaryOwnerContact = {
 };
 
 export type PropertyContactResult =
-
   | { visible: false }
   | {
       visible: true;
@@ -121,7 +120,10 @@ export async function resolvePropertyGuestContext(
 
     if (current.status === "ambiguous") return { status: "ambiguous" };
     if (current.status === "unavailable") {
-      return { status: "source_error", message: "OwnerRez returned an unavailable guest status unexpectedly." };
+      return {
+        status: "source_error",
+        message: "OwnerRez returned an unavailable guest status unexpectedly.",
+      };
     }
     if (current.status === "match") {
       return {

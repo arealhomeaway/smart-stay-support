@@ -46,7 +46,9 @@ export function isTeamA(roleCode: string) {
 
 /** Whether a minute-of-day falls inside a possibly overnight window. */
 export function isWithinWindow(nowMinutes: number, start: number, end: number) {
-  return start > end ? nowMinutes >= start || nowMinutes < end : nowMinutes >= start && nowMinutes < end;
+  return start > end
+    ? nowMinutes >= start || nowMinutes < end
+    : nowMinutes >= start && nowMinutes < end;
 }
 
 export type TriageWindow = {

@@ -92,7 +92,6 @@ export function stageLabel(value: string | null | undefined) {
   );
 }
 
-
 export const TASK_STATUSES = ["open", "blocked", "complete", "carryover"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
@@ -173,7 +172,9 @@ export function validateHandoff(
     {
       key: "address",
       label: "Property address is complete",
-      passed: Boolean(property.address_line1 && property.city && property.state && property.postal_code),
+      passed: Boolean(
+        property.address_line1 && property.city && property.state && property.postal_code,
+      ),
       blocking: true,
       detail: "Street, city, state and postal code are required for dispatch and mapping.",
     },
@@ -235,7 +236,6 @@ export function validateHandoff(
   return { checks, openBlocking, ready: checks.every((c) => !c.blocking || c.passed) };
 }
 
-
 /* ---------------------------------------------------------------------------
  * Stage 2 — formal handoff gate
  *
@@ -261,7 +261,11 @@ export const GATE_STEPS = [
     label: "Operations acceptance",
     blurb: "An Operations supervisor accepts ownership of the home.",
   },
-  { value: "live_confirmation", label: "Live confirmation", blurb: "Operations confirms the home is live." },
+  {
+    value: "live_confirmation",
+    label: "Live confirmation",
+    blurb: "Operations confirms the home is live.",
+  },
   { value: "complete", label: "Complete", blurb: "Handoff finished and archived to history." },
 ] as const;
 

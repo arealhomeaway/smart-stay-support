@@ -58,8 +58,16 @@ function Pipeline() {
           const stageRows = rows.filter((l) => l.stage === stage);
           if (stageRows.length === 0) return null;
           return (
-            <SectionCard key={stage} title={STAGE_LABELS[stage]} description={`${stageRows.length}`}>
-              <LeadListSection leads={stageRows} withProperties={withProperties} canEdit={!readOnly} />
+            <SectionCard
+              key={stage}
+              title={STAGE_LABELS[stage]}
+              description={`${stageRows.length}`}
+            >
+              <LeadListSection
+                leads={stageRows}
+                withProperties={withProperties}
+                canEdit={!readOnly}
+              />
             </SectionCard>
           );
         })

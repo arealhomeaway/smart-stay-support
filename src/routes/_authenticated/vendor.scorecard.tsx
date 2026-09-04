@@ -22,7 +22,10 @@ export const Route = createFileRoute("/_authenticated/vendor/scorecard")({
           "Your private A Real Home Away scorecard: points earned for thorough work, your partner tier and progress toward Gold Standard.",
       },
       { property: "og:title", content: "My scorecard | Resolve vendor portal" },
-      { property: "og:description", content: "Points, tier and progress toward Gold Standard partner." },
+      {
+        property: "og:description",
+        content: "Points, tier and progress toward Gold Standard partner.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -31,7 +34,11 @@ export const Route = createFileRoute("/_authenticated/vendor/scorecard")({
 
 function GatedScorecard() {
   return (
-    <LaunchStateGate flag="vendor_portal" title="Scorecards are not part of the Operations beta" description="Vendor scoring launches with the Vendor Portal workstream.">
+    <LaunchStateGate
+      flag="vendor_portal"
+      title="Scorecards are not part of the Operations beta"
+      description="Vendor scoring launches with the Vendor Portal workstream."
+    >
       <Scorecard />
     </LaunchStateGate>
   );
@@ -66,7 +73,9 @@ function Scorecard() {
           <span className="flex flex-wrap items-center gap-2">
             <Award className="size-5 text-primary" />
             {TIER_LABEL[s.tier]}
-            {s.percentile !== null && <StatusBadge tone="brand">Top {s.percentile}% of ARHA vendors</StatusBadge>}
+            {s.percentile !== null && (
+              <StatusBadge tone="brand">Top {s.percentile}% of ARHA vendors</StatusBadge>
+            )}
           </span>
         }
         description={TIER_BLURB[s.tier]}
@@ -75,7 +84,10 @@ function Scorecard() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatTile label="Points" value={s.points} />
             <StatTile label="Work orders scored" value={s.ratedJobs} />
-            <StatTile label="Average score" value={s.averageOverall !== null ? `${s.averageOverall.toFixed(1)}/5` : "—"} />
+            <StatTile
+              label="Average score"
+              value={s.averageOverall !== null ? `${s.averageOverall.toFixed(1)}/5` : "—"}
+            />
             <StatTile
               label="Streak"
               value={
@@ -91,12 +103,14 @@ function Scorecard() {
             <div className="space-y-1.5">
               <div className="flex justify-between text-sm">
                 <span>Progress to Gold Standard</span>
-                <span className="text-muted-foreground">{5 - s.jobsToGold}/5 above-average jobs</span>
+                <span className="text-muted-foreground">
+                  {5 - s.jobsToGold}/5 above-average jobs
+                </span>
               </div>
               <Progress value={goldProgress} />
               <p className="text-xs text-muted-foreground">
-                {s.jobsToGold} more job{s.jobsToGold === 1 ? "" : "s"} scored above the ARHA vendor average and
-                you're Gold Standard — first call on urgent work.
+                {s.jobsToGold} more job{s.jobsToGold === 1 ? "" : "s"} scored above the ARHA vendor
+                average and you're Gold Standard — first call on urgent work.
               </p>
             </div>
           )}
@@ -122,7 +136,11 @@ function Scorecard() {
             </span>
           }
         />
-        <StatTile label="Callbacks" value={s.reopenCount} tone={s.reopenCount > 0 ? "attention" : "neutral"} />
+        <StatTile
+          label="Callbacks"
+          value={s.reopenCount}
+          tone={s.reopenCount > 0 ? "attention" : "neutral"}
+        />
       </div>
 
       <SectionCard
@@ -132,7 +150,10 @@ function Scorecard() {
         <div className="space-y-1 text-sm text-muted-foreground">
           <p>Every completed work order starts at 10 points.</p>
           <p>Thoroughness moves your score the most, then communication and timeliness.</p>
-          <p>+10 for complete photo evidence, +8 for finishing inside the window, +6 for taking urgent P1 work.</p>
+          <p>
+            +10 for complete photo evidence, +8 for finishing inside the window, +6 for taking
+            urgent P1 work.
+          </p>
           <p>−20 if we have to send you back for the same issue.</p>
         </div>
       </SectionCard>
@@ -142,7 +163,10 @@ function Scorecard() {
           <SectionBand title="Recent scored work orders" />
           <div className="space-y-1.5">
             {s.recent.map((r) => (
-              <div key={r.ticketId} className="surface-row flex flex-wrap items-center gap-2 py-2.5 pl-4 pr-4 text-sm">
+              <div
+                key={r.ticketId}
+                className="surface-row flex flex-wrap items-center gap-2 py-2.5 pl-4 pr-4 text-sm"
+              >
                 <span className="font-medium">
                   {r.ref ? `#${r.ref} ` : ""}
                   {r.title}

@@ -380,7 +380,6 @@ function ProgramsBoard() {
               onToggle={() => setSelected(selected === row.id ? null : row.id)}
             />
           ))}
-
         </div>
       )}
 
@@ -476,7 +475,9 @@ function ProgramCard({
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={PROGRAM_STATUS_TONE[row.status] ?? "closed"}>{status.label}</StatusBadge>
+            <StatusBadge tone={PROGRAM_STATUS_TONE[row.status] ?? "closed"}>
+              {status.label}
+            </StatusBadge>
             <StatusBadge tone={PROGRESS_STATE_TONE[row.progressState] ?? "closed"}>
               {progress.label}
             </StatusBadge>
@@ -486,7 +487,6 @@ function ProgramCard({
             <Button size="sm" variant="outline" onClick={onToggle}>
               {expanded ? "Hide" : "Manage"}
             </Button>
-
           </div>
         </div>
 
@@ -652,7 +652,9 @@ function ProgramDetail({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {p.address || "No address"} · added {usDate(p.addedOn)} ·{" "}
-                    {p.closingConfirmed ? `closed ${usDate(p.closingDate)}` : "closing not confirmed"}
+                    {p.closingConfirmed
+                      ? `closed ${usDate(p.closingDate)}`
+                      : "closing not confirmed"}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -861,7 +863,8 @@ function ProgramDetail({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usDate(row.startedOn)} · ends {usDate(row.endsOn)}
+            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usDate(row.startedOn)} · ends{" "}
+            {usDate(row.endsOn)}
           </p>
         )}
         <div className="flex flex-wrap gap-2">

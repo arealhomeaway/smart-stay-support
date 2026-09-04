@@ -51,7 +51,11 @@ export async function loadSeatHolders(supabase: Client) {
   return map;
 }
 
-function seatFields(role: string | null | undefined, stage: string, holders: Map<string, string | null>) {
+function seatFields(
+  role: string | null | undefined,
+  stage: string,
+  holders: Map<string, string | null>,
+) {
   const seat: SeatCode = seatForTask({ role: role ?? null, stage });
   return { assigned_seat: seat, assigned_to: holders.get(seat) ?? null };
 }
@@ -61,7 +65,11 @@ export type TemplatePreview = {
   templateKey: string;
   toCreate: { key: string; stage: string; title: string; dueOn: string | null; subtasks: number }[];
   skipped: { title: string; reason: string }[];
-  anchors: { planned_closing: string | null; actual_closing: string | null; actual_access: string | null };
+  anchors: {
+    planned_closing: string | null;
+    actual_closing: string | null;
+    actual_access: string | null;
+  };
 };
 
 /**
@@ -104,9 +112,7 @@ async function loadContext(supabase: Client, propertyId: string) {
     rows.filter((t) => !t.parent_task_id).map((t) => taskKey(t.stage, t.title)),
   );
   const takenSubs = new Set(
-    rows
-      .filter((t) => t.parent_task_id)
-      .map((t) => subKey(t.parent_task_id as string, t.title)),
+    rows.filter((t) => t.parent_task_id).map((t) => subKey(t.parent_task_id as string, t.title)),
   );
   const parentIdByKey = new Map(
     rows.filter((t) => !t.parent_task_id).map((t) => [taskKey(t.stage, t.title), t.id] as const),

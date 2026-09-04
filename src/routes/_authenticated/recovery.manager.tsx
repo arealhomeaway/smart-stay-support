@@ -47,7 +47,9 @@ function RecoveryManager() {
 
   const rows = useMemo(
     () =>
-      [...(recoveries.data ?? [])].filter((r) => matchesManagerFilter(r, filter)).sort(recoverySort),
+      [...(recoveries.data ?? [])]
+        .filter((r) => matchesManagerFilter(r, filter))
+        .sort(recoverySort),
     [recoveries.data, filter],
   );
 

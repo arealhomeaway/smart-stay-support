@@ -53,7 +53,11 @@ export type SchedulePreviewRow = {
 
 export type SchedulePreview = {
   propertyId: string;
-  anchors: { planned_closing: string | null; actual_closing: string | null; actual_access: string | null };
+  anchors: {
+    planned_closing: string | null;
+    actual_closing: string | null;
+    actual_access: string | null;
+  };
   rows: SchedulePreviewRow[];
   skipped: { taskId: string; title: string; reason: string }[];
 };
@@ -115,7 +119,9 @@ export async function previewScheduleRecalc(
 
   const tasks = await supabase
     .from("onboarding_tasks")
-    .select("id, title, stage, status, due_on, schedule_anchor, schedule_offset_days, due_on_overridden")
+    .select(
+      "id, title, stage, status, due_on, schedule_anchor, schedule_offset_days, due_on_overridden",
+    )
     .eq("property_id", input.propertyId)
     .is("archived_at", null)
     .order("sort_order");
@@ -140,7 +146,11 @@ export async function previewScheduleRecalc(
     }
     const anchorDate = anchors[anchor];
     if (!anchorDate) {
-      skipped.push({ taskId: t.id, title: t.title, reason: `${ANCHOR_LABEL[anchor]} date is not recorded yet` });
+      skipped.push({
+        taskId: t.id,
+        title: t.title,
+        reason: `${ANCHOR_LABEL[anchor]} date is not recorded yet`,
+      });
       continue;
     }
     const proposed = shift(anchorDate, t.schedule_offset_days);
@@ -179,7 +189,10 @@ export async function applyScheduleRecalc(
   for (const row of chosen) {
     const { error } = await supabase
       .from("onboarding_tasks")
-      .update({ due_on: row.proposedDue, due_on_source: `${row.anchor}${row.offsetDays >= 0 ? "+" : ""}${row.offsetDays}d` })
+      .update({
+        due_on: row.proposedDue,
+        due_on_source: `${row.anchor}${row.offsetDays >= 0 ? "+" : ""}${row.offsetDays}d`,
+      })
       .eq("id", row.taskId)
       .eq("due_on_overridden", false);
     if (error) throw error;
@@ -190,7 +203,9 @@ export async function applyScheduleRecalc(
     action: "onboarding_dates_recalculated",
     entityType: "property",
     entityId: input.propertyId,
-    after: { applied: chosen.map((c) => ({ taskId: c.taskId, from: c.currentDue, to: c.proposedDue })) },
+    after: {
+      applied: chosen.map((c) => ({ taskId: c.taskId, from: c.currentDue, to: c.proposedDue })),
+    },
   });
 
   return { ok: true as const, applied: chosen.length };
