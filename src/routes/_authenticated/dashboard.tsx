@@ -154,7 +154,64 @@ function Dashboard() {
     })),
   );
 
+  // A person's own name, so Home greets them the way a colleague would.
+  const { data: me } = useQuery({
+    queryKey: ["my-name", role.userId],
+    enabled: Boolean(role.userId),
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", role.userId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+
+  // Recent activity, derived from the same rows Home already loaded — no new
+  // source of truth, just the last few things that visibly moved.
+  const recent: ActivityEvent[] = rows
+    .map((t) => {
+      const at = t.action_started_at ?? t.acknowledged_at ?? t.reported_at;
+      const kind: ActivityEvent["kind"] =
+        t.status === "waiting"
+          ? "waiting"
+          : t.status === "resolved" || t.status === "closed"
+            ? "completed"
+            : t.vendor_name
+              ? "repair"
+              : t.pending_handoff_to
+                ? "handoff"
+                : t.action_started_at
+                  ? "handoff"
+                  : "note";
+      return {
+        id: t.id,
+        kind,
+        when: relativeTime(at),
+        at: at ?? "",
+        label: (
+          <>
+            <span className="font-medium">{t.title}</span>
+            <span className="text-muted-foreground">
+              {" · "}
+              {t.properties?.nickname ?? t.properties?.name ?? "No property"}
+            </span>
+          </>
+        ),
+        to: "/tickets/$ticketId",
+        params: { ticketId: t.id },
+        search: originSearch,
+      };
+    })
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, 6);
+
   if (isLoading || !data) return <LoadingPage tiles={0} />;
+
 
   return (
     <div className="space-y-8">
