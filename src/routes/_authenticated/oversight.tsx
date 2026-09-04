@@ -497,7 +497,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
               to={sum.to}
               className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-secondary"
             >
-              <p className="flex items-center gap-2 font-medium">
+              <div className="flex items-center gap-2 font-medium">
                 {sum.title}
                 {sum.count > 0 && (
                   <Badge variant="outline" className="border-warning/40 bg-warning/10">
@@ -505,7 +505,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
                   </Badge>
                 )}
                 <ChevronRight className="ml-auto size-4 text-muted-foreground" />
-              </p>
+              </div>
               {sum.lines.map((l) => (
                 <p key={l} className="text-sm text-muted-foreground">
                   {l}
