@@ -44,11 +44,14 @@ import {
   categoriesAfterReopen,
   hasTag,
   requestsRecord,
+  requestsOwnerResponse,
+  categoriesAfterOwnerResponse,
   triggerKind,
   CLOSED_TAG,
   CREATED_TAG,
   CREATE_LEAD_TAG,
   CREATE_TICKET_TAG,
+  OWNER_RESPONSE_TAG,
   type TriggerKind,
 } from "./mail-categories";
 
@@ -235,7 +238,7 @@ async function writeCheckpoint(db: Db, iso: string) {
  */
 async function fetchTriggerMail(limit: number, since: string) {
   const seen = new Map<string, GraphMessage>();
-  for (const tag of [CREATE_TICKET_TAG, CREATE_LEAD_TAG]) {
+  for (const tag of [CREATE_TICKET_TAG, CREATE_LEAD_TAG, OWNER_RESPONSE_TAG]) {
     const filter = `receivedDateTime gt ${since} and categories/any(c:c eq '${tag.replace(/'/g, "''")}')`;
     const query =
       `?$filter=${encodeURIComponent(filter)}&$top=${limit}&$orderby=receivedDateTime asc&$select=${SELECT_FIELDS}`;
@@ -305,6 +308,8 @@ export type MailboxSyncResult = {
   completedTagged: number;
   /** Messages moved back to "ticket created" because their Ticket reopened. */
   reopenedTagged: number;
+  /** Homeowner replies filed against the decision they answer. */
+  ownerRepliesFiled: number;
   mailbox: string;
   items: {
     subject: string;
@@ -390,7 +395,11 @@ export async function syncMailbox(
   return base;
 }
 
-type MessageOutcome = MailboxSyncResult["items"][number] & { recategorised?: boolean; retried?: boolean };
+type MessageOutcome = MailboxSyncResult["items"][number] & {
+  recategorised?: boolean;
+  retried?: boolean;
+  ownerReply?: boolean;
+};
 
 function applyOutcome(base: MailboxSyncResult, o: MessageOutcome) {
   base.items.push(o);
@@ -401,6 +410,7 @@ function applyOutcome(base: MailboxSyncResult, o: MessageOutcome) {
   if (o.outcome === "failed") base.failed++;
   if (o.recategorised) base.recategorised++;
   if (o.retried) base.recategoriseRetried++;
+  if (o.ownerReply) base.ownerRepliesFiled++;
 }
 
 /**
@@ -437,6 +447,55 @@ export async function processMessage(db: Db, msg: GraphMessage, dryRun = false):
       };
     }
     return { subject, from, outcome: "skipped", reason: "already processed" };
+  }
+
+  // A homeowner's answer, marked as such by a person in the shared inbox. It is
+  // filed against the decision it answers and nothing else: Resolve never reads
+  // approval or refusal out of the words.
+  if (requestsOwnerResponse(msg.categories)) {
+    if (dryRun) return { subject, from, outcome: "skipped", reason: "homeowner reply" };
+    if (!(await claimMessage(db, msg, isStaleClaim(prior ?? ({} as MailboxRecord)) ? prior : null))) {
+      return { subject, from, outcome: "skipped", reason: "claimed by another pass" };
+    }
+    const replyBody = plainTextBody(msg.body?.content ?? msg.bodyPreview ?? "", msg.body?.contentType);
+    try {
+      const { captureOwnerResponse } = await import("./owner-response.server");
+      const files = msg.hasAttachments ? await attachmentMeta(msg.id) : [];
+      const filed = await captureOwnerResponse(db, msg, replyBody, files);
+      const tagged = await setCategories(msg.id, categoriesAfterOwnerResponse(msg.categories));
+      await settleClaim(db, messageIds, {
+        status: "linked",
+        entityType: "approval",
+        entityId: filed.approvalId,
+        error: tagged ? null : CATEGORY_PENDING,
+        conversationId: msg.conversationId ?? null,
+        source: await sourceFor(msg, "ticket"),
+      });
+      return {
+        subject,
+        from,
+        outcome: "skipped",
+        ownerReply: filed.status !== "duplicate",
+        recategorised: tagged,
+        reason:
+          filed.status === "matched"
+            ? "homeowner reply filed on the decision it answers"
+            : filed.status === "duplicate"
+              ? "homeowner reply already on file"
+              : (filed.reason ?? "homeowner reply held for someone to place"),
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not file the homeowner reply";
+      await settleClaim(db, messageIds, {
+        status: "failed",
+        entityType: null,
+        entityId: null,
+        error: message,
+        conversationId: msg.conversationId ?? null,
+        source: await sourceFor(msg, "ticket"),
+      });
+      return { subject, from, outcome: "failed", reason: message };
+    }
   }
 
   const trigger = triggerKind(msg.categories);
