@@ -610,9 +610,10 @@ function TicketDetail() {
     if (!ok) return;
     await log(
       "resolved",
-      `Closed as ${labelFor(OUTCOME_TYPES, outcome)}. ${resolution.trim()}`,
-      "closed",
+      `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${resolution.trim()}`,
+      "resolved",
     );
+
     setResolution("");
     setEvidence("");
     await refresh();
@@ -1073,7 +1074,17 @@ function TicketDetail() {
 
               {stage === "closed" && (
                 <div className="mt-2 space-y-3">
-                  <h2 className="text-xl font-semibold">This ticket is closed</h2>
+                  <h2 className="text-xl font-semibold">
+                    {ticket.status === "resolved"
+                      ? "Work is finished — closure review is next"
+                      : "This ticket is closed"}
+                  </h2>
+                  {ticket.status === "resolved" && (
+                    <p className="text-sm text-muted-foreground">
+                      Nothing more is needed from the frontline. A supervisor checks the closing
+                      record before it is closed for good.
+                    </p>
+                  )}
                   {ticket.resolution_notes && (
                     <p className="text-sm text-muted-foreground">{ticket.resolution_notes}</p>
                   )}
@@ -1084,6 +1095,7 @@ function TicketDetail() {
                   )}
                 </div>
               )}
+
 
               {/* Special Handling belongs with the decision, never as page furniture. */}
               {(stage === "repair" || stage === "repair_active" || stage === "steps") && (

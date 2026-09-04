@@ -31,12 +31,21 @@ export const getDemoStatus = createServerFn({ method: "GET" })
       .eq("id", "default")
       .maybeSingle();
     if (error) throw error;
+    // The control row can be missing (or stale) while demo scenarios exist.
+    // What matters to the person previewing is whether there is demo work to
+    // open, so fall back to counting the demo tickets themselves.
+    const { count } = await context.supabase
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("is_demo", true);
+    const demoTickets = count ?? 0;
     return {
-      active: data?.active ?? false,
-      seeded: Boolean(data?.seeded_at),
-      scenarioCount: data?.scenario_count ?? 0,
+      active: data?.active ?? demoTickets > 0,
+      seeded: Boolean(data?.seeded_at) || demoTickets > 0,
+      scenarioCount: data?.scenario_count ?? demoTickets,
     };
   });
+
 
 export const seedDemoEnvironment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

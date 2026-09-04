@@ -323,13 +323,14 @@ function RunRoutineDialog({
   const { demoMode } = useDemo();
 
   const { data: properties } = useQuery({
-    queryKey: ["routine-properties"],
+    queryKey: ["routine-properties", demoMode],
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, nickname")
+        .select("id, name, nickname, is_demo")
         .eq("active", true)
+        .eq("is_demo", demoMode)
         .order("name")
         .limit(500);
       if (error) throw error;
@@ -362,10 +363,12 @@ function RunRoutineDialog({
         team: config.team,
         assigned_to: auth.user?.id ?? null,
         created_by: auth.user?.id ?? null,
-        is_demo: demoMode,
+        // A routine on a demo property is always demo work, even if the lens is off.
+        is_demo: demoMode || Boolean((chosen as { is_demo?: boolean } | undefined)?.is_demo),
       });
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Added to routine work.");
       onCreated();
