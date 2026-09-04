@@ -123,7 +123,7 @@ function useOversightData() {
         supabase.from("profiles").select("id, full_name, email"),
         supabase
           .from("escalations")
-          .select("id, ticket_id, reason, requested_help, urgency, status, created_at, raised_by")
+          .select("id, ticket_id, reason, help_needed, urgency, status, created_at, escalated_by")
           .eq("status", "open")
           .eq("is_demo", demoMode),
       ]);
@@ -456,7 +456,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
                 className="flex items-start justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm hover:bg-muted/50"
               >
                 <span>
-                  <span className="font-medium">{e.requested_help || e.reason}</span>
+                  <span className="font-medium">{e.help_needed || e.reason}</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
                     Raised {relativeTime(e.created_at)}
                   </span>
