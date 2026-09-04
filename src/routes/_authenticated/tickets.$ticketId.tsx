@@ -292,7 +292,9 @@ function TicketDetail() {
     size_bytes?: number | null;
   }[];
   const qualifyingFiles = attachmentRows.filter(
-    (f) => (f.upload_status === "stored" || f.upload_status === "uploaded") && Number(f.size_bytes ?? 0) > 0,
+    (f) =>
+      (f.upload_status === "stored" || f.upload_status === "uploaded") &&
+      Number(f.size_bytes ?? 0) > 0,
   ).length;
   const evidenceNeedsFile = requiresPhotoOrFile(requiredEvidence);
   const evidenceSatisfied = closureEvidenceSatisfied({
@@ -303,10 +305,10 @@ function TicketDetail() {
   // A guest message can only be required when there is a guest to write to.
   const guestPresent = Boolean(
     ticket.guest_in_residence ||
-      ticket.guest_name ||
-      ticket.guest_contact ||
-      ticket.reservation_confirmation ||
-      ticket.reservation_guest_name,
+    ticket.guest_name ||
+    ticket.guest_contact ||
+    ticket.reservation_confirmation ||
+    ticket.reservation_guest_name,
   );
   const guestCommsRequired = (workType?.guest_communication_required ?? false) && guestPresent;
   // Readiness is a read of the same gates the close action enforces — no new
@@ -676,8 +678,7 @@ function TicketDetail() {
   // lives in Current Work, and the Evidence tab shows history only.
   const evidenceRequirementActive =
     !closed &&
-    ((stage === "verify" && needsEvidence) ||
-      Boolean(requiredEvidence) && !evidenceSatisfied);
+    ((stage === "verify" && needsEvidence) || (Boolean(requiredEvidence) && !evidenceSatisfied));
 
   const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";

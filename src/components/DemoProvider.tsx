@@ -2,11 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AppRole } from "@/lib/permissions";
 import { useViewAs } from "@/hooks/useViewAs";
-import {
-  getDemoStatus,
-  resetDemoEnvironment,
-  seedDemoEnvironment,
-} from "@/lib/demo.functions";
+import { getDemoStatus, resetDemoEnvironment, seedDemoEnvironment } from "@/lib/demo.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {

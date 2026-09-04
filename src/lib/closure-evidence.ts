@@ -57,7 +57,8 @@ export function scopedClosureEvidence(
 
   const kept = clauses(raw).filter((c) => !SAFETY_CLAUSE.test(c));
   if (kept.length === 0) return null;
-  const joined = kept.length === 1 ? kept[0]! : `${kept.slice(0, -1).join(", ")} and ${kept.at(-1)}`;
+  const joined =
+    kept.length === 1 ? kept[0]! : `${kept.slice(0, -1).join(", ")} and ${kept.at(-1)}`;
   // Sentence case, so a kept fragment still reads like an instruction.
   return joined.charAt(0).toUpperCase() + joined.slice(1);
 }

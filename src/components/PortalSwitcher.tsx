@@ -21,7 +21,13 @@ import { PREVIEW_SEAT_LABEL, type PreviewSeat } from "@/lib/demo-mode";
  * Operations Supervisor share the manager permission role but do different
  * jobs, so each is offered as its own seat.
  */
-const PREVIEW_PERSONAS: { id: string; role: AppRole; seat?: PreviewSeat; label: string; blurb: string }[] = [
+const PREVIEW_PERSONAS: {
+  id: string;
+  role: AppRole;
+  seat?: PreviewSeat;
+  label: string;
+  blurb: string;
+}[] = [
   {
     id: "director_ops",
     role: "manager",
@@ -68,8 +74,18 @@ export function PortalSwitcher() {
     <div className="flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" variant={demoMode ? "default" : "outline"} className="min-h-11 md:min-h-9">
-            {demoMode ? <FlaskConical className="size-4" /> : previewing ? <Eye className="size-4" /> : <LayoutGrid className="size-4" />}
+          <Button
+            size="sm"
+            variant={demoMode ? "default" : "outline"}
+            className="min-h-11 md:min-h-9"
+          >
+            {demoMode ? (
+              <FlaskConical className="size-4" />
+            ) : previewing ? (
+              <Eye className="size-4" />
+            ) : (
+              <LayoutGrid className="size-4" />
+            )}
             <span className="hidden sm:inline">
               {demoMode
                 ? `Demo · ${previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : previewRole ? ROLE_LABELS[previewRole] : "preview"}`
@@ -104,10 +120,17 @@ export function PortalSwitcher() {
             className="flex flex-col items-start gap-0.5"
           >
             <span className="flex items-center gap-2">
-              {seeding ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />} Seed demo data
+              {seeding ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="size-3.5" />
+              )}{" "}
+              Seed demo data
             </span>
             <span className="text-xs text-muted-foreground">
-              {status?.seeded ? `${status.scenarioCount} connected scenarios ready` : "No demo data yet"}
+              {status?.seeded
+                ? `${status.scenarioCount} connected scenarios ready`
+                : "No demo data yet"}
             </span>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -116,9 +139,16 @@ export function PortalSwitcher() {
             className="flex flex-col items-start gap-0.5"
           >
             <span className="flex items-center gap-2">
-              {resetting ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />} Archive demo data
+              {resetting ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <RotateCcw className="size-3.5" />
+              )}{" "}
+              Archive demo data
             </span>
-            <span className="text-xs text-muted-foreground">Archives demo records (never deleted) so scenarios can re-run</span>
+            <span className="text-xs text-muted-foreground">
+              Archives demo records (never deleted) so scenarios can re-run
+            </span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -181,9 +211,11 @@ export function ViewAsBanner() {
           {demoMode ? (
             <>
               <strong className="mr-1">Safe demo environment</strong>— you are working as a{" "}
-              <strong>{previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : ROLE_LABELS[previewRole]}</strong>. You can
-              complete work here: changes are saved to demo records only, and real homes, guests, owners, vendors and
-              email are never touched.{" "}
+              <strong>
+                {previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : ROLE_LABELS[previewRole]}
+              </strong>
+              . You can complete work here: changes are saved to demo records only, and real homes,
+              guests, owners, vendors and email are never touched.{" "}
               {status?.seeded
                 ? `${status.scenarioCount} scenarios are loaded.`
                 : "No demo data is loaded — use the Portals menu to seed it."}
@@ -191,8 +223,10 @@ export function ViewAsBanner() {
           ) : (
             <>
               Read-only preview — you are seeing Resolve as a{" "}
-              <strong>{previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : ROLE_LABELS[previewRole]}</strong>. No action
-              can change data while previewing.
+              <strong>
+                {previewSeat ? PREVIEW_SEAT_LABEL[previewSeat] : ROLE_LABELS[previewRole]}
+              </strong>
+              . No action can change data while previewing.
             </>
           )}
         </span>

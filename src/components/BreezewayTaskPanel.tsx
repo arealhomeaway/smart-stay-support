@@ -71,8 +71,10 @@ function repairNextAction(link: {
   if (link.status === "needs_review")
     return "Do not send this again. An admin checks Breezeway and clears it from Integrations.";
   if (link.status === "error") return "The send failed. Compose the repair again.";
-  if (!link.assigneeNames.length) return "Nobody is assigned in Breezeway yet — chase an assignment.";
-  if (!link.scheduledDate) return "No date is committed yet. Get a window and park this as waiting.";
+  if (!link.assigneeNames.length)
+    return "Nobody is assigned in Breezeway yet — chase an assignment.";
+  if (!link.scheduledDate)
+    return "No date is committed yet. Get a window and park this as waiting.";
   return "Watch for completion, then verify the evidence before you close.";
 }
 
@@ -108,7 +110,10 @@ export function BreezewayTaskPanel({
     setTitle(defaultTitle);
   }, [defaultTitle]);
 
-  const queryKey = useMemo(() => ["breezeway-outbound", sourceType, sourceId], [sourceType, sourceId]);
+  const queryKey = useMemo(
+    () => ["breezeway-outbound", sourceType, sourceId],
+    [sourceType, sourceId],
+  );
 
   const state = useQuery({
     queryKey,
@@ -206,7 +211,9 @@ export function BreezewayTaskPanel({
               </Badge>
               <span className="font-medium">{latest.title}</span>
               {latest.breezewayTaskId ? (
-                <span className="font-mono text-xs text-muted-foreground">#{latest.breezewayTaskId}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  #{latest.breezewayTaskId}
+                </span>
               ) : null}
             </div>
             <p className="flex items-center gap-2 text-muted-foreground">
@@ -221,7 +228,9 @@ export function BreezewayTaskPanel({
             </p>
             <p className="text-xs text-muted-foreground">
               Latest update{" "}
-              {new Date(latest.lastWebhookAt ?? latest.lastSyncedAt ?? latest.createdAt).toLocaleString()}
+              {new Date(
+                latest.lastWebhookAt ?? latest.lastSyncedAt ?? latest.createdAt,
+              ).toLocaleString()}
               {latest.errorMessage ? ` · ${latest.errorMessage}` : ""}
               {latest.reviewNote ? ` · ${latest.reviewNote}` : ""}
             </p>
@@ -256,8 +265,8 @@ export function BreezewayTaskPanel({
 
         {eligibility.eligible && unresolved ? (
           <p className="text-xs text-warning-foreground">
-            An earlier request for this record is still open. Sending is paused until it is resolved,
-            so a duplicate work order cannot be created.
+            An earlier request for this record is still open. Sending is paused until it is
+            resolved, so a duplicate work order cannot be created.
           </p>
         ) : null}
       </CardContent>
@@ -268,165 +277,171 @@ export function BreezewayTaskPanel({
         title="Send for repair"
         subtitle="You already own this ticket. This is who does the field work, and when."
       >
-          <div className="space-y-5 text-sm">
-            <SpecialHandlingNotice propertyId={propertyId} moment="maintenance" />
+        <div className="space-y-5 text-sm">
+          <SpecialHandlingNotice propertyId={propertyId} moment="maintenance" />
 
-            {authorityNote ? (
-              <p className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">{authorityNote}</p>
-            ) : null}
+          {authorityNote ? (
+            <p className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
+              {authorityNote}
+            </p>
+          ) : null}
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="bz-title">What needs fixing</Label>
-              <Input id="bz-title" value={title} onChange={(e) => setTitle(e.target.value)} />
-              <Textarea
-                id="bz-desc"
-                rows={3}
-                placeholder="Scope: what is wrong, what you already checked, what done looks like"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label>Trade</Label>
-                <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BREEZEWAY_DEPARTMENTS.map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Urgency</Label>
-                <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BREEZEWAY_PRIORITIES.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="bz-date">Scheduled / due</Label>
-                <Input
-                  id="bz-date"
-                  type="date"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="bz-time">Committed time (optional)</Label>
-                <Input
-                  id="bz-time"
-                  type="time"
-                  value={scheduledTime}
-                  onChange={(e) => setScheduledTime(e.target.value)}
-                  disabled={!scheduledDate}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Checklist template</Label>
-                <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No template</SelectItem>
-                    {visibleTemplates.map((t) => (
-                      <SelectItem key={t.id} value={String(t.id)}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label>Who is doing the work</Label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-                <Input
-                  className="pl-8"
-                  placeholder="Search Breezeway people and vendors"
-                  value={assigneeSearch}
-                  onChange={(e) => setAssigneeSearch(e.target.value)}
-                />
-              </div>
-              <div className="max-h-48 space-y-0.5 overflow-y-auto rounded-lg border border-border p-1">
-                {options.isLoading && <p className="p-2 text-xs text-muted-foreground">Loading people…</p>}
-                {!options.isLoading && matchingAssignees.length === 0 && (
-                  <p className="p-2 text-xs text-muted-foreground">
-                    No match. The repair can still be sent unassigned.
-                  </p>
-                )}
-                {matchingAssignees.map((person) => {
-                  const checked = assigneeIds.includes(person.id);
-                  return (
-                    <label
-                      key={person.id}
-                      className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-secondary ${
-                        checked ? "bg-secondary" : ""
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() =>
-                          setAssigneeIds((prev) =>
-                            checked ? prev.filter((id) => id !== person.id) : [...prev, person.id],
-                          )
-                        }
-                      />
-                      <span>{person.name}</span>
-                      {person.email ? (
-                        <span className="ml-auto truncate text-xs text-muted-foreground">{person.email}</span>
-                      ) : null}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Evidence is attached once, here, in the same flow. Breezeway-native
-                task photos continue to mirror back onto this record. */}
-            <div className="space-y-2">
-              <AttachmentsPanel
-                entityType={sourceType === "ticket" ? "ticket" : "onboarding_task"}
-                entityId={sourceId}
-                title="Photos for the field team"
-              />
-              <Textarea
-                rows={2}
-                placeholder="Anything the photos do not show"
-                value={evidenceNote}
-                onChange={(e) => setEvidenceNote(e.target.value)}
-              />
-            </div>
-
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={send.isPending || !title.trim()}
-              onClick={() => send.mutate()}
-            >
-              <Send className="size-4" />
-              {send.isPending ? "Sending…" : "Send to Breezeway"}
-            </Button>
+          <div className="grid gap-1.5">
+            <Label htmlFor="bz-title">What needs fixing</Label>
+            <Input id="bz-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Textarea
+              id="bz-desc"
+              rows={3}
+              placeholder="Scope: what is wrong, what you already checked, what done looks like"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label>Trade</Label>
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BREEZEWAY_DEPARTMENTS.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Urgency</Label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BREEZEWAY_PRIORITIES.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="bz-date">Scheduled / due</Label>
+              <Input
+                id="bz-date"
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="bz-time">Committed time (optional)</Label>
+              <Input
+                id="bz-time"
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                disabled={!scheduledDate}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Checklist template</Label>
+              <Select value={templateId} onValueChange={setTemplateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No template</SelectItem>
+                  {visibleTemplates.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>Who is doing the work</Label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                className="pl-8"
+                placeholder="Search Breezeway people and vendors"
+                value={assigneeSearch}
+                onChange={(e) => setAssigneeSearch(e.target.value)}
+              />
+            </div>
+            <div className="max-h-48 space-y-0.5 overflow-y-auto rounded-lg border border-border p-1">
+              {options.isLoading && (
+                <p className="p-2 text-xs text-muted-foreground">Loading people…</p>
+              )}
+              {!options.isLoading && matchingAssignees.length === 0 && (
+                <p className="p-2 text-xs text-muted-foreground">
+                  No match. The repair can still be sent unassigned.
+                </p>
+              )}
+              {matchingAssignees.map((person) => {
+                const checked = assigneeIds.includes(person.id);
+                return (
+                  <label
+                    key={person.id}
+                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-secondary ${
+                      checked ? "bg-secondary" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        setAssigneeIds((prev) =>
+                          checked ? prev.filter((id) => id !== person.id) : [...prev, person.id],
+                        )
+                      }
+                    />
+                    <span>{person.name}</span>
+                    {person.email ? (
+                      <span className="ml-auto truncate text-xs text-muted-foreground">
+                        {person.email}
+                      </span>
+                    ) : null}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Evidence is attached once, here, in the same flow. Breezeway-native
+                task photos continue to mirror back onto this record. */}
+          <div className="space-y-2">
+            <AttachmentsPanel
+              entityType={sourceType === "ticket" ? "ticket" : "onboarding_task"}
+              entityId={sourceId}
+              title="Photos for the field team"
+            />
+            <Textarea
+              rows={2}
+              placeholder="Anything the photos do not show"
+              value={evidenceNote}
+              onChange={(e) => setEvidenceNote(e.target.value)}
+            />
+          </div>
+
+          <Button
+            className="w-full"
+            size="lg"
+            disabled={send.isPending || !title.trim()}
+            onClick={() => send.mutate()}
+          >
+            <Send className="size-4" />
+            {send.isPending ? "Sending…" : "Send to Breezeway"}
+          </Button>
+        </div>
       </TaskWorkspace>
     </Card>
   );
