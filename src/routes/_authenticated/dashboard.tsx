@@ -6,6 +6,7 @@ import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState, LoadingPage, PageHero, PriorityRail, SectionCard } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
+import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import heroImage from "@/assets/hero-arha-property.jpg";
 import {
   AlertTriangle,
@@ -16,6 +17,7 @@ import {
   PlayCircle,
   Plus,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 import { routineConfig, routineDueLabel, routineDueState } from "@/lib/routine-controls";
 import { ticketNextAction } from "@/lib/ticket-next-action";
@@ -173,7 +175,7 @@ function Dashboard() {
 
   // Recent activity, derived from the same rows Home already loaded — no new
   // source of truth, just the last few things that visibly moved.
-  const recent: ActivityEvent[] = rows
+  const recent: (ActivityEvent & { at: string })[] = rows
     .map((t) => {
       const at = t.action_started_at ?? t.acknowledged_at ?? t.reported_at;
       const kind: ActivityEvent["kind"] =
