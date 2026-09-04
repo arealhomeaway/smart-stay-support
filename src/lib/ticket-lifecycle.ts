@@ -80,7 +80,7 @@ export const LIFECYCLE_EXCEPTIONS = {
   dispatch_prerequisites: "Dispatch without a recorded work order",
   guest_confirmation_prerequisites: "Await guest confirmation without recorded guest contact",
   closure_requirements: "Resolve without the required closure evidence",
-  closure_qa: "Close without Final Review",
+  closure_qa: "Close without a review",
 } as const;
 export type LifecycleException = keyof typeof LIFECYCLE_EXCEPTIONS;
 
@@ -283,7 +283,7 @@ export function validateTicketTransition(
       if (!FINAL_REVIEW_SATISFIED.has(String(facts.closureQaResult ?? "not_reviewed")))
         return fail(
           "close_qa_outstanding",
-          "This ticket needs Final Review by a supervisor before it can be closed.",
+          "A supervisor needs to review this ticket before it can be closed.",
           "closure_qa",
         );
       return { ok: true };

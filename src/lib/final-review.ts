@@ -12,7 +12,7 @@
  * evidence and communication requirements are already satisfied.
  */
 
-export const FINAL_REVIEW_LABEL = "Final Review";
+export const FINAL_REVIEW_LABEL = "Review before closing";
 
 /** Stored outcomes that mean Final Review is satisfied. */
 export const FINAL_REVIEW_SATISFIED = new Set([
@@ -33,21 +33,21 @@ export const FINAL_REVIEW_RESULT: Record<FinalReviewDecision, string> = {
 export function finalReviewResultLabel(result: string | null | undefined): string {
   switch (result) {
     case "pass":
-      return "Final Review approved";
+      return "Reviewed and approved";
     case "corrected":
       return "Corrected and approved";
     case "waived":
-      return "Final Review waived";
+      return "Review skipped";
     case "not_required":
-      return "No Final Review needed";
+      return "No review needed";
     case "returned":
-      return "Returned for correction";
+      return "Changes needed";
     case "not_reviewed":
     case null:
     case undefined:
-      return "Awaiting Final Review";
+      return "Needs review before closing";
     default:
-      return "Awaiting Final Review";
+      return "Needs review before closing";
   }
 }
 

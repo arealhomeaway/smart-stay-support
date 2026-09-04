@@ -275,7 +275,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       tone: "warning" as const,
     },
     {
-      title: "Final Review pending",
+      title: "Needs review before closing",
       description:
         "Finished work that needs a supervisor's decision before it can close. Routine work closes without you.",
       rows: finalReview as typeof reopened,
