@@ -8,7 +8,6 @@ import { EmptyState } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
-import { ROLE_LABELS } from "@/lib/permissions";
 import { portalsFor, recentPortalId } from "@/lib/portals";
 import { OPEN_STATUSES } from "@/lib/tickets";
 
@@ -28,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/hub")({
 });
 
 function Hub() {
-  const { roles, primary, can, isLoading } = useRole();
+  const { roles, identityLabel, previewing, can, isLoading } = useRole();
   const { demoMode } = useDemo();
   const [recent, setRecent] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
@@ -78,10 +77,12 @@ function Hub() {
           Your Resolve home
         </p>
         <h1 className="mt-3 text-3xl font-semibold md:text-4xl">
-          Welcome back{name ? `, ${name.split(" ")[0]}` : ""}
+          {/* A preview shows the previewed identity, never the real signed-in
+              admin's own name — the badge below already names who this is. */}
+          Welcome back{!previewing && name ? `, ${name.split(" ")[0]}` : ""}
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-muted-foreground">
-          <StatusBadge tone="brand">{ROLE_LABELS[primary]}</StatusBadge>
+          <StatusBadge tone="brand">{identityLabel}</StatusBadge>
           <span>A Real Home Away</span>
         </div>
 

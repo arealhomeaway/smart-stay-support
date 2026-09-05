@@ -51,3 +51,22 @@ export const PREVIEW_SEAT_LABEL: Record<PreviewSeat, string> = {
   director_ops: "Director of Operations",
   ops_supervisor: "Operations Supervisor",
 };
+
+/**
+ * The one label every preview-identity surface must show — the seat when
+ * one was chosen (so "Director of Operations" reads as itself, not as
+ * "Supervisor", the permission role it happens to share), else the plain
+ * role label, else the viewer's real label. Use this everywhere a Platform
+ * Owner's current identity is displayed (role badges, sign-out controls,
+ * greetings) instead of re-deriving the fallback chain locally.
+ */
+export function previewIdentityLabel(input: {
+  previewing: boolean;
+  previewSeat: PreviewSeat | null;
+  previewRoleLabel: string | null;
+  actualLabel: string;
+}): string {
+  if (!input.previewing) return input.actualLabel;
+  if (input.previewSeat) return PREVIEW_SEAT_LABEL[input.previewSeat];
+  return input.previewRoleLabel ?? input.actualLabel;
+}

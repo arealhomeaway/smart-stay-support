@@ -10,6 +10,8 @@ import {
 } from "@/lib/permissions";
 import { useViewAs } from "@/hooks/useViewAs";
 import { useDemoFlag, usePreviewSeat } from "@/hooks/useDemoFlag";
+import { previewIdentityLabel } from "@/lib/demo-mode";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 export type { AppRole };
 
@@ -71,6 +73,19 @@ export function useRole() {
     isDirectorPreview: previewing && previewSeat === "director_ops",
     isLoading: query.isLoading,
     primary: primaryRole(roles),
+    /**
+     * The one identity label every preview-aware surface should show —
+     * "Director of Operations" while previewing that seat, never the
+     * permission role it happens to share ("Supervisor"). Use this instead
+     * of reading ROLE_LABELS[primary] directly wherever a role/identity is
+     * displayed to the viewer.
+     */
+    identityLabel: previewIdentityLabel({
+      previewing,
+      previewSeat: previewing ? previewSeat : null,
+      previewRoleLabel: previewing && viewAs ? ROLE_LABELS[viewAs] : null,
+      actualLabel: ROLE_LABELS[primaryRole(actualRoles)],
+    }),
     capabilities: capabilitiesFor(roles),
     can: (capability: Capability) => can(roles, capability),
     landing: entryPathFor(roles),

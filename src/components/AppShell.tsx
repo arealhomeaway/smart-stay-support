@@ -1,4 +1,4 @@
-import { Link, useParams, useRouter } from "@tanstack/react-router";
+import { Link, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import {
   BarChart3,
   Building2,
@@ -51,13 +51,14 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
 import { RouteProgress } from "@/components/nav/RouteProgress";
 import { useAmbientOrigin } from "@/components/nav/NavContext";
+import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
-import { ROLE_LABELS, type Capability } from "@/lib/permissions";
+import { type Capability } from "@/lib/permissions";
 
 type NavItem = {
   to: string;
@@ -294,7 +295,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     isOwner,
     isSupervisor,
     readOnly,
-    primary,
+    identityLabel,
     isLoading: rolesLoading,
   } = useRole();
   // Guest Experience & Reservations seats work leads; Property Operations
@@ -303,6 +304,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = router.state.location.pathname;
   const vendorMode = !rolesLoading && isVendor;
   const ownerMode = !rolesLoading && isOwner;
+
+  // A record opened from another workspace (e.g. a ticket reached from Work
+  // orders) still lives under /tickets/*, but the sidebar should highlight
+  // where the employee is actually working, not the URL's own segment.
+  const recordSearch = useSearch({ strict: false }) as { from?: string };
+  const originSnapshot = readOrigin(recordSearch?.from);
+  const activePathname = originSnapshot
+    ? (originSnapshot.href.split("?")[0] ?? originSnapshot.href)
+    : pathname;
 
   // The global "Log a ticket" action: capability-gated, hidden where the page
   // already owns that action, demoted where the page has its own primary, and
@@ -421,7 +431,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => {
-                    const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                    const active =
+                      activePathname === item.to || activePathname.startsWith(`${item.to}/`);
                     return (
                       <SidebarMenuItem key={item.to}>
                         <SidebarMenuButton
@@ -503,13 +514,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                       size="icon"
                       variant="ghost"
                       onClick={signOut}
-                      aria-label={`Sign out (${ROLE_LABELS[primary]})`}
+                      aria-label={`Sign out (${identityLabel})`}
                       className="min-h-11 min-w-11 md:min-h-9 md:min-w-9"
                     >
                       <LogOut className="size-4" aria-hidden="true" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Sign out — {ROLE_LABELS[primary]}</TooltipContent>
+                  <TooltipContent>Sign out — {identityLabel}</TooltipContent>
                 </Tooltip>
               </div>
             </div>
