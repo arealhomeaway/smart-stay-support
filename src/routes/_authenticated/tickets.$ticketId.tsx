@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { humanizeHistoryText } from "@/lib/ticket-lifecycle";
+import { finalReviewRequirement } from "@/lib/final-review";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
 import { useRole } from "@/hooks/useRole";
+import { useDemo } from "@/components/DemoProvider";
 import { QueueRail, RecordHeaderNav, useRecordOrigin } from "@/components/nav/NavContext";
 import { PropertyContextDrawer } from "@/components/PropertyContextDrawer";
 import {
@@ -130,6 +132,7 @@ function TicketDetail() {
   const qc = useQueryClient();
   const role = useRole();
   const navigate = useNavigate();
+  const { demoMode } = useDemo();
   const [note, setNote] = useState("");
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
@@ -147,7 +150,11 @@ function TicketDetail() {
   const [showCelebrate, setShowCelebrate] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["ticket", ticketId],
+    // Keyed and filtered by demoMode exactly like every list/queue view, so
+    // toggling demo mode off a currently-open ticket re-fetches and comes
+    // back not-found rather than continuing to render a demo record under
+    // real permissions (or a real record under the demo lens).
+    queryKey: ["ticket", ticketId, demoMode],
     queryFn: async () => {
       const [ticket, steps, activity] = await Promise.all([
         supabase
@@ -156,7 +163,8 @@ function TicketDetail() {
             "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
-          .single(),
+          .eq("is_demo", demoMode)
+          .maybeSingle(),
         supabase.from("ticket_steps").select("*").eq("ticket_id", ticketId).order("position"),
         supabase
           .from("ticket_activity")
@@ -165,6 +173,7 @@ function TicketDetail() {
           .order("event_at", { ascending: false }),
       ]);
       if (ticket.error) throw ticket.error;
+      if (!ticket.data) return { ticket: null, steps: [], activity: [] };
       const authorIds = [
         ...new Set((activity.data ?? []).map((a) => a.author_id).filter(Boolean)),
       ] as string[];
@@ -281,7 +290,7 @@ function TicketDetail() {
   }, [savedWaitOn, savedWaitReason, savedWaitReview]);
 
   useEffect(() => {
-    if (!data) return;
+    if (!data?.ticket) return;
     const t = data.ticket;
     const closedNow = t.status === "resolved" || t.status === "closed";
     if (!closedNow) return;
@@ -292,7 +301,21 @@ function TicketDetail() {
     }
   }, [data, ticketId]);
 
-  if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
+  // Demo mode was toggled off (or on) while this exact ticket was open, or
+  // this ticket's id was reached directly and simply doesn't match the
+  // current lens — either way, it must not keep rendering under the wrong
+  // permissions. Leave to a safe, named destination rather than erroring.
+  useEffect(() => {
+    if (isLoading || !data || data.ticket) return;
+    toast.error(
+      demoMode
+        ? "That ticket isn't a demo record — it isn't available here."
+        : "That ticket isn't available outside demo mode.",
+    );
+    navigate({ to: "/tickets", replace: true });
+  }, [isLoading, data, demoMode, navigate]);
+
+  if (isLoading || !data || !data.ticket) return <Skeleton className="h-96 w-full" />;
 
   const { ticket, steps, activity } = data;
   const workType = ticket.work_types;
@@ -638,14 +661,20 @@ function TicketDetail() {
     if (!ok) return;
     await log(
       "resolved",
-      `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${summary}`,
+      willNeedFinalReview
+        ? `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${summary}`
+        : `Resolved and closed as ${labelFor(OUTCOME_TYPES, outcome)} — no review required. ${summary}`,
       "resolved",
     );
 
     setResolution("");
     setEvidence("");
     await refresh();
-    toast.success("Resolved — it moves to closure review before it is closed.");
+    toast.success(
+      willNeedFinalReview
+        ? "Resolved — it moves to closure review before it is closed."
+        : "Closed — no review is required for this ticket.",
+    );
   }
 
   async function reopen() {
@@ -684,9 +713,21 @@ function TicketDetail() {
   }[];
   const liveOrders = orders.filter((o) => o.phase !== "cancelled");
   const repairExists = repairLinks.length > 0 || liveOrders.length > 0;
+  /**
+   * "Repair complete" never blindly closes the Ticket — it only advances
+   * the displayed Current Work stage (below, via ticketStage()) to "verify"
+   * then "closure", which still requires guest confirmation, evidence and
+   * Final Review exactly as any other Ticket does. Signals, in order:
+   *  - `vendor_status` — the older on-ticket vendor dispatch field.
+   *  - every live (non-cancelled) Work Order closed or vendor-confirmed —
+   *    the canonical Resolve Work Order signal (Send for repair, §5).
+   * `repairLinks` (Breezeway-outbound task links) never signals completion
+   * here: their status enum (creating/created/synced/error/needs_review/
+   * abandoned) has no "completed" value — Breezeway is an execution channel
+   * off the Work Order, not a second source of truth for this ticket.
+   */
   const repairComplete =
     ticket.vendor_status === "completed" ||
-    repairLinks.some((l) => l.status === "completed") ||
     (liveOrders.length > 0 &&
       liveOrders.every((o) => Boolean(o.closed_at) || Boolean(o.vendor_completed_at)));
   const verified = !ticket.guest_in_residence || Boolean(ticket.guest_confirmed);
@@ -712,6 +753,20 @@ function TicketDetail() {
   const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
   const activeBranch = { claim: Boolean(branches?.claim), recovery: Boolean(branches?.recovery) };
+  // Whether resolving this ticket will close it outright or send it to a
+  // supervisor first — the action's label must say which one actually happens.
+  const willNeedFinalReview = finalReviewRequirement({
+    priority: ticket.priority,
+    category: ticket.category,
+    guest_in_residence: ticket.guest_in_residence,
+    guest_impact: ticket.guest_impact,
+    escalated: Boolean(ticket.escalated_at),
+    escalation_level: ticket.escalation_level,
+    reopen_count: ticket.reopen_count,
+    hasClaim: activeBranch.claim,
+    hasRecovery: activeBranch.recovery,
+  }).required;
+  const resolveActionLabel = willNeedFinalReview ? "Resolve — send for review" : "Close ticket";
 
   // One plain-language sentence: what is happening and what comes next. No stat wall.
   const nextStepLine = closed
@@ -846,7 +901,7 @@ function TicketDetail() {
 
       {!closeOpen ? (
         <Button onClick={() => setCloseOpen(true)} size="lg">
-          {closureReady ? "Close ticket" : "Work through what is missing"}
+          {closureReady ? resolveActionLabel : "Work through what is missing"}
         </Button>
       ) : (
         <div className="space-y-4 border-t border-border pt-4">
@@ -909,7 +964,7 @@ function TicketDetail() {
           )}
 
           <Button onClick={resolveTicket} size="lg">
-            <CheckCircle2 className="size-4" /> Close ticket
+            <CheckCircle2 className="size-4" /> {resolveActionLabel}
           </Button>
         </div>
       )}
@@ -1377,9 +1432,7 @@ function TicketDetail() {
                   <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
                 )}
                 {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-                {role.can("work_orders_internal") && (
-                  <TicketWorkOrderPanel ticket={ticket} readOnly />
-                )}
+                {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} />}
               </div>
             </details>
           </TabsContent>
