@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TaskWorkspace } from "@/components/ui/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,11 +174,13 @@ export function TaskDrawer({
   const dueChanged = (due || null) !== (task.due_on ?? null);
 
   return (
-    <Sheet open onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full overflow-y-auto p-0 sm:max-w-xl">
-        <SheetHeader className="border-b border-border p-4">
-          <SheetTitle className="pr-6 text-left text-base leading-snug">{task.title}</SheetTitle>
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+    <TaskWorkspace
+      open
+      onOpenChange={(v) => !v && onClose()}
+      title={task.title}
+      headerExtra={
+        <>
+          <div className="flex flex-wrap items-center gap-1.5">
             <Chip className={stateChip(STATUS_STATE[view.status])}>
               {STATUS_LABEL[view.status]}
             </Chip>
@@ -189,10 +191,53 @@ export function TaskDrawer({
               {propertyName} · {stageLabel(task.stage)}
             </span>
           </div>
-          {view.reason && <p className="text-left text-xs text-muted-foreground">{view.reason}</p>}
-        </SheetHeader>
-
-        <div className="space-y-5 p-4">
+          {view.reason && <p className="mt-1 text-xs text-muted-foreground">{view.reason}</p>}
+        </>
+      }
+      footer={
+        <>
+          {task.status !== "complete" ? (
+            <div className="flex flex-1 flex-col gap-1">
+              <Button
+                className="w-full"
+                disabled={
+                  disabled ||
+                  !view.canComplete ||
+                  view.waitingOn.length > 0 ||
+                  evidenceMissing ||
+                  awaitingOwner
+                }
+                onClick={() => onSave(taskPayload(task, { status: "complete", blocker: "" }))}
+              >
+                Mark complete
+              </Button>
+              {!view.canComplete && view.reason && (
+                <p className="text-xs text-muted-foreground">{view.reason}</p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Input
+                value={reopenReason}
+                onChange={(e) => setReopenReason(e.target.value)}
+                placeholder="Why is this being reopened?"
+              />
+              <Button
+                variant="secondary"
+                disabled={disabled || reopenReason.trim().length < 3}
+                onClick={() => onReopen(task.id, reopenReason.trim())}
+              >
+                Reopen with reason
+              </Button>
+            </div>
+          )}
+          <Button variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-5">
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <Field label="Assignee" value={assigneeLabel(task, people)} />
             <Field
@@ -556,49 +601,7 @@ export function TaskDrawer({
             </>
           )}
         </div>
-
-        <div className="sticky bottom-0 flex items-center gap-2 border-t border-border bg-card p-3">
-          {task.status !== "complete" ? (
-            <div className="flex flex-1 flex-col gap-1">
-              <Button
-                className="w-full"
-                disabled={
-                  disabled ||
-                  !view.canComplete ||
-                  view.waitingOn.length > 0 ||
-                  evidenceMissing ||
-                  awaitingOwner
-                }
-                onClick={() => onSave(taskPayload(task, { status: "complete", blocker: "" }))}
-              >
-                Mark complete
-              </Button>
-              {!view.canComplete && view.reason && (
-                <p className="text-xs text-muted-foreground">{view.reason}</p>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Input
-                value={reopenReason}
-                onChange={(e) => setReopenReason(e.target.value)}
-                placeholder="Why is this being reopened?"
-              />
-              <Button
-                variant="secondary"
-                disabled={disabled || reopenReason.trim().length < 3}
-                onClick={() => onReopen(task.id, reopenReason.trim())}
-              >
-                Reopen with reason
-              </Button>
-            </div>
-          )}
-          <Button variant="ghost" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+    </TaskWorkspace>
   );
 }
 

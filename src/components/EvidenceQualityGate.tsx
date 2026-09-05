@@ -35,14 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FocusedAction } from "@/components/ui/workspace";
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import {
   acceptEvidenceExceptionFn,
@@ -128,26 +121,13 @@ function ExceptionDialog({ item, onDone }: { item: EvidenceItemView; onDone: () 
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
         <ShieldCheck className="mr-1 size-3" /> Accept with exception
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Accept this photo with an exception</DialogTitle>
-            <DialogDescription>
-              You are taking responsibility for evidence that did not meet the standard. Your name,
-              the reason and the time are recorded, and the original result is kept.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="exception-reason">Why is this acceptable?</Label>
-            <Textarea
-              id="exception-reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Crawl space has no light and the vendor has left the property; the repair is confirmed by the vendor comment."
-            />
-          </div>
-          <DialogFooter>
+      <FocusedAction
+        open={open}
+        onOpenChange={setOpen}
+        title="Accept this photo with an exception"
+        description="You are taking responsibility for evidence that did not meet the standard. Your name, the reason and the time are recorded, and the original result is kept."
+        footer={
+          <>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
@@ -157,9 +137,20 @@ function ExceptionDialog({ item, onDone }: { item: EvidenceItemView; onDone: () 
             >
               Accept with exception
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <div className="space-y-2">
+          <Label htmlFor="exception-reason">Why is this acceptable?</Label>
+          <Textarea
+            id="exception-reason"
+            rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g. Crawl space has no light and the vendor has left the property; the repair is confirmed by the vendor comment."
+          />
+        </div>
+      </FocusedAction>
     </>
   );
 }
@@ -437,71 +428,69 @@ function AddRequirement({
       <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
         <Plus className="mr-1 size-3" /> Ask for a photo
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Ask for a photo</DialogTitle>
-            <DialogDescription>
-              Say exactly what has to be visible. The clearer the request, the fewer photos come
-              back unusable.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label>What kind of proof?</Label>
-              <Select value={kind} onValueChange={(v) => setKind(v as EvidenceKind)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVIDENCE_KINDS.map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {KIND_LABEL[k]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">{KIND_CRITERIA[kind]}</p>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="ev-label">Title</Label>
-              <Input
-                id="ev-label"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder={KIND_LABEL[kind]}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="ev-instruction">Instruction for whoever takes it</Label>
-              <Textarea
-                id="ev-instruction"
-                rows={2}
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                placeholder="e.g. Photograph the label on the side of the water heater, straight on and close enough to read the serial."
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="ev-detail">Specific detail to confirm (optional)</Label>
-              <Input
-                id="ev-detail"
-                value={detail}
-                onChange={(e) => setDetail(e.target.value)}
-                placeholder="e.g. filter size 20x25x1"
-              />
-            </div>
-          </div>
-          <DialogFooter>
+      <FocusedAction
+        open={open}
+        onOpenChange={setOpen}
+        title="Ask for a photo"
+        description="Say exactly what has to be visible. The clearer the request, the fewer photos come back unusable."
+        footer={
+          <>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button disabled={save.isPending} onClick={() => save.mutate()}>
               Add request
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>What kind of proof?</Label>
+            <Select value={kind} onValueChange={(v) => setKind(v as EvidenceKind)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {EVIDENCE_KINDS.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {KIND_LABEL[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{KIND_CRITERIA[kind]}</p>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="ev-label">Title</Label>
+            <Input
+              id="ev-label"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder={KIND_LABEL[kind]}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="ev-instruction">Instruction for whoever takes it</Label>
+            <Textarea
+              id="ev-instruction"
+              rows={2}
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              placeholder="e.g. Photograph the label on the side of the water heater, straight on and close enough to read the serial."
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="ev-detail">Specific detail to confirm (optional)</Label>
+            <Input
+              id="ev-detail"
+              value={detail}
+              onChange={(e) => setDetail(e.target.value)}
+              placeholder="e.g. filter size 20x25x1"
+            />
+          </div>
+        </div>
+      </FocusedAction>
     </>
   );
 }

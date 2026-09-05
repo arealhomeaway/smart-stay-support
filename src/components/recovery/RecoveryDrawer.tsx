@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TaskWorkspace } from "@/components/ui/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -145,7 +145,12 @@ export function RecoveryDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!recovery) return <Sheet open={false} onOpenChange={() => onClose()} />;
+  if (!recovery)
+    return (
+      <TaskWorkspace open={false} onOpenChange={() => onClose()} title="">
+        {null}
+      </TaskWorkspace>
+    );
 
   const value = (key: keyof RecoveryRow) =>
     fields[key as string] ??
@@ -166,13 +171,8 @@ export function RecoveryDrawer({
   const readOnly = !canEdit;
 
   return (
-    <Sheet open onOpenChange={(o) => (o ? null : onClose())}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle>{recovery.title}</SheetTitle>
-        </SheetHeader>
-
-        <div className="space-y-5 py-4 text-sm">
+    <TaskWorkspace open onOpenChange={(o) => (o ? null : onClose())} title={recovery.title}>
+      <div className="space-y-5 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <Chip className={stateChip(stageState(recovery.stage))}>
               {RECOVERY_STAGE_LABELS[recovery.stage]}
@@ -639,9 +639,8 @@ export function RecoveryDrawer({
               </div>
             ))}
           </section>
-        </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </TaskWorkspace>
   );
 }
 
