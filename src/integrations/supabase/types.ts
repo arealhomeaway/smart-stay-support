@@ -329,6 +329,7 @@ export type Database = {
           ticket_id: string | null
           title: string
           updated_at: string
+          work_order_id: string | null
         }
         Insert: {
           assignee?: string | null
@@ -363,6 +364,7 @@ export type Database = {
           ticket_id?: string | null
           title: string
           updated_at?: string
+          work_order_id?: string | null
         }
         Update: {
           assignee?: string | null
@@ -397,6 +399,7 @@ export type Database = {
           ticket_id?: string | null
           title?: string
           updated_at?: string
+          work_order_id?: string | null
         }
         Relationships: [
           {
@@ -418,6 +421,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_outbound_tasks_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -2662,6 +2672,8 @@ export type Database = {
       }
       handoffs: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           actions_completed: string
           created_at: string
           current_status: string
@@ -2683,6 +2695,8 @@ export type Database = {
           to_user: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           actions_completed: string
           created_at?: string
           current_status: string
@@ -2704,6 +2718,8 @@ export type Database = {
           to_user?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           actions_completed?: string
           created_at?: string
           current_status?: string
@@ -7771,6 +7787,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_director: { Args: { _user_id: string }; Returns: boolean }
       is_internal_staff: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
