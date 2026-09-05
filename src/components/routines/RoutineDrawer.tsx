@@ -6,7 +6,7 @@
  * Resolve handles ownership, evidence, completion and the follow-up ticket.
  */
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
@@ -59,6 +59,7 @@ export function RoutineDrawer({
   onOpenChange: (v: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const config = row ? routineConfig(row.kind) : null;
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [outcome, setOutcome] = useState<RoutineOutcome | null>(null);
@@ -115,6 +116,25 @@ export function RoutineDrawer({
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["routine-controls"] }),
   });
+
+  // Logging what was found must not be lost by navigating away to open the
+  // ticket, and the routine has to be completed before it can carry a link
+  // back to the ticket it produced.
+  async function completeAndFollowUp() {
+    if (!row) return;
+    try {
+      await complete.mutateAsync();
+    } catch {
+      return;
+    }
+    void navigate({
+      to: "/tickets/new",
+      search: {
+        ...(row.property_id ? { property: row.property_id } : {}),
+        from: `routine:${row.id}`,
+      },
+    });
+  }
 
   if (!row || !config) return null;
 
@@ -284,16 +304,14 @@ export function RoutineDrawer({
                 Mark it done
               </Button>
               {needsFollowUp && (
-                <Button asChild variant="outline" className="h-11">
-                  <Link
-                    to="/tickets/new"
-                    search={{
-                      ...(row.property_id ? { property: row.property_id } : {}),
-                      from: `routine:${row.id}`,
-                    }}
-                  >
-                    Create a follow-up ticket
-                  </Link>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  disabled={complete.isPending}
+                  onClick={() => void completeAndFollowUp()}
+                >
+                  Create a follow-up ticket
                 </Button>
               )}
               {!allChecked && outcome === "looks_good" && (
