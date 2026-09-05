@@ -86,6 +86,18 @@ export function FinalReviewPanel({
         </ul>
       )}
 
+      {!decided && !requirement.required && isSupervisor && !readOnly && (
+        // Straightforward work closes itself the moment it is resolved (see
+        // ticket-lifecycle.server.ts). This is only a safety valve for a
+        // record that reached "Resolved" before that rule existed, or
+        // otherwise never got the automatic follow-through.
+        <div className="mt-4">
+          <Button disabled={submit.isPending} onClick={() => submit.mutate("approve")}>
+            Close ticket
+          </Button>
+        </div>
+      )}
+
       {!decided && requirement.required && isSupervisor && !readOnly && (
         <div className="mt-4 space-y-3">
           <Label htmlFor="final-review-note">

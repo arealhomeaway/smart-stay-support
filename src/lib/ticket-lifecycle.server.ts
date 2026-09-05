@@ -262,5 +262,32 @@ export async function applyStatusChange(
     });
   }
 
-  return { ok: true as const, exception: usedException };
+  // Straightforward work does not wait on anyone once it is resolved: it
+  // closes in the same breath rather than sitting "Resolved" until someone
+  // remembers to close it a second time. Elevated-risk work still stops at
+  // "Resolved" for Final Review, exactly as before.
+  if (input.status === "resolved" && merged.finalReviewRequired === false) {
+    const { error: closeError } = await db
+      .from("tickets")
+      .update({ status: "closed" })
+      .eq("id", input.ticketId);
+    if (!closeError) {
+      await db.from("ticket_activity").insert({
+        ticket_id: input.ticketId,
+        author_id: userId,
+        kind: "status",
+        event_type: "status_changed",
+        internal: false,
+        body: "Closed automatically — no review is required for this ticket.",
+      });
+      return {
+        ok: true as const,
+        exception: usedException,
+        status: "closed" as const,
+        autoClosed: true,
+      };
+    }
+  }
+
+  return { ok: true as const, exception: usedException, status: input.status, autoClosed: false };
 }
