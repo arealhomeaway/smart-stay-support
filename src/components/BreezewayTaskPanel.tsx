@@ -16,7 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CalendarClock, Search, Send, UserCheck, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
-import { TaskWorkspace } from "@/components/ui/workspace";
+import { TaskWorkspace, FocusedAction } from "@/components/ui/workspace";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -106,6 +106,7 @@ export function BreezewayTaskPanel({
   // the checkpoint and the "past the committed date" read agree.
   const [scheduledTime, setScheduledTime] = useState("");
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     setTitle(defaultTitle);
@@ -162,6 +163,7 @@ export function BreezewayTaskPanel({
         },
       }),
     onSuccess: (result) => {
+      setConfirmOpen(false);
       if (result && "ok" in result && !result.ok) {
         toast.error(result.message);
         if ("retryable" in result && result.retryable) setRequestKey(crypto.randomUUID());
@@ -435,13 +437,57 @@ export function BreezewayTaskPanel({
             className="w-full"
             size="lg"
             disabled={send.isPending || !title.trim()}
-            onClick={() => send.mutate()}
+            onClick={() => setConfirmOpen(true)}
           >
             <Send className="size-4" />
-            {send.isPending ? "Sending…" : "Send to Breezeway"}
+            {send.isPending ? "Sending…" : "Dispatch to the field team"}
           </Button>
         </div>
       </TaskWorkspace>
+
+      <FocusedAction
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Send this repair now?"
+        description="This opens a work order on this ticket and notifies the field team immediately — it can't be recalled once sent."
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={send.isPending} onClick={() => send.mutate()}>
+              {send.isPending ? "Sending…" : "Send it"}
+            </Button>
+          </>
+        }
+      >
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
+          <dt className="text-muted-foreground">Work</dt>
+          <dd className="font-medium">{title || "—"}</dd>
+          <dt className="text-muted-foreground">Trade</dt>
+          <dd>{department}</dd>
+          <dt className="text-muted-foreground">Urgency</dt>
+          <dd>{priority}</dd>
+          <dt className="text-muted-foreground">Assigned to</dt>
+          <dd>
+            {assigneeIds.length
+              ? assignees
+                  .filter((p) => assigneeIds.includes(p.id))
+                  .map((p) => p.name)
+                  .join(", ")
+              : "Not assigned yet — sent unassigned"}
+          </dd>
+          {scheduledDate ? (
+            <>
+              <dt className="text-muted-foreground">Scheduled</dt>
+              <dd>
+                {scheduledDate}
+                {scheduledTime ? ` at ${scheduledTime}` : ""}
+              </dd>
+            </>
+          ) : null}
+        </dl>
+      </FocusedAction>
     </Card>
   );
 }

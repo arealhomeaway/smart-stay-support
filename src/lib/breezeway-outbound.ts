@@ -79,6 +79,8 @@ export type BreezewayOutboundLink = {
   sourceType: "ticket" | "onboarding_task";
   ticketId: string | null;
   onboardingTaskId: string | null;
+  /** The canonical Work Order this outbound task is a derived channel of. */
+  workOrderId: string | null;
   breezewayTaskId: number | null;
   status: BreezewayOutboundStatus;
   title: string;

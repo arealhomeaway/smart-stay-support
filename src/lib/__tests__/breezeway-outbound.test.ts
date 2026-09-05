@@ -235,6 +235,67 @@ describe("happy path", () => {
   });
 });
 
+/**
+ * Breezeway is a derived execution channel off the canonical Resolve Work
+ * Order, never a second repair record — see breezeway-outbound.server.ts.
+ */
+describe("canonical Work Order linkage", () => {
+  it("creates a Work Order for a ticket that does not have one yet, and links it", async () => {
+    expect(store.workOrders().length).toBe(0);
+    const result = await createOutboundTask(input("key-wo-create-0000000"), "actor");
+    expect(result.ok).toBe(true);
+    expect(store.workOrders().length).toBe(1);
+    const wo = store.workOrders()[0]!;
+    expect(wo["ticket_id"]).toBe(TICKET);
+    expect(wo["closed_at"]).toBeNull();
+    if (result.ok) expect(result.link.workOrderId).toBe(wo["id"] as string);
+    expect(store.outbound()[0]!["work_order_id"]).toBe(wo["id"] as string);
+  });
+
+  it("reuses the ticket's existing open Work Order instead of creating a second one", async () => {
+    store.state.workOrders.push({
+      id: "wo-existing",
+      ticket_id: TICKET,
+      closed_at: null,
+      property_id: "prop-1",
+    });
+    const result = await createOutboundTask(input("key-wo-reuse-00000000"), "actor");
+    expect(result.ok).toBe(true);
+    expect(store.workOrders().length).toBe(1);
+    if (result.ok) expect(result.link.workOrderId).toBe("wo-existing");
+    expect(store.outbound()[0]!["work_order_id"]).toBe("wo-existing");
+  });
+
+  it("opens a new Work Order when the ticket's previous one is already closed", async () => {
+    store.state.workOrders.push({
+      id: "wo-closed",
+      ticket_id: TICKET,
+      closed_at: "2026-01-01T00:00:00Z",
+      property_id: "prop-1",
+    });
+    const result = await createOutboundTask(input("key-wo-reopen-000000"), "actor");
+    expect(result.ok).toBe(true);
+    expect(store.workOrders().length).toBe(2);
+    const created = store.workOrders().find((w) => w["id"] !== "wo-closed")!;
+    if (result.ok) expect(result.link.workOrderId).toBe(created["id"] as string);
+  });
+
+  it("never creates or links a Work Order for an onboarding-task source", async () => {
+    const result = await createOutboundTask(
+      {
+        ...input("key-wo-onb-0000000000"),
+        sourceType: "onboarding_task",
+        sourceId: ONBOARDING_TASK,
+      },
+      "actor",
+    );
+    expect(result.ok).toBe(true);
+    expect(store.workOrders().length).toBe(0);
+    if (result.ok) expect(result.link.workOrderId).toBeNull();
+    expect(store.outbound()[0]!["work_order_id"]).toBeNull();
+  });
+});
+
 describe("idempotency", () => {
   it("a repeated request key returns the first result without a second POST", async () => {
     const key = "key-repeat-0000000000";
