@@ -208,18 +208,31 @@ export function TicketWorkOrderPanel({
       qc.invalidateQueries({ queryKey: ["work-orders-for-ticket", ticket.id] });
       toast.success("Work order opened");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      // One open work order per ticket (work_orders_one_open_per_ticket) —
+      // this fires only if two attempts raced, since the button below is
+      // already hidden whenever an open one exists.
+      if (e.message.includes("work_orders_one_open_per_ticket")) {
+        toast.error(
+          "This ticket already has an open work order — close it before opening another.",
+        );
+        qc.invalidateQueries({ queryKey: ["work-orders-for-ticket", ticket.id] });
+        return;
+      }
+      toast.error(e.message);
+    },
   });
 
   if (!can("claims_work")) return null;
 
   const existing = orders.data ?? [];
+  const hasOpenOrder = existing.some((wo) => !wo.closed_at);
   const blockedByEmergency = phase === "mitigation" && !emergency;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Send for repair</CardTitle>
+        <CardTitle>Work order</CardTitle>
         <CardDescription>Cost, approval and vendor tracking for this repair.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -274,7 +287,7 @@ export function TicketWorkOrderPanel({
           );
         })}
 
-        {readOnly ? null : !open ? (
+        {readOnly || hasOpenOrder ? null : !open ? (
           <Button variant="outline" onClick={() => setOpen(true)}>
             {existing.length ? "Open another work order" : "Open a work order"}
           </Button>
