@@ -444,10 +444,37 @@ async function refreshRequirementStatus(requirementId: string) {
     status = "rejected";
   }
 
+  const previous = await db
+    .from("evidence_requirements")
+    .select("subject_type, subject_id, label, status")
+    .eq("id", requirementId)
+    .maybeSingle();
+
   await db
     .from("evidence_requirements")
     .update({ status, accepted_item_id: accepted } as never)
     .eq("id", requirementId);
+
+  // A requirement newly reaching a satisfied state is meaningful to a person
+  // reading the Ticket, not just the technical evidence log — write it once,
+  // on the actual transition, never on every recheck that changes nothing.
+  const satisfied = status === "verified" || status === "accepted_exception";
+  const wasSatisfied =
+    previous.data?.status === "verified" || previous.data?.status === "accepted_exception";
+  if (previous.data?.subject_type === "ticket" && satisfied && !wasSatisfied) {
+    await db.from("ticket_activity").insert({
+      ticket_id: previous.data.subject_id,
+      author_id: null,
+      kind: "evidence",
+      event_type: "evidence_requirement_satisfied",
+      internal: false,
+      body:
+        status === "accepted_exception"
+          ? `Evidence exception accepted — ${previous.data.label}.`
+          : `Evidence requirement satisfied — ${previous.data.label}.`,
+    });
+  }
+
   return status;
 }
 
