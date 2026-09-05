@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 
-type Lens =
+export type Lens =
   | "attention"
   | "mine"
   | "at_risk"
@@ -133,9 +133,25 @@ function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
 export function DirectorHub({
   projects: allProjects,
   viewer,
+  originToken,
+  lens,
+  onLensChange,
+  find,
+  onFindChange,
+  owner,
+  onOwnerChange,
 }: {
   projects: ProjectSummary[];
   viewer?: HubViewer;
+  /** Remembered-workspace token so a project's Back returns to this exact view. */
+  originToken?: string | undefined;
+  /** Lifted to the route's own URL search params, so Back restores this exact view. */
+  lens: Lens;
+  onLensChange: (lens: Lens) => void;
+  find: string;
+  onFindChange: (find: string) => void;
+  owner: string | null;
+  onOwnerChange: (owner: string | null) => void;
 }) {
   const [showTest, setShowTest] = useState(false);
   // Test/QA homes never count towards live onboarding reporting. One shared
@@ -145,9 +161,9 @@ export function DirectorHub({
     () => applyTestDataFilter(allProjects, showTest, (p) => p.property),
     [allProjects, showTest],
   );
-  const [lens, setLens] = useState<Lens>("attention");
-  const [find, setFind] = useState("");
-  const [owner, setOwner] = useState<string | null>(null);
+  const setLens = onLensChange;
+  const setFind = onFindChange;
+  const setOwner = onOwnerChange;
 
   const counts = useMemo(
     () =>
@@ -216,7 +232,7 @@ export function DirectorHub({
             </p>
           )}
           {visible.map((p) => (
-            <ProjectRow key={p.property.id} project={p} />
+            <ProjectRow key={p.property.id} project={p} originToken={originToken} />
           ))}
         </div>
       </section>
@@ -316,7 +332,7 @@ export function DirectorHub({
               .slice()
               .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"))
               .map((p) => (
-                <PortfolioCard key={p.property.id} project={p} />
+                <PortfolioCard key={p.property.id} project={p} originToken={originToken} />
               ))}
           </div>
         )}
@@ -377,12 +393,19 @@ export function DirectorHub({
   );
 }
 
-function PortfolioCard({ project: p }: { project: ProjectSummary }) {
+function PortfolioCard({
+  project: p,
+  originToken,
+}: {
+  project: ProjectSummary;
+  originToken?: string | undefined;
+}) {
   const stage = lifecycleStageMeta(p.stage);
   return (
     <Link
       to="/onboarding/$propertyId"
       params={{ propertyId: p.property.id }}
+      search={(originToken ? { from: originToken } : undefined) as never}
       className="surface group block overflow-hidden transition hover:bg-muted/40"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden">
@@ -414,12 +437,19 @@ function PortfolioCard({ project: p }: { project: ProjectSummary }) {
   );
 }
 
-function ProjectRow({ project: p }: { project: ProjectSummary }) {
+function ProjectRow({
+  project: p,
+  originToken,
+}: {
+  project: ProjectSummary;
+  originToken?: string | undefined;
+}) {
   const stage = lifecycleStageMeta(p.stage);
   return (
     <Link
       to="/onboarding/$propertyId"
       params={{ propertyId: p.property.id }}
+      search={(originToken ? { from: originToken } : undefined) as never}
       className="surface flex flex-col gap-2 p-3 transition hover:bg-muted/40 lg:flex-row lg:items-center lg:gap-4"
     >
       <PropertyPhoto

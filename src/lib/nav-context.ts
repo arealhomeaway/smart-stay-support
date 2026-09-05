@@ -107,6 +107,7 @@ export const NATURAL_PARENTS = {
   claim: { label: "Claims", href: "/claims" },
   recovery: { label: "Guest recovery", href: "/recovery" },
   routine: { label: "Routine work", href: "/routines" },
+  onboarding: { label: "Director hub", href: "/onboarding" },
 } as const;
 
 export type NaturalParent = keyof typeof NATURAL_PARENTS;

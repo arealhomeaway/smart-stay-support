@@ -7,10 +7,11 @@ import { LoadingPage, PageHeader } from "@/components/ui/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
-import { DirectorHub } from "@/components/onboarding/DirectorHub";
+import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 
 import { useRole } from "@/hooks/useRole";
+import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { summarizeProject, type ProjectProperty } from "@/lib/onboarding-lifecycle";
 import { type WorkflowTask } from "@/lib/onboarding-workflow";
@@ -40,15 +41,48 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  // Lens, search text and owner filter live in the URL: the hub is
+  // shareable, survives a reload, and is exactly what Back restores after a
+  // visit to a project workspace.
+  validateSearch: (raw: Record<string, unknown>): HubSearch => {
+    const out: HubSearch = {};
+    if (typeof raw["lens"] === "string" && raw["lens"]) out.lens = raw["lens"] as Lens;
+    if (typeof raw["find"] === "string" && raw["find"]) out.find = raw["find"];
+    if (typeof raw["owner"] === "string" && raw["owner"]) out.owner = raw["owner"];
+    return out;
+  },
   component: Hub,
   errorComponent: () => <p className="text-muted-foreground">The hub could not be loaded.</p>,
 });
+
+type HubSearch = {
+  lens?: Lens | undefined;
+  find?: string | undefined;
+  owner?: string | undefined;
+};
 
 function Hub() {
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
   const { can, readOnly, userId } = useRole();
   const { enabled } = useFeatureFlags();
+  const { token: originToken } = useWorkspaceOrigin("Director hub");
+  const navigate = Route.useNavigate();
+  const params = Route.useSearch();
+  const lens = params.lens ?? "attention";
+  const find = params.find ?? "";
+  const owner = params.owner ?? null;
+  const setParam = (patch: HubSearch) =>
+    void navigate({
+      search: (prev: HubSearch) => {
+        const next: HubSearch = { ...prev, ...patch };
+        if (!next.lens || next.lens === "attention") delete next.lens;
+        if (!next.find) delete next.find;
+        if (!next.owner) delete next.owner;
+        return next;
+      },
+      replace: true,
+    });
 
   const { data, isLoading } = useQuery({
     queryKey: ["onboarding-workspace"],
@@ -148,6 +182,7 @@ function Hub() {
                     <Link
                       to="/onboarding/$propertyId"
                       params={{ propertyId: p.id }}
+                      search={{ from: originToken } as never}
                       className="inline-flex rounded-md border border-border px-2.5 py-1 text-sm hover:bg-muted"
                     >
                       {p.name}
@@ -157,7 +192,17 @@ function Hub() {
               </ul>
             </section>
           )}
-          <DirectorHub projects={projects} viewer={{ userId, canReview: can("handoff_review") }} />
+          <DirectorHub
+            projects={projects}
+            viewer={{ userId, canReview: can("handoff_review") }}
+            originToken={originToken}
+            lens={lens}
+            onLensChange={(v) => setParam({ lens: v })}
+            find={find}
+            onFindChange={(v) => setParam({ find: v || undefined })}
+            owner={owner}
+            onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
+          />
         </TabsContent>
 
         <TabsContent value="reviews" className="space-y-4">
