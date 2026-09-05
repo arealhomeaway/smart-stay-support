@@ -2,6 +2,7 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
+import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { PropertyContactPanel } from "@/components/PropertyContactPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -106,6 +107,7 @@ function NewMatter() {
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
+  const setStatus = useServerFn(setTicketStatusFn);
   const [mode, setMode] = useState<Mode>("ticket");
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
@@ -410,12 +412,16 @@ function NewMatter() {
           // tickets_auto_assign database trigger resolves the owning role
           // (functional_role_code) to its current seat holder server-side,
           // or leaves the ticket unassigned with a reason if none is
-          // eligible. One-touch resolutions are created already closed, so
-          // the trigger skips them and this insert's omission is a no-op.
-          status: oneTouch ? "closed" : "open",
+          // eligible.
+          // Every ticket is created "open", one-touch included — the
+          // resolved/closed transition below runs through the same
+          // validateTicketTransition gate every other ticket uses, so
+          // evidence and Final Review rules apply here too instead of being
+          // bypassed by inserting straight into a terminal status.
+          status: "open",
           outcome_type: oneTouch ? form.outcome_type : null,
           resolution_notes: oneTouch ? form.resolution_notes.trim() : null,
-          resolved_at: oneTouch ? now.toISOString() : null,
+          resolved_at: null,
         })
         .select("id")
         .single();
@@ -432,6 +438,15 @@ function NewMatter() {
           linked_by: userId,
         });
         if (linkError) toast.error("Ticket saved, but linking it to the lead failed.");
+      }
+
+      if (context.from?.startsWith("routine:")) {
+        const routineId = context.from.slice("routine:".length);
+        const { error: routineLinkError } = await supabase
+          .from("routine_controls")
+          .update({ follow_up_ticket_id: ticket.id })
+          .eq("id", routineId);
+        if (routineLinkError) toast.error("Ticket saved, but linking it to the routine failed.");
       }
 
       if (!oneTouch && resolvedPlaybookId) {
@@ -465,9 +480,30 @@ function NewMatter() {
         });
       }
 
-      toast.success(
-        oneTouch ? "One-touch resolution logged." : "Ticket opened with its clocks running.",
-      );
+      if (oneTouch) {
+        // Same gate every ticket closes through — a one-touch record only
+        // reaches "closed" if it genuinely qualifies (its evidence and
+        // review requirements, if any, are already satisfied). Resolving
+        // auto-closes it right there when no review is required; if it
+        // doesn't qualify, the record still exists — it just stops at "open"
+        // or "resolved" instead of silently claiming to be done.
+        const resolved = await setStatus({ data: { ticketId: ticket.id, status: "resolved" } });
+        if (!resolved.ok) {
+          toast.warning(
+            `Logged, but it could not be marked resolved yet: ${resolved.message} Finish it from the ticket.`,
+          );
+        } else {
+          toast.success(
+            resolved.autoClosed
+              ? "One-touch resolution logged and closed."
+              : "One-touch resolution logged — it needs a supervisor's review before it can close.",
+          );
+          router.navigate({ to: "/tickets/$ticketId", params: { ticketId: ticket.id } });
+          return;
+        }
+      } else {
+        toast.success("Ticket opened with its clocks running.");
+      }
       router.navigate({ to: "/tickets/$ticketId", params: { ticketId: ticket.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save this record");
