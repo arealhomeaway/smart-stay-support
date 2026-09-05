@@ -108,6 +108,7 @@ function WorkOrdersHome() {
                 requirements={reqMap}
                 propertyNames={propertyNames.data ?? new Map()}
                 canEdit={!readOnly}
+                originLabel="Work orders"
               />
             </SectionCard>
           );

@@ -124,6 +124,7 @@ export function WorkOrderDrawer({
   canEdit,
   propertyName,
   propertyPhotoUrl,
+  originToken,
   onClose,
 }: {
   workOrder: WorkOrderRow | null;
@@ -131,6 +132,8 @@ export function WorkOrderDrawer({
   canEdit: boolean;
   propertyName: string;
   propertyPhotoUrl?: string | null;
+  /** Where this list is — carried onto the Ticket so Back returns here. */
+  originToken?: string | undefined;
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -1147,6 +1150,7 @@ export function WorkOrderDrawer({
               <Link
                 to="/tickets/$ticketId"
                 params={{ ticketId: workOrder.ticket_id }}
+                search={(originToken ? { from: originToken } : undefined) as never}
                 className="underline underline-offset-2"
               >
                 Originating ticket

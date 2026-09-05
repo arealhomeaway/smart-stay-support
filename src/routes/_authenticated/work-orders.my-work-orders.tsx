@@ -46,6 +46,7 @@ function MyWorkOrders() {
           requirements={requirements.data ?? new Map<string, RequirementLike[]>()}
           propertyNames={propertyNames.data ?? new Map()}
           canEdit={!readOnly}
+          originLabel="My work orders"
         />
       )}
     </div>
