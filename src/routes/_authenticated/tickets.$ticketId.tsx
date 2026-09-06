@@ -1176,9 +1176,17 @@ function TicketDetail() {
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">Does this need a field repair?</h2>
                   <p className="text-sm text-muted-foreground">
-                    Send it to the field team and Resolve tracks it from here.
+                    Opening a work order is how Resolve tracks the repair — cost, approval and
+                    vendor. Sending it to a field team is a later, optional step.
                   </p>
-                  {repairPanel}
+                  {role.can("work_orders_internal") ? (
+                    <>
+                      <TicketWorkOrderPanel ticket={ticket} />
+                      {repairPanel}
+                    </>
+                  ) : (
+                    repairPanel
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => setCloseOpen(true)}>
                     No repair needed — finish this ticket
                   </Button>
@@ -1432,7 +1440,11 @@ function TicketDetail() {
                   <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
                 )}
                 {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-                {role.can("work_orders_internal") && <TicketWorkOrderPanel ticket={ticket} />}
+                {/* Shown as the primary action during the repair stage above;
+                    here it's reference only, once that stage has passed. */}
+                {role.can("work_orders_internal") && stage !== "repair" && (
+                  <TicketWorkOrderPanel ticket={ticket} />
+                )}
               </div>
             </details>
           </TabsContent>

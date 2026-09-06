@@ -288,7 +288,7 @@ export function TicketWorkOrderPanel({
         })}
 
         {readOnly || hasOpenOrder ? null : !open ? (
-          <Button variant="outline" onClick={() => setOpen(true)}>
+          <Button size="lg" className="w-full" onClick={() => setOpen(true)}>
             {existing.length ? "Open another work order" : "Open a work order"}
           </Button>
         ) : (

@@ -1,10 +1,12 @@
 /**
- * "Send for repair" — the one visible repair path in Operations.
+ * External dispatch — Breezeway is a secondary, optional channel off the
+ * canonical Resolve Work Order (rendered above this panel, on the ticket),
+ * never the primary repair path or the primary frontline action.
  *
- * Before it is sent this is a single dominant button that opens a focused
- * sheet. After it is sent the inputs collapse and the ticket shows a short
- * repair summary instead: who has it, what Breezeway says, when it is
- * scheduled, the latest update and what the coordinator does next.
+ * Before it is sent this is a single button that opens a focused sheet.
+ * After it is sent the inputs collapse and the ticket shows a short dispatch
+ * summary instead: who has it, what Breezeway says, when it is scheduled,
+ * the latest update and what the coordinator does next.
  *
  * Resolve stays the source of truth. Breezeway never changes anything here,
  * and a fresh request key per composed request makes a double-click or a
@@ -13,7 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, Search, Send, UserCheck, Wrench } from "lucide-react";
+import { CalendarClock, Search, Send, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { TaskWorkspace, FocusedAction } from "@/components/ui/workspace";
@@ -168,7 +170,7 @@ export function BreezewayTaskPanel({
         toast.error(result.message);
         if ("retryable" in result && result.retryable) setRequestKey(crypto.randomUUID());
       } else {
-        toast.success("Sent for repair.");
+        toast.success("Dispatched to Breezeway.");
         setRequestKey(crypto.randomUUID());
         setAssigneeIds([]);
         setEvidenceNote("");
@@ -194,14 +196,14 @@ export function BreezewayTaskPanel({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Wrench className="size-4" /> Repair
+          <Send className="size-4" /> External dispatch
         </CardTitle>
         <CardDescription>
           {latest
-            ? "This is with the field team. Resolve keeps the ticket; Breezeway does the work."
+            ? "With Breezeway for field scheduling. Resolve keeps the work order; Breezeway does the field work."
             : eligibility.eligible
-              ? "Send this to the field team and Resolve tracks it from here."
-              : `Repair sending is unavailable for this property. ${eligibility.reason ?? ""}`}
+              ? "Optional — sends this ticket's work order to Breezeway for field-team scheduling."
+              : `Dispatch to Breezeway is unavailable for this property. ${eligibility.reason ?? ""}`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -259,8 +261,9 @@ export function BreezewayTaskPanel({
         )}
 
         {canSend && (
-          <Button className="w-full" size="lg" onClick={() => setOpen(true)}>
-            <Wrench className="size-4" /> {latest ? "Send another repair" : "Send for repair"}
+          <Button variant="outline" className="w-full" onClick={() => setOpen(true)}>
+            <Send className="size-4" />{" "}
+            {latest ? "Dispatch to Breezeway again" : "Dispatch to Breezeway"}
           </Button>
         )}
 
@@ -275,8 +278,8 @@ export function BreezewayTaskPanel({
       <TaskWorkspace
         open={open}
         onOpenChange={setOpen}
-        title="Send for repair"
-        subtitle="You already own this ticket. This is who does the field work, and when."
+        title="Dispatch to Breezeway"
+        subtitle="Optional — sends this ticket's work order externally for field scheduling. You keep the ticket either way."
       >
         <div className="space-y-5 text-sm">
           <SpecialHandlingNotice propertyId={propertyId} moment="maintenance" />
@@ -440,7 +443,7 @@ export function BreezewayTaskPanel({
             onClick={() => setConfirmOpen(true)}
           >
             <Send className="size-4" />
-            {send.isPending ? "Sending…" : "Dispatch to the field team"}
+            {send.isPending ? "Sending…" : "Dispatch to Breezeway"}
           </Button>
         </div>
       </TaskWorkspace>
@@ -448,8 +451,8 @@ export function BreezewayTaskPanel({
       <FocusedAction
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Send this repair now?"
-        description="This opens a work order on this ticket and notifies the field team immediately — it can't be recalled once sent."
+        title="Dispatch to Breezeway now?"
+        description="This uses the work order already open on this ticket, or opens one if none exists yet, and sends it to Breezeway for field-team scheduling — it can't be recalled once sent."
         footer={
           <>
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
