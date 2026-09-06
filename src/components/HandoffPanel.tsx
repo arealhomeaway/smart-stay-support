@@ -25,6 +25,7 @@ import {
 } from "@/lib/tickets";
 import { usDateTime } from "@/lib/dates";
 import { useCurrentUserId } from "@/hooks/useTeam";
+import { handoffAcceptPatch, handoffSelfAcceptCheck } from "@/lib/handoff-accept";
 
 type Ticket = {
   id: string;
@@ -180,21 +181,17 @@ export function HandoffPanel({
 
   async function accept(handoffId: string, requestedFrom: string | null) {
     const { data: userData } = await supabase.auth.getUser();
-    if (userData.user?.id && userData.user.id === requestedFrom) {
-      toast.error("You requested this handoff — someone else has to accept it.");
+    const check = handoffSelfAcceptCheck(userData.user?.id, requestedFrom);
+    if (!check.ok) {
+      toast.error(check.message);
       return;
     }
+    // The designated recipient (to_user) is never overwritten here — who it
+    // was offered to and who actually accepted are two different facts, each
+    // kept in its own column. See handoffAcceptPatch for the exact shape.
     const { error } = await supabase
       .from("handoffs")
-      .update({
-        status: "accepted",
-        responded_at: new Date().toISOString(),
-        // The designated recipient (to_user) is never overwritten here — who
-        // it was offered to and who actually accepted are two different
-        // facts, each kept in its own column.
-        accepted_by: userData.user?.id ?? null,
-        accepted_at: new Date().toISOString(),
-      })
+      .update(handoffAcceptPatch(userData.user?.id ?? null, new Date().toISOString()))
       .eq("id", handoffId);
     if (error) {
       toast.error(error.message);
