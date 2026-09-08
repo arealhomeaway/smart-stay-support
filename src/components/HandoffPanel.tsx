@@ -39,6 +39,14 @@ type Ticket = {
  * A task is not handed off because someone was tagged. A valid handoff carries
  * the full summary and is not complete until the receiver accepts it.
  */
+/**
+ * Who actually accepted the handoff. Kept behind a reader because the
+ * generated database types do not yet expose this column.
+ */
+function acceptedBy(row: unknown): string | null {
+  return (row as { accepted_by?: string | null }).accepted_by ?? null;
+}
+
 export function HandoffPanel({
   ticket,
   closed,
