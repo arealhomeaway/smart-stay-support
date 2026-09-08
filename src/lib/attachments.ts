@@ -225,6 +225,22 @@ export function validateFile(input: {
   return { ok: true };
 }
 
+/**
+ * Query keys to invalidate after a successful upload, beyond the file
+ * list's own key. A ticket upload also writes a `ticket_activity` row (see
+ * `completeUpload` in attachments.server.ts) that the ticket detail page's
+ * own query holds — a separately keyed query (it also varies by demo mode),
+ * so it needs its own invalidation or the Activity tab stays stale.
+ */
+export function attachmentUploadInvalidationKeys(
+  entityType: AttachmentEntity,
+  entityId: string,
+): string[][] {
+  const keys: string[][] = [["attachments", entityType, entityId]];
+  if (entityType === "ticket") keys.push(["ticket", entityId]);
+  return keys;
+}
+
 /** Strips anything that would make a storage path ambiguous or unsafe. */
 export function safeFilename(name: string): string {
   const cleaned = name
