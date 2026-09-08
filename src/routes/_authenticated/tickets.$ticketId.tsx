@@ -210,7 +210,7 @@ function TicketDetail() {
     },
   });
 
-  const propertyId = data?.ticket.property_id;
+  const propertyId = data?.ticket?.property_id;
   const { data: history } = useQuery({
     queryKey: ["property-history", propertyId],
     enabled: !!propertyId,
@@ -238,7 +238,7 @@ function TicketDetail() {
     queryFn: () => repairStateFn({ data: { sourceType: "ticket", sourceId: ticketId } }),
   });
 
-  const ownerId = data?.ticket.current_action_owner ?? null;
+  const ownerId = data?.ticket?.current_action_owner ?? null;
   const { data: assignee } = useQuery({
     queryKey: ["ticket-assignee", ownerId],
     enabled: Boolean(ownerId),
@@ -276,9 +276,9 @@ function TicketDetail() {
 
   // Waiting is a saved state, not a form: reopening the ticket shows exactly
   // what was parked, on what, and when it comes back.
-  const savedWaitOn = data?.ticket.waiting_on ?? null;
-  const savedWaitReason = data?.ticket.waiting_reason ?? null;
-  const savedWaitReview = data?.ticket.next_review_at ?? null;
+  const savedWaitOn = data?.ticket?.waiting_on ?? null;
+  const savedWaitReason = data?.ticket?.waiting_reason ?? null;
+  const savedWaitReview = data?.ticket?.next_review_at ?? null;
   useEffect(() => {
     if (savedWaitOn) setWaitOn(savedWaitOn);
     if (savedWaitReason) setWaitReason(savedWaitReason);
