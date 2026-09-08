@@ -147,7 +147,7 @@ export const resolveEscalationFn = createServerFn({ method: "POST" })
     if (esc.escalated_to_role === "director") {
       const { data: isDirector, error: dirError } = await context.supabase.rpc("is_director" as never, {
         _user_id: context.userId,
-      });
+      } as never);
       if (dirError) throw new Error(dirError.message);
       if (!isDirector)
         throw new Error(
