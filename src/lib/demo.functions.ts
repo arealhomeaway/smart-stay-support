@@ -68,9 +68,12 @@ export const seedDemoEnvironment = createServerFn({ method: "POST" })
     if (ownerError) throw ownerError;
     // Stage 4: an open Work Order on the base AC ticket, so the canonical
     // Work Order screens have a demo fixture to open.
-    const { error: workOrderError } = await supabaseAdmin.rpc("seed_demo_work_order" as never, {
-      _actor: context.userId,
-    } as never);
+    const { error: workOrderError } = await supabaseAdmin.rpc(
+      "seed_demo_work_order" as never,
+      {
+        _actor: context.userId,
+      } as never,
+    );
     if (workOrderError) throw workOrderError;
     return { ok: true as const };
   });
@@ -97,9 +100,12 @@ export const resetDemoEnvironment = createServerFn({ method: "POST" })
       _actor: context.userId,
     });
     if (ownerError) throw ownerError;
-    const { error: workOrderError } = await supabaseAdmin.rpc("archive_demo_work_order" as never, {
-      _actor: context.userId,
-    } as never);
+    const { error: workOrderError } = await supabaseAdmin.rpc(
+      "archive_demo_work_order" as never,
+      {
+        _actor: context.userId,
+      } as never,
+    );
     if (workOrderError) throw workOrderError;
     return { ok: true as const };
   });
