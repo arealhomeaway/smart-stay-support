@@ -60,6 +60,17 @@ export const PREVIEW_SEAT_LABEL: Record<PreviewSeat, string> = {
  * Owner's current identity is displayed (role badges, sign-out controls,
  * greetings) instead of re-deriving the fallback chain locally.
  */
+/**
+ * True when a ticket already loaded into memory no longer belongs under the
+ * current demo lens — toggling demo mode while this exact ticket stays open
+ * doesn't by itself trigger the filtered query to refetch, so a page can't
+ * rely on the query alone to notice the record no longer qualifies. Compare
+ * the loaded record's own flag directly instead.
+ */
+export function ticketDemoMismatch(loadedTicketIsDemo: boolean | null, demoMode: boolean): boolean {
+  return loadedTicketIsDemo !== null && loadedTicketIsDemo !== demoMode;
+}
+
 export function previewIdentityLabel(input: {
   previewing: boolean;
   previewSeat: PreviewSeat | null;

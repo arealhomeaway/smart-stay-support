@@ -46,6 +46,7 @@ import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
 import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
+import { ticketDemoMismatch } from "@/lib/demo-mode";
 import { QueueRail, RecordHeaderNav, useRecordOrigin } from "@/components/nav/NavContext";
 import { PropertyContextDrawer } from "@/components/PropertyContextDrawer";
 import {
@@ -305,17 +306,34 @@ function TicketDetail() {
   // this ticket's id was reached directly and simply doesn't match the
   // current lens — either way, it must not keep rendering under the wrong
   // permissions. Leave to a safe, named destination rather than erroring.
+  //
+  // Two guards, deliberately redundant:
+  //  - A query keyed on demoMode (above) catches a direct/fresh load of a
+  //    mismatched ticket — it never has data to show in the first place.
+  //  - This one compares the ticket already sitting in memory against the
+  //    current demoMode directly, with no dependency on a network round
+  //    trip finishing. Toggling demo mode while a ticket is already open
+  //    must not leave the previous fetch's content on screen for however
+  //    long the requery takes — this effect (and the render guard below)
+  //    do not wait for it.
+  const loadedTicketIsDemo = data?.ticket?.is_demo ?? null;
+  const demoMismatch = ticketDemoMismatch(loadedTicketIsDemo, demoMode);
   useEffect(() => {
-    if (isLoading || !data || data.ticket) return;
+    if (isLoading || !data) return;
+    // Fires when the filtered query already came back empty (a mismatched
+    // ticket reached fresh), or when a ticket already in memory no longer
+    // matches demoMode (toggled while this exact ticket stayed open).
+    if (data.ticket && !demoMismatch) return;
     toast.error(
       demoMode
         ? "That ticket isn't a demo record — it isn't available here."
         : "That ticket isn't available outside demo mode.",
     );
     navigate({ to: "/tickets", replace: true });
-  }, [isLoading, data, demoMode, navigate]);
+  }, [isLoading, data, demoMode, demoMismatch, navigate]);
 
-  if (isLoading || !data || !data.ticket) return <Skeleton className="h-96 w-full" />;
+  if (isLoading || !data || !data.ticket || demoMismatch)
+    return <Skeleton className="h-96 w-full" />;
 
   const { ticket, steps, activity } = data;
   const workType = ticket.work_types;
