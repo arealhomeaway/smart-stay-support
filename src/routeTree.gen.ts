@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AwaitingAccessRouteImport } from './routes/awaiting-access'
-import { Route as OwnerShowcaseRouteImport } from './routes/owner-showcase'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
@@ -93,11 +92,6 @@ const AuthRoute = AuthRouteImport.update({
 const AwaitingAccessRoute = AwaitingAccessRouteImport.update({
   id: '/awaiting-access',
   path: '/awaiting-access',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnerShowcaseRoute = OwnerShowcaseRouteImport.update({
-  id: '/owner-showcase',
-  path: '/owner-showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -441,7 +435,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
-  '/owner-showcase': typeof OwnerShowcaseRoute
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
@@ -508,7 +501,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
-  '/owner-showcase': typeof OwnerShowcaseRoute
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
@@ -572,7 +564,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
-  '/owner-showcase': typeof OwnerShowcaseRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
@@ -641,7 +632,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/awaiting-access'
-    | '/owner-showcase'
     | '/reset-password'
     | '/analytics'
     | '/audit'
@@ -708,7 +698,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/awaiting-access'
-    | '/owner-showcase'
     | '/reset-password'
     | '/analytics'
     | '/audit'
@@ -771,7 +760,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/awaiting-access'
-    | '/owner-showcase'
     | '/reset-password'
     | '/_authenticated/analytics'
     | '/_authenticated/audit'
@@ -840,7 +828,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   AwaitingAccessRoute: typeof AwaitingAccessRoute
-  OwnerShowcaseRoute: typeof OwnerShowcaseRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicBzProbeRoute: typeof ApiPublicBzProbeRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
@@ -881,13 +868,6 @@ declare module '@tanstack/react-router' {
       path: '/awaiting-access'
       fullPath: '/awaiting-access'
       preLoaderRoute: typeof AwaitingAccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/owner-showcase': {
-      id: '/owner-showcase'
-      path: '/owner-showcase'
-      fullPath: '/owner-showcase'
-      preLoaderRoute: typeof OwnerShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1492,7 +1472,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   AwaitingAccessRoute: AwaitingAccessRoute,
-  OwnerShowcaseRoute: OwnerShowcaseRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicBzProbeRoute: ApiPublicBzProbeRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,

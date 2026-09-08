@@ -85,15 +85,21 @@ ALTER TABLE public.handoffs
 -- unchanged — every list/queue view already filters is_demo itself, and
 -- narrowing SELECT here would break legitimate is_staff reporting queries
 -- that intentionally read across both.
+--
+-- This must layer on top of the ownership/assignment gate tickets_update
+-- already carries (private.can_edit_ticket — added 2026-08-26), not
+-- replace it: only the demo AND-clause is new here, so no one who could
+-- edit a ticket before this migration loses that ability, and no one who
+-- couldn't gains it.
 -- ---------------------------------------------------------------------
 DROP POLICY IF EXISTS tickets_update ON public.tickets;
 CREATE POLICY tickets_update ON public.tickets FOR UPDATE TO authenticated
   USING (
-    (public.is_staff(auth.uid()) OR vendor_user_id = auth.uid())
+    ((private.is_staff(auth.uid()) AND private.can_edit_ticket(auth.uid(), id)) OR vendor_user_id = auth.uid())
     AND (NOT is_demo OR public.has_role(auth.uid(), 'admin'))
   )
   WITH CHECK (
-    (public.is_staff(auth.uid()) OR vendor_user_id = auth.uid())
+    ((private.is_staff(auth.uid()) AND private.can_edit_ticket(auth.uid(), id)) OR vendor_user_id = auth.uid())
     AND (NOT is_demo OR public.has_role(auth.uid(), 'admin'))
   );
 
