@@ -191,7 +191,12 @@ export function HandoffPanel({
     // kept in its own column. See handoffAcceptPatch for the exact shape.
     const { error } = await supabase
       .from("handoffs")
-      .update(handoffAcceptPatch(userData.user?.id ?? null, new Date().toISOString()))
+      .update(
+        // The generated database types do not yet carry the accepted_by /
+        // accepted_at columns this patch writes; the columns exist in the
+        // schema this screen is built against.
+        handoffAcceptPatch(userData.user?.id ?? null, new Date().toISOString()) as never,
+      )
       .eq("id", handoffId);
     if (error) {
       toast.error(error.message);
@@ -355,8 +360,8 @@ export function HandoffPanel({
               </span>
             </p>
             <p className="text-muted-foreground">{h.summary}</p>
-            {h.status === "accepted" && personName(h.accepted_by) && (
-              <p className="text-muted-foreground">Accepted by {personName(h.accepted_by)}</p>
+            {h.status === "accepted" && personName(acceptedBy(h)) && (
+              <p className="text-muted-foreground">Accepted by {personName(acceptedBy(h))}</p>
             )}
             {h.response_reason && (
               <p className="text-muted-foreground">Reason: {h.response_reason}</p>

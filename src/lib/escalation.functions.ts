@@ -145,7 +145,7 @@ export const resolveEscalationFn = createServerFn({ method: "POST" })
     // by the escalations RLS policy, so this cannot be bypassed by calling
     // the table directly either.
     if (esc.escalated_to_role === "director") {
-      const { data: isDirector, error: dirError } = await context.supabase.rpc("is_director", {
+      const { data: isDirector, error: dirError } = await context.supabase.rpc("is_director" as never, {
         _user_id: context.userId,
       });
       if (dirError) throw new Error(dirError.message);
