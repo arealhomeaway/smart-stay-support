@@ -76,15 +76,21 @@ BEGIN
   RETURNING id INTO p_willow;
 
   -- ============ Program ============
+  -- notify_email/notify_sms_p1/notify_push are forced false: every insert
+  -- below that would normally queue an owner_notifications row still does
+  -- (so the in-app alerts feed renders normally), but its email_status/
+  -- sms_status land as 'skipped' rather than 'pending' — belt-and-suspenders
+  -- on top of the .invalid email domain and NULL owner_user_id, so nothing
+  -- is ever eligible for an outbound send attempt by any worker.
   INSERT INTO public.owner_programs
     (property_id, owner_user_id, owner_name, owner_email, owner_phone, status, started_on, ends_on,
      target_hours, activated_at, activated_by, onboarding_lead, operations_lead, dfy_confirmed, dfy_confirmed_at,
-     internal_notes, is_demo)
+     internal_notes, notify_email, notify_sms_p1, notify_push, is_demo)
   VALUES
     (NULL, NULL, 'Dana Reyes (not a real person)', 'dana.reyes.qa@example.invalid', '(000) 000-0000', 'active',
      d0, d0 + 89, 100, d0::timestamptz, who, who, who, true, d0::timestamptz,
      'Fictional QA/demo owner for investor and board walkthroughs of the Active Owner participation experience. Not a real person or home — never contact.',
-     true)
+     false, false, false, true)
   RETURNING id INTO prog;
 
   INSERT INTO public.owner_program_properties
@@ -100,10 +106,10 @@ BEGIN
   VALUES
     ('ZZ QA AO — Willow: Hot tub service estimate',
      'Fictional demo matter opened by the QA/demo homeowner on the Consult path — a vendor estimate reviewed before booking.',
-     'maintenance','same_day_operations','p3','resolved','ticket','owner','none','vacant',
+     'maintenance','same_day_operations','p3','resolved','completed_interaction','owner','none','vacant',
      false, p_willow, who, (d0 + 22)::timestamptz, (d0 + 22)::timestamptz + interval '4 hours', (d0 + 25)::timestamptz,
      (d0 + 23)::timestamptz, 'Estimate reviewed with the homeowner and approved for scheduling.',
-     'not_started','owner','consult', true, who, 900200, true)
+     'none','owner','consult', true, who, 900200, true)
   RETURNING id INTO t_vendor;
 
   -- ============ Participation opportunities (the roadmap / "opportunities" board) ============
