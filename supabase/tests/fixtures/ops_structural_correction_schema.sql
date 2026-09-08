@@ -42,6 +42,20 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
   SELECT public.is_staff(_user_id)
 $$;
 
+-- private.* mirrors of is_staff/is_supervisor: the real migration history
+-- moves the implementation into the private schema with public.* left as
+-- thin wrappers (see 20260821194743). tickets_update and can_edit_ticket
+-- call the private.* names directly, so the fixture needs them too.
+CREATE OR REPLACE FUNCTION private.is_staff(_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT public.is_staff(_user_id)
+$$;
+
+CREATE OR REPLACE FUNCTION private.is_supervisor(_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT public.is_supervisor(_user_id)
+$$;
+
 CREATE TABLE public.functional_roles (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code text NOT NULL UNIQUE,
@@ -83,10 +97,37 @@ CREATE TABLE public.tickets (
   status text NOT NULL DEFAULT 'open',
   is_demo boolean NOT NULL DEFAULT false,
   property_id uuid REFERENCES public.properties(id),
-  vendor_user_id uuid REFERENCES auth.users(id)
+  vendor_user_id uuid REFERENCES auth.users(id),
+  record_owner uuid REFERENCES auth.users(id),
+  accountable_owner uuid REFERENCES auth.users(id),
+  current_action_owner uuid REFERENCES auth.users(id),
+  assigned_to uuid REFERENCES auth.users(id),
+  created_by uuid REFERENCES auth.users(id),
+  pending_handoff_to uuid REFERENCES auth.users(id)
 );
 ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tickets_test_insert ON public.tickets FOR INSERT TO PUBLIC WITH CHECK (true);
+
+-- Real definition (20260826192054): who may edit a ticket — a supervisor,
+-- anyone named as its owner/assignee in one of these columns, or anyone at
+-- all when the ticket has no owner yet.
+CREATE OR REPLACE FUNCTION private.can_edit_ticket(_user_id uuid, _ticket_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'private' AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.tickets t
+    WHERE t.id = _ticket_id
+      AND (
+        private.is_supervisor(_user_id)
+        OR t.record_owner = _user_id
+        OR t.accountable_owner = _user_id
+        OR t.current_action_owner = _user_id
+        OR t.assigned_to = _user_id
+        OR t.created_by = _user_id
+        OR t.pending_handoff_to = _user_id
+        OR COALESCE(t.record_owner, t.accountable_owner, t.current_action_owner, t.assigned_to) IS NULL
+      )
+  )
+$$;
 
 CREATE TABLE public.work_orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
