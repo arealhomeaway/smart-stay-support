@@ -465,8 +465,7 @@ export async function createOutboundTask(
       resolve_evidence_note: evidenceNote,
       attempts: 1,
       created_by: actorId,
-      // The generated types lag the schema for work_order_id on this table.
-    } as never)
+    })
     .select(SELECT)
     .single();
 
