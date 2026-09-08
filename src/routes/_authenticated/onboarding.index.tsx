@@ -49,6 +49,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
     if (typeof raw["lens"] === "string" && raw["lens"]) out.lens = raw["lens"] as Lens;
     if (typeof raw["find"] === "string" && raw["find"]) out.find = raw["find"];
     if (typeof raw["owner"] === "string" && raw["owner"]) out.owner = raw["owner"];
+    if (raw["showTest"] === true || raw["showTest"] === "true") out.showTest = true;
     return out;
   },
   component: Hub,
@@ -59,6 +60,7 @@ type HubSearch = {
   lens?: Lens | undefined;
   find?: string | undefined;
   owner?: string | undefined;
+  showTest?: boolean | undefined;
 };
 
 function Hub() {
@@ -72,6 +74,7 @@ function Hub() {
   const lens = params.lens ?? "attention";
   const find = params.find ?? "";
   const owner = params.owner ?? null;
+  const showTest = params.showTest === true;
   const setParam = (patch: HubSearch) =>
     void navigate({
       search: (prev: HubSearch) => {
@@ -79,6 +82,7 @@ function Hub() {
         if (!next.lens || next.lens === "attention") delete next.lens;
         if (!next.find) delete next.find;
         if (!next.owner) delete next.owner;
+        if (!next.showTest) delete next.showTest;
         return next;
       },
       replace: true,
@@ -202,6 +206,8 @@ function Hub() {
             onFindChange={(v) => setParam({ find: v || undefined })}
             owner={owner}
             onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
+            showTest={showTest}
+            onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
           />
         </TabsContent>
 

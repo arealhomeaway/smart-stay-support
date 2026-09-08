@@ -6,7 +6,7 @@
  * is written from this component; rows navigate to the project workspace.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { Chip, ProgressRing } from "@/components/ui/page";
 import { Input } from "@/components/ui/input";
@@ -140,6 +140,8 @@ export function DirectorHub({
   onFindChange,
   owner,
   onOwnerChange,
+  showTest,
+  onShowTestChange,
 }: {
   projects: ProjectSummary[];
   viewer?: HubViewer;
@@ -152,8 +154,9 @@ export function DirectorHub({
   onFindChange: (find: string) => void;
   owner: string | null;
   onOwnerChange: (owner: string | null) => void;
+  showTest: boolean;
+  onShowTestChange: (showTest: boolean) => void;
 }) {
-  const [showTest, setShowTest] = useState(false);
   // Test/QA homes never count towards live onboarding reporting. One shared
   // rule (src/lib/test-data.ts) decides this everywhere in Resolve.
   const testCount = countTestRecords(allProjects, (p) => p.property);
@@ -164,6 +167,7 @@ export function DirectorHub({
   const setLens = onLensChange;
   const setFind = onFindChange;
   const setOwner = onOwnerChange;
+  const setShowTest = onShowTestChange;
 
   const counts = useMemo(
     () =>
@@ -377,7 +381,7 @@ export function DirectorHub({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => setShowTest((v) => !v)}
+          onClick={() => setShowTest(!showTest)}
           title="Test homes are excluded from every count above."
           className={cn(
             "rounded-md border px-2.5 py-1 text-xs font-medium",
