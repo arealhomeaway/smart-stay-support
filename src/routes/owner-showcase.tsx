@@ -19,13 +19,10 @@ import {
   Download,
   FileText,
   Home,
-  Lightbulb,
   Lock,
   MapPin,
   MessageSquare,
   Sparkles,
-  Star,
-  Users,
 } from "lucide-react";
 import heroImage from "@/assets/hero-arha-property.jpg";
 import propertyImage from "@/assets/home-hero.jpg";
@@ -694,7 +691,15 @@ function OwnerShowcase() {
             title="Your participation record"
             hint="Your documented activities are organized here so you have a clear record of your participation."
             action={
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  toast.success("Report preview", {
+                    description: "A formatted copy of your record would open here.",
+                  })
+                }
+              >
                 <FileText className="size-4" /> Preview report
               </Button>
             }
@@ -745,7 +750,13 @@ function OwnerShowcase() {
                 This record reflects the activities you documented yourself. A Real Home Away keeps
                 it organized for you.
               </p>
-              <Button variant="ghost" size="sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  toast.success("Copy ready", { description: "Your record would download here." })
+                }
+              >
                 <Download className="size-4" /> Download a copy
               </Button>
             </div>
@@ -760,7 +771,3 @@ function OwnerShowcase() {
     </div>
   );
 }
-
-/* Icons referenced by fixtures above but not rendered directly stay imported
-   for clarity of the activity vocabulary. */
-void [Users, Star, Lightbulb];
