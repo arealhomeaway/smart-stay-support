@@ -131,7 +131,7 @@ export function MatterOwnershipPanel({
         .from("tickets")
         .update({
           escalated_at: new Date().toISOString(),
-          escalation_level: ticket.escalation_level === "p1" ? "p1" : "p2",
+          escalation_level: ticket.escalation_level === "supervisor" ? "director" : "supervisor",
         })
         .eq("id", ticket.id);
       if (error) throw error;
