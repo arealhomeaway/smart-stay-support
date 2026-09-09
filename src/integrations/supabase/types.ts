@@ -7780,6 +7780,10 @@ export type Database = {
         Returns: undefined
       }
       archive_demo_work_order: { Args: { _actor?: string }; Returns: undefined }
+      archive_qa_work_order_fixture: {
+        Args: { _actor?: string }
+        Returns: undefined
+      }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -7837,6 +7841,10 @@ export type Database = {
       seed_demo_onboarding: { Args: { _actor: string }; Returns: undefined }
       seed_demo_owner_program: { Args: { _actor?: string }; Returns: string }
       seed_demo_work_order: { Args: { _actor?: string }; Returns: undefined }
+      seed_qa_work_order_fixture: {
+        Args: { _actor?: string }
+        Returns: undefined
+      }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
