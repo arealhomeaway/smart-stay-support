@@ -262,6 +262,14 @@ function TeamQueuePage() {
         ))}
         <Button
           size="sm"
+          variant={filters.status === "closed" ? "default" : "outline"}
+          aria-pressed={filters.status === "closed"}
+          onClick={() => setParam({ status: filters.status === "closed" ? undefined : "closed" })}
+        >
+          Closed
+        </Button>
+        <Button
+          size="sm"
           variant={filters.assignee === userId ? "default" : "outline"}
           onClick={() =>
             setParam({ assignee: filters.assignee === userId ? undefined : (userId ?? undefined) })

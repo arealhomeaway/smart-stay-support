@@ -59,6 +59,7 @@ import {
   supervisorApprovalRequest,
   supervisorApproved,
   workOrderBucket,
+  workOrderReassignment,
   type OwnerApprovalOutcome,
 } from "@/lib/work-orders";
 import {
@@ -146,6 +147,7 @@ export function WorkOrderDrawer({
   const { isSupervisor } = useRole();
   const [note, setNote] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
+  const [reassignTo, setReassignTo] = useState("");
 
   /*
    * Every unsaved value belongs to one work order. QA found a quote typed on
@@ -571,6 +573,54 @@ export function WorkOrderDrawer({
             {commitments.action}
           </div>
         ) : null}
+
+        <Separator />
+
+        {/* Ownership ------------------------------------------------------
+            Who internally owns getting this Work Order done — never the
+            external vendor doing the work. Reassigning here only ever
+            writes assigned_to; it must never touch vendor_name or any
+            future vendor-delivery/recipient field, and this Work Order's
+            owner is not assumed to be who a vendor-facing delivery (PDF,
+            email, share — not built yet) would go to. */}
+        <section className="space-y-2">
+          <h3 className="font-display text-sm font-semibold">Ownership</h3>
+          <Chip>{owner ? displayName(people.find((p) => p.id === owner)) : "Unassigned"}</Chip>
+          {isSupervisor && !readOnly ? (
+            <div className="flex gap-2">
+              <Select value={reassignTo} onValueChange={setReassignTo}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Reassign to…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {people.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {displayName(p)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                disabled={!reassignTo || reassignTo === owner || save.isPending}
+                onClick={() => {
+                  const target = people.find((p) => p.id === reassignTo);
+                  save.mutate(
+                    workOrderReassignment({
+                      fromOwnerId: owner ?? null,
+                      toUserId: reassignTo,
+                      toUserName: displayName(target),
+                      actorId: userId,
+                    }),
+                  );
+                  setReassignTo("");
+                }}
+              >
+                Reassign
+              </Button>
+            </div>
+          ) : null}
+        </section>
 
         <Separator />
 
