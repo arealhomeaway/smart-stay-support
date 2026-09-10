@@ -728,7 +728,10 @@ function TicketDetail() {
   async function stillNeedsRepair() {
     const { error } = await supabase
       .from("tickets")
-      .update({ repair_reported_incomplete_at: new Date().toISOString() })
+      // Column ships with migration 20260910180000; generated types lag until it is applied.
+      .update({
+        repair_reported_incomplete_at: new Date().toISOString(),
+      } as never)
       .eq("id", ticketId);
     if (error) {
       toast.error(error.message);
@@ -775,7 +778,9 @@ function TicketDetail() {
     verified,
     requiredOpenSteps: requiredOpen.length,
     repairPossible: repairIsPossible(ticket.category, workType?.name),
-    repairReportedIncomplete: Boolean(ticket.repair_reported_incomplete_at),
+    repairReportedIncomplete: Boolean(
+      (ticket as { repair_reported_incomplete_at?: string | null }).repair_reported_incomplete_at,
+    ),
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
   const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
@@ -819,7 +824,8 @@ function TicketDetail() {
             : stage === "steps"
               ? (nextAction?.label ?? "Work the remaining steps.")
               : stage === "repair"
-                ? ticket.repair_reported_incomplete_at
+                ? (ticket as { repair_reported_incomplete_at?: string | null })
+                    .repair_reported_incomplete_at
                   ? "Guest says it's not fixed — open a new work order."
                   : "Decide whether this needs a field repair."
                 : stage === "closure"
