@@ -56,6 +56,7 @@ type Row = {
   source_type: "ticket" | "onboarding_task";
   ticket_id: string | null;
   onboarding_task_id: string | null;
+  work_order_id: string | null;
   breezeway_task_id: number | null;
   status: BreezewayOutboundStatus;
   title: string;
@@ -84,6 +85,7 @@ function toLink(row: Row): BreezewayOutboundLink {
     sourceType: row.source_type,
     ticketId: row.ticket_id,
     onboardingTaskId: row.onboarding_task_id,
+    workOrderId: row.work_order_id,
     breezewayTaskId: row.breezeway_task_id,
     status: row.status,
     title: row.title,
@@ -106,7 +108,7 @@ function toLink(row: Row): BreezewayOutboundLink {
 }
 
 const SELECT =
-  "id, source_type, ticket_id, onboarding_task_id, breezeway_task_id, status, title, department, priority, scheduled_date, scheduled_time, error_message, review_note, reviewed_at, created_at, last_synced_at, last_webhook_at, property_id, breezeway_home_id, template_id, template_name, assignee_ids, assignee_names, resolve_evidence_note";
+  "id, source_type, ticket_id, onboarding_task_id, work_order_id, breezeway_task_id, status, title, department, priority, scheduled_date, scheduled_time, error_message, review_note, reviewed_at, created_at, last_synced_at, last_webhook_at, property_id, breezeway_home_id, template_id, template_name, assignee_ids, assignee_names, resolve_evidence_note";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -392,12 +394,60 @@ export async function createOutboundTask(
   const evidenceNote = clean(input.resolveEvidenceNote ?? null, 1000);
 
   const db = await admin();
+
+  // Breezeway is an outbound execution channel off the canonical Resolve
+  // Work Order, not a second repair record — find or create the one open
+  // Work Order for this ticket and link the outbound task to it. Only
+  // ticket-sourced repairs have a Work Order to link; onboarding-task
+  // repairs are unaffected.
+  let workOrderId: string | null = null;
+  if (input.sourceType === "ticket") {
+    const openWo = await db
+      .from("work_orders")
+      .select("id")
+      .eq("ticket_id", input.sourceId)
+      .is("closed_at", null)
+      .maybeSingle();
+    if (openWo.data) {
+      workOrderId = openWo.data.id;
+    } else {
+      const ticketRow = await db
+        .from("tickets")
+        .select("priority, is_demo")
+        .eq("id", input.sourceId)
+        .maybeSingle();
+      const ticketPriority = ["p1", "p2", "p3"].includes(String(ticketRow.data?.priority))
+        ? (ticketRow.data!.priority as string)
+        : "p3";
+      const createdWo = await db
+        .from("work_orders")
+        .insert({
+          ticket_id: input.sourceId,
+          property_id: propertyId,
+          title,
+          scope: description,
+          service_category: department,
+          priority: ticketPriority,
+          created_by: actorId,
+          assigned_to: actorId,
+          is_demo: ticketRow.data?.is_demo ?? false,
+        })
+        .select("id")
+        .single();
+      // A racing request may have opened one first — that's fine, this send
+      // still proceeds and simply isn't linked to a Work Order this instant;
+      // the ticket's Work Order panel is unaffected either way.
+      if (!createdWo.error) workOrderId = createdWo.data.id;
+    }
+  }
+
   const insert = await db
     .from("breezeway_outbound_tasks")
     .insert({
       source_type: input.sourceType,
       ticket_id: input.sourceType === "ticket" ? input.sourceId : null,
       onboarding_task_id: input.sourceType === "onboarding_task" ? input.sourceId : null,
+      work_order_id: workOrderId,
       property_id: propertyId,
       breezeway_home_id: allowedHomeId,
       request_key: input.requestKey,

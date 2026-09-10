@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from "bun:test";
 import {
+  attachmentUploadInvalidationKeys,
   MAX_FILE_BYTES,
   safeFilename,
   storagePathFor,
@@ -156,5 +157,23 @@ describe("who may remove a file, and who may share one", () => {
   it("only staff decide what an owner sees", () => {
     expect(canChangeVisibility(staff).allow).toBe(true);
     expect(canChangeVisibility(owner).allow).toBe(false);
+  });
+});
+
+describe("what a successful upload must refresh", () => {
+  it("a ticket upload also invalidates the ticket detail page's own query", () => {
+    expect(attachmentUploadInvalidationKeys("ticket", "t1")).toEqual([
+      ["attachments", "ticket", "t1"],
+      ["ticket", "t1"],
+    ]);
+  });
+
+  it("a property or onboarding-task upload only invalidates its own file list", () => {
+    expect(attachmentUploadInvalidationKeys("property", "p1")).toEqual([
+      ["attachments", "property", "p1"],
+    ]);
+    expect(attachmentUploadInvalidationKeys("onboarding_task", "task1")).toEqual([
+      ["attachments", "onboarding_task", "task1"],
+    ]);
   });
 });

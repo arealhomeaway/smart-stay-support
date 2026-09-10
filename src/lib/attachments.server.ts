@@ -401,6 +401,20 @@ export async function completeUpload(
     after: { documentId: data.id, size: data.size_bytes, type: data.mime_type },
   });
 
+  // The audit log is the technical record; the Ticket's own Activity feed
+  // (what a person actually reads) needs its own plain-language entry too —
+  // otherwise attaching evidence is invisible on the ticket it was for.
+  if (data.entity_type === "ticket") {
+    await supabaseAdmin.from("ticket_activity").insert({
+      ticket_id: data.entity_id,
+      author_id: viewer.userId,
+      kind: "evidence",
+      event_type: "attachment_uploaded",
+      internal: false,
+      body: `Added ${data.original_filename}.`,
+    });
+  }
+
   return { ok: true as const };
 }
 

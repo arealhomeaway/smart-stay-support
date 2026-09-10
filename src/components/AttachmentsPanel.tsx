@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
   ALLOWED_MIME_TYPES,
+  attachmentUploadInvalidationKeys,
   type AttachmentEntity,
   DOCUMENT_CATEGORIES,
   documentCategoryLabel,
@@ -139,7 +140,9 @@ export function AttachmentsPanel({
       setProgress(null);
       setRetry(null);
       toast.success(r.skipped ? "That file was already on this record." : "File added.");
-      void qc.invalidateQueries({ queryKey: key });
+      for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) {
+        void qc.invalidateQueries({ queryKey });
+      }
     },
     onError: (err, file) => {
       setProgress(null);

@@ -24,6 +24,8 @@ import {
   relativeTime,
 } from "@/lib/tickets";
 import { usDateTime } from "@/lib/dates";
+import { useCurrentUserId } from "@/hooks/useTeam";
+import { handoffAcceptPatch, handoffSelfAcceptCheck } from "@/lib/handoff-accept";
 
 type Ticket = {
   id: string;
@@ -46,6 +48,7 @@ export function HandoffPanel({
   closed: boolean;
   onChanged: () => Promise<void> | void;
 }) {
+  const currentUserId = useCurrentUserId();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -176,15 +179,19 @@ export function HandoffPanel({
     }
   }
 
-  async function accept(handoffId: string) {
+  async function accept(handoffId: string, requestedFrom: string | null) {
     const { data: userData } = await supabase.auth.getUser();
+    const check = handoffSelfAcceptCheck(userData.user?.id, requestedFrom);
+    if (!check.ok) {
+      toast.error(check.message);
+      return;
+    }
+    // The designated recipient (to_user) is never overwritten here — who it
+    // was offered to and who actually accepted are two different facts, each
+    // kept in its own column. See handoffAcceptPatch for the exact shape.
     const { error } = await supabase
       .from("handoffs")
-      .update({
-        status: "accepted",
-        responded_at: new Date().toISOString(),
-        to_user: userData.user?.id ?? null,
-      })
+      .update(handoffAcceptPatch(userData.user?.id ?? null, new Date().toISOString()))
       .eq("id", handoffId);
     if (error) {
       toast.error(error.message);
@@ -318,13 +325,22 @@ export function HandoffPanel({
                 </div>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => accept(h.id)}>
-                  Accept handoff
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setRejecting(h.id)}>
-                  Reject
-                </Button>
+              <div className="flex flex-col gap-2">
+                {currentUserId && currentUserId === h.from_user && (
+                  <p className="text-xs text-muted-foreground">
+                    You requested this — waiting for {roleName(h.to_role_code)} to accept it.
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  {!(currentUserId && currentUserId === h.from_user) && (
+                    <Button size="sm" onClick={() => accept(h.id, h.from_user)}>
+                      Accept handoff
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => setRejecting(h.id)}>
+                    Reject
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -339,6 +355,9 @@ export function HandoffPanel({
               </span>
             </p>
             <p className="text-muted-foreground">{h.summary}</p>
+            {h.status === "accepted" && personName(h.accepted_by) && (
+              <p className="text-muted-foreground">Accepted by {personName(h.accepted_by)}</p>
+            )}
             {h.response_reason && (
               <p className="text-muted-foreground">Reason: {h.response_reason}</p>
             )}

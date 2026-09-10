@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, ChevronLeft, CircleAlert, Plus, XCircle } from "lucide-react";
+import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
 import {
   Chip,
   EmptyState,
@@ -13,6 +13,7 @@ import {
   StageRail,
 } from "@/components/ui/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,6 +128,9 @@ function PropertyWorkspace() {
   const { can, readOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  // Where the Director hub was left — filters, search and lens intact — so
+  // Back restores that exact view rather than a bare "/onboarding".
+  const { origin } = useRecordOrigin("onboarding");
 
   const { data, isLoading } = useQuery({
     queryKey: ["onboarding-workspace"],
@@ -263,12 +267,7 @@ function PropertyWorkspace() {
   if (life.notStarted) {
     return (
       <div className="space-y-5">
-        <Link
-          to="/onboarding"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft className="size-4" /> Director hub
-        </Link>
+        <BackControl origin={origin} />
         <PageHeader
           eyebrow="Onboarding"
           title={current.name}
@@ -314,12 +313,7 @@ function PropertyWorkspace() {
 
   return (
     <div className="space-y-5">
-      <Link
-        to="/onboarding"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" /> Director hub
-      </Link>
+      <BackControl origin={origin} />
 
       <PageHeader
         eyebrow="Onboarding"

@@ -26,9 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCurrentUserId } from "@/hooks/useTeam";
+import { useCurrentUserId, useStaffDirectory } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
 import { stateChip } from "@/lib/semantic";
+import { WorkOrderDrawer } from "@/components/workorders/WorkOrderDrawer";
 import {
   EMERGENCY_REASON_LABELS,
   MAINTENANCE_POLICY_VERSION,
@@ -48,9 +49,9 @@ import {
   warrantyHint,
   workOrderBucket,
   type PropertyWarranty,
-  type WorkOrderLike,
   type WorkOrderPhase,
 } from "@/lib/work-orders";
+import { ticketWorkOrdersQueryKey, type WorkOrderRow } from "@/lib/work-order-types";
 
 type TicketContext = {
   id: string;
@@ -62,14 +63,27 @@ type TicketContext = {
   is_demo?: boolean | null;
 };
 
-type WorkOrderRow = WorkOrderLike & {
-  id: string;
-  title: string;
-  service_category: string | null;
-  scope: string | null;
-  warranty_contact: string | null;
-  created_at?: string | null;
-};
+/**
+ * The one query for a ticket's Work Orders, shared by this panel and the
+ * ticket workspace's own stage derivation — a second, differently-shaped
+ * query here previously left the ticket page reading a cache the Work
+ * Order drawer's close/complete mutation never invalidated, so "Waiting on
+ * the repair" could sit stale until a manual refresh.
+ */
+export function useTicketWorkOrders(ticketId: string) {
+  return useQuery({
+    queryKey: ticketWorkOrdersQueryKey(ticketId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("work_orders")
+        .select("*")
+        .eq("ticket_id", ticketId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as WorkOrderRow[];
+    },
+  });
+}
 
 const EMERGENCY_OPTIONS = Object.keys(EMERGENCY_REASON_LABELS) as EmergencyReason[];
 
@@ -101,9 +115,12 @@ function bucketTone(bucket: ReturnType<typeof workOrderBucket>): StatusTone {
 
 export function TicketWorkOrderPanel({
   ticket,
+  propertyName = "Property",
   readOnly: forceReadOnly = false,
 }: {
   ticket: TicketContext;
+  /** For the Work Order drawer header, opened from a card below. */
+  propertyName?: string;
   /** Creation lives with the current work — history stays read-only. */
   readOnly?: boolean;
 }) {
@@ -111,25 +128,17 @@ export function TicketWorkOrderPanel({
   const userId = useCurrentUserId();
   const { can, readOnly: roleReadOnly } = useRole();
   const readOnly = roleReadOnly || forceReadOnly;
+  const canEdit = !readOnly;
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<WorkOrderPhase>("permanent");
   const [category, setCategory] = useState("");
   const [scope, setScope] = useState("");
   const [emergency, setEmergency] = useState<EmergencyReason | "">("");
   const [quote, setQuote] = useState("");
+  const [openWorkOrderId, setOpenWorkOrderId] = useState<string | null>(null);
+  const people = useStaffDirectory().data ?? [];
 
-  const orders = useQuery({
-    queryKey: ["work-orders-for-ticket", ticket.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("work_orders")
-        .select("*")
-        .eq("ticket_id", ticket.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as WorkOrderRow[];
-    },
-  });
+  const orders = useTicketWorkOrders(ticket.id);
 
   const property = useQuery({
     queryKey: ["work-order-property-warranty", ticket.property_id],
@@ -199,27 +208,49 @@ export function TicketWorkOrderPanel({
         },
         is_demo: ticket.is_demo ?? false,
       } as never);
+
+      // A fresh Work Order supersedes any earlier "still needs repair"
+      // verdict — clear it so the next completion gets its own verify step
+      // instead of the stage machine skipping straight back to repair.
+      await supabase
+        .from("tickets")
+        .update({ repair_reported_incomplete_at: null } as never)
+        .eq("id", ticket.id);
     },
     onSuccess: () => {
       setOpen(false);
       setScope("");
       setQuote("");
       setEmergency("");
-      qc.invalidateQueries({ queryKey: ["work-orders-for-ticket", ticket.id] });
+      qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
+      qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
       toast.success("Work order opened");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      // One open work order per ticket (work_orders_one_open_per_ticket) —
+      // this fires only if two attempts raced, since the button below is
+      // already hidden whenever an open one exists.
+      if (e.message.includes("work_orders_one_open_per_ticket")) {
+        toast.error(
+          "This ticket already has an open work order — close it before opening another.",
+        );
+        qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
+        return;
+      }
+      toast.error(e.message);
+    },
   });
 
   if (!can("claims_work")) return null;
 
   const existing = orders.data ?? [];
+  const hasOpenOrder = existing.some((wo) => !wo.closed_at);
   const blockedByEmergency = phase === "mitigation" && !emergency;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Send for repair</CardTitle>
+        <CardTitle>Work order</CardTitle>
         <CardDescription>Cost, approval and vendor tracking for this repair.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -270,12 +301,16 @@ export function TicketWorkOrderPanel({
               {blockers.length && !wo.closed_at ? (
                 <p className="text-xs text-muted-foreground">Before closing: {blockers[0]}</p>
               ) : null}
+
+              <Button size="sm" variant="outline" onClick={() => setOpenWorkOrderId(wo.id)}>
+                Open work order
+              </Button>
             </div>
           );
         })}
 
-        {readOnly ? null : !open ? (
-          <Button variant="outline" onClick={() => setOpen(true)}>
+        {readOnly || hasOpenOrder ? null : !open ? (
+          <Button size="lg" className="w-full" onClick={() => setOpen(true)}>
             {existing.length ? "Open another work order" : "Open a work order"}
           </Button>
         ) : (
@@ -377,6 +412,14 @@ export function TicketWorkOrderPanel({
           </div>
         )}
       </CardContent>
+      <WorkOrderDrawer
+        key={openWorkOrderId ?? "none"}
+        workOrder={existing.find((wo) => wo.id === openWorkOrderId) ?? null}
+        people={people}
+        canEdit={canEdit}
+        propertyName={propertyName}
+        onClose={() => setOpenWorkOrderId(null)}
+      />
     </Card>
   );
 }

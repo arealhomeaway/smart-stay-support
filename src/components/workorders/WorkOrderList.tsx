@@ -18,6 +18,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { usDate } from "@/lib/dates";
 import { displayName, useCurrentUserId, useStaffDirectory } from "@/hooks/useTeam";
+import { useAmbientOrigin } from "@/components/nav/NavContext";
 import { WorkOrderDrawer } from "@/components/workorders/WorkOrderDrawer";
 import type { RequirementLike } from "@/lib/claims";
 import {
@@ -224,12 +225,16 @@ export function WorkOrderListSection({
   requirements,
   propertyNames,
   canEdit,
+  originLabel = "Work orders",
 }: {
   workOrders: WorkOrderRow[];
   requirements: Map<string, RequirementLike[]>;
   propertyNames: Map<string, string>;
   canEdit: boolean;
+  /** Named "Back to X" destination when a Work Order's Ticket link is followed. */
+  originLabel?: string;
 }) {
+  const originToken = useAmbientOrigin(originLabel);
   const [openId, setOpenId] = useState<string | null>(null);
   const people = useStaffDirectory().data ?? [];
   const propertyPhotos = useWorkOrderPropertyPhotos().data ?? new Map<string, string | null>();
@@ -271,6 +276,7 @@ export function WorkOrderListSection({
           open ? (propertyNames.get(open.property_id ?? "") ?? "Property unlinked") : ""
         }
         propertyPhotoUrl={open ? (propertyPhotos.get(open.property_id ?? "") ?? null) : null}
+        originToken={originToken}
         onClose={() => setOpenId(null)}
       />
     </>

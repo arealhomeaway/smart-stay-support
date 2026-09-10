@@ -133,11 +133,27 @@ export const resolveEscalationFn = createServerFn({ method: "POST" })
 
     const { data: esc, error: readError } = await context.supabase
       .from("escalations")
-      .select("id, ticket_id, status")
+      .select("id, ticket_id, status, escalated_to_role")
       .eq("id", data.escalationId)
       .single();
     if (readError || !esc) throw new Error("That escalation could not be found.");
     if (esc.status !== "open") throw new Error("This escalation has already been answered.");
+
+    // A Supervisor may decide a supervisor-level escalation, but once it has
+    // been escalated further to the Director, only the Director (or a
+    // Platform Owner) may decide it — enforced again at the database level
+    // by the escalations RLS policy, so this cannot be bypassed by calling
+    // the table directly either.
+    if (esc.escalated_to_role === "director") {
+      const { data: isDirector, error: dirError } = await context.supabase.rpc("is_director", {
+        _user_id: context.userId,
+      });
+      if (dirError) throw new Error(dirError.message);
+      if (!isDirector)
+        throw new Error(
+          "This was escalated to the Director — only the Director can decide it now.",
+        );
+    }
 
     if (data.outcome === "reassigned" && !data.assignTo)
       throw new Error("Choose who should carry this next.");

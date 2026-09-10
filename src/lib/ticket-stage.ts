@@ -25,6 +25,15 @@ export type TicketStageInput = {
   requiredOpenSteps: number;
   /** This kind of work can plausibly need a field repair. */
   repairPossible: boolean;
+  /**
+   * The most recently completed repair was reported as unsuccessful (the
+   * "Still needs repair" action) and no fresh Work Order has been opened
+   * since. `repairExists`/`repairComplete` stay true forever once any Work
+   * Order has ever closed on this ticket — they say a repair was attempted,
+   * not that it worked — so this is the only signal that can send a ticket
+   * back to `repair` once it has reached `verify`.
+   */
+  repairReportedIncomplete: boolean;
 };
 
 export function ticketStage(t: TicketStageInput): TicketStage {
@@ -32,9 +41,16 @@ export function ticketStage(t: TicketStageInput): TicketStage {
   if (!t.acknowledged_at || !t.action_started_at) return "start";
   if (t.status === "waiting") return "waiting";
   if (t.repairExists && !t.repairComplete) return "repair_active";
-  if (t.repairExists && t.repairComplete && !t.verified) return "verify";
+  if (t.repairExists && t.repairComplete && !t.verified && !t.repairReportedIncomplete)
+    return "verify";
   if (t.requiredOpenSteps > 0) return "steps";
   if (t.repairPossible && !t.repairExists && t.status !== "resolved") return "repair";
+  // A repair happened and closed, but it didn't fix the issue — send it back
+  // to `repair` (not `verify` or `closure`) so a new Work Order can be
+  // opened. Guarded by `!verified`: a genuine guest confirmation always
+  // wins over a stale flag from an earlier cycle.
+  if (t.repairPossible && t.repairReportedIncomplete && !t.verified && t.status !== "resolved")
+    return "repair";
   return "closure";
 }
 
@@ -58,4 +74,27 @@ export function repairIsPossible(
   const text = `${category ?? ""} ${workTypeName ?? ""}`.toLowerCase();
   if (!text.trim()) return false;
   return [...REPAIRABLE].some((c) => text.includes(c));
+}
+
+/**
+ * Has the field repair actually finished — the signal `ticketStage()` reads
+ * as `repairComplete`.
+ *
+ * A vendor saying the job is done ("Vendor says complete", `vendor_completed_at`)
+ * is an internal Work Order milestone, not a Ticket-visible one: closure
+ * evidence, final cost and guest notification can all still stand between
+ * that and "Close work order". Only `closed_at` — the Work Order actually
+ * closed — may advance the Ticket to Verify. `vendor_status === "completed"`
+ * is kept as a second, independent signal: the older on-ticket vendor
+ * dispatch field, predating the Work Order model, unaffected by this rule.
+ */
+export function repairIsComplete(input: {
+  vendorStatus: string | null | undefined;
+  /** Every live (non-cancelled) Work Order for this ticket. */
+  liveOrders: { closed_at: string | null | undefined }[];
+}): boolean {
+  return (
+    input.vendorStatus === "completed" ||
+    (input.liveOrders.length > 0 && input.liveOrders.every((o) => Boolean(o.closed_at)))
+  );
 }

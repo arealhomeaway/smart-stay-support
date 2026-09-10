@@ -22,6 +22,7 @@ export function createFakeOutboundStore() {
     onboarding: [] as Row[],
     properties: [] as Row[],
     outbound: [] as Row[],
+    workOrders: [] as Row[],
     nextId: 1,
     failNextOutboundUpdate: 0,
   };
@@ -32,7 +33,14 @@ export function createFakeOutboundStore() {
     if (table === "onboarding_tasks") return state.onboarding;
     if (table === "properties") return state.properties;
     if (table === "breezeway_outbound_tasks") return state.outbound;
+    if (table === "work_orders") return state.workOrders;
     throw new Error(`Unexpected table in test: ${table}`);
+  }
+
+  function insertWorkOrder(payload: Row) {
+    const row: Row = { id: `wo-${state.nextId++}`, closed_at: null, ...payload };
+    state.workOrders.push(row);
+    return { data: row, error: null };
   }
 
   function insertOutbound(payload: Row) {
@@ -81,13 +89,13 @@ export function createFakeOutboundStore() {
   }
 
   function builder(table: string) {
-    type F = { col: string; op: "eq" | "in"; value: unknown };
+    type F = { col: string; op: "eq" | "in" | "is"; value: unknown };
     const filters: F[] = [];
     const match = (r: Row) =>
       filters.every((f) =>
-        f.op === "eq"
-          ? r[f.col] === f.value
-          : Array.isArray(f.value) && (f.value as unknown[]).includes(r[f.col]),
+        f.op === "in"
+          ? Array.isArray(f.value) && (f.value as unknown[]).includes(r[f.col])
+          : r[f.col] === f.value,
       );
     let order: { col: string; ascending: boolean } | null = null;
     let limitN: number | null = null;
@@ -112,7 +120,9 @@ export function createFakeOutboundStore() {
         const result =
           table === "breezeway_outbound_tasks"
             ? insertOutbound(payload)
-            : { data: payload, error: null };
+            : table === "work_orders"
+              ? insertWorkOrder(payload)
+              : { data: payload, error: null };
         const chain = {
           select: () => chain,
           single: () => Promise.resolve(result),
@@ -144,6 +154,10 @@ export function createFakeOutboundStore() {
         filters.push({ col, op: "in", value });
         return api;
       },
+      is: (col: string, value: unknown) => {
+        filters.push({ col, op: "is", value });
+        return api;
+      },
       order: (col: string, opts?: { ascending?: boolean }) => {
         order = { col, ascending: opts?.ascending ?? true };
         return api;
@@ -164,6 +178,7 @@ export function createFakeOutboundStore() {
     supabaseAdmin: { from: (table: string) => builder(table) },
     state,
     outbound: () => state.outbound,
+    workOrders: () => state.workOrders,
     setFlag: (enabled: boolean) => {
       state.flags = [{ key: "breezeway_outbound", enabled }];
     },
@@ -222,6 +237,7 @@ export function createFakeOutboundStore() {
       state.onboarding = [];
       state.properties = [];
       state.outbound = [];
+      state.workOrders = [];
       state.nextId = 1;
       state.failNextOutboundUpdate = 0;
     },

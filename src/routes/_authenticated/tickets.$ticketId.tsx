@@ -2,11 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { humanizeHistoryText } from "@/lib/ticket-lifecycle";
+import { finalReviewRequirement } from "@/lib/final-review";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
-import { ticketStage, repairIsPossible } from "@/lib/ticket-stage";
+import { ticketStage, repairIsPossible, repairIsComplete } from "@/lib/ticket-stage";
 import { scopedClosureEvidence } from "@/lib/closure-evidence";
 import { closureEvidenceSatisfied, requiresPhotoOrFile } from "@/lib/evidence-requirements";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
@@ -42,8 +43,13 @@ import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
-import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
+import {
+  TicketWorkOrderPanel,
+  useTicketWorkOrders,
+} from "@/components/workorders/TicketWorkOrderPanel";
 import { useRole } from "@/hooks/useRole";
+import { useDemo } from "@/components/DemoProvider";
+import { ticketDemoMismatch } from "@/lib/demo-mode";
 import { QueueRail, RecordHeaderNav, useRecordOrigin } from "@/components/nav/NavContext";
 import { PropertyContextDrawer } from "@/components/PropertyContextDrawer";
 import {
@@ -130,6 +136,7 @@ function TicketDetail() {
   const qc = useQueryClient();
   const role = useRole();
   const navigate = useNavigate();
+  const { demoMode } = useDemo();
   const [note, setNote] = useState("");
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
@@ -147,7 +154,11 @@ function TicketDetail() {
   const [showCelebrate, setShowCelebrate] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["ticket", ticketId],
+    // Keyed and filtered by demoMode exactly like every list/queue view, so
+    // toggling demo mode off a currently-open ticket re-fetches and comes
+    // back not-found rather than continuing to render a demo record under
+    // real permissions (or a real record under the demo lens).
+    queryKey: ["ticket", ticketId, demoMode],
     queryFn: async () => {
       const [ticket, steps, activity] = await Promise.all([
         supabase
@@ -156,7 +167,8 @@ function TicketDetail() {
             "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
-          .single(),
+          .eq("is_demo", demoMode)
+          .maybeSingle(),
         supabase.from("ticket_steps").select("*").eq("ticket_id", ticketId).order("position"),
         supabase
           .from("ticket_activity")
@@ -165,6 +177,7 @@ function TicketDetail() {
           .order("event_at", { ascending: false }),
       ]);
       if (ticket.error) throw ticket.error;
+      if (!ticket.data) return { ticket: null, steps: [], activity: [] };
       const authorIds = [
         ...new Set((activity.data ?? []).map((a) => a.author_id).filter(Boolean)),
       ] as string[];
@@ -200,7 +213,7 @@ function TicketDetail() {
     },
   });
 
-  const propertyId = data?.ticket.property_id;
+  const propertyId = data?.ticket?.property_id;
   const { data: history } = useQuery({
     queryKey: ["property-history", propertyId],
     enabled: !!propertyId,
@@ -228,7 +241,7 @@ function TicketDetail() {
     queryFn: () => repairStateFn({ data: { sourceType: "ticket", sourceId: ticketId } }),
   });
 
-  const ownerId = data?.ticket.current_action_owner ?? null;
+  const ownerId = data?.ticket?.current_action_owner ?? null;
   const { data: assignee } = useQuery({
     queryKey: ["ticket-assignee", ownerId],
     enabled: Boolean(ownerId),
@@ -252,23 +265,17 @@ function TicketDetail() {
 
   // Field repair can be raised as a Breezeway task or as an internal work
   // order. Either one means a repair exists, and either one completing means
-  // the ticket stops asking whether a repair is needed.
-  const { data: workOrders } = useQuery({
-    queryKey: ["ticket-work-orders", ticketId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("work_orders")
-        .select("id, phase, closed_at, vendor_completed_at")
-        .eq("ticket_id", ticketId);
-      return data ?? [];
-    },
-  });
+  // the ticket stops asking whether a repair is needed. The same query (same
+  // key) the Work Order panel and drawer use, so closing a Work Order there
+  // invalidates what this page reads too — no separate, differently-shaped
+  // cache to fall out of sync.
+  const { data: workOrders } = useTicketWorkOrders(ticketId);
 
   // Waiting is a saved state, not a form: reopening the ticket shows exactly
   // what was parked, on what, and when it comes back.
-  const savedWaitOn = data?.ticket.waiting_on ?? null;
-  const savedWaitReason = data?.ticket.waiting_reason ?? null;
-  const savedWaitReview = data?.ticket.next_review_at ?? null;
+  const savedWaitOn = data?.ticket?.waiting_on ?? null;
+  const savedWaitReason = data?.ticket?.waiting_reason ?? null;
+  const savedWaitReview = data?.ticket?.next_review_at ?? null;
   useEffect(() => {
     if (savedWaitOn) setWaitOn(savedWaitOn);
     if (savedWaitReason) setWaitReason(savedWaitReason);
@@ -281,7 +288,7 @@ function TicketDetail() {
   }, [savedWaitOn, savedWaitReason, savedWaitReview]);
 
   useEffect(() => {
-    if (!data) return;
+    if (!data?.ticket) return;
     const t = data.ticket;
     const closedNow = t.status === "resolved" || t.status === "closed";
     if (!closedNow) return;
@@ -292,7 +299,38 @@ function TicketDetail() {
     }
   }, [data, ticketId]);
 
-  if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
+  // Demo mode was toggled off (or on) while this exact ticket was open, or
+  // this ticket's id was reached directly and simply doesn't match the
+  // current lens — either way, it must not keep rendering under the wrong
+  // permissions. Leave to a safe, named destination rather than erroring.
+  //
+  // Two guards, deliberately redundant:
+  //  - A query keyed on demoMode (above) catches a direct/fresh load of a
+  //    mismatched ticket — it never has data to show in the first place.
+  //  - This one compares the ticket already sitting in memory against the
+  //    current demoMode directly, with no dependency on a network round
+  //    trip finishing. Toggling demo mode while a ticket is already open
+  //    must not leave the previous fetch's content on screen for however
+  //    long the requery takes — this effect (and the render guard below)
+  //    do not wait for it.
+  const loadedTicketIsDemo = data?.ticket?.is_demo ?? null;
+  const demoMismatch = ticketDemoMismatch(loadedTicketIsDemo, demoMode);
+  useEffect(() => {
+    if (isLoading || !data) return;
+    // Fires when the filtered query already came back empty (a mismatched
+    // ticket reached fresh), or when a ticket already in memory no longer
+    // matches demoMode (toggled while this exact ticket stayed open).
+    if (data.ticket && !demoMismatch) return;
+    toast.error(
+      demoMode
+        ? "That ticket isn't a demo record — it isn't available here."
+        : "That ticket isn't available outside demo mode.",
+    );
+    navigate({ to: "/tickets", replace: true });
+  }, [isLoading, data, demoMode, demoMismatch, navigate]);
+
+  if (isLoading || !data || !data.ticket || demoMismatch)
+    return <Skeleton className="h-96 w-full" />;
 
   const { ticket, steps, activity } = data;
   const workType = ticket.work_types;
@@ -638,14 +676,20 @@ function TicketDetail() {
     if (!ok) return;
     await log(
       "resolved",
-      `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${summary}`,
+      willNeedFinalReview
+        ? `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${summary}`
+        : `Resolved and closed as ${labelFor(OUTCOME_TYPES, outcome)} — no review required. ${summary}`,
       "resolved",
     );
 
     setResolution("");
     setEvidence("");
     await refresh();
-    toast.success("Resolved — it moves to closure review before it is closed.");
+    toast.success(
+      willNeedFinalReview
+        ? "Resolved — it moves to closure review before it is closed."
+        : "Closed — no review is required for this ticket.",
+    );
   }
 
   async function reopen() {
@@ -675,20 +719,54 @@ function TicketDetail() {
     toast.success("Recorded — the guest confirmed it.");
   }
 
+  /**
+   * The repair closed, but it didn't actually fix the issue. Sends the
+   * ticket back to the repair stage — never straight to closure — so a new
+   * Work Order can be opened; the previous one's history stays on the
+   * record untouched.
+   */
+  async function stillNeedsRepair() {
+    const { error } = await supabase
+      .from("tickets")
+      // Column ships with migration 20260910180000; generated types lag until it is applied.
+      .update({
+        repair_reported_incomplete_at: new Date().toISOString(),
+      } as never)
+      .eq("id", ticketId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await log(
+      "repair",
+      "Guest says the repair did not fix the issue — reopened for a new work order.",
+      "repair_reported_incomplete",
+    );
+    await refresh();
+    toast.success("Reopened — open a new work order when ready.");
+  }
+
   /* ---------------- where this ticket is in the work ---------------- */
   const repairLinks = (repairState?.links ?? []) as { status: string }[];
   const orders = (workOrders ?? []) as {
     phase: string | null;
     closed_at: string | null;
-    vendor_completed_at: string | null;
   }[];
   const liveOrders = orders.filter((o) => o.phase !== "cancelled");
   const repairExists = repairLinks.length > 0 || liveOrders.length > 0;
-  const repairComplete =
-    ticket.vendor_status === "completed" ||
-    repairLinks.some((l) => l.status === "completed") ||
-    (liveOrders.length > 0 &&
-      liveOrders.every((o) => Boolean(o.closed_at) || Boolean(o.vendor_completed_at)));
+  // "Repair complete" never blindly closes the Ticket — it only advances the
+  // displayed Current Work stage (below, via ticketStage()) to "verify" then
+  // "closure", which still requires guest confirmation, evidence and Final
+  // Review exactly as any other Ticket does. See repairIsComplete() for why
+  // it's closed_at only, not vendor_completed_at. `repairLinks` (Breezeway-
+  // outbound task links) never signals completion here: their status enum
+  // (creating/created/synced/error/needs_review/abandoned) has no
+  // "completed" value — Breezeway is an execution channel off the Work
+  // Order, not a second source of truth for this ticket.
+  const repairComplete = repairIsComplete({
+    vendorStatus: ticket.vendor_status,
+    liveOrders,
+  });
   const verified = !ticket.guest_in_residence || Boolean(ticket.guest_confirmed);
   const rawStage = ticketStage({
     status: ticket.status,
@@ -700,6 +778,9 @@ function TicketDetail() {
     verified,
     requiredOpenSteps: requiredOpen.length,
     repairPossible: repairIsPossible(ticket.category, workType?.name),
+    repairReportedIncomplete: Boolean(
+      (ticket as { repair_reported_incomplete_at?: string | null }).repair_reported_incomplete_at,
+    ),
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
   const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
@@ -712,6 +793,20 @@ function TicketDetail() {
   const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
   const activeBranch = { claim: Boolean(branches?.claim), recovery: Boolean(branches?.recovery) };
+  // Whether resolving this ticket will close it outright or send it to a
+  // supervisor first — the action's label must say which one actually happens.
+  const willNeedFinalReview = finalReviewRequirement({
+    priority: ticket.priority,
+    category: ticket.category,
+    guest_in_residence: ticket.guest_in_residence,
+    guest_impact: ticket.guest_impact,
+    escalated: Boolean(ticket.escalated_at),
+    escalation_level: ticket.escalation_level,
+    reopen_count: ticket.reopen_count,
+    hasClaim: activeBranch.claim,
+    hasRecovery: activeBranch.recovery,
+  }).required;
+  const resolveActionLabel = willNeedFinalReview ? "Resolve — send for review" : "Close ticket";
 
   // One plain-language sentence: what is happening and what comes next. No stat wall.
   const nextStepLine = closed
@@ -729,7 +824,10 @@ function TicketDetail() {
             : stage === "steps"
               ? (nextAction?.label ?? "Work the remaining steps.")
               : stage === "repair"
-                ? "Decide whether this needs a field repair."
+                ? (ticket as { repair_reported_incomplete_at?: string | null })
+                    .repair_reported_incomplete_at
+                  ? "Guest says it's not fixed — open a new work order."
+                  : "Decide whether this needs a field repair."
                 : stage === "closure"
                   ? closureReady
                     ? "Everything required is satisfied — ready to close."
@@ -846,7 +944,7 @@ function TicketDetail() {
 
       {!closeOpen ? (
         <Button onClick={() => setCloseOpen(true)} size="lg">
-          {closureReady ? "Close ticket" : "Work through what is missing"}
+          {closureReady ? resolveActionLabel : "Work through what is missing"}
         </Button>
       ) : (
         <div className="space-y-4 border-t border-border pt-4">
@@ -909,7 +1007,7 @@ function TicketDetail() {
           )}
 
           <Button onClick={resolveTicket} size="lg">
-            <CheckCircle2 className="size-4" /> Close ticket
+            <CheckCircle2 className="size-4" /> {resolveActionLabel}
           </Button>
         </div>
       )}
@@ -1040,6 +1138,9 @@ function TicketDetail() {
                   <p className="text-sm text-muted-foreground">
                     The field team has this. Watch for completion, then verify it.
                   </p>
+                  {role.can("work_orders_internal") ? (
+                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                  ) : null}
                   {repairPanel}
                 </div>
               )}
@@ -1051,6 +1152,9 @@ function TicketDetail() {
                     The repair is reported complete. Contact the guest and confirm it is genuinely
                     fixed.
                   </p>
+                  {role.can("work_orders_internal") ? (
+                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                  ) : null}
                   {needsEvidence && (
                     <AttachmentsPanel
                       entityType="ticket"
@@ -1058,9 +1162,14 @@ function TicketDetail() {
                       title="Add completion evidence"
                     />
                   )}
-                  <Button size="lg" onClick={markVerified}>
-                    Guest confirmed it is fixed
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="lg" onClick={markVerified}>
+                      Guest confirmed it is fixed
+                    </Button>
+                    <Button size="lg" variant="outline" onClick={stillNeedsRepair}>
+                      Still needs repair
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -1121,9 +1230,17 @@ function TicketDetail() {
                 <div className="mt-2 space-y-3">
                   <h2 className="text-xl font-semibold">Does this need a field repair?</h2>
                   <p className="text-sm text-muted-foreground">
-                    Send it to the field team and Resolve tracks it from here.
+                    Opening a work order is how Resolve tracks the repair — cost, approval and
+                    vendor. Sending it to a field team is a later, optional step.
                   </p>
-                  {repairPanel}
+                  {role.can("work_orders_internal") ? (
+                    <>
+                      <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                      {repairPanel}
+                    </>
+                  ) : (
+                    repairPanel
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => setCloseOpen(true)}>
                     No repair needed — finish this ticket
                   </Button>
@@ -1377,9 +1494,15 @@ function TicketDetail() {
                   <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
                 )}
                 {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-                {role.can("work_orders_internal") && (
-                  <TicketWorkOrderPanel ticket={ticket} readOnly />
-                )}
+                {/* Shown as the primary action in Current Work during repair,
+                    repair_active and verify above; here it's reference only,
+                    once all of those stages have passed. */}
+                {role.can("work_orders_internal") &&
+                  stage !== "repair" &&
+                  stage !== "repair_active" &&
+                  stage !== "verify" && (
+                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                  )}
               </div>
             </details>
           </TabsContent>

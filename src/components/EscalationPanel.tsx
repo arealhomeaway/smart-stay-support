@@ -21,6 +21,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useRole } from "@/hooks/useRole";
+import { useSeat } from "@/hooks/useSeat";
 import { useStaffDirectory, displayName } from "@/hooks/useTeam";
 import {
   ESCALATION_OUTCOMES,
@@ -43,7 +44,12 @@ import { relativeTime } from "@/lib/tickets";
  * supervisor answering it deliberately takes it or directs it elsewhere.
  */
 export function EscalationPanel({ ticketId }: { ticketId: string }) {
-  const { isSupervisor, readOnly } = useRole();
+  const { isSupervisor, isPlatformOwner, readOnly } = useRole();
+  // Director authority is a seat, not a permission role — the same seat
+  // register that already routes Guest Recovery director-vs-owner approval.
+  // A Platform Owner may always decide, matching the server-side check.
+  const seat = useSeat();
+  const isDirector = seat.code === "director_ops" || isPlatformOwner;
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
 
@@ -85,15 +91,32 @@ export function EscalationPanel({ ticketId }: { ticketId: string }) {
           <p className="mt-2 text-xs text-muted-foreground">
             This is a request for a decision. Whoever raised it still owns the work.
           </p>
-          {isSupervisor && !readOnly && (
-            <AnswerEscalation
-              escalationId={openOne.id}
-              onDone={() => {
-                void qc.invalidateQueries({ queryKey: ["escalations", ticketId] });
-                void qc.invalidateQueries({ queryKey: ["ticket", ticketId] });
-              }}
-            />
-          )}
+          {(() => {
+            const targetsDirector = openOne.escalated_to_role === "director";
+            const canDecide = targetsDirector ? isDirector : isSupervisor;
+            if (canDecide && !readOnly) {
+              return (
+                <AnswerEscalation
+                  escalationId={openOne.id}
+                  onDone={() => {
+                    void qc.invalidateQueries({ queryKey: ["escalations", ticketId] });
+                    void qc.invalidateQueries({ queryKey: ["ticket", ticketId] });
+                  }}
+                />
+              );
+            }
+            // A Supervisor sees a director-targeted escalation (it's still on
+            // the same ticket) but cannot decide it — say so plainly instead
+            // of silently hiding the control.
+            if (targetsDirector && isSupervisor && !readOnly) {
+              return (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Waiting on the Director of Operations to decide.
+                </p>
+              );
+            }
+            return null;
+          })()}
         </div>
       ) : (
         !readOnly && (

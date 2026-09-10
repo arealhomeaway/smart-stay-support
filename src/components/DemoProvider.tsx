@@ -2,13 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AppRole } from "@/lib/permissions";
 import { useViewAs } from "@/hooks/useViewAs";
+import { useMyRoles } from "@/hooks/useRole";
 import { getDemoStatus, resetDemoEnvironment, seedDemoEnvironment } from "@/lib/demo.functions";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import {
+  canOperateDemo,
   DEMO_FLAG_EVENT,
   PREVIEW_SEAT_EVENT,
   readDemoFlag,
+  resolveDemoMode,
   writeDemoFlag,
   writePreviewSeat,
   type PreviewSeat,
@@ -55,7 +57,6 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
   const [flag, setFlag] = useState<boolean>(() => readDemoFlag());
-  const [canDemo, setCanDemo] = useState(false);
 
   useEffect(() => {
     const sync = () => setFlag(readDemoFlag());
@@ -69,22 +70,15 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Resolve admin status once on mount so the provider stays light.
-  useEffect(() => {
-    let cancelled = false;
-    void supabase.auth.getUser().then(async ({ data }) => {
-      if (cancelled || !data.user) return;
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id);
-      if (cancelled) return;
-      setCanDemo((roles ?? []).some((r) => r.role === "admin"));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Admin detection is the same cached, retrying react-query roles lookup
+  // `useRole()` already relies on elsewhere — not a separate one-shot fetch.
+  // A one-shot fetch with no retry and no auth-state subscription could
+  // resolve before the session finished hydrating and then never
+  // reconsider itself, permanently disabling demo mode for a genuine
+  // admin. Sharing the query removes that failure mode, and keeps entering
+  // demo mode independent of anything seed-related.
+  const rolesQuery = useMyRoles();
+  const canDemo = canOperateDemo(rolesQuery.data?.roles ?? []);
 
   const statusQuery = useQuery({
     queryKey: ["demo-status"],
@@ -93,8 +87,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     queryFn: () => getDemoStatus(),
   });
 
-  // Demo mode is real only when an admin is previewing a persona.
-  const demoMode = canDemo && flag && Boolean(viewAs);
+  const demoMode = resolveDemoMode({ canDemo, flag, hasPreviewIdentity: Boolean(viewAs) });
 
   const seedFn = useServerFn(seedDemoEnvironment);
   const resetFn = useServerFn(resetDemoEnvironment);

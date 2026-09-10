@@ -10,21 +10,18 @@ import {
 } from "@/lib/permissions";
 import { useViewAs } from "@/hooks/useViewAs";
 import { useDemoFlag, usePreviewSeat } from "@/hooks/useDemoFlag";
+import { canOperateDemo, previewIdentityLabel } from "@/lib/demo-mode";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 export type { AppRole };
 
 /**
- * Roles for the signed-in user.
- *
- * `roles` are the effective roles the UI should honour (they follow a Platform
- * Owner's read-only "View As" preview). `actualRoles` are always the real ones.
+ * The signed-in user's real roles, cached and shared via react-query so
+ * every caller (this hook, DemoProvider's admin check) sees the same
+ * result instead of each running its own one-shot fetch.
  */
-export function useRole() {
-  const { viewAs } = useViewAs();
-  const demoFlag = useDemoFlag();
-  const previewSeat = usePreviewSeat();
-
-  const query = useQuery({
+export function useMyRoles() {
+  return useQuery({
     queryKey: ["my-roles"],
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
@@ -38,10 +35,24 @@ export function useRole() {
       return { userId: auth.user.id, roles: (data ?? []).map((r) => r.role as AppRole) };
     },
   });
+}
+
+/**
+ * Roles for the signed-in user.
+ *
+ * `roles` are the effective roles the UI should honour (they follow a Platform
+ * Owner's read-only "View As" preview). `actualRoles` are always the real ones.
+ */
+export function useRole() {
+  const { viewAs } = useViewAs();
+  const demoFlag = useDemoFlag();
+  const previewSeat = usePreviewSeat();
+
+  const query = useMyRoles();
 
   const actualRoles = query.data?.roles ?? [];
   const userId = query.data?.userId ?? null;
-  const previewing = Boolean(viewAs) && actualRoles.includes("admin");
+  const previewing = Boolean(viewAs) && canOperateDemo(actualRoles);
   // The demo environment exists to be worked. An ordinary role preview is a
   // look, never a change; the demo lens is a look at *demo records*, which the
   // previewer is meant to act on.
@@ -71,6 +82,19 @@ export function useRole() {
     isDirectorPreview: previewing && previewSeat === "director_ops",
     isLoading: query.isLoading,
     primary: primaryRole(roles),
+    /**
+     * The one identity label every preview-aware surface should show —
+     * "Director of Operations" while previewing that seat, never the
+     * permission role it happens to share ("Supervisor"). Use this instead
+     * of reading ROLE_LABELS[primary] directly wherever a role/identity is
+     * displayed to the viewer.
+     */
+    identityLabel: previewIdentityLabel({
+      previewing,
+      previewSeat: previewing ? previewSeat : null,
+      previewRoleLabel: previewing && viewAs ? ROLE_LABELS[viewAs] : null,
+      actualLabel: ROLE_LABELS[primaryRole(actualRoles)],
+    }),
     capabilities: capabilitiesFor(roles),
     can: (capability: Capability) => can(roles, capability),
     landing: entryPathFor(roles),

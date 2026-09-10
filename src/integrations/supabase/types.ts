@@ -329,6 +329,7 @@ export type Database = {
           ticket_id: string | null
           title: string
           updated_at: string
+          work_order_id: string | null
         }
         Insert: {
           assignee?: string | null
@@ -363,6 +364,7 @@ export type Database = {
           ticket_id?: string | null
           title: string
           updated_at?: string
+          work_order_id?: string | null
         }
         Update: {
           assignee?: string | null
@@ -397,6 +399,7 @@ export type Database = {
           ticket_id?: string | null
           title?: string
           updated_at?: string
+          work_order_id?: string | null
         }
         Relationships: [
           {
@@ -418,6 +421,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_outbound_tasks_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -2662,6 +2672,8 @@ export type Database = {
       }
       handoffs: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           actions_completed: string
           created_at: string
           current_status: string
@@ -2683,6 +2695,8 @@ export type Database = {
           to_user: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           actions_completed: string
           created_at?: string
           current_status: string
@@ -2704,6 +2718,8 @@ export type Database = {
           to_user?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           actions_completed?: string
           created_at?: string
           current_status?: string
@@ -6182,6 +6198,7 @@ export type Database = {
           record_type: string
           ref: number
           reopen_count: number
+          repair_reported_incomplete_at: string | null
           reported_at: string
           reservation_arrival: string | null
           reservation_channel: string | null
@@ -6290,6 +6307,7 @@ export type Database = {
           record_type?: string
           ref?: number
           reopen_count?: number
+          repair_reported_incomplete_at?: string | null
           reported_at?: string
           reservation_arrival?: string | null
           reservation_channel?: string | null
@@ -6398,6 +6416,7 @@ export type Database = {
           record_type?: string
           ref?: number
           reopen_count?: number
+          repair_reported_incomplete_at?: string | null
           reported_at?: string
           reservation_arrival?: string | null
           reservation_channel?: string | null
@@ -7763,6 +7782,11 @@ export type Database = {
         Args: { _actor?: string }
         Returns: undefined
       }
+      archive_demo_work_order: { Args: { _actor?: string }; Returns: undefined }
+      archive_qa_work_order_fixture: {
+        Args: { _actor?: string }
+        Returns: undefined
+      }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -7771,6 +7795,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_director: { Args: { _user_id: string }; Returns: boolean }
       is_internal_staff: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
@@ -7818,6 +7843,11 @@ export type Database = {
         | { Args: { _actor?: string }; Returns: undefined }
       seed_demo_onboarding: { Args: { _actor: string }; Returns: undefined }
       seed_demo_owner_program: { Args: { _actor?: string }; Returns: string }
+      seed_demo_work_order: { Args: { _actor?: string }; Returns: undefined }
+      seed_qa_work_order_fixture: {
+        Args: { _actor?: string }
+        Returns: undefined
+      }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
