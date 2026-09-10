@@ -75,3 +75,26 @@ export function repairIsPossible(
   if (!text.trim()) return false;
   return [...REPAIRABLE].some((c) => text.includes(c));
 }
+
+/**
+ * Has the field repair actually finished — the signal `ticketStage()` reads
+ * as `repairComplete`.
+ *
+ * A vendor saying the job is done ("Vendor says complete", `vendor_completed_at`)
+ * is an internal Work Order milestone, not a Ticket-visible one: closure
+ * evidence, final cost and guest notification can all still stand between
+ * that and "Close work order". Only `closed_at` — the Work Order actually
+ * closed — may advance the Ticket to Verify. `vendor_status === "completed"`
+ * is kept as a second, independent signal: the older on-ticket vendor
+ * dispatch field, predating the Work Order model, unaffected by this rule.
+ */
+export function repairIsComplete(input: {
+  vendorStatus: string | null | undefined;
+  /** Every live (non-cancelled) Work Order for this ticket. */
+  liveOrders: { closed_at: string | null | undefined }[];
+}): boolean {
+  return (
+    input.vendorStatus === "completed" ||
+    (input.liveOrders.length > 0 && input.liveOrders.every((o) => Boolean(o.closed_at)))
+  );
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { ticketStage, type TicketStageInput } from "../ticket-stage";
+import { repairIsComplete, ticketStage, type TicketStageInput } from "../ticket-stage";
 
 const base: TicketStageInput = {
   status: "in_progress",
@@ -122,5 +122,88 @@ describe("ticketStage — 'Still needs repair' sends a completed-but-failed repa
         repairReportedIncomplete: false,
       }),
     ).toBe("steps");
+  });
+});
+
+describe("repairIsComplete — 'Vendor says complete' is an internal Work Order milestone, not a Ticket signal", () => {
+  it("is not complete while the Work Order is open, even once the vendor has reported done", () => {
+    // vendor_completed_at is deliberately absent from this shape — the
+    // Ticket-facing signal only ever looks at closed_at.
+    expect(
+      repairIsComplete({
+        vendorStatus: null,
+        liveOrders: [{ closed_at: null }],
+      }),
+    ).toBe(false);
+  });
+
+  it("is complete once the Work Order actually closes", () => {
+    expect(
+      repairIsComplete({
+        vendorStatus: null,
+        liveOrders: [{ closed_at: "2026-09-10T12:00:00Z" }],
+      }),
+    ).toBe(true);
+  });
+
+  it("stays incomplete while any one of several live Work Orders is still open", () => {
+    expect(
+      repairIsComplete({
+        vendorStatus: null,
+        liveOrders: [{ closed_at: "2026-09-01T00:00:00Z" }, { closed_at: null }],
+      }),
+    ).toBe(false);
+  });
+
+  it("the older on-ticket vendor_status field is still an independent, second signal", () => {
+    expect(
+      repairIsComplete({
+        vendorStatus: "completed",
+        liveOrders: [],
+      }),
+    ).toBe(true);
+  });
+
+  it("is not complete with no live orders and no legacy vendor_status", () => {
+    expect(
+      repairIsComplete({
+        vendorStatus: null,
+        liveOrders: [],
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("ticketStage — end to end: Work Order completion timing", () => {
+  it("a new Work Order plus 'Vendor says complete' keeps the Ticket in repair_active, not verify", () => {
+    const repairComplete = repairIsComplete({
+      vendorStatus: null,
+      liveOrders: [{ closed_at: null }], // vendor_completed_at set, closed_at not
+    });
+    expect(
+      ticketStage({
+        ...base,
+        repairPossible: true,
+        repairExists: true,
+        repairComplete,
+        verified: false,
+      }),
+    ).toBe("repair_active");
+  });
+
+  it("closing that same Work Order immediately moves the Ticket to verify — the same recomputation, no separate step", () => {
+    const repairComplete = repairIsComplete({
+      vendorStatus: null,
+      liveOrders: [{ closed_at: "2026-09-10T12:00:00Z" }],
+    });
+    expect(
+      ticketStage({
+        ...base,
+        repairPossible: true,
+        repairExists: true,
+        repairComplete,
+        verified: false,
+      }),
+    ).toBe("verify");
   });
 });

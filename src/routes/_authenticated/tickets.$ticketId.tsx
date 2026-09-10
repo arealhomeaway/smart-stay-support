@@ -7,7 +7,7 @@ import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
-import { ticketStage, repairIsPossible } from "@/lib/ticket-stage";
+import { ticketStage, repairIsPossible, repairIsComplete } from "@/lib/ticket-stage";
 import { scopedClosureEvidence } from "@/lib/closure-evidence";
 import { closureEvidenceSatisfied, requiresPhotoOrFile } from "@/lib/evidence-requirements";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
@@ -748,27 +748,22 @@ function TicketDetail() {
   const orders = (workOrders ?? []) as {
     phase: string | null;
     closed_at: string | null;
-    vendor_completed_at: string | null;
   }[];
   const liveOrders = orders.filter((o) => o.phase !== "cancelled");
   const repairExists = repairLinks.length > 0 || liveOrders.length > 0;
-  /**
-   * "Repair complete" never blindly closes the Ticket — it only advances
-   * the displayed Current Work stage (below, via ticketStage()) to "verify"
-   * then "closure", which still requires guest confirmation, evidence and
-   * Final Review exactly as any other Ticket does. Signals, in order:
-   *  - `vendor_status` — the older on-ticket vendor dispatch field.
-   *  - every live (non-cancelled) Work Order closed or vendor-confirmed —
-   *    the canonical Resolve Work Order signal (Send for repair, §5).
-   * `repairLinks` (Breezeway-outbound task links) never signals completion
-   * here: their status enum (creating/created/synced/error/needs_review/
-   * abandoned) has no "completed" value — Breezeway is an execution channel
-   * off the Work Order, not a second source of truth for this ticket.
-   */
-  const repairComplete =
-    ticket.vendor_status === "completed" ||
-    (liveOrders.length > 0 &&
-      liveOrders.every((o) => Boolean(o.closed_at) || Boolean(o.vendor_completed_at)));
+  // "Repair complete" never blindly closes the Ticket — it only advances the
+  // displayed Current Work stage (below, via ticketStage()) to "verify" then
+  // "closure", which still requires guest confirmation, evidence and Final
+  // Review exactly as any other Ticket does. See repairIsComplete() for why
+  // it's closed_at only, not vendor_completed_at. `repairLinks` (Breezeway-
+  // outbound task links) never signals completion here: their status enum
+  // (creating/created/synced/error/needs_review/abandoned) has no
+  // "completed" value — Breezeway is an execution channel off the Work
+  // Order, not a second source of truth for this ticket.
+  const repairComplete = repairIsComplete({
+    vendorStatus: ticket.vendor_status,
+    liveOrders,
+  });
   const verified = !ticket.guest_in_residence || Boolean(ticket.guest_confirmed);
   const rawStage = ticketStage({
     status: ticket.status,

@@ -61,7 +61,12 @@ import {
   workOrderBucket,
   type OwnerApprovalOutcome,
 } from "@/lib/work-orders";
-import type { WorkOrderEventRow, WorkOrderRow, WorkOrderUpdate } from "@/lib/work-order-types";
+import {
+  ticketWorkOrdersQueryKey,
+  type WorkOrderEventRow,
+  type WorkOrderRow,
+  type WorkOrderUpdate,
+} from "@/lib/work-order-types";
 
 const OVERRIDE_REASONS = Object.keys(WARRANTY_OVERRIDE_LABELS) as WarrantyOverrideReason[];
 
@@ -221,7 +226,7 @@ export function WorkOrderDrawer({
     qc.invalidateQueries({ queryKey: ["work-order-requirements"] });
     qc.invalidateQueries({ queryKey: ["work-order-evidence", workOrder?.id] });
     qc.invalidateQueries({ queryKey: ["work-order-events", workOrder?.id] });
-    qc.invalidateQueries({ queryKey: ["work-orders-for-ticket", workOrder?.ticket_id] });
+    qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(workOrder?.ticket_id) });
   };
 
   const save = useMutation({
@@ -1152,6 +1157,7 @@ export function WorkOrderDrawer({
                 params={{ ticketId: workOrder.ticket_id }}
                 search={(originToken ? { from: originToken } : undefined) as never}
                 className="underline underline-offset-2"
+                onClick={onClose}
               >
                 Originating ticket
               </Link>

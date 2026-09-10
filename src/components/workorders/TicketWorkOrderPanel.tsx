@@ -51,7 +51,7 @@ import {
   type PropertyWarranty,
   type WorkOrderPhase,
 } from "@/lib/work-orders";
-import type { WorkOrderRow } from "@/lib/work-order-types";
+import { ticketWorkOrdersQueryKey, type WorkOrderRow } from "@/lib/work-order-types";
 
 type TicketContext = {
   id: string;
@@ -72,7 +72,7 @@ type TicketContext = {
  */
 export function useTicketWorkOrders(ticketId: string) {
   return useQuery({
-    queryKey: ["work-orders-for-ticket", ticketId],
+    queryKey: ticketWorkOrdersQueryKey(ticketId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("work_orders")
@@ -222,7 +222,7 @@ export function TicketWorkOrderPanel({
       setScope("");
       setQuote("");
       setEmergency("");
-      qc.invalidateQueries({ queryKey: ["work-orders-for-ticket", ticket.id] });
+      qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
       qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
       toast.success("Work order opened");
     },
@@ -234,7 +234,7 @@ export function TicketWorkOrderPanel({
         toast.error(
           "This ticket already has an open work order — close it before opening another.",
         );
-        qc.invalidateQueries({ queryKey: ["work-orders-for-ticket", ticket.id] });
+        qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
         return;
       }
       toast.error(e.message);
