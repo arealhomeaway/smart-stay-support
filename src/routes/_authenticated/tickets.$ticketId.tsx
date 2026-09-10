@@ -43,7 +43,10 @@ import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
 import { TicketRecoveryPanel } from "@/components/recovery/TicketRecoveryPanel";
-import { TicketWorkOrderPanel } from "@/components/workorders/TicketWorkOrderPanel";
+import {
+  TicketWorkOrderPanel,
+  useTicketWorkOrders,
+} from "@/components/workorders/TicketWorkOrderPanel";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { ticketDemoMismatch } from "@/lib/demo-mode";
@@ -262,17 +265,11 @@ function TicketDetail() {
 
   // Field repair can be raised as a Breezeway task or as an internal work
   // order. Either one means a repair exists, and either one completing means
-  // the ticket stops asking whether a repair is needed.
-  const { data: workOrders } = useQuery({
-    queryKey: ["ticket-work-orders", ticketId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("work_orders")
-        .select("id, phase, closed_at, vendor_completed_at")
-        .eq("ticket_id", ticketId);
-      return data ?? [];
-    },
-  });
+  // the ticket stops asking whether a repair is needed. The same query (same
+  // key) the Work Order panel and drawer use, so closing a Work Order there
+  // invalidates what this page reads too — no separate, differently-shaped
+  // cache to fall out of sync.
+  const { data: workOrders } = useTicketWorkOrders(ticketId);
 
   // Waiting is a saved state, not a form: reopening the ticket shows exactly
   // what was parked, on what, and when it comes back.
@@ -722,6 +719,30 @@ function TicketDetail() {
     toast.success("Recorded — the guest confirmed it.");
   }
 
+  /**
+   * The repair closed, but it didn't actually fix the issue. Sends the
+   * ticket back to the repair stage — never straight to closure — so a new
+   * Work Order can be opened; the previous one's history stays on the
+   * record untouched.
+   */
+  async function stillNeedsRepair() {
+    const { error } = await supabase
+      .from("tickets")
+      .update({ repair_reported_incomplete_at: new Date().toISOString() })
+      .eq("id", ticketId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await log(
+      "repair",
+      "Guest says the repair did not fix the issue — reopened for a new work order.",
+      "repair_reported_incomplete",
+    );
+    await refresh();
+    toast.success("Reopened — open a new work order when ready.");
+  }
+
   /* ---------------- where this ticket is in the work ---------------- */
   const repairLinks = (repairState?.links ?? []) as { status: string }[];
   const orders = (workOrders ?? []) as {
@@ -759,6 +780,7 @@ function TicketDetail() {
     verified,
     requiredOpenSteps: requiredOpen.length,
     repairPossible: repairIsPossible(ticket.category, workType?.name),
+    repairReportedIncomplete: Boolean(ticket.repair_reported_incomplete_at),
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
   const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
@@ -802,7 +824,9 @@ function TicketDetail() {
             : stage === "steps"
               ? (nextAction?.label ?? "Work the remaining steps.")
               : stage === "repair"
-                ? "Decide whether this needs a field repair."
+                ? ticket.repair_reported_incomplete_at
+                  ? "Guest says it's not fixed — open a new work order."
+                  : "Decide whether this needs a field repair."
                 : stage === "closure"
                   ? closureReady
                     ? "Everything required is satisfied — ready to close."
@@ -1113,6 +1137,9 @@ function TicketDetail() {
                   <p className="text-sm text-muted-foreground">
                     The field team has this. Watch for completion, then verify it.
                   </p>
+                  {role.can("work_orders_internal") ? (
+                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                  ) : null}
                   {repairPanel}
                 </div>
               )}
@@ -1124,6 +1151,9 @@ function TicketDetail() {
                     The repair is reported complete. Contact the guest and confirm it is genuinely
                     fixed.
                   </p>
+                  {role.can("work_orders_internal") ? (
+                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                  ) : null}
                   {needsEvidence && (
                     <AttachmentsPanel
                       entityType="ticket"
@@ -1131,9 +1161,14 @@ function TicketDetail() {
                       title="Add completion evidence"
                     />
                   )}
-                  <Button size="lg" onClick={markVerified}>
-                    Guest confirmed it is fixed
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="lg" onClick={markVerified}>
+                      Guest confirmed it is fixed
+                    </Button>
+                    <Button size="lg" variant="outline" onClick={stillNeedsRepair}>
+                      Still needs repair
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -1199,7 +1234,7 @@ function TicketDetail() {
                   </p>
                   {role.can("work_orders_internal") ? (
                     <>
-                      <TicketWorkOrderPanel ticket={ticket} />
+                      <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
                       {repairPanel}
                     </>
                   ) : (
@@ -1458,11 +1493,15 @@ function TicketDetail() {
                   <VendorRatingPanel ticketId={ticket.id} priority={ticket.priority ?? null} />
                 )}
                 {ticket.vendor_user_id && <VisitLogPanel ticketId={ticket.id} />}
-                {/* Shown as the primary action during the repair stage above;
-                    here it's reference only, once that stage has passed. */}
-                {role.can("work_orders_internal") && stage !== "repair" && (
-                  <TicketWorkOrderPanel ticket={ticket} />
-                )}
+                {/* Shown as the primary action in Current Work during repair,
+                    repair_active and verify above; here it's reference only,
+                    once all of those stages have passed. */}
+                {role.can("work_orders_internal") &&
+                  stage !== "repair" &&
+                  stage !== "repair_active" &&
+                  stage !== "verify" && (
+                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                  )}
               </div>
             </details>
           </TabsContent>

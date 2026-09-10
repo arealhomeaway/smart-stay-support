@@ -6198,6 +6198,7 @@ export type Database = {
           record_type: string
           ref: number
           reopen_count: number
+          repair_reported_incomplete_at: string | null
           reported_at: string
           reservation_arrival: string | null
           reservation_channel: string | null
@@ -6306,6 +6307,7 @@ export type Database = {
           record_type?: string
           ref?: number
           reopen_count?: number
+          repair_reported_incomplete_at?: string | null
           reported_at?: string
           reservation_arrival?: string | null
           reservation_channel?: string | null
@@ -6414,6 +6416,7 @@ export type Database = {
           record_type?: string
           ref?: number
           reopen_count?: number
+          repair_reported_incomplete_at?: string | null
           reported_at?: string
           reservation_arrival?: string | null
           reservation_channel?: string | null

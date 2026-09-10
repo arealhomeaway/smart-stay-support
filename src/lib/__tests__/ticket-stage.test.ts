@@ -11,6 +11,7 @@ const base: TicketStageInput = {
   verified: true,
   requiredOpenSteps: 0,
   repairPossible: false,
+  repairReportedIncomplete: false,
 };
 
 describe("ticketStage — Work Order completion never blindly closes a Ticket", () => {
@@ -49,5 +50,77 @@ describe("ticketStage — Work Order completion never blindly closes a Ticket", 
       ticketStage({ ...base, repairExists: true, repairComplete: true, closed: false }),
     ).not.toBe("closed");
     expect(ticketStage({ ...base, closed: true })).toBe("closed");
+  });
+});
+
+describe("ticketStage — 'Still needs repair' sends a completed-but-failed repair back to repair, not verify or closure", () => {
+  it("routes to repair, not verify, once the completed repair is reported unsuccessful", () => {
+    expect(
+      ticketStage({
+        ...base,
+        repairPossible: true,
+        repairExists: true,
+        repairComplete: true,
+        verified: false,
+        repairReportedIncomplete: true,
+      }),
+    ).toBe("repair");
+  });
+
+  it("without repairReportedIncomplete, the same record still goes to verify (unchanged behavior)", () => {
+    expect(
+      ticketStage({
+        ...base,
+        repairPossible: true,
+        repairExists: true,
+        repairComplete: true,
+        verified: false,
+        repairReportedIncomplete: false,
+      }),
+    ).toBe("verify");
+  });
+
+  it("does not route to repair once the guest has verified, even if repairReportedIncomplete is stale-true", () => {
+    // Guards against a stale flag from a prior cycle overriding a genuine
+    // guest confirmation — verified takes priority once it's true.
+    expect(
+      ticketStage({
+        ...base,
+        repairPossible: true,
+        repairExists: true,
+        repairComplete: true,
+        verified: true,
+        repairReportedIncomplete: true,
+      }),
+    ).toBe("closure");
+  });
+
+  it("a freshly opened Work Order takes priority over a stale repairReportedIncomplete flag", () => {
+    // Once a new Work Order is open, repairComplete goes back to false —
+    // repair_active wins regardless of the flag from the previous cycle.
+    expect(
+      ticketStage({
+        ...base,
+        repairPossible: true,
+        repairExists: true,
+        repairComplete: false,
+        verified: false,
+        repairReportedIncomplete: true,
+      }),
+    ).toBe("repair_active");
+  });
+
+  it("required playbook steps still gate closure even when repair is reported incomplete and later cleared", () => {
+    expect(
+      ticketStage({
+        ...base,
+        repairPossible: true,
+        repairExists: true,
+        repairComplete: true,
+        verified: true,
+        requiredOpenSteps: 2,
+        repairReportedIncomplete: false,
+      }),
+    ).toBe("steps");
   });
 });
