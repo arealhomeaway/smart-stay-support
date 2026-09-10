@@ -728,7 +728,10 @@ function TicketDetail() {
   async function stillNeedsRepair() {
     const { error } = await supabase
       .from("tickets")
-      .update({ repair_reported_incomplete_at: new Date().toISOString() })
+      // Column ships with migration 20260910180000; generated types lag until it is applied.
+      .update({
+        repair_reported_incomplete_at: new Date().toISOString(),
+      } as never)
       .eq("id", ticketId);
     if (error) {
       toast.error(error.message);
