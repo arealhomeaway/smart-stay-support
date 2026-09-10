@@ -10,6 +10,33 @@
 export const DEMO_FLAG_KEY = "resolve.demo-mode";
 export const DEMO_FLAG_EVENT = "resolve:demo-mode";
 
+/**
+ * Whether the current user may operate the demo environment at all — a
+ * Platform Owner (admin). Pure and role-only: it never depends on the demo
+ * environment being seeded, on any RPC, or on the demo flag itself, so
+ * admin detection can never get stuck behind a seed-related failure or a
+ * slow/one-shot network call.
+ */
+export function canOperateDemo(actualRoles: readonly string[]): boolean {
+  return actualRoles.includes("admin");
+}
+
+/**
+ * Whether the demo lens is actually on. Demo mode is real only once all
+ * three hold: the viewer may operate the demo environment, they've flipped
+ * the session flag on, and they're previewing a persona (so there's a role
+ * surface to render the demo scenarios as). Deliberately independent of
+ * whether demo data has ever been seeded — entering the lens and seeding
+ * data are separate responsibilities.
+ */
+export function resolveDemoMode(input: {
+  canDemo: boolean;
+  flag: boolean;
+  hasPreviewIdentity: boolean;
+}): boolean {
+  return input.canDemo && input.flag && input.hasPreviewIdentity;
+}
+
 export function readDemoFlag(): boolean {
   if (typeof window === "undefined") return false;
   return window.sessionStorage.getItem(DEMO_FLAG_KEY) === "1";
