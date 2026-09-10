@@ -783,7 +783,9 @@ function TicketDetail() {
     verified,
     requiredOpenSteps: requiredOpen.length,
     repairPossible: repairIsPossible(ticket.category, workType?.name),
-    repairReportedIncomplete: Boolean(ticket.repair_reported_incomplete_at),
+    repairReportedIncomplete: Boolean(
+      (ticket as { repair_reported_incomplete_at?: string | null }).repair_reported_incomplete_at,
+    ),
   });
   // The coordinator can say "this needs no repair" and go straight to finishing.
   const stage = rawStage === "repair" && closeOpen ? "closure" : rawStage;
