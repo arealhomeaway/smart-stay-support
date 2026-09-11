@@ -507,7 +507,12 @@ export function WorkOrderDrawer({
   const advice = secondQuoteAdvice(workOrder);
   const blockers = closureBlockers(workOrder, reqs);
   const consequence = declineConsequence(workOrder);
-  const readOnly = !canEdit;
+  const permissionReadOnly = !canEdit;
+  // Once the Work Order is actually closed (closed_at set), every action
+  // below locks except Reopen — which intentionally checks
+  // permissionReadOnly instead, since it is the one action a supervisor
+  // must still be able to take on a closed record.
+  const readOnly = permissionReadOnly || Boolean(workOrder.closed_at);
   const owner = workOrder.assigned_to;
   const stamp = () => new Date().toISOString();
 
@@ -1168,7 +1173,7 @@ export function WorkOrderDrawer({
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={readOnly || save.isPending}
+                disabled={permissionReadOnly || save.isPending}
                 onClick={() =>
                   save.mutate({
                     patch: {
