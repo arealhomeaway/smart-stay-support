@@ -216,14 +216,22 @@ export function TicketWorkOrderPanel({
         .from("tickets")
         .update({ repair_reported_incomplete_at: null } as never)
         .eq("id", ticket.id);
+
+      return (data as { id: string }).id;
     },
-    onSuccess: () => {
+    onSuccess: async (newWorkOrderId) => {
       setOpen(false);
       setScope("");
       setQuote("");
       setEmergency("");
-      qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
+      // Awaited so the drawer below opens against the query that already
+      // has the new Work Order in it, not a cache that hasn't refetched yet.
+      await qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
       qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
+      // Stay on this Ticket route — open the new Work Order in the same
+      // drawer "Open work order" already uses, rather than sending anyone
+      // to the Work Orders index to find it.
+      setOpenWorkOrderId(newWorkOrderId);
       toast.success("Work order opened");
     },
     onError: (e: Error) => {
