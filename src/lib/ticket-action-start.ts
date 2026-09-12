@@ -17,7 +17,7 @@ import { ticketActionStartPlan } from "@/lib/tickets";
 export async function ensureTicketActionStarted(ticketId: string): Promise<boolean> {
   const { data: current, error: readError } = await supabase
     .from("tickets")
-    .select("status, acknowledged_at, action_started_at")
+    .select("status, acknowledged_at, action_started_at, current_action_owner, assignment_source")
     .eq("id", ticketId)
     .maybeSingle();
   if (readError || !current) return false;
