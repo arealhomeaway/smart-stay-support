@@ -45,7 +45,7 @@ describe("TicketWorkOrderPanel's open Work Order id survives a ticket stage chan
 
   it("the Ticket page owns the state once, above every per-stage panel instance", () => {
     expect(ticketPageSrc).toContain(
-      "const [openWorkOrderId, setOpenWorkOrderId] = useState<string | null>(null);",
+      "const [openWorkOrderId, setOpenWorkOrderIdRaw] = useState<string | null>(null);",
     );
   });
 

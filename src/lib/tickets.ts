@@ -405,3 +405,71 @@ export function dueLabel(dueAt: string | null | undefined, status: string) {
   if (mins < 0) return { text: `Overdue by ${formatMinutes(mins)}`, overdue: true };
   return { text: `Due in ${formatMinutes(mins)}`, overdue: false };
 }
+
+export type TicketActionStartState = {
+  status: string;
+  acknowledged_at: string | null;
+  action_started_at: string | null;
+};
+
+export type TicketActionStartEvent = { kind: string; body: string; eventType: string };
+
+export type TicketActionStartPlan = {
+  patch: {
+    acknowledged_at: string;
+    action_started_at: string;
+    status?: string;
+    current_action_owner?: string | null;
+    assignment_source?: string;
+    assignment_note?: null;
+  };
+  events: TicketActionStartEvent[];
+};
+
+/**
+ * What used to be the "Start working" button's one click — acknowledge,
+ * start the clock, take ownership if nobody has it, move status out of
+ * "open" — now derived instead of manually triggered, so it can fire from
+ * the first real action a ticket receives instead of a dedicated gate.
+ * Pure: returns `null` once `action_started_at` is already set, so calling
+ * this on every action is always safe and never fires twice.
+ */
+export function ticketActionStartPlan(
+  ticket: TicketActionStartState,
+  actorId: string | null,
+  now: string,
+): TicketActionStartPlan | null {
+  if (ticket.action_started_at) return null;
+  const firstTouch = !ticket.acknowledged_at;
+  const patch: TicketActionStartPlan["patch"] = {
+    acknowledged_at: ticket.acknowledged_at ?? now,
+    action_started_at: now,
+  };
+  if (ticket.status === "open") patch.status = "in_progress";
+  if (firstTouch) {
+    patch.current_action_owner = actorId;
+    patch.assignment_source = "manual";
+    patch.assignment_note = null;
+  }
+  const events: TicketActionStartEvent[] = firstTouch
+    ? [
+        {
+          kind: "acknowledged",
+          body: "Acknowledged — this ticket is being worked.",
+          eventType: "acknowledged",
+        },
+        {
+          kind: "action_started",
+          body: "Work started on this ticket.",
+          eventType: "action_started",
+        },
+      ]
+    : [
+        {
+          kind: "action_started",
+          body: "Work started on this ticket.",
+          eventType: "action_started",
+        },
+      ];
+  return { patch, events };
+}

@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/sheet";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
+import { ensureTicketActionStarted } from "@/lib/ticket-action-start";
 import { classifyTicketText } from "@/lib/ticket-classify";
 import {
   AlertDialog,
@@ -156,7 +157,19 @@ function TicketDetail() {
   // changes this ticket's derived stage immediately, and a different
   // TicketWorkOrderPanel instance renders per stage — state kept in the
   // panel itself would be destroyed the instant it was set.
-  const [openWorkOrderId, setOpenWorkOrderId] = useState<string | null>(null);
+  const [openWorkOrderId, setOpenWorkOrderIdRaw] = useState<string | null>(null);
+  // Creating or opening a Work Order is real engagement with the ticket —
+  // one of the two anchor points (with log(), below) that back-fill
+  // "Start working" on the first meaningful action instead of requiring a
+  // dedicated click. Opening the drawer never waits on this.
+  const setOpenWorkOrderId = (id: string | null) => {
+    setOpenWorkOrderIdRaw(id);
+    if (id) {
+      void ensureTicketActionStarted(ticketId).then((started) => {
+        if (started) void refresh();
+      });
+    }
+  };
 
   const { data, isLoading } = useQuery({
     // Keyed and filtered by demoMode exactly like every list/queue view, so
@@ -472,9 +485,18 @@ function TicketDetail() {
     await qc.invalidateQueries({ queryKey: ["dashboard"] });
   }
 
+  /**
+   * The one place every Ticket action routes through before writing its own
+   * effect. "Start working" is no longer a separate click: the first call
+   * to log() on a fresh ticket backfills acknowledged_at, action_started_at,
+   * ownership and status through ensureTicketActionStarted before recording
+   * the action itself, so the audit trail still reads "Acknowledged" →
+   * "Work started" → whatever the coordinator actually did.
+   */
   async function log(kind: string, body: string, eventType = kind) {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return;
+    await ensureTicketActionStarted(ticketId);
     await supabase.from("ticket_activity").insert({
       ticket_id: ticketId,
       author_id: userData.user.id,
@@ -483,13 +505,6 @@ function TicketDetail() {
       body,
     });
   }
-
-  /**
-   * One start. Acknowledging and starting the clock are the same human moment,
-   * so Resolve records both, moves the ticket into progress and writes the
-   * audit trail from a single click.
-   */
-  const canStart = !closed && (!ticket.acknowledged_at || !ticket.action_started_at);
 
   /**
    * Every status write in this file goes through the one server-side
@@ -511,38 +526,6 @@ function TicketDetail() {
       toast.error(e instanceof Error ? e.message : "That change could not be saved.");
       return false;
     }
-  }
-
-  async function startWorking() {
-    const now = new Date().toISOString();
-    const { data: userData } = await supabase.auth.getUser();
-    const firstTouch = !ticket.acknowledged_at;
-    if (ticket.status === "open") {
-      if (!(await applyStatus("in_progress"))) return;
-    }
-    const { error } = await supabase
-      .from("tickets")
-      .update({
-        acknowledged_at: ticket.acknowledged_at ?? now,
-        action_started_at: ticket.action_started_at ?? now,
-        ...(firstTouch
-          ? {
-              current_action_owner: userData.user?.id ?? null,
-              assignment_source: "manual",
-              assignment_note: null,
-            }
-          : {}),
-      })
-      .eq("id", ticketId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    if (firstTouch)
-      await log("acknowledged", "Acknowledged — this ticket is being worked.", "acknowledged");
-    await log("action_started", "Work started on this ticket.", "action_started");
-    await refresh();
-    toast.success("You're working this ticket.");
   }
 
   async function setWaiting() {
@@ -776,8 +759,6 @@ function TicketDetail() {
   const rawStage = ticketStage({
     status: ticket.status,
     closed,
-    acknowledged_at: ticket.acknowledged_at,
-    action_started_at: ticket.action_started_at,
     repairExists,
     repairComplete,
     verified,
@@ -818,26 +799,24 @@ function TicketDetail() {
     ? ticket.status === "resolved"
       ? "Resolved — waiting on closure review."
       : "Closed and filed."
-    : stage === "start"
-      ? "Not started yet — acknowledge it and start the clock."
-      : stage === "waiting"
-        ? `Waiting on ${labelFor(WAITING_ON, ticket.waiting_on).toLowerCase()}.`
-        : stage === "repair_active"
-          ? "Field team has it — watch for completion, then verify."
-          : stage === "verify"
-            ? "Repair reported complete — confirm with the guest."
-            : stage === "steps"
-              ? (nextAction?.label ?? "Work the remaining steps.")
-              : stage === "repair"
-                ? (ticket as { repair_reported_incomplete_at?: string | null })
-                    .repair_reported_incomplete_at
-                  ? "Guest says it's not fixed — open a new work order."
-                  : "Decide whether this needs a field repair."
-                : stage === "closure"
-                  ? closureReady
-                    ? "Everything required is satisfied — ready to close."
-                    : `${remaining} thing${remaining === 1 ? "" : "s"} left before this can close.`
-                  : "In progress.";
+    : stage === "waiting"
+      ? `Waiting on ${labelFor(WAITING_ON, ticket.waiting_on).toLowerCase()}.`
+      : stage === "repair_active"
+        ? "Field team has it — watch for completion, then verify."
+        : stage === "verify"
+          ? "Repair reported complete — confirm with the guest."
+          : stage === "steps"
+            ? (nextAction?.label ?? "Work the remaining steps.")
+            : stage === "repair"
+              ? (ticket as { repair_reported_incomplete_at?: string | null })
+                  .repair_reported_incomplete_at
+                ? "Guest says it's not fixed — open a new work order."
+                : "Decide whether this needs a field repair."
+              : stage === "closure"
+                ? closureReady
+                  ? "Everything required is satisfied — ready to close."
+                  : `${remaining} thing${remaining === 1 ? "" : "s"} left before this can close.`
+                : "In progress.";
 
   function priorityTone2(priority: string | null | undefined): StatusTone {
     if (priority === "p1") return "escalated";
@@ -1107,18 +1086,6 @@ function TicketDetail() {
             <section aria-label="Current work">
               <h2 className="eyebrow text-muted-foreground">Current work</h2>
 
-              {stage === "start" && (
-                <div className="mt-2 space-y-3">
-                  <h2 className="text-xl font-semibold">Start working</h2>
-                  <p className="text-sm text-muted-foreground">
-                    One click acknowledges this, starts the clock and puts it in your name.
-                  </p>
-                  <Button size="lg" onClick={startWorking}>
-                    Start working
-                  </Button>
-                </div>
-              )}
-
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">
                   <h2 className="flex items-center gap-2 text-xl font-semibold">
@@ -1324,7 +1291,7 @@ function TicketDetail() {
                 </div>
               )}
 
-              {!closed && stage !== "waiting" && stage !== "start" && (
+              {!closed && stage !== "waiting" && (
                 <div className="mt-3">
                   <WaitingControl
                     waitOn={waitOn}

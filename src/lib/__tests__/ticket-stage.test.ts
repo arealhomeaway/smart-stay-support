@@ -4,8 +4,6 @@ import { repairIsComplete, ticketStage, type TicketStageInput } from "../ticket-
 const base: TicketStageInput = {
   status: "in_progress",
   closed: false,
-  acknowledged_at: "2026-09-01T00:00:00Z",
-  action_started_at: "2026-09-01T00:05:00Z",
   repairExists: false,
   repairComplete: false,
   verified: true,
