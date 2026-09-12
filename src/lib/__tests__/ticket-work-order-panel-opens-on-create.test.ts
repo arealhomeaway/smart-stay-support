@@ -14,9 +14,12 @@ const here = dirname(fileURLToPath(import.meta.url));
  *
  * Why both halves matter: the create mutation has to hand its new Work
  * Order's id back to onSuccess (mutationFn returns it), and onSuccess has
- * to feed that id into the same setOpenWorkOrderId state "Open work
- * order" already uses to drive the drawer — dropping either half silently
- * regresses back to "nothing opens after Open another work order".
+ * to feed that id into the same onOpenWorkOrderIdChange callback "Open
+ * work order" already uses to drive the drawer — dropping either half
+ * silently regresses back to "nothing opens after Open another work
+ * order". (That id now lives on the Ticket page, not this panel — see
+ * ticket-work-order-panel-open-id-survives-stage-change.test.ts — but the
+ * panel must still report it out through this same callback.)
  */
 describe("TicketWorkOrderPanel — creating a Work Order opens it in the same drawer, in place", () => {
   const src = readFileSync(
@@ -34,7 +37,7 @@ describe("TicketWorkOrderPanel — creating a Work Order opens it in the same dr
     );
     expect(onSuccessMatch).not.toBeNull();
     const body = onSuccessMatch?.[0] ?? "";
-    expect(body).toContain("setOpenWorkOrderId(newWorkOrderId)");
+    expect(body).toContain("onOpenWorkOrderIdChange(newWorkOrderId)");
     // Must not navigate away from the Ticket route to show the new Work Order.
     expect(body).not.toContain("navigate(");
     expect(/to=["']\/work-orders/.test(body)).toBe(false);
