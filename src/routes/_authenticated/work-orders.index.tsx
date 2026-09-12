@@ -93,9 +93,8 @@ function WorkOrdersHome() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Work orders"
-        title="Today"
-        description="Maintenance execution, ordered by what is still unresolved. Work orders start on the ticket where the issue was reported."
+        title="Work orders"
+        description="Today's queue — maintenance execution, ordered by what is still unresolved. Work orders start on the ticket where the issue was reported."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

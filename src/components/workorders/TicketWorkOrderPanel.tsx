@@ -117,12 +117,24 @@ export function TicketWorkOrderPanel({
   ticket,
   propertyName = "Property",
   readOnly: forceReadOnly = false,
+  openWorkOrderId,
+  onOpenWorkOrderIdChange,
 }: {
   ticket: TicketContext;
   /** For the Work Order drawer header, opened from a card below. */
   propertyName?: string;
   /** Creation lives with the current work — history stays read-only. */
   readOnly?: boolean;
+  /**
+   * Which Work Order the drawer shows, owned by the Ticket page rather than
+   * this panel: the Ticket renders a different `TicketWorkOrderPanel`
+   * instance per stage (repair / repair_active / verify / reference), and
+   * creating a Work Order changes the ticket's derived stage immediately —
+   * unmounting the instance that just created it. State kept here would be
+   * destroyed in the same tick it was set, before the drawer ever painted.
+   */
+  openWorkOrderId: string | null;
+  onOpenWorkOrderIdChange: (id: string | null) => void;
 }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
@@ -135,7 +147,6 @@ export function TicketWorkOrderPanel({
   const [scope, setScope] = useState("");
   const [emergency, setEmergency] = useState<EmergencyReason | "">("");
   const [quote, setQuote] = useState("");
-  const [openWorkOrderId, setOpenWorkOrderId] = useState<string | null>(null);
   const people = useStaffDirectory().data ?? [];
 
   const orders = useTicketWorkOrders(ticket.id);
@@ -231,7 +242,7 @@ export function TicketWorkOrderPanel({
       // Stay on this Ticket route — open the new Work Order in the same
       // drawer "Open work order" already uses, rather than sending anyone
       // to the Work Orders index to find it.
-      setOpenWorkOrderId(newWorkOrderId);
+      onOpenWorkOrderIdChange(newWorkOrderId);
       toast.success("Work order opened");
     },
     onError: (e: Error) => {
@@ -310,7 +321,7 @@ export function TicketWorkOrderPanel({
                 <p className="text-xs text-muted-foreground">Before closing: {blockers[0]}</p>
               ) : null}
 
-              <Button size="sm" variant="outline" onClick={() => setOpenWorkOrderId(wo.id)}>
+              <Button size="sm" variant="outline" onClick={() => onOpenWorkOrderIdChange(wo.id)}>
                 Open work order
               </Button>
             </div>
@@ -426,7 +437,7 @@ export function TicketWorkOrderPanel({
         people={people}
         canEdit={canEdit}
         propertyName={propertyName}
-        onClose={() => setOpenWorkOrderId(null)}
+        onClose={() => onOpenWorkOrderIdChange(null)}
       />
     </Card>
   );

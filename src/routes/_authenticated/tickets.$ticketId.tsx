@@ -153,6 +153,11 @@ function TicketDetail() {
   const { origin, token } = useRecordOrigin("ticket");
   const [propertyOpen, setPropertyOpen] = useState(false);
   const [showCelebrate, setShowCelebrate] = useState(false);
+  // Owned here, not inside TicketWorkOrderPanel: creating a Work Order
+  // changes this ticket's derived stage immediately, and a different
+  // TicketWorkOrderPanel instance renders per stage — state kept in the
+  // panel itself would be destroyed the instant it was set.
+  const [openWorkOrderId, setOpenWorkOrderId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     // Keyed and filtered by demoMode exactly like every list/queue view, so
@@ -1140,7 +1145,12 @@ function TicketDetail() {
                     The field team has this. Watch for completion, then verify it.
                   </p>
                   {role.can("work_orders_internal") ? (
-                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                    <TicketWorkOrderPanel
+                      ticket={ticket}
+                      propertyName={propertyName}
+                      openWorkOrderId={openWorkOrderId}
+                      onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                    />
                   ) : null}
                   {repairPanel}
                 </div>
@@ -1154,7 +1164,12 @@ function TicketDetail() {
                     fixed.
                   </p>
                   {role.can("work_orders_internal") ? (
-                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                    <TicketWorkOrderPanel
+                      ticket={ticket}
+                      propertyName={propertyName}
+                      openWorkOrderId={openWorkOrderId}
+                      onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                    />
                   ) : null}
                   {needsEvidence && (
                     <AttachmentsPanel
@@ -1236,7 +1251,12 @@ function TicketDetail() {
                   </p>
                   {role.can("work_orders_internal") ? (
                     <>
-                      <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                      <TicketWorkOrderPanel
+                        ticket={ticket}
+                        propertyName={propertyName}
+                        openWorkOrderId={openWorkOrderId}
+                        onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                      />
                       {repairPanel}
                     </>
                   ) : (
@@ -1505,7 +1525,12 @@ function TicketDetail() {
                   stage !== "repair" &&
                   stage !== "repair_active" &&
                   stage !== "verify" && (
-                    <TicketWorkOrderPanel ticket={ticket} propertyName={propertyName} />
+                    <TicketWorkOrderPanel
+                      ticket={ticket}
+                      propertyName={propertyName}
+                      openWorkOrderId={openWorkOrderId}
+                      onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                    />
                   )}
               </div>
             </details>
