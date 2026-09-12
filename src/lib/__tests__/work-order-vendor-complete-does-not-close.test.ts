@@ -61,8 +61,6 @@ describe("Vendor says complete does not close the Work Order", () => {
     const stage = ticketStage({
       status: "open",
       closed: false,
-      acknowledged_at: "2026-01-01T00:00:00Z",
-      action_started_at: "2026-01-01T00:00:00Z",
       repairExists: true,
       repairComplete: repairIsComplete({ vendorStatus: null, liveOrders: [{ closed_at: null }] }),
       verified: false,
@@ -82,8 +80,6 @@ describe("Vendor says complete does not close the Work Order", () => {
     const stage = ticketStage({
       status: "open",
       closed: false,
-      acknowledged_at: "2026-01-01T00:00:00Z",
-      action_started_at: "2026-01-01T00:00:00Z",
       repairExists: true,
       repairComplete: true,
       verified: false,
