@@ -6,14 +6,18 @@
  * commitments and evidence — nobody maintains a status by hand.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, LoadingRows, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import {
-  WorkOrderListSection,
+  WorkOrderRowCard,
   useWorkOrderPropertyNames,
+  useWorkOrderPropertyPhotos,
   useWorkOrderRequirements,
   useWorkOrders,
 } from "@/components/workorders/WorkOrderList";
+import { WorkOrderDrawer } from "@/components/workorders/WorkOrderDrawer";
+import { useAmbientOrigin } from "@/components/nav/NavContext";
+import { displayName, useStaffDirectory, type TeamMember } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
 import type { RequirementLike } from "@/lib/claims";
 import {
@@ -48,9 +52,28 @@ function WorkOrdersHome() {
   const workOrders = useWorkOrders();
   const requirements = useWorkOrderRequirements();
   const propertyNames = useWorkOrderPropertyNames();
+  const propertyPhotos = useWorkOrderPropertyPhotos().data ?? new Map<string, string | null>();
+  const people = useStaffDirectory().data ?? [];
+  const originToken = useAmbientOrigin("Work orders");
   const { readOnly } = useRole();
 
   const reqMap = requirements.data ?? new Map<string, RequirementLike[]>();
+  const nameFor = (id: string | null) =>
+    id ? displayName(people.find((p: TeamMember) => p.id === id)) : "Unassigned";
+
+  // The drawer's identity lives at the page, not inside a bucket section:
+  // recording a checkpoint (e.g. "Vendor says complete") can move a work
+  // order into a different bucket and empty out the section it was opened
+  // from. A drawer owned by that section would unmount with it — this one
+  // doesn't, because it is looked up from the full, unfiltered list.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const lastOpen = useRef<WorkOrderRow | null>(null);
+  const fromAll = (workOrders.data ?? []).find((w) => w.id === openId) ?? null;
+  if (fromAll) lastOpen.current = fromAll;
+  const openWorkOrder = openId ? (fromAll ?? lastOpen.current) : null;
+  useEffect(() => {
+    if (!openId) lastOpen.current = null;
+  }, [openId]);
 
   const buckets = useMemo(() => {
     const rows = [...(workOrders.data ?? [])].sort(workOrderSort);
@@ -103,17 +126,43 @@ function WorkOrdersHome() {
               title={BUCKET_LABELS[bucket]}
               description={BUCKET_HELP[bucket]}
             >
-              <WorkOrderListSection
-                workOrders={rows}
-                requirements={reqMap}
-                propertyNames={propertyNames.data ?? new Map()}
-                canEdit={!readOnly}
-                originLabel="Work orders"
-              />
+              <div className="space-y-2">
+                {rows.map((row) => (
+                  <WorkOrderRowCard
+                    key={row.id}
+                    workOrder={row}
+                    requirements={reqMap.get(row.id) ?? []}
+                    propertyName={
+                      propertyNames.data?.get(row.property_id ?? "") ?? "Property unlinked"
+                    }
+                    propertyPhotoUrl={propertyPhotos.get(row.property_id ?? "") ?? null}
+                    ownerName={nameFor(row.assigned_to)}
+                    canEdit={!readOnly}
+                    onOpen={() => setOpenId(row.id)}
+                  />
+                ))}
+              </div>
             </SectionCard>
           );
         })
       )}
+
+      <WorkOrderDrawer
+        key={openWorkOrder?.id ?? "none"}
+        workOrder={openWorkOrder}
+        people={people}
+        canEdit={!readOnly}
+        propertyName={
+          openWorkOrder
+            ? (propertyNames.data?.get(openWorkOrder.property_id ?? "") ?? "Property unlinked")
+            : ""
+        }
+        propertyPhotoUrl={
+          openWorkOrder ? (propertyPhotos.get(openWorkOrder.property_id ?? "") ?? null) : null
+        }
+        originToken={originToken}
+        onClose={() => setOpenId(null)}
+      />
 
       <p className="text-xs text-muted-foreground">{MAINTENANCE_POLICY_VERSION}</p>
     </div>
