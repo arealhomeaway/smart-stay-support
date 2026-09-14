@@ -66,6 +66,37 @@ function task(over: Partial<WorkflowTask> = {}): WorkflowTask {
 
 const PROJECT = { id: "pr1", status: "active" as string | null, completed_at: null };
 
+describe("release integrity", () => {
+  function context(t: WorkflowTask) {
+    return buildReleaseContext({
+      property: property(),
+      project: PROJECT,
+      tasks: [t],
+      handoff: null,
+    });
+  }
+  it("does not treat a past planned closing as confirmed closing", () => {
+    const t = task({ schedule_anchor: "actual_closing" });
+    expect(releaseState(t, [t], context(t)).canComplete).toBe(false);
+  });
+  it("allows pre-close work scheduled relative to planned closing", () => {
+    const t = task({
+      stage: "post_contract",
+      schedule_anchor: "planned_closing",
+      schedule_offset_days: -7,
+    });
+    expect(releaseState(t, [t], context(t)).canComplete).toBe(true);
+  });
+  it("keeps missing prerequisites blocking", () => {
+    const t = task({ depends_on: ["missing"] });
+    expect(releaseState(t, [t], context(t)).state).toBe("waiting");
+  });
+  it("requires evidence again for reopened work", () => {
+    const t = task({ completed_at: "2026-01-10T00:00:00Z", evidence_required: true });
+    expect(releaseState(t, [t], context(t)).canComplete).toBe(false);
+  });
+});
+
 describe("one authoritative lifecycle", () => {
   it("treats a home with no project as not started, whatever legacy fields say", () => {
     const life = deriveLifecycle({

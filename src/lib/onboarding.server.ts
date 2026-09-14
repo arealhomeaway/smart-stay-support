@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { validateHandoff } from "./onboarding";
 import { handoffReadiness } from "./onboarding-state";
+import { projectScope, splitByScope } from "./onboarding-scope";
 export { validateHandoff };
 import { writeAudit } from "./audit.server";
 
@@ -152,6 +153,9 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  if (!input.id && input.status === "complete") {
+    throw new Error("Create the step first, then complete it after its readiness checks.");
+  }
   // Locked handoff: once Operations accepts the home, the onboarding plan is
   // history. Anything found afterwards is a correction (reopen with a reason)
   // or an Operations ticket — never a silent edit to a finished project.
@@ -179,13 +183,21 @@ export async function saveOnboardingTask(
         .is("archived_at", null),
       supabase
         .from("onboarding_projects")
-        .select("id, status, completed_at")
+        .select("id, status, completed_at, furnishing_scope, modules")
         .eq("property_id", input.propertyId)
         .neq("status", "cancelled")
         .maybeSingle(),
     ]);
-    const all = (siblings.data ?? []) as never[];
+    if (prop.error) throw prop.error;
+    if (siblings.error) throw siblings.error;
+    if (projectRow.error) throw projectRow.error;
+    const scoped = splitByScope(siblings.data ?? [], projectScope(projectRow.data));
+    const all = scoped.inScope as never[];
     const target = (siblings.data ?? []).find((t) => t.id === input.id);
+    if (!prop.data || !target) throw new Error("That step is not available on this property.");
+    if (!scoped.inScope.some((t) => t.id === input.id)) {
+      throw new Error("This step is not applicable to the project's scope.");
+    }
     if (prop.data && target) {
       const ctx = buildReleaseContext({
         property: prop.data as never,
@@ -193,7 +205,11 @@ export async function saveOnboardingTask(
         tasks: all,
         handoff: null,
       });
-      const verdict = releaseState(target as never, all, ctx);
+      const verdict = releaseState(
+        { ...target, evidence_note: input.evidenceNote } as never,
+        all,
+        ctx,
+      );
       if (!verdict.canComplete)
         throw new Error(verdict.reason ?? "This step is not released yet and cannot be completed.");
     }
@@ -644,14 +660,12 @@ export async function requestHandoff(
   if (property.error) throw property.error;
   if (tasks.error) throw tasks.error;
 
-  const { checks, openBlocking, ready } = validateHandoff(property.data, tasks.data ?? []);
-
   // Authoritative server-side gate. The UI disables the action, but a stale
   // or alternate client must never be able to advance a blocked handoff.
   const [projectRow, openHandoffRow] = await Promise.all([
     supabase
       .from("onboarding_projects")
-      .select("id, status, completed_at")
+      .select("id, status, completed_at, furnishing_scope, modules")
       .eq("property_id", input.propertyId)
       .neq("status", "cancelled")
       .maybeSingle(),
@@ -662,6 +676,10 @@ export async function requestHandoff(
       .in("status", ["requested", "accepted_pending_live"])
       .maybeSingle(),
   ]);
+  if (projectRow.error) throw projectRow.error;
+  if (openHandoffRow.error) throw openHandoffRow.error;
+  const applicableTasks = splitByScope(tasks.data ?? [], projectScope(projectRow.data)).inScope;
+  const { checks, openBlocking, ready } = validateHandoff(property.data, applicableTasks);
   if (openHandoffRow.data) {
     throw new Error("A handoff is already in review for this home.");
   }
@@ -669,7 +687,7 @@ export async function requestHandoff(
     {
       property: property.data as never,
       project: (projectRow.data ?? null) as never,
-      tasks: (tasks.data ?? []) as never,
+      tasks: applicableTasks as never,
       handoff: null,
     },
     checks,

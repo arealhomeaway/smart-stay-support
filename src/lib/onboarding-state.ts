@@ -405,8 +405,7 @@ export function buildReleaseContext(input: StateInput): ReleaseContext {
   const { property, tasks } = input;
   const life = deriveLifecycle(input);
   const accessReached = accessConfirmed(property);
-  const closingReached =
-    milestoneReached(property.actual_closing_on) || milestoneReached(property.planned_closing_on);
+  const closingReached = milestoneReached(property.actual_closing_on);
 
   const released = new Set<string>();
   const reasons = new Map<string, string>();
@@ -488,7 +487,7 @@ export function releaseState(
     };
 
   // Milestone-anchored work waits for the milestone itself.
-  if (task.schedule_anchor === "planned_closing" || task.schedule_anchor === "actual_closing") {
+  if (task.schedule_anchor === "actual_closing") {
     if (!ctx.closingReached)
       return {
         state: "future",
@@ -505,8 +504,8 @@ export function releaseState(
 
   const waitingOn = (task.depends_on ?? [])
     .map((id) => all.find((t) => t.id === id))
-    .filter((t) => t && t.status !== "complete" && t.status !== "carryover")
-    .map((t) => t!.title);
+    .filter((t) => !t || (t.status !== "complete" && t.status !== "carryover"))
+    .map((t) => t?.title ?? "a prerequisite that is not available");
   if (waitingOn.length > 0)
     return { state: "waiting", reason: `Waiting on ${waitingOn.join(", ")}.`, canComplete: false };
 
@@ -534,20 +533,20 @@ export function releaseState(
   if ((task.blocker ?? "").trim())
     return { state: "waiting", reason: `Blocked — ${task.blocker!.trim()}`, canComplete: false };
 
-  const reopened = Boolean(task.completed_at) && task.status !== "complete";
-  if (reopened)
-    return {
-      state: "correction_required",
-      reason: "Reopened after completion — a correction is required.",
-      canComplete: true,
-    };
-
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   if (evidenceMissing)
     return {
       state: "in_progress",
       reason: "Required evidence is not recorded yet.",
       canComplete: false,
+    };
+
+  const reopened = Boolean(task.completed_at) && task.status !== "complete";
+  if (reopened)
+    return {
+      state: "correction_required",
+      reason: "Reopened after completion — a correction is required.",
+      canComplete: true,
     };
 
   if ((task.evidence_note ?? "").trim() || task.exception_reason)

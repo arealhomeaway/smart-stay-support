@@ -161,6 +161,8 @@ const REQUIRES: { module: ModuleKey; match: RegExp }[] = [
   { module: "cameras", match: /\bcamera|alarm|security system\b/i },
   { module: "smart_lock", match: /\bsmart lock|lock code|keypad|access device\b/i },
   { module: "new_appliances", match: /\bnew appliance|appliance purchase|appliance delivery\b/i },
+  { module: "existing_appliances", match: /\bexisting appliance/i },
+  { module: "active_owner", match: /\bactive owner|owner participation/i },
   { module: "furniture_warranty", match: /\bfurniture warranty|warranty registration\b/i },
   { module: "landscaping", match: /\blandscap|yard care|lawn\b/i },
   { module: "repairs", match: /\brepair|make[- ]ready\b/i },
@@ -168,7 +170,7 @@ const REQUIRES: { module: ModuleKey; match: RegExp }[] = [
 
 /** Work that only exists when the home is being furnished by ARHA. */
 const FURNISHING_ONLY =
-  /\bdesign|mood board|floor plan|furnish|furniture|staging|stage the|d[eé]cor|purchas(e|ing)|delivery|assembl/i;
+  /\bdesign|mood board|floor plan|furnish|furniture|staging|stage the|d[eé]cor|assembl/i;
 
 /**
  * Does this piece of work apply to a project with this scope?
@@ -177,12 +179,7 @@ const FURNISHING_ONLY =
  * removes work, it never invents it.
  */
 export function appliesToScope(title: string, scope: ProjectScope): boolean {
-  const text = title ?? "";
-  if (scope.furnishing === "no_furnishing" && FURNISHING_ONLY.test(text)) return false;
-  for (const rule of REQUIRES) {
-    if (rule.match.test(text) && !scope.modules.includes(rule.module)) return false;
-  }
-  return true;
+  return outOfScopeReason(title, scope) === null;
 }
 
 /** Why a task is out of scope, for the "Not applicable" explanation. */
@@ -226,11 +223,22 @@ export function projectScope(
  * has switched off. Out-of-scope work is never deleted and never counted as
  * missing — it is listed separately with the reason it does not apply.
  */
-export function splitByScope<T extends { title: string }>(tasks: T[], scope: ProjectScope) {
+export function splitByScope<
+  T extends { title: string; id?: string; parent_task_id?: string | null },
+>(tasks: T[], scope: ProjectScope) {
   const inScope: T[] = [];
   const outOfScope: { task: T; reason: string }[] = [];
+  const byId = new Map(tasks.filter((t) => t.id).map((t) => [t.id!, t]));
+  function reasonFor(task: T, visited = new Set<string>()): string | null {
+    const own = outOfScopeReason(task.title, scope);
+    if (own) return own;
+    if (!task.parent_task_id || visited.has(task.parent_task_id)) return null;
+    visited.add(task.parent_task_id);
+    const parent = byId.get(task.parent_task_id);
+    return parent ? reasonFor(parent, visited) : null;
+  }
   for (const t of tasks) {
-    const reason = outOfScopeReason(t.title, scope);
+    const reason = reasonFor(t);
     if (reason) outOfScope.push({ task: t, reason });
     else inScope.push(t);
   }

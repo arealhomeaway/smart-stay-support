@@ -59,6 +59,40 @@ describe("applicability", () => {
 });
 
 describe("split and summary", () => {
+  it("inherits exclusions through nested subtasks regardless of row order", () => {
+    const { inScope, outOfScope } = splitByScope(
+      [
+        { id: "child", title: "Review measurements", parent_task_id: "parent" },
+        { id: "parent", title: "Design plan", parent_task_id: null },
+        { id: "grandchild", title: "Upload evidence", parent_task_id: "child" },
+      ],
+      { furnishing: "no_furnishing", modules: defaultModules() },
+    );
+    expect(inScope.length).toBe(0);
+    expect(outOfScope.length).toBe(3);
+  });
+
+  it("keeps appliance delivery independent from furniture scope", () => {
+    expect(
+      appliesToScope("New appliance delivery", {
+        furnishing: "no_furnishing",
+        modules: ["new_appliances"],
+      }),
+    ).toBe(true);
+    expect(
+      appliesToScope("Existing appliance inspection", {
+        furnishing: "full_furnishing",
+        modules: [],
+      }),
+    ).toBe(false);
+    expect(
+      appliesToScope("Active Owner participation", {
+        furnishing: "full_furnishing",
+        modules: [],
+      }),
+    ).toBe(false);
+  });
+
   it("separates skipped work with a reason instead of hiding it", () => {
     const scope = { furnishing: "full_furnishing" as const, modules: defaultModules() };
     const { inScope, outOfScope } = splitByScope(

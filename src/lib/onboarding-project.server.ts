@@ -13,7 +13,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { defaultModules, type FurnishingScope, type ModuleKey } from "./onboarding-scope";
+import { type FurnishingScope, type ModuleKey } from "./onboarding-scope";
 import { writeAudit } from "./audit.server";
 
 type Client = SupabaseClient<Database>;
@@ -84,6 +84,7 @@ export async function loadProjectForProperty(supabase: Client, propertyId: strin
       .limit(100),
   ]);
   if (project.error) throw project.error;
+  if (events.error) throw events.error;
   return { project: project.data ?? null, events: events.data ?? [] };
 }
 
@@ -138,22 +139,17 @@ export async function startOnboardingProject(
     // A project that exists with no plan is the broken state this repairs:
     // re-running Start onboarding fills the plan in without creating a
     // second project.
-    const count = await supabase
-      .from("onboarding_tasks")
-      .select("id", { count: "exact", head: true })
-      .eq("property_id", input.propertyId);
-    if (!count.error && (count.count ?? 0) === 0) {
-      try {
-        const { applyOnboardingTemplate } = await import("./onboarding-template.server");
-        await applyOnboardingTemplate(supabase, userId, { propertyId: input.propertyId });
-      } catch {
-        // Plan can still be applied from the Work tab.
+    if (existing.data.status === "active" || existing.data.status === "planning") {
+      if ((existing.data.modules ?? []).includes("active_owner")) {
+        await ensureActiveOwnerEnrollment(supabase, userId, input.propertyId);
       }
+      const { applyOnboardingTemplate } = await import("./onboarding-template.server");
+      await applyOnboardingTemplate(supabase, userId, { propertyId: input.propertyId });
     }
     return existing.data;
   }
 
-  const modules = input.modules.length ? input.modules : defaultModules();
+  const modules = input.modules;
 
   const { data, error } = await supabase
     .from("onboarding_projects")
@@ -200,18 +196,11 @@ export async function startOnboardingProject(
   // Starting onboarding has to hand the team a plan, not an empty shell.
   // applyOnboardingTemplate deduplicates by task title, so this stays safe on
   // a retry and never doubles an existing plan.
-  let plannedTasks = 0;
-  try {
-    const { applyOnboardingTemplate } = await import("./onboarding-template.server");
-    const applied = await applyOnboardingTemplate(supabase, userId, {
-      propertyId: input.propertyId,
-    });
-    plannedTasks = (applied as { created?: number } | null)?.created ?? 0;
-  } catch {
-    // The project is real either way; the plan can be applied from the Work
-    // tab. Never leave the caller with a half-created project.
-    plannedTasks = 0;
-  }
+  const { applyOnboardingTemplate } = await import("./onboarding-template.server");
+  const applied = await applyOnboardingTemplate(supabase, userId, {
+    propertyId: input.propertyId,
+  });
+  const plannedTasks = applied.created;
 
   await recordProjectEvent(supabase, {
     projectId: data.id,
@@ -354,6 +343,7 @@ export async function ensureActiveOwnerEnrollment(
     .select("owner_name, owner_email")
     .eq("property_id", propertyId)
     .maybeSingle();
+  if (contact.error) throw contact.error;
 
   const { createProgram } = await import("./owner-program.server");
   const result = await createProgram(supabase, userId, {
