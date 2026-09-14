@@ -33,6 +33,9 @@ try {
     "supabase/tests/owner_task_response.test.sql",
     "supabase/migrations/20260914110000_atomic_owner_financial_response.sql",
     "supabase/tests/owner_financial_response.test.sql",
+    "supabase/migrations/20260914120000_onboarding_delivery_attempts.sql",
+    "supabase/migrations/20260914130000_reconcile_onboarding_delivery.sql",
+    "supabase/tests/onboarding_delivery_reconciliation.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

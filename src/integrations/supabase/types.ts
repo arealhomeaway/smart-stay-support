@@ -163,6 +163,8 @@ export type Database = {
           kind: string
           owner_email_conversation_id: string | null
           owner_email_sent_at: string | null
+          onboarding_delivery_history: Json
+          onboarding_delivery_attempt: Json | null
           owner_email_to: string | null
           property_id: string | null
           recorded_by: string | null
@@ -194,6 +196,8 @@ export type Database = {
           kind: string
           owner_email_conversation_id?: string | null
           owner_email_sent_at?: string | null
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           owner_email_to?: string | null
           property_id?: string | null
           recorded_by?: string | null
@@ -225,6 +229,8 @@ export type Database = {
           kind?: string
           owner_email_conversation_id?: string | null
           owner_email_sent_at?: string | null
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           owner_email_to?: string | null
           property_id?: string | null
           recorded_by?: string | null
@@ -2094,6 +2100,8 @@ export type Database = {
           actual_amount: number | null
           actual_recorded_at: string | null
           actual_recorded_by: string | null
+          onboarding_delivery_history: Json
+          onboarding_delivery_attempt: Json | null
           accounting_recipient: string | null
           accounting_sent_at: string | null
           approval_id: string | null
@@ -2124,6 +2132,8 @@ export type Database = {
           vendor: string | null
         }
         Insert: {
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           accounting_recipient?: string | null
           actual_amount?: number | null
           actual_recorded_at?: string | null
@@ -2158,6 +2168,8 @@ export type Database = {
           vendor?: string | null
         }
         Update: {
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           accounting_recipient?: string | null
           actual_amount?: number | null
           actual_recorded_at?: string | null
@@ -7788,6 +7800,10 @@ export type Database = {
       }
     }
     Functions: {
+      reconcile_onboarding_delivery: {
+        Args: { _kind: string; _record_id: string; _attempt_id: string; _delivered: boolean; _note: string }
+        Returns: undefined
+      }
       record_owner_financial_response: {
         Args: { _approval_id: string; _owner_id: string; _approved: boolean; _note: string }
         Returns: string

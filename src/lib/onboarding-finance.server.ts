@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { deliveryClaim, guardedDelivery } from "./onboarding-delivery.server";
 import { writeAudit } from "./audit.server";
 import { recordProjectEvent } from "./onboarding-project.server";
 import { loadOnboardingPolicy } from "./onboarding-policy.server";
@@ -454,26 +455,36 @@ export async function routeOwnerDecision(
     .join("\n");
 
   const html = emailShell(`Approval needed for ${home}`, body, undefined, "owner");
-  const result = await sendEmail({
-    to,
-    subject: `Approval needed — ${input.subject} at ${home}${reference ? ` [${reference}]` : ""}`,
-    html,
-    purpose: "onboarding_owner_approval",
+  const result = await guardedDelivery({
+    ...deliveryClaim(supabase, {
+      table: "approvals",
+      id: input.approvalId,
+      recipient: to,
+      actor: userId,
+    }),
+    send: () =>
+      sendEmail({
+        singleAttempt: true,
+        to,
+        subject: `Approval needed — ${input.subject} at ${home}${reference ? ` [${reference}]` : ""}`,
+        html,
+        purpose: "onboarding_owner_approval",
+      }),
+    recordSent: async () => {
+      const recorded = await supabase
+        .from("approvals")
+        .update({
+          external_reference: `email:${to}`,
+          owner_email_to: to,
+          owner_email_sent_at: new Date().toISOString(),
+        })
+        .eq("id", input.approvalId!)
+        .select("id")
+        .maybeSingle();
+      if (recorded.error) throw recorded.error;
+      if (!recorded.data) throw new Error("Delivery record missing");
+    },
   });
-  if (result.status !== "sent") {
-    throw new Error(`The approval was saved but email was not sent: ${result.error}.`);
-  }
-  if (input.approvalId) {
-    const recorded = await supabase
-      .from("approvals")
-      .update({
-        external_reference: `email:${to}`,
-        owner_email_to: to,
-        owner_email_sent_at: new Date().toISOString(),
-      })
-      .eq("id", input.approvalId);
-    if (recorded.error) throw recorded.error;
-  }
   await writeAudit({
     actorId: userId,
     action: "owner_approval_emailed",
@@ -642,32 +653,40 @@ export async function sendToAccounting(
     undefined,
     "staff",
   );
-  const result = await sendEmail({
-    to,
-    subject: `Onboarding cost — ${request.title}`,
-    html,
-    purpose: "onboarding_accounting",
+  const result = await guardedDelivery({
+    ...deliveryClaim(supabase, {
+      table: "financial_requests",
+      id: request.id,
+      recipient: to,
+      actor: userId,
+    }),
+    send: () =>
+      sendEmail({
+        singleAttempt: true,
+        to,
+        subject: `Onboarding cost — ${request.title}`,
+        html,
+        purpose: "onboarding_accounting",
+      }),
+    recordSent: async () => {
+      const { data, error } = await supabase
+        .from("financial_requests")
+        .update({
+          status: "sent_to_accounting",
+          accounting_recipient: to,
+          accounting_sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.id)
+        .eq("status", "invoiced")
+        .select("id")
+        .maybeSingle();
+      if (error || !data)
+        throw new Error(
+          "The accounting email was sent, but its handoff could not be recorded. Verify delivery before retrying.",
+        );
+    },
   });
-  if (result.status !== "sent") {
-    throw new Error(`Accounting handoff was not sent: ${result.error}. The request remains open.`);
-  }
-
-  const { data, error } = await supabase
-    .from("financial_requests")
-    .update({
-      status: "sent_to_accounting",
-      accounting_recipient: to,
-      accounting_sent_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", request.id)
-    .eq("status", "invoiced")
-    .select("id")
-    .maybeSingle();
-  if (error || !data)
-    throw new Error(
-      "The accounting email was sent, but its handoff could not be recorded. Verify delivery before retrying.",
-    );
   await writeAudit({
     actorId: userId,
     action: "financial_sent_to_accounting",

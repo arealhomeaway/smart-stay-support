@@ -32,6 +32,7 @@ function ownerDeliveryDb(sent: boolean, contactEmail: string | null = "owner@exa
         const query = {
           select: () => query,
           eq: () => query,
+          is: () => query,
           in: () => query,
           not: () => query,
           limit: () => query,
@@ -63,7 +64,7 @@ describe("owner delivery retries", () => {
     expect(result.channel).toBe("email");
     expect(emailAttempts).toBe(0);
   });
-  it("keeps failed delivery retryable without recording a sent timestamp", async () => {
+  it("keeps failed delivery claimed without recording a sent timestamp", async () => {
     const { db, writes } = ownerDeliveryDb(false);
     delivery = "failed";
     emailAttempts = 0;
@@ -79,9 +80,15 @@ describe("owner delivery retries", () => {
     } catch (error) {
       message = (error as Error).message;
     }
-    expect(message).toContain("email was not sent");
+    expect(message).toContain("Delivery is uncertain");
     expect(emailAttempts).toBe(1);
-    expect(writes.length).toBe(0);
+    expect(
+      writes.every(
+        (write) =>
+          !Object.hasOwn(write as object, "owner_email_sent_at") &&
+          !Object.hasOwn(write as object, "accounting_sent_at"),
+      ),
+    ).toBe(true);
   });
   it("surfaces a missing homeowner email instead of claiming delivery", async () => {
     const { db } = ownerDeliveryDb(false, null);
@@ -127,6 +134,7 @@ describe("financial delivery honesty", () => {
           const query = {
             select: () => query,
             eq: () => query,
+            is: () => query,
             maybeSingle: async () => ({ data: rows[table], error: null }),
             update: (value: unknown) => {
               writes.push(value);
@@ -144,7 +152,15 @@ describe("financial delivery honesty", () => {
       } catch (error) {
         message = (error as Error).message;
       }
-      expect(message).toContain("was not sent");
-      expect(writes.length).toBe(0);
+      expect(message).toContain(
+        status === "failed" ? "Delivery is uncertain" : "Email was not attempted",
+      );
+      expect(
+        writes.every(
+          (write) =>
+            !Object.hasOwn(write as object, "owner_email_sent_at") &&
+            !Object.hasOwn(write as object, "accounting_sent_at"),
+        ),
+      ).toBe(true);
     });
 });

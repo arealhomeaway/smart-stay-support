@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { AUTHORITY_TIER_LABELS, authorityLadder, authorityTier } from "@/lib/maintenance-policy";
 import { OnboardingAuthorityPanel } from "./OnboardingAuthorityPanel";
+import { DeliveryReconciliationPanel } from "./DeliveryReconciliationPanel";
 import {
   FINANCIAL_KINDS,
   FINANCIAL_STATUS_LABELS,
@@ -114,6 +115,7 @@ export function FinancialPanel({
 
   return (
     <div className="space-y-5">
+      <DeliveryReconciliationPanel propertyId={propertyId} canEdit={canEdit} />
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3">
           <CardTitle>Spend authority</CardTitle>
