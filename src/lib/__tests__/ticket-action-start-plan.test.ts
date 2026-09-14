@@ -107,4 +107,19 @@ describe("ticketActionStartPlan — the 'Start working' semantics, derived inste
       }
     }
   });
+
+  it("a second action never changes ownership — the plan is null entirely once action_started_at is set, whoever acts", () => {
+    // Emily's first action already claimed it (current_action_owner:
+    // "emily", assignment_source: "manual") and set action_started_at.
+    // A different person's second action must not re-run the claim logic
+    // at all, let alone hand ownership to them instead.
+    const alreadyStarted = {
+      status: "in_progress",
+      acknowledged_at: "2026-09-01T00:00:00Z",
+      action_started_at: "2026-09-01T00:05:00Z",
+      current_action_owner: "emily",
+      assignment_source: "manual",
+    };
+    expect(ticketActionStartPlan(alreadyStarted, "someone-else", NOW)).toBeNull();
+  });
 });
