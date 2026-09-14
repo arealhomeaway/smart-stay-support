@@ -51,6 +51,58 @@ export type HubField = {
 
 export type HubSection = { id: string; title: string; blurb?: string; fields: HubField[] };
 
+export type PropertyActivityRow = {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_label: string | null;
+  actor_label: string | null;
+  reason: string | null;
+  created_at: string;
+};
+
+/**
+ * Which `audit_log` (entity_type, entity_id) pairs belong to this property —
+ * a real foreign-key relationship, not the `entity_label` name-substring
+ * match this replaced. `audit_log` has no `property_id` column of its own,
+ * so this joins through the property-scoped rows the Hub already loads:
+ * the property record itself, plus its tickets, onboarding tasks,
+ * approvals and handoff. Other `audit_log` entity types exist
+ * (`financial_request`, `utility_account`, …) but aren't covered here —
+ * covering them would mean fetching tables this Hub doesn't otherwise
+ * need, which is a larger change than this fix.
+ */
+export function propertyActivityScopes(input: {
+  propertyId: string;
+  ticketIds: string[];
+  taskIds: string[];
+  approvalIds: string[];
+  handoffIds: string[];
+}): { entityType: string; entityIds: string[] }[] {
+  const scopes: { entityType: string; entityIds: string[] }[] = [
+    { entityType: "property", entityIds: [input.propertyId] },
+  ];
+  if (input.ticketIds.length) scopes.push({ entityType: "ticket", entityIds: input.ticketIds });
+  if (input.taskIds.length)
+    scopes.push({ entityType: "onboarding_task", entityIds: input.taskIds });
+  if (input.approvalIds.length)
+    scopes.push({ entityType: "approval", entityIds: input.approvalIds });
+  if (input.handoffIds.length)
+    scopes.push({ entityType: "property_handoff", entityIds: input.handoffIds });
+  return scopes;
+}
+
+/** Newest first, across every scope's results, capped at `limit`. */
+export function mergePropertyActivity(
+  batches: PropertyActivityRow[][],
+  limit = 25,
+): PropertyActivityRow[] {
+  return batches
+    .flat()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, limit);
+}
+
 async function ownerOwnsProperty(userId: string, propertyId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
@@ -86,90 +138,75 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   if (property.error || !property.data) throw new Error("That property could not be found.");
   const p = property.data;
 
-  const [
-    tasks,
-    tickets,
-    docs,
-    approvals,
-    handoff,
-    programLink,
-    activity,
-    outbound,
-    links,
-    conflicts,
-  ] = await Promise.all([
-    supabaseAdmin
-      .from("onboarding_tasks")
-      .select(
-        "id, title, stage, status, due_on, blocks_handoff, blocker, requires_owner_approval, owner_approval_status, assigned_to, parent_task_id, sort_order, archived_at",
-      )
-      .eq("property_id", propertyId)
-      .is("archived_at", null)
-      .order("sort_order"),
-    supabaseAdmin
-      .from("tickets")
-      .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
-      .eq("property_id", propertyId)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(25),
-    supabaseAdmin
-      .from("documents")
-      .select(
-        "id, title, kind, visibility, upload_status, uploaded_at, uploaded_by, entity_type, entity_id, mime_type, size_bytes, category, original_filename, note",
-      )
+  const [tasks, tickets, docs, approvals, handoff, programLink, outbound, links, conflicts] =
+    await Promise.all([
+      supabaseAdmin
+        .from("onboarding_tasks")
+        .select(
+          "id, title, stage, status, due_on, blocks_handoff, blocker, requires_owner_approval, owner_approval_status, assigned_to, parent_task_id, sort_order, archived_at",
+        )
+        .eq("property_id", propertyId)
+        .is("archived_at", null)
+        .order("sort_order"),
+      supabaseAdmin
+        .from("tickets")
+        .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
+        .eq("property_id", propertyId)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin
+        .from("documents")
+        .select(
+          "id, title, kind, visibility, upload_status, uploaded_at, uploaded_by, entity_type, entity_id, mime_type, size_bytes, category, original_filename, note",
+        )
 
-      .eq("property_id", propertyId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(50),
-    supabaseAdmin
-      .from("approvals")
-      .select("id, title, kind, status, due_on, decided_at, decision_note, created_at")
-      .eq("property_id", propertyId)
-      .order("created_at", { ascending: false })
-      .limit(25),
-    supabaseAdmin
-      .from("property_handoffs")
-      .select(
-        "id, status, gate_step, requested_at, kati_decision, kati_at, micah_decision, micah_at, accepted_at, live_confirmed_at",
-      )
-      .eq("property_id", propertyId)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1),
-    supabaseAdmin
-      .from("owner_program_properties")
-      .select(
-        "program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)",
-      )
-      .eq("property_id", propertyId)
-      .is("archived_at", null)
-      .limit(1),
-    supabaseAdmin
-      .from("audit_log")
-      .select("id, action, entity_type, entity_label, actor_label, reason, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin
-      .from("breezeway_outbound_tasks")
-      .select("id, title, status, source_type, created_at, breezeway_task_id, last_synced_at")
-      .eq("property_id", propertyId)
-      .order("created_at", { ascending: false })
-      .limit(15),
-    supabaseAdmin
-      .from("property_external_links")
-      .select(
-        "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
-      )
-      .eq("property_id", propertyId),
-    supabaseAdmin
-      .from("field_conflicts")
-      .select("id, field_label, field_key, resolve_value, external_value, system, status")
-      .eq("entity_type", "property")
-      .eq("entity_id", propertyId)
-      .eq("status", "open"),
-  ]);
+        .eq("property_id", propertyId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabaseAdmin
+        .from("approvals")
+        .select("id, title, kind, status, due_on, decided_at, decision_note, created_at")
+        .eq("property_id", propertyId)
+        .order("created_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin
+        .from("property_handoffs")
+        .select(
+          "id, status, gate_step, requested_at, kati_decision, kati_at, micah_decision, micah_at, accepted_at, live_confirmed_at",
+        )
+        .eq("property_id", propertyId)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1),
+      supabaseAdmin
+        .from("owner_program_properties")
+        .select(
+          "program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)",
+        )
+        .eq("property_id", propertyId)
+        .is("archived_at", null)
+        .limit(1),
+      supabaseAdmin
+        .from("breezeway_outbound_tasks")
+        .select("id, title, status, source_type, created_at, breezeway_task_id, last_synced_at")
+        .eq("property_id", propertyId)
+        .order("created_at", { ascending: false })
+        .limit(15),
+      supabaseAdmin
+        .from("property_external_links")
+        .select(
+          "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
+        )
+        .eq("property_id", propertyId),
+      supabaseAdmin
+        .from("field_conflicts")
+        .select("id, field_label, field_key, resolve_value, external_value, system, status")
+        .eq("entity_type", "property")
+        .eq("entity_id", propertyId)
+        .eq("status", "open"),
+    ]);
 
   // Quarterly reviews ship behind a launch-state flag. While the flag is OFF
   // the records and scheduler stay untouched, but the Hub must not surface a
@@ -204,6 +241,36 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     ends_on: string | null;
     target_hours: number | null;
   } | null;
+
+  // Activity: one query per property-linked entity type, run after those
+  // entities are known (tickets/tasks/approvals/handoff above), instead of
+  // filtering the 200 most recent *system-wide* audit rows by name. That
+  // old approach could both miss this property's real history (buried past
+  // row 200 by unrelated activity elsewhere) and wrongly include another
+  // record whose label happened to contain this property's name.
+  const activityScopes = propertyActivityScopes({
+    propertyId,
+    ticketIds: (tickets.data ?? []).map((t: { id: string }) => t.id),
+    taskIds: taskRows.map((t: { id: string }) => t.id),
+    approvalIds: (approvals.data ?? []).map((a: { id: string }) => a.id),
+    handoffIds: (handoff.data ?? []).map((h: { id: string }) => h.id),
+  });
+  const activityBatches = await Promise.all(
+    activityScopes.map((scope) =>
+      supabaseAdmin
+        .from("audit_log")
+        .select("id, action, entity_type, entity_label, actor_label, reason, created_at")
+        .eq("entity_type", scope.entityType)
+        .in("entity_id", scope.entityIds)
+        .order("created_at", { ascending: false })
+        .limit(25),
+    ),
+  );
+  const activityRows = mergePropertyActivity(
+    activityBatches.map(
+      (b: { data: PropertyActivityRow[] | null }) => (b.data ?? []) as PropertyActivityRow[],
+    ),
+  );
 
   const sections: HubSection[] = [
     {
@@ -730,21 +797,14 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
           }))
         : [],
     },
-    activity: (activity.data ?? [])
-      .filter(
-        (a) =>
-          (a.entity_label ?? "").includes(p.name) ||
-          (a.entity_type === "property" && a.entity_label === p.name),
-      )
-      .slice(0, 25)
-      .map((a) => ({
-        id: a.id,
-        action: a.action,
-        label: a.entity_label,
-        actor: staff ? a.actor_label : "ARHA",
-        reason: staff ? a.reason : null,
-        at: a.created_at,
-      })),
+    activity: activityRows.map((a) => ({
+      id: a.id,
+      action: a.action,
+      label: a.entity_label,
+      actor: staff ? a.actor_label : "ARHA",
+      reason: staff ? a.reason : null,
+      at: a.created_at,
+    })),
   };
 }
 

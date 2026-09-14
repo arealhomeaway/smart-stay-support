@@ -117,12 +117,24 @@ export function TicketWorkOrderPanel({
   ticket,
   propertyName = "Property",
   readOnly: forceReadOnly = false,
+  openWorkOrderId,
+  onOpenWorkOrderIdChange,
 }: {
   ticket: TicketContext;
   /** For the Work Order drawer header, opened from a card below. */
   propertyName?: string;
   /** Creation lives with the current work — history stays read-only. */
   readOnly?: boolean;
+  /**
+   * Which Work Order the drawer shows, owned by the Ticket page rather than
+   * this panel: the Ticket renders a different `TicketWorkOrderPanel`
+   * instance per stage (repair / repair_active / verify / reference), and
+   * creating a Work Order changes the ticket's derived stage immediately —
+   * unmounting the instance that just created it. State kept here would be
+   * destroyed in the same tick it was set, before the drawer ever painted.
+   */
+  openWorkOrderId: string | null;
+  onOpenWorkOrderIdChange: (id: string | null) => void;
 }) {
   const qc = useQueryClient();
   const userId = useCurrentUserId();
@@ -135,7 +147,6 @@ export function TicketWorkOrderPanel({
   const [scope, setScope] = useState("");
   const [emergency, setEmergency] = useState<EmergencyReason | "">("");
   const [quote, setQuote] = useState("");
-  const [openWorkOrderId, setOpenWorkOrderId] = useState<string | null>(null);
   const people = useStaffDirectory().data ?? [];
 
   const orders = useTicketWorkOrders(ticket.id);
@@ -216,14 +227,22 @@ export function TicketWorkOrderPanel({
         .from("tickets")
         .update({ repair_reported_incomplete_at: null } as never)
         .eq("id", ticket.id);
+
+      return (data as { id: string }).id;
     },
-    onSuccess: () => {
+    onSuccess: async (newWorkOrderId) => {
       setOpen(false);
       setScope("");
       setQuote("");
       setEmergency("");
-      qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
+      // Awaited so the drawer below opens against the query that already
+      // has the new Work Order in it, not a cache that hasn't refetched yet.
+      await qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(ticket.id) });
       qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
+      // Stay on this Ticket route — open the new Work Order in the same
+      // drawer "Open work order" already uses, rather than sending anyone
+      // to the Work Orders index to find it.
+      onOpenWorkOrderIdChange(newWorkOrderId);
       toast.success("Work order opened");
     },
     onError: (e: Error) => {
@@ -302,7 +321,7 @@ export function TicketWorkOrderPanel({
                 <p className="text-xs text-muted-foreground">Before closing: {blockers[0]}</p>
               ) : null}
 
-              <Button size="sm" variant="outline" onClick={() => setOpenWorkOrderId(wo.id)}>
+              <Button size="sm" variant="outline" onClick={() => onOpenWorkOrderIdChange(wo.id)}>
                 Open work order
               </Button>
             </div>
@@ -418,7 +437,7 @@ export function TicketWorkOrderPanel({
         people={people}
         canEdit={canEdit}
         propertyName={propertyName}
-        onClose={() => setOpenWorkOrderId(null)}
+        onClose={() => onOpenWorkOrderIdChange(null)}
       />
     </Card>
   );

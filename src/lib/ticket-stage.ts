@@ -6,16 +6,22 @@
  * it grants no authority, moves no clocks and never decides whether closure
  * is allowed — the SLA, evidence and closure engines remain the source of
  * truth. It only answers "where is the employee in this job right now?".
+ *
+ * There used to be a "start" stage that blocked everything else until a
+ * separate "Start working" click acknowledged the ticket and started the
+ * clock. That gate is retired: `acknowledged_at`/`action_started_at` are
+ * now backfilled automatically on the first real action the ticket
+ * receives (see `ensureTicketActionStarted` in ticket-action-start.ts), so
+ * the stage machine always shows the real next stage — opening a ticket is
+ * never itself an action, and never advances anything here.
  */
 
 export type TicketStage =
-  "closed" | "start" | "waiting" | "repair_active" | "verify" | "steps" | "repair" | "closure";
+  "closed" | "waiting" | "repair_active" | "verify" | "steps" | "repair" | "closure";
 
 export type TicketStageInput = {
   status: string | null | undefined;
   closed: boolean;
-  acknowledged_at: string | null | undefined;
-  action_started_at: string | null | undefined;
   /** A Breezeway repair exists for this ticket. */
   repairExists: boolean;
   /** The field work has been reported complete. */
@@ -38,7 +44,6 @@ export type TicketStageInput = {
 
 export function ticketStage(t: TicketStageInput): TicketStage {
   if (t.closed) return "closed";
-  if (!t.acknowledged_at || !t.action_started_at) return "start";
   if (t.status === "waiting") return "waiting";
   if (t.repairExists && !t.repairComplete) return "repair_active";
   if (t.repairExists && t.repairComplete && !t.verified && !t.repairReportedIncomplete)
