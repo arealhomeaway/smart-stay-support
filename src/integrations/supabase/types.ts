@@ -5203,8 +5203,60 @@ export type Database = {
           },
         ]
       }
+      property_assets: {
+        Row: {
+          id: string
+          property_id: string
+          name: string
+          kind: string
+          manufacturer: string | null
+          model: string | null
+          serial_number: string | null
+          location: string | null
+          warranty_notes: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          archived_at: string | null
+          is_demo: boolean
+        }
+        Insert: {
+          id?: string
+          property_id: string
+          name: string
+          kind: string
+          manufacturer?: string | null
+          model?: string | null
+          serial_number?: string | null
+          location?: string | null
+          warranty_notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          archived_at?: string | null
+          is_demo?: boolean
+        }
+        Update: {
+          id?: string
+          property_id?: string
+          name?: string
+          kind?: string
+          manufacturer?: string | null
+          model?: string | null
+          serial_number?: string | null
+          location?: string | null
+          warranty_notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          archived_at?: string | null
+          is_demo?: boolean
+        }
+        Relationships: []
+      }
       property_fact_proposals: {
         Row: {
+          asset_id: string | null
           created_at: string
           current_value: string | null
           decision_note: string | null
@@ -5224,6 +5276,7 @@ export type Database = {
           task_id: string | null
         }
         Insert: {
+          asset_id?: string | null
           created_at?: string
           current_value?: string | null
           decision_note?: string | null
@@ -5243,6 +5296,7 @@ export type Database = {
           task_id?: string | null
         }
         Update: {
+          asset_id?: string | null
           created_at?: string
           current_value?: string | null
           decision_note?: string | null

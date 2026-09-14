@@ -154,6 +154,7 @@ export const proposeFactFn = createServerFn({ method: "POST" })
     z
       .object({
         propertyId: z.string().uuid(),
+        assetId: z.string().uuid().nullable().optional(),
         fieldKey: z.string().trim().min(2).max(60),
         proposedValue: z.string().trim().min(1).max(2000),
         taskId: z.string().uuid().nullable().optional(),
@@ -196,4 +197,19 @@ export const setFinancialReconciliationFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { setFinancialReconciliation } = await import("./onboarding-finance.server");
     return setFinancialReconciliation(context.supabase, context.userId, data);
+  });
+export const createOnboardingAssetFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        name: z.string().trim().min(1).max(160),
+        kind: z.string().trim().min(1).max(80),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { createOnboardingAsset } = await import("./onboarding-finance.server");
+    return createOnboardingAsset(context.supabase, context.userId, data);
   });

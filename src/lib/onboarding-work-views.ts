@@ -110,3 +110,50 @@ export function groupMyWork(views: TaskView[], today: string) {
   }
   return groups;
 }
+
+/** Team browsing is a work view, not an additional data permission. */
+export function myWorkSelection<T extends { assigned_to: string | null; property_id: string }>(
+  tasks: T[],
+  viewerId: string | null,
+  requested: string,
+  supervisor: boolean,
+  projects: {
+    property_id: string;
+    project_manager: string | null;
+    director: string | null;
+    status: string;
+  }[],
+) {
+  const managed = new Set(
+    projects
+      .filter(
+        (p) =>
+          p.status !== "cancelled" &&
+          viewerId &&
+          (p.project_manager === viewerId || p.director === viewerId),
+      )
+      .map((p) => p.property_id),
+  );
+  const canBrowseTeam = supervisor || managed.size > 0;
+  const who = canBrowseTeam ? requested : "me";
+  const target = who === "me" ? viewerId : who === "unassigned" ? null : who;
+  return {
+    canBrowseTeam,
+    who,
+    tasks: tasks.filter(
+      (task) =>
+        (who === "me" || supervisor || managed.has(task.property_id)) &&
+        (who === "me" && !viewerId ? false : task.assigned_to === target),
+    ),
+  };
+}
+
+export function validateMyWorkSearch(search: { who?: unknown } & SearchSchemaInput) {
+  return {
+    who:
+      typeof search.who === "string" &&
+      (search.who === "unassigned" || /^[0-9a-f-]{36}$/i.test(search.who))
+        ? search.who
+        : "me",
+  };
+}

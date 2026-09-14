@@ -21,6 +21,7 @@ import {
 } from "./maintenance-policy";
 import {
   FACT_FIELDS,
+  ASSET_FACT_FIELDS,
   canRecordInvoice,
   financialNextAction,
   tierFor,
@@ -144,42 +145,58 @@ export async function setAccountingRecipient(supabase: Client, userId: string, e
 /* ------------------------------------------------------------------ */
 
 export async function loadFinance(supabase: Client, propertyId: string) {
-  const [requests, accounts, costs, facts, recipient, owner, property, reviewers, authorityPolicy] =
-    await Promise.all([
-      supabase
-        .from("financial_requests")
-        .select("*")
-        .eq("property_id", propertyId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("utility_accounts")
-        .select("*")
-        .eq("property_id", propertyId)
-        .order("utility_type"),
-      supabase
-        .from("utility_costs")
-        .select("*")
-        .eq("property_id", propertyId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("property_fact_proposals")
-        .select("*")
-        .eq("property_id", propertyId)
-        .order("created_at", { ascending: false }),
-      accountingRecipient(supabase),
-      supabase
-        .from("property_owner_contacts")
-        .select("owner_name, owner_email, owner_phone")
-        .eq("property_id", propertyId)
-        .maybeSingle(),
-      supabase
-        .from("properties")
-        .select("wifi_notes, access_notes, address_line1, city, state, postal_code, nickname")
-        .eq("id", propertyId)
-        .maybeSingle(),
-      supabase.from("profiles").select("id, full_name"),
-      loadOnboardingPolicy(supabase),
-    ]);
+  const [
+    requests,
+    accounts,
+    costs,
+    facts,
+    recipient,
+    owner,
+    property,
+    reviewers,
+    authorityPolicy,
+    assets,
+  ] = await Promise.all([
+    supabase
+      .from("financial_requests")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("utility_accounts")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("utility_type"),
+    supabase
+      .from("utility_costs")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("property_fact_proposals")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false }),
+    accountingRecipient(supabase),
+    supabase
+      .from("property_owner_contacts")
+      .select("owner_name, owner_email, owner_phone")
+      .eq("property_id", propertyId)
+      .maybeSingle(),
+    supabase
+      .from("properties")
+      .select("wifi_notes, access_notes, address_line1, city, state, postal_code, nickname")
+      .eq("id", propertyId)
+      .maybeSingle(),
+    supabase.from("profiles").select("id, full_name"),
+    loadOnboardingPolicy(supabase),
+    supabase
+      .from("property_assets")
+      .select("*")
+      .eq("property_id", propertyId)
+      .is("archived_at", null)
+      .order("name"),
+  ]);
   if (requests.error) throw requests.error;
   if (accounts.error) throw accounts.error;
   if (costs.error) throw costs.error;
@@ -187,6 +204,7 @@ export async function loadFinance(supabase: Client, propertyId: string) {
   if (owner.error) throw owner.error;
   if (property.error) throw property.error;
   if (reviewers.error) throw reviewers.error;
+  if (assets.error) throw assets.error;
   return {
     requests: requests.data ?? [],
     utilities: accounts.data ?? [],
@@ -195,6 +213,7 @@ export async function loadFinance(supabase: Client, propertyId: string) {
     accountingRecipient: recipient,
     ownerContact: owner.data ?? null,
     currentFacts: property.data ?? null,
+    assets: assets.data ?? [],
     reviewers: reviewers.data ?? [],
     authorityPolicy,
   };
@@ -858,6 +877,7 @@ export async function proposeFact(
   userId: string,
   input: {
     propertyId: string;
+    assetId?: string | null | undefined;
     fieldKey: string;
     proposedValue: string;
     taskId?: string | null | undefined;
@@ -865,7 +885,7 @@ export async function proposeFact(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
-  const label = FACT_FIELDS[input.fieldKey];
+  const label = (input.assetId ? ASSET_FACT_FIELDS : FACT_FIELDS)[input.fieldKey];
   if (!label) throw new Error("This field cannot be changed through onboarding fact review.");
   const property = await supabase
     .from("properties")
@@ -885,13 +905,27 @@ export async function proposeFact(
     if (task.error) throw task.error;
     if (!task.data) throw new Error("Choose a current task belonging to this property.");
   }
-  const current = (property.data as Record<string, unknown> | null)?.[input.fieldKey];
+  let target: Record<string, unknown> = property.data;
+  if (input.assetId) {
+    const asset = await supabase
+      .from("property_assets")
+      .select("*")
+      .eq("id", input.assetId)
+      .eq("property_id", input.propertyId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (asset.error) throw asset.error;
+    if (!asset.data) throw new Error("Choose a current asset belonging to this property.");
+    target = asset.data;
+  }
+  const current = target[input.fieldKey];
   const project = await projectFor(supabase, input.propertyId);
 
   const { data, error } = await supabase
     .from("property_fact_proposals")
     .insert({
       property_id: input.propertyId,
+      asset_id: input.assetId ?? null,
       project_id: project?.id ?? null,
       task_id: input.taskId ?? null,
       field_key: input.fieldKey,
@@ -993,4 +1027,39 @@ export async function setFinancialReconciliation(
     after: { status: input.status, propertyId: data?.property_id ?? null },
   });
   return { ok: true as const };
+}
+export async function createOnboardingAsset(
+  supabase: Client,
+  userId: string,
+  input: { propertyId: string; name: string; kind: string },
+) {
+  await assertOnboardingStaff(supabase, userId);
+  const property = await supabase
+    .from("properties")
+    .select("id,is_demo")
+    .eq("id", input.propertyId)
+    .maybeSingle();
+  if (property.error) throw property.error;
+  if (!property.data) throw new Error("That property is not available.");
+  const result = await supabase
+    .from("property_assets")
+    .insert({
+      property_id: input.propertyId,
+      name: input.name.trim(),
+      kind: input.kind.trim(),
+      created_by: userId,
+      is_demo: property.data.is_demo ?? false,
+    })
+    .select("id")
+    .single();
+  if (result.error) throw result.error;
+  await writeAudit({
+    actorId: userId,
+    action: "property_asset_added",
+    entityType: "property_asset",
+    entityId: result.data.id,
+    entityLabel: input.name,
+    after: { propertyId: input.propertyId, kind: input.kind },
+  });
+  return result.data;
 }

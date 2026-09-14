@@ -17,7 +17,7 @@ import { useRole } from "@/hooks/useRole";
 import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { buildReleaseContext } from "@/lib/onboarding-state";
-import { groupMyWork } from "@/lib/onboarding-work-views";
+import { groupMyWork, myWorkSelection, validateMyWorkSearch } from "@/lib/onboarding-work-views";
 import { isTestRecord } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
@@ -30,6 +30,7 @@ import {
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/my-work")({
+  validateSearch: validateMyWorkSearch,
   head: () => ({
     meta: [
       { title: "My onboarding work — Resolve" },
@@ -56,7 +57,11 @@ function MyWork() {
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
   const { userId, readOnly, can } = useRole();
-  const [who, setWho] = useState("me");
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const setWho = (who: string) => {
+    void navigate({ search: { who }, replace: true });
+  };
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -116,15 +121,15 @@ function MyWork() {
   });
 
   const allTasks = useMemo(() => (data?.tasks ?? []) as unknown as WorkflowTask[], [data?.tasks]);
-  const target = who === "me" ? userId : who === "unassigned" ? null : who;
-
-  const mine = useMemo(
-    () =>
-      allTasks
-        .filter((t) => (target === null ? !t.assigned_to : t.assigned_to === target))
-        .filter((t) => t.status !== "complete"),
-    [allTasks, target],
+  const selection = myWorkSelection(
+    allTasks,
+    userId,
+    search.who,
+    can("handoff_review"),
+    data?.projects ?? [],
   );
+  const who = selection.who;
+  const mine = selection.tasks.filter((task) => task.status !== "complete");
 
   if (isLoading || !data) return <LoadingPage />;
 
@@ -159,7 +164,7 @@ function MyWork() {
   });
   const t0 = today();
 
-  const openTask = allTasks.find((t) => t.id === openTaskId) ?? null;
+  const openTask = mine.find((t) => t.id === openTaskId) ?? null;
   const drawerSiblings = openTask
     ? splitByScope(
         allTasks.filter((t) => t.property_id === openTask.property_id),
@@ -206,20 +211,22 @@ function MyWork() {
         title="My work"
         description="Onboarding tasks assigned to you across every home, in the order they need attention."
         actions={
-          <Select value={who} onValueChange={setWho}>
-            <SelectTrigger className="w-60">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="me">Assigned to me</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {data.people.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.full_name || p.email || "Teammate"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          selection.canBrowseTeam ? (
+            <Select value={who} onValueChange={setWho}>
+              <SelectTrigger className="w-60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="me">Assigned to me</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {data.people.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.full_name || p.email || "Teammate"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : undefined
         }
       />
 

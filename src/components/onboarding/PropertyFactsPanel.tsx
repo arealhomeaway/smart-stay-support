@@ -19,6 +19,7 @@ import {
   UTILITY_STATUS_LABELS,
   UTILITY_TYPES,
   FACT_FIELDS,
+  ASSET_FACT_FIELDS,
   isConflict,
   isStaleFact,
   pendingFacts,
@@ -33,6 +34,7 @@ import {
 import {
   decideFactFn,
   proposeFactFn,
+  createOnboardingAssetFn,
   getOnboardingFinance,
   recordUtilityCostFn,
   saveUtilityAccountFn,
@@ -60,9 +62,19 @@ export function PropertyFactsPanel({
     void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
   };
   const [factDraft, setFactDraft] = useState({
+    assetId: "",
     fieldKey: "wifi_notes",
     proposedValue: "",
     sourceDetail: "",
+  });
+  const [assetDraft, setAssetDraft] = useState({ name: "", kind: "" });
+  const createAsset = useMutation({
+    mutationFn: useServerFn(createOnboardingAssetFn),
+    onSuccess: () => {
+      setAssetDraft({ name: "", kind: "" });
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const propose = useMutation({
@@ -116,7 +128,12 @@ export function PropertyFactsPanel({
   const notReady = utilitiesNotReady(utilities);
   const owner = data.ownerContact;
   const currentFacts = data.currentFacts as Record<string, string | null> | null;
-  const currentValue = (key: string) => currentFacts?.[key] ?? null;
+  const currentValue = (key: string, assetId?: string | null) => {
+    if (!assetId) return currentFacts?.[key] ?? null;
+    const asset = data.assets.find((item) => item.id === assetId);
+    const value = (asset as Record<string, unknown> | undefined)?.[key];
+    return value == null ? null : String(value);
+  };
 
   return (
     <div className="space-y-5">
@@ -151,7 +168,57 @@ export function PropertyFactsPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle>Permanent property facts</CardTitle>
+          <CardTitle>Equipment</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {data.assets.map((asset) => (
+            <div key={asset.id} className="rounded-md border p-3 text-sm">
+              <p className="font-medium">
+                {asset.name} · {asset.kind}
+              </p>
+              <p>
+                {[asset.manufacturer, asset.model, asset.location].filter(Boolean).join(" · ") ||
+                  "Details await capture and review."}
+              </p>
+            </div>
+          ))}
+          {canEdit && (
+            <form
+              className="space-y-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                createAsset.mutate({ data: { propertyId, ...assetDraft } });
+              }}
+            >
+              <Label htmlFor="asset-name">Equipment name</Label>
+              <Input
+                id="asset-name"
+                value={assetDraft.name}
+                onChange={(e) => setAssetDraft({ ...assetDraft, name: e.target.value })}
+                required
+                maxLength={160}
+              />
+              <Label htmlFor="asset-kind">Type</Label>
+              <Input
+                id="asset-kind"
+                value={assetDraft.kind}
+                onChange={(e) => setAssetDraft({ ...assetDraft, kind: e.target.value })}
+                required
+                maxLength={80}
+                placeholder="For example, refrigerator or pool pump"
+              />
+              <p className="text-xs text-muted-foreground">
+                Add the equipment record, then propose its details below. Keep passwords and access
+                codes in the secure store.
+              </p>
+              <Button disabled={createAsset.isPending}>Add equipment</Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Property and equipment facts</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {canEdit ? (
@@ -159,9 +226,32 @@ export function PropertyFactsPanel({
               className="space-y-3 rounded-lg border p-3"
               onSubmit={(event) => {
                 event.preventDefault();
-                propose.mutate({ data: { propertyId, ...factDraft } });
+                propose.mutate({
+                  data: { propertyId, ...factDraft, assetId: factDraft.assetId || null },
+                });
               }}
             >
+              <Label htmlFor="fact-target">Property or equipment</Label>
+              <select
+                id="fact-target"
+                className="w-full rounded-md border bg-background p-2 text-sm"
+                value={factDraft.assetId}
+                onChange={(e) =>
+                  setFactDraft({
+                    ...factDraft,
+                    assetId: e.target.value,
+                    fieldKey: e.target.value ? "model" : "wifi_notes",
+                    proposedValue: "",
+                  })
+                }
+              >
+                <option value="">Property</option>
+                {data.assets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.name}
+                  </option>
+                ))}
+              </select>
               <Label htmlFor="fact-field">Propose a change</Label>
               <select
                 id="fact-field"
@@ -169,14 +259,17 @@ export function PropertyFactsPanel({
                 value={factDraft.fieldKey}
                 onChange={(event) => setFactDraft({ ...factDraft, fieldKey: event.target.value })}
               >
-                {Object.entries(FACT_FIELDS).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
+                {Object.entries(factDraft.assetId ? ASSET_FACT_FIELDS : FACT_FIELDS).map(
+                  ([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ),
+                )}
               </select>
               <p className="whitespace-pre-wrap break-words text-sm">
-                Current value: {currentValue(factDraft.fieldKey) ?? "Not recorded"}
+                Current value:{" "}
+                {currentValue(factDraft.fieldKey, factDraft.assetId) ?? "Not recorded"}
               </p>
               <Label htmlFor="fact-value">Proposed value</Label>
               <Textarea
@@ -212,6 +305,9 @@ export function PropertyFactsPanel({
               <div key={f.id} className="rounded-lg border p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">
+                    {f.asset_id
+                      ? `${data.assets.find((asset) => asset.id === f.asset_id)?.name ?? "Equipment"} — `
+                      : ""}
                     {f.field_label || FACT_FIELDS[f.field_key] || f.field_key}
                   </span>
                   {isConflict(f) ? (
@@ -227,12 +323,12 @@ export function PropertyFactsPanel({
                   Proposed value: {f.proposed_value}
                 </p>
                 <p className="whitespace-pre-wrap break-words">
-                  Current value: {currentValue(f.field_key) ?? "Not recorded"}
+                  Current value: {currentValue(f.field_key, f.asset_id) ?? "Not recorded"}
                 </p>
                 {f.source_detail ? (
                   <p className="whitespace-pre-wrap break-words">Observation: {f.source_detail}</p>
                 ) : null}
-                {isStaleFact(f, currentValue(f.field_key)) ? (
+                {isStaleFact(f, currentValue(f.field_key, f.asset_id)) ? (
                   <p role="status" className="text-warning">
                     The current value changed after this proposal. Keep the current value, then
                     submit a fresh proposal if needed.
@@ -251,7 +347,10 @@ export function PropertyFactsPanel({
                     />
                     <Button
                       size="sm"
-                      disabled={decideFact.isPending || isStaleFact(f, currentValue(f.field_key))}
+                      disabled={
+                        decideFact.isPending ||
+                        isStaleFact(f, currentValue(f.field_key, f.asset_id))
+                      }
                       onClick={() =>
                         decideFact.mutate({
                           data: { proposalId: f.id, accept: true, note: reviewNotes[f.id] ?? "" },

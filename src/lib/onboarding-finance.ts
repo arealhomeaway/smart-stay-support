@@ -271,6 +271,16 @@ export function utilitySpend(costs: UtilityCost[]) {
 /* Permanent fact review                                               */
 /* ------------------------------------------------------------------ */
 
+export const ASSET_FACT_FIELDS: Record<string, string> = {
+  name: "Asset name",
+  kind: "Equipment type",
+  manufacturer: "Manufacturer",
+  model: "Model",
+  serial_number: "Serial number",
+  location: "Location",
+  warranty_notes: "Warranty notes",
+};
+
 export const FACT_FIELDS: Record<string, string> = {
   wifi_notes: "Wi-Fi notes",
   access_notes: "Access notes",
@@ -282,6 +292,7 @@ export const FACT_FIELDS: Record<string, string> = {
 };
 
 export type FactProposal = {
+  asset_id?: string | null;
   id: string;
   property_id: string;
   field_key: string;
