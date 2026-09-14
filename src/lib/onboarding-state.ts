@@ -112,6 +112,23 @@ export type StateProperty = {
   is_demo?: boolean | null;
 };
 
+/** Routine lifecycle edits cannot replace project start, stage review, or handoff. */
+export function lifecycleEditIssue(
+  property: Pick<StateProperty, "lifecycle_status" | "onboarding_stage" | "handoff_accepted_at">,
+  input: { status: string; stage?: string | null | undefined },
+): string | null {
+  if (input.stage !== undefined && input.stage !== property.onboarding_stage)
+    return "Use stage capture and review to advance or reopen work.";
+  if (
+    property.handoff_accepted_at ||
+    !["onboarding", "paused"].includes(property.lifecycle_status ?? "")
+  )
+    return "Use Start Onboarding or the handoff review chain for this home's current lifecycle.";
+  if (!["onboarding", "paused", "offboarded"].includes(input.status))
+    return "Use the handoff review chain to request, return, accept or confirm this home Live.";
+  return null;
+}
+
 export type StateProject = {
   id: string;
   status: string | null;
@@ -232,7 +249,8 @@ export function deriveLifecycle(input: StateInput): LifecycleState {
     (Boolean(property.handoff_accepted_at) || property.lifecycle_status === "active_operations");
 
   if (accepted) {
-    const live = property.lifecycle_status === "active_operations" || Boolean(handoff?.live_confirmed_at);
+    const live =
+      property.lifecycle_status === "active_operations" || Boolean(handoff?.live_confirmed_at);
     return {
       phase: live ? "live" : "live_confirmation",
       label: live ? PHASE_LABEL.live : PHASE_LABEL.live_confirmation,
@@ -244,8 +262,9 @@ export function deriveLifecycle(input: StateInput): LifecycleState {
       lockedAt,
       chainKey: live ? "complete" : "live_confirmation",
       staleHandoff: live && Boolean(handoff),
-      explain:
-        live ? "Operations confirmed this home Live. The onboarding plan is locked to history." : "Operations accepted ownership. The Supervisor must still confirm the home Live.",
+      explain: live
+        ? "Operations confirmed this home Live. The onboarding plan is locked to history."
+        : "Operations accepted ownership. The Supervisor must still confirm the home Live.",
     };
   }
 

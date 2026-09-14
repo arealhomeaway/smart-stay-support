@@ -505,13 +505,21 @@ function PropertyWorkspace() {
                     },
                   } as never)
                 }
-                disabled={readOnly}
+                disabled={
+                  readOnly ||
+                  Boolean(current.handoff_accepted_at) ||
+                  !["onboarding", "paused"].includes(current.lifecycle_status ?? "")
+                }
               >
                 <SelectTrigger className="w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LIFECYCLE.map((l) => (
+                  {LIFECYCLE.filter((l) =>
+                    ["onboarding", "paused", "offboarded", current.lifecycle_status].includes(
+                      l.value,
+                    ),
+                  ).map((l) => (
                     <SelectItem key={l.value} value={l.value}>
                       {l.label}
                     </SelectItem>
@@ -521,31 +529,10 @@ function PropertyWorkspace() {
             </div>
             <div className="flex flex-col gap-1">
               <Label className="eyebrow">Stage</Label>
-              <Select
-                value={current.onboarding_stage ?? "post_contract"}
-                onValueChange={(v) =>
-                  setLifecycle.mutate({
-                    data: {
-                      propertyId: current.id,
-                      status: (current.lifecycle_status ?? "onboarding") as never,
-                      stage: v,
-                      reason: "Stage advanced in the onboarding workspace",
-                    },
-                  } as never)
-                }
-                disabled={readOnly}
-              >
-                <SelectTrigger className="w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ONBOARDING_STAGES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <p className="text-sm">{stageLabel(current.onboarding_stage)}</p>
+              <p className="text-xs text-muted-foreground">
+                Stage capture and review control progression.
+              </p>
             </div>
           </div>
 

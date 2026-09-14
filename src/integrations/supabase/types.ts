@@ -7788,6 +7788,10 @@ export type Database = {
       }
     }
     Functions: {
+      prepare_onboarding_task_approval: {
+        Args: { _task_id: string; _property_id: string; _detail: string }
+        Returns: string
+      }
       prepare_onboarding_financial_approval: {
         Args: { _request_id: string; _expected_amount: number; _expected_tier: string }
         Returns: string

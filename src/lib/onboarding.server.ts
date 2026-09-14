@@ -11,7 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { validateHandoff } from "./onboarding";
-import { handoffReadiness } from "./onboarding-state";
+import { handoffReadiness, lifecycleEditIssue } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
 export { validateHandoff };
 import { writeAudit } from "./audit.server";
@@ -375,67 +375,32 @@ export async function ensureOwnerApprovalRequest(
     version?: string | null;
   },
 ): Promise<{ approvalId: string | null; channel: "in_app" | "email" | "none" }> {
-  const existing = await supabase
-    .from("approvals")
-    .select("id, status, title, detail")
-    .eq("entity_type", "onboarding_task")
-    .eq("entity_id", input.taskId)
-    .eq("property_id", input.propertyId)
-    .order("created_at", { ascending: false })
-    .limit(1);
-  if (existing.error) throw existing.error;
-  const latest = existing.data?.[0];
-  if (latest && latest.status === "pending") {
-    const { routeOwnerDecision } = await import("./onboarding-finance.server");
-    const routed = await routeOwnerDecision(supabase, userId, {
-      propertyId: input.propertyId,
-      approvalId: latest.id,
-      subject: latest.title,
-      amount: null,
-      detail: latest.detail ?? "",
-    });
-    return { approvalId: latest.id, channel: routed.channel };
-  }
-
-  const { activeOwnerFor } = await import("./active-owner.server");
-  const link = await activeOwnerFor(supabase, input.propertyId);
-  const ownerUserId = link?.ownerUserId ?? null;
-
   const detail = [input.detail || null, input.version ? `Version reviewed: ${input.version}` : null]
     .filter(Boolean)
     .join("\n\n");
-
-  const { data, error } = await supabase
+  const prepared = await supabase.rpc("prepare_onboarding_task_approval", {
+    _task_id: input.taskId,
+    _property_id: input.propertyId,
+    _detail: detail,
+  });
+  if (prepared.error) throw prepared.error;
+  if (!prepared.data) throw new Error("The approval could not be prepared.");
+  const saved = await supabase
     .from("approvals")
-    .insert({
-      entity_type: "onboarding_task",
-      entity_id: input.taskId,
-      property_id: input.propertyId,
-      kind: "onboarding_task",
-      title: input.title,
-      detail: detail || null,
-      requested_by: userId,
-      approver_id: ownerUserId,
-      approver_role: "owner",
-      status: "pending",
-      due_on: input.dueOn,
-      is_demo: input.isDemo,
-    })
-    .select("id")
-    .maybeSingle();
-  if (error) throw error;
-  const approvalId = data?.id ?? null;
-  if (!approvalId) return { approvalId: null, channel: "none" };
-
+    .select("id, title, detail")
+    .eq("id", prepared.data)
+    .eq("property_id", input.propertyId)
+    .single();
+  if (saved.error) throw saved.error;
   const { routeOwnerDecision } = await import("./onboarding-finance.server");
   const routed = await routeOwnerDecision(supabase, userId, {
     propertyId: input.propertyId,
-    approvalId,
-    subject: input.title,
+    approvalId: saved.data.id,
+    subject: saved.data.title,
     amount: null,
-    detail: detail || "",
+    detail: saved.data.detail ?? "",
   });
-  return { approvalId, channel: routed.channel };
+  return { approvalId: saved.data.id, channel: routed.channel };
 }
 
 /**
@@ -481,12 +446,6 @@ export async function submitOwnerApproval(
       "This home has no enrolled homeowner and no homeowner email on file, so the approval could not be sent. Add an owner contact email on the Property tab first.",
     );
   }
-
-  const { error } = await supabase
-    .from("onboarding_tasks")
-    .update({ owner_approval_status: "awaiting_owner" })
-    .eq("id", task.data.id);
-  if (error) throw error;
 
   await writeAudit({
     actorId: userId,
@@ -676,24 +635,31 @@ export async function setPropertyLifecycle(
   }
   const before = await supabase
     .from("properties")
-    .select("lifecycle_status, onboarding_stage")
+    .select("lifecycle_status, onboarding_stage, handoff_accepted_at")
     .eq("id", input.propertyId)
     .maybeSingle();
 
+  if (before.error) throw before.error;
+  if (!before.data) throw new Error("That property is not available.");
+  const issue = lifecycleEditIssue(before.data, input);
+  if (issue) throw new Error(issue);
+
   const patch: {
     lifecycle_status: string;
-    onboarding_stage?: string | null;
-    onboarding_started_at?: string;
     archived_at?: string;
   } = { lifecycle_status: input.status };
-  if (input.stage !== undefined) patch.onboarding_stage = input.stage;
-  if (input.status === "onboarding" && !before.data?.lifecycle_status?.startsWith("onboarding")) {
-    patch.onboarding_started_at = new Date().toISOString();
-  }
   if (input.status === "offboarded") patch.archived_at = new Date().toISOString();
 
-  const { error } = await supabase.from("properties").update(patch).eq("id", input.propertyId);
+  const { data, error } = await supabase
+    .from("properties")
+    .update(patch)
+    .eq("id", input.propertyId)
+    .eq("lifecycle_status", before.data.lifecycle_status!)
+    .is("handoff_accepted_at", null)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error("The lifecycle changed before this update. Refresh and review it.");
 
   await writeAudit({
     actorId: userId,
