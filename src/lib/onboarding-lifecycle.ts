@@ -151,6 +151,8 @@ export type ProjectInput = {
   handoff: OpenHandoff;
   /** The Onboarding Project row, when onboarding has actually been started. */
   project?: StateProject;
+  stageCaptures?: { stage: string; revision: number; status: string }[];
+  excludedTaskIds?: string[];
 };
 
 /**
@@ -164,6 +166,8 @@ function stateOf(input: ProjectInput) {
     project: input.project ?? null,
     tasks: input.tasks,
     handoff: input.handoff,
+    stageCaptures: input.stageCaptures,
+    excludedTaskIds: input.excludedTaskIds,
   };
 }
 
@@ -590,10 +594,9 @@ export function summarizeProject(input: ProjectInput, ownerName: string | null):
     done: roll.done,
     total: roll.total,
     hasProject: !life.notStarted,
-    // An accepted home is never simultaneously "in review", whatever stale
-    // handoff rows may still exist.
-    inReview: Boolean(input.handoff) && !life.accepted,
-    gateStep: life.accepted ? null : (input.handoff?.gate_step ?? null),
+    // Operations acceptance still requires Supervisor Live confirmation.
+    inReview: Boolean(input.handoff) && !life.live,
+    gateStep: life.live ? null : (input.handoff?.gate_step ?? null),
 
     owner: ownerName,
   };

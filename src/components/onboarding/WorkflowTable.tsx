@@ -59,7 +59,12 @@ export function WorkflowTable({
   return (
     <div className="space-y-3">
       {sections.map((s) => {
-        const expanded = open[s.key] ?? (s.state !== "complete" || s.key === active);
+        const expanded =
+          open[s.key] ??
+          (s.state === "active" ||
+            s.state === "blocked" ||
+            s.key === active ||
+            s.tasks.some((view) => view.task.id === selectedId));
         return (
           <Section
             key={s.key}

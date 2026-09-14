@@ -95,8 +95,8 @@ function awaitingMyReview(p: ProjectSummary, viewer?: HubViewer) {
  * counted as needing a project manager's action.
  */
 function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
-  // Accepted homes are history: they belong to Operations, not this hub.
-  const live = p.accepted || p.stage === "live";
+  // Keep accepted homes visible until the Supervisor confirms Live.
+  const live = p.stage === "live";
   switch (lens) {
     case "attention":
       return (
@@ -186,7 +186,7 @@ export function DirectorHub({
       .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
   }, [projects, lens, find, owner, viewer]);
 
-  const active = projects.filter((p) => !p.accepted && p.stage !== "live");
+  const active = projects.filter((p) => p.stage !== "live");
   const bottleneck = bottleneckStage(active);
   const workload = workloadByOwner(active);
   const activeLensMeta = LENSES.find((l) => l.key === lens);

@@ -39,6 +39,61 @@ messages, migrations, deployment, permission changes or merge have been performe
 
 ## Remaining work (goal is not complete)
 
+### September 14 implementation checkpoint
+
+The remaining-work list below predates these branch-local changes and is retained
+as a scope checklist, not a description of the current implementation:
+
+- Native stage capture now records revisions and uses gate checks; atomic fact
+  review rejects stale values and unsupported property fields.
+- Actual cost is stored separately from estimates, approval and invoice amounts.
+  Financial decisions update the canonical approval and history atomically.
+  Failed or skipped email delivery no longer marks requests sent.
+- Handoff review now checks the displayed gate before advancing and commits the
+  review, property transition and approved carryover together. Acceptance remains
+  distinct from Supervisor Live; the Manager Hub retains pending Live reviews.
+- Isolated PostgreSQL tests exercise all five new, unapplied migrations. The
+  handoff test covers reviewer restrictions, stale requests, all four gates,
+  approved-only carryover and rollback after a property update failure. These
+  fixtures are active automated-test dependencies and must be preserved.
+- Verification at this checkpoint: 582 unit tests passed, TypeScript passed,
+  focused lint passed, all four isolated database test groups passed. The new
+  Manager Hub summary regression is being checked separately after this count.
+- No live migration, deployment, external message or deletion was performed.
+  OneDrive's 268-item deletion set remains unverified and unapproved.
+
+The Property area now exposes fact proposal capture, live versus captured values,
+stale-proposal protection, reviewer notes and decision history. The server checks
+that linked tasks belong to the property and are current. Fact mutations refresh
+both the Property area and the onboarding workspace. Focused lint passes; the
+full suite now passes 585 tests across 53 files. Browser verification is pending.
+
+Financial approval preparation now uses a sixth unapplied migration to lock the
+request and atomically create/link one canonical pending approval. Retries reuse
+that approval; stale amounts, changed authority and decided approvals are rejected.
+Isolated PostgreSQL tests cover rollback, reuse, stale values and unauthorized use.
+Owner routing preserves recorded email delivery, reports missing contact details,
+and propagates failed in-app writes. Pending task approvals now retry their actual
+delivery channel. The Financial panel exposes retry and refreshes saved state even
+when delivery fails. Full unit suite: 588 passing; focused lint passes.
+
+Still to audit: simultaneous task-approval creation and uncertain email outcomes
+(provider success before local delivery metadata is saved). No external messages
+were sent during these tests.
+
+Two canonical local QA fixtures and an isolated browser renderer now exist under
+`qa/onboarding` and `src/lib/onboarding-qa-fixtures.ts`. Full Furnishing and No
+Furnishings derive all 180 template tasks/subtasks, apply the shared rules, and
+are explicitly excluded by the reporting filter. Desktop and 390px workflow
+previews were inspected; see `qa/onboarding/README.md` for evidence and limits.
+Future workflow sections now default to collapsed, with active work and blockers
+expanded. Full unit suite: 592 tests passing; fixture typecheck passes.
+
+Still required: remaining approval concurrency and
+policy configuration audits, role queues and filtered navigation, authenticated
+workspace/Active Owner desktop and 390px acceptance, final build/schema review,
+working commits and draft PR. This checkpoint does not establish preview readiness.
+
 1. Finish foundation audit, external-reference capture, enrollment/portal boundaries,
    restart recovery and owner contact visibility. Verify and commit Pass 1.
 2. Native stage capture with revisions, gate completion/reopening, atomic stale-safe

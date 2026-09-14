@@ -95,6 +95,7 @@ export const reviewHandoffFn = createServerFn({ method: "POST" })
     z
       .object({
         handoffId: z.string().uuid(),
+        expectedStep: z.string().min(1).max(60),
         decision: z.enum(["accepted", "returned"]),
         corrections: z.string().trim().max(2000).default(""),
         exceptionReason: z.string().trim().max(1000).optional(),
@@ -379,6 +380,7 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
         furnishingScope: z.enum(["full_furnishing", "no_furnishing"]).optional(),
         modules: z.array(moduleEnum).max(20).optional(),
         notes: z.string().trim().max(2000).nullable().optional(),
+        externalRefs: z.record(z.string(), z.string().trim().max(300)).optional(),
         reason: z.string().trim().max(500).nullable().optional(),
       })
       .parse(data),

@@ -175,6 +175,7 @@ export function ProjectScopePanel({
                 possessionOn: project.possession_on ?? "",
                 targetHandoffOn: project.target_handoff_on ?? "",
                 notes: project.notes ?? "",
+                externalRefs: (project.external_refs ?? {}) as Record<string, string>,
               }
             : {
                 furnishing: "full_furnishing",
@@ -189,6 +190,7 @@ export function ProjectScopePanel({
                 possessionOn: "",
                 targetHandoffOn: "",
                 notes: "",
+                externalRefs: {},
               }
         }
         editing={Boolean(project)}
@@ -206,6 +208,7 @@ export function ProjectScopePanel({
                 furnishingScope: v.furnishing,
                 modules: v.modules,
                 notes: v.notes || null,
+                externalRefs: v.externalRefs,
                 reason: reason.trim(),
               },
             });
@@ -222,7 +225,7 @@ export function ProjectScopePanel({
                 furnishingScope: v.furnishing,
                 modules: v.modules,
                 notes: v.notes || null,
-                externalRefs: {},
+                externalRefs: v.externalRefs,
               },
             });
           }
@@ -242,6 +245,7 @@ type ScopeValues = {
   possessionOn: string;
   targetHandoffOn: string;
   notes: string;
+  externalRefs: Record<string, string>;
 };
 
 function ScopeDialog({
@@ -392,6 +396,36 @@ function ScopeDialog({
               onChange={(e) => setV((p) => ({ ...p, notes: e.target.value }))}
             />
           </Field>
+
+          <fieldset className="space-y-3">
+            <legend className="eyebrow">External references</legend>
+            <p className="text-xs text-muted-foreground">
+              Link existing source records for context. Saving a reference does not update the
+              source system.
+            </p>
+            {(["asana", "notion", "property_folder"] as const).map((key) => (
+              <div key={key} className="space-y-1">
+                <Label htmlFor={`project-ref-${key}`}>
+                  {key === "property_folder"
+                    ? "Property folder"
+                    : key === "asana"
+                      ? "Asana project"
+                      : "Notion record"}
+                </Label>
+                <Input
+                  id={`project-ref-${key}`}
+                  value={v.externalRefs[key] ?? ""}
+                  maxLength={300}
+                  onChange={(e) =>
+                    setV((p) => ({
+                      ...p,
+                      externalRefs: { ...p.externalRefs, [key]: e.target.value },
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </fieldset>
 
           {editing && (
             <Field label="Why is the scope changing? (required)">

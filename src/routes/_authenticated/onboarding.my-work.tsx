@@ -15,6 +15,8 @@ import { TaskRow } from "@/components/onboarding/WorkflowTable";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
 import { viewTask, type TaskView, type WorkflowTask } from "@/lib/onboarding-workflow";
+import { projectScope, splitByScope } from "@/lib/onboarding-scope";
+import { buildReleaseContext } from "@/lib/onboarding-state";
 import {
   getOnboardingWorkspace,
   addOnboardingNoteFn,
@@ -126,12 +128,33 @@ function MyWork() {
 
   const propertyName = (id: string) =>
     data.properties.find((p) => p.id === id)?.name ?? "Unknown home";
-  const views = mine.map((t) =>
-    viewTask(
-      t,
+  const views = mine.flatMap((t) => {
+    const property = data.properties.find((p) => p.id === t.property_id);
+    if (!property || property.is_demo) return [];
+    const project =
+      data.projects.find((p) => p.property_id === t.property_id && p.status !== "cancelled") ??
+      null;
+    const scoped = splitByScope(
       allTasks.filter((x) => x.property_id === t.property_id),
-    ),
-  );
+      projectScope(project),
+    );
+    if (!scoped.inScope.some((x) => x.id === t.id)) return [];
+    const handoff =
+      data.handoffs.find(
+        (h) =>
+          h.property_id === t.property_id &&
+          ["requested", "accepted_pending_live"].includes(h.status),
+      ) ?? null;
+    const release = buildReleaseContext({
+      property,
+      project,
+      tasks: scoped.inScope,
+      handoff,
+      stageCaptures: data.stageCaptures.filter((c) => c.propertyId === t.property_id),
+      excludedTaskIds: scoped.outOfScope.map((x) => x.task.id),
+    });
+    return [viewTask(t, scoped.inScope, release)];
+  });
   const t0 = today();
 
   const groups: { key: string; label: string; hint: string; items: TaskView[] }[] = [

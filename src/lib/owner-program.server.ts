@@ -279,6 +279,41 @@ export async function createProgram(
   if (existing.error) throw existing.error;
   if (existing.data) return { programId: existing.data.program_id, alreadyExists: true as const };
 
+  const property = await supabase
+    .from("properties")
+    .select("id, is_demo, actual_closing_on")
+    .eq("id", input.propertyId)
+    .single();
+  if (property.error) throw property.error;
+
+  // Reuse the program for a known contact without granting portal access or
+  // resetting its clock. Late additions retain the existing administrator gate.
+  if (input.ownerEmail.trim()) {
+    const candidates = await supabase
+      .from("owner_programs")
+      .select("id")
+      .ilike("owner_email", input.ownerEmail.trim().replace(/[%_\\]/g, "\\$&"))
+      .eq("is_demo", property.data.is_demo ?? false)
+      .is("archived_at", null)
+      .not("status", "in", "(closed,completed)")
+      .limit(2);
+    if (candidates.error) throw candidates.error;
+    if ((candidates.data?.length ?? 0) > 1) {
+      throw new Error(
+        "This contact has more than one program. Select the intended program on the Active Owner board.",
+      );
+    }
+    const candidate = candidates.data?.[0];
+    if (candidate) {
+      await addProgramProperty(supabase, userId, {
+        programId: candidate.id,
+        propertyId: input.propertyId,
+        closingDate: property.data.actual_closing_on,
+      });
+      return { programId: candidate.id, alreadyExists: true as const };
+    }
+  }
+
   const { data, error } = await supabase
     .from("owner_programs")
     .insert({
@@ -293,6 +328,7 @@ export async function createProgram(
       onboarding_target_hours: DEFAULT_ONBOARDING_HOURS,
       ongoing_target_hours: DEFAULT_ONGOING_HOURS,
       created_by: userId,
+      is_demo: property.data.is_demo ?? false,
     })
     .select("id")
     .single();
@@ -350,7 +386,7 @@ export async function addProgramProperty(
         "Adding a property to a program already underway needs administrator approval.",
       );
     }
-    if (!input.closingDate) {
+    if (!input.closingDate || input.closingDate > new Date().toISOString().slice(0, 10)) {
       throw new Error("Confirm the property's closing date before adding it to an active program.");
     }
   }

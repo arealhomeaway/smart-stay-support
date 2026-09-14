@@ -98,6 +98,14 @@ describe("release integrity", () => {
 });
 
 describe("one authoritative lifecycle", () => {
+  it("keeps Operations acceptance distinct from Supervisor Live", () => {
+    const life = deriveLifecycle({ property: property({ lifecycle_status: "handoff_requested", handoff_accepted_at: "2026-09-14T00:00:00Z" }), project: PROJECT, tasks: [],
+      handoff: { id: "h", status: "accepted_pending_live", gate_step: "live_confirmation" } });
+    expect(life.accepted).toBe(true);
+    expect(life.live).toBe(false);
+    expect(life.phase).toBe("live_confirmation");
+    expect(life.chainKey).toBe("live_confirmation");
+  });
   it("treats a home with no project as not started, whatever legacy fields say", () => {
     const life = deriveLifecycle({
       property: property({ onboarding_stage: "phase4_purchasing" }),

@@ -2090,6 +2090,9 @@ export type Database = {
       }
       financial_requests: {
         Row: {
+          actual_amount: number | null
+          actual_recorded_at: string | null
+          actual_recorded_by: string | null
           accounting_recipient: string | null
           accounting_sent_at: string | null
           approval_id: string | null
@@ -2121,6 +2124,9 @@ export type Database = {
         }
         Insert: {
           accounting_recipient?: string | null
+          actual_amount?: number | null
+          actual_recorded_at?: string | null
+          actual_recorded_by?: string | null
           accounting_sent_at?: string | null
           approval_id?: string | null
           approved_amount?: number | null
@@ -2151,6 +2157,9 @@ export type Database = {
         }
         Update: {
           accounting_recipient?: string | null
+          actual_amount?: number | null
+          actual_recorded_at?: string | null
+          actual_recorded_by?: string | null
           accounting_sent_at?: string | null
           approval_id?: string | null
           approved_amount?: number | null
@@ -7770,9 +7779,32 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      onboarding_stage_captures: {
+        Row: { project_id: string; property_id: string; new_value: string }
+        Relationships: []
+      }
     }
     Functions: {
+      prepare_onboarding_financial_approval: {
+        Args: { _request_id: string; _expected_amount: number; _expected_tier: string }
+        Returns: string
+      }
+      review_onboarding_handoff: {
+        Args: { _handoff_id: string; _expected_step: string; _decision: string; _note?: string; _exception?: string }
+        Returns: Json
+      }
+      decide_onboarding_financial_request: {
+        Args: { _request_id: string; _approved: boolean; _note: string; _approved_amount?: number }
+        Returns: undefined
+      }
+      record_onboarding_stage_capture: {
+        Args: { _project_id: string; _actor: string; _expected_revision: number; _capture: Json; _tasks: Json; _scope: Json }
+        Returns: undefined
+      }
+      review_onboarding_fact: {
+        Args: { _proposal_id: string; _accept: boolean; _note?: string }
+        Returns: Json
+      }
       archive_demo_environment: {
         Args: { _actor?: string; _reason?: string }
         Returns: undefined

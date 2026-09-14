@@ -233,11 +233,12 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
       .map((l) => [l.property_id, l]),
   );
   const chosen = [...new Set(input.propertyIds)].filter((id) => allowed.has(id));
+  if (chosen.length !== new Set(input.propertyIds).size) throw new Error("Participation can only include properties enrolled in this program.");
   for (const id of chosen) {
     const link = allowed.get(id)!;
 
     // A home cannot carry participation from before it closed.
-    if (link.closing_date && input.entryDate < link.closing_date) {
+    if (!link.closing_date || input.entryDate < link.closing_date) {
       throw new Error(
         "That date is before this property's closing date. Please choose a date on or after closing.",
       );

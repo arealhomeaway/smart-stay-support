@@ -132,6 +132,8 @@ export type StateInput = {
   /** In-scope, non-archived tasks for this property. */
   tasks: WorkflowTask[];
   handoff: StateHandoff;
+  stageCaptures?: { stage: string; revision: number; status: string }[] | undefined;
+  excludedTaskIds?: string[] | undefined;
 };
 
 export function today(): string {
@@ -230,19 +232,20 @@ export function deriveLifecycle(input: StateInput): LifecycleState {
     (Boolean(property.handoff_accepted_at) || property.lifecycle_status === "active_operations");
 
   if (accepted) {
+    const live = property.lifecycle_status === "active_operations" || Boolean(handoff?.live_confirmed_at);
     return {
-      phase: "live",
-      label: PHASE_LABEL.live,
+      phase: live ? "live" : "live_confirmation",
+      label: live ? PHASE_LABEL.live : PHASE_LABEL.live_confirmation,
       accepted: true,
-      live: true,
+      live,
       corrections: false,
       notStarted: false,
       locked: true,
       lockedAt,
-      chainKey: "complete",
-      staleHandoff: Boolean(handoff),
+      chainKey: live ? "complete" : "live_confirmation",
+      staleHandoff: live && Boolean(handoff),
       explain:
-        "Operations accepted this home. The onboarding plan is history and is locked to further plan work.",
+        live ? "Operations confirmed this home Live. The onboarding plan is locked to history." : "Operations accepted ownership. The Supervisor must still confirm the home Live.",
     };
   }
 
@@ -383,6 +386,7 @@ export const RELEASE_LABEL: Record<ReleaseState, string> = {
 };
 
 export type ReleaseContext = {
+  excludedTaskIds?: string[] | undefined;
   /** Stage keys whose work is released for action. */
   released: Set<string>;
   /** Why each unreleased stage is not released yet. */
@@ -432,6 +436,12 @@ export function buildReleaseContext(input: StateInput): ReleaseContext {
       (t) => t.stage === stage && t.status !== "complete" && t.status !== "carryover",
     );
     if (openHere.length > 0) priorOpen = label;
+    else if (input.stageCaptures !== undefined && planTasks.some((t) => t.stage === stage)) {
+      const capture = input.stageCaptures
+        .filter((c) => c.stage === stage)
+        .sort((a, b) => b.revision - a.revision)[0];
+      if (capture?.status !== "complete") priorOpen = `${label} review`;
+    }
   });
 
   return {
@@ -443,6 +453,7 @@ export function buildReleaseContext(input: StateInput): ReleaseContext {
     closingReached,
     lockedAt: life.lockedAt,
     locked: life.locked,
+    excludedTaskIds: input.excludedTaskIds,
   };
 }
 
@@ -503,6 +514,7 @@ export function releaseState(
     };
 
   const waitingOn = (task.depends_on ?? [])
+    .filter((id) => !ctx.excludedTaskIds?.includes(id))
     .map((id) => all.find((t) => t.id === id))
     .filter((t) => !t || (t.status !== "complete" && t.status !== "carryover"))
     .map((t) => t?.title ?? "a prerequisite that is not available");
@@ -603,6 +615,20 @@ export function handoffReadiness(
   }
 
   const plan = input.tasks.filter((t) => !isPostLock(t, ctx.lockedAt));
+  if (input.stageCaptures !== undefined && !life.accepted) {
+    const unreviewed = [...new Set(plan.map((t) => t.stage))].filter(
+      (stage) =>
+        input
+          .stageCaptures!.filter((c) => c.stage === stage)
+          .sort((a, b) => b.revision - a.revision)[0]?.status !== "complete",
+    );
+    if (unreviewed.length)
+      reasons.push({
+        key: "stage_reviews",
+        label: "Stage reviews outstanding",
+        detail: `${unreviewed.length} applicable stage(s) need an approved capture.`,
+      });
+  }
   const open = plan.filter((t) => t.status !== "complete" && t.status !== "carryover");
   if (open.length > 0)
     reasons.push({
@@ -672,7 +698,7 @@ export function handoffReadiness(
 /** Display state of the handoff chain for the rail. */
 export function chainProgress(input: StateInput) {
   const life = deriveLifecycle(input);
-  const currentKey = life.accepted ? "complete" : life.chainKey;
+  const currentKey = life.live ? "complete" : life.chainKey;
   const index = currentKey ? HANDOFF_CHAIN.findIndex((s) => s.key === currentKey) : -1;
   return HANDOFF_CHAIN.map((s, i) => ({
     ...s,

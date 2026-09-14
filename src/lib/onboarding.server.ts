@@ -109,11 +109,23 @@ export async function loadOnboardingWorkspace(supabase: Client) {
   // where onboarding has actually been started.
   const { loadProjects } = await import("./onboarding-project.server");
   const projects = await loadProjects(supabase);
+  const stageEvents = await supabase
+    .from("onboarding_stage_captures")
+    .select("project_id, property_id, new_value");
+  if (stageEvents.error) throw stageEvents.error;
+  const stageCaptures = (stageEvents.data ?? [])
+    .map((e) => ({
+      ...(JSON.parse(e.new_value!) as import("./onboarding-stage").StageCapture),
+      projectId: e.project_id,
+      propertyId: e.property_id,
+    }))
+    .filter((c) => projects.some((p) => p.id === c.projectId && p.status !== "cancelled"));
 
   return {
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
     projects,
+    stageCaptures,
     tasks: tasks.data ?? [],
     activeOwnerProperties: [...participation.values()],
     approvalMismatches,
@@ -156,15 +168,52 @@ export async function saveOnboardingTask(
   if (!input.id && input.status === "complete") {
     throw new Error("Create the step first, then complete it after its readiness checks.");
   }
+  const { loadStageCaptures } = await import("./onboarding-stage.server");
+  const captures = await loadStageCaptures(supabase, input.propertyId);
+  const latestCapture = captures
+    .filter((c) => c.stage === input.stage)
+    .sort((a, b) => b.revision - a.revision)[0];
+  if (latestCapture && ["complete", "awaiting_review"].includes(latestCapture.status)) {
+    throw new Error("Return or reopen this stage before changing its work.");
+  }
+  const prior = input.id
+    ? await supabase
+        .from("onboarding_tasks")
+        .select("*")
+        .eq("id", input.id)
+        .eq("property_id", input.propertyId)
+        .single()
+    : null;
+  if (prior?.error) throw prior.error;
+  if (
+    prior?.data &&
+    (input.ownerApprovalStatus !== prior.data.owner_approval_status ||
+      input.requiresOwnerApproval !== prior.data.requires_owner_approval)
+  ) {
+    throw new Error(
+      "Use the owner decision or approval-requirement workflow to change an approval.",
+    );
+  }
+  const priorStage = captures
+    .filter((c) => c.stage === prior?.data.stage)
+    .sort((a, b) => b.revision - a.revision)[0];
+  if (priorStage && ["complete", "awaiting_review"].includes(priorStage.status))
+    throw new Error("Return or reopen the original stage before moving its work.");
+  if (prior?.data.status === "complete")
+    throw new Error("Reopen the completed step with a reason before editing it.");
   // Locked handoff: once Operations accepts the home, the onboarding plan is
   // history. Anything found afterwards is a correction (reopen with a reason)
   // or an Operations ticket — never a silent edit to a finished project.
   const accepted = await supabase
     .from("properties")
-    .select("handoff_accepted_at")
+    .select("handoff_accepted_at, lifecycle_status")
     .eq("id", input.propertyId)
     .maybeSingle();
-  if (accepted.data?.handoff_accepted_at) {
+  if (accepted.error) throw accepted.error;
+  if (
+    accepted.data?.handoff_accepted_at ||
+    ["handoff_requested", "active_operations"].includes(accepted.data?.lifecycle_status ?? "")
+  ) {
     throw new Error(
       "Operations has accepted this home, so onboarding steps are locked. Reopen the step with a reason, or report an issue.",
     );
@@ -204,6 +253,8 @@ export async function saveOnboardingTask(
         project: (projectRow.data ?? null) as never,
         tasks: all,
         handoff: null,
+        stageCaptures: captures,
+        excludedTaskIds: scoped.outOfScope.map((x) => x.task.id),
       });
       const verdict = releaseState(
         { ...target, evidence_note: input.evidenceNote } as never,
@@ -240,8 +291,9 @@ export async function saveOnboardingTask(
     evidence_note: input.evidenceNote || null,
     status: input.status,
     blocks_handoff: input.blocksHandoff,
-    completed_at: input.status === "complete" ? new Date().toISOString() : null,
-    completed_by: input.status === "complete" ? userId : null,
+    completed_at:
+      input.status === "complete" ? new Date().toISOString() : (prior?.data.completed_at ?? null),
+    completed_by: input.status === "complete" ? userId : (prior?.data.completed_by ?? null),
     parent_task_id: input.parentTaskId ?? null,
     depends_on: input.dependsOn ?? [],
     sort_order: input.sortOrder ?? 0,
@@ -325,15 +377,24 @@ export async function ensureOwnerApprovalRequest(
 ): Promise<{ approvalId: string | null; channel: "in_app" | "email" | "none" }> {
   const existing = await supabase
     .from("approvals")
-    .select("id, status")
+    .select("id, status, title, detail")
     .eq("entity_type", "onboarding_task")
     .eq("entity_id", input.taskId)
+    .eq("property_id", input.propertyId)
     .order("created_at", { ascending: false })
     .limit(1);
   if (existing.error) throw existing.error;
   const latest = existing.data?.[0];
   if (latest && latest.status === "pending") {
-    return { approvalId: latest.id, channel: "in_app" };
+    const { routeOwnerDecision } = await import("./onboarding-finance.server");
+    const routed = await routeOwnerDecision(supabase, userId, {
+      propertyId: input.propertyId,
+      approvalId: latest.id,
+      subject: latest.title,
+      amount: null,
+      detail: latest.detail ?? "",
+    });
+    return { approvalId: latest.id, channel: routed.channel };
   }
 
   const { activeOwnerFor } = await import("./active-owner.server");
@@ -608,6 +669,11 @@ export async function setPropertyLifecycle(
   input: { propertyId: string; status: string; stage?: string | null | undefined; reason: string },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  if (["handoff_requested", "handoff_corrections", "active_operations"].includes(input.status)) {
+    throw new Error(
+      "Use the handoff review chain to request, return, accept or confirm this home Live.",
+    );
+  }
   const before = await supabase
     .from("properties")
     .select("lifecycle_status, onboarding_stage")
@@ -679,6 +745,14 @@ export async function requestHandoff(
   if (projectRow.error) throw projectRow.error;
   if (openHandoffRow.error) throw openHandoffRow.error;
   const applicableTasks = splitByScope(tasks.data ?? [], projectScope(projectRow.data)).inScope;
+  const { loadStageCaptures } = await import("./onboarding-stage.server");
+  const stageCaptures = await loadStageCaptures(supabase, input.propertyId);
+  const pendingFacts = await supabase
+    .from("property_fact_proposals")
+    .select("id")
+    .eq("property_id", input.propertyId)
+    .eq("status", "pending");
+  if (pendingFacts.error) throw pendingFacts.error;
   const { checks, openBlocking, ready } = validateHandoff(property.data, applicableTasks);
   if (openHandoffRow.data) {
     throw new Error("A handoff is already in review for this home.");
@@ -689,8 +763,10 @@ export async function requestHandoff(
       project: (projectRow.data ?? null) as never,
       tasks: applicableTasks as never,
       handoff: null,
+      stageCaptures,
     },
     checks,
+    { pendingFacts: pendingFacts.data?.length ?? 0 },
   );
   if (readiness.blocked) {
     throw new Error(
@@ -759,175 +835,30 @@ export async function reviewHandoff(
   userId: string,
   input: {
     handoffId: string;
+    expectedStep: string;
     decision: "accepted" | "returned";
     corrections: string;
     exceptionReason?: string | undefined;
   },
 ) {
-  const { nextGateStep } = await import("./onboarding");
-  if (input.decision === "returned" && !input.corrections.trim()) {
-    throw new Error("Returning a handoff requires the corrections that are needed.");
-  }
-
-  const handoff = await supabase
-    .from("property_handoffs")
-    .select("id, property_id, status, gate_step, exceptions, is_demo")
-    .eq("id", input.handoffId)
-    .single();
-  if (handoff.error) throw handoff.error;
-  // "accepted_pending_live" is still an open handoff: Operations has taken
-  // ownership but the home is not live until the final confirmation.
-  const OPEN = ["requested", "accepted_pending_live"];
-  if (!OPEN.includes(handoff.data.status)) throw new Error("This handoff was already closed.");
-
-  const step = (handoff.data.gate_step ?? "kati_review") as string;
-
-  // Supervisors may record any gate. The assigned onboarding lead for THIS
-  // home may record only its own onboarding review — by project assignment,
-  // never by name and never for every onboarding user.
-  const { data: isSupervisor } = await supabase.rpc("is_supervisor", { _user_id: userId });
-  if (!isSupervisor) {
-    const lead = await supabase
-      .from("properties")
-      .select("onboarding_owner")
-      .eq("id", handoff.data.property_id)
-      .maybeSingle();
-    const { data: isOnboarding } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "onboarding",
-    });
-    const isAssignedLead = Boolean(isOnboarding) && lead.data?.onboarding_owner === userId;
-    if (!isAssignedLead || step !== "kati_review") {
-      throw new Error("You do not have access to record this review step.");
-    }
-  }
-
-  const now = new Date().toISOString();
-
-  // Immutable history entry for every decision at every gate.
-  const hist = await supabase.from("handoff_reviews").insert({
-    handoff_id: input.handoffId,
-    property_id: handoff.data.property_id,
-    step,
-    decision: input.decision,
-    reviewer_id: userId,
-    note: input.corrections || null,
-    exception_reason: input.exceptionReason || null,
-    is_demo: handoff.data.is_demo ?? false,
+  const { data, error } = await supabase.rpc("review_onboarding_handoff", {
+    _handoff_id: input.handoffId,
+    _expected_step: input.expectedStep,
+    _decision: input.decision,
+    _note: input.corrections,
+    _exception: input.exceptionReason ?? "",
   });
-  if (hist.error) throw hist.error;
-
-  if (input.decision === "returned") {
-    const upd = await supabase
-      .from("property_handoffs")
-      .update({
-        status: "returned",
-        reviewed_by: userId,
-        reviewed_at: now,
-        corrections: input.corrections || null,
-      })
-      .eq("id", input.handoffId)
-      .in("status", OPEN);
-    if (upd.error) throw upd.error;
-    await supabase
-      .from("properties")
-      .update({ lifecycle_status: "handoff_corrections" })
-      .eq("id", handoff.data.property_id);
-    await writeAudit({
-      actorId: userId,
-      action: "handoff_returned",
-      entityType: "property",
-      entityId: handoff.data.property_id,
-      reason: input.corrections || null,
-      after: { handoffId: input.handoffId, step },
-    });
-    return { ok: true as const, step, status: "returned" as const };
-  }
-
-  const next = nextGateStep(step);
-  const patch: Record<string, unknown> = { gate_step: next };
-  if (input.exceptionReason) {
-    const existing = Array.isArray(handoff.data.exceptions)
-      ? (handoff.data.exceptions as unknown[])
-      : [];
-    patch["exceptions"] = [
-      ...existing,
-      { step, reason: input.exceptionReason, by: userId, at: now },
-    ];
-  }
-  if (step === "kati_review") {
-    patch["kati_reviewer"] = userId;
-    patch["kati_decision"] = "approved";
-    patch["kati_note"] = input.corrections || null;
-    patch["kati_at"] = now;
-  }
-  if (step === "micah_review") {
-    patch["micah_reviewer"] = userId;
-    patch["micah_decision"] = "approved";
-    patch["micah_note"] = input.corrections || null;
-    patch["micah_at"] = now;
-  }
-  if (step === "operations_acceptance") {
-    patch["accepted_by"] = userId;
-    patch["accepted_at"] = now;
-    patch["reviewed_by"] = userId;
-    patch["reviewed_at"] = now;
-    // Operations has taken ownership, but the home is not live yet.
-    patch["status"] = "accepted_pending_live";
-  }
-  if (step === "live_confirmation") {
-    patch["live_confirmed_by"] = userId;
-    patch["live_confirmed_at"] = now;
-    patch["status"] = "accepted";
-  }
-
-  const upd = await supabase
-    .from("property_handoffs")
-    .update(patch as never)
-    .eq("id", input.handoffId)
-    .in("status", OPEN);
-  if (upd.error) throw upd.error;
-
-  if (step === "operations_acceptance") {
-    // Acceptance only moves the property into the pending-live stage.
-    await supabase
-      .from("properties")
-      .update({ onboarding_stage: "pending_live_confirmation", handoff_accepted_at: now })
-      .eq("id", handoff.data.property_id);
-    // Unfinished work is preserved as carryover — never closed or reset.
-    await supabase
-      .from("onboarding_tasks")
-      .update({ status: "carryover" })
-      .eq("property_id", handoff.data.property_id)
-      .in("status", ["open", "blocked"]);
-  }
-
-  // Only the final live confirmation makes a home operational.
-  if (step === "live_confirmation") {
-    await supabase
-      .from("properties")
-      .update({ lifecycle_status: "active_operations", active: true })
-      .eq("id", handoff.data.property_id);
-  }
-
+  if (error) throw error;
+  const result = data as { ok: true; step: string; status: string; propertyId: string };
   await writeAudit({
     actorId: userId,
-    action: "handoff_step_approved",
+    action: input.decision === "returned" ? "handoff_returned" : "handoff_step_approved",
     entityType: "property",
-    entityId: handoff.data.property_id,
+    entityId: result.propertyId,
     reason: input.exceptionReason || input.corrections || null,
-    after: { handoffId: input.handoffId, step, next },
+    after: { handoffId: input.handoffId, step: result.step, status: result.status },
   });
-
-  return {
-    ok: true as const,
-    step,
-    status: (step === "live_confirmation"
-      ? "accepted"
-      : step === "operations_acceptance"
-        ? "accepted_pending_live"
-        : "requested") as "accepted" | "accepted_pending_live" | "requested",
-  };
+  return result;
 }
 
 /* ------------------------------------------------------------------ *
@@ -984,14 +915,23 @@ export async function reopenOnboardingTask(
   await assertCap(supabase, userId, "is_onboarding_staff");
   const { data: task, error: readError } = await supabase
     .from("onboarding_tasks")
-    .select("id, property_id, title, completed_at")
+    .select("id, property_id, title, completed_at, status, stage")
     .eq("id", input.taskId)
     .single();
   if (readError) throw readError;
+  if (task.status !== "complete") throw new Error("Only a completed step can be reopened.");
+  if (input.reason.trim().length < 3) throw new Error("Record why this step needs a correction.");
+  const { loadStageCaptures } = await import("./onboarding-stage.server");
+  const captures = await loadStageCaptures(supabase, task.property_id);
+  const stage = captures
+    .filter((c) => c.stage === task.stage)
+    .sort((a, b) => b.revision - a.revision)[0];
+  if (stage && ["complete", "awaiting_review"].includes(stage.status))
+    throw new Error("Return or reopen the stage before reopening this step.");
 
   const { error } = await supabase
     .from("onboarding_tasks")
-    .update({ status: "open", completed_at: null })
+    .update({ status: "open", evidence_note: null })
     .eq("id", input.taskId);
   if (error) throw error;
 

@@ -86,7 +86,11 @@ export const settleFinancialRequestFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
-      .object({ requestId: z.string().uuid(), note: z.string().trim().min(3).max(1000) })
+      .object({
+        requestId: z.string().uuid(),
+        note: z.string().trim().min(3).max(1000),
+        actualAmount: z.number().min(0).max(1_000_000),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {

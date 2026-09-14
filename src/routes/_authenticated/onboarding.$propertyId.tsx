@@ -44,6 +44,7 @@ import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
+import { StageCapturePanel } from "@/components/onboarding/StageCapturePanel";
 import { CurrentWork } from "@/components/onboarding/CurrentWork";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
@@ -229,6 +230,8 @@ function PropertyWorkspace() {
     project: projectRow as never,
     tasks,
     handoff: (openHandoff ?? null) as never,
+    stageCaptures: data.stageCaptures.filter((c) => c.propertyId === current.id),
+    excludedTaskIds: outOfScope.map((x) => x.task.id),
   });
   const roll = rollupProperty(tasks, release);
   const sections = buildSections(tasks, release);
@@ -238,6 +241,7 @@ function PropertyWorkspace() {
       project: projectRow as never,
       tasks,
       handoff: (openHandoff ?? null) as never,
+      stageCaptures: data.stageCaptures.filter((c) => c.propertyId === current.id),
     },
     validateHandoff(current, tasks as never, {
       includeQuarterlyReview: enabled("quarterly_reviews"),
@@ -664,6 +668,16 @@ function PropertyWorkspace() {
             selectedId={openTaskId}
             release={release}
             onSelect={(t) => setOpenTaskId(t.id)}
+          />
+          <StageCapturePanel
+            propertyId={current.id}
+            canEdit={canEdit && !life.locked}
+            canReview={
+              !readOnly &&
+              (can("handoff_review") ||
+                data.projects.some((p) => p.property_id === current.id && p.director === userId))
+            }
+            documents={data.documents.filter((d) => d.entity_id === current.id)}
           />
           {!life.locked && (
             <TemplatePanel

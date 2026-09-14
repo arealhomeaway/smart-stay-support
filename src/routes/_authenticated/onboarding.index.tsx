@@ -15,6 +15,7 @@ import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { summarizeProject, type ProjectProperty } from "@/lib/onboarding-lifecycle";
 import { type WorkflowTask } from "@/lib/onboarding-workflow";
+import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
@@ -129,8 +130,16 @@ function Hub() {
         const project =
           (data.projects ?? []).find((x) => x.property_id === p.id && x.status !== "cancelled") ??
           null;
+        const scoped = splitByScope(tasks, projectScope(project));
         return summarizeProject(
-          { property: p as unknown as ProjectProperty, tasks, handoff, project: project as never },
+          {
+            property: p as unknown as ProjectProperty,
+            tasks: scoped.inScope,
+            handoff,
+            project: project as never,
+            stageCaptures: data.stageCaptures.filter((c) => c.propertyId === p.id),
+            excludedTaskIds: scoped.outOfScope.map((x) => x.task.id),
+          },
           pm?.full_name ?? pm?.email ?? null,
         );
       });

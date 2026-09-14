@@ -57,6 +57,7 @@ export type FinancialRequest = {
   approval_id: string | null;
   approved_amount: number | null;
   approved_at: string | null;
+  actual_amount?: number | null;
   invoice_amount: number | null;
   invoice_ref: string | null;
   invoice_at: string | null;
@@ -233,6 +234,16 @@ export function utilitySpend(costs: UtilityCost[]) {
 /* Permanent fact review                                               */
 /* ------------------------------------------------------------------ */
 
+export const FACT_FIELDS: Record<string, string> = {
+  wifi_notes: "Wi-Fi notes",
+  access_notes: "Access notes",
+  address_line1: "Street address",
+  city: "City",
+  state: "State",
+  postal_code: "Postal code",
+  nickname: "Nickname",
+};
+
 export type FactProposal = {
   id: string;
   property_id: string;
@@ -245,8 +256,14 @@ export type FactProposal = {
   status: string;
   decision_note: string | null;
   reviewed_at: string | null;
+  reviewed_by?: string | null;
   created_at: string;
 };
+
+/** Compare the captured prior value with the live value, without hiding whitespace changes. */
+export function isStaleFact(row: FactProposal, currentValue: string | null) {
+  return row.current_value !== currentValue;
+}
 
 export function pendingFacts(rows: FactProposal[]) {
   return rows.filter((r) => r.status === "pending");

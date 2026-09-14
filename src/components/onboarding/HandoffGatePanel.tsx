@@ -61,6 +61,7 @@ export function HandoffGatePanel({
   canReview: boolean;
   disabled: boolean;
   onDecision: (input: {
+    expectedStep: string;
     decision: "accepted" | "returned";
     corrections: string;
     exceptionReason?: string;
@@ -136,6 +137,7 @@ export function HandoffGatePanel({
                 disabled={disabled}
                 onApprove={(note, exceptionReason) =>
                   onDecision({
+                    expectedStep: step,
                     decision: "accepted",
                     corrections: note,
                     ...(exceptionReason ? { exceptionReason } : {}),
@@ -144,7 +146,7 @@ export function HandoffGatePanel({
               />
               <ReturnDialog
                 disabled={disabled}
-                onReturn={(corrections) => onDecision({ decision: "returned", corrections })}
+                onReturn={(corrections) => onDecision({ expectedStep: step, decision: "returned", corrections })}
               />
             </div>
           )}

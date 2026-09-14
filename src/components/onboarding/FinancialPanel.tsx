@@ -73,7 +73,11 @@ export function FinancialPanel({
         toast.success(ok);
         invalidate();
       },
-      onError: (e: Error) => toast.error(e.message),
+      onError: (e: Error) => {
+        toast.error(e.message);
+        // The canonical request may have been prepared before delivery failed.
+        void invalidate();
+      },
     }) as const;
 
   const create = useMutation(run(useServerFn(createFinancialRequestFn), "Cost request created."));
@@ -272,6 +276,7 @@ export function FinancialPanel({
               key={r.id}
               request={r}
               canEdit={canEdit}
+              sending={send.isPending}
               onSend={() => send.mutate({ data: { requestId: r.id } } as never)}
               onDecide={(approved, note, approvedAmount) =>
                 decide.mutate({
@@ -284,7 +289,9 @@ export function FinancialPanel({
                 } as never)
               }
               onAccounting={() => accounting.mutate({ data: { requestId: r.id } } as never)}
-              onSettle={(note) => settle.mutate({ data: { requestId: r.id, note } } as never)}
+              onSettle={(note, actualAmount) =>
+                settle.mutate({ data: { requestId: r.id, note, actualAmount } } as never)
+              }
             />
           ))}
         </div>
@@ -296,6 +303,7 @@ export function FinancialPanel({
 function RequestCard({
   request,
   canEdit,
+  sending,
   onSend,
   onDecide,
   onInvoice,
@@ -304,17 +312,19 @@ function RequestCard({
 }: {
   request: FinancialRequest;
   canEdit: boolean;
+  sending: boolean;
   onSend: () => void;
   onDecide: (approved: boolean, note: string, approvedAmount: number | null) => void;
   onInvoice: (amount: number, ref: string | null, note: string | null) => void;
   onAccounting: () => void;
-  onSettle: (note: string) => void;
+  onSettle: (note: string, actualAmount: number) => void;
 }) {
   const status = financialStatus(request);
   const tier = tierFor(request);
   const [note, setNote] = useState("");
   const [invoiceAmount, setInvoiceAmount] = useState("");
   const [invoiceRef, setInvoiceRef] = useState("");
+  const [actualAmount, setActualAmount] = useState("");
 
   return (
     <Card>
@@ -330,13 +340,14 @@ function RequestCard({
         <div className="flex flex-wrap gap-4 text-muted-foreground">
           <span>Estimate {money(request.estimate_amount)}</span>
           <span>Approved {money(request.approved_amount)}</span>
+          <span>Actual paid {money(request.actual_amount ?? null)}</span>
           <span>Invoice {money(request.invoice_amount)}</span>
           {request.vendor ? <span>Vendor {request.vendor}</span> : null}
           <span>{varianceLabel(request)}</span>
         </div>
 
-        {canEdit && status === "estimate" ? (
-          <Button size="sm" onClick={onSend}>
+        {canEdit && status === "estimate" && (tier === "owner" || tier === "supervisor") ? (
+          <Button size="sm" onClick={onSend} disabled={sending}>
             {tier === "owner"
               ? "Send to homeowner"
               : tier === "supervisor"
@@ -347,6 +358,11 @@ function RequestCard({
 
         {canEdit && status === "awaiting_approval" ? (
           <div className="space-y-2">
+            {tier === "owner" ? (
+              <Button size="sm" variant="outline" onClick={onSend} disabled={sending}>
+                {sending ? "Checking delivery…" : "Retry owner delivery"}
+              </Button>
+            ) : null}
             <Textarea
               rows={2}
               placeholder="Decision note"
@@ -392,10 +408,18 @@ function RequestCard({
               size="sm"
               variant="outline"
               disabled={!invoiceAmount}
-              onClick={() => onInvoice(Number(invoiceAmount), invoiceRef.trim() || null, null)}
+              onClick={() =>
+                onInvoice(Number(invoiceAmount), invoiceRef.trim() || null, note.trim() || null)
+              }
             >
               Record invoice
             </Button>
+            <Input
+              aria-label="Invoice variance explanation"
+              placeholder="Explain any amount above approval"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
         ) : null}
 
@@ -434,6 +458,17 @@ function RequestCard({
 
         {canEdit && status === "sent_to_accounting" ? (
           <div className="flex flex-wrap gap-2">
+            <div className="space-y-1">
+              <Label htmlFor={`actual-${request.id}`}>Actual paid amount</Label>
+              <Input
+                id={`actual-${request.id}`}
+                type="number"
+                min="0"
+                step="0.01"
+                value={actualAmount}
+                onChange={(e) => setActualAmount(e.target.value)}
+              />
+            </div>
             <Input
               className="max-w-sm"
               placeholder="Settlement note"
@@ -442,8 +477,13 @@ function RequestCard({
             />
             <Button
               size="sm"
-              disabled={note.trim().length < 3}
-              onClick={() => onSettle(note.trim())}
+              disabled={
+                note.trim().length < 3 ||
+                actualAmount === "" ||
+                !Number.isFinite(Number(actualAmount)) ||
+                Number(actualAmount) < 0
+              }
+              onClick={() => onSettle(note.trim(), Number(actualAmount))}
             >
               Mark settled
             </Button>

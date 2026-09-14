@@ -238,6 +238,7 @@ export async function updateProject(
     furnishingScope?: FurnishingScope | undefined;
     modules?: ModuleKey[] | undefined;
     notes?: string | null | undefined;
+    externalRefs?: Record<string, string> | undefined;
     reason?: string | null | undefined;
   },
 ) {
@@ -271,6 +272,7 @@ export async function updateProject(
   if (input.furnishingScope !== undefined) patch.furnishing_scope = input.furnishingScope;
   if (input.modules !== undefined) patch.modules = input.modules;
   if (input.notes !== undefined) patch.notes = input.notes;
+  if (input.externalRefs !== undefined) patch.external_refs = input.externalRefs;
 
   const { data, error } = await supabase
     .from("onboarding_projects")
@@ -293,9 +295,7 @@ export async function updateProject(
       actor: userId,
       isDemo: data.is_demo,
     });
-    const nowActiveOwner =
-      (data.modules ?? []).includes("active_owner") &&
-      !(current.data.modules ?? []).includes("active_owner");
+    const nowActiveOwner = (data.modules ?? []).includes("active_owner");
     if (nowActiveOwner) await ensureActiveOwnerEnrollment(supabase, userId, data.property_id);
   } else {
     await recordProjectEvent(supabase, {
