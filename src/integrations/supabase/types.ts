@@ -7788,6 +7788,18 @@ export type Database = {
       }
     }
     Functions: {
+      record_owner_financial_response: {
+        Args: { _approval_id: string; _owner_id: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      record_owner_task_response: {
+        Args: { _approval_id: string; _owner_id: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      decide_onboarding_task_approval: {
+        Args: { _task_id: string; _approved: boolean; _note: string; _evidence_url?: string }
+        Returns: string
+      }
       prepare_onboarding_task_approval: {
         Args: { _task_id: string; _property_id: string; _detail: string }
         Returns: string

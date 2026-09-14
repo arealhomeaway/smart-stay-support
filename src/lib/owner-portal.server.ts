@@ -233,7 +233,8 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
       .map((l) => [l.property_id, l]),
   );
   const chosen = [...new Set(input.propertyIds)].filter((id) => allowed.has(id));
-  if (chosen.length !== new Set(input.propertyIds).size) throw new Error("Participation can only include properties enrolled in this program.");
+  if (chosen.length !== new Set(input.propertyIds).size)
+    throw new Error("Participation can only include properties enrolled in this program.");
   for (const id of chosen) {
     const link = allowed.get(id)!;
 
@@ -670,34 +671,38 @@ export async function recordOwnerApproval(
     throw new Error("Please add a short note explaining what you would like changed.");
   }
 
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("approvals")
-    .update({
-      status: input.decision,
-      decision_note: input.comment.trim() || null,
-      decided_at: now,
-    })
-    .eq("id", input.approvalId)
-    .eq("status", "pending")
-    .select("id")
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error("A decision was already recorded for this request.");
-
-  // Mirror the decision onto the onboarding task it gates, if any. Homeowners
-  // cannot write staff task rows themselves, so this narrow, already-authorized
-  // write runs with elevated access on the single gated task and nothing else.
-  if (current.data.entity_type === "onboarding_task" && current.data.entity_id) {
+  let now = new Date().toISOString();
+  if (["onboarding_task", "financial_request"].includes(current.data.entity_type ?? "")) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
-      .from("onboarding_tasks")
-      // A requested change returns the step to the team for revision and
-      // resubmission; it never completes and never waives the requirement.
+    const response = await supabaseAdmin.rpc(
+      current.data.entity_type === "onboarding_task"
+        ? "record_owner_task_response"
+        : "record_owner_financial_response",
+      {
+        _approval_id: input.approvalId,
+        _owner_id: userId,
+        _approved: input.decision === "approved",
+        _note: input.comment.trim(),
+      },
+    );
+    if (response.error) throw response.error;
+    if (!response.data) throw new Error("The owner response could not be recorded.");
+    now = response.data;
+  } else {
+    const { data, error } = await supabase
+      .from("approvals")
       .update({
-        owner_approval_status: input.decision === "approved" ? "approved" : "changes_requested",
+        status: input.decision,
+        decision_note: input.comment.trim() || null,
+        decided_at: now,
       })
-      .eq("id", current.data.entity_id);
+      .eq("id", input.approvalId)
+      .eq("status", "pending")
+      .eq("approver_id", userId)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("A decision was already recorded or the recipient changed.");
   }
 
   const { writeAudit } = await import("./audit.server");

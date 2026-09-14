@@ -493,39 +493,14 @@ export async function recordOwnerTaskDecision(
     throw new Error("This step does not require a homeowner approval.");
   }
 
-  const pending = await supabase
-    .from("approvals")
-    .select("id")
-    .eq("entity_type", "onboarding_task")
-    .eq("entity_id", task.data.id)
-    .eq("status", "pending")
-    .order("created_at", { ascending: false })
-    .limit(1);
-  if (pending.error) throw pending.error;
-  const approvalId = pending.data?.[0]?.id ?? null;
-  if (!approvalId) {
-    throw new Error(
-      "There is no open homeowner request on this step — send it for approval first.",
-    );
-  }
-
-  const now = new Date().toISOString();
-  const decided = await supabase
-    .from("approvals")
-    .update({
-      status: input.approved ? "approved" : "declined",
-      decision_note: input.note.trim(),
-      decided_at: now,
-      ...(input.evidenceUrl ? { evidence_url: input.evidenceUrl } : {}),
-    })
-    .eq("id", approvalId);
-  if (decided.error) throw decided.error;
-
-  const { error } = await supabase
-    .from("onboarding_tasks")
-    .update({ owner_approval_status: input.approved ? "approved" : "changes_requested" })
-    .eq("id", task.data.id);
-  if (error) throw error;
+  const decision = await supabase.rpc("decide_onboarding_task_approval", {
+    _task_id: input.taskId,
+    _approved: input.approved,
+    _note: input.note.trim(),
+    ...(input.evidenceUrl ? { _evidence_url: input.evidenceUrl } : {}),
+  });
+  if (decision.error) throw decision.error;
+  const approvalId = decision.data;
 
   await writeAudit({
     actorId: userId,

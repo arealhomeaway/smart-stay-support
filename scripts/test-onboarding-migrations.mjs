@@ -25,6 +25,14 @@ try {
     "supabase/tests/fixtures/onboarding_task_approval_schema.sql",
     "supabase/migrations/20260914080000_prepare_onboarding_task_approval.sql",
     "supabase/tests/onboarding_task_approval.test.sql",
+    "supabase/tests/fixtures/onboarding_task_decision_schema.sql",
+    "supabase/migrations/20260914090000_atomic_onboarding_task_decision.sql",
+    "supabase/tests/onboarding_task_decision.test.sql",
+    "supabase/tests/fixtures/owner_task_response_schema.sql",
+    "supabase/migrations/20260914100000_atomic_owner_task_response.sql",
+    "supabase/tests/owner_task_response.test.sql",
+    "supabase/migrations/20260914110000_atomic_owner_financial_response.sql",
+    "supabase/tests/owner_financial_response.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);
