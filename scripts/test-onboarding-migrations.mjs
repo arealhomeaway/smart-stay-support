@@ -21,6 +21,7 @@ try {
     "supabase/tests/fixtures/onboarding_approval_preparation_schema.sql",
     "supabase/migrations/20260914060000_prepare_onboarding_financial_approval.sql",
     "supabase/tests/onboarding_approval_preparation.test.sql",
+    "supabase/migrations/20260914070000_onboarding_authority_policy_snapshot.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

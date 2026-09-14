@@ -89,8 +89,28 @@ previews were inspected; see `qa/onboarding/README.md` for evidence and limits.
 Future workflow sections now default to collapsed, with active work and blockers
 expanded. Full unit suite: 592 tests passing; fixture typecheck passes.
 
-Still required: remaining approval concurrency and
-policy configuration audits, role queues and filtered navigation, authenticated
+Director Hub now includes stage review/correction counts and the assigned project
+Director for review ownership. Attention rows open matching Work filters or the
+handoff gate, with the origin token preserved. Workspace tab/filter selection is
+URL-backed; legacy timeline/calendar/files links map into the six approved areas.
+Timeline/calendar are Work disclosures and documents/media live under Property.
+My Work groups are mutually exclusive, future work is collapsed, and the drawer
+shares the same scope, stage captures and release context as its list. Filters
+retain the complete task set for dependency calculations. Regression suite: 597
+tests passing; focused lint passes. Authenticated browser validation remains open.
+
+Onboarding authority thresholds now use the existing shared policy functions with
+an optional explicit configuration. Approved defaults and Operations callers are
+unchanged. Administrators can record a version, thresholds and approval reference
+for future onboarding requests through existing app-settings permissions. New
+requests snapshot that policy using a seventh unapplied migration. Existing
+requests retain their recorded tier; sending/retry no longer reclassifies them.
+Invalid settings fail closed. Tests cover boundaries, defaults, persisted authority
+and non-admin rejection. Full suite: 602 passing; isolated migration checks,
+typecheck and focused lint pass. No live policy settings were changed.
+
+Still required: remaining approval concurrency,
+remaining role-view audit, authenticated
 workspace/Active Owner desktop and 390px acceptance, final build/schema review,
 working commits and draft PR. This checkpoint does not establish preview readiness.
 
@@ -110,3 +130,12 @@ working commits and draft PR. This checkpoint does not establish preview readine
    acceptance review only when all four passes are implemented.
 
 No claim of preview readiness yet. Browser verification and draft PR remain pending.
+# Financial and utility transition verification — September 14
+
+Invoice recording now requires approved authority, an authorized proceed estimate, or a documented emergency. Existing invoices cannot be overwritten through that action; the conditional save rejects a competing status/invoice change. The panel shares this eligibility rule, including the documented emergency path. Whitespace alone no longer satisfies an emergency or variance explanation.
+
+Utility account updates are restricted to their property and preserve omitted service dates and notes. Utility costs require a matching account/property and a nonnegative amount with a forward billing period. New financial requests validate the linked task's property. Accounting handoff requires an invoiced request, reuses a previously recorded delivery, and reports an explicit reconciliation error if email delivery succeeds but its status update cannot be saved. Concurrent email attempts and provider/local-write uncertainty remain open; these guards do not claim exactly-once delivery.
+
+Verification: 611 unit tests pass across 57 files, including nine new transition and property-boundary cases using local fake clients. Focused lint passes. No email was sent, live data changed, migration applied, or OneDrive item deleted during this work.
+
+The handoff screen now offers the first review to the assigned, non-cancelled project's Director, matching the server's existing authorization rule. The latest Cloudflare production build passes with the same application entry and plugins, using a separate ignored output/cache directory and disabling deployment-config generation. All seven migrations pass the isolated PostgreSQL runner. These build and database checks do not replace authenticated workspace/portal acceptance or verification of the live schema, and no deployment or live migration was performed.

@@ -42,6 +42,12 @@ import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
+import {
+  WORK_FILTER_LABELS,
+  matchesWorkFilter,
+  validateWorkspaceSearch,
+  type WorkFilter,
+} from "@/lib/onboarding-work-views";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
 import { StageCapturePanel } from "@/components/onboarding/StageCapturePanel";
@@ -101,6 +107,7 @@ import {
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
+  validateSearch: validateWorkspaceSearch,
   head: () => ({
     meta: [
       { title: "Property onboarding workflow — Resolve" },
@@ -124,6 +131,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
 
 function PropertyWorkspace() {
   const { propertyId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
   const { can, readOnly, userId, roles } = useRole();
@@ -362,16 +371,17 @@ function PropertyWorkspace() {
         onOpenTask={setOpenTaskId}
       />
 
-      <Tabs defaultValue="overview" className="space-y-5">
-        <TabsList>
+      <Tabs
+        value={search.tab}
+        onValueChange={(tab) => void navigate({ search: { ...search, tab }, replace: true })}
+        className="space-y-5"
+      >
+        <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="workflow">All work</TabsTrigger>
+          <TabsTrigger value="workflow">Work</TabsTrigger>
           <TabsTrigger value="property">Property</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="handoff">Handoff</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="activity">History</TabsTrigger>
         </TabsList>
 
@@ -661,8 +671,39 @@ function PropertyWorkspace() {
               </ul>
             </section>
           )}
+          <div className="space-y-2">
+            <Label htmlFor="work-filter">Show work</Label>
+            <select
+              id="work-filter"
+              className="w-full rounded-md border bg-background p-2 text-sm sm:max-w-xs"
+              value={search.workFilter}
+              onChange={(event) =>
+                void navigate({
+                  search: { ...search, workFilter: event.target.value as WorkFilter },
+                  replace: true,
+                })
+              }
+            >
+              {Object.entries(WORK_FILTER_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
           <WorkflowTable
             tasks={tasks}
+            visibleTaskIds={tasks
+              .filter((task) =>
+                matchesWorkFilter(
+                  viewTask(task, tasks, release),
+                  search.workFilter,
+                  data.stageCaptures.find(
+                    (capture) => capture.propertyId === current.id && capture.stage === task.stage,
+                  )?.status,
+                ),
+              )
+              .map((task) => task.id)}
             outOfScope={outOfScope}
             people={data.people}
             selectedId={openTaskId}
@@ -686,11 +727,91 @@ function PropertyWorkspace() {
               readOnly={!canEdit}
             />
           )}
+          <details className="surface space-y-4 p-4">
+            <summary className="cursor-pointer font-medium">Timeline and milestones</summary>
+            <SchedulePanel
+              propertyId={current.id}
+              plannedClosingOn={
+                (current as { planned_closing_on?: string | null }).planned_closing_on ?? null
+              }
+              actualClosingOn={
+                (current as { actual_closing_on?: string | null }).actual_closing_on ?? null
+              }
+              actualAccessOn={
+                (current as { actual_access_on?: string | null }).actual_access_on ?? null
+              }
+              canEdit={canEdit}
+              onChange={() => void refresh()}
+            />
+            <section className="surface p-4">
+              <p className="font-medium">Section timeline</p>
+              <p className="text-sm text-muted-foreground">
+                Where each workflow section should land, from the dates Resolve calculated. Only
+                milestone-level dates are shown — individual task dates live in the Workflow tab.
+              </p>
+              <div className="mt-3 space-y-2">
+                {sections.map((s) => {
+                  const dates = s.tasks
+                    .map((v) => v.task.due_on)
+                    .filter((d): d is string => Boolean(d))
+                    .sort();
+                  const late = s.tasks.filter((v) => v.overdue).length;
+                  return (
+                    <div
+                      key={s.key}
+                      className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3 text-sm"
+                    >
+                      <span className="min-w-0 flex-1 truncate font-medium">{s.label}</span>
+                      <span className="numeric text-xs text-muted-foreground">
+                        {dates.length > 0 ? `${dates[0]} → ${dates.at(-1)}` : "No dates set"}
+                      </span>
+                      <Chip
+                        className={stateChip(
+                          s.state === "complete"
+                            ? "done"
+                            : s.state === "blocked"
+                              ? "blocked"
+                              : "active",
+                        )}
+                      >
+                        {s.done}/{s.total}
+                      </Chip>
+                      {late > 0 && <Chip className={stateChip("blocked")}>{late} late</Chip>}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </details>
+          <details className="surface space-y-4 p-4">
+            <summary className="cursor-pointer font-medium">Task calendar</summary>
+            <TaskCalendar
+              tasks={tasks}
+              people={data.people}
+              onSelect={(t) => setOpenTaskId(t.id)}
+            />
+          </details>
         </TabsContent>
 
         {/* ------------------------------------------------------- Property */}
         <TabsContent value="property" className="space-y-4">
           <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
+          <details className="surface space-y-4 p-4">
+            <summary className="cursor-pointer font-medium">Documents and media</summary>
+            <PhotoStrip entityType="property" entityId={current.id} title="Photos" limit={16} />
+            <AttachmentsPanel
+              entityType="property"
+              entityId={current.id}
+              title="Property documents & media"
+            />
+            <OperationsContextPanel
+              property={current as never}
+              tasks={tasks as never}
+              records={data.externalRecords as never}
+              documents={data.documents as never}
+              documentsEnabled={docsEnabled}
+            />
+          </details>
         </TabsContent>
 
         {/* ------------------------------------------------------ Financial */}
@@ -735,7 +856,12 @@ function PropertyWorkspace() {
                 can("handoff_review") ||
                 (Boolean(userId) &&
                   (openHandoff.gate_step ?? "kati_review") === "kati_review" &&
-                  current.onboarding_owner === userId)
+                  data.projects.some(
+                    (project) =>
+                      project.property_id === current.id &&
+                      project.status !== "cancelled" &&
+                      project.director === userId,
+                  ))
               }
               disabled={readOnly}
               onDecision={(input) =>
@@ -814,83 +940,10 @@ function PropertyWorkspace() {
         </TabsContent>
 
         {/* ------------------------------------------------------- Timeline */}
-        <TabsContent value="timeline" className="space-y-4">
-          <SchedulePanel
-            propertyId={current.id}
-            plannedClosingOn={
-              (current as { planned_closing_on?: string | null }).planned_closing_on ?? null
-            }
-            actualClosingOn={
-              (current as { actual_closing_on?: string | null }).actual_closing_on ?? null
-            }
-            actualAccessOn={
-              (current as { actual_access_on?: string | null }).actual_access_on ?? null
-            }
-            canEdit={canEdit}
-            onChange={() => void refresh()}
-          />
-          <section className="surface p-4">
-            <p className="font-medium">Section timeline</p>
-            <p className="text-sm text-muted-foreground">
-              Where each workflow section should land, from the dates Resolve calculated. Only
-              milestone-level dates are shown — individual task dates live in the Workflow tab.
-            </p>
-            <div className="mt-3 space-y-2">
-              {sections.map((s) => {
-                const dates = s.tasks
-                  .map((v) => v.task.due_on)
-                  .filter((d): d is string => Boolean(d))
-                  .sort();
-                const late = s.tasks.filter((v) => v.overdue).length;
-                return (
-                  <div
-                    key={s.key}
-                    className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 truncate font-medium">{s.label}</span>
-                    <span className="numeric text-xs text-muted-foreground">
-                      {dates.length > 0 ? `${dates[0]} → ${dates.at(-1)}` : "No dates set"}
-                    </span>
-                    <Chip
-                      className={stateChip(
-                        s.state === "complete"
-                          ? "done"
-                          : s.state === "blocked"
-                            ? "blocked"
-                            : "active",
-                      )}
-                    >
-                      {s.done}/{s.total}
-                    </Chip>
-                    {late > 0 && <Chip className={stateChip("blocked")}>{late} late</Chip>}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </TabsContent>
 
         {/* ------------------------------------------------------- Calendar */}
-        <TabsContent value="calendar">
-          <TaskCalendar tasks={tasks} people={data.people} onSelect={(t) => setOpenTaskId(t.id)} />
-        </TabsContent>
 
         {/* ---------------------------------------------------------- Files */}
-        <TabsContent value="files" className="space-y-4">
-          <PhotoStrip entityType="property" entityId={current.id} title="Photos" limit={16} />
-          <AttachmentsPanel
-            entityType="property"
-            entityId={current.id}
-            title="Property documents & media"
-          />
-          <OperationsContextPanel
-            property={current as never}
-            tasks={tasks as never}
-            records={data.externalRecords as never}
-            documents={data.documents as never}
-            documentsEnabled={docsEnabled}
-          />
-        </TabsContent>
 
         {/* ------------------------------------------------------- Activity */}
         <TabsContent value="activity" className="space-y-4">

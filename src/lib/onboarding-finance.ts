@@ -5,7 +5,12 @@
  * from the maintenance authority policy — nothing is restated here.
  */
 
-import { authorityTier, money, type AuthorityTier } from "./maintenance-policy";
+import {
+  authorityTier,
+  money,
+  type AuthorityTier,
+  type AuthorityPolicy,
+} from "./maintenance-policy";
 
 /* ------------------------------------------------------------------ */
 /* Financial requests                                                  */
@@ -52,6 +57,7 @@ export type FinancialRequest = {
   description: string | null;
   estimate_amount: number | null;
   authority_tier: string;
+  authority_policy?: AuthorityPolicy | null;
   emergency: boolean;
   emergency_reason: string | null;
   approval_id: string | null;
@@ -78,9 +84,40 @@ export function financialStatus(row: Pick<FinancialRequest, "status">): Financia
 
 /** Tier a request falls into, from its estimate and emergency flag. */
 export function tierFor(
-  row: Pick<FinancialRequest, "estimate_amount" | "emergency">,
+  row: Pick<FinancialRequest, "estimate_amount" | "emergency"> &
+    Partial<Pick<FinancialRequest, "authority_tier" | "authority_policy">>,
 ): AuthorityTier {
-  return authorityTier(row.estimate_amount, { emergency: row.emergency });
+  if (
+    row.authority_tier &&
+    ["proceed", "supervisor", "owner", "emergency"].includes(row.authority_tier)
+  )
+    return row.authority_tier as AuthorityTier;
+  return authorityTier(row.estimate_amount, {
+    emergency: row.emergency,
+    ...(row.authority_policy ? { policy: row.authority_policy } : {}),
+  });
+}
+
+/** Only an authorized request can receive its first invoice. */
+export function canRecordInvoice(row: FinancialRequest): boolean {
+  if (row.invoice_amount != null || row.invoice_at != null) return false;
+  if (row.status === "approved")
+    return (
+      row.approved_amount != null &&
+      Number.isFinite(row.approved_amount) &&
+      row.approved_amount >= 0
+    );
+  if (
+    row.status !== "estimate" ||
+    row.estimate_amount == null ||
+    !Number.isFinite(row.estimate_amount) ||
+    row.estimate_amount < 0
+  )
+    return false;
+  const tier = tierFor(row);
+  return (
+    tier === "proceed" || (tier === "emergency" && row.emergency && !!row.emergency_reason?.trim())
+  );
 }
 
 /** Invoice minus what was approved. Positive means it came in over. */

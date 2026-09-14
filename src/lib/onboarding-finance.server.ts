@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { writeAudit } from "./audit.server";
 import { recordProjectEvent } from "./onboarding-project.server";
+import { loadOnboardingPolicy } from "./onboarding-policy.server";
 import {
   authorityTier,
   AUTHORITY_TIER_LABELS,
@@ -19,7 +20,9 @@ import {
 } from "./maintenance-policy";
 import {
   FACT_FIELDS,
+  canRecordInvoice,
   financialNextAction,
+  tierFor,
   variance,
   type FinancialRequest,
 } from "./onboarding-finance";
@@ -140,7 +143,7 @@ export async function setAccountingRecipient(supabase: Client, userId: string, e
 /* ------------------------------------------------------------------ */
 
 export async function loadFinance(supabase: Client, propertyId: string) {
-  const [requests, accounts, costs, facts, recipient, owner, property, reviewers] =
+  const [requests, accounts, costs, facts, recipient, owner, property, reviewers, authorityPolicy] =
     await Promise.all([
       supabase
         .from("financial_requests")
@@ -174,6 +177,7 @@ export async function loadFinance(supabase: Client, propertyId: string) {
         .eq("id", propertyId)
         .maybeSingle(),
       supabase.from("profiles").select("id, full_name"),
+      loadOnboardingPolicy(supabase),
     ]);
   if (requests.error) throw requests.error;
   if (accounts.error) throw accounts.error;
@@ -191,6 +195,7 @@ export async function loadFinance(supabase: Client, propertyId: string) {
     ownerContact: owner.data ?? null,
     currentFacts: property.data ?? null,
     reviewers: reviewers.data ?? [],
+    authorityPolicy,
   };
 }
 
@@ -211,8 +216,19 @@ export async function createFinancialRequest(
 ) {
   await assertOnboardingStaff(supabase, userId);
   const project = await projectFor(supabase, input.propertyId);
-  const tier = authorityTier(input.estimateAmount, { emergency: input.emergency ?? false });
-  if (tier === "emergency" && !input.emergencyReason) {
+  if (input.taskId) {
+    const task = await supabase
+      .from("onboarding_tasks")
+      .select("id")
+      .eq("id", input.taskId)
+      .eq("property_id", input.propertyId)
+      .maybeSingle();
+    if (task.error) throw task.error;
+    if (!task.data) throw new Error("That task is not available for this property.");
+  }
+  const policy = await loadOnboardingPolicy(supabase);
+  const tier = authorityTier(input.estimateAmount, { emergency: input.emergency ?? false, policy });
+  if (tier === "emergency" && !input.emergencyReason?.trim()) {
     throw new Error("An emergency needs a recorded reason before it can proceed.");
   }
   const { data, error } = await supabase
@@ -227,6 +243,7 @@ export async function createFinancialRequest(
       description: input.description ?? null,
       estimate_amount: input.estimateAmount,
       authority_tier: tier,
+      authority_policy: policy,
       emergency: input.emergency ?? false,
       emergency_reason: input.emergencyReason ?? null,
       status: "estimate",
@@ -243,7 +260,10 @@ export async function createFinancialRequest(
       propertyId: input.propertyId,
       kind: "financial_request_created",
       summary: `${input.title} — ${money(input.estimateAmount)} (${AUTHORITY_TIER_LABELS[tier]})`,
-      detail: authorityGuidance(input.estimateAmount, { emergency: input.emergency ?? false }),
+      detail: authorityGuidance(input.estimateAmount, {
+        emergency: input.emergency ?? false,
+        policy,
+      }),
       actor: userId,
       isDemo: project.is_demo ?? false,
     });
@@ -284,10 +304,10 @@ export async function sendFinancialForApproval(
   if (request.estimate_amount == null || !Number.isFinite(request.estimate_amount)) {
     throw new Error("Record a valid estimate before requesting approval.");
   }
-  const tier = authorityTier(request.estimate_amount, { emergency: request.emergency });
+  const tier = tierFor(request);
   if (tier === "proceed") {
     throw new Error(
-      `Under ${money(200)} no approval is needed — record the invoice when it arrives.`,
+      "This request can proceed under its recorded authority — record the invoice when it arrives.",
     );
   }
 
@@ -307,7 +327,10 @@ export async function sendFinancialForApproval(
         userId: id,
         kind: "approval_needed",
         title: `Approve ${money(request.estimate_amount)} — ${request.title}`,
-        body: authorityGuidance(request.estimate_amount),
+        body: authorityGuidance(
+          request.estimate_amount,
+          request.authority_policy ? { policy: request.authority_policy } : {},
+        ),
         linkPath: link,
         entityType: "financial_request",
         entityId: request.id,
@@ -513,9 +536,15 @@ export async function recordInvoice(
   const request = row.data as FinancialRequest | null;
   if (!request) throw new Error("That request is not available.");
 
+  if (!canRecordInvoice(request))
+    throw new Error(
+      "This request needs approval or already has an invoice. Refresh its current status.",
+    );
+  if (!Number.isFinite(input.invoiceAmount) || input.invoiceAmount < 0)
+    throw new Error("Enter a valid invoice amount.");
   const merged = { ...request, invoice_amount: input.invoiceAmount };
   const delta = variance(merged);
-  if (delta != null && delta > 0 && !input.varianceNote) {
+  if (delta != null && delta > 0 && !input.varianceNote?.trim()) {
     const baseline = Number(request.approved_amount ?? request.estimate_amount ?? 0);
     if (baseline <= 0 || delta / baseline > 0.1) {
       throw new Error(
@@ -524,7 +553,7 @@ export async function recordInvoice(
     }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("financial_requests")
     .update({
       invoice_amount: input.invoiceAmount,
@@ -534,8 +563,15 @@ export async function recordInvoice(
       status: "invoiced",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", request.id);
+    .eq("id", request.id)
+    .eq("status", request.status)
+    .is("invoice_amount", null)
+    .is("invoice_at", null)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!data)
+    throw new Error("The request changed before the invoice was saved. Refresh and review it.");
 
   await writeAudit({
     actorId: userId,
@@ -565,6 +601,15 @@ export async function sendToAccounting(
   if (!request) throw new Error("That request is not available.");
   if (request.invoice_amount == null)
     throw new Error("Record the invoice before sending it to accounting.");
+
+  if (
+    request.accounting_sent_at &&
+    request.accounting_recipient &&
+    ["sent_to_accounting", "settled"].includes(request.status)
+  )
+    return { ok: true as const, to: request.accounting_recipient, delivery: "sent" as const };
+  if (request.status !== "invoiced")
+    throw new Error("Only an invoiced request can be sent to accounting.");
 
   const to = await accountingRecipient(supabase);
   if (!to) {
@@ -607,7 +652,7 @@ export async function sendToAccounting(
     throw new Error(`Accounting handoff was not sent: ${result.error}. The request remains open.`);
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("financial_requests")
     .update({
       status: "sent_to_accounting",
@@ -615,8 +660,14 @@ export async function sendToAccounting(
       accounting_sent_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", request.id);
-  if (error) throw error;
+    .eq("id", request.id)
+    .eq("status", "invoiced")
+    .select("id")
+    .maybeSingle();
+  if (error || !data)
+    throw new Error(
+      "The accounting email was sent, but its handoff could not be recorded. Verify delivery before retrying.",
+    );
   await writeAudit({
     actorId: userId,
     action: "financial_sent_to_accounting",
@@ -703,12 +754,20 @@ export async function saveUtilityAccount(
     account_label: input.accountLabel,
     status: input.status,
     responsible: input.responsible,
-    service_start_on: input.serviceStartOn || null,
-    notes: input.notes ?? null,
+    ...(input.serviceStartOn !== undefined
+      ? { service_start_on: input.serviceStartOn || null }
+      : {}),
+    ...(input.notes !== undefined ? { notes: input.notes } : {}),
     updated_at: new Date().toISOString(),
   };
   const query = input.id
-    ? supabase.from("utility_accounts").update(patch).eq("id", input.id).select("id").maybeSingle()
+    ? supabase
+        .from("utility_accounts")
+        .update(patch)
+        .eq("id", input.id)
+        .eq("property_id", input.propertyId)
+        .select("id")
+        .maybeSingle()
     : supabase
         .from("utility_accounts")
         .insert({ ...patch, created_by: userId, is_demo: project?.is_demo ?? false })
@@ -716,6 +775,7 @@ export async function saveUtilityAccount(
         .maybeSingle();
   const { data, error } = await query;
   if (error) throw error;
+  if (!data) throw new Error("That utility account is not available for this property.");
   await writeAudit({
     actorId: userId,
     action: input.id ? "utility_account_updated" : "utility_account_added",
@@ -741,6 +801,18 @@ export async function recordUtilityCost(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
+  if (!Number.isFinite(input.amount) || input.amount < 0)
+    throw new Error("Enter a valid utility cost.");
+  if (input.periodStart && input.periodEnd && input.periodStart > input.periodEnd)
+    throw new Error("The billing period must end on or after its start date.");
+  const account = await supabase
+    .from("utility_accounts")
+    .select("id")
+    .eq("id", input.accountId)
+    .eq("property_id", input.propertyId)
+    .maybeSingle();
+  if (account.error) throw account.error;
+  if (!account.data) throw new Error("That utility account is not available for this property.");
   const project = await projectFor(supabase, input.propertyId);
   const { error } = await supabase.from("utility_costs").insert({
     account_id: input.accountId,

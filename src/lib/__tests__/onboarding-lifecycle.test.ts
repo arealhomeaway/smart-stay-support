@@ -64,6 +64,25 @@ function task(over: Partial<WorkflowTask> = {}): WorkflowTask {
 }
 
 describe("stage derivation", () => {
+  it("surfaces stage review ownership and corrections before handoff", () => {
+    const summary = summarizeProject(
+      {
+        property: property(),
+        tasks: [],
+        handoff: null,
+        project: { id: "project", status: "active", director: "director" },
+        stageCaptures: [
+          { stage: "post_contract", revision: 2, status: "awaiting_review" },
+          { stage: "phase1_inspection", revision: 4, status: "correction_required" },
+        ],
+      },
+      null,
+    );
+    expect(summary.stageReviewCount).toBe(1);
+    expect(summary.stageCorrectionCount).toBe(1);
+    expect(summary.directorId).toBe("director");
+    expect(summary.gateStep).toBe(null);
+  });
   it("keeps accepted homes in the review queue until Supervisor Live confirmation", () => {
     const summary = summarizeProject(
       {

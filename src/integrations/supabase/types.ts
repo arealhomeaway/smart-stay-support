@@ -2090,6 +2090,7 @@ export type Database = {
       }
       financial_requests: {
         Row: {
+          authority_policy: Json | null
           actual_amount: number | null
           actual_recorded_at: string | null
           actual_recorded_by: string | null
@@ -2127,6 +2128,7 @@ export type Database = {
           actual_amount?: number | null
           actual_recorded_at?: string | null
           actual_recorded_by?: string | null
+          authority_policy?: Json | null
           accounting_sent_at?: string | null
           approval_id?: string | null
           approved_amount?: number | null
@@ -2160,6 +2162,7 @@ export type Database = {
           actual_amount?: number | null
           actual_recorded_at?: string | null
           actual_recorded_by?: string | null
+          authority_policy?: Json | null
           accounting_sent_at?: string | null
           approval_id?: string | null
           approved_amount?: number | null

@@ -14,9 +14,11 @@ import {
 import { TaskRow } from "@/components/onboarding/WorkflowTable";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
-import { viewTask, type TaskView, type WorkflowTask } from "@/lib/onboarding-workflow";
+import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { buildReleaseContext } from "@/lib/onboarding-state";
+import { groupMyWork } from "@/lib/onboarding-work-views";
+import { isTestRecord } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
   addOnboardingNoteFn,
@@ -113,7 +115,7 @@ function MyWork() {
     onError,
   });
 
-  const allTasks = (data?.tasks ?? []) as unknown as WorkflowTask[];
+  const allTasks = useMemo(() => (data?.tasks ?? []) as unknown as WorkflowTask[], [data?.tasks]);
   const target = who === "me" ? userId : who === "unassigned" ? null : who;
 
   const mine = useMemo(
@@ -130,7 +132,7 @@ function MyWork() {
     data.properties.find((p) => p.id === id)?.name ?? "Unknown home";
   const views = mine.flatMap((t) => {
     const property = data.properties.find((p) => p.id === t.property_id);
-    if (!property || property.is_demo) return [];
+    if (!property || isTestRecord(property)) return [];
     const project =
       data.projects.find((p) => p.property_id === t.property_id && p.status !== "cancelled") ??
       null;
@@ -157,65 +159,44 @@ function MyWork() {
   });
   const t0 = today();
 
-  const groups: { key: string; label: string; hint: string; items: TaskView[] }[] = [
-    {
-      key: "overdue",
-      label: "Overdue",
-      hint: "Past the date Resolve calculated for this step.",
-      items: views.filter((v) => v.overdue),
-    },
-    {
-      key: "today",
-      label: "Due today",
-      hint: "Scheduled to finish today.",
-      items: views.filter((v) => !v.overdue && v.task.due_on === t0),
-    },
-    {
-      key: "blocked",
-      label: "Blocked",
-      hint: "Waiting on a dependency, a homeowner decision, or a recorded blocker.",
-      items: views.filter(
-        (v) => !v.overdue && (v.status === "blocked" || v.status === "not_ready"),
-      ),
-    },
-    {
-      key: "review",
-      label: "Needs review",
-      hint: "Work is done but evidence or an approval is still outstanding.",
-      items: views.filter((v) => !v.overdue && v.status === "needs_review"),
-    },
-    {
-      key: "upcoming",
-      label: "Upcoming",
-      hint: "Released and dated for a later day.",
-      items: views.filter(
-        (v) =>
-          !v.overdue &&
-          v.status !== "blocked" &&
-          v.status !== "not_ready" &&
-          v.status !== "needs_review" &&
-          (v.task.due_on ?? "") > t0,
-      ),
-    },
-    {
-      key: "undated",
-      label: "No date yet",
-      hint: "Not scheduled — usually waiting on a milestone date such as closing or access.",
-      items: views.filter(
-        (v) =>
-          !v.task.due_on &&
-          !v.overdue &&
-          v.status !== "blocked" &&
-          v.status !== "not_ready" &&
-          v.status !== "needs_review",
-      ),
-    },
-  ];
-
   const openTask = allTasks.find((t) => t.id === openTaskId) ?? null;
   const drawerSiblings = openTask
-    ? allTasks.filter((t) => t.property_id === openTask.property_id)
+    ? splitByScope(
+        allTasks.filter((t) => t.property_id === openTask.property_id),
+        projectScope(
+          data.projects.find(
+            (p) => p.property_id === openTask.property_id && p.status !== "cancelled",
+          ) ?? null,
+        ),
+      ).inScope
     : [];
+  const drawerProperty = data.properties.find((p) => p.id === openTask?.property_id);
+  const drawerRelease = drawerProperty
+    ? buildReleaseContext({
+        property: drawerProperty,
+        project:
+          data.projects.find(
+            (p) => p.property_id === drawerProperty.id && p.status !== "cancelled",
+          ) ?? null,
+        tasks: drawerSiblings,
+        handoff:
+          data.handoffs.find(
+            (h) =>
+              h.property_id === drawerProperty.id &&
+              ["requested", "accepted_pending_live"].includes(h.status),
+          ) ?? null,
+        stageCaptures: data.stageCaptures.filter(
+          (capture) => capture.propertyId === drawerProperty.id,
+        ),
+        excludedTaskIds: allTasks
+          .filter(
+            (task) =>
+              task.property_id === drawerProperty.id &&
+              !drawerSiblings.some((sibling) => sibling.id === task.id),
+          )
+          .map((task) => task.id),
+      })
+    : undefined;
   const canEdit = !readOnly && can("handoff_request");
 
   return (
@@ -249,16 +230,16 @@ function MyWork() {
         />
       )}
 
-      {groups
+      {groupMyWork(views, t0)
         .filter((g) => g.items.length > 0)
         .map((g) => (
-          <section key={g.key} className="surface overflow-hidden">
-            <div className="border-b border-border bg-muted/40 px-3 py-2">
+          <details key={g.key} open={g.key !== "future"} className="surface overflow-hidden">
+            <summary className="cursor-pointer border-b border-border bg-muted/40 px-3 py-2">
               <p className="text-sm font-semibold">
                 {g.label} <span className="numeric text-muted-foreground">({g.items.length})</span>
               </p>
               <p className="text-xs text-muted-foreground">{g.hint}</p>
-            </div>
+            </summary>
             {g.items
               .sort((a, b) => (a.task.due_on ?? "9999").localeCompare(b.task.due_on ?? "9999"))
               .map((v) => (
@@ -271,15 +252,16 @@ function MyWork() {
                   showProperty={propertyName(v.task.property_id)}
                 />
               ))}
-          </section>
+          </details>
         ))}
 
       <TaskDrawer
         task={openTask}
         tasks={drawerSiblings}
+        {...(drawerRelease ? { release: drawerRelease } : {})}
         people={data.people}
         propertyName={openTask ? propertyName(openTask.property_id) : ""}
-        disabled={!canEdit}
+        disabled={!canEdit || !drawerRelease || drawerRelease.locked}
         canRecordException={can("handoff_review")}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}

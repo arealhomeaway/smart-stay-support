@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AUTHORITY_TIER_LABELS, authorityLadder, authorityTier } from "@/lib/maintenance-policy";
+import { OnboardingAuthorityPanel } from "./OnboardingAuthorityPanel";
 import {
   FINANCIAL_KINDS,
   FINANCIAL_STATUS_LABELS,
@@ -31,6 +32,7 @@ import {
   financialStatus,
   financialTotals,
   tierFor,
+  canRecordInvoice,
   varianceLabel,
   varianceNeedsNote,
   type FinancialRequest,
@@ -60,7 +62,7 @@ export function FinancialPanel({
 }) {
   const qc = useQueryClient();
   const load = useServerFn(getOnboardingFinance);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["onboarding-finance", propertyId],
     queryFn: () => load({ data: { propertyId } }),
   });
@@ -102,12 +104,13 @@ export function FinancialPanel({
   });
   const [recipientEmail, setRecipientEmail] = useState("");
 
+  if (error) return <p role="alert">Costs could not be loaded: {error.message}</p>;
   if (isLoading || !data) return <p className="text-muted-foreground">Loading costs…</p>;
 
   const requests = (data.requests ?? []) as unknown as FinancialRequest[];
   const totals = financialTotals(requests);
   const amount = Number(form.estimateAmount || 0);
-  const tier = authorityTier(amount, { emergency: form.emergency });
+  const tier = authorityTier(amount, { emergency: form.emergency, policy: data.authorityPolicy });
 
   return (
     <div className="space-y-5">
@@ -223,10 +226,17 @@ export function FinancialPanel({
         </CardHeader>
         <CardContent className="space-y-2">
           <ul className="space-y-1 text-sm text-muted-foreground">
-            {authorityLadder().map((line) => (
+            {authorityLadder(data.authorityPolicy).map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>
+          <p className="text-xs text-muted-foreground">Policy: {data.authorityPolicy.version}</p>
+          {isAdmin && canEdit ? (
+            <OnboardingAuthorityPanel
+              policy={data.authorityPolicy}
+              onSaved={() => void invalidate()}
+            />
+          ) : null}
           <div className="flex flex-wrap gap-4 pt-2 text-sm">
             <span>Estimated {money(totals.estimated)}</span>
             <span>Awaiting approval {totals.awaitingApproval}</span>
@@ -339,6 +349,7 @@ function RequestCard({
       <CardContent className="space-y-3 text-sm">
         <div className="flex flex-wrap gap-4 text-muted-foreground">
           <span>Estimate {money(request.estimate_amount)}</span>
+          <span>Policy {request.authority_policy?.version ?? "Recorded legacy authority"}</span>
           <span>Approved {money(request.approved_amount)}</span>
           <span>Actual paid {money(request.actual_amount ?? null)}</span>
           <span>Invoice {money(request.invoice_amount)}</span>
@@ -389,7 +400,7 @@ function RequestCard({
           </div>
         ) : null}
 
-        {canEdit && (status === "approved" || (status === "estimate" && tier === "proceed")) ? (
+        {canEdit && canRecordInvoice(request) ? (
           <div className="flex flex-wrap gap-2">
             <Input
               className="max-w-[8rem]"

@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
+import { workspaceSearchFromLens } from "@/lib/onboarding-work-views";
 
 export type Lens =
   | "attention"
@@ -60,7 +61,7 @@ const LENSES: { key: Lens; label: string; hint: string }[] = [
   { key: "corrections", label: "Corrections", hint: "Returned from a review gate." },
   { key: "at_risk", label: "At risk", hint: "Derived from overdue, blocked or evidence gaps." },
   { key: "blocked", label: "Blocked", hint: "Nothing can move until the blocker clears." },
-  { key: "review", label: "Handoff queue", hint: "Sitting at a handoff review gate." },
+  { key: "review", label: "Review queue", hint: "Stage captures and handoffs awaiting review." },
   { key: "handoffs", label: "Upcoming handoffs", hint: "Target handoff within 14 days." },
   { key: "up7", label: "Next 7 days", hint: "Target handoff within 7 days." },
   { key: "up14", label: "Next 14 days", hint: "Target handoff within 14 days." },
@@ -81,10 +82,15 @@ const CHIP_LENSES: Lens[] = [
 ];
 
 function awaitingMyReview(p: ProjectSummary, viewer?: HubViewer) {
-  if (!p.inReview || !viewer) return false;
-  const step = p.gateStep ?? "kati_review";
-  if (step === "kati_review" && viewer.userId && p.property.onboarding_owner === viewer.userId)
+  if (!viewer) return false;
+  if (
+    p.stageReviewCount > 0 &&
+    (viewer.canReview || (viewer.userId && p.directorId === viewer.userId))
+  )
     return true;
+  if (!p.inReview) return false;
+  const step = p.gateStep ?? "kati_review";
+  if (step === "kati_review" && viewer.userId && p.directorId === viewer.userId) return true;
   return viewer.canReview;
 }
 
@@ -104,6 +110,7 @@ function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
         (p.risk.level === "blocked" ||
           p.risk.level === "at_risk" ||
           p.property.lifecycle_status === "handoff_corrections" ||
+          p.stageCorrectionCount > 0 ||
           awaitingMyReview(p, viewer) ||
           (!p.next.waiting && !p.inReview))
       );
@@ -114,9 +121,12 @@ function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
     case "blocked":
       return !live && p.risk.level === "blocked";
     case "review":
-      return !live && p.inReview;
+      return !live && (p.inReview || p.stageReviewCount > 0);
     case "corrections":
-      return !live && p.property.lifecycle_status === "handoff_corrections";
+      return (
+        !live &&
+        (p.property.lifecycle_status === "handoff_corrections" || p.stageCorrectionCount > 0)
+      );
     case "handoffs":
       return !live && withinDays(p.target, 14);
     case "up7":
@@ -236,7 +246,7 @@ export function DirectorHub({
             </p>
           )}
           {visible.map((p) => (
-            <ProjectRow key={p.property.id} project={p} originToken={originToken} />
+            <ProjectRow key={p.property.id} project={p} originToken={originToken} lens={lens} />
           ))}
         </div>
       </section>
@@ -444,16 +454,23 @@ function PortfolioCard({
 function ProjectRow({
   project: p,
   originToken,
+  lens,
 }: {
   project: ProjectSummary;
   originToken?: string | undefined;
+  lens: Lens;
 }) {
   const stage = lifecycleStageMeta(p.stage);
   return (
     <Link
       to="/onboarding/$propertyId"
       params={{ propertyId: p.property.id }}
-      search={(originToken ? { from: originToken } : undefined) as never}
+      search={
+        {
+          ...workspaceSearchFromLens(lens, Boolean(p.gateStep)),
+          ...(originToken ? { from: originToken } : {}),
+        } as never
+      }
       className="surface flex flex-col gap-2 p-3 transition hover:bg-muted/40 lg:flex-row lg:items-center lg:gap-4"
     >
       <PropertyPhoto

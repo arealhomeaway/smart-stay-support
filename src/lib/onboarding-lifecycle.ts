@@ -150,7 +150,7 @@ export type ProjectInput = {
   tasks: WorkflowTask[];
   handoff: OpenHandoff;
   /** The Onboarding Project row, when onboarding has actually been started. */
-  project?: StateProject;
+  project?: (Exclude<StateProject, null> & { director?: string | null }) | null;
   stageCaptures?: { stage: string; revision: number; status: string }[];
   excludedTaskIds?: string[];
 };
@@ -572,6 +572,9 @@ export type ProjectSummary = {
   inReview: boolean;
   /** Which handoff gate the readiness record is sitting at, when open. */
   gateStep: string | null;
+  stageReviewCount: number;
+  stageCorrectionCount: number;
+  directorId: string | null;
   owner: string | null;
 };
 
@@ -597,6 +600,15 @@ export function summarizeProject(input: ProjectInput, ownerName: string | null):
     // Operations acceptance still requires Supervisor Live confirmation.
     inReview: Boolean(input.handoff) && !life.live,
     gateStep: life.live ? null : (input.handoff?.gate_step ?? null),
+    stageReviewCount: life.live
+      ? 0
+      : (input.stageCaptures ?? []).filter((capture) => capture.status === "awaiting_review")
+          .length,
+    stageCorrectionCount: life.live
+      ? 0
+      : (input.stageCaptures ?? []).filter((capture) => capture.status === "correction_required")
+          .length,
+    directorId: input.project?.director ?? null,
 
     owner: ownerName,
   };
