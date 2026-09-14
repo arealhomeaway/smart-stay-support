@@ -105,6 +105,7 @@ import {
   relativeTime,
   slaState,
   statusTone,
+  ticketAssigneeName,
 } from "@/lib/tickets";
 
 export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
@@ -776,7 +777,7 @@ function TicketDetail() {
     !closed &&
     ((stage === "verify" && needsEvidence) || (Boolean(requiredEvidence) && !evidenceSatisfied));
 
-  const assigneeName = assignee?.full_name ?? assignee?.email ?? "Unassigned";
+  const assigneeName = ticketAssigneeName(ownerId, assignee);
   const propertyName = ticket.properties?.nickname ?? ticket.properties?.name ?? "Property";
   const activeBranch = { claim: Boolean(branches?.claim), recovery: Boolean(branches?.recovery) };
   // Whether resolving this ticket will close it outright or send it to a

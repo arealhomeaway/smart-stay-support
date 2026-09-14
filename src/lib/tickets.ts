@@ -482,3 +482,20 @@ export function ticketActionStartPlan(
   ];
   return { patch, events };
 }
+
+/**
+ * "Unassigned" must mean no owner — never "the owner's profile hasn't
+ * loaded yet". The profile for a ticket's owner is fetched by id, so the
+ * moment ownership changes (e.g. ticketActionStartPlan claiming it for
+ * the acting user) that's a brand new lookup with nothing cached yet.
+ * Without separating "no owner" from "owner set, profile pending", that
+ * loading gap reads as a regression to Unassigned even though the owner
+ * was already correctly set in the same write that started the clock.
+ */
+export function ticketAssigneeName(
+  ownerId: string | null,
+  profile: { full_name?: string | null; email?: string | null } | null | undefined,
+): string {
+  if (!ownerId) return "Unassigned";
+  return profile?.full_name ?? profile?.email ?? "…";
+}
