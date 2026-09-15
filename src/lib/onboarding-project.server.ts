@@ -333,27 +333,11 @@ export async function ensureActiveOwnerEnrollment(
   userId: string,
   propertyId: string,
 ) {
-  const existing = await supabase
-    .from("owner_program_properties")
-    .select("program_id")
-    .eq("property_id", propertyId)
-    .eq("inclusion_status", "included")
-    .maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) return { programId: existing.data.program_id, created: false as const };
-
-  const contact = await supabase
-    .from("property_owner_contacts")
-    .select("owner_name, owner_email")
-    .eq("property_id", propertyId)
-    .maybeSingle();
-  if (contact.error) throw contact.error;
-
   const { createProgram } = await import("./owner-program.server");
   const result = await createProgram(supabase, userId, {
     propertyId,
-    ownerName: contact.data?.owner_name ?? "",
-    ownerEmail: contact.data?.owner_email ?? "",
+    ownerName: "",
+    ownerEmail: "",
   });
   return { programId: result.programId, created: !result.alreadyExists };
 }

@@ -31,6 +31,10 @@ import {
 } from "./owner-participation";
 import { combinedMinutes, loadProgramAggregate, recordEvent } from "./owner-participation.server";
 import { syncBadges } from "./owner-badges.server";
+import {
+  canonicalEnrollmentOwner,
+  assertEnrollmentOwner,
+} from "./owner-enrollment-identity.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -272,6 +276,7 @@ export async function createProgram(
   userId: string,
   input: { propertyId: string; ownerName: string; ownerEmail: string },
 ) {
+  const { property, owner } = await canonicalEnrollmentOwner(supabase, input.propertyId);
   const existing = await supabase
     .from("owner_program_properties")
     .select("program_id")
@@ -279,30 +284,32 @@ export async function createProgram(
     .eq("inclusion_status", "included")
     .maybeSingle();
   if (existing.error) throw existing.error;
-  if (existing.data) return { programId: existing.data.program_id, alreadyExists: true as const };
+  if (existing.data) {
+    const program = await supabase
+      .from("owner_programs")
+      .select("owner_record_id")
+      .eq("id", existing.data.program_id)
+      .single();
+    if (program.error) throw program.error;
+    assertEnrollmentOwner(program.data.owner_record_id, owner.id);
+    return { programId: existing.data.program_id, alreadyExists: true as const };
+  }
 
-  const property = await supabase
-    .from("properties")
-    .select("id, is_demo, actual_closing_on")
-    .eq("id", input.propertyId)
-    .single();
-  if (property.error) throw property.error;
-
-  // Reuse the program for a known contact without granting portal access or
+  // Reuse by canonical Owner identity without granting portal access or
   // resetting its clock. Late additions retain the existing administrator gate.
-  if (input.ownerEmail.trim()) {
+  {
     const candidates = await supabase
       .from("owner_programs")
       .select("id")
-      .ilike("owner_email", input.ownerEmail.trim().replace(/[%_\\]/g, "\\$&"))
-      .eq("is_demo", property.data.is_demo ?? false)
+      .eq("owner_record_id", owner.id)
+      .eq("is_demo", property.is_demo ?? false)
       .is("archived_at", null)
       .not("status", "in", "(closed,completed)")
       .limit(2);
     if (candidates.error) throw candidates.error;
     if ((candidates.data?.length ?? 0) > 1) {
       throw new Error(
-        "This contact has more than one program. Select the intended program on the Active Owner board.",
+        "This canonical Owner has more than one program. Resolve the duplicate program before enrollment.",
       );
     }
     const candidate = candidates.data?.[0];
@@ -310,7 +317,7 @@ export async function createProgram(
       await addProgramProperty(supabase, userId, {
         programId: candidate.id,
         propertyId: input.propertyId,
-        closingDate: property.data.actual_closing_on,
+        closingDate: property.actual_closing_on,
       });
       return { programId: candidate.id, alreadyExists: true as const };
     }
@@ -320,8 +327,9 @@ export async function createProgram(
     .from("owner_programs")
     .insert({
       property_id: input.propertyId,
-      owner_name: input.ownerName || null,
-      owner_email: input.ownerEmail || null,
+      owner_record_id: owner.id,
+      owner_name: owner.name,
+      owner_email: owner.email,
       status: "draft",
       started_on: null,
       ends_on: null,
@@ -330,7 +338,7 @@ export async function createProgram(
       onboarding_target_hours: DEFAULT_ONBOARDING_HOURS,
       ongoing_target_hours: DEFAULT_ONGOING_HOURS,
       created_by: userId,
-      is_demo: property.data.is_demo ?? false,
+      is_demo: property.is_demo ?? false,
     })
     .select("id")
     .single();
@@ -365,10 +373,12 @@ export async function addProgramProperty(
 ) {
   const program = await supabase
     .from("owner_programs")
-    .select("id, status, started_on")
+    .select("id, status, started_on, owner_record_id")
     .eq("id", input.programId)
     .single();
   if (program.error) throw program.error;
+  const { owner } = await canonicalEnrollmentOwner(supabase, input.propertyId);
+  assertEnrollmentOwner(program.data.owner_record_id, owner.id);
 
   const alreadyElsewhere = await supabase
     .from("owner_program_properties")

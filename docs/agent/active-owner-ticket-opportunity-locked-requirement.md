@@ -34,3 +34,13 @@ Status: PENDING implementation of the complete locked requirement. Existing buil
 ## Acceptance evidence required
 
 Test all Tickets across enrolled properties, including more than the current feed cap; initial generation, stage updates and repeat/concurrent synchronization; correct Ticket/Property/Owner/program linkage; all eight request categories and explanations; canonical authority changes without hardcoded thresholds; restricted-content exclusion; unrelated-owner and non-enrolled-property denial; review-only logging and retained history; canonical identity mismatch handling without name/email matching. Reconcile actual schema/RLS and rendered authenticated owner views in the approved isolated acceptance environment.
+
+### September 15 follow-up: canonical Owner enrollment foundation
+
+Migration `20260915050000_canonical_owner_enrollment.sql` adds the existing `property_owners` foreign key to programs, a unique active program per canonical Owner/demo partition, and trigger validation for new program/enrollment identity. A bound program cannot replace its Owner identity; existing unbound programs are not guessed or backfilled. New enrollment must match the program and Property canonical Owner. No existing RLS or portal-user mapping changed.
+
+`createProgram` now resolves `properties.owner_record_id`, checks that canonical Owner is active, reuses programs by the Owner ID rather than email, and snapshots contact details from that record. Submitted contact fields no longer establish identity. `addProgramProperty` rejects missing/mismatched identity, and onboarding's enrollment helper goes through the same validation instead of trusting an existing link without checking it.
+
+666 unit tests / 76 files / 1918 assertions pass; TypeScript and focused lint pass (generated types use the documented formatting-baseline exception). All 23 isolated migration files pass, including cross-owner rejection, unbound creation, duplicate active program prevention, immutable bound identity and preservation of unresolved legacy records. Production client/server build passes in `.codex-qa.local/build-20260915-canonical-owner`. Migration is unapplied to shared/live.
+
+Locked Ticket requirement status: PARTIALLY IMPLEMENTED. This is the canonical enrollment foundation, not automatic Ticket coverage. Automatic generation, safe operational projection, eight request types/explanations, legacy reconciliation UI and updated contact controls remain. Existing property-owner changes and complete activation/enrollment concurrency need further audit. Program/link/history creation remains multiple writes; this checkpoint does not claim it is atomic. No owner user account was created, rebound or inferred from contact text. MORE IMPLEMENTATION REQUIRED.

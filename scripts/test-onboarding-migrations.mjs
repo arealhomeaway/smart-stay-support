@@ -60,6 +60,9 @@ try {
     "supabase/tests/fixtures/task_date_override_schema.sql",
     "supabase/migrations/20260915040000_atomic_task_date_override.sql",
     "supabase/tests/task_date_override.test.sql",
+    "supabase/tests/fixtures/canonical_owner_enrollment_schema.sql",
+    "supabase/migrations/20260915050000_canonical_owner_enrollment.sql",
+    "supabase/tests/canonical_owner_enrollment.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

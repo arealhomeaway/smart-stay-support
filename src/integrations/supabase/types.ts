@@ -4084,6 +4084,7 @@ export type Database = {
           owner_email: string | null
           owner_name: string | null
           owner_phone: string | null
+          owner_record_id: string | null
           owner_user_id: string | null
           property_id: string | null
           started_on: string | null
@@ -4124,6 +4125,7 @@ export type Database = {
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          owner_record_id?: string | null
           owner_user_id?: string | null
           property_id?: string | null
           started_on?: string | null
@@ -4164,6 +4166,7 @@ export type Database = {
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          owner_record_id?: string | null
           owner_user_id?: string | null
           property_id?: string | null
           started_on?: string | null
