@@ -30,6 +30,13 @@ it("attaches authority only from Work Orders linked to both the Ticket and its P
       args: { _program_id: string; _property_ids: string[]; _preview: boolean },
       options: { count: string },
     ) => {
+      if (name === "read_owner_ticket_updates") {
+        const query = {
+          order: () => query,
+          range: async () => ({ data: [], count: 0, error: null }),
+        };
+        return query;
+      }
       expect(name).toBe("read_owner_ticket_authority");
       expect(args._program_id).toBe("program");
       expect(options.count).toBe("exact");
@@ -99,6 +106,13 @@ it("loads every visible Ticket across bounded property filters and pages, retain
       args: { _program_id: string; _property_ids: string[]; _preview: boolean },
       options: { count: string },
     ) => {
+      if (name === "read_owner_ticket_updates") {
+        const query = {
+          order: () => query,
+          range: async () => ({ data: [], count: 0, error: null }),
+        };
+        return query;
+      }
       expect(name).toBe("read_owner_ticket_authority");
       expect(args._program_id).toBe("program");
       expect(options.count).toBe("exact");
@@ -159,6 +173,26 @@ it("uses the scoped receipt without requesting raw Work Orders or approval recor
       return query;
     },
     rpc: (_name: string, args: Record<string, unknown>) => {
+      if (_name === "read_owner_ticket_updates") {
+        const query = {
+          order: () => query,
+          range: async () => ({
+            data: [
+              {
+                ticket_id: "ticket",
+                property_id: "home",
+                issue: "A pipe was leaking.",
+                work_performed: "The pipe was repaired.",
+                outcome: "Leak testing passed.",
+                reviewed_at: "2026-09-15T12:00:00Z",
+              },
+            ],
+            count: 1,
+            error: null,
+          }),
+        };
+        return query;
+      }
       expect(args).toEqual({ _program_id: "program", _property_ids: ["home"], _preview: false });
       const query = {
         order: () => query,
@@ -189,4 +223,6 @@ it("uses the scoped receipt without requesting raw Work Orders or approval recor
   const result = await loadOwnerTicketProjection(db as never, ["home"], false, "program");
   expect(result[0]!.request.ownerActionRequired).toBe(false);
   expect(result[0]!.request.why).toContain("prior response is recorded");
+  expect(result[0]!.description).toContain("The pipe was repaired.");
+  expect(result[0]!.resolution_notes).toBe("Leak testing passed.");
 });

@@ -95,9 +95,27 @@ export async function loadOwnerTicketProjection(
         )
         .order("id"),
     );
+    const updates = await readCountedRows(
+      supabase
+        .rpc(
+          "read_owner_ticket_updates",
+          {
+            _program_id: programId,
+            _property_ids: ids.slice(offset, offset + 100),
+            _preview: preview,
+          },
+          { count: "exact" },
+        )
+        .order("ticket_id"),
+    );
     tickets.push(
       ...result.data.map((ticket) => ({
         ...projectOwnerTicket(ticket),
+        ...projectReviewedTicketUpdate(
+          updates.data.find(
+            (update) => update.ticket_id === ticket.id && update.property_id === ticket.property_id,
+          ),
+        ),
         request: ownerTicketRequest(
           work.data
             .filter(
@@ -133,4 +151,18 @@ export async function loadOwnerTicketProjection(
   return tickets.sort(
     (a, b) => b.reported_at.localeCompare(a.reported_at) || a.id.localeCompare(b.id),
   );
+}
+
+/** Only content explicitly reviewed for owner visibility enters this narrative. */
+export function projectReviewedTicketUpdate(update?: {
+  issue: string;
+  work_performed: string;
+  outcome: string;
+  reviewed_at: string;
+}) {
+  if (!update) return {};
+  return {
+    description: `Reviewed update (${update.reviewed_at.slice(0, 10)}). Issue: ${update.issue}\nWork: ${update.work_performed}${update.outcome ? `\nOutcome: ${update.outcome}` : ""}`,
+    resolution_notes: update.outcome || null,
+  };
 }

@@ -14,6 +14,16 @@ export type Database = {
   }
   public: {
     Tables: {
+      ticket_owner_updates: {
+        Row: {
+          id: string; ticket_id: string; property_id: string; owner_record_id: string;
+          revision: number; issue: string; work_performed: string; outcome: string;
+          reviewed_by: string; reviewed_at: string; source_updated_at: string; is_demo: boolean;
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -7866,6 +7876,16 @@ export type Database = {
       }
     }
     Functions: {
+      save_ticket_owner_update: {
+        Args: { _ticket_id: string; _actor_id: string; _expected_ticket_updated_at: string;
+          _expected_revision: number; _expected_owner_id: string; _issue: string; _work_performed: string; _outcome: string; _reviewed: boolean }
+        Returns: string
+      }
+      read_owner_ticket_updates: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: { ticket_id: string; property_id: string; revision: number; issue: string;
+          work_performed: string; outcome: string; reviewed_at: string }[]
+      }
       read_owner_ticket_authority: {
         Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
         Returns: {
