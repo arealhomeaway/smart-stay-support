@@ -4085,6 +4085,7 @@ export type Database = {
           owner_phone: string | null
           owner_user_id: string | null
           property_id: string | null
+          report_version: string
           started_on: string | null
           status: string
           target_hours: number
@@ -4124,6 +4125,7 @@ export type Database = {
           owner_phone?: string | null
           owner_user_id?: string | null
           property_id?: string | null
+          report_version?: string
           started_on?: string | null
           status?: string
           target_hours?: number
@@ -4163,6 +4165,7 @@ export type Database = {
           owner_phone?: string | null
           owner_user_id?: string | null
           property_id?: string | null
+          report_version?: string
           started_on?: string | null
           status?: string
           target_hours?: number
@@ -7906,6 +7909,15 @@ export type Database = {
         Returns: undefined
       }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
+      complete_owner_program: {
+        Args: {
+          _actor_id: string
+          _expected_version: string
+          _program_id: string
+          _report: Json
+        }
+        Returns: string
+      }
       correct_owner_time_entry: {
         Args: {
           _actor_id: string
@@ -7971,6 +7983,16 @@ export type Database = {
           _priority: string
           _title: string
           _user_id: string
+        }
+        Returns: string
+      }
+      override_onboarding_task_date: {
+        Args: {
+          _actor_id: string
+          _due_on: string
+          _expected_updated_at: string
+          _reason: string
+          _task_id: string
         }
         Returns: string
       }
