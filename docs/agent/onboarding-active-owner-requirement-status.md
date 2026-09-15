@@ -29,7 +29,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | Handoff blockers, carryover, finance independent of Live | PARTIAL | Derived readiness and tests exist; transaction rechecks carryover links, assignee, date and reason. Full readiness-input concurrency and end-to-end acceptance outstanding. |
 | Six workspace areas and details in drawers | NOT YET ACCEPTED | Implemented; full desktop/390px verification pending. |
 | Manager Hub and My Work | PARTIAL | Assignment/team selection and filtered drill-through implemented; role-specific experience unverified. |
-| PM, directors, supervisor, field role homes | PARTIAL | Local selection guards; common Director hub navigation and wider workspace payload still need role-specific behavior. |
+| PM, directors, supervisor, field role homes | PARTIAL | Server-derived navigation mode and identity-scoped caches implemented. Field users land on My Work; supervisors and project leads retain hub navigation. Wider workspace payload and per-project role boundaries remain incomplete. |
 | Director attention/review/correction/risk/blocked/upcoming/handoff/workload queues | PARTIAL | Queue/drill-through work exists; inspect each named queue against current routes. |
 | Origin, filters, contextual Back | PARTIAL | URL state implementation exists; complete navigation acceptance remains. |
 | Two marked QA projects excluded from KPIs | PARTIAL | Synthetic fixtures cover Full/No Furnishing; authenticated isolated project seed/acceptance not performed. |
@@ -45,7 +45,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 21 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 647 tests, 70 files, 1615 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 649 tests, 71 files, 1623 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
 | Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-resume-verified`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
@@ -107,3 +107,10 @@ Remaining closeout issue found during this audit: aggregation reads capped resul
 `loadProgramAggregate` now pages every collection to its exact reported count, including enrollment, reviews, entries, badges and both property-link tables. Link reads use the existing parent foreign keys to filter to the selected program before paging. All queries have deterministic tie-break ordering. The shared counted-page helper advances by received rows so a backend cap below the requested 500 rows cannot truncate the result; count changes, missing pages and later-page errors fail the load rather than returning partial totals. No access policy or migration changed.
 
 The aggregate regression uses 1205 entries, a 200-row server cap and a correction beyond the first 1000 rows. It verifies complete property links, late amendment detection and 1204 counted minutes. Per-property direct/shared totals now use the same countable-entry selector as the combined total, so original corrected entries do not inflate property figures. 647 unit tests / 70 files / 1615 assertions, TypeScript and strict focused lint pass. This resolves the pagination defect identified in the previous checkpoint. Same-count concurrent edits outside closeout still do not constitute a database snapshot; closeout uses the separate report-version guard. Authenticated PostgREST and simultaneous multi-connection acceptance remain unverified.
+
+
+### September 15 follow-up: role-aware navigation and identity-scoped caches
+
+The workspace response derives a presentation mode from the existing supervisor predicate and non-cancelled PM/director assignments. Supervisors see Director hub, project leads see Project hub, and other onboarding users are redirected from the hub to My Work and receive no hub navigation link. All four workspace consumers use a user-specific query key and disable loading without a user ID. Existing prefix invalidation still refreshes the workspace after mutations. These are presentation/cache changes, not new roles, grants or RLS policies.
+
+649 unit tests / 71 files / 1623 assertions pass; TypeScript and focused source/route lint pass. Tests cover supervisor/lead/field/cancelled-project mode and identity-specific cache keys. Rendered authenticated desktop/390px navigation remains NOT YET ACCEPTED. The full workspace payload still returns wider RLS-visible data, and project detail/direct server action boundaries remain under audit. Next: provide assigned-task data with only necessary prerequisite context, avoiding a UI-only permission claim or loss of release-gate inputs.

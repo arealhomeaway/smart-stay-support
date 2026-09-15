@@ -1,3 +1,4 @@
+import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -143,8 +144,9 @@ function PropertyWorkspace() {
   const { origin } = useRecordOrigin("onboarding");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["onboarding-workspace"],
+    queryKey: onboardingWorkspaceKey(userId),
     queryFn: () => load(),
+    enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 

@@ -240,3 +240,12 @@ Versioned-closeout production build passed using fresh `.codex-qa.local/build-20
 Replaced capped collection reads with counted, deterministically ordered pagination, scoped to the program including review/entry property links through existing foreign keys. The helper honors a lower server row cap and rejects missing/error pages or changed counts. Regression coverage includes 1205 entries with a late correction under a 200-row cap, preserving all links and correct combined totals. Also corrected per-property direct/shared minutes to exclude returned/superseded entries through the canonical selector. 647 unit tests / 70 files / 1615 assertions pass; TypeScript and strict focused lint pass. No migration changed; the existing 21-migration validation remains applicable. Production build result follows when the running handle finishes. Authenticated query/security and multi-connection acceptance remain outstanding.
 
 Pagination production build passed with fresh `.codex-qa.local/build-20260915-owner-pagination` output. No deployment or live migration. The goal remains incomplete: handoff/lifecycle concurrency, role-specific workspace behavior and authenticated acceptance still require work.
+
+
+### September 15 - role-aware onboarding navigation
+
+Added a server-derived presentation mode using existing supervisor capability and PM/director assignments. Field users land on My Work, supervisor/lead hub labels match their view, and workspace queries are keyed by authenticated identity and disabled while no user is known. Existing workspace mutation invalidation remains compatible. No role grants or RLS policies changed. Wider data projection and direct project/action boundaries remain unfinished; navigation is not claimed as authorization.
+
+649 unit tests / 71 files / 1623 assertions, TypeScript and focused route/source lint pass. Initial production build passed; a final build follows the small hub-title alignment. Authenticated desktop/390px navigation still needs acceptance. Modern web guidance search/accessibility retrieval used the installed CLI because npx was unavailable; required child-process escalation succeeded. No plugin upgrade or permission change was performed.
+
+Final role-navigation build passed using fresh `.codex-qa.local/build-20260915-workspace-view-final` output. Verified all remaining generic workspace query keys are prefix invalidations, so they continue to invalidate the identity-scoped queries. No deployment, live migration or permission-policy change.

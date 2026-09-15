@@ -1,3 +1,4 @@
+import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -65,8 +66,9 @@ function MyWork() {
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["onboarding-workspace"],
+    queryKey: onboardingWorkspaceKey(userId),
     queryFn: () => load(),
+    enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
   const onError = (e: Error) => toast.error(e.message);

@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
@@ -26,13 +27,13 @@ import {
 export const Route = createFileRoute("/_authenticated/onboarding/")({
   head: () => ({
     meta: [
-      { title: "Director onboarding hub — Resolve" },
+      { title: "Onboarding hub — Resolve" },
       {
         name: "description",
         content:
           "What needs attention today across every home in onboarding: derived risk, first-class blockers, review gates, upcoming handoffs and workload by project manager.",
       },
-      { property: "og:title", content: "Director onboarding hub — Resolve" },
+      { property: "og:title", content: "Onboarding hub — Resolve" },
       {
         property: "og:description",
         content:
@@ -69,7 +70,7 @@ function Hub() {
   const qc = useQueryClient();
   const { can, readOnly, userId } = useRole();
   const { enabled } = useFeatureFlags();
-  const { token: originToken } = useWorkspaceOrigin("Director hub");
+  const { token: originToken } = useWorkspaceOrigin("Onboarding hub");
   const navigate = Route.useNavigate();
   const params = Route.useSearch();
   const lens = params.lens ?? "attention";
@@ -90,8 +91,9 @@ function Hub() {
     });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["onboarding-workspace"],
+    queryKey: onboardingWorkspaceKey(userId),
     queryFn: () => load(),
+    enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 
@@ -146,6 +148,8 @@ function Hub() {
   }, [data]);
 
   if (isLoading || !data) return <LoadingPage />;
+  if (data.workspaceMode === "assigned")
+    return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
 
   // Homes in the pipeline where nobody has started an Onboarding Project yet.
   // A property existing is not the same as onboarding being under way.
@@ -166,7 +170,7 @@ function Hub() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Onboarding"
-        title="Director hub"
+        title={data.workspaceMode === "portfolio" ? "Director hub" : "Project hub"}
         description="What needs attention today, what is at risk and why, which homes are waiting on a review gate, and which handoffs land this week."
         actions={<AddPropertyDialog disabled={readOnly} />}
       />

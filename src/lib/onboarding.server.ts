@@ -14,6 +14,7 @@ import { validateHandoff } from "./onboarding";
 import { handoffReadiness, lifecycleEditIssue } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
 export { validateHandoff };
+import { onboardingWorkspaceMode } from "./onboarding-workspace-view";
 import { writeAudit } from "./audit.server";
 
 type Client = SupabaseClient<Database>;
@@ -110,6 +111,9 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   // where onboarding has actually been started.
   const { loadProjects } = await import("./onboarding-project.server");
   const projects = await loadProjects(supabase);
+  const supervisor = await supabase.rpc("is_supervisor", { _user_id: userId });
+  if (supervisor.error) throw new Error("Could not verify your workspace view.");
+  const workspaceMode = onboardingWorkspaceMode(userId, Boolean(supervisor.data), projects);
   const stageEvents = await supabase
     .from("onboarding_stage_captures")
     .select("project_id, property_id, new_value");
@@ -123,6 +127,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     .filter((c) => projects.some((p) => p.id === c.projectId && p.status !== "cancelled"));
 
   return {
+    workspaceMode,
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
     projects,
