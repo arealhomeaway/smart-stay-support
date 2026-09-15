@@ -69,6 +69,9 @@ try {
     "supabase/tests/fixtures/safe_ticket_notifications_schema.sql",
     "supabase/migrations/20260915070000_safe_ticket_notifications.sql",
     "supabase/tests/safe_ticket_notifications.test.sql",
+    "supabase/tests/fixtures/automatic_ticket_opportunities_schema.sql",
+    "supabase/migrations/20260915080000_automatic_ticket_opportunities.sql",
+    "supabase/tests/automatic_ticket_opportunities.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

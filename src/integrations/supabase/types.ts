@@ -4224,6 +4224,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           attachment_path: string | null
+          auto_ticket: boolean
           available_from: string | null
           business_question: string | null
           closed_at: string | null
@@ -4261,6 +4262,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           attachment_path?: string | null
+          auto_ticket?: boolean
           available_from?: string | null
           business_question?: string | null
           closed_at?: string | null
@@ -4298,6 +4300,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           attachment_path?: string | null
+          auto_ticket?: boolean
           available_from?: string | null
           business_question?: string | null
           closed_at?: string | null
