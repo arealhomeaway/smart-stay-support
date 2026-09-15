@@ -52,6 +52,7 @@ export type EntryRow = {
 };
 
 export type ReviewRow = {
+  updated_at?: string;
   auto_ticket?: boolean;
   id: string;
   phase: string;
@@ -159,7 +160,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
       supabase
         .from("owner_reviews")
         .select(
-          "id, auto_ticket, phase, stage, title, task_type, recommendation, business_question, evidence, impact, decision_path, respond_by, status, owner_decision, owner_response, outcome, responded_at, ticket_id, property_id, attachment_path, photos, sort_order, source_type, onboarding_task_id, owner_action_type, available_from, staff_context, closed_at",
+          "id, updated_at, auto_ticket, phase, stage, title, task_type, recommendation, business_question, evidence, impact, decision_path, respond_by, status, owner_decision, owner_response, outcome, responded_at, ticket_id, property_id, attachment_path, photos, sort_order, source_type, onboarding_task_id, owner_action_type, available_from, staff_context, closed_at",
           { count: "exact" },
         )
         .eq("program_id", programId)

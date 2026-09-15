@@ -62,6 +62,7 @@ export const Route = createFileRoute("/_authenticated/owner")({
 
 type Review = {
   id: string;
+  updated_at?: string;
   title: string;
   recommendation: string | null;
   business_question: string | null;
@@ -250,11 +251,23 @@ function ReviewRow({
 }) {
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState("");
+  const [responseVersion, setResponseVersion] = useState("");
+  const setResponseOpen = (next: boolean) => {
+    if (next && !open) setResponseVersion(review.updated_at ?? "");
+    setOpen(next);
+  };
   const answer = useServerFn(answerOwnerReview);
 
   const respond = useMutation({
     mutationFn: (decision: string) =>
-      answer({ data: { reviewId: review.id, decision, response: response.trim() } }),
+      answer({
+        data: {
+          reviewId: review.id,
+          expectedUpdatedAt: responseVersion,
+          decision,
+          response: response.trim(),
+        },
+      }),
     onSuccess: () => {
       toast.success("Thanks — your response was recorded.");
       setOpen(false);
@@ -288,12 +301,17 @@ function ReviewRow({
       </div>
       <div className="flex shrink-0 gap-2">
         <LogTimeButton review={review} programId={programId} onDone={onDone} readOnly={readOnly} />
-        <Button size="sm" variant="outline" disabled={readOnly} onClick={() => setOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={readOnly || !review.updated_at}
+          onClick={() => setResponseOpen(true)}
+        >
           <MessageSquare className="size-4" /> Respond
         </Button>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setResponseOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{review.title}</DialogTitle>

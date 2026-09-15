@@ -330,7 +330,7 @@ export async function resubmitOwnerTime(
 export async function respondToReview(
   supabase: Client,
   userId: string,
-  input: { reviewId: string; decision: string; response: string },
+  input: { reviewId: string; expectedUpdatedAt: string; decision: string; response: string },
 ) {
   const review = await supabase
     .from("owner_reviews")
@@ -363,7 +363,7 @@ export async function respondToReview(
 
   const { data: saved, error } = await supabase.rpc("respond_owner_review", {
     _review_id: input.reviewId,
-    _expected_updated_at: review.data.updated_at,
+    _expected_updated_at: input.expectedUpdatedAt,
     _decision: input.decision,
     _response: input.response,
   });

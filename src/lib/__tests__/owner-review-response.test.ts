@@ -48,6 +48,7 @@ async function attempt(f: ReturnType<typeof fixture>, decision = "acknowledged")
   try {
     await respondToReview(f.db as never, "owner", {
       reviewId: "review",
+      expectedUpdatedAt: "2026-09-15T00:00:00Z",
       decision,
       response: "My review notes",
     });
@@ -74,7 +75,7 @@ it("does not record an arbitrary repair approval through a participation respons
   expect(f.updates.length).toBe(0);
 });
 it("preserves the automatic request and rejects an acknowledgement when the viewed row changed", async () => {
-  const f = fixture();
+  const f = fixture({ updated_at: "2026-09-15T01:00:00Z" });
   expect(await attempt(f)).toContain("changed");
   expect(f.updates[0]).toEqual({
     _review_id: "review",
