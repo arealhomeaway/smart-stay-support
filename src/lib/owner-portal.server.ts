@@ -84,7 +84,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
       .eq("program_id", agg.program.id)
       .order("created_at", { ascending: false })
       .limit(60),
-    loadOwnerTicketProjection(supabase, propertyIds, preview),
+    loadOwnerTicketProjection(supabase, propertyIds, preview, programId),
   ]);
   if (alerts.error) throw alerts.error;
 

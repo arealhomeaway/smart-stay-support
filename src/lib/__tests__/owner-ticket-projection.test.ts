@@ -25,10 +25,20 @@ it("attaches authority only from Work Orders linked to both the Ticket and its P
     ],
   };
   const db = {
+    rpc: (
+      name: string,
+      args: { _program_id: string; _property_ids: string[]; _preview: boolean },
+      options: { count: string },
+    ) => {
+      expect(name).toBe("read_owner_ticket_authority");
+      expect(args._program_id).toBe("program");
+      expect(options.count).toBe("exact");
+      return db.from("work_orders").select("id", options).in("property_id", args._property_ids);
+    },
     from: (table: string) => {
       const query = {
-        select: () => query,
-        in: () => query,
+        select: (_fields?: string, _options?: { count: string }) => query,
+        in: (_key?: string, _ids?: string[]) => query,
         eq: () => query,
         order: () => query,
         range: async (from: number, to: number) => ({
@@ -40,7 +50,7 @@ it("attaches authority only from Work Orders linked to both the Ticket and its P
       return query;
     },
   };
-  const result = await loadOwnerTicketProjection(db as never, ["home"], false);
+  const result = await loadOwnerTicketProjection(db as never, ["home"], false, "program");
   expect(result[0]!.request.label).toBe("Review — No approval required");
   expect(result[0]!.request.why).toContain("$150");
   expect(result[0]!.request.why.includes("9,999")).toBe(false);
@@ -84,6 +94,16 @@ it("loads every visible Ticket across bounded property filters and pages, retain
   );
   const filterSizes: number[] = [];
   const db = {
+    rpc: (
+      name: string,
+      args: { _program_id: string; _property_ids: string[]; _preview: boolean },
+      options: { count: string },
+    ) => {
+      expect(name).toBe("read_owner_ticket_authority");
+      expect(args._program_id).toBe("program");
+      expect(options.count).toBe("exact");
+      return db.from("work_orders").select("id", options).in("property_id", args._property_ids);
+    },
     from: (table: string) => {
       let visible = table === "tickets" ? rows : [];
       const query = {
@@ -117,10 +137,56 @@ it("loads every visible Ticket across bounded property filters and pages, retain
       return query;
     },
   };
-  const result = await loadOwnerTicketProjection(db as never, homes, false);
+  const result = await loadOwnerTicketProjection(db as never, homes, false, "program");
   expect(filterSizes).toEqual([100, 1]);
   expect(result.length).toBe(1305);
   expect(result.some((row) => row.id === "ticket-0")).toBe(true);
   expect(result.some((row) => ["demo", "excluded"].includes(row.id))).toBe(false);
-  expect(await loadOwnerTicketProjection(db as never, [], false)).toEqual([]);
+  expect(await loadOwnerTicketProjection(db as never, [], false, "program")).toEqual([]);
+});
+
+it("uses the scoped receipt without requesting raw Work Orders or approval records", async () => {
+  const db = {
+    from: (table: string) => {
+      expect(table).toBe("tickets");
+      const query = {
+        select: () => query,
+        in: () => query,
+        eq: () => query,
+        order: () => query,
+        range: async () => ({ data: [ticket], count: 1, error: null }),
+      };
+      return query;
+    },
+    rpc: (_name: string, args: Record<string, unknown>) => {
+      expect(args).toEqual({ _program_id: "program", _property_ids: ["home"], _preview: false });
+      const query = {
+        order: () => query,
+        range: async () => ({
+          data: [
+            {
+              id: "work",
+              ticket_id: "ticket",
+              property_id: "home",
+              phase: "permanent",
+              quote_amount: 650,
+              approved_amount: 650,
+              approval_id: "approval",
+              approval_status: "pending",
+              receipt_id: "approval",
+              receipt_status: "approved",
+              receipt_amount: 650,
+              receipt_decided_at: "2026-09-15T12:00:00Z",
+            },
+          ],
+          count: 1,
+          error: null,
+        }),
+      };
+      return query;
+    },
+  };
+  const result = await loadOwnerTicketProjection(db as never, ["home"], false, "program");
+  expect(result[0]!.request.ownerActionRequired).toBe(false);
+  expect(result[0]!.request.why).toContain("prior response is recorded");
 });

@@ -7866,6 +7866,17 @@ export type Database = {
       }
     }
     Functions: {
+      read_owner_ticket_authority: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: {
+          id: string; ticket_id: string; property_id: string; phase: string;
+          quote_amount: number | null; approved_amount: number | null;
+          approval_id: string | null; approval_status: string;
+          contractual_exception: boolean; emergency_reason: string | null;
+          receipt_id: string | null; receipt_status: string | null;
+          receipt_amount: number | null; receipt_decided_at: string | null;
+        }[]
+      }
       respond_owner_review: {
         Args: { _review_id: string; _expected_updated_at: string; _decision: string; _response: string }
         Returns: string

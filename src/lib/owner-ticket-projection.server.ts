@@ -60,11 +60,12 @@ export function projectOwnerTicket(ticket: Ticket): OwnerTicket {
   };
 }
 
-/** Caller supplies validated, currently included program properties; caller RLS still applies. */
+/** Ticket RLS remains in force; authority RPC independently validates canonical enrollment. */
 export async function loadOwnerTicketProjection(
   supabase: SupabaseClient<Database>,
   includedPropertyIds: string[],
   preview: boolean,
+  programId: string,
 ) {
   const ids = [...new Set(includedPropertyIds)];
   const tickets: OwnerTicket[] = [];
@@ -81,26 +82,19 @@ export async function loadOwnerTicketProjection(
     const result = await readCountedRows(
       query.order("reported_at", { ascending: false }).order("id"),
     );
-    let workQuery = supabase
-      .from("work_orders")
-      .select(
-        "id, ticket_id, property_id, phase, quote_amount, approved_amount, approval_id, approval_status, contractual_exception, emergency_reason",
-        { count: "exact" },
-      )
-      .in("property_id", ids.slice(offset, offset + 100));
-    if (!preview) workQuery = workQuery.eq("is_demo", false);
-    const work = await readCountedRows(workQuery.order("id"));
-    let approvalQuery = supabase
-      .from("approvals")
-      .select(
-        "id, entity_type, entity_id, property_id, approver_role, status, amount, decided_at",
-        { count: "exact" },
-      )
-      .eq("entity_type", "work_order")
-      .eq("approver_role", "owner")
-      .in("property_id", ids.slice(offset, offset + 100));
-    if (!preview) approvalQuery = approvalQuery.eq("is_demo", false);
-    const approvals = await readCountedRows(approvalQuery.order("id"));
+    const work = await readCountedRows(
+      supabase
+        .rpc(
+          "read_owner_ticket_authority",
+          {
+            _program_id: programId,
+            _property_ids: ids.slice(offset, offset + 100),
+            _preview: preview,
+          },
+          { count: "exact" },
+        )
+        .order("id"),
+    );
     tickets.push(
       ...result.data.map((ticket) => ({
         ...projectOwnerTicket(ticket),
@@ -116,7 +110,20 @@ export async function loadOwnerTicketProjection(
                   phase:
                     order.phase === "mitigation" ? ("mitigation" as const) : ("permanent" as const),
                 },
-                approvals.data,
+                order.receipt_id && order.receipt_status
+                  ? [
+                      {
+                        id: order.receipt_id,
+                        entity_type: "work_order",
+                        entity_id: order.id,
+                        property_id: order.property_id,
+                        approver_role: "owner",
+                        status: order.receipt_status,
+                        amount: order.receipt_amount,
+                        decided_at: order.receipt_decided_at,
+                      },
+                    ]
+                  : [],
               ),
             ),
         ),
