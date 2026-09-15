@@ -52,6 +52,8 @@ try {
     "supabase/tests/fixtures/handoff_request_schema.sql",
     "supabase/migrations/20260915010000_atomic_handoff_request.sql",
     "supabase/tests/handoff_request.test.sql",
+    "supabase/migrations/20260915020000_atomic_owner_activity_history.sql",
+    "supabase/tests/owner_activity_history.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

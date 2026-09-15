@@ -217,3 +217,10 @@ Preserved committed and uncommitted work on codex/onboarding-active-owner-build.
 Validation: 643 unit tests / 68 files / 1550 assertions pass; TypeScript passes. All 19 additive migration files pass the isolated runner (migration 18 is schema application coverage, not a concurrent closeout test). Production client/server build passed using .codex-qa.local/build-resume.config.mjs and fresh output build-20260915-resume-verified; sandbox EPERM required an approved child-process retry. Strict focused source/test/script lint passed. Generated types and owner-program route pass logic lint with formatting rule disabled; strict generated-file lint reports 8199 formatting errors, so full strict touched-file lint is not clean. No broad generated-file reformat. git diff --check passed.
 
 Requirements matrix now records transaction, history, role-view and full-schema owner-access gaps, plus exact isolated-account acceptance instructions. Verdict: MORE IMPLEMENTATION REQUIRED. No merge, deployment, live migration, external message or deletion. The goal is not complete and this checkpoint does not claim authenticated acceptance.
+
+
+### September 15 - atomic owner activity history
+
+Follow-up to aa0d182: moved logging/resubmission events into their existing invoker RPC transactions using additive migration 20. Existing grants and access policies are unchanged. Removed duplicate server event writes and the correction's history-only link read. Isolated owner-role tests force history failure and prove rollback of both entries and links, then verify success context, duplicate correction rejection and another-owner denial. All 20 migration files pass the isolated runner; 643 unit tests / 1550 assertions and TypeScript pass; focused lint passes. Closeout events, last-activity/badge side effects and wider concurrency/role-view gaps remain. Production build result is recorded in the next checkpoint entry.
+
+Owner-history final build: production client/server build passed with fresh output `.codex-qa.local/build-20260915-owner-history`. No deployment performed. Validation is complete for this follow-up; authenticated acceptance remains outstanding.

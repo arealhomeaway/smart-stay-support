@@ -44,7 +44,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | Formal completion enforces checklist | PARTIAL | Missing-description gate fixed; report prerequisite implemented; concurrent entry/task changes during closeout remain open. |
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
-| Additive unapplied migrations, grants/RLS review | PARTIAL | 19 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
+| Additive unapplied migrations, grants/RLS review | PARTIAL | 20 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
 | Full unit suite | PASS | September 15: 643 tests, 68 files, 1550 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
 | Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-resume-verified`. Child-process escalation required; no deployment. |
@@ -56,7 +56,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 
 The existing implementation was preserved. Broad PARTIAL rows above remain incomplete. Passing isolated checks do not substitute for missing behavior or acceptance evidence.
 
-- Atomic time logging and multi-property checks: migration 16 and `supabase/tests/owner_time_entry.test.sql` cover entry/link rollback, enrollment/closing/date, opportunity membership, owner/ticket mismatch and inherited demo classification. Concurrent enrollment/status changes remain unprotected.
+- Atomic time logging and multi-property checks: migrations 16/20 and `supabase/tests/owner_time_entry.test.sql` cover entry/link rollback, enrollment/closing/date, opportunity membership, owner/ticket mismatch and inherited demo classification. Concurrent enrollment/status changes remain unprotected.
 - Atomic staff corrections: migration 17 and `supabase/tests/staff_time_correction.test.sql` cover server-only execution, supervisor checks, shared amendment lock, preserved evidence/property/activity/attestation, duplicate rejection and audit-failure rollback.
 - Lifecycle: `owner-program-status-gates.test.ts` covers forbidden transitions, stale activation/status writes and preserved start clock. Enrollment changes during activation remain outside that check.
 - Saved reports: migration 18 adds the saved snapshot; `owner-report-snapshot.test.ts` covers stored attestation, correction counting, saved export and denied access. Migration 18 has schema-application coverage, not a concurrent closeout transaction test.
@@ -64,7 +64,7 @@ The existing implementation was preserved. Broad PARTIAL rows above remain incom
 - Workspace access: `onboarding-workspace-access.test.ts` proves nonstaff and failed capability lookups are rejected before staff workspace reads. This does not prove full-schema RLS or assigned-work-only data projection.
 - Task correction: `onboarding-alternate-task-guards.test.ts` covers handoff/review freezes for archive, exception and reopen. Reopening retains evidence and rejects stale completion before history; cross-table stage/task races remain.
 - Role views: `onboarding-work-views.ts` and `onboarding-team-view.test.ts` limit team browsing to supervisors or assigned project leads. Field users get their own My Work selection. `loadOnboardingWorkspace` still returns the wider RLS-visible payload; common navigation exposes Director hub. Server projection and role home behavior remain unfinished.
-- Concurrency/history: closeout, activation/enrollment, stage/task edits and full handoff readiness do not share one transaction boundary. Owner logging/resubmission and closeout event writes remain separate and can fail after data is saved. Staff correction history is atomic.
+- Concurrency/history: closeout, activation/enrollment, stage/task edits and full handoff readiness do not share one transaction boundary. Owner logging/resubmission history now commits atomically with entries/links under migration 20; rollback and owner visibility are tested. Closeout event writes remain separate and can fail after completion is saved. Last-activity timestamps and badge refreshes also remain post-transaction side effects. Staff correction history is atomic.
 - External-owner security: owner RPCs retain caller RLS; staff correction/handoff RPCs use service_role-only execution and actor checks. Full-schema portal/document/ticket/review cross-access and direct-table business-rule bypass tests remain unproven. No existing access policy changed.
 - Interrupted email claims can remain sending. Administrator investigation/recovery is still required; elapsed time is not evidence that retry is safe.
 
@@ -86,3 +86,8 @@ After the listed defects are fixed:
 7. Record role, viewport, expected/actual result and evidence for each checklist row. No external sends, live migrations, merge or deployment.
 
 No merge, deployment, live migration, external message, permission-policy change or OneDrive deletion is authorized. Keep all unresolved 268 deletion items pending exact-list verification.
+
+
+### September 15 follow-up: owner activity history
+
+Migration `20260915020000_atomic_owner_activity_history.sql` replaces the two existing invoker RPC bodies without changing their EXECUTE grants or existing table policies. Owner logging and resubmission now persist their history event inside the entry/link transaction. The server no longer writes a second event or reads property links only for history. `owner_activity_history.test.sql` verifies rollback on history failure for both paths, retained actor/review/property/category/minute/reason context, correction retry rejection without duplicate history, and denial of another owner's history/correction under the isolated owner policy. This closes the missing-history gap for these two paths; closeout history and broader concurrency/security requirements remain PARTIAL.

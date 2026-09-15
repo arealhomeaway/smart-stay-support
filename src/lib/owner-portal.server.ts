@@ -296,17 +296,6 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
     .update({ last_owner_activity_at: new Date().toISOString() })
     .eq("id", input.programId);
 
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "time_entry",
-    summary: `${input.minutes} minutes reported: ${input.activity}`,
-    actorId: userId,
-    entryId,
-    reviewId: input.reviewId,
-    newValue: String(input.minutes),
-    detail: { propertyIds: chosen, phase: input.phase, category: input.activityCategory },
-  });
-
   const agg = await loadProgramAggregate(supabase, input.programId);
   const badges = await syncBadges(supabase, agg);
   return { ok: true as const, entryId, awarded: badges.awarded };
@@ -347,12 +336,6 @@ export async function resubmitOwnerTime(
     throw new Error("This entry has already been corrected and resubmitted.");
   }
 
-  const links = await supabase
-    .from("owner_time_entry_properties")
-    .select("property_id")
-    .eq("entry_id", input.entryId);
-  if (links.error) throw links.error;
-
   const corrected = await supabase.rpc("resubmit_owner_time_entry", {
     _entry_id: input.entryId,
     _minutes: input.minutes,
@@ -361,19 +344,6 @@ export async function resubmitOwnerTime(
   });
   if (corrected.error) throw corrected.error;
   if (!corrected.data) throw new Error("The corrected entry could not be recorded.");
-  const propertyIds = (links.data ?? []).map((link) => link.property_id);
-
-  await recordEvent(supabase, {
-    programId: original.data.program_id,
-    kind: "time_entry",
-    summary: `Homeowner resubmitted a returned entry: ${input.activity}`,
-    actorId: userId,
-    entryId: corrected.data,
-    reason: input.note || null,
-    newValue: String(input.minutes),
-    detail: { correctionOf: input.entryId, propertyIds },
-  });
-
   return { ok: true as const, entryId: corrected.data };
 }
 
