@@ -627,6 +627,19 @@ export async function recordOwnerApproval(
   }
 
   let now = new Date().toISOString();
+  if (current.data.entity_type === "work_order") {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const response = await supabaseAdmin.rpc("record_owner_work_order_response", {
+      _approval_id: input.approvalId,
+      _owner_id: userId,
+      _approved: input.decision === "approved",
+      _note: input.comment.trim(),
+    });
+    if (response.error) throw response.error;
+    if (!response.data) throw new Error("The owner response could not be recorded.");
+    // The Work Order history and global audit already committed with the decision.
+    return { ok: true as const, status: input.decision, decidedAt: response.data };
+  }
   if (["onboarding_task", "financial_request"].includes(current.data.entity_type ?? "")) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const response = await supabaseAdmin.rpc(

@@ -7914,6 +7914,10 @@ export type Database = {
         Args: { _task_id: string; _property_id: string; _detail: string }
         Returns: string
       }
+      record_owner_work_order_response: {
+        Args: { _approval_id: string; _owner_id: string; _approved: boolean; _note: string }
+        Returns: string
+      }
       prepare_work_order_owner_approval: {
         Args: { _work_order_id: string; _expected_updated_at: string; _owner_summary: string }
         Returns: string

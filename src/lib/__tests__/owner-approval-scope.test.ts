@@ -86,7 +86,7 @@ it("rechecks role and demo scope when a generic approval changes after the read"
             approver_id: "owner",
             approver_role: "owner",
             is_demo: false,
-            entity_type: "work_order",
+            entity_type: "property",
           },
       error: null,
     }),
