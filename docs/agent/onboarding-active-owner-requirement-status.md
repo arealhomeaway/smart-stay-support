@@ -6,6 +6,10 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 
 | Requirement | Status | Current evidence and remaining work |
 |---|---|---|
+| LOCKED: every enrolled Property Ticket automatically represented by an owner-safe opportunity | PARTIAL | Existing manual `owner_reviews` linkage and program/Ticket uniqueness are reusable; automatic generation/update, complete coverage and safe operational projection are PENDING. See `active-owner-ticket-opportunity-locked-requirement.md`. |
+| LOCKED: eight Welcome Packet request types, WHY and canonical authority classification | PARTIAL | Current six-code taxonomy and canonical authority helper exist. Eight-type integration and per-opportunity explanations are PENDING. No hardcoded $150 rule is authorized. |
+| LOCKED: review-only opportunities support actual logged time and retained history | PARTIAL | Opportunity-linked time logging exists; generated review-only flow and historical retention need implementation/acceptance. |
+| LOCKED: one canonical Owner identity and explicit Owner + Property enrollment linkage | PARTIAL | Canonical property owner records exist; program linkage to those records is missing. No free-text identity inference or second model is permitted. |
 | Separate property, owner, project, portal access, enrollment | PARTIAL | Project/enrollment implementation exists; real account relationships and owner visibility need acceptance. |
 | Explicit Start Onboarding with known context | NOT YET ACCEPTED | Initialization and retry logic implemented; authenticated flow unverified. |
 | Branch, responsible roles, closing/possession/handoff dates, scope, references | NOT YET ACCEPTED | Project capture implemented; verify all fields and preservation in preview. |

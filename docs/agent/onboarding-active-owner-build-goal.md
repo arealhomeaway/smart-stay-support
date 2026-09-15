@@ -28,6 +28,8 @@ Also inspect relevant existing onboarding, owner participation, Property Hub, ap
 
 ## Product rules
 
+The September 15 locked Ticket coverage and canonical Owner identity requirement is part of this goal: follow [Active Owner Ticket coverage](active-owner-ticket-opportunity-locked-requirement.md). Every enrolled property's operational Ticket must automatically have an owner-safe linked opportunity, including review-only participation, using the eight Welcome Packet request types and canonical approval/authority logic.
+
 - Resolve replaces fragmented task handling; it should not recreate Asana, Notion, Fillout, or Make screen-for-screen.
 - Optimize for simple daily use, clear ownership, progressive disclosure, reliable handoffs, and auditability.
 - Go-live order remains Operations, Onboarding, Active Owner, Vendor.
