@@ -63,6 +63,9 @@ try {
     "supabase/tests/fixtures/canonical_owner_enrollment_schema.sql",
     "supabase/migrations/20260915050000_canonical_owner_enrollment.sql",
     "supabase/tests/canonical_owner_enrollment.test.sql",
+    "supabase/tests/fixtures/owner_request_taxonomy_schema.sql",
+    "supabase/migrations/20260915060000_owner_request_taxonomy.sql",
+    "supabase/tests/owner_request_taxonomy.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

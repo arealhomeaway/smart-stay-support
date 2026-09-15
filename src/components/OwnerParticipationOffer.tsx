@@ -71,7 +71,7 @@ export function OwnerParticipationOffer({
 
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [actionType, setActionType] = useState<OwnerActionType>("review");
+  const [actionType, setActionType] = useState<OwnerActionType>("review_comment");
   const [availableFrom, setAvailableFrom] = useState("");
   const [respondBy, setRespondBy] = useState("");
   const [staffContext, setStaffContext] = useState("");

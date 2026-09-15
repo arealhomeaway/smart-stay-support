@@ -10,7 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { recordEvent } from "./owner-participation.server";
-import type { OwnerActionType } from "./owner-opportunity";
+import { opportunityDecisionPath, type OwnerActionType } from "./owner-opportunity";
 
 type Client = SupabaseClient<Database>;
 
@@ -144,7 +144,7 @@ export async function offerToOwner(supabase: Client, userId: string, input: Offe
       title: input.title,
       recommendation: input.instructions,
       business_question: input.instructions,
-      decision_path: input.actionType === "approve" ? "approve" : "consult",
+      decision_path: opportunityDecisionPath(input.actionType),
       status: "awaiting_owner",
       created_by: userId,
     } as never)
