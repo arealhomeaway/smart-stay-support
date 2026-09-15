@@ -206,7 +206,10 @@ function PropertyWorkspace() {
   );
 
   if (isLoading || !data) return <LoadingPage />;
-  if (data.workspaceMode === "assigned")
+  if (
+    data.workspaceMode === "assigned" ||
+    data.assignedWorkContexts.some((context) => context.propertyId === propertyId)
+  )
     return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
   if (!current)
     return (

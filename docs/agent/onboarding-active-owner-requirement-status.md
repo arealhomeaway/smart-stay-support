@@ -29,7 +29,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | Handoff blockers, carryover, finance independent of Live | PARTIAL | Derived readiness and tests exist; transaction rechecks carryover links, assignee, date and reason. Full readiness-input concurrency and end-to-end acceptance outstanding. |
 | Six workspace areas and details in drawers | NOT YET ACCEPTED | Implemented; full desktop/390px verification pending. |
 | Manager Hub and My Work | PARTIAL | Assignment/team selection and filtered drill-through implemented; role-specific experience unverified. |
-| PM, directors, supervisor, field role homes | PARTIAL | Server-derived navigation mode and identity-scoped caches implemented. Field users land on My Work; supervisors and project leads retain hub navigation. Assigned-mode workspace payload is now restricted with redacted prerequisite context. Project-lead scope and direct action boundaries remain incomplete. |
+| PM, directors, supervisor, field role homes | PARTIAL | Server-derived navigation mode and identity-scoped caches implemented. Field users land on My Work; supervisors and project leads retain hub navigation. Assigned-mode workspace payload is now restricted with redacted prerequisite context. Project-lead response scope now follows assigned projects while preserving restricted outside assignments. Direct endpoint and database boundaries still need review. |
 | Director attention/review/correction/risk/blocked/upcoming/handoff/workload queues | PARTIAL | Queue/drill-through work exists; inspect each named queue against current routes. |
 | Origin, filters, contextual Back | PARTIAL | URL state implementation exists; complete navigation acceptance remains. |
 | Two marked QA projects excluded from KPIs | PARTIAL | Synthetic fixtures cover Full/No Furnishing; authenticated isolated project seed/acceptance not performed. |
@@ -45,9 +45,9 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 22 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 662 tests, 75 files, 1890 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 663 tests, 75 files, 1908 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
-| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-workspace-pages`. Child-process escalation required; no deployment. |
+| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-project-scope`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
 | Authenticated desktop and 390px acceptance | BLOCKED | Need an approved isolated schema and role/test-account access. Shared/live migrations and account creation not authorized. |
 | Consolidated review request and morning report | PARTIAL | This checkpoint explicitly remains MORE IMPLEMENTATION REQUIRED. Authenticated acceptance is not yet ready. |
@@ -68,7 +68,7 @@ The existing implementation was preserved. Broad PARTIAL rows above remain incom
 - External-owner security: owner RPCs retain caller RLS; staff correction/handoff RPCs use service_role-only execution and actor checks. Full-schema portal/document/ticket/review cross-access and direct-table business-rule bypass tests remain unproven. No existing access policy changed.
 - Interrupted email claims can remain sending. Administrator investigation/recovery is still required; elapsed time is not evidence that retry is safe.
 
-Next implementation actions: reject competing handoff readiness, stage/task and scheduling changes; complete project-lead workspace projection and audit detail/action queries for caps; audit remaining project/action boundaries and activation/enrollment concurrency; make remaining badge/activity side effects durable. Closeout versioning, assigned-work projection and role navigation are implemented in the later checkpoints below. Revalidate affected paths before acceptance preparation.
+Next implementation actions: reject competing handoff readiness, stage/task and scheduling changes; audit separate detail endpoints and action queries for responsibility scope and caps; audit remaining project/action boundaries and activation/enrollment concurrency; make remaining badge/activity side effects durable. Closeout versioning, assigned-work projection and role navigation are implemented in the later checkpoints below. Revalidate affected paths before acceptance preparation.
 
 ## Access, policy and exact acceptance sequence
 
@@ -164,3 +164,12 @@ Regression evidence covers 1205 rows per source under a 200-row backend cap, exa
 662 unit tests / 75 files / 1890 assertions pass; TypeScript and focused lint pass; production client/server build passes in `.codex-qa.local/build-20260915-workspace-pages`; all 22 isolated migration checks pass. No schema or access-policy changes were made in this checkpoint.
 
 This resolves silent row-cap truncation in the workspace loader. It does not provide a cross-table snapshot, project-lead response projection, complete detail/action-query pagination, or authenticated PostgREST/performance evidence. Large property-ID filters and real-environment behavior still require acceptance. Other concurrency/security/role acceptance gaps in the checklist remain open. MORE IMPLEMENTATION REQUIRED.
+### September 15 follow-up: project-lead workspace response scope
+
+Non-supervisor PM/director workspace responses now retain full records only for properties with a non-cancelled project assigned to that caller. Pipeline, project rows, stage captures, notes, documents, approvals, participation, handoffs and external records follow that property set; reviews must also reference a returned handoff and external database descriptions must match returned records. Existing supervisor portfolio behavior remains. Leads retain the existing staff directory for assignment.
+
+A lead's own tasks outside managed projects remain available through the existing assigned-work projection: redacted property credentials, related prerequisite summaries, canonical release decisions and task-linked approvals. The project route sends these assigned-only property contexts to My Work. This avoids dropping valid assigned work or returning the other project's private workspace records. No RLS, role or grant changed.
+
+663 unit tests / 75 files / 1908 assertions pass; TypeScript and focused lint pass; the production client/server build passes in `.codex-qa.local/build-20260915-project-scope`; all 22 isolated migration checks pass. Regression covers managed, unrelated and cancelled projects, assignments outside managed homes, preserved prerequisite blocking, linked handoff reviews and external database filtering. Authenticated rendered navigation is NOT YET ACCEPTED.
+
+This proves the workspace response projection, not every direct endpoint or database policy. Separate detail reads such as `getPropertyProject`, mutation scope and concurrent reassignment still need review. Wider stage/task/schedule/handoff and activation/enrollment concurrency, complete owner cross-access/demo-isolation evidence and authenticated acceptance remain incomplete. MORE IMPLEMENTATION REQUIRED.

@@ -3,7 +3,7 @@ import { loadOnboardingWorkspace } from "../onboarding.server";
 import { restoreAssignedRelease } from "../onboarding-assigned-context";
 import { viewTask, type WorkflowTask } from "../onboarding-workflow";
 
-it("returns assigned work with redacted prerequisite context, excluding unrelated records", async () => {
+function fixture(projectLead = false) {
   const task = (id: string, property: string, assignee: string, depends: string[] = []) => ({
     id,
     property_id: property,
@@ -59,6 +59,47 @@ it("returns assigned work with redacted prerequisite context, excluding unrelate
       { id: "other-approval", entity_type: "onboarding_task", entity_id: "dependency" },
     ],
   };
+  if (projectLead) {
+    sources["properties"]!.push({
+      id: "managed",
+      name: "Managed home",
+      lifecycle_status: "onboarding",
+      access_notes: "managed access",
+    });
+    sources["onboarding_tasks"]!.push(task("managed-task", "managed", "other-user"));
+    sources["onboarding_projects"]!.push(
+      {
+        id: "managed-project",
+        property_id: "managed",
+        status: "active",
+        project_manager: "field",
+        director: null,
+      },
+      {
+        id: "cancelled",
+        property_id: "other",
+        status: "cancelled",
+        project_manager: "field",
+        director: null,
+      },
+    );
+    sources["onboarding_notes"]!.push({ property_id: "managed", body: "managed note" });
+    sources["documents"]!.push({ entity_id: "managed", external_url: "managed document" });
+    sources["approvals"]!.push({ id: "managed-approval", property_id: "managed" });
+    sources["property_handoffs"] = [
+      { id: "handoff", property_id: "managed", status: "requested" },
+      { id: "private-handoff", property_id: "home" },
+    ];
+    sources["handoff_reviews"] = [
+      { id: "review", property_id: "managed", handoff_id: "handoff" },
+      { id: "invalid-link", property_id: "managed", handoff_id: "private-handoff" },
+    ];
+    sources["external_records"] = [
+      { property_id: "managed", database_key: "managed-db" },
+      { property_id: "home", database_key: "private-db" },
+    ];
+    sources["external_databases"] = [{ key: "managed-db" }, { key: "private-db" }];
+  }
   const db = {
     rpc: async (name: string) => ({ data: name === "is_onboarding_staff", error: null }),
     from: (table: string) => {
@@ -82,6 +123,11 @@ it("returns assigned work with redacted prerequisite context, excluding unrelate
       return query;
     },
   };
+  return { db, own };
+}
+
+it("returns assigned work with redacted prerequisite context, excluding unrelated records", async () => {
+  const { db, own } = fixture();
   const result = await loadOnboardingWorkspace(db as never, "field");
   expect(result.workspaceMode).toBe("assigned");
   expect(result.tasks.map((item) => item.id)).toEqual(["mine"]);
@@ -105,4 +151,36 @@ it("returns assigned work with redacted prerequisite context, excluding unrelate
   );
   expect(view.canComplete).toBe(false);
   expect(view.waitingOn).toEqual(["dependency"]);
+});
+
+it("projects scope preserves outside assignments without exposing their project records", async () => {
+  const { db, own } = fixture(true);
+  const result = await loadOnboardingWorkspace(db as never, "field");
+  expect(result.workspaceMode).toBe("projects");
+  expect(result.projects.map((project) => project.id)).toEqual(["managed-project"]);
+  expect(result.pipeline).toEqual(["managed"]);
+  expect(result.properties.map((property) => property.id)).toEqual(["home", "managed"]);
+  expect(result.tasks.map((task) => task.id)).toEqual(["managed-task", "mine"]);
+  expect(result.properties.find((property) => property.id === "home")?.access_notes).toBe(null);
+  expect(result.properties.find((property) => property.id === "managed")?.access_notes).toBe(
+    "managed access",
+  );
+  expect(result.notes.map((note) => note.body)).toEqual(["managed note"]);
+  expect(result.documents.map((document) => document.external_url)).toEqual(["managed document"]);
+  expect(result.ownerApprovals.map((approval) => approval.id)).toEqual([
+    "own-approval",
+    "managed-approval",
+  ]);
+  expect(result.handoffs.map((handoff) => handoff.id)).toEqual(["handoff"]);
+  expect(result.reviews.map((review) => review.id)).toEqual(["review"]);
+  expect(result.externalDatabases.map((database) => database.key)).toEqual(["managed-db"]);
+  expect(result.externalRecords.map((record) => record.database_key)).toEqual(["managed-db"]);
+  const context = result.assignedWorkContexts[0]!;
+  expect(context.propertyId).toBe("home");
+  expect(context.tasks.map((task) => task.id)).toEqual(["mine", "dependency"]);
+  expect(
+    viewTask(own as unknown as WorkflowTask, context.tasks, restoreAssignedRelease(context))
+      .canComplete,
+  ).toBe(false);
+  expect(JSON.stringify(result).includes("private project")).toBe(false);
 });

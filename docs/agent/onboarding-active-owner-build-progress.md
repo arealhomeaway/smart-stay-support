@@ -302,3 +302,13 @@ Regression evidence covers 1205 rows per source under a 200-row backend cap, exa
 662 unit tests / 75 files / 1890 assertions pass; TypeScript and focused lint pass; production client/server build passes in `.codex-qa.local/build-20260915-workspace-pages`; all 22 isolated migration checks pass. No schema or access-policy changes were made in this checkpoint.
 
 This resolves silent row-cap truncation in the workspace loader. It does not provide a cross-table snapshot, project-lead response projection, complete detail/action-query pagination, or authenticated PostgREST/performance evidence. Large property-ID filters and real-environment behavior still require acceptance. Other concurrency/security/role acceptance gaps in the checklist remain open. MORE IMPLEMENTATION REQUIRED.
+
+### September 15 follow-up: project-lead workspace response scope
+
+Non-supervisor PM/director workspace responses now retain full records only for properties with a non-cancelled project assigned to that caller. Pipeline, project rows, stage captures, notes, documents, approvals, participation, handoffs and external records follow that property set; reviews must also reference a returned handoff and external database descriptions must match returned records. Existing supervisor portfolio behavior remains. Leads retain the existing staff directory for assignment.
+
+A lead's own tasks outside managed projects remain available through the existing assigned-work projection: redacted property credentials, related prerequisite summaries, canonical release decisions and task-linked approvals. The project route sends these assigned-only property contexts to My Work. This avoids dropping valid assigned work or returning the other project's private workspace records. No RLS, role or grant changed.
+
+663 unit tests / 75 files / 1908 assertions pass; TypeScript and focused lint pass; the production client/server build passes in `.codex-qa.local/build-20260915-project-scope`; all 22 isolated migration checks pass. Regression covers managed, unrelated and cancelled projects, assignments outside managed homes, preserved prerequisite blocking, linked handoff reviews and external database filtering. Authenticated rendered navigation is NOT YET ACCEPTED.
+
+This proves the workspace response projection, not every direct endpoint or database policy. Separate detail reads such as `getPropertyProject`, mutation scope and concurrent reassignment still need review. Wider stage/task/schedule/handoff and activation/enrollment concurrency, complete owner cross-access/demo-isolation evidence and authenticated acceptance remain incomplete. MORE IMPLEMENTATION REQUIRED.

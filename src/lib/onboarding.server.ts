@@ -206,8 +206,19 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     documents: docs.data ?? [],
     ownerApprovals: ownerApprovals.data ?? [],
   };
-  if (workspaceMode !== "assigned") return workspace;
-  const assigned = workspace.tasks.filter((task) => task.assigned_to === userId);
+  if (workspaceMode === "portfolio") return workspace;
+  const managed = new Set(
+    projects
+      .filter(
+        (project) =>
+          project.status !== "cancelled" &&
+          (project.project_manager === userId || project.director === userId),
+      )
+      .map((project) => project.property_id),
+  );
+  const assigned = workspace.tasks.filter(
+    (task) => task.assigned_to === userId && !managed.has(task.property_id),
+  );
   const propertyIds = new Set(assigned.map((task) => task.property_id));
   const contexts = workspace.properties
     .filter((property) => propertyIds.has(property.id))
@@ -236,28 +247,51 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   const inScope = new Set(contexts.flatMap((context) => context.tasks.map((task) => task.id)));
   const visibleTasks = assigned.filter((task) => inScope.has(task.id));
   const visibleIds = new Set(visibleTasks.map((task) => task.id));
+  const managedRecord = (row: { property_id: string | null }) =>
+    Boolean(row.property_id && managed.has(row.property_id));
+  const visibleHandoffs = workspace.handoffs.filter(managedRecord);
+  const handoffIds = new Set(visibleHandoffs.map((handoff) => handoff.id));
+  const externalRecords = workspace.externalRecords.filter(managedRecord);
+  const databaseKeys = new Set(externalRecords.map((record) => record.database_key));
   return {
     ...workspace,
     assignedWorkContexts: contexts,
-    tasks: visibleTasks,
+    tasks: [...workspace.tasks.filter(managedRecord), ...visibleTasks],
     properties: workspace.properties
-      .filter((property) => propertyIds.has(property.id))
-      .map((property) => ({ ...property, access_notes: null, wifi_notes: null })),
-    projects: [],
-    pipeline: [],
-    stageCaptures: [],
-    handoffs: [],
-    notes: [],
-    reviews: [],
-    externalDatabases: [],
-    externalRecords: [],
-    documents: [],
-    activeOwnerProperties: [],
-    approvalMismatches: [],
-    people: workspace.people.filter((person) => person.id === userId),
+      .filter((property) => managed.has(property.id) || propertyIds.has(property.id))
+      .map((property) =>
+        managed.has(property.id) ? property : { ...property, access_notes: null, wifi_notes: null },
+      ),
+    projects: projects.filter(managedRecord),
+    pipeline: workspace.pipeline.filter((id) => managed.has(id)),
+    stageCaptures: workspace.stageCaptures.filter((capture) => managed.has(capture.propertyId)),
+    handoffs: visibleHandoffs,
+    notes: workspace.notes.filter(managedRecord),
+    reviews: workspace.reviews.filter(
+      (review) => managedRecord(review) && handoffIds.has(review.handoff_id),
+    ),
+    externalDatabases: workspace.externalDatabases.filter((database) =>
+      databaseKeys.has(database.key),
+    ),
+    externalRecords,
+    documents: workspace.documents.filter(
+      (document) => document.entity_id && managed.has(document.entity_id),
+    ),
+    activeOwnerProperties: workspace.activeOwnerProperties.filter((link) =>
+      managed.has(link.propertyId),
+    ),
+    approvalMismatches: workspace.approvalMismatches.filter((mismatch) =>
+      managed.has(mismatch.propertyId),
+    ),
+    // Leads need the existing staff directory to assign work on their projects.
+    people:
+      workspaceMode === "projects"
+        ? workspace.people
+        : workspace.people.filter((person) => person.id === userId),
     ownerApprovals: workspace.ownerApprovals.filter(
       (approval) =>
-        approval.entity_type === "onboarding_task" && visibleIds.has(approval.entity_id ?? ""),
+        managedRecord(approval) ||
+        (approval.entity_type === "onboarding_task" && visibleIds.has(approval.entity_id ?? "")),
     ),
   };
 }
