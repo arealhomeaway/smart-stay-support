@@ -15,24 +15,10 @@ import type { Database } from "@/integrations/supabase/types";
 import { PROGRAM_DAYS } from "./owner-program";
 import { loadProgramAggregate, recordEvent } from "./owner-participation.server";
 import { syncBadges } from "./owner-badges.server";
+import { loadOwnerTicketProjection } from "./owner-ticket-projection.server";
+export type { OwnerTicket } from "./owner-ticket-projection.server";
 
 type Client = SupabaseClient<Database>;
-
-export type OwnerTicket = {
-  id: string;
-  ref: number;
-  property_id: string | null;
-  title: string;
-  description: string | null;
-  category: string;
-  priority: string;
-  status: string;
-  reported_at: string;
-  resolved_at: string | null;
-  resolution_notes: string | null;
-  owner_participation_path: string | null;
-  owner_submitted: boolean | null;
-};
 
 function addDays(iso: string, days: number) {
   const d = new Date(`${iso}T00:00:00`);
@@ -84,7 +70,7 @@ export async function loadOwnerHomePreview(
 async function loadOwnerHomeByProgram(supabase: Client, programId: string, preview = false) {
   const agg = await loadProgramAggregate(supabase, programId);
 
-  const propertyIds = agg.properties.map((p) => p.propertyId);
+  const propertyIds = agg.includedProperties.map((p) => p.propertyId);
 
   const [alerts, tickets] = await Promise.all([
     supabase
@@ -95,23 +81,9 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
       .eq("program_id", agg.program.id)
       .order("created_at", { ascending: false })
       .limit(60),
-    propertyIds.length
-      ? (() => {
-          let q = supabase
-            .from("tickets")
-            .select(
-              "id, ref, property_id, title, description, category, priority, status, reported_at, resolved_at, resolution_notes, owner_participation_path, owner_submitted",
-            )
-            .in("property_id", propertyIds)
-            .is("archived_at", null);
-          // A staff preview of a demo program must show its demo tickets.
-          if (!preview) q = q.eq("is_demo", false);
-          return q.order("reported_at", { ascending: false }).limit(120);
-        })()
-      : Promise.resolve({ data: [], error: null } as const),
+    loadOwnerTicketProjection(supabase, propertyIds, preview),
   ]);
   if (alerts.error) throw alerts.error;
-  if (tickets.error) throw tickets.error;
 
   // Keep achievements current whenever the owner opens the hub.
   // A preview never writes: it reads whatever badges already exist.
@@ -130,7 +102,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     entries: agg.entries,
     badges: badges.data ?? agg.badges,
     alerts: alerts.data ?? [],
-    tickets: (tickets.data ?? []) as OwnerTicket[],
+    tickets,
     reportedMinutes: agg.reportedMinutes,
     approvedMinutes: agg.approvedMinutes,
     pendingReviewMinutes: agg.pendingReviewMinutes,
