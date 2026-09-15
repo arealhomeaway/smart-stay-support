@@ -161,6 +161,8 @@ export type Database = {
           id: string
           is_demo: boolean
           kind: string
+          onboarding_delivery_attempt: Json | null
+          onboarding_delivery_history: Json
           owner_email_conversation_id: string | null
           owner_email_sent_at: string | null
           owner_email_to: string | null
@@ -192,6 +194,8 @@ export type Database = {
           id?: string
           is_demo?: boolean
           kind: string
+          onboarding_delivery_attempt?: Json | null
+          onboarding_delivery_history?: Json
           owner_email_conversation_id?: string | null
           owner_email_sent_at?: string | null
           owner_email_to?: string | null
@@ -223,6 +227,8 @@ export type Database = {
           id?: string
           is_demo?: boolean
           kind?: string
+          onboarding_delivery_attempt?: Json | null
+          onboarding_delivery_history?: Json
           owner_email_conversation_id?: string | null
           owner_email_sent_at?: string | null
           owner_email_to?: string | null
@@ -2092,9 +2098,13 @@ export type Database = {
         Row: {
           accounting_recipient: string | null
           accounting_sent_at: string | null
+          actual_amount: number | null
+          actual_recorded_at: string | null
+          actual_recorded_by: string | null
           approval_id: string | null
           approved_amount: number | null
           approved_at: string | null
+          authority_policy: Json | null
           authority_tier: string
           created_at: string
           created_by: string | null
@@ -2108,6 +2118,8 @@ export type Database = {
           invoice_ref: string | null
           is_demo: boolean
           kind: string
+          onboarding_delivery_attempt: Json | null
+          onboarding_delivery_history: Json
           project_id: string | null
           property_id: string
           settled_at: string | null
@@ -2122,9 +2134,13 @@ export type Database = {
         Insert: {
           accounting_recipient?: string | null
           accounting_sent_at?: string | null
+          actual_amount?: number | null
+          actual_recorded_at?: string | null
+          actual_recorded_by?: string | null
           approval_id?: string | null
           approved_amount?: number | null
           approved_at?: string | null
+          authority_policy?: Json | null
           authority_tier?: string
           created_at?: string
           created_by?: string | null
@@ -2138,6 +2154,8 @@ export type Database = {
           invoice_ref?: string | null
           is_demo?: boolean
           kind?: string
+          onboarding_delivery_attempt?: Json | null
+          onboarding_delivery_history?: Json
           project_id?: string | null
           property_id: string
           settled_at?: string | null
@@ -2152,9 +2170,13 @@ export type Database = {
         Update: {
           accounting_recipient?: string | null
           accounting_sent_at?: string | null
+          actual_amount?: number | null
+          actual_recorded_at?: string | null
+          actual_recorded_by?: string | null
           approval_id?: string | null
           approved_amount?: number | null
           approved_at?: string | null
+          authority_policy?: Json | null
           authority_tier?: string
           created_at?: string
           created_by?: string | null
@@ -2168,6 +2190,8 @@ export type Database = {
           invoice_ref?: string | null
           is_demo?: boolean
           kind?: string
+          onboarding_delivery_attempt?: Json | null
+          onboarding_delivery_history?: Json
           project_id?: string | null
           property_id?: string
           settled_at?: string | null
@@ -4035,6 +4059,7 @@ export type Database = {
           archived_by: string | null
           completed_at: string | null
           completed_by: string | null
+          completion_report: Json | null
           created_at: string
           created_by: string | null
           dfy_confirmed: boolean
@@ -4060,6 +4085,7 @@ export type Database = {
           owner_phone: string | null
           owner_user_id: string | null
           property_id: string | null
+          report_version: string
           started_on: string | null
           status: string
           target_hours: number
@@ -4073,6 +4099,7 @@ export type Database = {
           archived_by?: string | null
           completed_at?: string | null
           completed_by?: string | null
+          completion_report?: Json | null
           created_at?: string
           created_by?: string | null
           dfy_confirmed?: boolean
@@ -4098,6 +4125,7 @@ export type Database = {
           owner_phone?: string | null
           owner_user_id?: string | null
           property_id?: string | null
+          report_version?: string
           started_on?: string | null
           status?: string
           target_hours?: number
@@ -4111,6 +4139,7 @@ export type Database = {
           archived_by?: string | null
           completed_at?: string | null
           completed_by?: string | null
+          completion_report?: Json | null
           created_at?: string
           created_by?: string | null
           dfy_confirmed?: boolean
@@ -4136,6 +4165,7 @@ export type Database = {
           owner_phone?: string | null
           owner_user_id?: string | null
           property_id?: string | null
+          report_version?: string
           started_on?: string | null
           status?: string
           target_hours?: number
@@ -5052,6 +5082,65 @@ export type Database = {
           },
         ]
       }
+      property_assets: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_demo: boolean
+          kind: string
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          property_id: string
+          serial_number: string | null
+          updated_at: string
+          warranty_notes: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          kind: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          property_id: string
+          serial_number?: string | null
+          updated_at?: string
+          warranty_notes?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          property_id?: string
+          serial_number?: string | null
+          updated_at?: string
+          warranty_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_assets_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_credentials: {
         Row: {
           active: boolean
@@ -5181,6 +5270,7 @@ export type Database = {
       }
       property_fact_proposals: {
         Row: {
+          asset_id: string | null
           created_at: string
           current_value: string | null
           decision_note: string | null
@@ -5200,6 +5290,7 @@ export type Database = {
           task_id: string | null
         }
         Insert: {
+          asset_id?: string | null
           created_at?: string
           current_value?: string | null
           decision_note?: string | null
@@ -5219,6 +5310,7 @@ export type Database = {
           task_id?: string | null
         }
         Update: {
+          asset_id?: string | null
           created_at?: string
           current_value?: string | null
           decision_note?: string | null
@@ -5238,6 +5330,13 @@ export type Database = {
           task_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fact_proposal_asset_property_fk"
+            columns: ["asset_id", "property_id"]
+            isOneToOne: false
+            referencedRelation: "property_assets"
+            referencedColumns: ["id", "property_id"]
+          },
           {
             foreignKeyName: "property_fact_proposals_project_id_fkey"
             columns: ["project_id"]
@@ -7770,7 +7869,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      onboarding_stage_captures: {
+        Row: {
+          new_value: string | null
+          project_id: string | null
+          property_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_project_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_project_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       archive_demo_environment: {
@@ -7788,6 +7909,51 @@ export type Database = {
         Returns: undefined
       }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
+      complete_owner_program: {
+        Args: {
+          _actor_id: string
+          _expected_version: string
+          _program_id: string
+          _report: Json
+        }
+        Returns: string
+      }
+      correct_owner_time_entry: {
+        Args: {
+          _actor_id: string
+          _entry_id: string
+          _minutes: number
+          _reason: string
+        }
+        Returns: string
+      }
+      create_onboarding_handoff: {
+        Args: {
+          _actor_id: string
+          _expected_lifecycle: string
+          _property_id: string
+          _request: Json
+        }
+        Returns: string
+      }
+      decide_onboarding_financial_request: {
+        Args: {
+          _approved: boolean
+          _approved_amount?: number
+          _note: string
+          _request_id: string
+        }
+        Returns: undefined
+      }
+      decide_onboarding_task_approval: {
+        Args: {
+          _approved: boolean
+          _evidence_url?: string
+          _note: string
+          _task_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -7800,6 +7966,10 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      log_owner_time_entry: {
+        Args: { _entry: Json; _property_ids: string[] }
+        Returns: string
+      }
       notify_staff: {
         Args: {
           _actor_id: string
@@ -7816,9 +7986,93 @@ export type Database = {
         }
         Returns: string
       }
+      override_onboarding_task_date: {
+        Args: {
+          _actor_id: string
+          _due_on: string
+          _expected_updated_at: string
+          _reason: string
+          _task_id: string
+        }
+        Returns: string
+      }
+      prepare_onboarding_financial_approval: {
+        Args: {
+          _expected_amount: number
+          _expected_tier: string
+          _request_id: string
+        }
+        Returns: string
+      }
+      prepare_onboarding_task_approval: {
+        Args: { _detail: string; _property_id: string; _task_id: string }
+        Returns: string
+      }
+      reconcile_onboarding_delivery: {
+        Args: {
+          _attempt_id: string
+          _delivered: boolean
+          _kind: string
+          _note: string
+          _record_id: string
+        }
+        Returns: undefined
+      }
+      record_onboarding_stage_capture: {
+        Args: {
+          _actor: string
+          _capture: Json
+          _expected_revision: number
+          _project_id: string
+          _scope: Json
+          _tasks: Json
+        }
+        Returns: undefined
+      }
+      record_owner_financial_response: {
+        Args: {
+          _approval_id: string
+          _approved: boolean
+          _note: string
+          _owner_id: string
+        }
+        Returns: string
+      }
+      record_owner_task_response: {
+        Args: {
+          _approval_id: string
+          _approved: boolean
+          _note: string
+          _owner_id: string
+        }
+        Returns: string
+      }
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
+      resubmit_owner_time_entry: {
+        Args: {
+          _activity: string
+          _entry_id: string
+          _minutes: number
+          _note: string
+        }
+        Returns: string
+      }
+      review_onboarding_fact: {
+        Args: { _accept: boolean; _note?: string; _proposal_id: string }
+        Returns: Json
+      }
+      review_onboarding_handoff: {
+        Args: {
+          _decision: string
+          _exception?: string
+          _expected_step: string
+          _handoff_id: string
+          _note?: string
+        }
+        Returns: Json
+      }
       seat_eligible_now: {
         Args: { _at?: string; _role_code: string }
         Returns: boolean
