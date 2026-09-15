@@ -258,3 +258,12 @@ Restricted assigned-mode workspace responses to assigned in-scope tasks, associa
 650 unit tests / 72 files / 1639 assertions pass, including a real-loader response-redaction regression preserving prerequisite blocking. TypeScript and focused route/source lint pass. Production build result follows its live handle. Remaining work: direct task action authorization, project-lead scope, onboarding read completeness, broader transaction races and authenticated acceptance. This is a response projection, not proof of complete server/RLS authorization.
 
 Assigned-workspace production build passed with fresh `.codex-qa.local/build-20260915-assigned-workspace` output. No deployment or live migration. Working checkpoint remains MORE IMPLEMENTATION REQUIRED.
+
+
+### September 15 - scoped task actions
+
+Added existing-capability/project-responsibility/assignment checks to generic task save, approval submission/recording/requirement changes, notes and reopen. Assigned workers write progress only and cannot alter requirements/links/dates/ownership/carryover. Updates compare current assignment and task updated_at; archived rows cannot be saved. Notes reject mismatched property/task links and archived tasks. New task creation and requirement changes require management access.
+
+656 unit tests / 73 files / 1658 assertions and focused lint pass. TypeScript passed after an indexed-property syntax correction. Existing onboarding_tasks_updated trigger supports the stale-row comparison. No RLS or grant changes. Direct database API bypass proof, concurrent project-responsibility changes, remaining property/handoff actions and field UI management controls are still incomplete. Production build status follows its live handle.
+
+Task-access production build passed with fresh `.codex-qa.local/build-20260915-task-access` output. No deployment or migration. The goal remains MORE IMPLEMENTATION REQUIRED.

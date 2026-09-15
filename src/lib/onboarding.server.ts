@@ -14,6 +14,7 @@ import { validateHandoff } from "./onboarding";
 import { handoffReadiness, lifecycleEditIssue } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
 export { validateHandoff };
+import { onboardingTaskAccess, assertAssignedTaskPatch } from "./onboarding-task-access.server";
 import { assignedWorkContext, type AssignedWorkContext } from "./onboarding-assigned-context";
 import { onboardingWorkspaceMode } from "./onboarding-workspace-view";
 import { writeAudit } from "./audit.server";
@@ -247,6 +248,12 @@ export async function saveOnboardingTask(
         .single()
     : null;
   if (prior?.error) throw prior.error;
+  const access = await onboardingTaskAccess(
+    supabase,
+    userId,
+    input.propertyId,
+    prior?.data.assigned_to ?? null,
+  );
   if (
     prior?.data &&
     (input.ownerApprovalStatus !== prior.data.owner_approval_status ||
@@ -363,8 +370,28 @@ export async function saveOnboardingTask(
   };
 
   if (input.id) {
-    const { error } = await supabase.from("onboarding_tasks").update(row).eq("id", input.id);
+    if (!access.canManage) assertAssignedTaskPatch(prior!.data, row);
+    // A field update must not overwrite requirements changed since its read.
+    const patch = access.canManage
+      ? row
+      : {
+          blocker: row.blocker,
+          evidence_note: row.evidence_note,
+          status: row.status,
+          completed_at: row.completed_at,
+          completed_by: row.completed_by,
+        };
+    const update = supabase
+      .from("onboarding_tasks")
+      .update(patch)
+      .eq("id", input.id)
+      .eq("property_id", input.propertyId)
+      .eq("updated_at", prior!.data.updated_at)
+      .is("archived_at", null);
+    const scopedUpdate = access.canManage ? update : update.eq("assigned_to", userId);
+    const { data: saved, error } = await scopedUpdate.select("id").maybeSingle();
     if (error) throw error;
+    if (!saved) throw new Error("The task changed or was reassigned. Refresh before saving.");
     await writeAudit({
       actorId: userId,
       action: "onboarding_task_updated",
@@ -481,12 +508,13 @@ export async function submitOwnerApproval(
   const task = await supabase
     .from("onboarding_tasks")
     .select(
-      "id, property_id, title, detail, due_on, is_demo, requires_owner_approval, owner_approval_status",
+      "id, property_id, assigned_to, title, detail, due_on, is_demo, requires_owner_approval, owner_approval_status",
     )
     .eq("id", input.taskId)
     .maybeSingle();
   if (task.error) throw task.error;
   if (!task.data) throw new Error("That task is not available.");
+  await onboardingTaskAccess(supabase, userId, task.data.property_id, task.data.assigned_to);
   if (!task.data.requires_owner_approval) {
     throw new Error("This step does not require a homeowner approval.");
   }
@@ -546,11 +574,12 @@ export async function recordOwnerTaskDecision(
   }
   const task = await supabase
     .from("onboarding_tasks")
-    .select("id, property_id, title, requires_owner_approval, owner_approval_status")
+    .select("id, property_id, assigned_to, title, requires_owner_approval, owner_approval_status")
     .eq("id", input.taskId)
     .maybeSingle();
   if (task.error) throw task.error;
   if (!task.data) throw new Error("That task is not available.");
+  await onboardingTaskAccess(supabase, userId, task.data.property_id, task.data.assigned_to);
   if (!task.data.requires_owner_approval) {
     throw new Error("This step does not require a homeowner approval.");
   }
@@ -594,12 +623,19 @@ export async function confirmApprovalRequirement(
   const task = await supabase
     .from("onboarding_tasks")
     .select(
-      "id, property_id, title, detail, due_on, is_demo, status, requires_owner_approval, owner_approval_status",
+      "id, property_id, assigned_to, title, detail, due_on, is_demo, status, requires_owner_approval, owner_approval_status",
     )
     .eq("id", input.taskId)
     .maybeSingle();
   if (task.error) throw task.error;
   if (!task.data) throw new Error("That task is not available.");
+  const access = await onboardingTaskAccess(
+    supabase,
+    userId,
+    task.data.property_id,
+    task.data.assigned_to,
+  );
+  if (!access.canManage) throw new Error("Only the project lead can change approval requirements.");
 
   if (input.requiresOwnerApproval) {
     const alreadyApproved = task.data.owner_approval_status === "approved";
@@ -873,6 +909,19 @@ export async function addOnboardingNote(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  let assignedTo: string | null = null;
+  if (input.taskId) {
+    const task = await supabase
+      .from("onboarding_tasks")
+      .select("property_id, assigned_to, archived_at")
+      .eq("id", input.taskId)
+      .single();
+    if (task.error) throw task.error;
+    if (task.data.property_id !== input.propertyId || task.data.archived_at)
+      throw new Error("Choose an available task from this property.");
+    assignedTo = task.data.assigned_to;
+  }
+  await onboardingTaskAccess(supabase, userId, input.propertyId, assignedTo);
   const { data, error } = await supabase
     .from("onboarding_notes")
     .insert({
@@ -911,10 +960,11 @@ export async function reopenOnboardingTask(
   await assertCap(supabase, userId, "is_onboarding_staff");
   const { data: task, error: readError } = await supabase
     .from("onboarding_tasks")
-    .select("id, property_id, title, completed_at, status, stage")
+    .select("id, property_id, title, completed_at, status, stage, assigned_to")
     .eq("id", input.taskId)
     .single();
   if (readError) throw readError;
+  const access = await onboardingTaskAccess(supabase, userId, task.property_id, task.assigned_to);
   if (task.status !== "complete") throw new Error("Only a completed step can be reopened.");
   if (input.reason.trim().length < 3) throw new Error("Record why this step needs a correction.");
   await assertTaskRequirementEditable(supabase, input.taskId);
@@ -924,6 +974,7 @@ export async function reopenOnboardingTask(
     .update({ status: "open" })
     .eq("id", input.taskId)
     .eq("status", "complete");
+  if (!access.canManage) update.eq("assigned_to", userId);
   const unchanged = task.completed_at
     ? update.eq("completed_at", task.completed_at)
     : update.is("completed_at", null);
