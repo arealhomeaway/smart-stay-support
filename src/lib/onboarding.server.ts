@@ -248,6 +248,8 @@ export async function saveOnboardingTask(
         .single()
     : null;
   if (prior?.error) throw prior.error;
+  if (prior?.data && (input.dueOn ?? null) !== prior.data.due_on)
+    throw new Error("Use the date override action and record a reason.");
   const access = await onboardingTaskAccess(
     supabase,
     userId,
@@ -1160,4 +1162,36 @@ export async function resolveExternalRecord(
     after: { recordId: input.recordId },
   });
   return { ok: true as const };
+}
+
+export async function overrideOnboardingTaskDate(
+  supabase: Client,
+  userId: string,
+  input: { taskId: string; expectedUpdatedAt: string; dueOn: string | null; reason: string },
+  admin: Client,
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select("property_id, assigned_to")
+    .eq("id", input.taskId)
+    .single();
+  if (task.error) throw task.error;
+  const access = await onboardingTaskAccess(
+    supabase,
+    userId,
+    task.data.property_id,
+    task.data.assigned_to,
+  );
+  if (!access.canManage) throw new Error("Only the project lead can change task dates.");
+  const result = await admin.rpc("override_onboarding_task_date", {
+    _task_id: input.taskId,
+    _actor_id: userId,
+    _expected_updated_at: input.expectedUpdatedAt,
+    _due_on: input.dueOn,
+    _reason: input.reason,
+  });
+  if (result.error) throw result.error;
+  if (!result.data) throw new Error("The date override could not be recorded.");
+  return { id: result.data };
 }

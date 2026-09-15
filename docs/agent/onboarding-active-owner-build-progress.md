@@ -276,3 +276,11 @@ Date editing is now shown only for the selected property's supervisor/PM/directo
 658 unit tests / 74 files / 1670 assertions pass, with TypeScript clean and focused lint at zero errors/one existing Fast Refresh export warning. The drawer test required React runtime access outside the sandbox; the approved retry and full suite passed. Production build result follows its running handle. No migrations or access policies changed.
 
 Drawer production build passed using fresh `.codex-qa.local/build-20260915-task-drawer` output. No deployment or shared migration. Working checkpoint remains MORE IMPLEMENTATION REQUIRED.
+
+### September 15 follow-up: atomic date overrides
+
+The task drawer now uses a dedicated date action with a required reason and the task version viewed by the user. Migration `20260915040000_atomic_task_date_override.sql` locks project, property and task in stage-capture order, rechecks existing supervisor/project responsibility, lifecycle and stage locks, and saves the manual scheduling flag and prior/new date history together. Generic task saves reject date changes. The authenticated actor comes from server context; the RPC is service-role-only, with no existing RLS policy changed.
+
+659 unit tests / 74 files / 1675 assertions pass. TypeScript passes. Focused lint has zero errors and one existing TaskDrawer Fast Refresh warning; generated types pass logic lint with the existing formatting baseline excluded. All 22 isolated migrations pass, including missing reason, unrelated actor, stale version, stage/handoff locks and history-failure rollback. The production client/server build passes in `.codex-qa.local/build-20260915-date-override` with no deployment. Server tests verify actor/version forwarding, assignee denial and stale-result propagation.
+
+The dedicated override gap from the previous checkpoint is resolved locally. General schedule recalculation/configuration, wider task/stage/handoff concurrency and project-lead workspace scope remain incomplete. Authenticated desktop/390px acceptance and full-schema security review remain outstanding. Verdict remains MORE IMPLEMENTATION REQUIRED.

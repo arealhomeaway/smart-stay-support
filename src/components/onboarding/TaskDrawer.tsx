@@ -92,6 +92,7 @@ export function TaskDrawer({
   canManageTask,
   onClose,
   onSave,
+  onSaveDate,
   onSubmitApproval,
   onRecordOwnerDecision,
 
@@ -110,6 +111,12 @@ export function TaskDrawer({
   canManageTask: boolean;
   onClose: () => void;
   onSave: (input: SaveTaskInput) => void;
+  onSaveDate: (
+    taskId: string,
+    expectedUpdatedAt: string,
+    dueOn: string | null,
+    reason: string,
+  ) => void;
   onSubmitApproval: (taskId: string, version: string, note: string) => void;
   onRecordOwnerDecision: (
     taskId: string,
@@ -406,34 +413,26 @@ export function TaskDrawer({
                 size="sm"
                 variant="secondary"
                 disabled={
-                  disabled ||
-                  !dueChanged ||
-                  (Boolean(task.schedule_anchor) && overrideReason.trim().length < 3)
+                  disabled || !dueChanged || !task.updated_at || overrideReason.trim().length < 3
                 }
                 onClick={() => {
-                  onSave(taskPayload(task, { dueOn: due || null }));
-                  if (overrideReason.trim().length >= 3)
-                    onAddObservation(
-                      task.id,
-                      `Requested due date change from ${task.due_on ?? "undated"} to ${due || "undated"}: ${overrideReason.trim()}`,
-                    );
+                  if (task.updated_at)
+                    onSaveDate(task.id, task.updated_at, due || null, overrideReason.trim());
                 }}
               >
                 Save date
               </Button>
             </div>
-            {task.schedule_anchor && (
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">
-                  Override reason (required — this date is calculated automatically)
-                </Label>
-                <Input
-                  value={overrideReason}
-                  onChange={(e) => setOverrideReason(e.target.value)}
-                  placeholder="Why is the automatic date wrong for this home?"
-                />
-              </div>
-            )}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                Reason for changing the due date (required)
+              </Label>
+              <Input
+                value={overrideReason}
+                onChange={(e) => setOverrideReason(e.target.value)}
+                placeholder="Why does this task need a different date?"
+              />
+            </div>
           </section>
         )}
 

@@ -57,6 +57,9 @@ try {
     "supabase/tests/fixtures/owner_closeout_schema.sql",
     "supabase/migrations/20260915030000_versioned_owner_closeout.sql",
     "supabase/tests/owner_closeout.test.sql",
+    "supabase/tests/fixtures/task_date_override_schema.sql",
+    "supabase/migrations/20260915040000_atomic_task_date_override.sql",
+    "supabase/tests/task_date_override.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

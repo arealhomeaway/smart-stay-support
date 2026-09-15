@@ -5,6 +5,7 @@ import {
   submitOwnerApproval,
   recordOwnerTaskDecision,
   confirmApprovalRequirement,
+  overrideOnboardingTaskDate,
 } from "../onboarding.server";
 
 function client(assignedTo: string, lead = false, property = "home") {
@@ -66,6 +67,51 @@ it("distinguishes assigned progress from project management and rejects unrelate
     (e: Error) => e.message,
   );
   expect(message).toContain("not assigned");
+});
+
+it("date overrides reject assignees and forward the viewed version and authenticated actor", async () => {
+  const calls: unknown[] = [];
+  const admin = {
+    rpc: async (name: string, args: unknown) => {
+      calls.push({ name, args });
+      return { data: "task", error: null };
+    },
+  };
+  const input = {
+    taskId: "task",
+    expectedUpdatedAt: "2026-09-15T12:00:00Z",
+    dueOn: null,
+    reason: "Delivery date pending",
+  };
+  await expect(
+    overrideOnboardingTaskDate(client("actor").db as never, "actor", input, admin as never),
+  ).rejects.toThrow("Only the project lead");
+  expect(calls).toHaveLength(0);
+  expect(
+    await overrideOnboardingTaskDate(
+      client("other", true).db as never,
+      "actor",
+      input,
+      admin as never,
+    ),
+  ).toEqual({ id: "task" });
+  expect(calls).toEqual([
+    {
+      name: "override_onboarding_task_date",
+      args: {
+        _task_id: "task",
+        _actor_id: "actor",
+        _expected_updated_at: input.expectedUpdatedAt,
+        _due_on: null,
+        _reason: input.reason,
+      },
+    },
+  ]);
+  await expect(
+    overrideOnboardingTaskDate(client("other", true).db as never, "actor", input, {
+      rpc: async () => ({ data: null, error: new Error("This task changed") }),
+    } as never),
+  ).rejects.toThrow("This task changed");
 });
 
 it("assigned progress cannot change evidence requirements, ownership, links or carryover", () => {

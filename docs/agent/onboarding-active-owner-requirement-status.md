@@ -44,10 +44,10 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | Formal completion enforces checklist | PARTIAL | Missing-description gate fixed; report prerequisite implemented; closeout now checks a version invalidated by report-input mutations and saves history atomically. Complete program-scoped pagination is implemented and tested; multi-connection and authenticated acceptance still need verification. |
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
-| Additive unapplied migrations, grants/RLS review | PARTIAL | 21 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 658 tests, 74 files, 1670 assertions, zero failures. |
+| Additive unapplied migrations, grants/RLS review | PARTIAL | 22 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
+| Full unit suite | PASS | September 15: 659 tests, 74 files, 1675 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
-| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-resume-verified`. Child-process escalation required; no deployment. |
+| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-date-override`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
 | Authenticated desktop and 390px acceptance | BLOCKED | Need an approved isolated schema and role/test-account access. Shared/live migrations and account creation not authorized. |
 | Consolidated review request and morning report | PARTIAL | This checkpoint explicitly remains MORE IMPLEMENTATION REQUIRED. Authenticated acceptance is not yet ready. |
@@ -141,3 +141,10 @@ The drawer now receives property-specific management capability from existing su
 Date-change requests no longer call the supervisor exception action, which could incorrectly record a task-requirement exception or fail for project leads. The drawer instead records a clearly labeled requested-change observation. This is not an atomic date-change audit: server-side reason enforcement, manual-override persistence and transactional date/history updates remain incomplete.
 
 658 unit tests / 74 files / 1670 assertions and TypeScript pass. Focused lint has zero errors and one existing Fast Refresh export warning in TaskDrawer. Full tests needed escalation because the sandbox denied reading React's JSX runtime for the new drawer regression. Tests verify property-specific management and preservation of order/evidence/approval/dependency/ticket context. Authenticated rendered UI acceptance remains outstanding.
+### September 15 follow-up: atomic date overrides
+
+The task drawer now uses a dedicated date action with a required reason and the task version viewed by the user. Migration `20260915040000_atomic_task_date_override.sql` locks project, property and task in stage-capture order, rechecks existing supervisor/project responsibility, lifecycle and stage locks, and saves the manual scheduling flag and prior/new date history together. Generic task saves reject date changes. The authenticated actor comes from server context; the RPC is service-role-only, with no existing RLS policy changed.
+
+659 unit tests / 74 files / 1675 assertions pass. TypeScript passes. Focused lint has zero errors and one existing TaskDrawer Fast Refresh warning; generated types pass logic lint with the existing formatting baseline excluded. All 22 isolated migrations pass, including missing reason, unrelated actor, stale version, stage/handoff locks and history-failure rollback. The production client/server build passes in `.codex-qa.local/build-20260915-date-override` with no deployment. Server tests verify actor/version forwarding, assignee denial and stale-result propagation.
+
+The dedicated override gap from the previous checkpoint is resolved locally. General schedule recalculation/configuration, wider task/stage/handoff concurrency and project-lead workspace scope remain incomplete. Authenticated desktop/390px acceptance and full-schema security review remain outstanding. Verdict remains MORE IMPLEMENTATION REQUIRED.

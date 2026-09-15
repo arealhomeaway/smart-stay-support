@@ -7864,6 +7864,10 @@ export type Database = {
         Args: { _property_id: string; _actor_id: string; _expected_lifecycle: string | null; _request: Json }
         Returns: string
       }
+      override_onboarding_task_date: {
+        Args: { _task_id: string; _actor_id: string; _expected_updated_at: string; _due_on: string | null; _reason: string }
+        Returns: string
+      }
       complete_owner_program: {
         Args: { _program_id: string; _actor_id: string; _expected_version: string; _report: Json }
         Returns: string

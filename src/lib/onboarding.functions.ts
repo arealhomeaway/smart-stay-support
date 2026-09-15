@@ -389,3 +389,21 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
     const { updateProject } = await import("./onboarding-project.server");
     return updateProject(context.supabase, context.userId, data);
   });
+
+export const overrideOnboardingTaskDateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        expectedUpdatedAt: z.string().datetime({ offset: true }),
+        dueOn: z.string().date().nullable(),
+        reason: z.string().trim().min(3).max(1000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { overrideOnboardingTaskDate } = await import("./onboarding.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return overrideOnboardingTaskDate(context.supabase, context.userId, data, supabaseAdmin);
+  });

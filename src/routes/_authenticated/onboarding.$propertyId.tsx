@@ -1,3 +1,4 @@
+import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import {
   onboardingWorkspaceKey,
   canManageOnboardingProperty,
@@ -164,6 +165,7 @@ function PropertyWorkspace() {
       onError: (e: Error) => toast.error(e.message),
     });
 
+  const saveDate = mut(useServerFn(overrideOnboardingTaskDateFn), "Date override recorded.");
   const saveTask = mut(useServerFn(saveOnboardingTaskFn), "Task saved.");
   const setLifecycle = mut(useServerFn(setPropertyLifecycleFn), "Lifecycle updated.");
   const requestHandoff = mut(useServerFn(requestHandoffFn), "Handoff requested.");
@@ -982,6 +984,9 @@ function PropertyWorkspace() {
         )}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
+        onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>
+          saveDate.mutate({ data: { taskId, expectedUpdatedAt, dueOn, reason } } as never)
+        }
         onSubmitApproval={(taskId, version, note) =>
           submitApproval.mutate({ data: { taskId, version, note } } as never)
         }

@@ -1,3 +1,4 @@
+import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
 import {
   onboardingWorkspaceKey,
@@ -77,6 +78,14 @@ function MyWork() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
   const onError = (e: Error) => toast.error(e.message);
 
+  const saveDate = useMutation({
+    mutationFn: useServerFn(overrideOnboardingTaskDateFn),
+    onSuccess: () => {
+      toast.success("Date override recorded.");
+      void refresh();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const saveTask = useMutation({
     mutationFn: useServerFn(saveOnboardingTaskFn) as never,
     onSuccess: () => {
@@ -300,6 +309,9 @@ function MyWork() {
         )}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
+        onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>
+          saveDate.mutate({ data: { taskId, expectedUpdatedAt, dueOn, reason } })
+        }
         onSubmitApproval={(taskId, version, note) =>
           submitApproval.mutate({ data: { taskId, version, note } } as never)
         }
