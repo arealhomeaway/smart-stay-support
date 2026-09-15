@@ -745,7 +745,16 @@ export const OWNER_APPROVAL_OUTCOME_LABELS: Record<OwnerApprovalOutcome, string>
   info_requested: "Owner asked for more information",
 };
 
-/** Everything the owner needs to answer without a phone call back to us. */
+/** Explicitly authored owner copy; never default to internal title or scope. */
+export function ownerApprovalText(summary: string) {
+  const detail = summary.trim();
+  if (detail.length < 20 || detail.length > 4000) {
+    throw new Error("Explain the repair and proposed work for the owner in 20–4,000 characters.");
+  }
+  return { title: "Owner approval — property repair", detail };
+}
+
+/** Internal authority/evidence snapshot. Narrative fields are staff-only. */
 export function ownerApprovalRequest(
   wo: WorkOrderLike & {
     id?: string;

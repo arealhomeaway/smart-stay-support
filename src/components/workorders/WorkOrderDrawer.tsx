@@ -55,6 +55,7 @@ import {
   nextAction,
   nextCheckpoint,
   ownerApprovalRequest,
+  ownerApprovalText,
   secondQuoteAdvice,
   supervisorApprovalRequest,
   supervisorApproved,
@@ -266,6 +267,7 @@ export function WorkOrderDrawer({
     mutationFn: async () => {
       if (!workOrder) return;
       const request = ownerApprovalRequest(workOrder);
+      const ownerText = ownerApprovalText(fields["owner_approval_summary"] ?? "");
       const program = activeOwner.data;
       const { data, error } = await supabase
         .from("approvals")
@@ -274,8 +276,8 @@ export function WorkOrderDrawer({
           entity_id: workOrder.id,
           property_id: workOrder.property_id,
           kind: request.kind,
-          title: request.title,
-          detail: (workOrder.scope ?? workOrder.title) as string,
+          title: ownerText.title,
+          detail: ownerText.detail,
           amount: request.amount,
           requested_by: userId,
           approver_role: "owner",
@@ -313,6 +315,7 @@ export function WorkOrderDrawer({
       refresh();
       qc.invalidateQueries({ queryKey: ["approvals"] });
       toast.success("Owner approval requested");
+      setFields((current) => ({ ...current, owner_approval_summary: "" }));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -730,14 +733,51 @@ export function WorkOrderDrawer({
             <>
               <div className="flex flex-wrap gap-2">
                 {workOrder.approval_status === "not_required" || !workOrder.approval_id ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={readOnly || requestApproval.isPending}
-                    onClick={() => requestApproval.mutate()}
+                  <form
+                    className="w-full space-y-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!readOnly && !requestApproval.isPending) requestApproval.mutate();
+                    }}
                   >
-                    Request owner approval
-                  </Button>
+                    <Label htmlFor={`owner-summary-${workOrder.id}`}>
+                      Explanation for the owner (required)
+                    </Label>
+                    <Textarea
+                      id={`owner-summary-${workOrder.id}`}
+                      name="owner_approval_summary"
+                      aria-describedby={`owner-summary-help-${workOrder.id}`}
+                      required
+                      minLength={20}
+                      maxLength={4000}
+                      rows={4}
+                      disabled={readOnly || requestApproval.isPending}
+                      value={fields["owner_approval_summary"] ?? ""}
+                      onChange={(event) =>
+                        setFields((current) => ({
+                          ...current,
+                          owner_approval_summary: event.target.value,
+                        }))
+                      }
+                    />
+                    <p
+                      id={`owner-summary-help-${workOrder.id}`}
+                      className="text-xs text-muted-foreground"
+                    >
+                      The owner will see this explanation with the requested amount. Describe the
+                      issue, work already performed, proposed repair and why a decision is needed.
+                      Review it for guest personal information, private staff notes and access
+                      credentials before requesting approval.
+                    </p>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="outline"
+                      disabled={readOnly || requestApproval.isPending}
+                    >
+                      Request owner approval
+                    </Button>
+                  </form>
                 ) : null}
               </div>
 

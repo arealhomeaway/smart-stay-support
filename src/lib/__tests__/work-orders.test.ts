@@ -16,6 +16,7 @@ import {
   declineConsequence,
   matchesManagerFilter,
   ownerApprovalRequest,
+  ownerApprovalText,
   recentlyCompleted,
   repeatMaintenanceProperties,
   workOrderEvidenceSlots,
@@ -25,6 +26,22 @@ import {
 const NOW = new Date("2026-09-02T12:00:00Z");
 const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60000).toISOString();
 const ahead = (minutes: number) => new Date(NOW.getTime() + minutes * 60000).toISOString();
+
+describe("owner-facing approval copy", () => {
+  it("requires deliberate owner context without an internal-text fallback", () => {
+    for (const input of ["", "   ", "Too brief", "x".repeat(4001)]) {
+      expect(() => ownerApprovalText(input)).toThrow();
+    }
+  });
+  it("preserves the authored explanation under a neutral owner-facing title", () => {
+    const explanation =
+      "The water heater is leaking. Please approve replacement at the quoted amount.";
+    expect(ownerApprovalText(`  ${explanation}  `)).toEqual({
+      title: "Owner approval — property repair",
+      detail: explanation,
+    });
+  });
+});
 
 describe("maintenance authority", () => {
   it("A — a $150 repair proceeds with no approval at all", () => {
