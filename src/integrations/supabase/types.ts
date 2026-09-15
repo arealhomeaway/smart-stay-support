@@ -7882,6 +7882,11 @@ export type Database = {
       }
     }
     Functions: {
+      save_work_order_costs: {
+        Args: { _work_order_id: string; _expected_updated_at: string; _quote: number | null;
+          _second_quote: number | null; _final_cost: number | null; _scope: string; _reason: string }
+        Returns: string
+      }
       read_owner_ticket_financial_context: {
         Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
         Returns: (Database["public"]["Functions"]["read_owner_ticket_authority"]["Returns"][number] & { final_cost: number | null })[]
