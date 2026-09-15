@@ -14,6 +14,7 @@ it("captures the report version before aggregate reads and propagates stale clos
         },
         eq: () => query,
         order: () => query,
+        range: () => query,
         single: async () => {
           reads.push(selected);
           return {
@@ -54,7 +55,7 @@ it("captures the report version before aggregate reads and propagates stale clos
                     },
                   ]
                 : [];
-          return Promise.resolve({ data, error: null }).then(resolve);
+          return Promise.resolve({ data, error: null, count: data.length }).then(resolve);
         },
       };
       return query;

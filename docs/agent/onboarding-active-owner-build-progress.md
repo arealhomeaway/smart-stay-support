@@ -233,3 +233,10 @@ Added unapplied migration 21: report-input version invalidation and service-only
 644 unit tests / 69 files / 1557 assertions pass. TypeScript and strict focused changed-source lint pass. All 21 migration files pass the isolated runner. Found an additional concrete closeout defect: aggregate queries need complete program-scoped pagination before large-program reports are trustworthy. That work, broader eligibility/handoff/stage races and role-specific workspace behavior remain. Production build result follows when its running handle completes.
 
 Versioned-closeout production build passed using fresh `.codex-qa.local/build-20260915-owner-closeout` output. No deployment or shared migration. Working checkpoint remains MORE IMPLEMENTATION REQUIRED.
+
+
+### September 15 - complete owner aggregation
+
+Replaced capped collection reads with counted, deterministically ordered pagination, scoped to the program including review/entry property links through existing foreign keys. The helper honors a lower server row cap and rejects missing/error pages or changed counts. Regression coverage includes 1205 entries with a late correction under a 200-row cap, preserving all links and correct combined totals. Also corrected per-property direct/shared minutes to exclude returned/superseded entries through the canonical selector. 647 unit tests / 70 files / 1615 assertions pass; TypeScript and strict focused lint pass. No migration changed; the existing 21-migration validation remains applicable. Production build result follows when the running handle finishes. Authenticated query/security and multi-connection acceptance remain outstanding.
+
+Pagination production build passed with fresh `.codex-qa.local/build-20260915-owner-pagination` output. No deployment or live migration. The goal remains incomplete: handoff/lifecycle concurrency, role-specific workspace behavior and authenticated acceptance still require work.
