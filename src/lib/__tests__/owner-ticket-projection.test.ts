@@ -17,6 +17,7 @@ const ticket = {
 it("attaches authority only from Work Orders linked to both the Ticket and its Property", async () => {
   const records: Record<string, unknown[]> = {
     tickets: [ticket],
+    approvals: [],
     work_orders: [
       { ticket_id: "ticket", property_id: "home", phase: "permanent", quote_amount: 150 },
       { ticket_id: "ticket", property_id: "other-home", phase: "permanent", quote_amount: 9999 },

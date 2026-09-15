@@ -10,13 +10,16 @@ export type OwnerTicketRequest = {
 };
 
 /** Canonical Work Order rules decide authority; this layer only explains the participation request. */
-export function ownerTicketRequest(workOrders: WorkOrderLike[]): OwnerTicketRequest {
+export function ownerTicketRequest(
+  workOrders: (WorkOrderLike & { authorityUnconfirmed?: boolean })[],
+): OwnerTicketRequest {
   const evaluated = workOrders.map((order) => ({ order, verdict: evaluateAuthority(order) }));
   const pending = evaluated.filter(
     ({ order, verdict }) =>
-      order.approval_status === "pending" ||
-      (verdict.ownerApprovalRequired &&
-        !["approved", "declined", "info_requested"].includes(order.approval_status ?? "")),
+      !order.authorityUnconfirmed &&
+      (order.approval_status === "pending" ||
+        (verdict.ownerApprovalRequired &&
+          !["approved", "declined", "info_requested"].includes(order.approval_status ?? ""))),
   );
   const policyVersions = [...new Set(evaluated.map(({ verdict }) => verdict.policyVersion))];
   if (pending.length)
@@ -37,6 +40,7 @@ export function ownerTicketRequest(workOrders: WorkOrderLike[]): OwnerTicketRequ
     !evaluated.length ||
     evaluated.some(
       ({ order, verdict }) =>
+        order.authorityUnconfirmed ||
         (verdict.amount === null && !verdict.mitigationOnly) ||
         (verdict.ownerApprovalRequired &&
           order.approval_status === "approved" &&

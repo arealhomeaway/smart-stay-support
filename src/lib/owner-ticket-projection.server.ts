@@ -3,6 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { CATEGORIES, STATUSES } from "./tickets";
 import { readCountedRows } from "./read-all-rows";
 import { ownerTicketRequest, type OwnerTicketRequest } from "./owner-ticket-authority";
+import { reconcileTicketApproval } from "./owner-ticket-approval";
 
 export type OwnerTicket = {
   request: OwnerTicketRequest;
@@ -83,12 +84,23 @@ export async function loadOwnerTicketProjection(
     let workQuery = supabase
       .from("work_orders")
       .select(
-        "id, ticket_id, property_id, phase, quote_amount, approved_amount, approval_status, contractual_exception, emergency_reason",
+        "id, ticket_id, property_id, phase, quote_amount, approved_amount, approval_id, approval_status, contractual_exception, emergency_reason",
         { count: "exact" },
       )
       .in("property_id", ids.slice(offset, offset + 100));
     if (!preview) workQuery = workQuery.eq("is_demo", false);
     const work = await readCountedRows(workQuery.order("id"));
+    let approvalQuery = supabase
+      .from("approvals")
+      .select(
+        "id, entity_type, entity_id, property_id, approver_role, status, amount, decided_at",
+        { count: "exact" },
+      )
+      .eq("entity_type", "work_order")
+      .eq("approver_role", "owner")
+      .in("property_id", ids.slice(offset, offset + 100));
+    if (!preview) approvalQuery = approvalQuery.eq("is_demo", false);
+    const approvals = await readCountedRows(approvalQuery.order("id"));
     tickets.push(
       ...result.data.map((ticket) => ({
         ...projectOwnerTicket(ticket),
@@ -97,11 +109,16 @@ export async function loadOwnerTicketProjection(
             .filter(
               (order) => order.ticket_id === ticket.id && order.property_id === ticket.property_id,
             )
-            .map((order) => ({
-              ...order,
-              phase:
-                order.phase === "mitigation" ? ("mitigation" as const) : ("permanent" as const),
-            })),
+            .map((order) =>
+              reconcileTicketApproval(
+                {
+                  ...order,
+                  phase:
+                    order.phase === "mitigation" ? ("mitigation" as const) : ("permanent" as const),
+                },
+                approvals.data,
+              ),
+            ),
         ),
       })),
     );
