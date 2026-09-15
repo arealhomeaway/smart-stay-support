@@ -526,6 +526,7 @@ export async function createOwnerMatter(
 
 export type OwnerApproval = {
   id: string;
+  updated_at: string;
   kind: string;
   title: string;
   detail: string | null;
@@ -556,7 +557,7 @@ export async function loadOwnerApprovals(
   const { data, error } = await supabase
     .from("approvals")
     .select(
-      "id, kind, title, detail, amount, currency, status, decision_note, decided_at, due_on, evidence_url, property_id, approver_id, created_at",
+      "id, updated_at, kind, title, detail, amount, currency, status, decision_note, decided_at, due_on, evidence_url, property_id, approver_id, created_at",
     )
     .eq("approver_id", userId)
     .eq("approver_role", "owner")
@@ -576,6 +577,7 @@ export async function loadOwnerApprovals(
   const participation = ids.length ? await activeOwnerLinks(supabase, ids) : new Map();
   return rows.map((r) => ({
     id: r.id,
+    updated_at: r.updated_at,
     kind: r.kind,
     title: r.title,
     detail: r.detail,
@@ -604,7 +606,12 @@ export async function loadOwnerApprovals(
 export async function recordOwnerApproval(
   supabase: Client,
   userId: string,
-  input: { approvalId: string; decision: "approved" | "declined"; comment: string },
+  input: {
+    approvalId: string;
+    expectedUpdatedAt: string;
+    decision: "approved" | "declined";
+    comment: string;
+  },
 ) {
   const current = await supabase
     .from("approvals")
@@ -627,35 +634,23 @@ export async function recordOwnerApproval(
   }
 
   let now = new Date().toISOString();
-  if (current.data.entity_type === "work_order") {
+  if (
+    ["work_order", "onboarding_task", "financial_request"].includes(current.data.entity_type ?? "")
+  ) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const response = await supabaseAdmin.rpc("record_owner_work_order_response", {
+    const response = await supabaseAdmin.rpc("record_versioned_owner_response", {
       _approval_id: input.approvalId,
+      _expected_updated_at: input.expectedUpdatedAt,
       _owner_id: userId,
       _approved: input.decision === "approved",
       _note: input.comment.trim(),
     });
     if (response.error) throw response.error;
     if (!response.data) throw new Error("The owner response could not be recorded.");
-    // The Work Order history and global audit already committed with the decision.
-    return { ok: true as const, status: input.decision, decidedAt: response.data };
-  }
-  if (["onboarding_task", "financial_request"].includes(current.data.entity_type ?? "")) {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const response = await supabaseAdmin.rpc(
-      current.data.entity_type === "onboarding_task"
-        ? "record_owner_task_response"
-        : "record_owner_financial_response",
-      {
-        _approval_id: input.approvalId,
-        _owner_id: userId,
-        _approved: input.decision === "approved",
-        _note: input.comment.trim(),
-      },
-    );
-    if (response.error) throw response.error;
-    if (!response.data) throw new Error("The owner response could not be recorded.");
     now = response.data;
+    // Work Order history and global audit commit inside its response transaction.
+    if (current.data.entity_type === "work_order")
+      return { ok: true as const, status: input.decision, decidedAt: now };
   } else {
     const { data, error } = await supabase
       .from("approvals")
@@ -666,6 +661,7 @@ export async function recordOwnerApproval(
       })
       .eq("id", input.approvalId)
       .eq("status", "pending")
+      .eq("updated_at", input.expectedUpdatedAt)
       .eq("approver_id", userId)
       .eq("approver_role", "owner")
       .eq("is_demo", false)

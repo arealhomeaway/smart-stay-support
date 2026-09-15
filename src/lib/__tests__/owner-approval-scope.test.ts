@@ -53,6 +53,7 @@ it("rejects direct homeowner decisions on staff-role and demo requests before an
     try {
       await recordOwnerApproval({ from: () => query } as never, "owner", {
         approvalId: "approval",
+        expectedUpdatedAt: "2026-09-15T00:00:00Z",
         decision: "approved",
         comment: "",
       });
@@ -95,6 +96,7 @@ it("rechecks role and demo scope when a generic approval changes after the read"
   try {
     await recordOwnerApproval({ from: () => query } as never, "owner", {
       approvalId: "approval",
+      expectedUpdatedAt: "2026-09-15T00:00:00Z",
       decision: "approved",
       comment: "",
     });
@@ -105,6 +107,7 @@ it("rechecks role and demo scope when a generic approval changes after the read"
   expect(filters).toEqual({
     id: "approval",
     status: "pending",
+    updated_at: "2026-09-15T00:00:00Z",
     approver_id: "owner",
     approver_role: "owner",
     is_demo: false,

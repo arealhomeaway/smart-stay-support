@@ -53,13 +53,17 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
   const load = useServerFn(ownerApprovals);
   const decide = useServerFn(decideOwnerApproval);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [versions, setVersions] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const q = useQuery({ queryKey: ["owner-approvals", userId], queryFn: () => load() });
 
   const submit = useMutation({
-    mutationFn: (input: { approvalId: string; decision: "approved" | "declined" }) =>
-      decide({ data: { ...input, comment: notes[input.approvalId] ?? "" } }),
+    mutationFn: (input: {
+      approvalId: string;
+      expectedUpdatedAt: string;
+      decision: "approved" | "declined";
+    }) => decide({ data: { ...input, comment: notes[input.approvalId] ?? "" } }),
     onMutate: (v) => setBusy(v.approvalId),
     onSettled: () => setBusy(null),
     onSuccess: (_r, v) => {
@@ -69,10 +73,18 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
           : "Sent back to the team with your note.",
       );
       setNotes((n) => ({ ...n, [v.approvalId]: "" }));
+      setVersions((current) => {
+        const next = { ...current };
+        delete next[v.approvalId];
+        return next;
+      });
       void qc.invalidateQueries({ queryKey: ["owner-approvals"] });
       void qc.invalidateQueries({ queryKey: ["owner-home"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      void qc.invalidateQueries({ queryKey: ["owner-approvals", userId] });
+    },
   });
 
   if (q.isLoading) return <Skeleton className="h-40 w-full" />;
@@ -102,6 +114,8 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
 
         {pending.map((a) => {
           const amount = money(a.amount, a.currency);
+          const version = versions[a.id] ?? a.updated_at;
+          const changed = version !== a.updated_at;
           return (
             <div key={a.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -138,14 +152,39 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
                 rows={2}
                 placeholder="Add a note (required if you request changes)"
                 value={notes[a.id] ?? ""}
-                onChange={(e) => setNotes((n) => ({ ...n, [a.id]: e.target.value }))}
+                onChange={(e) => {
+                  setNotes((n) => ({ ...n, [a.id]: e.target.value }));
+                  setVersions((current) => ({ ...current, [a.id]: current[a.id] ?? a.updated_at }));
+                }}
                 disabled={readOnly}
               />
+              {changed && (
+                <div className="mt-2 space-y-2" role="status">
+                  <p className="text-sm">
+                    This request changed while you were responding. Review the updated details
+                    above; your note has been kept.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={readOnly || busy === a.id}
+                    onClick={() => setVersions((current) => ({ ...current, [a.id]: a.updated_at }))}
+                  >
+                    I have reviewed the updated request
+                  </Button>
+                </div>
+              )}
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
                   size="sm"
-                  disabled={readOnly || busy === a.id}
-                  onClick={() => submit.mutate({ approvalId: a.id, decision: "approved" })}
+                  disabled={readOnly || busy === a.id || changed || !version}
+                  onClick={() =>
+                    submit.mutate({
+                      approvalId: a.id,
+                      expectedUpdatedAt: version,
+                      decision: "approved",
+                    })
+                  }
                 >
                   <CheckCircle2 className="mr-1 h-4 w-4" aria-hidden="true" />
                   Approve
@@ -153,8 +192,14 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={readOnly || busy === a.id}
-                  onClick={() => submit.mutate({ approvalId: a.id, decision: "declined" })}
+                  disabled={readOnly || busy === a.id || changed || !version}
+                  onClick={() =>
+                    submit.mutate({
+                      approvalId: a.id,
+                      expectedUpdatedAt: version,
+                      decision: "declined",
+                    })
+                  }
                 >
                   <RotateCcw className="mr-1 h-4 w-4" aria-hidden="true" />
                   Request changes

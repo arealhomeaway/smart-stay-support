@@ -88,6 +88,9 @@ try {
     "supabase/tests/fixtures/staff_work_order_owner_decision_schema.sql",
     "supabase/migrations/20260915130000_atomic_staff_work_order_owner_decision.sql",
     "supabase/tests/staff_work_order_owner_decision.test.sql",
+    "supabase/tests/fixtures/versioned_owner_response_schema.sql",
+    "supabase/migrations/20260915140000_versioned_owner_approval_response.sql",
+    "supabase/tests/versioned_owner_response.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

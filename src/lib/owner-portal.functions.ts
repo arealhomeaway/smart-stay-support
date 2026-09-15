@@ -169,6 +169,7 @@ export const decideOwnerApproval = createServerFn({ method: "POST" })
     z
       .object({
         approvalId: z.string().uuid(),
+        expectedUpdatedAt: z.string().datetime({ offset: true }),
         decision: z.enum(["approved", "declined"]),
         comment: z.string().trim().max(2000).default(""),
       })
