@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { ownerNotificationText } from "./owner-notification";
 
 type Client = SupabaseClient<Database>;
 
@@ -51,7 +52,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   const { data, error } = await supabase
     .from("owner_notifications")
     .select(
-      "id, title, body, priority, ticket_id, sms_status, email_status, program_id, is_demo, owner_programs(owner_email, owner_phone, owner_name)",
+      "id, kind, review_id, title, body, priority, ticket_id, sms_status, email_status, program_id, is_demo, owner_programs(owner_email, owner_phone, owner_name)",
     )
     .or("email_status.eq.pending,sms_status.eq.pending")
     .order("created_at")
@@ -63,6 +64,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   const notes: string[] = [];
 
   for (const row of data ?? []) {
+    const safeText = ownerNotificationText(row);
     // Hard safety guard: demo notifications must never reach a real channel.
     if (row.is_demo) {
       await supabase
@@ -100,8 +102,8 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
         }
         const result = await sendEmail(
           program.owner_email,
-          row.title,
-          row.body,
+          safeText.title,
+          safeText.body,
           ticketRef,
           row.ticket_id,
         );
@@ -123,8 +125,8 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
         owner_name: program?.owner_name ?? null,
         owner_phone: program?.owner_phone ?? null,
         owner_email: program?.owner_email ?? null,
-        title: row.title,
-        body: row.body,
+        title: safeText.title,
+        body: safeText.body,
         reason: program?.owner_phone
           ? "Urgent ticket at this owner's home — text or call them now."
           : "Urgent ticket at this owner's home, and we have no phone number on file — reach them by email and collect a number.",

@@ -16,6 +16,7 @@ import { PROGRAM_DAYS } from "./owner-program";
 import { loadProgramAggregate, recordEvent } from "./owner-participation.server";
 import { syncBadges } from "./owner-badges.server";
 import { loadOwnerTicketProjection } from "./owner-ticket-projection.server";
+import { ownerNotificationText } from "./owner-notification";
 export type { OwnerTicket } from "./owner-ticket-projection.server";
 
 type Client = SupabaseClient<Database>;
@@ -101,7 +102,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     reviews: agg.reviews,
     entries: agg.entries,
     badges: badges.data ?? agg.badges,
-    alerts: alerts.data ?? [],
+    alerts: (alerts.data ?? []).map((row) => ({ ...row, ...ownerNotificationText(row) })),
     tickets,
     reportedMinutes: agg.reportedMinutes,
     approvedMinutes: agg.approvedMinutes,

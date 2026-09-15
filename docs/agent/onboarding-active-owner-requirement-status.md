@@ -49,7 +49,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 24 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 679 tests, 80 files, 1997 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 681 tests, 81 files, 2012 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
 | Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-owner-authority`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
@@ -221,3 +221,11 @@ The owner Ticket projection now reconciles Work Order approval mirrors against c
 679 unit tests / 80 files / 1997 assertions pass; TypeScript and focused lint pass; all 24 isolated migration checks pass; production client/server build passes in `.codex-qa.local/build-20260915-owner-approval`. Tests cover stale decisions, identity mismatches, missing receipts and changed amounts. No schema or RLS changes were introduced.
 
 Locked requirement remains PARTIALLY IMPLEMENTED. Automatic opportunity synchronization, rendered explanations, detailed safe work/cost/outcome publishing and canonical identity validation of existing enrollments remain pending. Separate reads are not a transactional snapshot; this metadata is not an approval mutation or authorization to perform work. Full owner payload/RLS and authenticated acceptance remain unproven. No access is needed for the remaining independent local implementation.
+
+### September 15 follow-up: work-alert text safety
+
+Inspection found a bypass of the structured Ticket projection: existing database notification triggers copy raw Ticket titles/descriptions/resolution notes into owner_notifications, and the hub and delivery worker previously forwarded those fields. The shared ownerNotificationText formatter now replaces Ticket/review alert text at both output paths, retaining urgency/resolution and directing owners to the portal without implying every review requires approval. It also covers historical alerts whose Ticket link has been removed. Delivery-worker contact tasks use the same text. No delivery worker was executed and no external message was sent.
+
+681 unit tests / 81 files / 2012 assertions pass; TypeScript and focused lint pass; all 24 isolated migrations pass; production client/server build passes in `.codex-qa.local/build-20260915-owner-alert-safety`. Injected private text is excluded from linked and legacy work notifications. No schema/RLS changes or stored notification updates were made.
+
+Locked requirement remains PARTIALLY IMPLEMENTED. This closes these application output paths, not direct-table exposure. Existing notification generators still store raw text, direct database owner access needs review, and canonical enrollment/current-property checks on notification routing remain incomplete. Automatic opportunity generation must account for existing notification triggers before adding records. Detailed owner-safe operational context, automatic synchronization and authenticated isolation remain required; generic alert text is not a substitute for the opportunity itself. No access is needed for independent local fixes.
