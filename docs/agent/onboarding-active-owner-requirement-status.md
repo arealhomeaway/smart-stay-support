@@ -49,9 +49,9 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 24 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 681 tests, 81 files, 2012 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 685 tests, 82 files, 2033 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
-| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-owner-authority`. Child-process escalation required; no deployment. |
+| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-owner-alert-identity`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
 | Authenticated desktop and 390px acceptance | BLOCKED | Need an approved isolated schema and role/test-account access. Shared/live migrations and account creation not authorized. |
 | Consolidated review request and morning report | PARTIAL | This checkpoint explicitly remains MORE IMPLEMENTATION REQUIRED. Authenticated acceptance is not yet ready. |
@@ -229,3 +229,11 @@ Inspection found a bypass of the structured Ticket projection: existing database
 681 unit tests / 81 files / 2012 assertions pass; TypeScript and focused lint pass; all 24 isolated migrations pass; production client/server build passes in `.codex-qa.local/build-20260915-owner-alert-safety`. Injected private text is excluded from linked and legacy work notifications. No schema/RLS changes or stored notification updates were made.
 
 Locked requirement remains PARTIALLY IMPLEMENTED. This closes these application output paths, not direct-table exposure. Existing notification generators still store raw text, direct database owner access needs review, and canonical enrollment/current-property checks on notification routing remain incomplete. Automatic opportunity generation must account for existing notification triggers before adding records. Detailed owner-safe operational context, automatic synchronization and authenticated isolation remain required; generic alert text is not a substitute for the opportunity itself. No access is needed for independent local fixes.
+
+### September 15 follow-up: canonical Ticket alert routing
+
+Before a queued Ticket alert can reach email or a contact task, ticketAlertRecipient rechecks the program canonical Owner, portal-user binding, active/pending status, archive/demo state, current Ticket Property and included enrollment. Contact details come from property_owners, not the program's free-text snapshots. Missing sources, changed ownership, removed enrollment, inactive Owners or failed lookups skip delivery with a staff-review reason. No worker was executed and no external messages or contact tasks were created.
+
+685 unit tests / 82 files / 2033 assertions pass; TypeScript and focused lint pass after adapting rejection assertions to the repository test declarations. All 24 isolated migration checks pass. Production client/server build passes in `.codex-qa.local/build-20260915-owner-alert-identity`. Tests cover canonical secondary-property routing, identity mismatch, removed enrollment, demo/inactive/archive states and failed reads.
+
+Locked requirement remains PARTIALLY IMPLEMENTED. This guard handles Ticket-linked delivery; non-Ticket review delivery, stored raw notification text, owner hub/direct-table access and concurrent ownership/recipient changes still require review. Separate preflight reads do not establish an atomic delivery claim or prevent every concurrent reassignment. Automatic opportunity creation, rendered WHY and detailed safe work/cost/outcome publishing remain required. No approval/access is needed for independent local implementation; authenticated acceptance still needs an approved isolated environment and test roles.

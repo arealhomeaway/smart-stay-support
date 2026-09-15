@@ -10,6 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ownerNotificationText } from "./owner-notification";
+import { ticketAlertRecipient } from "./owner-ticket-alert.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -52,7 +53,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
   const { data, error } = await supabase
     .from("owner_notifications")
     .select(
-      "id, kind, review_id, title, body, priority, ticket_id, sms_status, email_status, program_id, is_demo, owner_programs(owner_email, owner_phone, owner_name)",
+      "id, kind, review_id, title, body, priority, ticket_id, sms_status, email_status, program_id, owner_user_id, is_demo, owner_programs(owner_email, owner_phone, owner_name)",
     )
     .or("email_status.eq.pending,sms_status.eq.pending")
     .order("created_at")
@@ -78,11 +79,38 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
       continue;
     }
 
-    const program = row.owner_programs as unknown as {
+    let program = row.owner_programs as unknown as {
       owner_email: string | null;
       owner_phone: string | null;
       owner_name: string | null;
     } | null;
+
+    let ticketRef: number | null = null;
+    if (row.ticket_id || row.kind.startsWith("ticket_")) {
+      try {
+        if (!row.ticket_id) throw new Error("Ticket alert source is missing.");
+        const recipient = await ticketAlertRecipient(supabase, {
+          ...row,
+          ticket_id: row.ticket_id,
+        });
+        program = recipient;
+        ticketRef = recipient.ticketRef;
+      } catch {
+        // Do not retry or route an old alert using free-text program contact snapshots.
+        const blocked = await supabase
+          .from("owner_notifications")
+          .update({
+            email_status: "skipped",
+            sms_status: "skipped",
+            delivery_error:
+              "Ticket alert delivery blocked: canonical Owner, Property and enrollment must be verified by staff.",
+          })
+          .eq("id", row.id);
+        if (blocked.error) throw blocked.error;
+        notes.push("A Ticket alert requires canonical relationship review before delivery.");
+        continue;
+      }
+    }
 
     const patch: Database["public"]["Tables"]["owner_notifications"]["Update"] = {};
 
@@ -91,15 +119,6 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
         patch.email_status = "skipped";
         patch.delivery_error = "No owner email on file.";
       } else {
-        let ticketRef: number | null = null;
-        if (row.ticket_id) {
-          const { data: t } = await supabase
-            .from("tickets")
-            .select("ref")
-            .eq("id", row.ticket_id)
-            .maybeSingle();
-          ticketRef = t?.ref ?? null;
-        }
         const result = await sendEmail(
           program.owner_email,
           safeText.title,
