@@ -65,6 +65,13 @@ it("reports actual attestation and distinguishes corrected history from counted 
       },
       {
         id: "correction",
+        owner_update_snapshot: {
+          revision: 1,
+          issue: "Original issue",
+          work_performed: "Initial work",
+          outcome: "Original outcome",
+          reviewed_at: "2026-01-02",
+        },
         entry_date: "2026-01-02",
         minutes: 45,
         activity: "Corrected review",
@@ -82,4 +89,6 @@ it("reports actual attestation and distinguishes corrected history from counted 
   expect(report.log[1]?.attested).toBe(true);
   expect(report.log[1]?.countsTowardTotal).toBe(true);
   expect(report.log[1]?.correctionOf).toBe("original");
+  expect(report.log[1]?.ownerUpdate?.revision).toBe(1);
+  expect(report.log[1]?.ownerUpdate?.outcome).toBe("Original outcome");
 });

@@ -71,6 +71,7 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
         // Mandatory: context-free time entries are not allowed.
         reviewId: z.string().uuid(),
         ticketId: z.string().uuid().nullable().default(null),
+        ownerUpdateRevision: z.number().int().positive().nullable().default(null),
         propertyIds: z.array(z.string().uuid()).max(25).default([]),
         confirmed: z.literal(true, {
           message: "Please confirm the entry reflects the time you personally spent.",

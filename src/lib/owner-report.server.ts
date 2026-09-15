@@ -12,12 +12,14 @@
  * not count until the homeowner corrects it.
  */
 
+import { reviewedOwnerUpdateText } from "./owner-reviewed-update";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Client } from "./owner-participation.server";
 import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
 import { PROGRAM_TOTAL_DAYS, hoursFromMinutes } from "./owner-participation";
 
 export type ReportEntry = {
+  reviewedUpdate?: string;
   id: string;
   date: string;
   activity: string;
@@ -99,7 +101,10 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       id: e.id,
       date: e.entry_date,
       activity: e.activity,
-      detail: [e.output, e.comments].filter(Boolean).join(" — "),
+      detail: [e.output, e.comments, reviewedOwnerUpdateText(e.owner_update_snapshot)]
+        .filter(Boolean)
+        .join(" — "),
+      reviewedUpdate: reviewedOwnerUpdateText(e.owner_update_snapshot),
       minutes: e.minutes,
       hours: hoursFromMinutes(e.minutes),
       properties: e.propertyIds.map((id) => propNames.get(id) ?? "Property"),
@@ -452,6 +457,17 @@ export async function reportPdf(report: OwnerReport) {
       text(String(e.hours), { size: 8, x: cols[3] });
       text("—", { size: 8, x: cols[4] });
       text("Outside period", { size: 8, x: cols[5], color: MUTED });
+    }
+  }
+
+  const reviewedEntries = [...report.entries, ...report.outsidePeriod].filter(
+    (entry) => entry.reviewedUpdate,
+  );
+  if (reviewedEntries.length) {
+    heading("Owner updates retained with participation");
+    for (const entry of reviewedEntries) {
+      para(`${entry.date} · ${entry.activity} · ${entry.status}`, 9);
+      para(entry.reviewedUpdate!, 9);
     }
   }
 

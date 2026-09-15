@@ -42,6 +42,7 @@ import {
   parseOwnerMinutes,
   OWNER_GOAL_LABEL,
 } from "@/lib/owner-participation";
+import { captureReviewedOpportunity } from "@/lib/owner-reviewed-update";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
@@ -64,6 +65,7 @@ export const Route = createFileRoute("/_authenticated/owner")({
 });
 
 type Review = {
+  owner_update_revision?: number | null;
   id: string;
   auto_ticket?: boolean;
   owner_request?: OwnerTicketRequest;
@@ -130,7 +132,10 @@ function OwnerHubBody({
   preview: boolean;
 }) {
   const qc = useQueryClient();
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-home"] });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["owner-home"] });
+    void qc.invalidateQueries({ queryKey: ["owner-report"] });
+  };
 
   const { program, properties, reviews, badges, alerts, tickets, snapshot } = data;
 
@@ -263,6 +268,38 @@ function OwnerHubBody({
         <ParticipationReportPanel />
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
       </div>
+
+      <SectionCard title="Reviewed updates in your participation history">
+        <div className="space-y-2">
+          {data.entries
+            .filter((entry) => entry.owner_update_snapshot)
+            .map((entry) => {
+              const reviewed = entry.owner_update_snapshot!;
+              return (
+                <details key={entry.id} className="rounded-lg border p-3 text-sm">
+                  <summary className="cursor-pointer">
+                    {usDate(entry.entry_date)} · {entry.activity} · Revision {reviewed.revision}
+                    {entry.superseded ? " · Superseded entry" : ""}
+                  </summary>
+                  <div className="mt-2 space-y-2 whitespace-pre-wrap">
+                    <p>{reviewed.issue}</p>
+                    <p>{reviewed.work_performed}</p>
+                    {reviewed.outcome && <p>{reviewed.outcome}</p>}
+                    <p className="text-muted-foreground">
+                      Owner update reviewed {usDate(reviewed.reviewed_at)}. Retained with this
+                      participation entry.
+                    </p>
+                  </div>
+                </details>
+              );
+            })}
+          {!data.entries.some((entry) => entry.owner_update_snapshot) && (
+            <p className="text-sm text-muted-foreground">
+              No participation entries have a saved owner-update revision yet.
+            </p>
+          )}
+        </div>
+      </SectionCard>
 
       <OwnerFilesPanel />
 
@@ -412,26 +449,32 @@ function LogTimeButton({
   readOnly: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
+    null,
+  );
   const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const log = useServerFn(logOwnerParticipation);
 
   const save = useMutation({
-    mutationFn: () =>
-      log({
+    mutationFn: () => {
+      if (!reviewed) throw new Error("Open the opportunity before logging participation.");
+      return log({
         data: {
           programId,
           phase: "ongoing",
           entryDate: new Date().toISOString().slice(0, 10),
           minutes: parseOwnerMinutes(minutes),
           activity: activity.trim(),
-          reviewId: review.id,
-          ticketId: review.ticket_id,
-          propertyIds: review.propertyIds,
+          reviewId: reviewed.id,
+          ticketId: reviewed.ticketId,
+          ownerUpdateRevision: reviewed.ownerUpdateRevision,
+          propertyIds: reviewed.propertyIds,
           confirmed: true,
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Time logged.");
       setOpen(false);
@@ -445,7 +488,15 @@ function LogTimeButton({
 
   return (
     <>
-      <Button size="sm" variant="outline" disabled={readOnly} onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={readOnly}
+        onClick={() => {
+          setReviewed(captureReviewedOpportunity(review));
+          setOpen(true);
+        }}
+      >
         <Clock className="size-4" /> Log time
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -455,6 +506,11 @@ function LogTimeButton({
             <DialogDescription>{MANUAL_ENTRY_NOTICE}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {reviewed?.description && (
+              <p className="max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
+                {reviewed.description}
+              </p>
+            )}
             <div className="space-y-1">
               <Label htmlFor="log-activity">What did you do?</Label>
               <Textarea

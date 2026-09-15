@@ -97,6 +97,8 @@ try {
     "supabase/tests/fixtures/ticket_owner_updates_schema.sql",
     "supabase/migrations/20260915160000_reviewed_ticket_owner_updates.sql",
     "supabase/tests/ticket_owner_updates.test.sql",
+    "supabase/migrations/20260915170000_owner_time_reviewed_update.sql",
+    "supabase/tests/owner_time_reviewed_update.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

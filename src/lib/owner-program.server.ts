@@ -866,6 +866,7 @@ export function buildProgramReportSnapshot(agg: Awaited<ReturnType<typeof loadPr
       task: e.review_id ? (reviewTitle.get(e.review_id) ?? null) : null,
       decision: e.decision_outcome ?? e.output,
       comments: e.comments,
+      ownerUpdate: e.owner_update_snapshot ?? null,
       correctionOf: e.amends_entry_id,
       correctionReason: e.correction_reason,
       attested: e.attested,

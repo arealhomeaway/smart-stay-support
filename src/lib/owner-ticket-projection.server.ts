@@ -6,6 +6,7 @@ import { ownerTicketRequest, type OwnerTicketRequest } from "./owner-ticket-auth
 import { reconcileTicketApproval } from "./owner-ticket-approval";
 
 export type OwnerTicket = {
+  owner_update_revision?: number | null;
   request: OwnerTicketRequest;
   id: string;
   ref: number;
@@ -155,6 +156,7 @@ export async function loadOwnerTicketProjection(
 
 /** Only content explicitly reviewed for owner visibility enters this narrative. */
 export function projectReviewedTicketUpdate(update?: {
+  revision: number;
   issue: string;
   work_performed: string;
   outcome: string;
@@ -162,6 +164,7 @@ export function projectReviewedTicketUpdate(update?: {
 }) {
   if (!update) return {};
   return {
+    owner_update_revision: update.revision,
     description: `Reviewed update (${update.reviewed_at.slice(0, 10)}). Issue: ${update.issue}\nWork: ${update.work_performed}${update.outcome ? `\nOutcome: ${update.outcome}` : ""}`,
     resolution_notes: update.outcome || null,
   };

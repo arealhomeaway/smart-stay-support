@@ -4445,6 +4445,8 @@ export type Database = {
       }
       owner_time_entries: {
         Row: {
+          owner_update_revision: number | null
+          owner_update_snapshot: Json | null
           activity: string
           activity_category: string | null
           amends_entry_id: string | null
@@ -4472,6 +4474,8 @@ export type Database = {
           ticket_id: string | null
         }
         Insert: {
+          owner_update_revision?: number | null
+          owner_update_snapshot?: Json | null
           activity: string
           activity_category?: string | null
           amends_entry_id?: string | null
@@ -4499,6 +4503,8 @@ export type Database = {
           ticket_id?: string | null
         }
         Update: {
+          owner_update_revision?: number | null
+          owner_update_snapshot?: Json | null
           activity?: string
           activity_category?: string | null
           amends_entry_id?: string | null

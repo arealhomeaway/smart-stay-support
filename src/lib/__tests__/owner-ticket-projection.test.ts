@@ -181,6 +181,7 @@ it("uses the scoped receipt without requesting raw Work Orders or approval recor
               {
                 ticket_id: "ticket",
                 property_id: "home",
+                revision: 1,
                 issue: "A pipe was leaking.",
                 work_performed: "The pipe was repaired.",
                 outcome: "Leak testing passed.",
@@ -225,4 +226,5 @@ it("uses the scoped receipt without requesting raw Work Orders or approval recor
   expect(result[0]!.request.why).toContain("prior response is recorded");
   expect(result[0]!.description).toContain("The pipe was repaired.");
   expect(result[0]!.resolution_notes).toBe("Leak testing passed.");
+  expect(result[0]!.owner_update_revision).toBe(1);
 });

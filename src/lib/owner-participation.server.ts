@@ -9,6 +9,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseReviewedOwnerUpdate, type ReviewedOwnerUpdate } from "./owner-reviewed-update";
 import { readAllRows } from "./read-all-rows";
 import type { Database } from "@/integrations/supabase/types";
 import {
@@ -27,6 +28,8 @@ import {
 export type Client = SupabaseClient<Database>;
 
 export type EntryRow = {
+  owner_update_revision?: number | null;
+  owner_update_snapshot?: ReviewedOwnerUpdate | null;
   id: string;
   phase: string;
   entry_date: string;
@@ -52,6 +55,7 @@ export type EntryRow = {
 };
 
 export type ReviewRow = {
+  owner_update_revision?: number | null;
   owner_request?: import("./owner-ticket-authority").OwnerTicketRequest;
   updated_at?: string;
   auto_ticket?: boolean;
@@ -182,7 +186,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
       supabase
         .from("owner_time_entries")
         .select(
-          "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, amends_entry_id, correction_reason, review_status, reviewed_by, reviewed_at, review_note, attested, flagged, created_at",
+          "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, owner_update_revision, owner_update_snapshot, amends_entry_id, correction_reason, review_status, reviewed_by, reviewed_at, review_note, attested, flagged, created_at",
           { count: "exact" },
         )
         .eq("program_id", programId)
@@ -220,6 +224,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
 
   const entryRows: EntryRow[] = (entries.data ?? []).map((e) => ({
     ...e,
+    owner_update_snapshot: parseReviewedOwnerUpdate(e.owner_update_snapshot),
     propertyIds: (entryProps.data ?? [])
       .filter((l) => l.entry_id === e.id)
       .map((l) => l.property_id),

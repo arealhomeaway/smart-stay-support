@@ -152,6 +152,7 @@ export async function saveAlertPreferences(
 }
 
 export type LogTimeInput = {
+  ownerUpdateRevision?: number | null;
   programId: string;
   phase: "onboarding" | "ongoing";
   entryDate: string;
