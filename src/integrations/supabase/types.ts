@@ -7922,6 +7922,10 @@ export type Database = {
         Args: { _work_order_id: string; _expected_updated_at: string; _owner_summary: string }
         Returns: string
       }
+      record_staff_work_order_owner_decision: {
+        Args: { _work_order_id: string; _expected_updated_at: string; _outcome: string; _approved_amount: number | null; _note: string }
+        Returns: string
+      }
       prepare_onboarding_financial_approval: {
         Args: { _request_id: string; _expected_amount: number; _expected_tier: string }
         Returns: string

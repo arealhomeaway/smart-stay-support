@@ -261,7 +261,6 @@ export function WorkOrderDrawer({
   const recordDecision = useMutation({
     mutationFn: async (outcome: OwnerApprovalOutcome) => {
       if (!workOrder) return;
-      const decidedAt = new Date().toISOString();
       const approvedAmount =
         outcome === "approved"
           ? fields["approved_amount"]
@@ -269,39 +268,14 @@ export function WorkOrderDrawer({
             : workOrder.quote_amount
           : null;
 
-      if (workOrder.approval_id) {
-        const { error } = await supabase
-          .from("approvals")
-          .update({
-            status:
-              outcome === "approved" ? "approved" : outcome === "declined" ? "declined" : "pending",
-            decision_note: note,
-            decided_at: outcome === "info_requested" ? null : decidedAt,
-            approver_role: "owner",
-          })
-          .eq("id", workOrder.approval_id);
-        if (error) throw error;
-      }
-
-      const { error } = await supabase
-        .from("work_orders")
-        .update({
-          approval_status: outcome,
-          approval_note: note,
-          approval_decided_at: outcome === "info_requested" ? null : decidedAt,
-          approved_amount: approvedAmount,
-        })
-        .eq("id", workOrder.id);
-      if (error) throw error;
-
-      await supabase.from("work_order_events").insert({
-        work_order_id: workOrder.id,
-        author_id: userId,
-        event_type: `owner_${outcome}`,
-        body: `${OWNER_APPROVAL_OUTCOME_LABELS[outcome]} — ${note}`,
-        detail: { outcome, approved_amount: approvedAmount, recorded_by: userId } as never,
-        is_demo: workOrder.is_demo,
+      const { error } = await supabase.rpc("record_staff_work_order_owner_decision", {
+        _work_order_id: workOrder.id,
+        _expected_updated_at: workOrder.updated_at,
+        _outcome: outcome,
+        _approved_amount: approvedAmount,
+        _note: note,
       });
+      if (error) throw error;
     },
     onSuccess: () => {
       setNote("");
