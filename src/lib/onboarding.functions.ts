@@ -329,16 +329,16 @@ const moduleEnum = z.enum([
 export const getOnboardingProjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { loadProjects } = await import("./onboarding-project.server");
-    return loadProjects(context.supabase);
+    const { loadProjectsForActor } = await import("./onboarding-project.server");
+    return loadProjectsForActor(context.supabase, context.userId);
   });
 
 export const getPropertyProject = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
-    const { loadProjectForProperty } = await import("./onboarding-project.server");
-    return loadProjectForProperty(context.supabase, data.propertyId);
+    const { loadPropertyProjectForActor } = await import("./onboarding-project.server");
+    return loadPropertyProjectForActor(context.supabase, context.userId, data.propertyId);
   });
 
 export const startOnboardingProjectFn = createServerFn({ method: "POST" })

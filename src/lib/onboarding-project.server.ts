@@ -16,6 +16,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { type FurnishingScope, type ModuleKey } from "./onboarding-scope";
 import { writeAudit } from "./audit.server";
 import { readCountedRows } from "./read-all-rows";
+import { assertOnboardingPropertyManagement } from "./onboarding-task-access.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -26,9 +27,11 @@ async function assertOnboardingStaff(supabase: Client, userId: string) {
     supabase.rpc("is_onboarding_staff", { _user_id: userId }),
     supabase.rpc("is_supervisor", { _user_id: userId }),
   ]);
+  if (staff.error || supervisor.error) throw new Error("Could not verify onboarding access.");
   if (!staff.data && !supervisor.data) {
     throw new Error("You do not have access to change onboarding projects.");
   }
+  return { supervisor: Boolean(supervisor.data) };
 }
 
 export async function recordProjectEvent(
@@ -60,16 +63,32 @@ export async function recordProjectEvent(
 }
 
 /** Every project, newest first. Read-only for any internal staff member. */
-export async function loadProjects(supabase: Client) {
-  const { data, error } = await readCountedRows(
-    supabase
-      .from("onboarding_projects")
-      .select("*", { count: "exact" })
-      .order("started_at", { ascending: false })
-      .order("id"),
-  );
+export async function loadProjects(supabase: Client, leadId?: string) {
+  let query = supabase
+    .from("onboarding_projects")
+    .select("*", { count: "exact" })
+    .order("started_at", { ascending: false })
+    .order("id");
+  if (leadId) query = query.or(`project_manager.eq.${leadId},director.eq.${leadId}`);
+  const { data, error } = await readCountedRows(query);
   if (error) throw error;
   return data ?? [];
+}
+
+/** Public server endpoint projection; raw loaders also support already-scoped internal workflows. */
+export async function loadProjectsForActor(supabase: Client, userId: string) {
+  const access = await assertOnboardingStaff(supabase, userId);
+  return loadProjects(supabase, access.supervisor ? undefined : userId);
+}
+
+export async function loadPropertyProjectForActor(
+  supabase: Client,
+  userId: string,
+  propertyId: string,
+) {
+  await assertOnboardingStaff(supabase, userId);
+  await assertOnboardingPropertyManagement(supabase, userId, propertyId);
+  return loadProjectForProperty(supabase, propertyId);
 }
 
 export async function loadProjectForProperty(supabase: Client, propertyId: string) {
