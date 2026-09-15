@@ -13,6 +13,37 @@ const ticket = {
   owner_participation_path: "inform",
   owner_submitted: false,
 };
+
+it("attaches authority only from Work Orders linked to both the Ticket and its Property", async () => {
+  const records: Record<string, unknown[]> = {
+    tickets: [ticket],
+    work_orders: [
+      { ticket_id: "ticket", property_id: "home", phase: "permanent", quote_amount: 150 },
+      { ticket_id: "ticket", property_id: "other-home", phase: "permanent", quote_amount: 9999 },
+      { ticket_id: "other-ticket", property_id: "home", phase: "permanent", quote_amount: 9999 },
+    ],
+  };
+  const db = {
+    from: (table: string) => {
+      const query = {
+        select: () => query,
+        in: () => query,
+        eq: () => query,
+        order: () => query,
+        range: async (from: number, to: number) => ({
+          data: records[table]!.slice(from, to + 1),
+          count: records[table]!.length,
+          error: null,
+        }),
+      };
+      return query;
+    },
+  };
+  const result = await loadOwnerTicketProjection(db as never, ["home"], false);
+  expect(result[0]!.request.label).toBe("Review — No approval required");
+  expect(result[0]!.request.why).toContain("$150");
+  expect(result[0]!.request.why.includes("9,999")).toBe(false);
+});
 it("projects structured Ticket context without spreading private source text", () => {
   const poisoned = {
     ...ticket,
@@ -52,8 +83,8 @@ it("loads every visible Ticket across bounded property filters and pages, retain
   );
   const filterSizes: number[] = [];
   const db = {
-    from: () => {
-      let visible = rows;
+    from: (table: string) => {
+      let visible = table === "tickets" ? rows : [];
       const query = {
         select: (fields: string, options: { count: string }) => {
           expect(
@@ -67,7 +98,7 @@ it("loads every visible Ticket across bounded property filters and pages, retain
           return query;
         },
         in: (_key: string, ids: string[]) => {
-          filterSizes.push(ids.length);
+          if (table === "tickets") filterSizes.push(ids.length);
           visible = visible.filter((row) => ids.includes(row.property_id));
           return query;
         },

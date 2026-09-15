@@ -2,8 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { CATEGORIES, STATUSES } from "./tickets";
 import { readCountedRows } from "./read-all-rows";
+import { ownerTicketRequest, type OwnerTicketRequest } from "./owner-ticket-authority";
 
 export type OwnerTicket = {
+  request: OwnerTicketRequest;
   id: string;
   ref: number;
   property_id: string | null;
@@ -36,6 +38,7 @@ type Ticket = Pick<
 export function projectOwnerTicket(ticket: Ticket): OwnerTicket {
   const category = CATEGORIES.find((item) => item.value === ticket.category);
   return {
+    request: ownerTicketRequest([]),
     id: ticket.id,
     ref: ticket.ref,
     property_id: ticket.property_id,
@@ -77,7 +80,31 @@ export async function loadOwnerTicketProjection(
     const result = await readCountedRows(
       query.order("reported_at", { ascending: false }).order("id"),
     );
-    tickets.push(...result.data.map(projectOwnerTicket));
+    let workQuery = supabase
+      .from("work_orders")
+      .select(
+        "id, ticket_id, property_id, phase, quote_amount, approved_amount, approval_status, contractual_exception, emergency_reason",
+        { count: "exact" },
+      )
+      .in("property_id", ids.slice(offset, offset + 100));
+    if (!preview) workQuery = workQuery.eq("is_demo", false);
+    const work = await readCountedRows(workQuery.order("id"));
+    tickets.push(
+      ...result.data.map((ticket) => ({
+        ...projectOwnerTicket(ticket),
+        request: ownerTicketRequest(
+          work.data
+            .filter(
+              (order) => order.ticket_id === ticket.id && order.property_id === ticket.property_id,
+            )
+            .map((order) => ({
+              ...order,
+              phase:
+                order.phase === "mitigation" ? ("mitigation" as const) : ("permanent" as const),
+            })),
+        ),
+      })),
+    );
   }
   return tickets.sort(
     (a, b) => b.reported_at.localeCompare(a.reported_at) || a.id.localeCompare(b.id),
