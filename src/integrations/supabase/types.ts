@@ -7882,6 +7882,10 @@ export type Database = {
       }
     }
     Functions: {
+      read_owner_ticket_financial_context: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: (Database["public"]["Functions"]["read_owner_ticket_authority"]["Returns"][number] & { final_cost: number | null })[]
+      }
       save_ticket_owner_update: {
         Args: { _ticket_id: string; _actor_id: string; _expected_ticket_updated_at: string;
           _expected_revision: number; _expected_owner_id: string; _issue: string; _work_performed: string; _outcome: string; _reviewed: boolean }

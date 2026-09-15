@@ -3,9 +3,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { CATEGORIES, STATUSES } from "./tickets";
 import { readCountedRows } from "./read-all-rows";
 import { ownerTicketRequest, type OwnerTicketRequest } from "./owner-ticket-authority";
+import { ownerTicketCosts } from "./owner-ticket-costs";
 import { reconcileTicketApproval } from "./owner-ticket-approval";
 
 export type OwnerTicket = {
+  costs?: ReturnType<typeof ownerTicketCosts>;
   owner_update_revision?: number | null;
   request: OwnerTicketRequest;
   id: string;
@@ -86,7 +88,7 @@ export async function loadOwnerTicketProjection(
     const work = await readCountedRows(
       supabase
         .rpc(
-          "read_owner_ticket_authority",
+          "read_owner_ticket_financial_context",
           {
             _program_id: programId,
             _property_ids: ids.slice(offset, offset + 100),
@@ -115,6 +117,11 @@ export async function loadOwnerTicketProjection(
         ...projectReviewedTicketUpdate(
           updates.data.find(
             (update) => update.ticket_id === ticket.id && update.property_id === ticket.property_id,
+          ),
+        ),
+        costs: ownerTicketCosts(
+          work.data.filter(
+            (order) => order.ticket_id === ticket.id && order.property_id === ticket.property_id,
           ),
         ),
         request: ownerTicketRequest(

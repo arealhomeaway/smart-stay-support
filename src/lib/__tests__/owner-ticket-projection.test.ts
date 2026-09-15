@@ -37,7 +37,7 @@ it("attaches authority only from Work Orders linked to both the Ticket and its P
         };
         return query;
       }
-      expect(name).toBe("read_owner_ticket_authority");
+      expect(name).toBe("read_owner_ticket_financial_context");
       expect(args._program_id).toBe("program");
       expect(options.count).toBe("exact");
       return db.from("work_orders").select("id", options).in("property_id", args._property_ids);
@@ -113,7 +113,7 @@ it("loads every visible Ticket across bounded property filters and pages, retain
         };
         return query;
       }
-      expect(name).toBe("read_owner_ticket_authority");
+      expect(name).toBe("read_owner_ticket_financial_context");
       expect(args._program_id).toBe("program");
       expect(options.count).toBe("exact");
       return db.from("work_orders").select("id", options).in("property_id", args._property_ids);
@@ -205,6 +205,7 @@ it("uses the scoped receipt without requesting raw Work Orders or approval recor
               property_id: "home",
               phase: "permanent",
               quote_amount: 650,
+              final_cost: 625,
               approved_amount: 650,
               approval_id: "approval",
               approval_status: "pending",
@@ -227,4 +228,5 @@ it("uses the scoped receipt without requesting raw Work Orders or approval recor
   expect(result[0]!.description).toContain("The pipe was repaired.");
   expect(result[0]!.resolution_notes).toBe("Leak testing passed.");
   expect(result[0]!.owner_update_revision).toBe(1);
+  expect(result[0]!.costs?.recordedAmount).toBe(625);
 });

@@ -22,7 +22,7 @@ export function automaticOpportunityView(review: ReviewRow, ticket?: OwnerTicket
     owner_action_type: request.category,
     decision_path: opportunityDecisionPath(request.category),
     business_question: request.why,
-    recommendation: `${request.label}. ${request.why} ${linked?.description ?? "Current property work details are unavailable."}`,
+    recommendation: `${request.label}. ${request.why} ${linked?.description ?? "Current property work details are unavailable."} ${linked?.costs?.summary ?? ""}`,
     staff_context: null,
   };
 }
