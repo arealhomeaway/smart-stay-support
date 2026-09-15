@@ -224,3 +224,12 @@ Requirements matrix now records transaction, history, role-view and full-schema 
 Follow-up to aa0d182: moved logging/resubmission events into their existing invoker RPC transactions using additive migration 20. Existing grants and access policies are unchanged. Removed duplicate server event writes and the correction's history-only link read. Isolated owner-role tests force history failure and prove rollback of both entries and links, then verify success context, duplicate correction rejection and another-owner denial. All 20 migration files pass the isolated runner; 643 unit tests / 1550 assertions and TypeScript pass; focused lint passes. Closeout events, last-activity/badge side effects and wider concurrency/role-view gaps remain. Production build result is recorded in the next checkpoint entry.
 
 Owner-history final build: production client/server build passed with fresh output `.codex-qa.local/build-20260915-owner-history`. No deployment performed. Validation is complete for this follow-up; authenticated acceptance remains outstanding.
+
+
+### September 15 - versioned owner closeout
+
+Added unapplied migration 21: report-input version invalidation and service-only closeout RPC. The server captures a version before loading/checking its canonical aggregate; completion locks and compares that version, then writes status, saved report and audit event atomically. Trigger-only invalidation covers program, enrollment, entries/reviews and links, property metadata and badges without granting owners program UPDATE. Existing RLS policies remain unchanged. Tests cover stale source changes, owner insert invalidation, role rejection, history-failure rollback and repeat closeout rejection. Sequential isolated tests do not claim simultaneous multi-connection acceptance.
+
+644 unit tests / 69 files / 1557 assertions pass. TypeScript and strict focused changed-source lint pass. All 21 migration files pass the isolated runner. Found an additional concrete closeout defect: aggregate queries need complete program-scoped pagination before large-program reports are trustworthy. That work, broader eligibility/handoff/stage races and role-specific workspace behavior remain. Production build result follows when its running handle completes.
+
+Versioned-closeout production build passed using fresh `.codex-qa.local/build-20260915-owner-closeout` output. No deployment or shared migration. Working checkpoint remains MORE IMPLEMENTATION REQUIRED.

@@ -775,7 +775,19 @@ export function completionChecklist(agg: Awaited<ReturnType<typeof loadProgramAg
 }
 
 /** Formal closeout. Hours alone never close a program with open property work. */
-export async function completeProgram(supabase: Client, userId: string, programId: string) {
+export async function completeProgram(
+  supabase: Client,
+  userId: string,
+  programId: string,
+  admin: Client,
+) {
+  // Read before the aggregate: changes during any of its reads invalidate closeout.
+  const version = await supabase
+    .from("owner_programs")
+    .select("report_version")
+    .eq("id", programId)
+    .single();
+  if (version.error) throw version.error;
   const agg = await loadProgramAggregate(supabase, programId);
   if (!["active", "target_reached"].includes(agg.program.status)) {
     throw new Error("Only an active program can be completed. Resume a paused program first.");
@@ -791,27 +803,14 @@ export async function completeProgram(supabase: Client, userId: string, programI
     throw new Error("Every counted entry needs an activity description.");
 
   const report = buildProgramReportSnapshot(agg);
-  const { data: completed, error } = await supabase
-    .from("owner_programs")
-    .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
-      completed_by: userId,
-      completion_report: report as unknown as Json,
-    })
-    .eq("id", programId)
-    .eq("status", agg.program.status)
-    .is("completed_at", null)
-    .select("id")
-    .maybeSingle();
+  const { data: completed, error } = await admin.rpc("complete_owner_program", {
+    _program_id: programId,
+    _actor_id: userId,
+    _expected_version: version.data.report_version,
+    _report: report as unknown as Json,
+  });
   if (error) throw error;
   if (!completed) throw new Error("The program changed. Refresh before completing it.");
-  await recordEvent(supabase, {
-    programId,
-    kind: "program_completed",
-    summary: "ARHA completed the formal program closeout.",
-    actorId: userId,
-  });
   const refreshed = await loadProgramAggregate(supabase, programId);
   await syncBadges(supabase, refreshed);
   return { ok: true as const };

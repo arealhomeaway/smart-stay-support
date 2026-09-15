@@ -164,7 +164,8 @@ export const completeOwnerProgram = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { assertSupervisor, completeProgram } = await import("./owner-program.server");
     await assertSupervisor(context.supabase, context.userId);
-    return completeProgram(context.supabase, context.userId, data.programId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return completeProgram(context.supabase, context.userId, data.programId, supabaseAdmin);
   });
 
 /** Supervisor: record a correction without overwriting what the owner entered. */

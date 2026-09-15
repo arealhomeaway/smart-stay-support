@@ -54,6 +54,9 @@ try {
     "supabase/tests/handoff_request.test.sql",
     "supabase/migrations/20260915020000_atomic_owner_activity_history.sql",
     "supabase/tests/owner_activity_history.test.sql",
+    "supabase/tests/fixtures/owner_closeout_schema.sql",
+    "supabase/migrations/20260915030000_versioned_owner_closeout.sql",
+    "supabase/tests/owner_closeout.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);
