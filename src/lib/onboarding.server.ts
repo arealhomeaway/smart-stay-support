@@ -14,7 +14,11 @@ import { validateHandoff } from "./onboarding";
 import { handoffReadiness, lifecycleEditIssue } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
 export { validateHandoff };
-import { onboardingTaskAccess, assertAssignedTaskPatch } from "./onboarding-task-access.server";
+import {
+  onboardingTaskAccess,
+  assertAssignedTaskPatch,
+  assertOnboardingPropertyManagement,
+} from "./onboarding-task-access.server";
 import { assignedWorkContext, type AssignedWorkContext } from "./onboarding-assigned-context";
 import { onboardingWorkspaceMode } from "./onboarding-workspace-view";
 import { writeAudit } from "./audit.server";
@@ -703,6 +707,7 @@ export async function setPropertyLifecycle(
   input: { propertyId: string; status: string; stage?: string | null | undefined; reason: string },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
   if (["handoff_requested", "handoff_corrections", "active_operations"].includes(input.status)) {
     throw new Error(
       "Use the handoff review chain to request, return, accept or confirm this home Live.",
@@ -754,6 +759,7 @@ export async function requestHandoff(
   input: { propertyId: string; notes: string; carryoverAccepted: boolean },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
 
   const [property, tasks] = await Promise.all([
     supabase.from("properties").select(PROPERTY_FIELDS).eq("id", input.propertyId).single(),

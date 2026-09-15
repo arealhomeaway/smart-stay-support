@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { writeAudit } from "./audit.server";
+import { assertOnboardingPropertyManagement } from "./onboarding-task-access.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -77,6 +78,7 @@ export async function saveScheduleAnchors(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
+  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
   const { error } = await supabase
     .from("properties")
     .update({
@@ -103,6 +105,7 @@ export async function previewScheduleRecalc(
   input: { propertyId: string },
 ): Promise<SchedulePreview> {
   await assertOnboardingStaff(supabase, userId);
+  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
 
   const property = await supabase
     .from("properties")
@@ -223,6 +226,13 @@ export async function setTaskSchedule(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select("property_id")
+    .eq("id", input.taskId)
+    .single();
+  if (task.error) throw task.error;
+  await assertOnboardingPropertyManagement(supabase, userId, task.data.property_id);
   const { error } = await supabase
     .from("onboarding_tasks")
     .update({

@@ -6,7 +6,15 @@ import {
   recordOwnerTaskDecision,
   confirmApprovalRequirement,
   overrideOnboardingTaskDate,
+  setPropertyLifecycle,
+  requestHandoff,
 } from "../onboarding.server";
+import {
+  saveScheduleAnchors,
+  previewScheduleRecalc,
+  applyScheduleRecalc,
+  setTaskSchedule,
+} from "../onboarding-schedule.server";
 
 function client(assignedTo: string, lead = false, property = "home") {
   let writes = 0;
@@ -50,6 +58,48 @@ function client(assignedTo: string, lead = false, property = "home") {
   return { db, writes: () => writes };
 }
 
+it("field assignment does not authorize property lifecycle, handoff or scheduling actions", async () => {
+  const { db, writes } = client("actor");
+  const actions = [
+    () =>
+      setPropertyLifecycle(db as never, "actor", {
+        propertyId: "home",
+        status: "paused",
+        reason: "Pause",
+      }),
+    () =>
+      requestHandoff(db as never, "actor", {
+        propertyId: "home",
+        notes: "Ready",
+        carryoverAccepted: false,
+      }),
+    () =>
+      saveScheduleAnchors(db as never, "actor", {
+        propertyId: "home",
+        plannedClosingOn: null,
+        actualClosingOn: null,
+        actualAccessOn: null,
+      }),
+    () => previewScheduleRecalc(db as never, "actor", { propertyId: "home" }),
+    () => applyScheduleRecalc(db as never, "actor", { propertyId: "home", taskIds: ["task"] }),
+    () =>
+      setTaskSchedule(db as never, "actor", {
+        taskId: "task",
+        anchor: null,
+        offsetDays: null,
+        manualOverride: false,
+      }),
+  ];
+  for (const action of actions) {
+    const message = await action().then(
+      () => "allowed",
+      (error: Error) => error.message,
+    );
+    expect(message).toContain("not assigned");
+  }
+  expect(writes()).toBe(0);
+});
+
 it("distinguishes assigned progress from project management and rejects unrelated callers", async () => {
   expect(await onboardingTaskAccess(client("actor").db as never, "actor", "home", "actor")).toEqual(
     { canManage: false },
@@ -83,10 +133,17 @@ it("date overrides reject assignees and forward the viewed version and authentic
     dueOn: null,
     reason: "Delivery date pending",
   };
-  await expect(
-    overrideOnboardingTaskDate(client("actor").db as never, "actor", input, admin as never),
-  ).rejects.toThrow("Only the project lead");
-  expect(calls).toHaveLength(0);
+  const denied = await overrideOnboardingTaskDate(
+    client("actor").db as never,
+    "actor",
+    input,
+    admin as never,
+  ).then(
+    () => "allowed",
+    (error: Error) => error.message,
+  );
+  expect(denied).toContain("Only the project lead");
+  expect(calls.length).toBe(0);
   expect(
     await overrideOnboardingTaskDate(
       client("other", true).db as never,
@@ -107,11 +164,18 @@ it("date overrides reject assignees and forward the viewed version and authentic
       },
     },
   ]);
-  await expect(
-    overrideOnboardingTaskDate(client("other", true).db as never, "actor", input, {
+  const stale = await overrideOnboardingTaskDate(
+    client("other", true).db as never,
+    "actor",
+    input,
+    {
       rpc: async () => ({ data: null, error: new Error("This task changed") }),
-    } as never),
-  ).rejects.toThrow("This task changed");
+    } as never,
+  ).then(
+    () => "allowed",
+    (error: Error) => error.message,
+  );
+  expect(stale).toContain("This task changed");
 });
 
 it("assigned progress cannot change evidence requirements, ownership, links or carryover", () => {

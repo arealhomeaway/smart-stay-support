@@ -45,9 +45,9 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 22 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 659 tests, 74 files, 1675 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 660 tests, 74 files, 1682 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
-| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-date-override`. Child-process escalation required; no deployment. |
+| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-property-management`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
 | Authenticated desktop and 390px acceptance | BLOCKED | Need an approved isolated schema and role/test-account access. Shared/live migrations and account creation not authorized. |
 | Consolidated review request and morning report | PARTIAL | This checkpoint explicitly remains MORE IMPLEMENTATION REQUIRED. Authenticated acceptance is not yet ready. |
@@ -68,7 +68,7 @@ The existing implementation was preserved. Broad PARTIAL rows above remain incom
 - External-owner security: owner RPCs retain caller RLS; staff correction/handoff RPCs use service_role-only execution and actor checks. Full-schema portal/document/ticket/review cross-access and direct-table business-rule bypass tests remain unproven. No existing access policy changed.
 - Interrupted email claims can remain sending. Administrator investigation/recovery is still required; elapsed time is not evidence that retry is safe.
 
-Next implementation actions: establish a consistent transaction/version boundary for closeout and its inputs; reject competing handoff readiness and stage/task changes; finish field-only workspace projection and role navigation without weakening RLS; make remaining history writes durable. Revalidate affected paths before acceptance preparation.
+Next implementation actions: reject competing handoff readiness, stage/task and scheduling changes; complete project-lead workspace projection and workspace pagination; audit remaining project/action boundaries and activation/enrollment concurrency; make remaining badge/activity side effects durable. Closeout versioning, assigned-work projection and role navigation are implemented in the later checkpoints below. Revalidate affected paths before acceptance preparation.
 
 ## Access, policy and exact acceptance sequence
 
@@ -148,3 +148,10 @@ The task drawer now uses a dedicated date action with a required reason and the 
 659 unit tests / 74 files / 1675 assertions pass. TypeScript passes. Focused lint has zero errors and one existing TaskDrawer Fast Refresh warning; generated types pass logic lint with the existing formatting baseline excluded. All 22 isolated migrations pass, including missing reason, unrelated actor, stale version, stage/handoff locks and history-failure rollback. The production client/server build passes in `.codex-qa.local/build-20260915-date-override` with no deployment. Server tests verify actor/version forwarding, assignee denial and stale-result propagation.
 
 The dedicated override gap from the previous checkpoint is resolved locally. General schedule recalculation/configuration, wider task/stage/handoff concurrency and project-lead workspace scope remain incomplete. Authenticated desktop/390px acceptance and full-schema security review remain outstanding. Verdict remains MORE IMPLEMENTATION REQUIRED.
+### September 15 follow-up: property management action scope
+
+Lifecycle edits, handoff requests, schedule anchors, schedule previews/applications and per-task schedule configuration now reuse the existing supervisor or non-cancelled project PM/director responsibility check. Task assignment alone is insufficient. The regression exercises all six entry points and proves denial before writes. This is a server-action guard; direct database RLS and concurrent reassignment are not newly proven or changed.
+
+Final validation: 660 unit tests / 74 files / 1682 assertions, zero failures; TypeScript passes; focused lint for this checkpoint passes without warnings; all 22 isolated migration checks pass; production client/server build passes at `.codex-qa.local/build-20260915-property-management`. The earlier TaskDrawer Fast Refresh warning and generated-types formatting baseline remain as documented. A test-declaration incompatibility introduced by the late date-action assertions was caught and fixed by using the repository's existing assertion style. This final TypeScript run supersedes the earlier date-checkpoint claim, which preceded those assertions.
+
+Remaining implementation is explicit: project-lead data projection and complete workspace pagination; project/scope and other action-boundary review; complete handoff readiness and stage/task/schedule transaction boundaries; program activation/enrollment concurrency; post-transaction badge/activity durability; full external-owner RLS/demo-isolation evidence. General scheduling can still race or mutate reviewed work despite the newly scoped caller guard. Requirements beyond these checks retain their PARTIAL or NOT YET ACCEPTED status. Authenticated desktop/390px testing requires an approved isolated backend and role accounts; no shared migration or account setup was performed. MORE IMPLEMENTATION REQUIRED.

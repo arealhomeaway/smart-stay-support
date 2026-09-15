@@ -2,6 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 type Client = SupabaseClient<Database>;
+/** Property-level management actions use the same responsibility boundary as task management. */
+export async function assertOnboardingPropertyManagement(
+  supabase: Client,
+  userId: string,
+  propertyId: string,
+) {
+  await onboardingTaskAccess(supabase, userId, propertyId, null);
+}
+
 /** Called after the action verifies the onboarding capability. */
 export async function onboardingTaskAccess(
   supabase: Client,
