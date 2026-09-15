@@ -54,7 +54,6 @@ import {
   money,
   nextAction,
   nextCheckpoint,
-  ownerApprovalRequest,
   ownerApprovalText,
   secondQuoteAdvice,
   supervisorApprovalRequest,
@@ -190,35 +189,6 @@ export function WorkOrderDrawer({
     },
   });
 
-  /** Is this property enrolled with an Active Owner who decides in Resolve? */
-  const activeOwner = useQuery({
-    queryKey: ["work-order-active-owner", workOrder?.property_id],
-    enabled: !!workOrder?.property_id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("owner_program_properties")
-        .select("owner_programs!inner(id, owner_user_id, owner_name, status)")
-        .eq("property_id", workOrder!.property_id as string)
-        .limit(5);
-      const row = (data ?? [])
-        .map(
-          (r) =>
-            (
-              r as {
-                owner_programs: {
-                  id: string;
-                  owner_user_id: string | null;
-                  owner_name: string | null;
-                  status: string | null;
-                };
-              }
-            ).owner_programs,
-        )
-        .find((p) => p && p.status !== "archived" && p.owner_user_id);
-      return row ?? null;
-    },
-  });
-
   const reqs = (requirements.data ?? []) as RequirementLike[];
   const progress = useMemo(() => evidenceProgress(reqs), [reqs]);
 
@@ -266,56 +236,23 @@ export function WorkOrderDrawer({
   const requestApproval = useMutation({
     mutationFn: async () => {
       if (!workOrder) return;
-      const request = ownerApprovalRequest(workOrder);
       const ownerText = ownerApprovalText(fields["owner_approval_summary"] ?? "");
-      const program = activeOwner.data;
-      const { data, error } = await supabase
-        .from("approvals")
-        .insert({
-          entity_type: "work_order",
-          entity_id: workOrder.id,
-          property_id: workOrder.property_id,
-          kind: request.kind,
-          title: ownerText.title,
-          detail: ownerText.detail,
-          amount: request.amount,
-          requested_by: userId,
-          approver_role: "owner",
-          // Active Owners decide in Resolve; standard owners answer by email
-          // and staff transcribe the decision onto this same record.
-          approver_id: program?.owner_user_id ?? null,
-          status: "pending",
-          is_demo: workOrder.is_demo,
-        } as never)
-        .select("id")
-        .single();
-      if (error) throw error;
-
-      const { error: updateError } = await supabase
-        .from("work_orders")
-        .update({
-          approval_id: (data as { id: string }).id,
-          approval_status: "pending",
-          approval_requested_at: new Date().toISOString(),
-          approval_requested_by: userId,
-        })
-        .eq("id", workOrder.id);
-      if (updateError) throw updateError;
-
-      await supabase.from("work_order_events").insert({
-        work_order_id: workOrder.id,
-        author_id: userId,
-        event_type: "owner_approval_requested",
-        body: `Owner approval requested for ${money(workOrder.quote_amount)}`,
-        detail: request.detail as never,
-        is_demo: workOrder.is_demo,
+      const { error } = await supabase.rpc("prepare_work_order_owner_approval", {
+        _work_order_id: workOrder.id,
+        _expected_updated_at: fields["owner_approval_version"] ?? workOrder.updated_at,
+        _owner_summary: ownerText.detail,
       });
+      if (error) throw error;
     },
     onSuccess: () => {
       refresh();
       qc.invalidateQueries({ queryKey: ["approvals"] });
       toast.success("Owner approval requested");
-      setFields((current) => ({ ...current, owner_approval_summary: "" }));
+      setFields((current) => ({
+        ...current,
+        owner_approval_summary: "",
+        owner_approval_version: "",
+      }));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -757,6 +694,8 @@ export function WorkOrderDrawer({
                         setFields((current) => ({
                           ...current,
                           owner_approval_summary: event.target.value,
+                          owner_approval_version:
+                            current["owner_approval_version"] || workOrder.updated_at,
                         }))
                       }
                     />
