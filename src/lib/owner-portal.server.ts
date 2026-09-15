@@ -544,9 +544,10 @@ export type OwnerApproval = {
 };
 
 /**
- * Approval requests addressed to this homeowner. RLS already limits reads to
- * homes/programs the signed-in owner is authorised for; the property filter
- * here is only to label the card.
+ * Non-demo owner-role requests addressed to this homeowner. These filters are
+ * required even when the account also has staff permissions. Property labels
+ * are not an authorization check; current canonical relationship checks remain
+ * a separate requirement from the recipient and role boundary.
  */
 export async function loadOwnerApprovals(
   supabase: Client,
@@ -558,6 +559,8 @@ export async function loadOwnerApprovals(
       "id, kind, title, detail, amount, currency, status, decision_note, decided_at, due_on, evidence_url, property_id, approver_id, created_at",
     )
     .eq("approver_id", userId)
+    .eq("approver_role", "owner")
+    .eq("is_demo", false)
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw error;
@@ -566,6 +569,7 @@ export async function loadOwnerApprovals(
   const names = new Map<string, string>();
   if (ids.length) {
     const props = await supabase.from("properties").select("id, name").in("id", ids);
+    if (props.error) throw props.error;
     for (const p of props.data ?? []) names.set(p.id, p.name);
   }
   const { activeOwnerLinks } = await import("./active-owner.server");
@@ -604,11 +608,14 @@ export async function recordOwnerApproval(
 ) {
   const current = await supabase
     .from("approvals")
-    .select("id, status, property_id, entity_type, entity_id, approver_id")
+    .select("id, status, property_id, entity_type, entity_id, approver_id, approver_role, is_demo")
     .eq("id", input.approvalId)
     .maybeSingle();
   if (current.error) throw current.error;
   if (!current.data) throw new Error("That approval request is not available to you.");
+  if (current.data.approver_role !== "owner" || current.data.is_demo !== false) {
+    throw new Error("That request is not available for a homeowner decision.");
+  }
   if (current.data.approver_id !== userId) {
     throw new Error("That approval request is addressed to someone else.");
   }
@@ -647,6 +654,8 @@ export async function recordOwnerApproval(
       .eq("id", input.approvalId)
       .eq("status", "pending")
       .eq("approver_id", userId)
+      .eq("approver_role", "owner")
+      .eq("is_demo", false)
       .select("id")
       .maybeSingle();
     if (error) throw error;

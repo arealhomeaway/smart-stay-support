@@ -1,8 +1,8 @@
 BEGIN;
 SELECT set_config('test.actor','11111111-1111-4111-8111-111111111111',true);
 SELECT set_config('test.staff','true',true);
-INSERT INTO financial_requests(id,property_id,title,status,estimate_amount,authority_tier,kind)
- VALUES ('77777777-7777-4777-8777-777777777777','22222222-2222-4222-8222-222222222222','QA owner finance','estimate',500,'owner','repair');
+INSERT INTO financial_requests(id,property_id,title,status,estimate_amount,authority_tier,kind,is_demo)
+ VALUES ('77777777-7777-4777-8777-777777777777','22222222-2222-4222-8222-222222222222','QA owner finance','estimate',500,'owner','repair',false);
 SELECT prepare_onboarding_financial_approval('77777777-7777-4777-8777-777777777777',500,'owner');
 UPDATE approvals SET approver_id='33333333-3333-4333-8333-333333333333';
 ALTER TABLE financial_requests ADD CONSTRAINT simulate_owner_finance_failure CHECK(approved_amount IS NULL);

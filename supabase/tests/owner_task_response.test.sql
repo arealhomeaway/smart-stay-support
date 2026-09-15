@@ -1,8 +1,8 @@
 BEGIN;
 SELECT set_config('test.actor','11111111-1111-4111-8111-111111111111',true);
 SELECT set_config('test.staff','true',true);
-INSERT INTO onboarding_tasks(id,property_id,title,status,owner_approval_status)
- VALUES ('88888888-8888-4888-8888-888888888888','22222222-2222-4222-8222-222222222222','QA owner response','in_progress','not_requested');
+INSERT INTO onboarding_tasks(id,property_id,title,status,owner_approval_status,is_demo)
+ VALUES ('88888888-8888-4888-8888-888888888888','22222222-2222-4222-8222-222222222222','QA owner response','in_progress','not_requested',false);
 SELECT prepare_onboarding_task_approval('88888888-8888-4888-8888-888888888888','22222222-2222-4222-8222-222222222222','Version one');
 UPDATE approvals SET approver_id='33333333-3333-4333-8333-333333333333';
 ALTER TABLE onboarding_tasks ADD CONSTRAINT simulate_owner_response_failure CHECK(owner_approval_status <> 'approved');
