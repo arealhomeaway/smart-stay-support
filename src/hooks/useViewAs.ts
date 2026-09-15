@@ -8,8 +8,10 @@ import type { AppRole } from "@/lib/permissions";
  * server call stay the real user. It only narrows what the UI shows and puts
  * the app in read-only mode so a preview can never change data by accident.
  */
-const KEY = "resolve.view-as";
-const EVENT = "resolve:view-as";
+export const VIEW_AS_KEY = "resolve.view-as";
+export const VIEW_AS_EVENT = "resolve:view-as";
+const KEY = VIEW_AS_KEY;
+const EVENT = VIEW_AS_EVENT;
 
 export function readViewAs(): AppRole | null {
   if (typeof window === "undefined") return null;

@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { syncPreviewAccount } from "./preview-account-boundary";
 
 // Survives layout unmounts (for example, while the sign-in page is open),
 // without retaining QueryClients after their application instance is gone.
@@ -13,6 +14,7 @@ export function watchAccountIdentity(
   onChange: (userId: string | null) => void,
   revalidate: () => void,
 ) {
+  syncPreviewAccount(initialUserId);
   if (cacheIdentities.get(queries) !== initialUserId) queries.clear();
   cacheIdentities.set(queries, initialUserId);
   let currentId: string | null = initialUserId;
@@ -24,6 +26,7 @@ export function watchAccountIdentity(
       return;
     }
     currentId = nextId;
+    syncPreviewAccount(nextId);
     cacheIdentities.set(queries, nextId);
     // clear() also destroys pending queries, preventing late results from
     // repopulating the prior account's cache. It cannot undo server mutations.
