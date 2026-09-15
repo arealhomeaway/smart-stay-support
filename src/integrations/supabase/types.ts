@@ -7866,6 +7866,10 @@ export type Database = {
       }
     }
     Functions: {
+      respond_owner_review: {
+        Args: { _review_id: string; _expected_updated_at: string; _decision: string; _response: string }
+        Returns: string
+      }
       create_onboarding_handoff: {
         Args: { _property_id: string; _actor_id: string; _expected_lifecycle: string | null; _request: Json }
         Returns: string

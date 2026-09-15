@@ -72,6 +72,9 @@ try {
     "supabase/tests/fixtures/automatic_ticket_opportunities_schema.sql",
     "supabase/migrations/20260915080000_automatic_ticket_opportunities.sql",
     "supabase/tests/automatic_ticket_opportunities.test.sql",
+    "supabase/tests/fixtures/owner_review_response_schema.sql",
+    "supabase/migrations/20260915090000_atomic_owner_review_response.sql",
+    "supabase/tests/owner_review_response.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

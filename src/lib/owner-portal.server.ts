@@ -361,36 +361,15 @@ export async function respondToReview(
       "Use the canonical approval request to approve or decline work. This response records participation only.",
     );
 
-  const { data: saved, error } = await supabase
-    .from("owner_reviews")
-    .update({
-      owner_decision: input.decision,
-      owner_response: input.response || null,
-      // An acknowledgement must not dismiss a separate operational decision request.
-      status: review.data.auto_ticket ? review.data.status : "answered",
-      responded_at: new Date().toISOString(),
-    })
-    .eq("id", input.reviewId)
-    .eq("updated_at", review.data.updated_at)
-    .eq("status", review.data.status)
-    .select("id")
-    .maybeSingle();
-  if (error) throw error;
-  if (!saved) throw new Error("The opportunity changed. Refresh before responding.");
-
-  await recordEvent(supabase, {
-    programId: review.data.program_id,
-    kind: review.data.auto_ticket ? "owner_participation_response" : "owner_decision",
-    summary: review.data.auto_ticket
-      ? "Participation response recorded for property work; no repair approval granted."
-      : `Decision on “${review.data.title}”: ${input.decision}`,
-    actorId: userId,
-    reviewId: input.reviewId,
-    newValue: input.decision,
+  const { data: saved, error } = await supabase.rpc("respond_owner_review", {
+    _review_id: input.reviewId,
+    _expected_updated_at: review.data.updated_at,
+    _decision: input.decision,
+    _response: input.response,
   });
-
-  const agg = await loadProgramAggregate(supabase, review.data.program_id);
-  await syncBadges(supabase, agg);
+  if (error) throw error;
+  if (!saved) throw new Error("The response could not be recorded.");
+  // The next hub load refreshes badges; a badge failure must not report this committed response as failed.
   return { ok: true as const };
 }
 

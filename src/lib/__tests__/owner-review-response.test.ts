@@ -16,6 +16,13 @@ function fixture(reviewChange = {}, programChange = {}) {
   };
   const program = { owner_user_id: "owner", archived_at: null, status: "active", ...programChange };
   const db = {
+    rpc: async (_name: string, args: Record<string, unknown>) => {
+      updates.push(args);
+      return {
+        data: null,
+        error: new Error("The opportunity changed. Refresh before responding."),
+      };
+    },
     from: (table: string) => {
       let writing = false;
       const query = {
@@ -69,10 +76,11 @@ it("does not record an arbitrary repair approval through a participation respons
 it("preserves the automatic request and rejects an acknowledgement when the viewed row changed", async () => {
   const f = fixture();
   expect(await attempt(f)).toContain("changed");
-  expect(f.updates[0]?.["status"]).toBe("awaiting_owner");
-  expect(f.filters).toEqual([
-    ["id", "review"],
-    ["updated_at", "2026-09-15T00:00:00Z"],
-    ["status", "awaiting_owner"],
-  ]);
+  expect(f.updates[0]).toEqual({
+    _review_id: "review",
+    _expected_updated_at: "2026-09-15T00:00:00Z",
+    _decision: "acknowledged",
+    _response: "My review notes",
+  });
+  expect(f.filters.length).toBe(0);
 });
