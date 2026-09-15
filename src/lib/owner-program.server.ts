@@ -9,7 +9,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import {
   DEFAULT_ONBOARDING_HOURS,
   DEFAULT_ONGOING_HOURS,
@@ -24,6 +24,7 @@ import {
   countableParticipationEntries,
   hoursFromMinutes,
   OPERATING_TARGET_HOURS,
+  REPORT_DISCLAIMER,
   progressSnapshot,
   type ProgramStatus,
   type TaskType,
@@ -512,7 +513,10 @@ export async function activateProgram(
     .eq("id", input.programId)
     .single();
   if (program.error) throw program.error;
-  if (!ACTIVATABLE_STATUSES.includes(program.data.status as ProgramStatus)) {
+  if (
+    program.data.started_on ||
+    !ACTIVATABLE_STATUSES.includes(program.data.status as ProgramStatus)
+  ) {
     throw new Error("This program has already been activated.");
   }
   if (!program.data.dfy_confirmed) {
@@ -540,7 +544,7 @@ export async function activateProgram(
     );
   }
 
-  const { error } = await supabase
+  const { data: activated, error } = await supabase
     .from("owner_programs")
     .update({
       started_on: input.startedOn,
@@ -549,8 +553,15 @@ export async function activateProgram(
       activated_at: new Date().toISOString(),
       activated_by: userId,
     })
-    .eq("id", input.programId);
+    .eq("id", input.programId)
+    .eq("status", program.data.status)
+    .eq("dfy_confirmed", true)
+    .is("started_on", null)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!activated)
+    throw new Error("The program changed or was activated. Refresh before continuing.");
 
   await recordEvent(supabase, {
     programId: input.programId,
@@ -570,16 +581,30 @@ export async function setProgramStatus(
 ) {
   const current = await supabase
     .from("owner_programs")
-    .select("status")
+    .select("status, started_on")
     .eq("id", input.programId)
     .single();
   if (current.error) throw current.error;
 
-  const { error } = await supabase
+  const from = current.data.status as ProgramStatus;
+  const preActivation = ACTIVATABLE_STATUSES.includes(from) && !current.data.started_on;
+  const allowed =
+    (preActivation && ACTIVATABLE_STATUSES.includes(input.status)) ||
+    (["active", "target_reached"].includes(from) && input.status === "paused") ||
+    (from === "paused" && Boolean(current.data.started_on) && input.status === "active");
+  if (!allowed) {
+    throw new Error("Use the activation or completion checklist for this lifecycle change.");
+  }
+
+  const { data: updated, error } = await supabase
     .from("owner_programs")
     .update({ status: input.status })
-    .eq("id", input.programId);
+    .eq("id", input.programId)
+    .eq("status", from)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!updated) throw new Error("The program changed. Refresh before changing its status.");
   await recordEvent(supabase, {
     programId: input.programId,
     kind: "status_changed",
@@ -600,6 +625,7 @@ export async function recordTimeCorrection(
   supabase: Client,
   userId: string,
   input: { entryId: string; minutes: number; reason: string },
+  admin: Client,
 ) {
   const original = await supabase
     .from("owner_time_entries")
@@ -610,35 +636,15 @@ export async function recordTimeCorrection(
     .single();
   if (original.error) throw original.error;
 
-  const insert = await supabase
-    .from("owner_time_entries")
-    .insert({
-      program_id: original.data.program_id,
-      owner_user_id: original.data.owner_user_id,
-      phase: original.data.phase,
-      entry_date: original.data.entry_date,
-      minutes: input.minutes,
-      activity: `Correction: ${original.data.activity}`,
-      review_id: original.data.review_id,
-      ticket_id: original.data.ticket_id,
-      amends_entry_id: original.data.id,
-      correction_reason: input.reason,
-      attested: true,
-    })
-    .select("id")
-    .single();
-  if (insert.error) throw insert.error;
-
-  await recordEvent(supabase, {
-    programId: original.data.program_id,
-    kind: "time_corrected",
-    summary: `Participation entry corrected from ${original.data.minutes} to ${input.minutes} minutes.`,
-    actorId: userId,
-    entryId: insert.data.id,
-    previousValue: String(original.data.minutes),
-    newValue: String(input.minutes),
-    reason: input.reason,
+  // Preserve the caller's visibility check before invoking the server-only operation.
+  const insert = await admin.rpc("correct_owner_time_entry", {
+    _entry_id: original.data.id,
+    _actor_id: userId,
+    _minutes: input.minutes,
+    _reason: input.reason,
   });
+  if (insert.error) throw insert.error;
+  if (!insert.data) throw new Error("The correction could not be recorded.");
 
   const agg = await loadProgramAggregate(supabase, original.data.program_id);
   await syncBadges(supabase, agg);
@@ -751,13 +757,17 @@ export async function loadProgramDetail(supabase: Client, programId: string) {
 export function completionChecklist(agg: Awaited<ReturnType<typeof loadProgramAggregate>>) {
   const included = agg.includedProperties;
   const openTasks = agg.reviews.filter((r) => !["answered", "closed"].includes(r.status));
+  const entriesAttributed = countableParticipationEntries(agg.entries).every(
+    (entry) => entry.activity.trim().length > 0,
+  );
   return {
     hoursExceeded: agg.goalMet,
     propertyTasksComplete: included.length > 0 && included.every((p) => p.openTasks === 0),
     decisionsReceived: openTasks.filter((r) => r.status === "awaiting_owner").length === 0,
-    entriesAttributed: agg.entries.every((e) => e.activity.trim().length > 0),
+    entriesAttributed,
     allClear:
       agg.goalMet &&
+      entriesAttributed &&
       included.length > 0 &&
       included.every((p) => p.openTasks === 0) &&
       openTasks.filter((r) => r.status === "awaiting_owner").length === 0,
@@ -767,6 +777,9 @@ export function completionChecklist(agg: Awaited<ReturnType<typeof loadProgramAg
 /** Formal closeout. Hours alone never close a program with open property work. */
 export async function completeProgram(supabase: Client, userId: string, programId: string) {
   const agg = await loadProgramAggregate(supabase, programId);
+  if (!["active", "target_reached"].includes(agg.program.status)) {
+    throw new Error("Only an active program can be completed. Resume a paused program first.");
+  }
   const check = completionChecklist(agg);
   if (!check.hoursExceeded)
     throw new Error("The homeowner has not yet reported more than 100 hours.");
@@ -774,12 +787,25 @@ export async function completeProgram(supabase: Client, userId: string, programI
     throw new Error("Required owner tasks are still open on one or more properties.");
   }
   if (!check.decisionsReceived) throw new Error("Owner decisions are still outstanding.");
+  if (!check.entriesAttributed)
+    throw new Error("Every counted entry needs an activity description.");
 
-  const { error } = await supabase
+  const report = buildProgramReportSnapshot(agg);
+  const { data: completed, error } = await supabase
     .from("owner_programs")
-    .update({ status: "completed", completed_at: new Date().toISOString(), completed_by: userId })
-    .eq("id", programId);
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      completed_by: userId,
+      completion_report: report as unknown as Json,
+    })
+    .eq("id", programId)
+    .eq("status", agg.program.status)
+    .is("completed_at", null)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!completed) throw new Error("The program changed. Refresh before completing it.");
   await recordEvent(supabase, {
     programId,
     kind: "program_completed",
@@ -793,7 +819,27 @@ export async function completeProgram(supabase: Client, userId: string, programI
 
 /** The single combined participation report for the whole program. */
 export async function buildProgramReport(supabase: Client, programId: string) {
+  const saved = await supabase
+    .from("owner_programs")
+    .select("status, completion_report")
+    .eq("id", programId)
+    .single();
+  if (saved.error) throw saved.error;
+  if (
+    ["completed", "complete", "closed"].includes(saved.data.status) &&
+    saved.data.completion_report !== null
+  ) {
+    return saved.data.completion_report;
+  }
   const agg = await loadProgramAggregate(supabase, programId);
+  return buildProgramReportSnapshot(agg);
+}
+
+/** The report and its closeout gates use the same loaded participation snapshot. */
+export function buildProgramReportSnapshot(agg: Awaited<ReturnType<typeof loadProgramAggregate>>) {
+  const countedEntryIds = new Set(
+    countableParticipationEntries(agg.entries).map((entry) => entry.id),
+  );
   const nameOf = (id: string) =>
     agg.properties.find((p) => p.propertyId === id)?.name ?? "Property";
   const reviewTitle = new Map(agg.reviews.map((r) => [r.id, r.title]));
@@ -813,7 +859,9 @@ export async function buildProgramReport(supabase: Client, programId: string) {
       comments: e.comments,
       correctionOf: e.amends_entry_id,
       correctionReason: e.correction_reason,
-      attested: true,
+      attested: e.attested,
+      reviewStatus: e.review_status,
+      countsTowardTotal: countedEntryIds.has(e.id),
     }));
 
   const decisions = agg.reviews
@@ -829,6 +877,7 @@ export async function buildProgramReport(supabase: Client, programId: string) {
     }));
 
   return {
+    disclaimer: REPORT_DISCLAIMER,
     owner: { name: agg.program.ownerName, email: agg.program.ownerEmail },
     programDates: { startedOn: agg.program.startedOn, endsOn: agg.program.endsOn },
     properties: agg.includedProperties.map((p) => ({

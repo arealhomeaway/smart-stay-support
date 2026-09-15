@@ -4057,6 +4057,7 @@ export type Database = {
           archive_reason: string | null
           archived_at: string | null
           archived_by: string | null
+          completion_report: Json | null
           completed_at: string | null
           completed_by: string | null
           created_at: string
@@ -4095,6 +4096,7 @@ export type Database = {
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
+          completion_report?: Json | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -4133,6 +4135,7 @@ export type Database = {
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
+          completion_report?: Json | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -7854,6 +7857,18 @@ export type Database = {
       }
     }
     Functions: {
+      create_onboarding_handoff: {
+        Args: { _property_id: string; _actor_id: string; _expected_lifecycle: string | null; _request: Json }
+        Returns: string
+      }
+      correct_owner_time_entry: {
+        Args: { _entry_id: string; _actor_id: string; _minutes: number; _reason: string }
+        Returns: string
+      }
+      log_owner_time_entry: {
+        Args: { _entry: Json; _property_ids: string[] }
+        Returns: string
+      }
       resubmit_owner_time_entry: {
         Args: { _entry_id: string; _minutes: number; _activity: string; _note: string }
         Returns: string

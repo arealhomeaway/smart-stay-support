@@ -6,7 +6,7 @@ export const getOnboardingWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { loadOnboardingWorkspace } = await import("./onboarding.server");
-    return loadOnboardingWorkspace(context.supabase);
+    return loadOnboardingWorkspace(context.supabase, context.userId);
   });
 
 export const saveOnboardingTaskFn = createServerFn({ method: "POST" })

@@ -182,7 +182,8 @@ export const correctOwnerTimeEntry = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { assertSupervisor, recordTimeCorrection } = await import("./owner-program.server");
     await assertSupervisor(context.supabase, context.userId);
-    return recordTimeCorrection(context.supabase, context.userId, data);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return recordTimeCorrection(context.supabase, context.userId, data, supabaseAdmin);
   });
 
 /** Supervisor: release owner activities from the roadmap catalog. */

@@ -199,7 +199,7 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
   }
   const opportunity = await supabase
     .from("owner_reviews")
-    .select("id, program_id, status, available_from, property_id")
+    .select("id, program_id, status, available_from, property_id, task_type")
     .eq("id", input.reviewId)
     .eq("program_id", input.programId)
     .maybeSingle();
@@ -216,10 +216,15 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
   ) {
     throw new Error("That opportunity is not open yet.");
   }
-  if (input.propertyIds.length === 0 && opportunity.data.property_id) {
+  if (
+    input.propertyIds.length === 0 &&
+    opportunity.data.property_id &&
+    opportunity.data.task_type !== "multi_property"
+  ) {
     input = { ...input, propertyIds: [opportunity.data.property_id] };
   }
-  const opportunityPropertyId = opportunity.data.property_id;
+  const opportunityPropertyId =
+    opportunity.data.task_type === "multi_property" ? null : opportunity.data.property_id;
   if (
     opportunityPropertyId &&
     input.propertyIds.some((propertyId) => propertyId !== opportunityPropertyId)
@@ -271,33 +276,14 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
     }
   }
 
-  const { data, error } = await supabase
-    .from("owner_time_entries")
-    .insert({
-      program_id: input.programId,
-      owner_user_id: userId,
-      phase: input.phase,
-      entry_date: input.entryDate,
-      minutes: input.minutes,
-      activity: input.activity,
-      activity_category: input.activityCategory || null,
-      decision_outcome: input.output || null,
-      output: input.output || null,
-      comments: input.comments || null,
-      attachment_path: input.attachmentPath,
-      review_id: input.reviewId,
-      ticket_id: input.ticketId,
-      attested: true,
-    })
-    .select("id")
-    .single();
+  const { data: entryId, error } = await supabase.rpc("log_owner_time_entry", {
+    _entry: { ...input },
+    _property_ids: chosen,
+  });
   if (error) throw error;
+  if (!entryId) throw new Error("The participation entry could not be recorded.");
 
   if (chosen.length > 0) {
-    const link = await supabase
-      .from("owner_time_entry_properties")
-      .insert(chosen.map((property_id) => ({ entry_id: data.id, property_id })));
-    if (link.error) throw link.error;
     await supabase
       .from("owner_program_properties")
       .update({ last_owner_activity_at: new Date().toISOString() })
@@ -315,7 +301,7 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
     kind: "time_entry",
     summary: `${input.minutes} minutes reported: ${input.activity}`,
     actorId: userId,
-    entryId: data.id,
+    entryId,
     reviewId: input.reviewId,
     newValue: String(input.minutes),
     detail: { propertyIds: chosen, phase: input.phase, category: input.activityCategory },
@@ -323,7 +309,7 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
 
   const agg = await loadProgramAggregate(supabase, input.programId);
   const badges = await syncBadges(supabase, agg);
-  return { ok: true as const, entryId: data.id, awarded: badges.awarded };
+  return { ok: true as const, entryId, awarded: badges.awarded };
 }
 
 /**

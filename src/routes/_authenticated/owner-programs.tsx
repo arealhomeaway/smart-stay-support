@@ -42,7 +42,6 @@ import {
   PROGRAM_STATUS_META,
   PROGRAM_TOTAL_DAYS,
   PROGRESS_META,
-  REPORT_DISCLAIMER,
   formatDuration,
   type CoverageState,
   type ProgramStatus,
@@ -582,7 +581,7 @@ function ProgramDetail({
   const downloadReport = async () => {
     try {
       const data = await report({ data: { programId } });
-      const blob = new Blob([JSON.stringify({ disclaimer: REPORT_DISCLAIMER, ...data }, null, 2)], {
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: "application/json",
       });
       const url = URL.createObjectURL(blob);

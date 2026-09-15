@@ -44,6 +44,7 @@ export type EntryRow = {
   reviewed_by: string | null;
   reviewed_at: string | null;
   review_note: string | null;
+  attested: boolean;
   flagged: boolean;
   created_at: string;
   propertyIds: string[];
@@ -158,7 +159,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     supabase
       .from("owner_time_entries")
       .select(
-        "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, amends_entry_id, correction_reason, review_status, reviewed_by, reviewed_at, review_note, flagged, created_at",
+        "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, amends_entry_id, correction_reason, review_status, reviewed_by, reviewed_at, review_note, attested, flagged, created_at",
       )
       .eq("program_id", programId)
       .order("entry_date", { ascending: false }),

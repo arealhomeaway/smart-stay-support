@@ -31,7 +31,8 @@ async function assertCap(
   if (!data) throw new Error("You do not have access to this action.");
 }
 
-export async function loadOnboardingWorkspace(supabase: Client) {
+export async function loadOnboardingWorkspace(supabase: Client, userId: string) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
   const [props, tasks, handoffs, people, notes, reviews, extDbs, extRecords, docs] =
     await Promise.all([
       supabase.from("properties").select(PROPERTY_FIELDS).order("name"),
@@ -735,29 +736,22 @@ export async function requestHandoff(
     }
   }
 
-  const { data, error } = await supabase
-    .from("property_handoffs")
-    .insert({
-      property_id: input.propertyId,
-      status: "requested",
-      requested_by: userId,
-      checklist: checks as never,
-      validation: { ready, openBlocking } as never,
-      open_task_ids: openBlocking,
-      carryover_accepted: input.carryoverAccepted && !ready,
-      gate_step: "kati_review",
-      notes: input.notes || null,
-      // Inherit isolation from the home, so demo/test handoffs never count.
-      is_demo: property.data.is_demo ?? false,
-    })
-    .select("id")
-    .single();
+  // Only the server can persist this request, after the caller-scoped checks above.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: handoffId, error } = await supabaseAdmin.rpc("create_onboarding_handoff", {
+    _property_id: input.propertyId,
+    _actor_id: userId,
+    _expected_lifecycle: property.data.lifecycle_status,
+    _request: {
+      checklist: checks,
+      validation: { ready, openBlocking },
+      openTaskIds: openBlocking,
+      carryoverAccepted: input.carryoverAccepted && !ready,
+      notes: input.notes,
+    },
+  });
   if (error) throw error;
-
-  await supabase
-    .from("properties")
-    .update({ lifecycle_status: "handoff_requested" })
-    .eq("id", input.propertyId);
+  if (!handoffId) throw new Error("The handoff request could not be recorded.");
 
   await writeAudit({
     actorId: userId,
@@ -765,10 +759,10 @@ export async function requestHandoff(
     entityType: "property",
     entityId: input.propertyId,
     entityLabel: property.data.name,
-    after: { handoffId: data.id, ready, openBlocking },
+    after: { handoffId, ready, openBlocking },
   });
 
-  return { id: data.id, ready, checks };
+  return { id: handoffId, ready, checks };
 }
 
 export async function reviewHandoff(
@@ -862,19 +856,19 @@ export async function reopenOnboardingTask(
   if (readError) throw readError;
   if (task.status !== "complete") throw new Error("Only a completed step can be reopened.");
   if (input.reason.trim().length < 3) throw new Error("Record why this step needs a correction.");
-  const { loadStageCaptures } = await import("./onboarding-stage.server");
-  const captures = await loadStageCaptures(supabase, task.property_id);
-  const stage = captures
-    .filter((c) => c.stage === task.stage)
-    .sort((a, b) => b.revision - a.revision)[0];
-  if (stage && ["complete", "awaiting_review"].includes(stage.status))
-    throw new Error("Return or reopen the stage before reopening this step.");
-
-  const { error } = await supabase
+  await assertTaskRequirementEditable(supabase, input.taskId);
+  // Keep the prior evidence attached while the correction is in progress.
+  const update = supabase
     .from("onboarding_tasks")
-    .update({ status: "open", evidence_note: null })
-    .eq("id", input.taskId);
+    .update({ status: "open" })
+    .eq("id", input.taskId)
+    .eq("status", "complete");
+  const unchanged = task.completed_at
+    ? update.eq("completed_at", task.completed_at)
+    : update.is("completed_at", null);
+  const { data: reopened, error } = await unchanged.select("id").maybeSingle();
   if (error) throw error;
+  if (!reopened) throw new Error("This step changed. Refresh before reopening it.");
 
   const { loadProjectForProperty, recordProjectEvent } =
     await import("./onboarding-project.server");
@@ -903,12 +897,44 @@ export async function reopenOnboardingTask(
   return { ok: true as const };
 }
 
+/** Alternate task actions must respect the same review boundary as ordinary edits. */
+async function assertTaskRequirementEditable(supabase: Client, taskId: string) {
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select("property_id, stage, archived_at")
+    .eq("id", taskId)
+    .single();
+  if (task.error) throw task.error;
+  if (task.data.archived_at) throw new Error("This step is already archived.");
+  const property = await supabase
+    .from("properties")
+    .select("handoff_accepted_at, lifecycle_status")
+    .eq("id", task.data.property_id)
+    .single();
+  if (property.error) throw property.error;
+  if (
+    property.data.handoff_accepted_at ||
+    ["handoff_requested", "active_operations"].includes(property.data.lifecycle_status ?? "")
+  ) {
+    throw new Error("Return the handoff before changing onboarding requirements.");
+  }
+  const { loadStageCaptures } = await import("./onboarding-stage.server");
+  const captures = await loadStageCaptures(supabase, task.data.property_id);
+  const stage = captures
+    .filter((capture) => capture.stage === task.data.stage)
+    .sort((a, b) => b.revision - a.revision)[0];
+  if (stage && ["complete", "awaiting_review"].includes(stage.status)) {
+    throw new Error("Return or reopen the stage before changing its requirements.");
+  }
+}
+
 export async function recordTaskException(
   supabase: Client,
   userId: string,
   input: { taskId: string; reason: string },
 ) {
   await assertCap(supabase, userId, "is_supervisor");
+  await assertTaskRequirementEditable(supabase, input.taskId);
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("onboarding_tasks")
@@ -931,6 +957,7 @@ export async function archiveOnboardingTask(
   input: { taskId: string; reason: string },
 ) {
   await assertCap(supabase, userId, "is_supervisor");
+  await assertTaskRequirementEditable(supabase, input.taskId);
   const { error } = await supabase
     .from("onboarding_tasks")
     .update({ archived_at: new Date().toISOString(), archived_by: userId })

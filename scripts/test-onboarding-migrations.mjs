@@ -42,6 +42,16 @@ try {
     "supabase/tests/fixtures/owner_time_correction_schema.sql",
     "supabase/migrations/20260914150000_atomic_owner_time_correction.sql",
     "supabase/tests/owner_time_correction.test.sql",
+    "supabase/tests/fixtures/owner_time_entry_schema.sql",
+    "supabase/migrations/20260914160000_atomic_owner_time_entry.sql",
+    "supabase/tests/owner_time_entry.test.sql",
+    "supabase/tests/fixtures/staff_time_correction_schema.sql",
+    "supabase/migrations/20260914170000_atomic_staff_time_correction.sql",
+    "supabase/tests/staff_time_correction.test.sql",
+    "supabase/migrations/20260914180000_owner_completion_report.sql",
+    "supabase/tests/fixtures/handoff_request_schema.sql",
+    "supabase/migrations/20260915010000_atomic_handoff_request.sql",
+    "supabase/tests/handoff_request.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);
