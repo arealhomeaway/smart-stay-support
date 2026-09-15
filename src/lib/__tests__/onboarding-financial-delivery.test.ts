@@ -36,6 +36,11 @@ function ownerDeliveryDb(sent: boolean, contactEmail: string | null = "owner@exa
           in: () => query,
           not: () => query,
           limit: () => query,
+          order: () => query,
+          range: async (from: number, to: number) => {
+            const data = rows[table] as unknown[];
+            return { data: data.slice(from, to + 1), count: data.length, error: null };
+          },
           maybeSingle: async () => ({ data: rows[table], error: null }),
           update: (value: unknown) => {
             writes.push(value);

@@ -10,6 +10,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { readCountedRows } from "./read-all-rows";
 
 type Client = SupabaseClient<Database>;
 
@@ -42,16 +43,23 @@ export async function activeOwnerLinks(
     .from("owner_program_properties")
     .select(
       "property_id, program_id, inclusion_status, owner_programs!inner(id, owner_user_id, owner_name, status)",
-    );
+      { count: "exact" },
+    )
+    .order("program_id")
+    .order("property_id");
   if (ids) joinQuery = joinQuery.in("property_id", ids);
 
   let legacyQuery = supabase
     .from("owner_programs")
-    .select("id, property_id, owner_user_id, owner_name, status")
-    .not("property_id", "is", null);
+    .select("id, property_id, owner_user_id, owner_name, status", { count: "exact" })
+    .not("property_id", "is", null)
+    .order("id");
   if (ids) legacyQuery = legacyQuery.in("property_id", ids);
 
-  const [joined, legacy] = await Promise.all([joinQuery, legacyQuery]);
+  const [joined, legacy] = await Promise.all([
+    readCountedRows(joinQuery),
+    readCountedRows(legacyQuery),
+  ]);
 
   if (joined.error) throw joined.error;
   if (legacy.error) throw legacy.error;

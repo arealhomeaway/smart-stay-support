@@ -45,9 +45,9 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 22 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 660 tests, 74 files, 1682 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 662 tests, 75 files, 1890 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
-| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-property-management`. Child-process escalation required; no deployment. |
+| Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-workspace-pages`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
 | Authenticated desktop and 390px acceptance | BLOCKED | Need an approved isolated schema and role/test-account access. Shared/live migrations and account creation not authorized. |
 | Consolidated review request and morning report | PARTIAL | This checkpoint explicitly remains MORE IMPLEMENTATION REQUIRED. Authenticated acceptance is not yet ready. |
@@ -68,7 +68,7 @@ The existing implementation was preserved. Broad PARTIAL rows above remain incom
 - External-owner security: owner RPCs retain caller RLS; staff correction/handoff RPCs use service_role-only execution and actor checks. Full-schema portal/document/ticket/review cross-access and direct-table business-rule bypass tests remain unproven. No existing access policy changed.
 - Interrupted email claims can remain sending. Administrator investigation/recovery is still required; elapsed time is not evidence that retry is safe.
 
-Next implementation actions: reject competing handoff readiness, stage/task and scheduling changes; complete project-lead workspace projection and workspace pagination; audit remaining project/action boundaries and activation/enrollment concurrency; make remaining badge/activity side effects durable. Closeout versioning, assigned-work projection and role navigation are implemented in the later checkpoints below. Revalidate affected paths before acceptance preparation.
+Next implementation actions: reject competing handoff readiness, stage/task and scheduling changes; complete project-lead workspace projection and audit detail/action queries for caps; audit remaining project/action boundaries and activation/enrollment concurrency; make remaining badge/activity side effects durable. Closeout versioning, assigned-work projection and role navigation are implemented in the later checkpoints below. Revalidate affected paths before acceptance preparation.
 
 ## Access, policy and exact acceptance sequence
 
@@ -155,3 +155,12 @@ Lifecycle edits, handoff requests, schedule anchors, schedule previews/applicati
 Final validation: 660 unit tests / 74 files / 1682 assertions, zero failures; TypeScript passes; focused lint for this checkpoint passes without warnings; all 22 isolated migration checks pass; production client/server build passes at `.codex-qa.local/build-20260915-property-management`. The earlier TaskDrawer Fast Refresh warning and generated-types formatting baseline remain as documented. A test-declaration incompatibility introduced by the late date-action assertions was caught and fixed by using the repository's existing assertion style. This final TypeScript run supersedes the earlier date-checkpoint claim, which preceded those assertions.
 
 Remaining implementation is explicit: project-lead data projection and complete workspace pagination; project/scope and other action-boundary review; complete handoff readiness and stage/task/schedule transaction boundaries; program activation/enrollment concurrency; post-transaction badge/activity durability; full external-owner RLS/demo-isolation evidence. General scheduling can still race or mutate reviewed work despite the newly scoped caller guard. Requirements beyond these checks retain their PARTIAL or NOT YET ACCEPTED status. Authenticated desktop/390px testing requires an approved isolated backend and role accounts; no shared migration or account setup was performed. MORE IMPLEMENTATION REQUIRED.
+### September 15 follow-up: complete workspace pagination
+
+All fourteen collection reads used by `loadOnboardingWorkspace` now use exact-count pagination with deterministic tie-break ordering: properties, tasks, handoffs, profiles, notes, reviews, external databases/records, documents, owner approvals, projects, stage captures and both participation sources. The previous 200-approval limit is removed. Supporting-record errors now reject the load rather than silently producing an empty section. The shared query adapter reuses `readAllRows`; it does not change RLS or introduce another aggregate model.
+
+Regression evidence covers 1205 rows per source under a 200-row backend cap, exact-count requests, deterministic ordering, all seven pages, complete returned collections and a later supporting-page failure. Assigned-work redaction is exercised under a two-row cap. Existing delivery test adapters were extended for ordered/ranged reads; delivery behavior and assertions remain intact.
+
+662 unit tests / 75 files / 1890 assertions pass; TypeScript and focused lint pass; production client/server build passes in `.codex-qa.local/build-20260915-workspace-pages`; all 22 isolated migration checks pass. No schema or access-policy changes were made in this checkpoint.
+
+This resolves silent row-cap truncation in the workspace loader. It does not provide a cross-table snapshot, project-lead response projection, complete detail/action-query pagination, or authenticated PostgREST/performance evidence. Large property-ID filters and real-environment behavior still require acceptance. Other concurrency/security/role acceptance gaps in the checklist remain open. MORE IMPLEMENTATION REQUIRED.

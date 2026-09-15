@@ -71,6 +71,11 @@ it("returns assigned work with redacted prerequisite context, excluding unrelate
         in: () => query,
         order: () => query,
         limit: () => query,
+        range: async (from: number, to: number) => ({
+          data: (sources[table] ?? []).slice(from, Math.min(to + 1, from + 2)),
+          count: (sources[table] ?? []).length,
+          error: null,
+        }),
         then: (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: sources[table] ?? [], error: null }).then(resolve),
       };

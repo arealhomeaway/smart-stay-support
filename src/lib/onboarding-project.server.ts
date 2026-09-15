@@ -15,6 +15,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { type FurnishingScope, type ModuleKey } from "./onboarding-scope";
 import { writeAudit } from "./audit.server";
+import { readCountedRows } from "./read-all-rows";
 
 type Client = SupabaseClient<Database>;
 
@@ -60,10 +61,13 @@ export async function recordProjectEvent(
 
 /** Every project, newest first. Read-only for any internal staff member. */
 export async function loadProjects(supabase: Client) {
-  const { data, error } = await supabase
-    .from("onboarding_projects")
-    .select("*")
-    .order("started_at", { ascending: false });
+  const { data, error } = await readCountedRows(
+    supabase
+      .from("onboarding_projects")
+      .select("*", { count: "exact" })
+      .order("started_at", { ascending: false })
+      .order("id"),
+  );
   if (error) throw error;
   return data ?? [];
 }

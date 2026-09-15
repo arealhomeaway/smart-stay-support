@@ -1,3 +1,13 @@
+/** Adapter for a counted, ordered Supabase query; range is replaced for each sequential page. */
+export function readCountedRows<T>(query: {
+  range: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: unknown; count: number | null }>;
+}) {
+  return readAllRows((from, to) => query.range(from, to));
+}
+
 /** Read a counted, deterministically ordered query without assuming the backend row cap. */
 export async function readAllRows<T>(
   page: (

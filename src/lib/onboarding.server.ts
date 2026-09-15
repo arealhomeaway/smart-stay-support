@@ -22,6 +22,7 @@ import {
 import { assignedWorkContext, type AssignedWorkContext } from "./onboarding-assigned-context";
 import { onboardingWorkspaceMode } from "./onboarding-workspace-view";
 import { writeAudit } from "./audit.server";
+import { readCountedRows } from "./read-all-rows";
 
 type Client = SupabaseClient<Database>;
 
@@ -42,31 +43,78 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   await assertCap(supabase, userId, "is_onboarding_staff");
   const [props, tasks, handoffs, people, notes, reviews, extDbs, extRecords, docs] =
     await Promise.all([
-      supabase.from("properties").select(PROPERTY_FIELDS).order("name"),
-      supabase.from("onboarding_tasks").select("*").is("archived_at", null).order("sort_order"),
-      supabase
-        .from("property_handoffs")
-        .select("*")
-        .is("archived_at", null)
-        .order("requested_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name, email").order("full_name"),
-      supabase
-        .from("onboarding_notes")
-        .select("*")
-        .is("archived_at", null)
-        .order("created_at", { ascending: false }),
-      supabase.from("handoff_reviews").select("*").order("created_at", { ascending: false }),
-      supabase.from("external_databases").select("*").is("archived_at", null).order("label"),
-      supabase
-        .from("external_records")
-        .select("*")
-        .is("archived_at", null)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("documents")
-        .select("id, entity_type, entity_id, title, kind, external_url, required, note, created_at")
-        .eq("entity_type", "property")
-        .is("archived_at", null),
+      readCountedRows(
+        supabase
+          .from("properties")
+          .select(PROPERTY_FIELDS, { count: "exact" })
+          .order("name")
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("onboarding_tasks")
+          .select("*", { count: "exact" })
+          .is("archived_at", null)
+          .order("sort_order")
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("property_handoffs")
+          .select("*", { count: "exact" })
+          .is("archived_at", null)
+          .order("requested_at", { ascending: false })
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("profiles")
+          .select("id, full_name, email", { count: "exact" })
+          .order("full_name")
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("onboarding_notes")
+          .select("*", { count: "exact" })
+          .is("archived_at", null)
+          .order("created_at", { ascending: false })
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("handoff_reviews")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: false })
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("external_databases")
+          .select("*", { count: "exact" })
+          .is("archived_at", null)
+          .order("label")
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("external_records")
+          .select("*", { count: "exact" })
+          .is("archived_at", null)
+          .order("created_at", { ascending: false })
+          .order("id"),
+      ),
+      readCountedRows(
+        supabase
+          .from("documents")
+          .select(
+            "id, entity_type, entity_id, title, kind, external_url, required, note, created_at",
+            { count: "exact" },
+          )
+          .eq("entity_type", "property")
+          .is("archived_at", null)
+          .order("id"),
+      ),
     ]);
   if (props.error) throw props.error;
   if (tasks.error) throw tasks.error;
@@ -78,14 +126,17 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   );
 
   // Homeowner decisions and their history — staff read-only.
-  const ownerApprovals = await supabase
-    .from("approvals")
-    .select(
-      "id, entity_type, entity_id, property_id, kind, title, detail, status, decision_note, decided_at, approver_id, due_on, created_at",
-    )
-    .eq("approver_role", "owner")
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const ownerApprovals = await readCountedRows(
+    supabase
+      .from("approvals")
+      .select(
+        "id, entity_type, entity_id, property_id, kind, title, detail, status, decision_note, decided_at, approver_id, due_on, created_at",
+        { count: "exact" },
+      )
+      .eq("approver_role", "owner")
+      .order("created_at", { ascending: false })
+      .order("id"),
+  );
 
   // Active Owner Program participation, per owner/property relationship.
   const { activeOwnerLinks } = await import("./active-owner.server");
@@ -120,9 +171,13 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   const supervisor = await supabase.rpc("is_supervisor", { _user_id: userId });
   if (supervisor.error) throw new Error("Could not verify your workspace view.");
   const workspaceMode = onboardingWorkspaceMode(userId, Boolean(supervisor.data), projects);
-  const stageEvents = await supabase
-    .from("onboarding_stage_captures")
-    .select("project_id, property_id, new_value");
+  const stageEvents = await readCountedRows(
+    supabase
+      .from("onboarding_stage_captures")
+      .select("project_id, property_id, new_value", { count: "exact" })
+      .order("project_id")
+      .order("new_value"),
+  );
   if (stageEvents.error) throw stageEvents.error;
   const stageCaptures = (stageEvents.data ?? [])
     .map((e) => ({
