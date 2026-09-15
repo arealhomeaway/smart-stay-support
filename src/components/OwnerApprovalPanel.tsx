@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useRouteContext } from "@tanstack/react-router";
 import { CheckCircle2, ClipboardCheck, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { decideOwnerApproval, ownerApprovals } from "@/lib/owner-portal.functions";
@@ -43,13 +44,18 @@ function money(amount: number | null, currency: string) {
 }
 
 export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean }) {
+  const { user } = useRouteContext({ from: "/_authenticated" });
+  return <AccountApprovals key={user.id} userId={user.id} readOnly={readOnly} />;
+}
+
+function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: boolean }) {
   const qc = useQueryClient();
   const load = useServerFn(ownerApprovals);
   const decide = useServerFn(decideOwnerApproval);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
-  const q = useQuery({ queryKey: ["owner-approvals"], queryFn: () => load() });
+  const q = useQuery({ queryKey: ["owner-approvals", userId], queryFn: () => load() });
 
   const submit = useMutation({
     mutationFn: (input: { approvalId: string; decision: "approved" | "declined" }) =>

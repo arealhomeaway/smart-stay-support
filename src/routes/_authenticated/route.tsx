@@ -1,8 +1,10 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { portalsFor } from "@/lib/portals";
 import type { AppRole } from "@/lib/permissions";
+import { watchAccountIdentity } from "@/lib/account-query-boundary";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -24,9 +26,29 @@ export const Route = createFileRoute("/_authenticated")({
 
     return { user: data.user, roles };
   },
-  component: () => (
-    <AppShell>
+  component: AuthenticatedLayout,
+});
+
+function AuthenticatedLayout() {
+  const { user, queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  const [sessionUserId, setSessionUserId] = useState<string | null>(user.id);
+  useEffect(
+    () =>
+      watchAccountIdentity(supabase.auth, queryClient, user.id, setSessionUserId, () => {
+        void router.invalidate();
+      }),
+    [user.id, queryClient, router],
+  );
+  if (sessionUserId !== user.id)
+    return (
+      <p role="status" className="p-6">
+        Checking your account…
+      </p>
+    );
+  return (
+    <AppShell key={user.id}>
       <Outlet />
     </AppShell>
-  ),
-});
+  );
+}

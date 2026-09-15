@@ -86,12 +86,18 @@ function firstName(name: string | null | undefined) {
 }
 
 function OwnerHub() {
+  const { user } = Route.useRouteContext();
   const { ownerPreview } = useOwnerPreview();
   const load = useServerFn(ownerHome);
   const loadPreview = useServerFn(ownerHomePreview);
 
   const home = useQuery({
-    queryKey: ["owner-home", ownerPreview?.programId ?? null],
+    queryKey: [
+      "owner-home",
+      user.id,
+      ownerPreview ? "preview" : "owner",
+      ownerPreview?.programId ?? null,
+    ],
     queryFn: () =>
       ownerPreview ? loadPreview({ data: { programId: ownerPreview.programId } }) : load(),
   });
@@ -107,7 +113,13 @@ function OwnerHub() {
     );
   }
 
-  return <OwnerHubBody data={home.data} preview={Boolean(ownerPreview)} />;
+  return (
+    <OwnerHubBody
+      key={`${user.id}:${home.data.program.id}:${Boolean(ownerPreview)}`}
+      data={home.data}
+      preview={Boolean(ownerPreview)}
+    />
+  );
 }
 
 function OwnerHubBody({
