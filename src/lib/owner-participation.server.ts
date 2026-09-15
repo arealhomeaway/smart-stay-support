@@ -52,6 +52,7 @@ export type EntryRow = {
 };
 
 export type ReviewRow = {
+  owner_request?: import("./owner-ticket-authority").OwnerTicketRequest;
   updated_at?: string;
   auto_ticket?: boolean;
   id: string;

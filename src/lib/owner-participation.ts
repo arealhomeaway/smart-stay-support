@@ -17,6 +17,13 @@ export const ONBOARDING_MILESTONE_DAY = 35;
 
 export const OWNER_GOAL_LABEL = "More than 100 hours";
 
+export function parseOwnerMinutes(value: string): number {
+  const minutes = Number(value);
+  if (!value.trim() || !Number.isInteger(minutes) || minutes < 1 || minutes > 1440)
+    throw new Error("Enter the actual time spent, from 1 to 1440 whole minutes.");
+  return minutes;
+}
+
 export const MANUAL_ENTRY_NOTICE =
   "Enter the actual time you personally spent completing this activity. ARHA does not assign or recommend a standard amount of time.";
 export const MANUAL_ENTRY_CONFIRMATION =

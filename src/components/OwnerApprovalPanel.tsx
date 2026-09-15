@@ -64,6 +64,7 @@ export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean })
       );
       setNotes((n) => ({ ...n, [v.approvalId]: "" }));
       void qc.invalidateQueries({ queryKey: ["owner-approvals"] });
+      void qc.invalidateQueries({ queryKey: ["owner-home"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });

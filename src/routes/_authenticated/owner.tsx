@@ -39,9 +39,12 @@ import {
 import {
   MANUAL_ENTRY_CONFIRMATION,
   MANUAL_ENTRY_NOTICE,
+  parseOwnerMinutes,
   OWNER_GOAL_LABEL,
 } from "@/lib/owner-participation";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
+import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
+import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
 import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
@@ -62,6 +65,10 @@ export const Route = createFileRoute("/_authenticated/owner")({
 
 type Review = {
   id: string;
+  auto_ticket?: boolean;
+  owner_request?: OwnerTicketRequest;
+  responded_at?: string | null;
+  owner_response?: string | null;
   updated_at?: string;
   title: string;
   recommendation: string | null;
@@ -115,8 +122,9 @@ function OwnerHubBody({
 
   const { program, properties, reviews, badges, alerts, tickets, snapshot } = data;
 
-  const openReviews = (reviews as Review[]).filter(
-    (r) => r.status === "awaiting_owner" || r.status === "returned",
+  const openReviews = (reviews as Review[]).filter((r) => ownerReviewPresentation(r).attention);
+  const availableReviews = (reviews as Review[]).filter(
+    (r) => r.auto_ticket && !ownerReviewPresentation(r).attention,
   );
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
@@ -136,8 +144,6 @@ function OwnerHubBody({
       kind: t.status === "closed" ? "completed" : "handoff",
       label: t.title,
       when: usDate(t.reported_at),
-      to: "/tickets/$ticketId",
-      params: { ticketId: t.id },
     }));
     return [...fromAlerts, ...fromTickets]
       .sort((a, b) => (a.when && b.when ? (a.when < b.when ? 1 : -1) : 0))
@@ -217,6 +223,30 @@ function OwnerHubBody({
 
       <OwnerApprovalPanel readOnly={preview} />
 
+      <SectionCard
+        title="Property work to review"
+        description="Review what is happening at your homes, retain your participation history, and log time you actually spend reviewing."
+      >
+        {availableReviews.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No property work is available to review yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {availableReviews.map((r) => (
+              <ReviewRow
+                key={r.id}
+                review={r}
+                properties={properties}
+                programId={program.id}
+                onDone={invalidate}
+                readOnly={preview}
+              />
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <ParticipationReportPanel />
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
@@ -251,6 +281,11 @@ function ReviewRow({
 }) {
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState("");
+  const presentation = ownerReviewPresentation(review);
+  const canRespond =
+    !readOnly &&
+    ["awaiting_owner", "returned"].includes(review.status) &&
+    Boolean(review.updated_at);
   const [responseVersion, setResponseVersion] = useState("");
   const setResponseOpen = (next: boolean) => {
     if (next && !open) setResponseVersion(review.updated_at ?? "");
@@ -287,9 +322,7 @@ function ReviewRow({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold">{review.title}</p>
-          <StatusBadge tone={reviewTone(review.status)}>
-            {review.status === "returned" ? "Sent back to you" : "Waiting on you"}
-          </StatusBadge>
+          <StatusBadge tone={reviewTone(review.status)}>{presentation.label}</StatusBadge>
         </div>
         {review.business_question ? (
           <p className="mt-1 text-sm text-muted-foreground">{review.business_question}</p>
@@ -300,14 +333,15 @@ function ReviewRow({
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <LogTimeButton review={review} programId={programId} onDone={onDone} readOnly={readOnly} />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={readOnly || !review.updated_at}
-          onClick={() => setResponseOpen(true)}
-        >
-          <MessageSquare className="size-4" /> Respond
+        <LogTimeButton
+          review={review}
+          programId={programId}
+          onDone={onDone}
+          readOnly={readOnly || review.status === "closed"}
+        />
+        <Button size="sm" variant="outline" onClick={() => setResponseOpen(true)}>
+          <MessageSquare className="size-4" />{" "}
+          {review.auto_ticket || !canRespond ? "Review details" : "Respond"}
         </Button>
       </div>
 
@@ -319,19 +353,34 @@ function ReviewRow({
               {review.recommendation ?? "Share your decision or note below."}
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            rows={4}
-            placeholder="Your response"
-            value={response}
-            onChange={(e) => setResponse(e.target.value)}
-          />
+          {review.auto_ticket && review.owner_request?.ownerActionRequired ? (
+            <p className="text-sm text-muted-foreground">
+              This form records review notes. Approve or decline work through the separate approval
+              request.
+            </p>
+          ) : null}
+          {review.owner_response ? (
+            <p className="text-sm whitespace-pre-wrap">
+              Your recorded response: {review.owner_response}
+            </p>
+          ) : null}
+          {canRespond ? (
+            <Textarea
+              rows={4}
+              placeholder="Your response"
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+            />
+          ) : null}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={respond.isPending} onClick={() => respond.mutate("acknowledged")}>
-              Send response
-            </Button>
+            {canRespond ? (
+              <Button disabled={respond.isPending} onClick={() => respond.mutate("acknowledged")}>
+                Send response
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -351,7 +400,7 @@ function LogTimeButton({
   readOnly: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [minutes, setMinutes] = useState("30");
+  const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const log = useServerFn(logOwnerParticipation);
@@ -363,7 +412,7 @@ function LogTimeButton({
           programId,
           phase: "ongoing",
           entryDate: new Date().toISOString().slice(0, 10),
-          minutes: Math.max(1, Math.min(1440, Number(minutes) || 0)),
+          minutes: parseOwnerMinutes(minutes),
           activity: activity.trim(),
           reviewId: review.id,
           ticketId: review.ticket_id,
@@ -375,7 +424,7 @@ function LogTimeButton({
       toast.success("Time logged.");
       setOpen(false);
       setActivity("");
-      setMinutes("30");
+      setMinutes("");
       setConfirmed(false);
       onDone();
     },

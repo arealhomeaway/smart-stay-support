@@ -16,6 +16,7 @@ export function automaticOpportunityView(review: ReviewRow, ticket?: OwnerTicket
   const request = linked?.request ?? ownerTicketRequest([]);
   return {
     ...review,
+    owner_request: request,
     title: linked?.title ?? "Recorded property work",
     owner_action_type: request.category,
     decision_path: opportunityDecisionPath(request.category),
