@@ -14,6 +14,7 @@ import { validateHandoff } from "./onboarding";
 import { handoffReadiness, lifecycleEditIssue } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
 export { validateHandoff };
+import { assignedWorkContext, type AssignedWorkContext } from "./onboarding-assigned-context";
 import { onboardingWorkspaceMode } from "./onboarding-workspace-view";
 import { writeAudit } from "./audit.server";
 
@@ -126,8 +127,9 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     }))
     .filter((c) => projects.some((p) => p.id === c.projectId && p.status !== "cancelled"));
 
-  return {
+  const workspace = {
     workspaceMode,
+    assignedWorkContexts: [] as AssignedWorkContext[],
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
     projects,
@@ -143,6 +145,60 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     externalRecords: extRecords.data ?? [],
     documents: docs.data ?? [],
     ownerApprovals: ownerApprovals.data ?? [],
+  };
+  if (workspaceMode !== "assigned") return workspace;
+  const assigned = workspace.tasks.filter((task) => task.assigned_to === userId);
+  const propertyIds = new Set(assigned.map((task) => task.property_id));
+  const contexts = workspace.properties
+    .filter((property) => propertyIds.has(property.id))
+    .map((property) =>
+      assignedWorkContext(
+        {
+          property,
+          project:
+            projects.find(
+              (project) => project.property_id === property.id && project.status !== "cancelled",
+            ) ?? null,
+          tasks: workspace.tasks.filter((task) => task.property_id === property.id),
+          handoff:
+            workspace.handoffs.find(
+              (handoff) =>
+                handoff.property_id === property.id &&
+                ["requested", "accepted_pending_live"].includes(handoff.status),
+            ) ?? null,
+          stageCaptures: workspace.stageCaptures.filter(
+            (capture) => capture.propertyId === property.id,
+          ),
+        },
+        userId,
+      ),
+    );
+  const inScope = new Set(contexts.flatMap((context) => context.tasks.map((task) => task.id)));
+  const visibleTasks = assigned.filter((task) => inScope.has(task.id));
+  const visibleIds = new Set(visibleTasks.map((task) => task.id));
+  return {
+    ...workspace,
+    assignedWorkContexts: contexts,
+    tasks: visibleTasks,
+    properties: workspace.properties
+      .filter((property) => propertyIds.has(property.id))
+      .map((property) => ({ ...property, access_notes: null, wifi_notes: null })),
+    projects: [],
+    pipeline: [],
+    stageCaptures: [],
+    handoffs: [],
+    notes: [],
+    reviews: [],
+    externalDatabases: [],
+    externalRecords: [],
+    documents: [],
+    activeOwnerProperties: [],
+    approvalMismatches: [],
+    people: workspace.people.filter((person) => person.id === userId),
+    ownerApprovals: workspace.ownerApprovals.filter(
+      (approval) =>
+        approval.entity_type === "onboarding_task" && visibleIds.has(approval.entity_id ?? ""),
+    ),
   };
 }
 

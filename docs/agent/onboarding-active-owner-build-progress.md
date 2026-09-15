@@ -249,3 +249,12 @@ Added a server-derived presentation mode using existing supervisor capability an
 649 unit tests / 71 files / 1623 assertions, TypeScript and focused route/source lint pass. Initial production build passed; a final build follows the small hub-title alignment. Authenticated desktop/390px navigation still needs acceptance. Modern web guidance search/accessibility retrieval used the installed CLI because npx was unavailable; required child-process escalation succeeded. No plugin upgrade or permission change was performed.
 
 Final role-navigation build passed using fresh `.codex-qa.local/build-20260915-workspace-view-final` output. Verified all remaining generic workspace query keys are prefix invalidations, so they continue to invalidate the identity-scoped queries. No deployment, live migration or permission-policy change.
+
+
+### September 15 - assigned-work server response
+
+Restricted assigned-mode workspace responses to assigned in-scope tasks, associated homes, self profile and matching task approvals. Removed project/history/external/document/participation collections and access/Wi-Fi notes from that response. Canonical scope and release are computed before redaction; only related task structure/status/title context is serialized for My Work and its drawer. Unrelated task notes/evidence/assignments are not returned. Field project URLs return to My Work. Existing RLS policies unchanged.
+
+650 unit tests / 72 files / 1639 assertions pass, including a real-loader response-redaction regression preserving prerequisite blocking. TypeScript and focused route/source lint pass. Production build result follows its live handle. Remaining work: direct task action authorization, project-lead scope, onboarding read completeness, broader transaction races and authenticated acceptance. This is a response projection, not proof of complete server/RLS authorization.
+
+Assigned-workspace production build passed with fresh `.codex-qa.local/build-20260915-assigned-workspace` output. No deployment or live migration. Working checkpoint remains MORE IMPLEMENTATION REQUIRED.

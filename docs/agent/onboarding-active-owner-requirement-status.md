@@ -29,7 +29,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | Handoff blockers, carryover, finance independent of Live | PARTIAL | Derived readiness and tests exist; transaction rechecks carryover links, assignee, date and reason. Full readiness-input concurrency and end-to-end acceptance outstanding. |
 | Six workspace areas and details in drawers | NOT YET ACCEPTED | Implemented; full desktop/390px verification pending. |
 | Manager Hub and My Work | PARTIAL | Assignment/team selection and filtered drill-through implemented; role-specific experience unverified. |
-| PM, directors, supervisor, field role homes | PARTIAL | Server-derived navigation mode and identity-scoped caches implemented. Field users land on My Work; supervisors and project leads retain hub navigation. Wider workspace payload and per-project role boundaries remain incomplete. |
+| PM, directors, supervisor, field role homes | PARTIAL | Server-derived navigation mode and identity-scoped caches implemented. Field users land on My Work; supervisors and project leads retain hub navigation. Assigned-mode workspace payload is now restricted with redacted prerequisite context. Project-lead scope and direct action boundaries remain incomplete. |
 | Director attention/review/correction/risk/blocked/upcoming/handoff/workload queues | PARTIAL | Queue/drill-through work exists; inspect each named queue against current routes. |
 | Origin, filters, contextual Back | PARTIAL | URL state implementation exists; complete navigation acceptance remains. |
 | Two marked QA projects excluded from KPIs | PARTIAL | Synthetic fixtures cover Full/No Furnishing; authenticated isolated project seed/acceptance not performed. |
@@ -45,7 +45,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 21 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 649 tests, 71 files, 1623 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 650 tests, 72 files, 1639 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
 | Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-resume-verified`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
@@ -114,3 +114,12 @@ The aggregate regression uses 1205 entries, a 200-row server cap and a correctio
 The workspace response derives a presentation mode from the existing supervisor predicate and non-cancelled PM/director assignments. Supervisors see Director hub, project leads see Project hub, and other onboarding users are redirected from the hub to My Work and receive no hub navigation link. All four workspace consumers use a user-specific query key and disable loading without a user ID. Existing prefix invalidation still refreshes the workspace after mutations. These are presentation/cache changes, not new roles, grants or RLS policies.
 
 649 unit tests / 71 files / 1623 assertions pass; TypeScript and focused source/route lint pass. Tests cover supervisor/lead/field/cancelled-project mode and identity-specific cache keys. Rendered authenticated desktop/390px navigation remains NOT YET ACCEPTED. The full workspace payload still returns wider RLS-visible data, and project detail/direct server action boundaries remain under audit. Next: provide assigned-task data with only necessary prerequisite context, avoiding a UI-only permission claim or loss of release-gate inputs.
+
+
+### September 15 follow-up: assigned-work server projection
+
+For assigned-mode users, `loadOnboardingWorkspace` now returns only their in-scope tasks and associated homes, their own profile, and canonical approvals for those tasks. It omits project rows, pipeline, captures, handoffs, notes, reviews, external databases/records, documents, Active Owner links and approval mismatches; property access/Wi-Fi notes are cleared. This projection occurs server-side before serialization under the existing caller RLS; it does not modify RLS policies.
+
+`assignedWorkContext` computes canonical scope/release against the full workflow, then returns only related task IDs/titles/states/structure with no task detail, evidence, assignee, due-date or decision fields. Related context follows prerequisites and assigned-parent descendants, not unrelated same-property work. Release sets/maps cross the server boundary as arrays and are restored in My Work. The drawer and completion affordance use that context; an unavailable prerequisite still blocks completion. Assigned-mode direct project URLs redirect to My Work.
+
+The integration test exercises the real workspace loader with assigned/unassigned tasks, another home, private project/notes/document data, profiles and unrelated approvals. It proves response filtering/redaction and preserved prerequisite blocking. 650 unit tests / 72 files / 1639 assertions, TypeScript and focused source/route lint pass. Authenticated rendered desktop/390px acceptance remains unverified. Direct action authorization, project-lead property scope, and complete onboarding workspace pagination are not covered by this projection and remain under audit; no global authorization-complete claim is made.

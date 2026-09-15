@@ -1,3 +1,4 @@
+import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -138,6 +139,15 @@ function MyWork() {
   const propertyName = (id: string) =>
     data.properties.find((p) => p.id === id)?.name ?? "Unknown home";
   const views = mine.flatMap((t) => {
+    const assignedContext = data.assignedWorkContexts.find(
+      (context) => context.propertyId === t.property_id,
+    );
+    if (assignedContext) {
+      const property = data.properties.find((item) => item.id === t.property_id);
+      return property && !isTestRecord(property)
+        ? [viewTask(t, assignedContext.tasks, restoreAssignedRelease(assignedContext))]
+        : [];
+    }
     const property = data.properties.find((p) => p.id === t.property_id);
     if (!property || isTestRecord(property)) return [];
     const project =
@@ -167,43 +177,50 @@ function MyWork() {
   const t0 = today();
 
   const openTask = mine.find((t) => t.id === openTaskId) ?? null;
-  const drawerSiblings = openTask
-    ? splitByScope(
-        allTasks.filter((t) => t.property_id === openTask.property_id),
-        projectScope(
-          data.projects.find(
-            (p) => p.property_id === openTask.property_id && p.status !== "cancelled",
-          ) ?? null,
-        ),
-      ).inScope
-    : [];
+  const assignedDrawerContext = data.assignedWorkContexts.find(
+    (context) => context.propertyId === openTask?.property_id,
+  );
+  const drawerSiblings = assignedDrawerContext
+    ? assignedDrawerContext.tasks
+    : openTask
+      ? splitByScope(
+          allTasks.filter((t) => t.property_id === openTask.property_id),
+          projectScope(
+            data.projects.find(
+              (p) => p.property_id === openTask.property_id && p.status !== "cancelled",
+            ) ?? null,
+          ),
+        ).inScope
+      : [];
   const drawerProperty = data.properties.find((p) => p.id === openTask?.property_id);
-  const drawerRelease = drawerProperty
-    ? buildReleaseContext({
-        property: drawerProperty,
-        project:
-          data.projects.find(
-            (p) => p.property_id === drawerProperty.id && p.status !== "cancelled",
-          ) ?? null,
-        tasks: drawerSiblings,
-        handoff:
-          data.handoffs.find(
-            (h) =>
-              h.property_id === drawerProperty.id &&
-              ["requested", "accepted_pending_live"].includes(h.status),
-          ) ?? null,
-        stageCaptures: data.stageCaptures.filter(
-          (capture) => capture.propertyId === drawerProperty.id,
-        ),
-        excludedTaskIds: allTasks
-          .filter(
-            (task) =>
-              task.property_id === drawerProperty.id &&
-              !drawerSiblings.some((sibling) => sibling.id === task.id),
-          )
-          .map((task) => task.id),
-      })
-    : undefined;
+  const drawerRelease = assignedDrawerContext
+    ? restoreAssignedRelease(assignedDrawerContext)
+    : drawerProperty
+      ? buildReleaseContext({
+          property: drawerProperty,
+          project:
+            data.projects.find(
+              (p) => p.property_id === drawerProperty.id && p.status !== "cancelled",
+            ) ?? null,
+          tasks: drawerSiblings,
+          handoff:
+            data.handoffs.find(
+              (h) =>
+                h.property_id === drawerProperty.id &&
+                ["requested", "accepted_pending_live"].includes(h.status),
+            ) ?? null,
+          stageCaptures: data.stageCaptures.filter(
+            (capture) => capture.propertyId === drawerProperty.id,
+          ),
+          excludedTaskIds: allTasks
+            .filter(
+              (task) =>
+                task.property_id === drawerProperty.id &&
+                !drawerSiblings.some((sibling) => sibling.id === task.id),
+            )
+            .map((task) => task.id),
+        })
+      : undefined;
   const canEdit = !readOnly && can("handoff_request");
 
   return (

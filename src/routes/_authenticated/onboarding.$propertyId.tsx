@@ -1,5 +1,5 @@
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -201,6 +201,8 @@ function PropertyWorkspace() {
   );
 
   if (isLoading || !data) return <LoadingPage />;
+  if (data.workspaceMode === "assigned")
+    return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
   if (!current)
     return (
       <EmptyState title="Home not found" hint="This property is not in the onboarding workspace." />
