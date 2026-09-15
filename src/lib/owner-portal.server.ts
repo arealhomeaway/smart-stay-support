@@ -334,26 +334,56 @@ export async function respondToReview(
 ) {
   const review = await supabase
     .from("owner_reviews")
-    .select("id, program_id, title")
+    .select("id, program_id, title, status, auto_ticket, available_from, updated_at")
     .eq("id", input.reviewId)
     .single();
   if (review.error) throw review.error;
 
-  const { error } = await supabase
+  const program = await supabase
+    .from("owner_programs")
+    .select("owner_user_id, archived_at, status")
+    .eq("id", review.data.program_id)
+    .single();
+  if (program.error) throw program.error;
+  if (
+    program.data.owner_user_id !== userId ||
+    program.data.archived_at ||
+    ["closed", "completed"].includes(program.data.status)
+  )
+    throw new Error("This participation program is not available for your response.");
+  if (
+    !["awaiting_owner", "returned"].includes(review.data.status) ||
+    (review.data.available_from && new Date(review.data.available_from).getTime() > Date.now())
+  )
+    throw new Error("This opportunity is not currently awaiting your response.");
+  if (review.data.auto_ticket && input.decision !== "acknowledged")
+    throw new Error(
+      "Use the canonical approval request to approve or decline work. This response records participation only.",
+    );
+
+  const { data: saved, error } = await supabase
     .from("owner_reviews")
     .update({
       owner_decision: input.decision,
       owner_response: input.response || null,
-      status: "answered",
+      // An acknowledgement must not dismiss a separate operational decision request.
+      status: review.data.auto_ticket ? review.data.status : "answered",
       responded_at: new Date().toISOString(),
     })
-    .eq("id", input.reviewId);
+    .eq("id", input.reviewId)
+    .eq("updated_at", review.data.updated_at)
+    .eq("status", review.data.status)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!saved) throw new Error("The opportunity changed. Refresh before responding.");
 
   await recordEvent(supabase, {
     programId: review.data.program_id,
-    kind: "owner_decision",
-    summary: `Decision on “${review.data.title}”: ${input.decision}`,
+    kind: review.data.auto_ticket ? "owner_participation_response" : "owner_decision",
+    summary: review.data.auto_ticket
+      ? "Participation response recorded for property work; no repair approval granted."
+      : `Decision on “${review.data.title}”: ${input.decision}`,
     actorId: userId,
     reviewId: input.reviewId,
     newValue: input.decision,
