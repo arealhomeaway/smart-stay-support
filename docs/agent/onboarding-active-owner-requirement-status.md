@@ -45,7 +45,7 @@ PASS means the stated local check is proven. PARTIAL means implementation or ver
 | No owner cross-access or demo leakage | PARTIAL | Focused RPC tests are insufficient for global RLS proof; complete external-owner audit remains. |
 | Operations preserved | PARTIAL | Full unit suite passes; targeted Operations regression/route smoke still required after final changes. |
 | Additive unapplied migrations, grants/RLS review | PARTIAL | 21 local migration files pass the isolated runner; minimal fixtures do not prove complete deployed schema. |
-| Full unit suite | PASS | September 15: 656 tests, 73 files, 1658 assertions, zero failures. |
+| Full unit suite | PASS | September 15: 658 tests, 74 files, 1670 assertions, zero failures. |
 | TypeScript and focused lint | PASS | TypeScript passes. Strict touched source/test/script lint passes. Generated types and owner-program route pass logic lint with formatting rule disabled. Strict generated-file lint reports 8199 formatting errors; no broad reformat performed. |
 | Final production build | PASS | September 15 production client/server build passed in fresh isolated output `.codex-qa.local/build-20260915-resume-verified`. Child-process escalation required; no deployment. |
 | Clean commits/push and draft PR updated | PARTIAL | Verified checkpoint prepared for feature-branch commit/push and PR update. Final response/PR records resulting SHA and publication status. |
@@ -132,3 +132,12 @@ The integration test exercises the real workspace loader with assigned/unassigne
 Notes validate that the linked task belongs to the supplied property and is not archived, then verify assignment/lead scope before insertion. Tests cover unrelated approval actions, self-waived approval requirements, structural/carryover changes, cross-property notes and failed capability lookup. 656 unit tests / 73 files / 1658 assertions pass; focused lint passes. TypeScript passed after correcting index-signature access syntax.
 
 Remaining boundaries: direct database API access still follows existing RLS and is not proven by these server guards; project-responsibility changes and note/approval authorization reads are not a single transaction with writes. Stage/handoff readiness races, property lifecycle/handoff action scope, project-lead data projection, and UI management-control visibility require follow-up. No grants or RLS policies changed. Authenticated acceptance remains outstanding.
+
+
+### September 15 follow-up: task drawer controls and payload preservation
+
+The drawer now receives property-specific management capability from existing supervisor/PM/director assignments. Field users see the recorded due date but no date-edit controls; a lead assignment on another property does not expose those controls. Evidence/progress payloads now preserve task sort order, and generic saves retain prior order when older callers omit it, preventing the field guard from rejecting valid progress edits or resetting ordering.
+
+Date-change requests no longer call the supervisor exception action, which could incorrectly record a task-requirement exception or fail for project leads. The drawer instead records a clearly labeled requested-change observation. This is not an atomic date-change audit: server-side reason enforcement, manual-override persistence and transactional date/history updates remain incomplete.
+
+658 unit tests / 74 files / 1670 assertions and TypeScript pass. Focused lint has zero errors and one existing Fast Refresh export warning in TaskDrawer. Full tests needed escalation because the sandbox denied reading React's JSX runtime for the new drawer regression. Tests verify property-specific management and preservation of order/evidence/approval/dependency/ticket context. Authenticated rendered UI acceptance remains outstanding.

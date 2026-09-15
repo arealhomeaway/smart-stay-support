@@ -1,5 +1,8 @@
 import { restoreAssignedRelease } from "@/lib/onboarding-assigned-context";
-import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
+import {
+  onboardingWorkspaceKey,
+  canManageOnboardingProperty,
+} from "@/lib/onboarding-workspace-view";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -289,6 +292,12 @@ function MyWork() {
         propertyName={openTask ? propertyName(openTask.property_id) : ""}
         disabled={!canEdit || !drawerRelease || drawerRelease.locked}
         canRecordException={can("handoff_review")}
+        canManageTask={canManageOnboardingProperty(
+          userId,
+          can("handoff_review"),
+          openTask?.property_id,
+          data.projects,
+        )}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSubmitApproval={(taskId, version, note) =>

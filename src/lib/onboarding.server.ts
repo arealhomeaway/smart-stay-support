@@ -365,7 +365,7 @@ export async function saveOnboardingTask(
     completed_by: input.status === "complete" ? userId : (prior?.data.completed_by ?? null),
     parent_task_id: input.parentTaskId ?? null,
     depends_on: input.dependsOn ?? [],
-    sort_order: input.sortOrder ?? 0,
+    sort_order: input.sortOrder ?? prior?.data.sort_order ?? 0,
     linked_ticket_id: input.linkedTicketId ?? null,
   };
 

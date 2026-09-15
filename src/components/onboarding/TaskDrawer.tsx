@@ -42,6 +42,7 @@ export type SaveTaskInput = {
   detail: string;
   assignedTo: string | null;
   dueOn: string | null;
+  sortOrder: number;
   blocker: string;
   requiresOwnerApproval: boolean;
   ownerApprovalStatus:
@@ -65,6 +66,7 @@ export function taskPayload(t: WorkflowTask, patch: Partial<SaveTaskInput> = {})
     detail: t.detail ?? "",
     assignedTo: t.assigned_to,
     dueOn: t.due_on,
+    sortOrder: t.sort_order,
     blocker: t.blocker ?? "",
     requiresOwnerApproval: t.requires_owner_approval,
     ownerApprovalStatus: (t.owner_approval_status ??
@@ -87,6 +89,7 @@ export function TaskDrawer({
   propertyName,
   disabled,
   canRecordException,
+  canManageTask,
   onClose,
   onSave,
   onSubmitApproval,
@@ -104,6 +107,7 @@ export function TaskDrawer({
   propertyName: string;
   disabled: boolean;
   canRecordException: boolean;
+  canManageTask: boolean;
   onClose: () => void;
   onSave: (input: SaveTaskInput) => void;
   onSubmitApproval: (taskId: string, version: string, note: string) => void;
@@ -238,155 +242,154 @@ export function TaskDrawer({
       }
     >
       <div className="space-y-5">
-          <dl className="grid grid-cols-2 gap-3 text-sm">
-            <Field label="Assignee" value={assigneeLabel(task, people)} />
-            <Field
-              label="Due date"
-              value={task.due_on ?? "—"}
-              hint={dueExplanation(task) ?? undefined}
-            />
-            <Field label="Blocks handoff" value={task.blocks_handoff ? "Yes" : "No"} />
-            <Field
-              label="Owner approval"
-              value={
-                task.requires_owner_approval
-                  ? task.owner_approval_status === "approved"
-                    ? "Approved"
-                    : task.owner_approval_status === "awaiting_owner"
-                      ? "Waiting on homeowner"
-                      : task.owner_approval_status === "changes_requested"
-                        ? "Changes requested"
-                        : "Required"
-                  : "Not required"
-              }
-            />
-          </dl>
+        <dl className="grid grid-cols-2 gap-3 text-sm">
+          <Field label="Assignee" value={assigneeLabel(task, people)} />
+          <Field
+            label="Due date"
+            value={task.due_on ?? "—"}
+            hint={dueExplanation(task) ?? undefined}
+          />
+          <Field label="Blocks handoff" value={task.blocks_handoff ? "Yes" : "No"} />
+          <Field
+            label="Owner approval"
+            value={
+              task.requires_owner_approval
+                ? task.owner_approval_status === "approved"
+                  ? "Approved"
+                  : task.owner_approval_status === "awaiting_owner"
+                    ? "Waiting on homeowner"
+                    : task.owner_approval_status === "changes_requested"
+                      ? "Changes requested"
+                      : "Required"
+                : "Not required"
+            }
+          />
+        </dl>
 
-          {/* Why this task exists — the plain-language automation story. */}
-          <section className="sunken rounded-lg p-3">
-            <p className="eyebrow">Why this task exists</p>
-            <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground">
-              {why.map((line) => (
-                <li key={line}>· {line}</li>
-              ))}
-            </ul>
+        {/* Why this task exists — the plain-language automation story. */}
+        <section className="sunken rounded-lg p-3">
+          <p className="eyebrow">Why this task exists</p>
+          <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground">
+            {why.map((line) => (
+              <li key={line}>· {line}</li>
+            ))}
+          </ul>
+        </section>
+
+        {repairApprovalGuidance(task.title) && (
+          <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+            {repairApprovalGuidance(task.title)}
+          </p>
+        )}
+
+        {task.detail && (
+          <section>
+            <p className="eyebrow">Instructions</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{task.detail}</p>
           </section>
+        )}
 
-          {repairApprovalGuidance(task.title) && (
-            <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
-              {repairApprovalGuidance(task.title)}
-            </p>
-          )}
-
-          {task.detail && (
-            <section>
-              <p className="eyebrow">Instructions</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                {task.detail}
+        {(deps.length > 0 || downstream.length > 0) && (
+          <section className="space-y-1">
+            <p className="eyebrow">Dependencies &amp; release</p>
+            {deps.map((d) => (
+              <p key={d.id} className="text-sm">
+                <span className="text-muted-foreground">Waits for </span>
+                {d.title}
+                <span className="text-muted-foreground">
+                  {" "}
+                  — {d.status === "complete" ? "complete" : "not complete"}
+                </span>
               </p>
-            </section>
-          )}
-
-          {(deps.length > 0 || downstream.length > 0) && (
-            <section className="space-y-1">
-              <p className="eyebrow">Dependencies &amp; release</p>
-              {deps.map((d) => (
-                <p key={d.id} className="text-sm">
-                  <span className="text-muted-foreground">Waits for </span>
-                  {d.title}
-                  <span className="text-muted-foreground">
-                    {" "}
-                    — {d.status === "complete" ? "complete" : "not complete"}
-                  </span>
-                </p>
-              ))}
-              {downstream.map((d) => (
-                <p key={d.id} className="text-sm text-muted-foreground">
-                  Releases {d.title}
-                </p>
-              ))}
-            </section>
-          )}
-
-          {subtasks.length > 0 && (
-            <section className="space-y-1">
-              <p className="eyebrow">Subtasks</p>
-              {subtasks.map((s) => (
-                <p key={s.id} className="text-sm">
-                  {s.status === "complete" ? "✓" : "·"} {s.title}
-                </p>
-              ))}
-            </section>
-          )}
-
-          <Separator />
-
-          {/* Evidence gate */}
-          <section className="space-y-2">
-            <p className="eyebrow">
-              {task.evidence_required ? "Evidence required before completion" : "Notes & files"}
-            </p>
-            {evidenceMissing && (
-              <p className="text-sm text-state-blocked">
-                Required evidence is missing — this task cannot be marked complete.
+            ))}
+            {downstream.map((d) => (
+              <p key={d.id} className="text-sm text-muted-foreground">
+                Releases {d.title}
               </p>
-            )}
-            <Textarea
-              rows={3}
-              value={evidence}
-              onChange={(e) => setEvidence(e.target.value)}
-              placeholder="What proves this is done — photo location, document name, meter reading, confirmation number."
-            />
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={
-                disabled ||
-                evidence.trim().length < 3 ||
-                evidence.trim() === (task.evidence_note ?? "")
-              }
-              onClick={() => onSave(taskPayload(task, { evidenceNote: evidence.trim() }))}
-            >
-              Save evidence
-            </Button>
-            <AttachmentsPanel
-              entityType="onboarding_task"
-              entityId={task.id}
-              title="Photos & documents"
-            />
+            ))}
           </section>
+        )}
 
-          <Separator />
+        {subtasks.length > 0 && (
+          <section className="space-y-1">
+            <p className="eyebrow">Subtasks</p>
+            {subtasks.map((s) => (
+              <p key={s.id} className="text-sm">
+                {s.status === "complete" ? "✓" : "·"} {s.title}
+              </p>
+            ))}
+          </section>
+        )}
 
-          {/* Native capture: what the person actually found in the home. */}
-          <section className="space-y-2">
-            <p className="eyebrow">What did you find?</p>
-            <p className="text-xs text-muted-foreground">
-              Record the observation here, in Resolve — not in a separate form. It stays on this
-              step and on the home&apos;s history.
+        <Separator />
+
+        {/* Evidence gate */}
+        <section className="space-y-2">
+          <p className="eyebrow">
+            {task.evidence_required ? "Evidence required before completion" : "Notes & files"}
+          </p>
+          {evidenceMissing && (
+            <p className="text-sm text-state-blocked">
+              Required evidence is missing — this task cannot be marked complete.
             </p>
-            <Textarea
-              rows={2}
-              value={observation}
-              onChange={(e) => setObservation(e.target.value)}
-              placeholder="Condition, measurement, missing item, something the next person needs to know."
-            />
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={disabled || observation.trim().length < 3}
-              onClick={() => {
-                onAddObservation(task.id, observation.trim());
-                setObservation("");
-              }}
-            >
-              Record observation
-            </Button>
-          </section>
+          )}
+          <Textarea
+            rows={3}
+            value={evidence}
+            onChange={(e) => setEvidence(e.target.value)}
+            placeholder="What proves this is done — photo location, document name, meter reading, confirmation number."
+          />
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={
+              disabled ||
+              evidence.trim().length < 3 ||
+              evidence.trim() === (task.evidence_note ?? "")
+            }
+            onClick={() => onSave(taskPayload(task, { evidenceNote: evidence.trim() }))}
+          >
+            Save evidence
+          </Button>
+          <AttachmentsPanel
+            entityType="onboarding_task"
+            entityId={task.id}
+            title="Photos & documents"
+          />
+        </section>
 
-          <Separator />
+        <Separator />
 
-          {/* Due date with override reason */}
+        {/* Native capture: what the person actually found in the home. */}
+        <section className="space-y-2">
+          <p className="eyebrow">What did you find?</p>
+          <p className="text-xs text-muted-foreground">
+            Record the observation here, in Resolve — not in a separate form. It stays on this step
+            and on the home&apos;s history.
+          </p>
+          <Textarea
+            rows={2}
+            value={observation}
+            onChange={(e) => setObservation(e.target.value)}
+            placeholder="Condition, measurement, missing item, something the next person needs to know."
+          />
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={disabled || observation.trim().length < 3}
+            onClick={() => {
+              onAddObservation(task.id, observation.trim());
+              setObservation("");
+            }}
+          >
+            Record observation
+          </Button>
+        </section>
+
+        <Separator />
+
+        {/* Management-only date edits; the current date remains visible above. */}
+        {canManageTask && (
           <section className="space-y-2">
             <p className="eyebrow">Due date</p>
             <div className="flex flex-wrap items-end gap-2">
@@ -410,7 +413,10 @@ export function TaskDrawer({
                 onClick={() => {
                   onSave(taskPayload(task, { dueOn: due || null }));
                   if (overrideReason.trim().length >= 3)
-                    onRecordException(task.id, `Due date override: ${overrideReason.trim()}`);
+                    onAddObservation(
+                      task.id,
+                      `Requested due date change from ${task.due_on ?? "undated"} to ${due || "undated"}: ${overrideReason.trim()}`,
+                    );
                 }}
               >
                 Save date
@@ -429,178 +435,179 @@ export function TaskDrawer({
               </div>
             )}
           </section>
+        )}
 
-          {task.requires_owner_approval && task.owner_approval_status !== "approved" && (
-            <>
-              <Separator />
-              {lastApproval && (
-                <section className="space-y-1 rounded-lg border border-border p-3 text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Chip
-                      className={stateChip(
-                        lastApproval.status === "approved"
-                          ? "done"
-                          : lastApproval.status === "pending"
-                            ? "waiting"
-                            : "info",
-                      )}
-                    >
-                      {lastApproval.status === "pending"
-                        ? "Request sent — waiting on the homeowner"
-                        : lastApproval.status === "approved"
-                          ? "Approved"
-                          : "Changes requested"}
-                    </Chip>
-                    <span className="numeric text-xs text-muted-foreground">
-                      Sent {usDate(lastApproval.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Channel:{" "}
-                    {task.owner_approval_status === "awaiting_owner"
-                      ? "Recorded on the canonical approval record — Active Owner portal or Resolve-generated email."
-                      : "Canonical approval record."}
-                    {lastApproval.decided_at
-                      ? ` Decided ${usDateTime(lastApproval.decided_at)}.`
-                      : ""}
-                  </p>
-                  {lastApproval.decision_note && (
-                    <p className="text-xs text-muted-foreground">{lastApproval.decision_note}</p>
-                  )}
-                </section>
-              )}
-
-              <section className="space-y-2">
-                <p className="eyebrow">
-                  {openApproval ? "Resend this request" : "Send to the homeowner"}
-                </p>
-                <Input
-                  value={approvalVersion}
-                  onChange={(e) => setApprovalVersion(e.target.value)}
-                  placeholder="Version being reviewed — e.g. Mood boards v2"
-                />
-                <Textarea
-                  rows={2}
-                  value={approvalNote}
-                  onChange={(e) => setApprovalNote(e.target.value)}
-                  placeholder="What the homeowner is being asked to approve."
-                />
+        {task.requires_owner_approval && task.owner_approval_status !== "approved" && (
+          <>
+            <Separator />
+            {lastApproval && (
+              <section className="space-y-1 rounded-lg border border-border p-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Chip
+                    className={stateChip(
+                      lastApproval.status === "approved"
+                        ? "done"
+                        : lastApproval.status === "pending"
+                          ? "waiting"
+                          : "info",
+                    )}
+                  >
+                    {lastApproval.status === "pending"
+                      ? "Request sent — waiting on the homeowner"
+                      : lastApproval.status === "approved"
+                        ? "Approved"
+                        : "Changes requested"}
+                  </Chip>
+                  <span className="numeric text-xs text-muted-foreground">
+                    Sent {usDate(lastApproval.created_at)}
+                  </span>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  An enrolled Active Owner sees this in their portal. A standard homeowner gets a
-                  Resolve-generated email — they never need Resolve access to answer. Either way it
-                  is the same approval record. Sending alone does not complete the step.
+                  Channel:{" "}
+                  {task.owner_approval_status === "awaiting_owner"
+                    ? "Recorded on the canonical approval record — Active Owner portal or Resolve-generated email."
+                    : "Canonical approval record."}
+                  {lastApproval.decided_at
+                    ? ` Decided ${usDateTime(lastApproval.decided_at)}.`
+                    : ""}
                 </p>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={disabled || approvalVersion.trim().length < 2}
-                  onClick={() =>
-                    onSubmitApproval(task.id, approvalVersion.trim(), approvalNote.trim())
-                  }
-                >
-                  {openApproval
-                    ? "Resend request"
-                    : task.owner_approval_status === "changes_requested"
-                      ? "Resubmit for approval"
-                      : "Send for approval"}
-                </Button>
+                {lastApproval.decision_note && (
+                  <p className="text-xs text-muted-foreground">{lastApproval.decision_note}</p>
+                )}
               </section>
+            )}
 
-              {task.owner_approval_status === "awaiting_owner" && (
-                <section className="space-y-2 rounded-lg border border-border p-3">
-                  <p className="eyebrow">Record the homeowner&apos;s answer</p>
-                  <p className="text-xs text-muted-foreground">
-                    When the homeowner replies by email or phone, record it here. It is written to
-                    the same approval record with your name and the time.
-                  </p>
-                  <Textarea
-                    rows={2}
-                    value={decisionNote}
-                    onChange={(e) => setDecisionNote(e.target.value)}
-                    placeholder="What they said, and where the answer came from."
-                  />
-                  <Input
-                    value={decisionEvidence}
-                    onChange={(e) => setDecisionEvidence(e.target.value)}
-                    placeholder="Link to the reply email or saved document (optional)"
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      disabled={disabled || decisionNote.trim().length < 3}
-                      onClick={() =>
-                        onRecordOwnerDecision(
-                          task.id,
-                          true,
-                          decisionNote.trim(),
-                          decisionEvidence.trim(),
-                        )
-                      }
-                    >
-                      Homeowner approved
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={disabled || decisionNote.trim().length < 3}
-                      onClick={() =>
-                        onRecordOwnerDecision(
-                          task.id,
-                          false,
-                          decisionNote.trim(),
-                          decisionEvidence.trim(),
-                        )
-                      }
-                    >
-                      Changes requested
-                    </Button>
-                  </div>
-                </section>
-              )}
-            </>
-          )}
+            <section className="space-y-2">
+              <p className="eyebrow">
+                {openApproval ? "Resend this request" : "Send to the homeowner"}
+              </p>
+              <Input
+                value={approvalVersion}
+                onChange={(e) => setApprovalVersion(e.target.value)}
+                placeholder="Version being reviewed — e.g. Mood boards v2"
+              />
+              <Textarea
+                rows={2}
+                value={approvalNote}
+                onChange={(e) => setApprovalNote(e.target.value)}
+                placeholder="What the homeowner is being asked to approve."
+              />
+              <p className="text-xs text-muted-foreground">
+                An enrolled Active Owner sees this in their portal. A standard homeowner gets a
+                Resolve-generated email — they never need Resolve access to answer. Either way it is
+                the same approval record. Sending alone does not complete the step.
+              </p>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={disabled || approvalVersion.trim().length < 2}
+                onClick={() =>
+                  onSubmitApproval(task.id, approvalVersion.trim(), approvalNote.trim())
+                }
+              >
+                {openApproval
+                  ? "Resend request"
+                  : task.owner_approval_status === "changes_requested"
+                    ? "Resubmit for approval"
+                    : "Send for approval"}
+              </Button>
+            </section>
 
-          <Separator />
-
-          <Separator />
-          <section className="space-y-2">
-            <p className="eyebrow">Active Owner</p>
-            <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
-          </section>
-
-          <section className="space-y-2">
-            <p className="eyebrow">Breezeway</p>
-            <BreezewayTaskPanel
-              sourceType="onboarding_task"
-              sourceId={task.id}
-              defaultTitle={task.title}
-              defaultDescription={task.detail ?? null}
-            />
-          </section>
-
-          {canRecordException && !task.exception_reason && (
-            <>
-              <Separator />
-              <section className="space-y-2">
-                <p className="eyebrow">Authorised exception</p>
+            {task.owner_approval_status === "awaiting_owner" && (
+              <section className="space-y-2 rounded-lg border border-border p-3">
+                <p className="eyebrow">Record the homeowner&apos;s answer</p>
+                <p className="text-xs text-muted-foreground">
+                  When the homeowner replies by email or phone, record it here. It is written to the
+                  same approval record with your name and the time.
+                </p>
                 <Textarea
                   rows={2}
-                  value={exception}
-                  onChange={(e) => setException(e.target.value)}
-                  placeholder="Why is this requirement being waived, and who approved it?"
+                  value={decisionNote}
+                  onChange={(e) => setDecisionNote(e.target.value)}
+                  placeholder="What they said, and where the answer came from."
                 />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={disabled || exception.trim().length < 3}
-                  onClick={() => onRecordException(task.id, exception.trim())}
-                >
-                  Record exception
-                </Button>
+                <Input
+                  value={decisionEvidence}
+                  onChange={(e) => setDecisionEvidence(e.target.value)}
+                  placeholder="Link to the reply email or saved document (optional)"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    disabled={disabled || decisionNote.trim().length < 3}
+                    onClick={() =>
+                      onRecordOwnerDecision(
+                        task.id,
+                        true,
+                        decisionNote.trim(),
+                        decisionEvidence.trim(),
+                      )
+                    }
+                  >
+                    Homeowner approved
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={disabled || decisionNote.trim().length < 3}
+                    onClick={() =>
+                      onRecordOwnerDecision(
+                        task.id,
+                        false,
+                        decisionNote.trim(),
+                        decisionEvidence.trim(),
+                      )
+                    }
+                  >
+                    Changes requested
+                  </Button>
+                </div>
               </section>
-            </>
-          )}
-        </div>
+            )}
+          </>
+        )}
+
+        <Separator />
+
+        <Separator />
+        <section className="space-y-2">
+          <p className="eyebrow">Active Owner</p>
+          <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
+        </section>
+
+        <section className="space-y-2">
+          <p className="eyebrow">Breezeway</p>
+          <BreezewayTaskPanel
+            sourceType="onboarding_task"
+            sourceId={task.id}
+            defaultTitle={task.title}
+            defaultDescription={task.detail ?? null}
+          />
+        </section>
+
+        {canRecordException && !task.exception_reason && (
+          <>
+            <Separator />
+            <section className="space-y-2">
+              <p className="eyebrow">Authorised exception</p>
+              <Textarea
+                rows={2}
+                value={exception}
+                onChange={(e) => setException(e.target.value)}
+                placeholder="Why is this requirement being waived, and who approved it?"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={disabled || exception.trim().length < 3}
+                onClick={() => onRecordException(task.id, exception.trim())}
+              >
+                Record exception
+              </Button>
+            </section>
+          </>
+        )}
+      </div>
     </TaskWorkspace>
   );
 }

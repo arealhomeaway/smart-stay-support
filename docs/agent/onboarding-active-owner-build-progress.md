@@ -267,3 +267,12 @@ Added existing-capability/project-responsibility/assignment checks to generic ta
 656 unit tests / 73 files / 1658 assertions and focused lint pass. TypeScript passed after an indexed-property syntax correction. Existing onboarding_tasks_updated trigger supports the stale-row comparison. No RLS or grant changes. Direct database API bypass proof, concurrent project-responsibility changes, remaining property/handoff actions and field UI management controls are still incomplete. Production build status follows its live handle.
 
 Task-access production build passed with fresh `.codex-qa.local/build-20260915-task-access` output. No deployment or migration. The goal remains MORE IMPLEMENTATION REQUIRED.
+
+
+### September 15 - task drawer alignment
+
+Date editing is now shown only for the selected property's supervisor/PM/director; field users retain read-only date display and progress/evidence actions. Fixed the drawer's omitted sortOrder and preserved prior order for older generic-save callers. Removed date-change use of the supervisor exception action; the separate observation is labeled as a requested date change. Atomic date/history persistence, required reasons and manual-override state remain follow-up work.
+
+658 unit tests / 74 files / 1670 assertions pass, with TypeScript clean and focused lint at zero errors/one existing Fast Refresh export warning. The drawer test required React runtime access outside the sandbox; the approved retry and full suite passed. Production build result follows its running handle. No migrations or access policies changed.
+
+Drawer production build passed using fresh `.codex-qa.local/build-20260915-task-drawer` output. No deployment or shared migration. Working checkpoint remains MORE IMPLEMENTATION REQUIRED.

@@ -1,4 +1,7 @@
-import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
+import {
+  onboardingWorkspaceKey,
+  canManageOnboardingProperty,
+} from "@/lib/onboarding-workspace-view";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -971,6 +974,12 @@ function PropertyWorkspace() {
         release={release}
         approvals={approvals as never}
         canRecordException={can("handoff_review")}
+        canManageTask={canManageOnboardingProperty(
+          userId,
+          can("handoff_review"),
+          openTask?.property_id,
+          data.projects,
+        )}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSubmitApproval={(taskId, version, note) =>
