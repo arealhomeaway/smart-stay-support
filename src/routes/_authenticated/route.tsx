@@ -32,7 +32,9 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { user, queryClient } = Route.useRouteContext();
   const router = useRouter();
-  const [sessionUserId, setSessionUserId] = useState<string | null>(user.id);
+  // Wait for the initial auth notification and cache boundary before mounting
+  // consumers of cached roles or private data.
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   useEffect(
     () =>
       watchAccountIdentity(supabase.auth, queryClient, user.id, setSessionUserId, () => {

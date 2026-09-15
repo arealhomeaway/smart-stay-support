@@ -2,7 +2,10 @@ import { expect, it } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 import { watchAccountIdentity } from "../account-query-boundary";
 
-function fixture() {
+function fixture(
+  queries = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  initialUserId = "owner-a",
+) {
   let notify: (event: string, session: { user: { id: string } } | null) => void = () => {};
   let unsubscribed = false;
   const auth = {
@@ -19,13 +22,12 @@ function fixture() {
       };
     },
   };
-  const queries = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const identities: (string | null)[] = [];
   let reloads = 0;
   const stop = watchAccountIdentity(
     auth as never,
     queries,
-    "owner-a",
+    initialUserId,
     (id) => identities.push(id),
     () => {
       reloads++;
@@ -40,6 +42,29 @@ function fixture() {
     unsubscribed: () => unsubscribed,
   };
 }
+
+it("clears the prior account on remount even when auth events occurred while unmounted", () => {
+  const first = fixture();
+  first.queries.setQueryData(["my-roles"], { userId: "owner-a", roles: ["admin"] });
+  first.queries.setQueryData(["owner-home", "owner-a"], { private: "home-a" });
+  first.stop();
+  const second = fixture(first.queries, "owner-b");
+  expect(second.queries.getQueryCache().getAll().length).toBe(0);
+  second.emit("owner-b");
+  expect(second.identities).toEqual(["owner-b"]);
+  expect(second.reloads()).toBe(0);
+  second.stop();
+});
+
+it("retains the same account cache across a layout remount", () => {
+  const first = fixture();
+  first.queries.setQueryData(["owner-home", "owner-a"], { private: "home-a" });
+  first.stop();
+  const second = fixture(first.queries);
+  expect(second.queries.getQueryData(["owner-home", "owner-a"])).toEqual({ private: "home-a" });
+  second.stop();
+  second.queries.clear();
+});
 
 it("keeps same-account token refreshes from clearing data or reloading the route", async () => {
   const f = fixture();
