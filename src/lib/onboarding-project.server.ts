@@ -138,7 +138,7 @@ export async function startOnboardingProject(
   userId: string,
   input: StartProjectInput,
 ) {
-  await assertOnboardingStaff(supabase, userId);
+  const access = await assertOnboardingStaff(supabase, userId);
 
   const property = await supabase
     .from("properties")
@@ -159,6 +159,7 @@ export async function startOnboardingProject(
     .maybeSingle();
   if (existing.error) throw existing.error;
   if (existing.data) {
+    assertProjectLead(existing.data, userId, access.supervisor);
     // A project that exists with no plan is the broken state this repairs:
     // re-running Start onboarding fills the plan in without creating a
     // second project.
@@ -265,7 +266,7 @@ export async function updateProject(
     reason?: string | null | undefined;
   },
 ) {
-  await assertOnboardingStaff(supabase, userId);
+  const access = await assertOnboardingStaff(supabase, userId);
 
   const current = await supabase
     .from("onboarding_projects")
@@ -273,6 +274,7 @@ export async function updateProject(
     .eq("id", input.projectId)
     .single();
   if (current.error) throw current.error;
+  assertProjectLead(current.data, userId, access.supervisor);
 
   // A scope change after initialization must always carry a reason: History
   // has to explain why this home stopped being asked for that work.
@@ -301,9 +303,13 @@ export async function updateProject(
     .from("onboarding_projects")
     .update(patch)
     .eq("id", input.projectId)
+    .eq("property_id", current.data.property_id)
+    .eq("updated_at", current.data.updated_at)
+    .eq("status", current.data.status)
     .select("*")
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error("The project changed. Refresh before saving your changes.");
 
   const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
   if (scopeChanged) {
@@ -332,6 +338,12 @@ export async function updateProject(
     });
   }
   return data;
+}
+
+function assertProjectLead(project: ProjectRow, userId: string, supervisor: boolean) {
+  if (!supervisor && project.project_manager !== userId && project.director !== userId) {
+    throw new Error("Only a supervisor or this project's lead can change it.");
+  }
 }
 
 function describeScope(row: ProjectRow) {
