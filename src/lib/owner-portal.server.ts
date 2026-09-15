@@ -219,6 +219,31 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
   if (input.propertyIds.length === 0 && opportunity.data.property_id) {
     input = { ...input, propertyIds: [opportunity.data.property_id] };
   }
+  const opportunityPropertyId = opportunity.data.property_id;
+  if (
+    opportunityPropertyId &&
+    input.propertyIds.some((propertyId) => propertyId !== opportunityPropertyId)
+  ) {
+    throw new Error("This participation opportunity belongs to a different property.");
+  }
+
+  const program = await supabase
+    .from("owner_programs")
+    .select("owner_user_id,started_on,status")
+    .eq("id", input.programId)
+    .maybeSingle();
+  if (program.error) throw program.error;
+  if (!program.data || program.data.owner_user_id !== userId)
+    throw new Error("That participation program is not available to you.");
+  if (!["active", "target_reached"].includes(program.data.status) || !program.data.started_on)
+    throw new Error(
+      "Your ARHA contact must activate this program before new participation can be logged.",
+    );
+  if (
+    input.entryDate < program.data.started_on ||
+    input.entryDate > new Date().toISOString().slice(0, 10)
+  )
+    throw new Error("Choose a date from the program start through today.");
 
   const links = await supabase
     .from("owner_program_properties")
@@ -342,49 +367,28 @@ export async function resubmitOwnerTime(
     .eq("entry_id", input.entryId);
   if (links.error) throw links.error;
 
-  const insert = await supabase
-    .from("owner_time_entries")
-    .insert({
-      program_id: original.data.program_id,
-      owner_user_id: userId,
-      phase: original.data.phase,
-      entry_date: original.data.entry_date,
-      minutes: input.minutes,
-      activity: input.activity,
-      activity_category: original.data.activity_category,
-      output: original.data.output,
-      comments: input.note || original.data.comments,
-      review_id: original.data.review_id,
-      ticket_id: original.data.ticket_id,
-      amends_entry_id: input.entryId,
-      correction_reason: input.note || "Corrected by the homeowner after review.",
-      review_status: "submitted",
-      attested: true,
-    })
-    .select("id")
-    .single();
-  if (insert.error) throw insert.error;
-
-  const propertyIds = (links.data ?? []).map((l) => l.property_id);
-  if (propertyIds.length > 0) {
-    const relink = await supabase
-      .from("owner_time_entry_properties")
-      .insert(propertyIds.map((property_id) => ({ entry_id: insert.data.id, property_id })));
-    if (relink.error) throw relink.error;
-  }
+  const corrected = await supabase.rpc("resubmit_owner_time_entry", {
+    _entry_id: input.entryId,
+    _minutes: input.minutes,
+    _activity: input.activity,
+    _note: input.note,
+  });
+  if (corrected.error) throw corrected.error;
+  if (!corrected.data) throw new Error("The corrected entry could not be recorded.");
+  const propertyIds = (links.data ?? []).map((link) => link.property_id);
 
   await recordEvent(supabase, {
     programId: original.data.program_id,
     kind: "time_entry",
     summary: `Homeowner resubmitted a returned entry: ${input.activity}`,
     actorId: userId,
-    entryId: insert.data.id,
+    entryId: corrected.data,
     reason: input.note || null,
     newValue: String(input.minutes),
     detail: { correctionOf: input.entryId, propertyIds },
   });
 
-  return { ok: true as const, entryId: insert.data.id };
+  return { ok: true as const, entryId: corrected.data };
 }
 
 /** Owner answers a task that was waiting on them. */

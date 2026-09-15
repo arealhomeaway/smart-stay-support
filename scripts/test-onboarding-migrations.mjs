@@ -39,6 +39,9 @@ try {
     "supabase/migrations/20260914140000_reviewed_property_assets.sql",
     "supabase/tests/onboarding_asset_review.test.sql",
     "supabase/tests/onboarding_fact_review.test.sql",
+    "supabase/tests/fixtures/owner_time_correction_schema.sql",
+    "supabase/migrations/20260914150000_atomic_owner_time_correction.sql",
+    "supabase/tests/owner_time_correction.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

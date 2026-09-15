@@ -7854,6 +7854,10 @@ export type Database = {
       }
     }
     Functions: {
+      resubmit_owner_time_entry: {
+        Args: { _entry_id: string; _minutes: number; _activity: string; _note: string }
+        Returns: string
+      }
       reconcile_onboarding_delivery: {
         Args: { _kind: string; _record_id: string; _attempt_id: string; _delivered: boolean; _note: string }
         Returns: undefined

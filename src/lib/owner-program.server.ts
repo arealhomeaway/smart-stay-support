@@ -21,6 +21,7 @@ import {
 } from "./owner-program";
 import {
   ACTIVATABLE_STATUSES,
+  countableParticipationEntries,
   hoursFromMinutes,
   OPERATING_TARGET_HOURS,
   progressSnapshot,
@@ -131,7 +132,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
         .select("id, program_id, property_id, status, respond_by, source_type, available_from"),
       supabase
         .from("owner_time_entries")
-        .select("id, program_id, minutes, review_status")
+        .select("id, program_id, minutes, review_status, amends_entry_id")
         .eq("is_demo", demo),
       supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
       supabase.from("owner_badges").select("program_id, code"),
@@ -162,8 +163,8 @@ export async function loadPrograms(supabase: Client, demo = false) {
       (l) => l.program_id === p.id && l.inclusion_status === "included",
     );
     const myReviews = (reviews.data ?? []).filter((r) => r.program_id === p.id);
-    const myEntries = (entries.data ?? []).filter(
-      (e) => e.program_id === p.id && e.review_status !== "returned",
+    const myEntries = countableParticipationEntries(
+      (entries.data ?? []).filter((entry) => entry.program_id === p.id),
     );
     const reported = combinedMinutes(myEntries);
     const snapshot = progressSnapshot({
@@ -520,7 +521,7 @@ export async function activateProgram(
 
   const links = await supabase
     .from("owner_program_properties")
-    .select("property_id, closing_confirmed")
+    .select("property_id, closing_confirmed, closing_date")
     .eq("program_id", input.programId)
     .eq("inclusion_status", "included");
   if (links.error) throw links.error;
@@ -528,6 +529,15 @@ export async function activateProgram(
     throw new Error("Add at least one property before activating.");
   if ((links.data ?? []).some((l) => !l.closing_confirmed)) {
     throw new Error("Every property must have a confirmed closing date before activation.");
+  }
+
+  if (
+    input.startedOn > new Date().toISOString().slice(0, 10) ||
+    (links.data ?? []).some((link) => !link.closing_date || link.closing_date > input.startedOn)
+  ) {
+    throw new Error(
+      "The program start must be on or after every included property's closing and no later than today.",
+    );
   }
 
   const { error } = await supabase

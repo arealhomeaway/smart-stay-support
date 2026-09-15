@@ -462,3 +462,11 @@ export function parseReviewPhotos(raw: unknown): ReviewPhoto[] {
     .filter((p) => p && typeof p.url === "string" && p.url.length > 0)
     .map((p) => ({ url: p.url, caption: p.caption ?? null }));
 }
+
+/** Corrections replace earlier entries; returned work does not count toward progress. */
+export function countableParticipationEntries<
+  T extends { id: string; amends_entry_id: string | null; review_status: string },
+>(entries: T[]): T[] {
+  const superseded = new Set(entries.map((entry) => entry.amends_entry_id).filter(Boolean));
+  return entries.filter((entry) => entry.review_status !== "returned" && !superseded.has(entry.id));
+}

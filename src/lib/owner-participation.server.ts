@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   benchmarkHours,
+  countableParticipationEntries,
   hoursFromMinutes,
   OWNER_GOAL_HOURS,
   progressSnapshot,
@@ -259,9 +260,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
   );
   // A returned entry is waiting on the homeowner, so it does not count yet.
   // Nothing here ever adds, estimates or credits time on the owner's behalf.
-  const countable = entryRows.filter(
-    (e) => e.review_status !== "returned" && !supersededIds.has(e.id),
-  );
+  const countable = countableParticipationEntries(entryRows);
   const reported = combinedMinutes(countable);
   const onboardingMinutes = combinedMinutes(countable.filter((e) => e.phase === "onboarding"));
   const approvedMinutes = combinedMinutes(countable.filter((e) => e.review_status === "approved"));
