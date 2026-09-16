@@ -1,0 +1,25 @@
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES
+  ('20260914010000', 'atomic_onboarding_fact_review'),
+  ('20260914020000', 'versioned_onboarding_stage_capture'),
+  ('20260914030000', 'onboarding_actual_cost'),
+  ('20260914040000', 'atomic_onboarding_financial_decision'),
+  ('20260914050000', 'atomic_onboarding_handoff_review'),
+  ('20260914060000', 'prepare_onboarding_financial_approval'),
+  ('20260914070000', 'onboarding_authority_policy_snapshot'),
+  ('20260914080000', 'prepare_onboarding_task_approval'),
+  ('20260914090000', 'atomic_onboarding_task_decision'),
+  ('20260914100000', 'atomic_owner_task_response'),
+  ('20260914110000', 'atomic_owner_financial_response'),
+  ('20260914120000', 'onboarding_delivery_attempts'),
+  ('20260914130000', 'reconcile_onboarding_delivery'),
+  ('20260914140000', 'reviewed_property_assets'),
+  ('20260914150000', 'atomic_owner_time_correction'),
+  ('20260914160000', 'atomic_owner_time_entry'),
+  ('20260914170000', 'atomic_staff_time_correction'),
+  ('20260914180000', 'owner_completion_report'),
+  ('20260915010000', 'atomic_handoff_request'),
+  ('20260915020000', 'atomic_owner_activity_history'),
+  ('20260915030000', 'versioned_owner_closeout'),
+  ('20260915040000', 'atomic_task_date_override')
+ON CONFLICT (version) DO NOTHING;
