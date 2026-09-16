@@ -16,6 +16,12 @@ type Client = SupabaseClient<Database>;
 
 const INACTIVE_PROGRAM = new Set(["closed", "completed"]);
 
+async function assertOpportunityStaff(supabase: Client, userId: string) {
+  const access = await supabase.rpc("is_internal_staff", { _user_id: userId });
+  if (access.error) throw access.error;
+  if (!access.data) throw new Error("Only staff may manage participation opportunities.");
+}
+
 export type OfferInput = {
   source: "onboarding" | "operations";
   sourceId: string;
@@ -89,9 +95,11 @@ async function programForProperty(supabase: Client, propertyId: string) {
  */
 export async function opportunityContext(
   supabase: Client,
+  userId: string,
   source: "onboarding" | "operations",
   sourceId: string,
 ) {
+  await assertOpportunityStaff(supabase, userId);
   const ctx = await loadSource(supabase, source, sourceId);
   if (!ctx.propertyId) return { eligible: false as const, reason: "no_property" as const };
   const link = await programForProperty(supabase, ctx.propertyId);
@@ -99,7 +107,9 @@ export async function opportunityContext(
 
   const query = supabase
     .from("owner_reviews")
-    .select("id, title, status, owner_action_type, available_from, respond_by, source_type")
+    .select(
+      "id, title, recommendation, status, owner_action_type, available_from, respond_by, source_type, updated_at, auto_ticket, ticket_id, responded_at",
+    )
     .eq("program_id", link.programId);
   const existing = await (
     ctx.onboardingTaskId
@@ -121,6 +131,7 @@ export async function opportunityContext(
 
 /** Creates the opportunity. Idempotent per source record. */
 export async function offerToOwner(supabase: Client, userId: string, input: OfferInput) {
+  await assertOpportunityStaff(supabase, userId);
   const ctx = await loadSource(supabase, input.source, input.sourceId);
   if (!ctx.propertyId) throw new Error("This work is not attached to a property.");
   const link = await programForProperty(supabase, ctx.propertyId);
@@ -175,38 +186,15 @@ export async function offerToOwner(supabase: Client, userId: string, input: Offe
 export async function closeOpportunity(
   supabase: Client,
   userId: string,
-  input: { opportunityId: string; reason: string },
+  input: { opportunityId: string; expectedUpdatedAt: string; reason: string },
 ) {
-  const access = await supabase.rpc("is_internal_staff", { _user_id: userId });
-  if (access.error) throw access.error;
-  if (!access.data) throw new Error("Only staff may close participation opportunities.");
-  const row = await supabase
-    .from("owner_reviews")
-    .select("id, program_id, title, status, updated_at")
-    .eq("id", input.opportunityId)
-    .single();
-  if (row.error) throw row.error;
-  if (row.data.status === "answered") {
-    throw new Error("This opportunity is already completed and stays in the owner's record.");
-  }
-
-  const { data: saved, error } = await supabase
-    .from("owner_reviews")
-    .update({ status: "closed", closed_at: new Date().toISOString() })
-    .eq("id", input.opportunityId)
-    .eq("updated_at", row.data.updated_at)
-    .eq("status", row.data.status)
-    .select("id")
-    .maybeSingle();
+  await assertOpportunityStaff(supabase, userId);
+  const { data: saved, error } = await supabase.rpc("close_owner_opportunity", {
+    _review_id: input.opportunityId,
+    _expected_updated_at: input.expectedUpdatedAt,
+    _reason: input.reason,
+  });
   if (error) throw error;
   if (!saved) throw new Error("The opportunity changed. Refresh before closing it.");
-
-  await recordEvent(supabase, {
-    programId: row.data.program_id,
-    kind: "opportunity_closed",
-    summary: `Participation opportunity closed: ${row.data.title}`,
-    actorId: userId,
-    reason: input.reason || null,
-  });
   return { ok: true as const };
 }

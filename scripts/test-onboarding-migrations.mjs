@@ -110,6 +110,9 @@ try {
     "supabase/tests/fixtures/owner_review_write_boundary_schema.sql",
     "supabase/migrations/20260916010000_owner_review_write_boundary.sql",
     "supabase/tests/owner_review_write_boundary.test.sql",
+    "supabase/tests/fixtures/owner_opportunity_closure_schema.sql",
+    "supabase/migrations/20260916020000_atomic_owner_opportunity_closure.sql",
+    "supabase/tests/owner_opportunity_closure.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

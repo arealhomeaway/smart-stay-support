@@ -12,7 +12,7 @@ export const ownerOpportunityContext = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ source, sourceId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { opportunityContext } = await import("./owner-opportunity.server");
-    return opportunityContext(context.supabase, data.source, data.sourceId);
+    return opportunityContext(context.supabase, context.userId, data.source, data.sourceId);
   });
 
 export const offerOwnerOpportunity = createServerFn({ method: "POST" })
@@ -43,7 +43,11 @@ export const closeOwnerOpportunity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
-      .object({ opportunityId: z.string().uuid(), reason: z.string().trim().max(500).default("") })
+      .object({
+        opportunityId: z.string().uuid(),
+        expectedUpdatedAt: z.string().datetime({ offset: true }),
+        reason: z.string().trim().min(3).max(500),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {

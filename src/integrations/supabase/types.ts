@@ -7882,6 +7882,10 @@ export type Database = {
       }
     }
     Functions: {
+      close_owner_opportunity: {
+        Args: { _review_id: string; _expected_updated_at: string; _reason: string }
+        Returns: string
+      }
       save_work_order_costs: {
         Args: { _work_order_id: string; _expected_updated_at: string; _quote: number | null;
           _second_quote: number | null; _final_cost: number | null; _scope: string; _reason: string }
