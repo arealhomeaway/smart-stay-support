@@ -19,6 +19,8 @@ import { loadOwnerTicketProjection } from "./owner-ticket-projection.server";
 import { ownerNotificationText } from "./owner-notification";
 import { automaticOpportunityView } from "./owner-automatic-opportunity";
 import { ownerProgramProjection } from "./owner-program-projection";
+import { readCountedRows } from "./read-all-rows";
+import { projectOwnerResponseReceipt } from "./owner-reviewed-update";
 export type { OwnerTicket } from "./owner-ticket-projection.server";
 
 type Client = SupabaseClient<Database>;
@@ -87,6 +89,15 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     loadOwnerTicketProjection(supabase, propertyIds, preview, programId),
   ]);
   if (alerts.error) throw alerts.error;
+  const receipts = await readCountedRows(
+    supabase
+      .from("owner_program_events")
+      .select("id, review_id, created_at, detail", { count: "exact" })
+      .eq("program_id", programId)
+      .in("kind", ["owner_participation_response", "owner_decision"])
+      .order("created_at")
+      .order("id"),
+  );
 
   // Keep achievements current whenever the owner opens the hub.
   // A preview never writes: it reads whatever badges already exist.
@@ -108,6 +119,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
       ),
     ),
     entries: agg.entries,
+    responseReceipts: receipts.data.map(projectOwnerResponseReceipt),
     badges: badges.data ?? agg.badges,
     alerts: (alerts.data ?? []).map((row) => ({ ...row, ...ownerNotificationText(row) })),
     tickets,
@@ -332,7 +344,13 @@ export async function resubmitOwnerTime(
 export async function respondToReview(
   supabase: Client,
   userId: string,
-  input: { reviewId: string; expectedUpdatedAt: string; decision: string; response: string },
+  input: {
+    reviewId: string;
+    expectedUpdatedAt: string;
+    decision: string;
+    response: string;
+    ownerUpdateRevision?: number | null;
+  },
 ) {
   const review = await supabase
     .from("owner_reviews")
@@ -368,6 +386,7 @@ export async function respondToReview(
     _expected_updated_at: input.expectedUpdatedAt,
     _decision: input.decision,
     _response: input.response,
+    _owner_update_revision: input.ownerUpdateRevision ?? null,
   });
   if (error) throw error;
   if (!saved) throw new Error("The response could not be recorded.");

@@ -42,7 +42,7 @@ import {
   parseOwnerMinutes,
   OWNER_GOAL_LABEL,
 } from "@/lib/owner-participation";
-import { captureReviewedOpportunity } from "@/lib/owner-reviewed-update";
+import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
@@ -303,6 +303,40 @@ function OwnerHubBody({
 
       <OwnerFilesPanel />
 
+      <SectionCard title="Your recorded review responses">
+        <div className="space-y-2">
+          {data.responseReceipts.map((receipt) => (
+            <details key={receipt.id} className="rounded-lg border p-3 text-sm">
+              <summary className="cursor-pointer">
+                {usDateTime(receipt.createdAt)} · Review response
+                {receipt.ownerUpdate ? ` · Revision ${receipt.ownerUpdate.revision}` : ""}
+              </summary>
+              <div className="mt-2 space-y-2 whitespace-pre-wrap">
+                <p>{receipt.response || "Review acknowledged without a note."}</p>
+                {receipt.ownerUpdate ? (
+                  <>
+                    <p>{receipt.ownerUpdate.issue}</p>
+                    <p>{receipt.ownerUpdate.work_performed}</p>
+                    {receipt.ownerUpdate.outcome && <p>{receipt.ownerUpdate.outcome}</p>}
+                    <p className="text-muted-foreground">
+                      This is the reviewed narrative retained with this response. A response does
+                      not add participation hours.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No narrative revision was retained with this response.
+                  </p>
+                )}
+              </div>
+            </details>
+          ))}
+          {data.responseReceipts.length === 0 && (
+            <p className="text-sm text-muted-foreground">No review responses recorded yet.</p>
+          )}
+        </div>
+      </SectionCard>
+
       <SectionCard title="Recent activity" description="What's happened lately across your homes.">
         <ActivityList events={events} emptyLabel="Nothing has happened yet." />
       </SectionCard>
@@ -335,9 +369,11 @@ function ReviewRow({
     !readOnly &&
     ["awaiting_owner", "returned"].includes(review.status) &&
     Boolean(review.updated_at);
-  const [responseVersion, setResponseVersion] = useState("");
+  const [responseContext, setResponseContext] = useState<ReturnType<
+    typeof captureReviewedResponse
+  > | null>(null);
   const setResponseOpen = (next: boolean) => {
-    if (next && !open) setResponseVersion(review.updated_at ?? "");
+    if (next && !open) setResponseContext(captureReviewedResponse(review));
     setOpen(next);
   };
   const answer = useServerFn(answerOwnerReview);
@@ -346,8 +382,9 @@ function ReviewRow({
     mutationFn: (decision: string) =>
       answer({
         data: {
-          reviewId: review.id,
-          expectedUpdatedAt: responseVersion,
+          reviewId: responseContext?.id ?? review.id,
+          expectedUpdatedAt: responseContext?.expectedUpdatedAt ?? "",
+          ownerUpdateRevision: responseContext?.ownerUpdateRevision ?? null,
           decision,
           response: response.trim(),
         },
@@ -397,9 +434,9 @@ function ReviewRow({
       <Dialog open={open} onOpenChange={setResponseOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{review.title}</DialogTitle>
+            <DialogTitle>{responseContext?.title ?? review.title}</DialogTitle>
             <DialogDescription>
-              {review.recommendation ?? "Share your decision or note below."}
+              {responseContext?.description ?? "Share your decision or note below."}
             </DialogDescription>
           </DialogHeader>
           {review.auto_ticket && review.owner_request?.ownerActionRequired ? (

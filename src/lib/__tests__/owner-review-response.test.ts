@@ -82,6 +82,7 @@ it("preserves the automatic request and rejects an acknowledgement when the view
     _expected_updated_at: "2026-09-15T00:00:00Z",
     _decision: "acknowledged",
     _response: "My review notes",
+    _owner_update_revision: null,
   });
   expect(f.filters.length).toBe(0);
 });

@@ -1,5 +1,9 @@
 import { expect, it } from "bun:test";
-import { captureReviewedOpportunity, parseReviewedOwnerUpdate } from "../owner-reviewed-update";
+import {
+  captureReviewedOpportunity,
+  captureReviewedResponse,
+  parseReviewedOwnerUpdate,
+} from "../owner-reviewed-update";
 
 it("retains the displayed revision, narrative and property links across refreshes", () => {
   const review = {
@@ -41,4 +45,47 @@ it("does not invent a revision for legacy opportunities and parses only safe sna
   expect(JSON.stringify(parseReviewedOwnerUpdate(snapshot)).includes("PRIVATE")).toBe(false);
   expect(parseReviewedOwnerUpdate(null)).toBe(null);
   expect(parseReviewedOwnerUpdate({ revision: 0 })).toBe(null);
+});
+
+it("freezes a response version with the narrative actually displayed", () => {
+  const review = {
+    id: "review",
+    title: "Work",
+    ticket_id: "ticket",
+    propertyIds: ["home"],
+    updated_at: "first",
+    owner_update_revision: 1,
+    recommendation: "Original",
+  };
+  const draft = captureReviewedResponse(review);
+  review.updated_at = "second";
+  review.owner_update_revision = 2;
+  review.recommendation = "Revised";
+  expect(draft.expectedUpdatedAt).toBe("first");
+  expect(draft.ownerUpdateRevision).toBe(1);
+  expect(draft.description).toBe("Original");
+});
+
+it("exposes only response text and allowlisted narrative fields from a receipt", async () => {
+  const { projectOwnerResponseReceipt } = await import("../owner-reviewed-update");
+  const receipt = projectOwnerResponseReceipt({
+    id: "receipt",
+    review_id: "review",
+    created_at: "date",
+    detail: {
+      response: "My note",
+      private_note: "SECRET",
+      ownerUpdate: {
+        revision: 1,
+        issue: "Issue",
+        work_performed: "Work",
+        outcome: "Done",
+        reviewed_at: "date",
+        access_code: "SECRET",
+      },
+    },
+  });
+  expect(receipt.response).toBe("My note");
+  expect(receipt.ownerUpdate?.revision).toBe(1);
+  expect(JSON.stringify(receipt).includes("SECRET")).toBe(false);
 });

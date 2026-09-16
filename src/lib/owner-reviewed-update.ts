@@ -35,3 +35,31 @@ export function reviewedOwnerUpdateText(value: unknown): string {
   if (!update) return "";
   return `Owner update revision ${update.revision} (${update.reviewed_at.slice(0, 10)}). Issue: ${update.issue} Work: ${update.work_performed}${update.outcome ? ` Outcome: ${update.outcome}` : ""}`;
 }
+
+export function projectOwnerResponseReceipt(row: {
+  id: string;
+  review_id: string | null;
+  created_at: string;
+  detail: unknown;
+}) {
+  const detail =
+    row.detail && typeof row.detail === "object" ? (row.detail as Record<string, unknown>) : {};
+  return {
+    id: row.id,
+    reviewId: row.review_id,
+    createdAt: row.created_at,
+    response: typeof detail["response"] === "string" ? detail["response"] : "",
+    ownerUpdate: parseReviewedOwnerUpdate(detail["ownerUpdate"]),
+  };
+}
+
+/** Capture response narrative and optimistic-concurrency version together. */
+export function captureReviewedResponse(
+  review: Parameters<typeof captureReviewedOpportunity>[0] & { updated_at?: string; title: string },
+) {
+  return {
+    ...captureReviewedOpportunity(review),
+    expectedUpdatedAt: review.updated_at ?? "",
+    title: review.title,
+  };
+}

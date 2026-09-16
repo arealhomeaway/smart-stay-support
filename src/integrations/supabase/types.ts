@@ -7913,7 +7913,7 @@ export type Database = {
         }[]
       }
       respond_owner_review: {
-        Args: { _review_id: string; _expected_updated_at: string; _decision: string; _response: string }
+        Args: { _review_id: string; _expected_updated_at: string; _decision: string; _response: string; _owner_update_revision: number | null }
         Returns: string
       }
       create_onboarding_handoff: {

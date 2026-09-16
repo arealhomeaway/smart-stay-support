@@ -112,6 +112,7 @@ export const answerOwnerReview = createServerFn({ method: "POST" })
       .object({
         reviewId: z.string().uuid(),
         expectedUpdatedAt: z.string().datetime({ offset: true }),
+        ownerUpdateRevision: z.number().int().positive().nullable().default(null),
         decision: z.string().trim().min(1).max(60),
         response: z.string().trim().max(2000).default(""),
       })
