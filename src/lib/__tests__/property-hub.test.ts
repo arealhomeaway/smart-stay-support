@@ -92,7 +92,7 @@ describe("mergePropertyActivity — one merged, newest-first timeline across eve
       row(`r${i}`, new Date(2026, 8, 1 + i).toISOString()),
     );
     const merged = mergePropertyActivity([rows], 25);
-    expect(merged).toHaveLength(25);
+    expect(merged.length).toBe(25);
     // Newest (highest day offset) first.
     expect(merged[0]?.id).toBe("r29");
   });

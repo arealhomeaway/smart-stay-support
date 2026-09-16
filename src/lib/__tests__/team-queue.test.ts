@@ -40,7 +40,7 @@ describe("applyTeamQueueFilters — status: 'closed', the value the new Closed c
 
   it("status: 'all' still includes closed tickets alongside everything else", () => {
     const visible = applyTeamQueueFilters(rows, filters({ status: "all" }), homeTeamOf);
-    expect(visible).toHaveLength(4);
+    expect(visible.length).toBe(4);
   });
 
   it("composes with another filter — closed AND a specific priority", () => {
@@ -54,7 +54,7 @@ describe("applyTeamQueueFilters — status: 'closed', the value the new Closed c
       filters({ status: "closed", priority: "p1" }),
       homeTeamOf,
     );
-    expect(visible).toHaveLength(1);
+    expect(visible.length).toBe(1);
     expect(visible[0]?.status).toBe("closed");
     expect(visible[0]?.priority).toBe("p1");
   });
