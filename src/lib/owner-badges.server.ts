@@ -10,7 +10,7 @@ import {
   BADGE_BY_CODE,
   benchmarkHours,
   hoursFromMinutes,
-  OWNER_GOAL_HOURS,
+  ownerGoalMet,
 } from "./owner-participation";
 import { recordEvent, type Client, type ProgramAggregate } from "./owner-participation.server";
 
@@ -38,7 +38,8 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
       add(code, `${hours} reported hours reached the ${def.hours}-hour milestone`);
     }
   }
-  if (hours > OWNER_GOAL_HOURS) add("hundred_plus", `${hours} reported hours exceeded 100`);
+  if (ownerGoalMet(agg.reportedMinutes))
+    add("hundred_plus", `${hours} reported hours met the 100-hour target`);
 
   const onboardingReviews = agg.reviews.filter((r) => r.phase === "onboarding");
   const onboardingDone =

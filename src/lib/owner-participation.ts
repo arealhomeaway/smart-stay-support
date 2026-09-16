@@ -8,14 +8,14 @@
  */
 
 export const PROGRAM_TOTAL_DAYS = 90;
-/** What the owner is told: more than 100 hours. Never "100". */
+/** Locked participation target: exactly 100 documented hours qualifies. */
 export const OWNER_GOAL_HOURS = 100;
 /** ARHA's internal operating target used for pacing and the progress ring. */
 export const OPERATING_TARGET_HOURS = 105;
 export const ONBOARDING_MILESTONE_HOURS = 60;
 export const ONBOARDING_MILESTONE_DAY = 35;
 
-export const OWNER_GOAL_LABEL = "More than 100 hours";
+export const OWNER_GOAL_LABEL = "At least 100 hours";
 
 export function parseOwnerMinutes(value: string): number {
   const minutes = Number(value);
@@ -263,8 +263,8 @@ export function progressSnapshot(input: {
   let state: ProgressState;
   if (input.status === "completed" || input.status === "complete" || input.status === "closed") {
     state = "program_completed";
-  } else if (reportedHours > OWNER_GOAL_HOURS) {
-    // Strictly above 100 — exactly 100 is not yet "reached".
+  } else if (ownerGoalMet(input.reportedMinutes)) {
+    // Compare actual minutes so display rounding cannot satisfy the goal early.
     state = "target_reached";
   } else if (!active) {
     state = "not_started";
@@ -286,7 +286,7 @@ export function progressSnapshot(input: {
       100,
       Math.round((reportedHours / OPERATING_TARGET_HOURS) * 1000) / 10,
     ),
-    hoursToGoal: Math.max(0, Math.round((OWNER_GOAL_HOURS + 0.1 - reportedHours) * 10) / 10),
+    hoursToGoal: Math.ceil(Math.max(0, OWNER_GOAL_HOURS - input.reportedMinutes / 60) * 100) / 100,
     state,
     next: nextMilestone(day),
   };
@@ -375,10 +375,10 @@ export const BADGES: BadgeDef[] = [
   },
   {
     code: "hundred_plus",
-    name: "100+ Milestone",
+    name: "100-Hour Milestone",
     kind: "hours",
     hours: 100,
-    requirement: "More than 100 reported hours",
+    requirement: "At least 100 reported hours",
   },
   {
     code: "program_complete",
@@ -476,4 +476,9 @@ export function countableParticipationEntries<
 >(entries: T[]): T[] {
   const superseded = new Set(entries.map((entry) => entry.amends_entry_id).filter(Boolean));
   return entries.filter((entry) => entry.review_status !== "returned" && !superseded.has(entry.id));
+}
+
+/** Use counted minutes, never rounded display hours, to decide completion. */
+export function ownerGoalMet(reportedMinutes: number): boolean {
+  return Number.isFinite(reportedMinutes) && reportedMinutes >= OWNER_GOAL_HOURS * 60;
 }

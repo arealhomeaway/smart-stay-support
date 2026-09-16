@@ -105,7 +105,7 @@ function OwnerAnalyticsPage() {
         <PageHeader
           eyebrow="Insight"
           title="Active Owner analytics"
-          description={`Program goal is ${OWNER_GOAL_HOURS}+ hours for the homeowner; ARHA paces to the ${OPERATING_TARGET_HOURS}-hour internal operating target.`}
+          description={`Program goal is at least ${OWNER_GOAL_HOURS} hours for the homeowner; ARHA paces to the ${OPERATING_TARGET_HOURS}-hour internal operating target.`}
         />
         <Button variant="outline" disabled={rows.length === 0} onClick={() => download(rows)}>
           <Download className="mr-2 size-4" /> Export CSV
@@ -148,7 +148,7 @@ function OwnerAnalyticsPage() {
           <div>
             <SectionBand
               title="Programs"
-              hint={`Average ${data?.totals.averageReportedHours ?? 0} reported hrs/program · ${data?.totals.averageVarianceHours ?? 0} vs benchmark · ${data?.totals.goalMet ?? 0} above the ${OWNER_GOAL_HOURS}-hour goal`}
+              hint={`Average ${data?.totals.averageReportedHours ?? 0} reported hrs/program · ${data?.totals.averageVarianceHours ?? 0} vs benchmark · ${data?.totals.goalMet ?? 0} at or above the ${OWNER_GOAL_HOURS}-hour goal`}
               actions={<Users className="size-4 text-muted-foreground" />}
             />
             {rows.length === 0 ? (

@@ -69,13 +69,14 @@ describe("progress state", () => {
     expect(snap(35, 40).state).toBe("significantly_behind");
   });
 
-  it("requires strictly more than 100 hours to reach the goal", () => {
-    expect(snap(85, OWNER_GOAL_HOURS).state).not.toBe("target_reached");
+  it("accepts exactly 100 hours and rejects one minute below the goal", () => {
+    expect(snap(85, OWNER_GOAL_HOURS - 1 / 60).state).not.toBe("target_reached");
+    expect(snap(85, OWNER_GOAL_HOURS).state).toBe("target_reached");
     expect(snap(85, OWNER_GOAL_HOURS + 0.5).state).toBe("target_reached");
   });
 
   it("computes remaining hours to the goal and never goes negative", () => {
-    expect(Math.round(snap(50, 60).hoursToGoal * 10) / 10).toBe(40.1);
+    expect(Math.round(snap(50, 60).hoursToGoal * 10) / 10).toBe(40);
     expect(snap(50, 130).hoursToGoal).toBe(0);
   });
 

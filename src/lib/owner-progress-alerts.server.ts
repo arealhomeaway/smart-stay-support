@@ -9,7 +9,7 @@
 
 import {
   hoursFromMinutes,
-  OWNER_GOAL_HOURS,
+  ownerGoalMet,
   PROGRESS_SEVERITY,
   PROGRESS_META,
   nextMilestone,
@@ -44,12 +44,12 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
   const openTasks = agg.reviews.filter((r) => !["answered", "closed"].includes(r.status));
   if (!agg.program.startedOn || s.day === 0) return out;
 
-  if (hours > OWNER_GOAL_HOURS) {
+  if (ownerGoalMet(agg.reportedMinutes)) {
     out.push({
       kind: "goal_exceeded",
       alertKind: "progress_celebration",
       severity: 0,
-      title: "You have passed 100 hours of reported participation",
+      title: "You have reached at least 100 hours of reported participation",
       body: `Congratulations — you have reported ${hours} hours across your program. Thank you for the time and care you have put in. Please keep recording any remaining activities as you complete them.`,
     });
     return out;
@@ -227,7 +227,7 @@ export async function syncCoverageAlerts(supabase: Client, agg: ProgramAggregate
 
   if (agg.goalMet && included.some((p) => p.openTasks > 0)) {
     rows.push({
-      title: "Owner passed 100 hours with property work still open",
+      title: "Owner reached the 100-hour target with property work still open",
       body: "The combined hour goal is met, but required property tasks or decisions remain outstanding.",
       reason: "goal_met_work_open",
     });

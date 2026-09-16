@@ -17,6 +17,7 @@ import {
   progressSnapshot,
   OPERATING_TARGET_HOURS,
   OWNER_GOAL_HOURS,
+  ownerGoalMet,
   type ProgramStatus,
   type ProgressState,
 } from "./owner-participation";
@@ -36,6 +37,7 @@ export type OwnerProgramMetric = {
   properties: number;
   entries: number;
   reportedHours: number;
+  goalMet: boolean;
   approvedHours: number;
   pendingHours: number;
   returnedHours: number;
@@ -187,6 +189,7 @@ export async function loadOwnerAnalytics(
       properties: propertyCount.get(p.id) ?? 0,
       entries: countable.length,
       reportedHours: hoursFromMinutes(reported),
+      goalMet: ownerGoalMet(reported),
       approvedHours: hoursFromMinutes(approved),
       pendingHours: hoursFromMinutes(pending),
       returnedHours: hoursFromMinutes(returned),
@@ -221,7 +224,7 @@ export async function loadOwnerAnalytics(
       pendingHours: sum(metrics, (m) => m.pendingHours),
       pendingEntries: metrics.reduce((n, m) => n + m.pendingEntries, 0),
       flaggedEntries: metrics.reduce((n, m) => n + m.flaggedEntries, 0),
-      goalMet: metrics.filter((m) => m.reportedHours > OWNER_GOAL_HOURS).length,
+      goalMet: metrics.filter((m) => m.goalMet).length,
       behind: active.filter(
         (m) => m.state === "action_needed" || m.state === "significantly_behind",
       ).length,

@@ -16,7 +16,7 @@ import {
   benchmarkHours,
   countableParticipationEntries,
   hoursFromMinutes,
-  OWNER_GOAL_HOURS,
+  ownerGoalMet,
   progressSnapshot,
   parseReviewPhotos,
   type ReviewPhoto,
@@ -363,7 +363,7 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     benchmark: benchmarkHours(snapshot.day),
     snapshot,
     lastOwnerActivityAt: lastActivity,
-    goalMet: hoursFromMinutes(reported) > OWNER_GOAL_HOURS,
+    goalMet: ownerGoalMet(reported),
     unusedIds: { entryIds, reviewIds },
   };
 }

@@ -3,7 +3,7 @@
  *
  * One homeowner has one program. A program can carry one home or several;
  * either way there is a single 90-day clock, a single combined commitment of
- * more than 100 hours and a single pace benchmark. Individual homes are
+ * at least 100 hours and a single pace benchmark. Individual homes are
  * measured by the tasks and decisions they need, never by their own hour
  * target.
  */
@@ -23,6 +23,7 @@ import {
   ACTIVATABLE_STATUSES,
   countableParticipationEntries,
   hoursFromMinutes,
+  ownerGoalMet,
   OPERATING_TARGET_HOURS,
   REPORT_DISCLAIMER,
   progressSnapshot,
@@ -95,6 +96,7 @@ export type AdminProgramRow = {
   day: number;
   daysLeft: number;
   reportedHours: number;
+  goalMet: boolean;
   benchmark: number;
   variance: number;
   progressState: string;
@@ -222,6 +224,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       day: snapshot.day,
       daysLeft: snapshot.daysLeft,
       reportedHours: hoursFromMinutes(reported),
+      goalMet: ownerGoalMet(reported),
       benchmark: snapshot.benchmark,
       variance: snapshot.variance,
       progressState: snapshot.state,
@@ -253,26 +256,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
   return { rows, available };
 }
 
-/** Priority order for the "Owners needing attention" queue. */
-export function attentionRank(row: AdminProgramRow) {
-  const quietDays = row.lastOwnerActivityAt
-    ? Math.floor((Date.now() - new Date(row.lastOwnerActivityAt).getTime()) / 86_400_000)
-    : Infinity;
-  const behind = -row.variance;
-  if (row.status !== "active" && row.status !== "target_reached") return null;
-  if (behind >= 10) return { rank: 1, reason: "10+ hours behind pace" };
-  if (behind >= 5) return { rank: 2, reason: "5+ hours behind pace" };
-  if (quietDays >= 7 && row.openTasks > 0)
-    return { rank: 3, reason: "No activity for 7 days with open tasks" };
-  if (row.daysLeft < 10 && row.reportedHours <= 100)
-    return { rank: 4, reason: "Under 10 days without 100+ hours" };
-  if (row.properties.some((p) => p.overdue > 0))
-    return { rank: 5, reason: "Overdue property decisions" };
-  if (row.properties.some((p) => p.coverage === "no_activity"))
-    return { rank: 6, reason: "A property has no owner activity" };
-  if (behind >= 1) return { rank: 7, reason: "Slightly behind pace" };
-  return null;
-}
+export { ownerAttention as attentionRank } from "./owner-attention";
 
 /** Creates a draft program. The 90-day clock is never started here. */
 export async function createProgram(
@@ -808,7 +792,7 @@ export async function completeProgram(
   }
   const check = completionChecklist(agg);
   if (!check.hoursExceeded)
-    throw new Error("The homeowner has not yet reported more than 100 hours.");
+    throw new Error("The homeowner has not yet reported at least 100 hours.");
   if (!check.propertyTasksComplete) {
     throw new Error("Required owner tasks are still open on one or more properties.");
   }
