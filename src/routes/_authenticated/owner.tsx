@@ -312,6 +312,14 @@ function OwnerHubBody({
                 {receipt.ownerUpdate ? ` · Revision ${receipt.ownerUpdate.revision}` : ""}
               </summary>
               <div className="mt-2 space-y-2 whitespace-pre-wrap">
+                <p className="text-muted-foreground">
+                  {properties.find((property) => property.propertyId === receipt.propertyId)
+                    ?.name ??
+                    (receipt.propertyId ? "Previously enrolled property" : "Program opportunity")}
+                  {receipt.ticketId
+                    ? ` · ${tickets.find((ticket) => ticket.id === receipt.ticketId)?.title ?? "Property work"}`
+                    : ""}
+                </p>
                 <p>{receipt.response || "Review acknowledged without a note."}</p>
                 {receipt.ownerUpdate ? (
                   <>

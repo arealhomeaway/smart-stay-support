@@ -4,13 +4,15 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE r public.owner_reviews; p public.owner_programs; u public.ticket_owner_updates;
 BEGIN
  SELECT * INTO r FROM public.owner_reviews WHERE id=_review_id;
- SELECT * INTO p FROM public.owner_programs WHERE id=r.program_id FOR UPDATE;
+ SELECT * INTO p FROM public.owner_programs WHERE id=r.program_id FOR UPDATE NOWAIT;
  IF p.id IS NULL OR auth.uid() IS NULL OR p.owner_user_id IS DISTINCT FROM auth.uid() OR p.is_demo IS DISTINCT FROM false
   OR p.archived_at IS NOT NULL OR p.status IN ('closed','completed') OR r.is_demo IS DISTINCT FROM p.is_demo THEN
   RAISE EXCEPTION 'This reviewed opportunity is not available.';
  END IF;
- SELECT * INTO r FROM public.owner_reviews WHERE id=_review_id AND program_id=p.id FOR UPDATE;
+ SELECT * INTO r FROM public.owner_reviews WHERE id=_review_id AND program_id=p.id FOR UPDATE NOWAIT;
  IF NOT FOUND OR r.is_demo IS DISTINCT FROM p.is_demo THEN RAISE EXCEPTION 'This reviewed opportunity changed.'; END IF;
+ PERFORM 1 FROM public.property_owners WHERE id=p.owner_record_id AND active FOR SHARE NOWAIT;
+ IF NOT FOUND THEN RAISE EXCEPTION 'This program needs an active canonical Owner.'; END IF;
  IF r.ticket_id IS NULL THEN
   IF _revision IS NOT NULL THEN RAISE EXCEPTION 'This opportunity has no Ticket update.'; END IF;
   RETURN NULL;
@@ -19,7 +21,7 @@ BEGIN
  JOIN public.properties h ON h.id=t.property_id AND h.id=r.property_id AND h.owner_record_id=p.owner_record_id AND h.is_demo=false
  JOIN public.property_owners o ON o.id=h.owner_record_id AND o.active
  JOIN public.owner_program_properties e ON e.property_id=h.id AND e.program_id=p.id AND e.inclusion_status='included'
- WHERE t.id=r.ticket_id AND t.is_demo=false FOR SHARE OF t,h,o,e;
+ WHERE t.id=r.ticket_id AND t.is_demo=false FOR SHARE OF t,h,o,e NOWAIT;
  IF NOT FOUND THEN RAISE EXCEPTION 'The Ticket Property is no longer included for this Owner.'; END IF;
  -- NULL explicitly means no reviewed narrative was displayed; do not invent a latest revision.
  IF _revision IS NULL THEN RETURN NULL; END IF;
@@ -27,6 +29,8 @@ BEGIN
   AND owner_record_id=p.owner_record_id AND revision=_revision AND is_demo=false;
  IF NOT FOUND THEN RAISE EXCEPTION 'The reviewed Ticket revision is not available.'; END IF;
  RETURN jsonb_build_object('revision',u.revision,'issue',u.issue,'work_performed',u.work_performed,'outcome',u.outcome,'reviewed_at',u.reviewed_at);
+EXCEPTION WHEN lock_not_available THEN
+ RAISE EXCEPTION 'This opportunity is being updated. Review current information and try your response again.';
 END $$;
 REVOKE ALL ON FUNCTION public.read_owner_review_update(uuid,integer) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.read_owner_review_update(uuid,integer) TO authenticated,service_role;
@@ -34,7 +38,7 @@ GRANT EXECUTE ON FUNCTION public.read_owner_review_update(uuid,integer) TO authe
 -- Replace the old signature so there is only one response endpoint.
 DROP FUNCTION public.respond_owner_review(uuid,timestamptz,text,text);
 CREATE FUNCTION public.respond_owner_review(_review_id uuid,_expected_updated_at timestamptz,_decision text,_response text,_owner_update_revision integer)
-RETURNS uuid LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE review public.owner_reviews; program public.owner_programs; snapshot jsonb;
 BEGIN
  -- Scope validation locks program then review before any response write.
@@ -43,7 +47,7 @@ BEGIN
  IF NOT FOUND OR auth.uid() IS NULL OR program.owner_user_id IS DISTINCT FROM auth.uid() OR program.archived_at IS NOT NULL OR program.status IN ('closed','completed') THEN
   RAISE EXCEPTION 'This participation program is not available for your response.';
  END IF;
- SELECT * INTO review FROM public.owner_reviews WHERE id=_review_id AND program_id=program.id FOR UPDATE;
+ SELECT * INTO review FROM public.owner_reviews WHERE id=_review_id AND program_id=program.id FOR UPDATE NOWAIT;
  IF NOT FOUND THEN RAISE EXCEPTION 'This opportunity is not available.'; END IF;
  IF _expected_updated_at IS NULL OR review.updated_at IS DISTINCT FROM _expected_updated_at THEN RAISE EXCEPTION 'The opportunity changed. Refresh before responding.'; END IF;
  IF review.status NOT IN ('awaiting_owner','returned') OR review.available_from>now() THEN RAISE EXCEPTION 'This opportunity is not currently awaiting your response.'; END IF;
@@ -55,7 +59,7 @@ BEGIN
  INSERT INTO public.owner_program_events(program_id,review_id,kind,summary,actor_id,previous_value,new_value,detail)
  VALUES(review.program_id,review.id,CASE WHEN review.auto_ticket THEN 'owner_participation_response' ELSE 'owner_decision' END,
   CASE WHEN review.auto_ticket THEN 'Participation response recorded for property work; no repair approval granted.' ELSE 'Owner response recorded for participation opportunity.' END,
-  auth.uid(),review.owner_decision,_decision,jsonb_build_object('previousResponse',review.owner_response,'response',nullif(_response,''),'ownerUpdate',snapshot));
+  auth.uid(),review.owner_decision,_decision,jsonb_build_object('previousResponse',review.owner_response,'response',nullif(_response,''),'ownerUpdate',snapshot,'propertyId',review.property_id,'ticketId',review.ticket_id));
  RETURN review.id;
 END $$;
 REVOKE ALL ON FUNCTION public.respond_owner_review(uuid,timestamptz,text,text,integer) FROM PUBLIC,anon;
@@ -65,7 +69,13 @@ GRANT EXECUTE ON FUNCTION public.respond_owner_review(uuid,timestamptz,text,text
 CREATE FUNCTION public.preserve_owner_response_update() RETURNS trigger
 LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 BEGIN
+ IF TG_OP='UPDATE' AND NEW.kind IN ('owner_participation_response','owner_decision') THEN
+  RAISE EXCEPTION 'Participation response history is immutable.';
+ END IF;
  IF TG_OP='INSERT' AND NEW.kind IN ('owner_participation_response','owner_decision') THEN
+  IF current_user IS DISTINCT FROM (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid='public.respond_owner_review(uuid,timestamptz,text,text,integer)'::regprocedure) THEN
+   RAISE EXCEPTION 'Record participation responses through the atomic response action.';
+  END IF;
   IF NOT EXISTS(SELECT 1 FROM public.owner_reviews WHERE id=NEW.review_id AND program_id=NEW.program_id) THEN RAISE EXCEPTION 'The response history must match its opportunity.'; END IF;
   NEW.detail:=coalesce(NEW.detail,'{}'::jsonb) || jsonb_build_object('ownerUpdate',public.read_owner_review_update(NEW.review_id,(NEW.detail->'ownerUpdate'->>'revision')::integer));
   RETURN NEW;

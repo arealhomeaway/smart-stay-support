@@ -15,6 +15,11 @@ SET LOCAL ROLE authenticated;
 
 DO $$ DECLARE r owner_reviews; BEGIN
  SELECT * INTO r FROM owner_reviews WHERE ticket_id='66666666-6666-4666-8666-666666666666';
+ BEGIN
+  INSERT INTO owner_program_events(program_id,review_id,kind,detail)
+  VALUES(r.program_id,r.id,'owner_participation_response','{"response":"Forged response","ownerUpdate":{"revision":1}}');
+  RAISE EXCEPTION 'direct response history accepted';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Record participation responses through the atomic response action.' THEN RAISE; END IF; END;
  PERFORM respond_owner_review(r.id,r.updated_at,'acknowledged','Reviewed first narrative',1);
  IF NOT EXISTS(SELECT 1 FROM owner_program_events WHERE review_id=r.id AND detail->'ownerUpdate'->>'work_performed'='Initial repair was performed.') THEN RAISE EXCEPTION 'original narrative not retained'; END IF;
  IF EXISTS(SELECT 1 FROM owner_program_events WHERE detail->'ownerUpdate' IS NOT NULL AND detail::text LIKE '%PRIVATE%') THEN RAISE EXCEPTION 'private Ticket data leaked'; END IF;
@@ -27,6 +32,11 @@ DO $$ DECLARE r owner_reviews; BEGIN
 END $$;
 RESET ROLE;
 DO $$ BEGIN
+ INSERT INTO owner_program_events(program_id,kind) VALUES('55555555-5555-4555-8555-555555555555','ordinary_test_event');
+ BEGIN
+  UPDATE owner_program_events SET kind='owner_participation_response' WHERE kind='ordinary_test_event';
+  RAISE EXCEPTION 'ordinary event converted to response';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Participation response history is immutable.' THEN RAISE; END IF; END;
  BEGIN
   UPDATE owner_program_events SET detail='{}' WHERE kind='owner_participation_response';
   RAISE EXCEPTION 'receipt changed';
@@ -56,6 +66,17 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 SELECT set_config('test.actor','88888888-8888-4888-8888-888888888888',true);
+UPDATE property_owners SET active=false;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE r owner_reviews; BEGIN
+ SELECT * INTO r FROM owner_reviews LIMIT 1;
+ BEGIN
+  PERFORM respond_owner_review(r.id,r.updated_at,'acknowledged','Inactive Owner',1);
+  RAISE EXCEPTION 'inactive canonical Owner accepted';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'This program needs an active canonical Owner.' THEN RAISE; END IF; END;
+END $$;
+RESET ROLE;
+UPDATE property_owners SET active=true;
 UPDATE owner_program_properties SET inclusion_status='removed';
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE r owner_reviews; BEGIN
@@ -67,4 +88,17 @@ DO $$ DECLARE r owner_reviews; BEGIN
  IF NOT EXISTS(SELECT 1 FROM owner_program_events WHERE detail->'ownerUpdate'->>'revision'='1') THEN RAISE EXCEPTION 'historic receipt lost'; END IF;
 END $$;
 RESET ROLE;
+-- Inject the PostgreSQL lock error to test translation/rollback, not multi-session contention.
+DO $$ DECLARE original_uid text; r owner_reviews; before_count integer; BEGIN
+ SELECT pg_get_functiondef('auth.uid()'::regprocedure) INTO original_uid;
+ SELECT * INTO r FROM owner_reviews WHERE ticket_id='66666666-6666-4666-8666-666666666666';
+ SELECT count(*) INTO before_count FROM owner_program_events;
+ EXECUTE $definition$CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE plpgsql AS $body$ BEGIN RAISE EXCEPTION 'injected lock failure' USING ERRCODE='55P03'; END $body$ $definition$;
+ BEGIN
+  PERFORM respond_owner_review(r.id,r.updated_at,'acknowledged','Busy response',1);
+  RAISE EXCEPTION 'lock error ignored';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'This opportunity is being updated. Review current information and try your response again.' THEN RAISE; END IF; END;
+ EXECUTE original_uid;
+ IF (SELECT count(*) FROM owner_program_events)<>before_count OR EXISTS(SELECT 1 FROM owner_reviews WHERE owner_response='Busy response') THEN RAISE EXCEPTION 'busy response changed history'; END IF;
+END $$;
 ROLLBACK;

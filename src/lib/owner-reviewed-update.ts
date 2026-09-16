@@ -47,6 +47,8 @@ export function projectOwnerResponseReceipt(row: {
   return {
     id: row.id,
     reviewId: row.review_id,
+    propertyId: z.string().uuid().safeParse(detail["propertyId"]).data ?? null,
+    ticketId: z.string().uuid().safeParse(detail["ticketId"]).data ?? null,
     createdAt: row.created_at,
     response: typeof detail["response"] === "string" ? detail["response"] : "",
     ownerUpdate: parseReviewedOwnerUpdate(detail["ownerUpdate"]),

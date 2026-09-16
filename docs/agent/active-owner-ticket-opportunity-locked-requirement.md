@@ -206,3 +206,7 @@ Migration manifest addition: 20260915180000_owner_ticket_actual_cost_projection.
 ### September 15 overnight cost-write checkpoint
 
 PARTIALLY IMPLEMENTED overall. Canonical actual costs now have an atomic staff recording path with stale-version protection, retained prior/new evidence and owner/supervisor-linked quote/scope guards. This complements the safe owner financial projection without granting spending authority. 729 unit tests and all 37 isolated migration files pass; broader direct-write/concurrency, acknowledgement revision retention and authenticated acceptance remain open. See build-progress for migration 20260915190000 preconditions and verification.
+
+### September 16 response retention
+
+Exact reviewed narratives are now captured for responses without time entries, retained in immutable response receipts, and visible in owner history. Canonical Ticket/Property links are retained; responses never add hours. Direct receipt insertion/conversion bypasses are closed locally; broader review-table writes and authenticated concurrency remain open. Overall locked requirement remains PARTIALLY IMPLEMENTED. See the restart checkpoint and migration manifest for migration 20260915200000 and its coordinated isolated rollout requirement.

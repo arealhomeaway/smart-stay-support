@@ -74,6 +74,8 @@ it("exposes only response text and allowlisted narrative fields from a receipt",
     created_at: "date",
     detail: {
       response: "My note",
+      propertyId: "33333333-3333-4333-8333-333333333333",
+      ticketId: "not-a-Ticket-id",
       private_note: "SECRET",
       ownerUpdate: {
         revision: 1,
@@ -86,6 +88,8 @@ it("exposes only response text and allowlisted narrative fields from a receipt",
     },
   });
   expect(receipt.response).toBe("My note");
+  expect(receipt.propertyId).toBe("33333333-3333-4333-8333-333333333333");
+  expect(receipt.ticketId).toBe(null);
   expect(receipt.ownerUpdate?.revision).toBe(1);
   expect(JSON.stringify(receipt).includes("SECRET")).toBe(false);
 });
