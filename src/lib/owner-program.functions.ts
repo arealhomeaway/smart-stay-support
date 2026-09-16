@@ -269,6 +269,7 @@ export const reviewOwnerTimeEntry = createServerFn({ method: "POST" })
     z
       .object({
         entryId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         decision: z.enum(["approved", "returned", "flagged"]),
         note: z.string().trim().max(1000).default(""),
       })

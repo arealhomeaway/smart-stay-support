@@ -8,6 +8,7 @@ import {
 it("retains the displayed revision, narrative and property links across refreshes", () => {
   const review = {
     id: "review",
+    phase: "onboarding",
     ticket_id: "ticket",
     propertyIds: ["home"],
     owner_update_revision: 1,
@@ -15,10 +16,12 @@ it("retains the displayed revision, narrative and property links across refreshe
   };
   const captured = captureReviewedOpportunity(review);
   review.owner_update_revision = 2;
+  review.phase = "ongoing";
   review.recommendation = "Follow-up repair";
   review.propertyIds.push("another home");
   expect(captured).toEqual({
     id: "review",
+    phase: "onboarding",
     ticketId: "ticket",
     propertyIds: ["home"],
     ownerUpdateRevision: 1,
@@ -29,6 +32,7 @@ it("does not invent a revision for legacy opportunities and parses only safe sna
   expect(
     captureReviewedOpportunity({
       id: "review",
+      phase: "onboarding",
       ticket_id: null,
       propertyIds: [],
       recommendation: null,
@@ -50,6 +54,7 @@ it("does not invent a revision for legacy opportunities and parses only safe sna
 it("freezes a response version with the narrative actually displayed", () => {
   const review = {
     id: "review",
+    phase: "onboarding",
     title: "Work",
     ticket_id: "ticket",
     propertyIds: ["home"],
@@ -60,10 +65,12 @@ it("freezes a response version with the narrative actually displayed", () => {
   const draft = captureReviewedResponse(review);
   review.updated_at = "second";
   review.owner_update_revision = 2;
+  review.phase = "ongoing";
   review.recommendation = "Revised";
   expect(draft.expectedUpdatedAt).toBe("first");
   expect(draft.ownerUpdateRevision).toBe(1);
   expect(draft.description).toBe("Original");
+  expect(draft.phase).toBe("onboarding");
 });
 
 it("exposes only response text and allowlisted narrative fields from a receipt", async () => {

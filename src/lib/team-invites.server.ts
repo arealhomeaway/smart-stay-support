@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { assertAdmin, applyRole, type AppRole } from "./access.server";
+import { isProtectedResponsibilitySeat } from "./responsibility-seats.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -139,8 +140,14 @@ export async function revokeTeamInvite(supabase: Client, userId: string, inviteI
  * Redeems a code for the signed-in account and applies the invited role.
  * Runs with the service-role client because the redeemer is not an admin yet.
  */
-export async function redeemTeamInvite(userId: string, userEmail: string | null, rawCode: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+export async function redeemTeamInvite(
+  userId: string,
+  userEmail: string | null,
+  rawCode: string,
+  runtime?: { supabase: Client; applyRole: typeof applyRole },
+) {
+  const supabaseAdmin =
+    runtime?.supabase ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
   const code = rawCode.trim().toUpperCase();
 
   const invite = await supabaseAdmin
@@ -155,7 +162,11 @@ export async function redeemTeamInvite(userId: string, userEmail: string | null,
     // the only redemption box they can reach.
     const { redeemOwnerInvite } = await import("./owner-portal.server");
     await redeemOwnerInvite(supabaseAdmin, userId, userEmail, code);
-    return { ok: true as const, role: "owner" as AppRole };
+    return {
+      ok: true as const,
+      role: "owner" as AppRole,
+      pendingSeatAssignment: null as string | null,
+    };
   }
   if (invite.data.revoked_at) throw new Error("That code was revoked. Ask an admin for a new one.");
   if (invite.data.redeemed_by) throw new Error("That code has already been used.");
@@ -177,14 +188,17 @@ export async function redeemTeamInvite(userId: string, userEmail: string | null,
   if (claim.error) throw claim.error;
   if (!claim.data) throw new Error("That code has already been used.");
 
-  await applyRole(userId, invite.data.role as AppRole);
+  await (runtime?.applyRole ?? applyRole)(userId, invite.data.role as AppRole);
 
   // The invite already says which seat this person was hired into, so the real
   // auth user is seated the moment it exists. No duplicate account, no phantom
   // seat holder before redemption, and an already-filled seat is never taken
   // over silently.
   const seatCode = (invite.data as { seat_role_code?: string | null }).seat_role_code ?? null;
-  if (seatCode) {
+  const pendingSeatAssignment = isProtectedResponsibilitySeat(seatCode) ? seatCode : null;
+  // A redeemed staff role does not grant authority to claim a protected seat.
+  // Keep the account usable while an administrator completes that assignment.
+  if (seatCode && !pendingSeatAssignment) {
     const { data: seat } = await supabaseAdmin
       .from("functional_roles")
       .select("id, code, current_seat_holder, current_seat_name")
@@ -218,7 +232,7 @@ export async function redeemTeamInvite(userId: string, userEmail: string | null,
     }
   }
 
-  return { ok: true as const, role: invite.data.role as AppRole };
+  return { ok: true as const, role: invite.data.role as AppRole, pendingSeatAssignment };
 }
 
 /** Admin: re-send an existing, still-usable invite code to its locked email address. */

@@ -119,6 +119,15 @@ try {
     "supabase/tests/fixtures/owner_program_activation_schema.sql",
     "supabase/migrations/20260916040000_atomic_owner_program_activation.sql",
     "supabase/tests/owner_program_activation.test.sql",
+    "supabase/tests/fixtures/owner_time_write_boundary_schema.sql",
+    "supabase/migrations/20260916050000_owner_time_write_boundary.sql",
+    "supabase/tests/owner_time_write_boundary.test.sql",
+    "supabase/tests/fixtures/owner_invite_redemption_schema.sql",
+    "supabase/migrations/20260916060000_atomic_owner_invite_redemption.sql",
+    "supabase/tests/owner_invite_redemption.test.sql",
+    "supabase/tests/fixtures/onboarding_responsibility_assignments_schema.sql",
+    "supabase/migrations/20260916070000_onboarding_responsibility_assignments.sql",
+    "supabase/tests/onboarding_responsibility_assignments.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

@@ -14,6 +14,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { responsibilitySeatWriter } from "./responsibility-seats.server";
 
 type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 
@@ -96,7 +97,7 @@ export const setSeatHolder = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
-    const db = await admin();
+    const db = await responsibilitySeatWriter(context, data.roleCode, admin);
     const { data: before } = await db
       .from("functional_roles")
       .select("current_seat_holder, current_seat_name")
@@ -147,7 +148,7 @@ export const setSeatAvailability = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCanEditCoverage(context);
-    const db = await admin();
+    const db = await responsibilitySeatWriter(context, data.roleCode, admin);
     const { data: before } = await db
       .from("functional_roles")
       .select("available, unavailable_note, unavailable_until")
@@ -289,7 +290,7 @@ export const saveOverride = createServerFn({ method: "POST" })
     if (new Date(data.endsAt) <= new Date(data.startsAt))
       throw new Error("The override needs an end after its start.");
     if (data.kind === "cover" && !data.userId) throw new Error("Choose who is covering.");
-    const db = await admin();
+    const db = await responsibilitySeatWriter(context, data.roleCode, admin);
     const row = {
       role_code: data.roleCode,
       kind: data.kind,
@@ -325,7 +326,13 @@ export const deleteOverride = createServerFn({ method: "POST" })
       .select("*")
       .eq("id", data.id)
       .maybeSingle();
-    const { error } = await db.from("coverage_overrides").delete().eq("id", data.id);
+    if (!before) throw new Error("That coverage override no longer exists.");
+    const writer = await responsibilitySeatWriter(context, before.role_code, admin);
+    const { error } = await writer
+      .from("coverage_overrides")
+      .delete()
+      .eq("id", data.id)
+      .eq("role_code", before.role_code);
     if (error) throw error;
     await audit({
       actorId: context.userId,

@@ -4468,6 +4468,7 @@ export type Database = {
           program_id: string
           review_id: string | null
           review_note: string | null
+          review_version: string
           review_status: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -4497,6 +4498,7 @@ export type Database = {
           program_id: string
           review_id?: string | null
           review_note?: string | null
+          review_version?: string
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -4526,6 +4528,7 @@ export type Database = {
           program_id?: string
           review_id?: string | null
           review_note?: string | null
+          review_version?: string
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -7950,6 +7953,18 @@ export type Database = {
       correct_owner_time_entry: {
         Args: { _entry_id: string; _actor_id: string; _minutes: number; _reason: string }
         Returns: string
+      }
+      review_owner_time_entry: {
+        Args: { _entry_id: string; _expected_version: string; _decision: string; _note: string }
+        Returns: string
+      }
+      redeem_owner_invite: {
+        Args: { _user_id: string; _code: string }
+        Returns: string
+      }
+      read_onboarding_assignment_authority: {
+        Args: Record<PropertyKey, never>
+        Returns: { director_id: string | null; can_assign: boolean }[]
       }
       log_owner_time_entry: {
         Args: { _entry: Json; _property_ids: string[] }

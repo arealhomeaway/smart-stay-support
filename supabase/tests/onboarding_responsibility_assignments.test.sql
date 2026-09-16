@@ -1,0 +1,70 @@
+BEGIN;
+CREATE FUNCTION pg_temp.must_fail(statement text,expected text) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+ BEGIN EXECUTE statement; EXCEPTION WHEN OTHERS THEN
+  IF position(expected IN SQLERRM)=0 THEN RAISE EXCEPTION 'Unexpected rejection: %',SQLERRM; END IF;
+  RETURN;
+ END;
+ RAISE EXCEPTION 'Unsafe statement succeeded: %',statement;
+END $$;
+CREATE FUNCTION pg_temp.assert_true(value boolean,message text) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN IF value IS DISTINCT FROM true THEN RAISE EXCEPTION '%',message; END IF; END $$;
+SELECT pg_temp.assert_true((SELECT current_seat_holder IS NULL FROM functional_roles WHERE code='director_onboarding'),'New Director seat must not guess a person');
+SET LOCAL ROLE authenticated;
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000002',true);
+SELECT pg_temp.must_fail($q$UPDATE functional_roles SET current_seat_holder=auth.uid() WHERE code='director_onboarding'$q$,'Only a platform administrator');
+SELECT pg_temp.must_fail($q$UPDATE functional_roles SET code='ordinary' WHERE code='director_ops'$q$,'Only a platform administrator');
+SELECT pg_temp.must_fail($q$INSERT INTO functional_roles(code,name) VALUES('director_onboarding','Self-created Director')$q$,'Only a platform administrator');
+SELECT pg_temp.must_fail($q$INSERT INTO coverage_overrides(role_code,user_id,starts_at,ends_at) VALUES('ops_supervisor',auth.uid(),now(),now()+interval '1 hour')$q$,'Only a platform administrator');
+UPDATE functional_roles SET current_seat_holder=auth.uid() WHERE code='po_day';
+SELECT pg_temp.assert_true((SELECT current_seat_holder=auth.uid() FROM functional_roles WHERE code='po_day'),'Ordinary manager coverage must still work');
+
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000001',true);
+UPDATE functional_roles SET current_seat_holder='00000000-0000-4000-8000-000000000004' WHERE code='director_onboarding';
+SELECT pg_temp.must_fail($q$UPDATE functional_roles SET current_seat_holder='00000000-0000-4000-8000-000000000005' WHERE code='director_ops'$q$,'existing Onboarding');
+SELECT pg_temp.must_fail($q$UPDATE functional_roles SET current_seat_holder='00000000-0000-4000-8000-000000000007' WHERE code='director_ops'$q$,'existing Onboarding');
+INSERT INTO coverage_overrides(id,role_code,user_id,starts_at,ends_at) VALUES('00000000-0000-4000-8000-000000000101','ops_supervisor','00000000-0000-4000-8000-000000000006',now(),now()+interval '1 hour');
+INSERT INTO coverage_overrides(id,role_code,user_id,starts_at,ends_at) VALUES('00000000-0000-4000-8000-000000000102','po_day','00000000-0000-4000-8000-000000000006',now(),now()+interval '1 hour');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000002',true);
+SELECT pg_temp.must_fail($q$UPDATE coverage_overrides SET role_code='po_day' WHERE id='00000000-0000-4000-8000-000000000101'$q$,'Only a platform administrator');
+SELECT pg_temp.must_fail($q$DELETE FROM coverage_overrides WHERE id='00000000-0000-4000-8000-000000000101'$q$,'Only a platform administrator');
+SELECT pg_temp.must_fail($q$UPDATE coverage_overrides SET role_code='director_ops' WHERE id='00000000-0000-4000-8000-000000000102'$q$,'Only a platform administrator');
+
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000003',true);
+INSERT INTO onboarding_projects(id,property_id,started_by) VALUES('00000000-0000-4000-8000-000000000201','00000000-0000-4000-8000-000000000301',auth.uid());
+SELECT pg_temp.assert_true((SELECT project_manager=auth.uid() AND director='00000000-0000-4000-8000-000000000004' FROM onboarding_projects WHERE id='00000000-0000-4000-8000-000000000201'),'Ordinary start must use self PM and protected Director');
+UPDATE onboarding_projects SET notes='PM execution work' WHERE id='00000000-0000-4000-8000-000000000201';
+SELECT pg_temp.must_fail($q$UPDATE onboarding_projects SET director=auth.uid() WHERE id='00000000-0000-4000-8000-000000000201'$q$,'trusted Onboarding Director');
+SELECT pg_temp.must_fail($q$INSERT INTO onboarding_projects(id,property_id,project_manager,director,started_by) VALUES('00000000-0000-4000-8000-000000000202','00000000-0000-4000-8000-000000000302',auth.uid(),auth.uid(),auth.uid())$q$,'protected responsibility seat');
+SELECT pg_temp.must_fail($q$UPDATE onboarding_projects SET started_by='00000000-0000-4000-8000-000000000004' WHERE id='00000000-0000-4000-8000-000000000201'$q$,'original project creation');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000006',true);
+UPDATE onboarding_projects SET notes='unrelated tampering' WHERE id='00000000-0000-4000-8000-000000000201';
+SELECT pg_temp.assert_true((SELECT notes='PM execution work' FROM onboarding_projects WHERE id='00000000-0000-4000-8000-000000000201'),'Unrelated staff must not update projects');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000004',true);
+SELECT pg_temp.assert_true((SELECT can_assign FROM read_onboarding_assignment_authority()),'Protected Director must have assignment authority');
+UPDATE onboarding_projects SET project_manager='00000000-0000-4000-8000-000000000006' WHERE id='00000000-0000-4000-8000-000000000201';
+SELECT pg_temp.must_fail($q$UPDATE onboarding_projects SET director='00000000-0000-4000-8000-000000000005' WHERE id='00000000-0000-4000-8000-000000000201'$q$,'existing Onboarding');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000001',true);
+UPDATE onboarding_projects SET director='00000000-0000-4000-8000-000000000006' WHERE id='00000000-0000-4000-8000-000000000201';
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000006',true);
+SELECT pg_temp.must_fail($q$UPDATE onboarding_projects SET director=auth.uid(),project_manager='00000000-0000-4000-8000-000000000003' WHERE id='00000000-0000-4000-8000-000000000201'$q$,'trusted Onboarding Director');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000001',true);
+INSERT INTO coverage_overrides(id,role_code,user_id,starts_at,ends_at) VALUES('00000000-0000-4000-8000-000000000103','director_onboarding','00000000-0000-4000-8000-000000000006',now(),now()+interval '1 hour');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000006',true);
+SELECT pg_temp.assert_true((SELECT can_assign AND director_id=auth.uid() FROM read_onboarding_assignment_authority()),'Administrator-approved current cover must hold Director authority');
+UPDATE onboarding_projects SET project_manager='00000000-0000-4000-8000-000000000003' WHERE id='00000000-0000-4000-8000-000000000201';
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000004',true);
+SELECT pg_temp.assert_true((SELECT NOT can_assign FROM read_onboarding_assignment_authority()),'Replaced seat holder must not keep assignment authority while cover is active');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000001',true);
+DELETE FROM coverage_overrides WHERE id='00000000-0000-4000-8000-000000000103';
+UPDATE functional_roles SET current_seat_holder=NULL WHERE code='director_onboarding';
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000003',true);
+INSERT INTO onboarding_projects(id,property_id,started_by) VALUES('00000000-0000-4000-8000-000000000203','00000000-0000-4000-8000-000000000303',auth.uid());
+SELECT pg_temp.assert_true((SELECT project_manager=auth.uid() AND director IS NULL FROM onboarding_projects WHERE id='00000000-0000-4000-8000-000000000203'),'A vacant Director seat must keep PM creation available without guessing leadership');
+SELECT set_config('test.actor','00000000-0000-4000-8000-000000000005',true);
+SELECT pg_temp.assert_true(NOT EXISTS(SELECT 1 FROM read_onboarding_assignment_authority()),'Owners must not receive assignment authority');
+RESET ROLE;
+SELECT set_config('test.actor','',true);
+SELECT pg_temp.must_fail($q$UPDATE functional_roles SET current_seat_holder=NULL WHERE code='director_onboarding'$q$,'Only a platform administrator');
+SELECT pg_temp.must_fail($q$UPDATE onboarding_projects SET director=NULL WHERE id='00000000-0000-4000-8000-000000000201'$q$,'signed-in Onboarding');
+ROLLBACK;

@@ -163,6 +163,7 @@ export function ProjectScopePanel({
         propertyName={propertyName}
         people={people}
         busy={start.isPending || update.isPending}
+        canAssign={data?.assignments.canAssign ?? false}
         initial={
           project
             ? {
@@ -184,8 +185,8 @@ export function ProjectScopePanel({
                   hoa: hints?.hoa ?? null,
                 }),
                 branch: "",
-                projectManager: null,
-                director: null,
+                projectManager: data?.assignments.projectManagerId ?? null,
+                director: data?.assignments.directorId ?? null,
                 plannedClosingOn: hints?.planned_closing_on ?? "",
                 possessionOn: "",
                 targetHandoffOn: "",
@@ -256,6 +257,7 @@ function ScopeDialog({
   initial,
   editing,
   busy,
+  canAssign,
   onSubmit,
 }: {
   open: boolean;
@@ -265,6 +267,7 @@ function ScopeDialog({
   initial: ScopeValues;
   editing: boolean;
   busy: boolean;
+  canAssign: boolean;
   onSubmit: (values: ScopeValues, reason: string) => void;
 }) {
   const [v, setV] = useState<ScopeValues>(initial);
@@ -350,12 +353,14 @@ function ScopeDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <PersonField
               label="Project manager"
+              disabled={!canAssign}
               people={people}
               value={v.projectManager}
               onChange={(id) => setV((p) => ({ ...p, projectManager: id }))}
             />
             <PersonField
               label="Director"
+              disabled={!canAssign}
               people={people}
               value={v.director}
               onChange={(id) => setV((p) => ({ ...p, director: id }))}
@@ -388,6 +393,14 @@ function ScopeDialog({
               />
             </Field>
           </div>
+
+          {!canAssign && (
+            <p className="text-xs text-muted-foreground">
+              {editing
+                ? "Project responsibility is assigned by the Onboarding Director or a platform administrator."
+                : "You will be the project manager. The Director comes from the current Onboarding leadership assignment; if vacant, an administrator must assign it."}
+            </p>
+          )}
 
           <Field label="Notes">
             <Textarea
@@ -472,15 +485,21 @@ function PersonField({
   people,
   value,
   onChange,
+  disabled,
 }: {
   label: string;
   people: Person[];
   value: string | null;
   onChange: (id: string | null) => void;
+  disabled: boolean;
 }) {
   return (
     <Field label={label}>
-      <Select value={value ?? "none"} onValueChange={(x) => onChange(x === "none" ? null : x)}>
+      <Select
+        disabled={disabled}
+        value={value ?? "none"}
+        onValueChange={(x) => onChange(x === "none" ? null : x)}
+      >
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>

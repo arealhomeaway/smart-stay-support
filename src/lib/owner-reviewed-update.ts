@@ -16,6 +16,7 @@ export function parseReviewedOwnerUpdate(value: unknown): ReviewedOwnerUpdate | 
 /** Freeze the displayed context when logging opens; background refresh must not replace it. */
 export function captureReviewedOpportunity(review: {
   id: string;
+  phase: string;
   ticket_id: string | null;
   propertyIds: string[];
   owner_update_revision?: number | null;
@@ -23,6 +24,7 @@ export function captureReviewedOpportunity(review: {
 }) {
   return {
     id: review.id,
+    phase: review.phase,
     ticketId: review.ticket_id,
     propertyIds: [...review.propertyIds],
     ownerUpdateRevision: review.owner_update_revision ?? null,

@@ -21,6 +21,7 @@ it("rejects program-wide time before activation or before the program start", as
     let message = "";
     try {
       await logOwnerTime(db as never, "owner", {
+        confirmed: true,
         programId: "program",
         phase: "onboarding",
         entryDate: "2026-09-01",
@@ -93,6 +94,7 @@ it("rejects a property-specific opportunity logged against another home before w
   let message = "";
   try {
     await logOwnerTime(db as never, "owner", {
+      confirmed: true,
       programId: "program",
       phase: "onboarding",
       entryDate: "2026-09-14",

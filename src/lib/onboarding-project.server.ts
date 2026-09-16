@@ -17,6 +17,11 @@ import { type FurnishingScope, type ModuleKey } from "./onboarding-scope";
 import { writeAudit } from "./audit.server";
 import { readCountedRows } from "./read-all-rows";
 import { assertOnboardingPropertyManagement } from "./onboarding-task-access.server";
+import {
+  assertEligibleProjectAssignees,
+  readOnboardingAssignmentAuthority,
+  resolveNewProjectAssignments,
+} from "./onboarding-assignment.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -88,7 +93,11 @@ export async function loadPropertyProjectForActor(
 ) {
   await assertOnboardingStaff(supabase, userId);
   await assertOnboardingPropertyManagement(supabase, userId, propertyId);
-  return loadProjectForProperty(supabase, propertyId);
+  const [result, assignments] = await Promise.all([
+    loadProjectForProperty(supabase, propertyId),
+    readOnboardingAssignmentAuthority(supabase),
+  ]);
+  return { ...result, assignments: { ...assignments, projectManagerId: userId } };
 }
 
 export async function loadProjectForProperty(supabase: Client, propertyId: string) {
@@ -174,6 +183,7 @@ export async function startOnboardingProject(
   }
 
   const modules = input.modules;
+  const assignments = await resolveNewProjectAssignments(supabase, userId, input);
 
   const { data, error } = await supabase
     .from("onboarding_projects")
@@ -181,8 +191,8 @@ export async function startOnboardingProject(
       property_id: input.propertyId,
       status: "active",
       branch: input.branch,
-      project_manager: input.projectManager,
-      director: input.director,
+      project_manager: assignments.projectManager,
+      director: assignments.director,
       planned_closing_on: input.plannedClosingOn,
       possession_on: input.possessionOn,
       target_handoff_on: input.targetHandoffOn,
@@ -205,8 +215,8 @@ export async function startOnboardingProject(
   if (!property.data.actual_access_on && input.possessionOn) {
     patch.actual_access_on = input.possessionOn;
   }
-  if (!property.data.onboarding_owner && input.projectManager) {
-    patch.onboarding_owner = input.projectManager;
+  if (!property.data.onboarding_owner && data.project_manager) {
+    patch.onboarding_owner = data.project_manager;
   }
   if (property.data.lifecycle_status !== "onboarding") patch.lifecycle_status = "onboarding";
   patch.onboarding_started_at = new Date().toISOString();
@@ -274,7 +284,23 @@ export async function updateProject(
     .eq("id", input.projectId)
     .single();
   if (current.error) throw current.error;
-  assertProjectLead(current.data, userId, access.supervisor);
+  const assignmentsChanging =
+    (input.projectManager !== undefined && input.projectManager !== current.data.project_manager) ||
+    (input.director !== undefined && input.director !== current.data.director);
+  if (assignmentsChanging) {
+    const authority = await readOnboardingAssignmentAuthority(supabase);
+    if (!authority.canAssign) {
+      throw new Error(
+        "Only a platform administrator or the trusted Onboarding Director can change project responsibility.",
+      );
+    }
+    await assertEligibleProjectAssignees(supabase, [
+      input.projectManager === undefined ? current.data.project_manager : input.projectManager,
+      input.director === undefined ? current.data.director : input.director,
+    ]);
+  } else {
+    assertProjectLead(current.data, userId, access.supervisor);
+  }
 
   // A scope change after initialization must always carry a reason: History
   // has to explain why this home stopped being asked for that work.

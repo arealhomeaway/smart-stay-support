@@ -12,8 +12,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { PROGRAM_DAYS } from "./owner-program";
-import { loadProgramAggregate, recordEvent } from "./owner-participation.server";
+import { loadProgramAggregate } from "./owner-participation.server";
+import { redeemOwnerInviteAtomically } from "./owner-invite-redemption.server";
 import { syncBadges } from "./owner-badges.server";
 import { loadOwnerTicketProjection } from "./owner-ticket-projection.server";
 import { ownerNotificationText } from "./owner-notification";
@@ -23,12 +23,6 @@ import { loadOwnerResponseReceipts } from "./owner-response-history.server";
 export type { OwnerTicket } from "./owner-ticket-projection.server";
 
 type Client = SupabaseClient<Database>;
-
-function addDays(iso: string, days: number) {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 /** Everything the owner hub renders, in one round trip. */
 export async function loadOwnerHome(supabase: Client, userId: string) {
@@ -168,6 +162,7 @@ export type LogTimeInput = {
   reviewId: string | null;
   ticketId: string | null;
   propertyIds: string[];
+  confirmed: true;
 };
 
 /**
@@ -267,22 +262,10 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
   if (error) throw error;
   if (!entryId) throw new Error("The participation entry could not be recorded.");
 
-  if (chosen.length > 0) {
-    await supabase
-      .from("owner_program_properties")
-      .update({ last_owner_activity_at: new Date().toISOString() })
-      .eq("program_id", input.programId)
-      .in("property_id", chosen);
-  }
-
-  await supabase
-    .from("owner_programs")
-    .update({ last_owner_activity_at: new Date().toISOString() })
-    .eq("id", input.programId);
-
-  const agg = await loadProgramAggregate(supabase, input.programId);
-  const badges = await syncBadges(supabase, agg);
-  return { ok: true as const, entryId, awarded: badges.awarded };
+  // Activity timestamps and evidence are committed by the same transaction.
+  // The next hub load refreshes badges; a later read failure must never invite
+  // the owner to submit this already-recorded activity a second time.
+  return { ok: true as const, entryId, awarded: [] as string[] };
 }
 
 /**
@@ -385,75 +368,16 @@ export async function respondToReview(
   return { ok: true as const };
 }
 
-/**
- * Single-use invite redemption. Runs with elevated access because it links an
- * auth account to a program and grants the owner role — both are outside what
- * a brand-new signed-in user can do for themselves.
- */
+/** Links a signed-in account using the service-only, atomic redemption action. */
 export async function redeemOwnerInvite(
   admin: Client,
   userId: string,
-  userEmail: string | null,
+  _userEmail: string | null,
   code: string,
 ) {
-  const invite = await admin
-    .from("owner_invites")
-    .select("id, program_id, expires_at, redeemed_by, owner_email")
-    .eq("code", code.trim().toUpperCase())
-    .maybeSingle();
-  if (invite.error) throw invite.error;
-  if (!invite.data) throw new Error("That code was not recognized. Check it and try again.");
-  if (invite.data.redeemed_by) throw new Error("That code has already been used.");
-  if (new Date(invite.data.expires_at).getTime() < Date.now()) {
-    throw new Error("That code has expired. Ask your ARHA contact for a new one.");
-  }
-
-  const program = await admin
-    .from("owner_programs")
-    .select("id, owner_user_id, started_on, status")
-    .eq("id", invite.data.program_id)
-    .single();
-  if (program.error) throw program.error;
-  if (program.data.owner_user_id && program.data.owner_user_id !== userId) {
-    throw new Error("This program is already linked to another owner account.");
-  }
-
-  // Redeeming a code links the account. It does not start the 90-day clock:
-  // only an authorized ARHA team member activates a program.
-  const updates = await admin
-    .from("owner_programs")
-    .update({
-      owner_user_id: userId,
-      owner_email: invite.data.owner_email ?? userEmail,
-      ends_on: program.data.started_on ? addDays(program.data.started_on, PROGRAM_DAYS - 1) : null,
-    })
-    .eq("id", program.data.id);
-  if (updates.error) throw updates.error;
-
-  const roleInsert = await admin
-    .from("user_roles")
-    .upsert({ user_id: userId, role: "owner" }, { onConflict: "user_id,role" });
-  if (roleInsert.error) throw roleInsert.error;
-
-  // Defensive: a homeowner is never internal staff, even if an internal role
-  // was granted to this account before the invite was redeemed.
-  await admin.from("user_roles").delete().eq("user_id", userId).eq("role", "tech");
-
-  const redeem = await admin
-    .from("owner_invites")
-    .update({ redeemed_by: userId, redeemed_at: new Date().toISOString() })
-    .eq("id", invite.data.id)
-    .is("redeemed_by", null);
-  if (redeem.error) throw redeem.error;
-
-  await recordEvent(admin, {
-    programId: program.data.id,
-    kind: "owner_linked",
-    summary: "Homeowner connected their account with an invite code.",
-    actorId: userId,
-  });
-
-  return { ok: true as const, programId: program.data.id };
+  // Email claims and contact text never select an Owner or grant access. The
+  // database verifies the existing account against this code's explicit recipient.
+  return redeemOwnerInviteAtomically(admin, userId, code);
 }
 
 /* ------------------------------------------------------------------ *

@@ -67,6 +67,7 @@ export const Route = createFileRoute("/_authenticated/owner")({
 type Review = {
   owner_update_revision?: number | null;
   id: string;
+  phase: string;
   auto_ticket?: boolean;
   owner_request?: OwnerTicketRequest;
   responded_at?: string | null;
@@ -505,10 +506,13 @@ function LogTimeButton({
   const save = useMutation({
     mutationFn: () => {
       if (!reviewed) throw new Error("Open the opportunity before logging participation.");
+      if (reviewed.phase !== "onboarding" && reviewed.phase !== "ongoing") {
+        throw new Error("This opportunity needs a valid participation phase.");
+      }
       return log({
         data: {
           programId,
-          phase: "ongoing",
+          phase: reviewed.phase,
           entryDate: new Date().toISOString().slice(0, 10),
           minutes: parseOwnerMinutes(minutes),
           activity: activity.trim(),

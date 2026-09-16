@@ -583,9 +583,9 @@ export async function recordTimeCorrection(
   if (insert.error) throw insert.error;
   if (!insert.data) throw new Error("The correction could not be recorded.");
 
-  const agg = await loadProgramAggregate(supabase, original.data.program_id);
-  await syncBadges(supabase, agg);
-  return { ok: true as const };
+  // The correction and its history are committed. Badge refresh belongs to the
+  // next hub load, so a failed follow-up cannot turn this receipt into an error.
+  return { ok: true as const, entryId: insert.data };
 }
 
 /**

@@ -21,7 +21,12 @@ function fixture(staff = true, supervisor = false, failedCapability = false) {
   ];
   const db = {
     rpc: async (name: string) => ({
-      data: name === "is_supervisor" ? supervisor : staff,
+      data:
+        name === "read_onboarding_assignment_authority"
+          ? [{ can_assign: false, director_id: "director" }]
+          : name === "is_supervisor"
+            ? supervisor
+            : staff,
       error: failedCapability ? new Error("unavailable") : null,
     }),
     from: (table: string) => {
