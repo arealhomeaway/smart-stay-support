@@ -30,6 +30,10 @@ import {
   type TaskType,
 } from "./owner-participation";
 import { combinedMinutes, loadProgramAggregate, recordEvent } from "./owner-participation.server";
+import {
+  loadOwnerResponseReceipts,
+  type OwnerResponseReceipt,
+} from "./owner-response-history.server";
 import { syncBadges } from "./owner-badges.server";
 import {
   canonicalEnrollmentOwner,
@@ -812,7 +816,10 @@ export async function completeProgram(
   if (!check.entriesAttributed)
     throw new Error("Every counted entry needs an activity description.");
 
-  const report = buildProgramReportSnapshot(agg);
+  const report = buildProgramReportSnapshot(
+    agg,
+    await loadOwnerResponseReceipts(supabase, programId),
+  );
   const { data: completed, error } = await admin.rpc("complete_owner_program", {
     _program_id: programId,
     _actor_id: userId,
@@ -841,11 +848,14 @@ export async function buildProgramReport(supabase: Client, programId: string) {
     return saved.data.completion_report;
   }
   const agg = await loadProgramAggregate(supabase, programId);
-  return buildProgramReportSnapshot(agg);
+  return buildProgramReportSnapshot(agg, await loadOwnerResponseReceipts(supabase, programId));
 }
 
 /** The report and its closeout gates use the same loaded participation snapshot. */
-export function buildProgramReportSnapshot(agg: Awaited<ReturnType<typeof loadProgramAggregate>>) {
+export function buildProgramReportSnapshot(
+  agg: Awaited<ReturnType<typeof loadProgramAggregate>>,
+  responses: OwnerResponseReceipt[] = [],
+) {
   const countedEntryIds = new Set(
     countableParticipationEntries(agg.entries).map((entry) => entry.id),
   );
@@ -906,6 +916,12 @@ export function buildProgramReportSnapshot(agg: Awaited<ReturnType<typeof loadPr
     },
     log,
     decisions,
+    responseHistory: responses.map((receipt) => ({
+      ...receipt,
+      ownerUpdate: receipt.ownerUpdate ? { ...receipt.ownerUpdate } : null,
+      propertyName: receipt.propertyId ? nameOf(receipt.propertyId) : null,
+      countsTowardTotal: false,
+    })),
     badges: agg.badges,
     generatedAt: new Date().toISOString(),
   };

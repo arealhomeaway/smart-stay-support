@@ -107,6 +107,9 @@ try {
     "supabase/tests/work_order_cost.test.sql",
     "supabase/migrations/20260915200000_owner_response_reviewed_update.sql",
     "supabase/tests/owner_response_reviewed_update.test.sql",
+    "supabase/tests/fixtures/owner_review_write_boundary_schema.sql",
+    "supabase/migrations/20260916010000_owner_review_write_boundary.sql",
+    "supabase/tests/owner_review_write_boundary.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

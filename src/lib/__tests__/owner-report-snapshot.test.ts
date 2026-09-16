@@ -92,3 +92,42 @@ it("reports actual attestation and distinguishes corrected history from counted 
   expect(report.log[1]?.ownerUpdate?.revision).toBe(1);
   expect(report.log[1]?.ownerUpdate?.outcome).toBe("Original outcome");
 });
+
+it("saves response-only revision history without changing closeout hours", () => {
+  const receipt = {
+    id: "receipt",
+    reviewId: "review",
+    propertyId: "home",
+    ticketId: "ticket",
+    createdAt: "2026-01-02",
+    response: "I reviewed this work",
+    ownerUpdate: {
+      revision: 1,
+      issue: "Original issue",
+      work_performed: "Original work",
+      outcome: "Original outcome",
+      reviewed_at: "2026-01-01",
+    },
+  };
+  const report = buildProgramReportSnapshot(
+    {
+      program: { ownerName: "QA Owner" },
+      properties: [{ propertyId: "home", name: "QA Home" }],
+      includedProperties: [],
+      reviews: [],
+      badges: [],
+      entries: [],
+      reportedMinutes: 0,
+      onboardingMinutes: 0,
+      operationalMinutes: 0,
+    } as never,
+    [receipt],
+  );
+  receipt.ownerUpdate.outcome = "Later edit";
+  expect(report.responseHistory.length).toBe(1);
+  expect(report.responseHistory[0]?.ownerUpdate?.outcome).toBe("Original outcome");
+  expect(report.responseHistory[0]?.propertyName).toBe("QA Home");
+  expect(report.responseHistory[0]?.countsTowardTotal).toBe(false);
+  expect(report.totals.combinedHours).toBe(0);
+  expect(report.log.length).toBe(0);
+});

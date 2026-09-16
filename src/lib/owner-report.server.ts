@@ -13,6 +13,8 @@
  */
 
 import { reviewedOwnerUpdateText } from "./owner-reviewed-update";
+import { loadOwnerResponseReceipts } from "./owner-response-history.server";
+import { readCountedRows } from "./read-all-rows";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Client } from "./owner-participation.server";
 import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
@@ -141,13 +143,25 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
 
   // Participation actions: approvals, returns and revisions. These are a
   // record of what happened — they never add hours on the owner's behalf.
-  const events = await supabase
-    .from("owner_program_events")
-    .select("kind, summary, created_at, new_value")
-    .eq("program_id", programId)
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const events = await readCountedRows(
+    supabase
+      .from("owner_program_events")
+      .select("id, kind, summary, created_at, new_value", { count: "exact" })
+      .eq("program_id", programId)
+      .order("created_at", { ascending: false })
+      .order("id"),
+  );
   if (events.error) throw events.error;
+  const responses = (await loadOwnerResponseReceipts(supabase, programId)).map((receipt) => ({
+    ...receipt,
+    propertyName: receipt.propertyId
+      ? (propNames.get(receipt.propertyId) ?? "Previously enrolled property")
+      : "Program opportunity",
+    inPeriod:
+      (!startedOn || receipt.createdAt.slice(0, 10) >= startedOn) &&
+      (!endsOn || receipt.createdAt.slice(0, 10) <= endsOn),
+  }));
+  const retainedReviewIds = new Set(responses.map((receipt) => receipt.reviewId));
 
   const OWNER_VISIBLE = /^(entry|review|program|decision)/;
   const actions: ReportAction[] = (events.data ?? [])
@@ -160,7 +174,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
     }));
 
   const decisions = agg.reviews
-    .filter((r) => r.responded_at)
+    .filter((r) => r.responded_at && !retainedReviewIds.has(r.id))
     .map((r) => ({
       date: (r.responded_at ?? "").slice(0, 10),
       kind: "owner decision",
@@ -195,6 +209,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
     entries: inPeriod,
     outsidePeriod,
     actions: allActions,
+    responses,
   };
 }
 
@@ -223,6 +238,13 @@ export function reportCsv(report: OwnerReport) {
     "counts_toward_reported_hours",
     "within_program_period",
     "note",
+    "record_type",
+    "record_id",
+    "response_recorded_at",
+    "property_id",
+    "ticket_id",
+    "review_id",
+    "narrative_revision",
   ];
   const rows = [...report.entries, ...report.outsidePeriod].map((e) =>
     [
@@ -240,6 +262,40 @@ export function reportCsv(report: OwnerReport) {
       e.counts && e.inPeriod ? "yes" : "no",
       e.inPeriod ? "yes" : "no",
       e.reason,
+      "time_entry",
+      e.id,
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]
+      .map(esc)
+      .join(","),
+  );
+  const responseRows = report.responses.map((receipt) =>
+    [
+      "",
+      "Review response",
+      "",
+      "Review",
+      "Participation history",
+      [receipt.response, reviewedOwnerUpdateText(receipt.ownerUpdate)].filter(Boolean).join(" — "),
+      "",
+      "",
+      receipt.propertyName,
+      "no",
+      "Recorded response",
+      "no",
+      receipt.inPeriod ? "yes" : "no",
+      "Response history only; no participation hours added.",
+      "review_response",
+      receipt.id,
+      receipt.createdAt,
+      receipt.propertyId ?? "",
+      receipt.ticketId ?? "",
+      receipt.reviewId ?? "",
+      receipt.ownerUpdate?.revision ?? "",
     ]
       .map(esc)
       .join(","),
@@ -255,7 +311,7 @@ export function reportCsv(report: OwnerReport) {
     `# Superseded hours (not counted),${report.totals.supersededHours}`,
     ...NOTES.map((n) => `# ${n.replace(/,/g, ";")}`),
   ];
-  return [...meta, head.join(","), ...rows].join("\n");
+  return [...meta, head.join(","), ...rows, ...responseRows].join("\n");
 }
 
 const TEAL = rgb(0.075, 0.455, 0.478);
@@ -314,12 +370,13 @@ export async function reportPdf(report: OwnerReport) {
     }
   };
   const heading = (s: string) => {
+    if (y - 56 < M + 24) newPage();
     space(24);
     text(s, { size: 12, f: bold, color: TEAL });
-    space(4);
+    space(8);
     page.drawLine({
-      start: { x: M, y: y + 6 },
-      end: { x: W - M, y: y + 6 },
+      start: { x: M, y },
+      end: { x: W - M, y },
       thickness: 0.7,
       color: GOLD,
     });
@@ -475,13 +532,40 @@ export async function reportPdf(report: OwnerReport) {
   para(
     "Approvals, returns, corrections and owner decisions. These are a record of review activity and never generate hours.",
   );
-  for (const a of report.actions.slice(0, 40)) {
-    space(12);
-    text(a.date, { size: 8, x: cols[0] });
-    text(fit(`${a.kind}: ${a.summary}`, 360), { size: 8, x: cols[1] });
-    if (a.document) text(fit(a.document, 84), { size: 8, x: cols[4], color: MUTED });
+  for (const a of report.actions) {
+    para(`${a.date} · ${a.kind}: ${a.summary}`, 9);
+    if (a.document) para(a.document, 8);
   }
   if (report.actions.length === 0) para("No review actions recorded yet.");
+
+  heading("Retained owner review responses");
+  para(
+    "These responses retain the narrative reviewed at the time. They add no participation hours.",
+  );
+  for (const receipt of report.responses) {
+    const paragraphs: [string, number][] = [
+      [
+        `${receipt.createdAt.slice(0, 10)} · ${receipt.propertyName}${receipt.inPeriod ? "" : " · Outside program period"}`,
+        9,
+      ],
+      ...(receipt.ticketId ? [[`Ticket: ${receipt.ticketId}`, 8] as [string, number]] : []),
+      [receipt.response || "Review acknowledged without a note.", 9],
+      [
+        reviewedOwnerUpdateText(receipt.ownerUpdate) ||
+          "No narrative revision was retained with this response.",
+        9,
+      ],
+    ];
+    const height = paragraphs.reduce(
+      (total, [value, size]) => total + wrap(value, W - M * 2, size).length * (size + 3),
+      8,
+    );
+    // Keep short receipts together; long narratives may continue across pages without truncation.
+    if (height <= H - M * 2 - 24 && y - height < M + 24) newPage();
+    for (const [value, size] of paragraphs) para(value, size);
+    space(8);
+  }
+  if (report.responses.length === 0) para("No review responses recorded yet.");
 
   heading("How to read this report");
   for (const n of NOTES) para(`• ${n}`, 8.5);

@@ -19,8 +19,7 @@ import { loadOwnerTicketProjection } from "./owner-ticket-projection.server";
 import { ownerNotificationText } from "./owner-notification";
 import { automaticOpportunityView } from "./owner-automatic-opportunity";
 import { ownerProgramProjection } from "./owner-program-projection";
-import { readCountedRows } from "./read-all-rows";
-import { projectOwnerResponseReceipt } from "./owner-reviewed-update";
+import { loadOwnerResponseReceipts } from "./owner-response-history.server";
 export type { OwnerTicket } from "./owner-ticket-projection.server";
 
 type Client = SupabaseClient<Database>;
@@ -89,15 +88,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     loadOwnerTicketProjection(supabase, propertyIds, preview, programId),
   ]);
   if (alerts.error) throw alerts.error;
-  const receipts = await readCountedRows(
-    supabase
-      .from("owner_program_events")
-      .select("id, review_id, created_at, detail", { count: "exact" })
-      .eq("program_id", programId)
-      .in("kind", ["owner_participation_response", "owner_decision"])
-      .order("created_at")
-      .order("id"),
-  );
+  const receipts = await loadOwnerResponseReceipts(supabase, programId);
 
   // Keep achievements current whenever the owner opens the hub.
   // A preview never writes: it reads whatever badges already exist.
@@ -119,7 +110,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
       ),
     ),
     entries: agg.entries,
-    responseReceipts: receipts.data.map(projectOwnerResponseReceipt),
+    responseReceipts: receipts,
     badges: badges.data ?? agg.badges,
     alerts: (alerts.data ?? []).map((row) => ({ ...row, ...ownerNotificationText(row) })),
     tickets,

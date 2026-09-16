@@ -210,3 +210,7 @@ PARTIALLY IMPLEMENTED overall. Canonical actual costs now have an atomic staff r
 ### September 16 response retention
 
 Exact reviewed narratives are now captured for responses without time entries, retained in immutable response receipts, and visible in owner history. Canonical Ticket/Property links are retained; responses never add hours. Direct receipt insertion/conversion bypasses are closed locally; broader review-table writes and authenticated concurrency remain open. Overall locked requirement remains PARTIALLY IMPLEMENTED. See the restart checkpoint and migration manifest for migration 20260915200000 and its coordinated isolated rollout requirement.
+
+### September 16 report integration and write boundary
+
+Response-only narratives now appear in CSV/PDF and new saved closeouts, with no implied participation hours and no substitution of a later narrative. Owner raw review-table mutation is blocked by an unapplied feature migration while canonical responses and legitimate participation remain supported. All 39 isolated migration files and 739 unit tests pass. This completes these local gaps; broader owner-safe payloads, canonical lifecycle/concurrency and authenticated acceptance keep the overall locked requirement PARTIALLY IMPLEMENTED.

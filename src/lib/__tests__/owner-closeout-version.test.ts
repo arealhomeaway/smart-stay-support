@@ -13,6 +13,7 @@ it("captures the report version before aggregate reads and propagates stale clos
           return query;
         },
         eq: () => query,
+        in: () => query,
         order: () => query,
         range: () => query,
         single: async () => {
@@ -54,7 +55,25 @@ it("captures the report version before aggregate reads and propagates stale clos
                       propertyIds: [],
                     },
                   ]
-                : [];
+                : table === "owner_program_events"
+                  ? [
+                      {
+                        id: "receipt",
+                        review_id: "review",
+                        created_at: "2026-01-02",
+                        detail: {
+                          response: "Reviewed original",
+                          ownerUpdate: {
+                            revision: 1,
+                            issue: "Original issue",
+                            work_performed: "Original work",
+                            outcome: "Original outcome",
+                            reviewed_at: "2026-01-01",
+                          },
+                        },
+                      },
+                    ]
+                  : [];
           return Promise.resolve({ data, error: null, count: data.length }).then(resolve);
         },
       };
@@ -78,10 +97,15 @@ it("captures the report version before aggregate reads and propagates stale clos
     _program_id: string;
     _actor_id: string;
     _expected_version: string;
-    _report: { log: unknown[] };
+    _report: {
+      log: unknown[];
+      responseHistory: { ownerUpdate: { revision: number; outcome: string } }[];
+    };
   };
   expect(request._program_id).toBe("program");
   expect(request._actor_id).toBe("supervisor");
   expect(request._expected_version).toBe("initial-version");
   expect(request._report.log.length).toBe(1);
+  expect(request._report.responseHistory[0]?.ownerUpdate.revision).toBe(1);
+  expect(request._report.responseHistory[0]?.ownerUpdate.outcome).toBe("Original outcome");
 });

@@ -177,9 +177,12 @@ export async function closeOpportunity(
   userId: string,
   input: { opportunityId: string; reason: string },
 ) {
+  const access = await supabase.rpc("is_internal_staff", { _user_id: userId });
+  if (access.error) throw access.error;
+  if (!access.data) throw new Error("Only staff may close participation opportunities.");
   const row = await supabase
     .from("owner_reviews")
-    .select("id, program_id, title, status")
+    .select("id, program_id, title, status, updated_at")
     .eq("id", input.opportunityId)
     .single();
   if (row.error) throw row.error;
@@ -187,11 +190,16 @@ export async function closeOpportunity(
     throw new Error("This opportunity is already completed and stays in the owner's record.");
   }
 
-  const { error } = await supabase
+  const { data: saved, error } = await supabase
     .from("owner_reviews")
     .update({ status: "closed", closed_at: new Date().toISOString() })
-    .eq("id", input.opportunityId);
+    .eq("id", input.opportunityId)
+    .eq("updated_at", row.data.updated_at)
+    .eq("status", row.data.status)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!saved) throw new Error("The opportunity changed. Refresh before closing it.");
 
   await recordEvent(supabase, {
     programId: row.data.program_id,
