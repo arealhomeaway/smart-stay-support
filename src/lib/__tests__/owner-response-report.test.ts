@@ -1,3 +1,4 @@
+import { ownerProgramFixture, ownerEnrollmentFixture } from "./owner-program-reader-fixture";
 import { expect, it } from "bun:test";
 import { buildOwnerReport, reportCsv, reportPdf } from "../owner-report.server";
 import { PDFDocument } from "pdf-lib";
@@ -57,7 +58,26 @@ function reportDatabase(includePrivateEvents = false) {
       : events,
   };
   return {
+    rpc: (name: string) => {
+      if (name === "read_owner_programs")
+        return Promise.resolve({
+          data: [{ id: "program", program: ownerProgramFixture() }],
+          error: null,
+        });
+      expect(name).toBe("read_owner_program_properties");
+      const q = {
+        order: () => q,
+        range: async () => ({
+          data: [{ id: "enrollment", enrollment: ownerEnrollmentFixture() }],
+          count: 1,
+          error: null,
+        }),
+      };
+      return q;
+    },
     from: (table: string) => {
+      if (["owner_programs", "properties", "owner_program_properties"].includes(table))
+        throw new Error("Owner report must not read raw Program/Property rows");
       let selectedKinds: string[] | undefined;
       const q = {
         select: () => q,

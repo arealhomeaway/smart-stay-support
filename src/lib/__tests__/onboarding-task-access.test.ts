@@ -19,7 +19,22 @@ import {
 function client(assignedTo: string, lead = false, property = "home") {
   let writes = 0;
   const db = {
-    rpc: async (name: string) => ({ data: name === "is_onboarding_staff", error: null }),
+    rpc: async (name: string) => ({
+      data:
+        name === "read_onboarding_review_capabilities"
+          ? [
+              {
+                is_admin: false,
+                can_review_stages: false,
+                kati_review: false,
+                micah_review: false,
+                operations_acceptance: false,
+                live_confirmation: false,
+              },
+            ]
+          : name === "is_onboarding_staff",
+      error: null,
+    }),
     from: (table: string) => {
       const row = {
         id: "task",

@@ -1,3 +1,4 @@
+import { ownerProgramFixture } from "./owner-program-reader-fixture";
 import { expect, it } from "bun:test";
 import { logOwnerTime } from "../owner-portal.server";
 import { activateProgram } from "../owner-program.server";
@@ -5,6 +6,15 @@ import { activateProgram } from "../owner-program.server";
 it("rejects program-wide time before activation or before the program start", async () => {
   for (const status of ["draft", "active"]) {
     const db = {
+      rpc: async (name: string) => {
+        expect(name).toBe("read_owner_programs");
+        return {
+          data: [
+            { id: "program", program: ownerProgramFixture({ status, started_on: "2026-09-10" }) },
+          ],
+          error: null,
+        };
+      },
       from: (table: string) => {
         const row =
           table === "owner_reviews"

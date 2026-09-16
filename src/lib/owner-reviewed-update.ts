@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { reviewedTicketRequestTypeSchema, reviewedTicketRequestText } from "./owner-ticket-intent";
+import type { OwnerTicketRequest } from "./owner-ticket-authority";
 
 const reviewedUpdateSchema = z.object({
   revision: z.number().int().positive(),
@@ -6,6 +8,8 @@ const reviewedUpdateSchema = z.object({
   work_performed: z.string(),
   outcome: z.string(),
   reviewed_at: z.string(),
+  owner_request_type: reviewedTicketRequestTypeSchema.nullish(),
+  owner_request_why: z.string().nullish(),
 });
 export type ReviewedOwnerUpdate = z.infer<typeof reviewedUpdateSchema>;
 export function parseReviewedOwnerUpdate(value: unknown): ReviewedOwnerUpdate | null {
@@ -35,7 +39,8 @@ export function captureReviewedOpportunity(review: {
 export function reviewedOwnerUpdateText(value: unknown): string {
   const update = parseReviewedOwnerUpdate(value);
   if (!update) return "";
-  return `Owner update revision ${update.revision} (${update.reviewed_at.slice(0, 10)}). Issue: ${update.issue} Work: ${update.work_performed}${update.outcome ? ` Outcome: ${update.outcome}` : ""}`;
+  const request = reviewedTicketRequestText(update);
+  return `Owner update revision ${update.revision} (${update.reviewed_at.slice(0, 10)}). Issue: ${update.issue} Work: ${update.work_performed}${update.outcome ? ` Outcome: ${update.outcome}` : ""}${request ? ` Owner request: ${request}` : ""}`;
 }
 
 export function projectOwnerResponseReceipt(row: {
@@ -59,11 +64,16 @@ export function projectOwnerResponseReceipt(row: {
 
 /** Capture response narrative and optimistic-concurrency version together. */
 export function captureReviewedResponse(
-  review: Parameters<typeof captureReviewedOpportunity>[0] & { updated_at?: string; title: string },
+  review: Parameters<typeof captureReviewedOpportunity>[0] & {
+    updated_at?: string;
+    title: string;
+    owner_request?: OwnerTicketRequest;
+  },
 ) {
   return {
     ...captureReviewedOpportunity(review),
     expectedUpdatedAt: review.updated_at ?? "",
     title: review.title,
+    requestCategory: review.owner_request?.category,
   };
 }

@@ -43,6 +43,7 @@ import {
   OWNER_GOAL_LABEL,
 } from "@/lib/owner-participation";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
+import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
@@ -286,6 +287,9 @@ function OwnerHubBody({
                     <p>{reviewed.issue}</p>
                     <p>{reviewed.work_performed}</p>
                     {reviewed.outcome && <p>{reviewed.outcome}</p>}
+                    {reviewedTicketRequestText(reviewed) && (
+                      <p>{reviewedTicketRequestText(reviewed)}</p>
+                    )}
                     <p className="text-muted-foreground">
                       Owner update reviewed {usDate(reviewed.reviewed_at)}. Retained with this
                       participation entry.
@@ -327,6 +331,9 @@ function OwnerHubBody({
                     <p>{receipt.ownerUpdate.issue}</p>
                     <p>{receipt.ownerUpdate.work_performed}</p>
                     {receipt.ownerUpdate.outcome && <p>{receipt.ownerUpdate.outcome}</p>}
+                    {reviewedTicketRequestText(receipt.ownerUpdate) && (
+                      <p>{reviewedTicketRequestText(receipt.ownerUpdate)}</p>
+                    )}
                     <p className="text-muted-foreground">
                       This is the reviewed narrative retained with this response. A response does
                       not add participation hours.
@@ -448,10 +455,9 @@ function ReviewRow({
               {responseContext?.description ?? "Share your decision or note below."}
             </DialogDescription>
           </DialogHeader>
-          {review.auto_ticket && review.owner_request?.ownerActionRequired ? (
+          {review.auto_ticket ? (
             <p className="text-sm text-muted-foreground">
-              This form records review notes. Approve or decline work through the separate approval
-              request.
+              {ownerTicketResponseGuidance(responseContext?.requestCategory)}
             </p>
           ) : null}
           {review.owner_response ? (

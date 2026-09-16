@@ -13,6 +13,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { loadProgramAggregate } from "./owner-participation.server";
+import {
+  findOwnerProgram,
+  readOwnerProgram,
+  readOwnerPropertyLabels,
+} from "./owner-program-reader.server";
 import { redeemOwnerInviteAtomically } from "./owner-invite-redemption.server";
 import { syncBadges } from "./owner-badges.server";
 import { loadOwnerTicketProjection } from "./owner-ticket-projection.server";
@@ -26,14 +31,9 @@ type Client = SupabaseClient<Database>;
 
 /** Everything the owner hub renders, in one round trip. */
 export async function loadOwnerHome(supabase: Client, userId: string) {
-  const program = await supabase
-    .from("owner_programs")
-    .select("id")
-    .eq("owner_user_id", userId)
-    .maybeSingle();
-  if (program.error) throw program.error;
-  if (!program.data) return { linked: false as const };
-  return loadOwnerHomeByProgram(supabase, program.data.id);
+  const program = await findOwnerProgram(supabase, userId);
+  if (!program) return { linked: false as const };
+  return loadOwnerHomeByProgram(supabase, program.id);
 }
 
 /**
@@ -66,7 +66,7 @@ export async function loadOwnerHomePreview(
 }
 
 async function loadOwnerHomeByProgram(supabase: Client, programId: string, preview = false) {
-  const agg = await loadProgramAggregate(supabase, programId);
+  const agg = await loadProgramAggregate(supabase, programId, { ownerView: true, preview });
 
   const propertyIds = agg.includedProperties.map((p) => p.propertyId);
 
@@ -132,19 +132,17 @@ export async function markAlertsRead(supabase: Client, ids: string[]) {
 /** Owner-controlled alert channels. Only their own program is reachable. */
 export async function saveAlertPreferences(
   supabase: Client,
-  userId: string,
+  _userId: string,
   input: { email: boolean; smsP1: boolean; push: boolean; phone: string },
 ) {
-  const { error } = await supabase
-    .from("owner_programs")
-    .update({
-      notify_email: input.email,
-      notify_sms_p1: input.smsP1,
-      notify_push: input.push,
-      owner_phone: input.phone || null,
-    })
-    .eq("owner_user_id", userId);
+  const { data, error } = await supabase.rpc("save_owner_alert_preferences", {
+    _email: input.email,
+    _sms_p1: input.smsP1,
+    _push: input.push,
+    _phone: input.phone,
+  });
   if (error) throw error;
+  if (!data) throw new Error("Your notification preferences could not be saved.");
   return { ok: true as const };
 }
 
@@ -211,11 +209,7 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
     throw new Error("This participation opportunity belongs to a different property.");
   }
 
-  const program = await supabase
-    .from("owner_programs")
-    .select("owner_user_id,started_on,status")
-    .eq("id", input.programId)
-    .maybeSingle();
+  const program = await readOwnerProgram(supabase, input.programId);
   if (program.error) throw program.error;
   if (!program.data || program.data.owner_user_id !== userId)
     throw new Error("That participation program is not available to you.");
@@ -333,16 +327,11 @@ export async function respondToReview(
     .single();
   if (review.error) throw review.error;
 
-  const program = await supabase
-    .from("owner_programs")
-    .select("owner_user_id, archived_at, status")
-    .eq("id", review.data.program_id)
-    .single();
+  const program = await readOwnerProgram(supabase, review.data.program_id);
   if (program.error) throw program.error;
   if (
     program.data.owner_user_id !== userId ||
-    program.data.archived_at ||
-    ["closed", "completed"].includes(program.data.status)
+    ["closed", "completed", "complete"].includes(program.data.status)
   )
     throw new Error("This participation program is not available for your response.");
   if (
@@ -466,14 +455,11 @@ export async function loadOwnerApprovals(
   if (error) throw error;
   const rows = data ?? [];
   const ids = [...new Set(rows.map((r) => r.property_id).filter((v): v is string => Boolean(v)))];
-  const names = new Map<string, string>();
-  if (ids.length) {
-    const props = await supabase.from("properties").select("id, name").in("id", ids);
-    if (props.error) throw props.error;
-    for (const p of props.data ?? []) names.set(p.id, p.name);
-  }
-  const { activeOwnerLinks } = await import("./active-owner.server");
-  const participation = ids.length ? await activeOwnerLinks(supabase, ids) : new Map();
+  const labels = await readOwnerPropertyLabels(supabase, ids);
+  const names = new Map(labels.map((property) => [property.id, property.name]));
+  const participation = new Set(
+    labels.filter((property) => property.active).map((property) => property.id),
+  );
   return rows.map((r) => ({
     id: r.id,
     updated_at: r.updated_at,

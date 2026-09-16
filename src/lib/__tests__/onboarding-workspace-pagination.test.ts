@@ -23,7 +23,22 @@ function database(failedTable?: string) {
     new_value: JSON.stringify({ stage: "intake", revision: 1, status: "draft" }),
   }));
   const db = {
-    rpc: async () => ({ data: true, error: null }),
+    rpc: async (name: string) => ({
+      data:
+        name === "read_onboarding_review_capabilities"
+          ? [
+              {
+                is_admin: false,
+                can_review_stages: false,
+                kati_review: false,
+                micah_review: false,
+                operations_acceptance: false,
+                live_confirmation: false,
+              },
+            ]
+          : true,
+      error: null,
+    }),
     from: (table: string) => {
       const orders: string[] = [];
       const query = {

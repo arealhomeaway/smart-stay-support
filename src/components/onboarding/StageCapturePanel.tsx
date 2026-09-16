@@ -160,7 +160,7 @@ export function StageCapturePanel({
             rows={2}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            disabled={save.isPending || !canEdit}
+            disabled={save.isPending || (!canEdit && !canReview)}
           />
         </div>
         <div className="flex flex-wrap gap-2">

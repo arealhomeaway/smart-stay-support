@@ -1,3 +1,7 @@
+import {
+  canReviewOnboardingGate,
+  type OnboardingReviewCapabilities,
+} from "@/lib/onboarding-review-capabilities";
 /**
  * Director Onboarding Hub — the exception surface.
  *
@@ -44,7 +48,7 @@ export type Lens =
 export type HubViewer = {
   userId: string | null;
   /** True for Director / Operations reviewers who own a gate decision. */
-  canReview: boolean;
+  reviewCapabilities: OnboardingReviewCapabilities;
 };
 
 const LENSES: { key: Lens; label: string; hint: string }[] = [
@@ -83,15 +87,8 @@ const CHIP_LENSES: Lens[] = [
 
 function awaitingMyReview(p: ProjectSummary, viewer?: HubViewer) {
   if (!viewer) return false;
-  if (
-    p.stageReviewCount > 0 &&
-    (viewer.canReview || (viewer.userId && p.directorId === viewer.userId))
-  )
-    return true;
-  if (!p.inReview) return false;
-  const step = p.gateStep ?? "kati_review";
-  if (step === "kati_review" && viewer.userId && p.directorId === viewer.userId) return true;
-  return viewer.canReview;
+  if (p.stageReviewCount > 0 && viewer.reviewCapabilities.can_review_stages) return true;
+  return p.inReview && canReviewOnboardingGate(viewer.reviewCapabilities, p.gateStep);
 }
 
 /**

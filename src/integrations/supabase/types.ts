@@ -17,7 +17,7 @@ export type Database = {
       ticket_owner_updates: {
         Row: {
           id: string; ticket_id: string; property_id: string; owner_record_id: string;
-          revision: number; issue: string; work_performed: string; outcome: string;
+          revision: number; issue: string; work_performed: string; outcome: string; owner_request_type: string | null; owner_request_why: string | null;
           reviewed_by: string; reviewed_at: string; source_updated_at: string; is_demo: boolean;
         }
         Insert: never
@@ -7915,13 +7915,13 @@ export type Database = {
       }
       save_ticket_owner_update: {
         Args: { _ticket_id: string; _actor_id: string; _expected_ticket_updated_at: string;
-          _expected_revision: number; _expected_owner_id: string; _issue: string; _work_performed: string; _outcome: string; _reviewed: boolean }
+          _expected_revision: number; _expected_owner_id: string; _issue: string; _work_performed: string; _outcome: string; _reviewed: boolean; _owner_request_type: string; _owner_request_why: string }
         Returns: string
       }
       read_owner_ticket_updates: {
         Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
         Returns: { ticket_id: string; property_id: string; revision: number; issue: string;
-          work_performed: string; outcome: string; reviewed_at: string }[]
+          work_performed: string; outcome: string; reviewed_at: string; owner_request_type: string | null; owner_request_why: string | null }[]
       }
       read_owner_ticket_authority: {
         Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
@@ -7961,6 +7961,34 @@ export type Database = {
       redeem_owner_invite: {
         Args: { _user_id: string; _code: string }
         Returns: string
+      }
+      owner_property_access: {
+        Args: { _property_id: string; _actor_id?: string | null }
+        Returns: boolean
+      }
+      read_owner_programs: {
+        Args: { _program_id?: string | null; _preview?: boolean; _actor_id?: string | null }
+        Returns: { id: string; program: Json }[]
+      }
+      read_owner_properties: {
+        Args: { _property_ids: string[]; _program_id?: string | null; _preview?: boolean; _actor_id?: string | null }
+        Returns: { id: string; program_id: string; program_status: string; property: Json }[]
+      }
+      read_owner_program_properties: {
+        Args: { _program_id: string; _preview?: boolean }
+        Returns: { id: string; enrollment: Json }[]
+      }
+      save_owner_alert_preferences: {
+        Args: { _email: boolean; _sms_p1: boolean; _push: boolean; _phone: string }
+        Returns: string
+      }
+      read_onboarding_review_capabilities: {
+        Args: Record<PropertyKey, never>
+        Returns: { is_admin: boolean; can_review_stages: boolean; kati_review: boolean; micah_review: boolean; operations_acceptance: boolean; live_confirmation: boolean }[]
+      }
+      read_onboarding_handoff_snapshot: {
+        Args: { _property_id: string }
+        Returns: Json
       }
       read_onboarding_assignment_authority: {
         Args: Record<PropertyKey, never>

@@ -1,5 +1,7 @@
 import { evaluateAuthority, type WorkOrderLike } from "./work-orders";
 import type { OwnerActionType } from "./owner-opportunity";
+import { ACTION_TYPE_META } from "./owner-opportunity";
+import { parseReviewedTicketRequest } from "./owner-ticket-intent";
 
 export type OwnerTicketRequest = {
   category: OwnerActionType;
@@ -11,6 +13,26 @@ export type OwnerTicketRequest = {
 
 /** Canonical Work Order rules decide authority; this layer only explains the participation request. */
 export function ownerTicketRequest(
+  workOrders: (WorkOrderLike & { authorityUnconfirmed?: boolean })[],
+  reviewedIntent?: unknown,
+): OwnerTicketRequest {
+  const authority = ownerTicketAuthority(workOrders);
+  const intent = parseReviewedTicketRequest(reviewedIntent);
+  if (!intent) return authority;
+  const explicitWhy = `${ACTION_TYPE_META[intent.owner_request_type].label}: ${intent.owner_request_why}`;
+  // Canonical pending approval always stays primary, while the separate staff request remains visible.
+  if (authority.category === "approve_only" || intent.owner_request_type === "information_only")
+    return { ...authority, why: `${authority.why} Reviewed owner request — ${explicitWhy}` };
+  return {
+    ...authority,
+    category: intent.owner_request_type,
+    label: ACTION_TYPE_META[intent.owner_request_type].label,
+    ownerActionRequired: true,
+    why: `${explicitWhy} Repair authority: ${authority.why}`,
+  };
+}
+
+function ownerTicketAuthority(
   workOrders: (WorkOrderLike & { authorityUnconfirmed?: boolean })[],
 ): OwnerTicketRequest {
   const evaluated = workOrders.map((order) => ({ order, verdict: evaluateAuthority(order) }));

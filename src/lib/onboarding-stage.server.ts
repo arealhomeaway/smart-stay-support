@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-import { assertOnboardingPropertyManagement } from "./onboarding-task-access.server";
+import { assertOnboardingStageAccess } from "./onboarding-review-access.server";
 import {
   nextStageCapture,
   stageCompletionBlockers,
@@ -10,15 +10,9 @@ import {
 
 type Client = SupabaseClient<Database>;
 
-async function assertStageAccess(db: Client, userId: string, propertyId: string) {
-  const access = await db.rpc("is_onboarding_staff", { _user_id: userId });
-  if (access.error || !access.data) throw new Error("You do not have access to stage capture.");
-  await assertOnboardingPropertyManagement(db, userId, propertyId);
-}
-
 /** Public reads use the same property responsibility boundary as stage writes. */
 export async function loadStageCapturesForActor(db: Client, userId: string, propertyId: string) {
-  await assertStageAccess(db, userId, propertyId);
+  await assertOnboardingStageAccess(db, userId, propertyId);
   return loadStageCaptures(db, propertyId);
 }
 
@@ -58,8 +52,13 @@ export async function saveStageCapture(
   },
   writer?: Pick<Client, "rpc">,
 ) {
-  await assertStageAccess(db, userId, input.propertyId);
-  const [project, tasks, captures, supervisor, property, facts, evidence] = await Promise.all([
+  const capabilities = await assertOnboardingStageAccess(
+    db,
+    userId,
+    input.propertyId,
+    input.action,
+  );
+  const [project, tasks, captures, property, facts, evidence] = await Promise.all([
     db
       .from("onboarding_projects")
       .select("*")
@@ -73,7 +72,6 @@ export async function saveStageCapture(
       .is("archived_at", null)
       .order("id"),
     loadStageCaptures(db, input.propertyId),
-    db.rpc("is_supervisor", { _user_id: userId }),
     db
       .from("properties")
       .select("lifecycle_status, handoff_accepted_at")
@@ -86,14 +84,16 @@ export async function saveStageCapture(
       .eq("status", "pending"),
     db
       .from("documents")
-      .select("id, entity_type, entity_id")
+      .select("id, entity_type, entity_id, is_demo, storage_path, external_url")
       .in(
         "id",
         input.evidenceIds.length ? input.evidenceIds : ["00000000-0000-0000-0000-000000000000"],
       )
-      .is("archived_at", null),
+      .is("archived_at", null)
+      .is("deleted_at", null)
+      .eq("upload_status", "stored"),
   ]);
-  for (const result of [project, tasks, supervisor, property, facts, evidence])
+  for (const result of [project, tasks, property, facts, evidence])
     if (result.error) throw result.error;
   if (!project.data || !property.data)
     throw new Error("Start onboarding before capturing a stage.");
@@ -107,11 +107,18 @@ export async function saveStageCapture(
   const stageTasks = (tasks.data ?? []).filter((t) => t.stage === input.stage);
   const validEvidence = (evidence.data ?? []).filter(
     (d) =>
-      (d.entity_type === "property" && d.entity_id === input.propertyId) ||
-      (d.entity_type === "onboarding_task" && stageTasks.some((t) => t.id === d.entity_id)),
+      d.is_demo === project.data.is_demo &&
+      Boolean(d.storage_path?.trim() || d.external_url?.trim()) &&
+      ((d.entity_type === "property" && d.entity_id === input.propertyId) ||
+        (d.entity_type === "onboarding_task" && stageTasks.some((t) => t.id === d.entity_id))),
   );
-  if (input.evidenceIds.some((id) => !validEvidence.some((d) => d.id === id)))
-    throw new Error("Evidence must belong to this property or stage work.");
+  if (
+    !["return", "reopen"].includes(input.action) &&
+    input.evidenceIds.some((id) => !validEvidence.some((d) => d.id === id))
+  )
+    throw new Error(
+      "Evidence must be stored, available, and belong to this property or stage work.",
+    );
   const blockers = stageCompletionBlockers(input.stage, tasks.data ?? [], project.data);
   if (facts.data?.length) blockers.push("Permanent property facts await review");
   const current =
@@ -121,7 +128,7 @@ export async function saveStageCapture(
     ...input,
     current,
     actor: userId,
-    canReview: supervisor.data === true || project.data.director === userId,
+    canReview: capabilities.can_review_stages,
     blockers,
     now: new Date().toISOString(),
   });

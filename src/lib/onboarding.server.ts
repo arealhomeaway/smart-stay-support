@@ -11,7 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { validateHandoff } from "./onboarding";
-import { handoffReadiness, lifecycleEditIssue } from "./onboarding-state";
+import { lifecycleEditIssue } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
 export { validateHandoff };
 import {
@@ -23,6 +23,15 @@ import { assignedWorkContext, type AssignedWorkContext } from "./onboarding-assi
 import { onboardingWorkspaceMode } from "./onboarding-workspace-view";
 import { writeAudit } from "./audit.server";
 import { readCountedRows } from "./read-all-rows";
+import {
+  assertOnboardingStageAccess,
+  readOnboardingReviewCapabilities,
+} from "./onboarding-review-access.server";
+import { hasOnboardingReview } from "./onboarding-review-capabilities";
+import {
+  prepareOnboardingHandoff,
+  type OnboardingHandoffSnapshot,
+} from "./onboarding-handoff-readiness";
 
 type Client = SupabaseClient<Database>;
 
@@ -170,7 +179,12 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   const projects = await loadProjects(supabase);
   const supervisor = await supabase.rpc("is_supervisor", { _user_id: userId });
   if (supervisor.error) throw new Error("Could not verify your workspace view.");
-  const workspaceMode = onboardingWorkspaceMode(userId, Boolean(supervisor.data), projects);
+  const reviewCapabilities = await readOnboardingReviewCapabilities(supabase);
+  const workspaceMode = onboardingWorkspaceMode(
+    userId,
+    Boolean(supervisor.data) || hasOnboardingReview(reviewCapabilities),
+    projects,
+  );
   const stageEvents = await readCountedRows(
     supabase
       .from("onboarding_stage_captures")
@@ -189,6 +203,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
 
   const workspace = {
     workspaceMode,
+    reviewCapabilities,
     assignedWorkContexts: [] as AssignedWorkContext[],
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
@@ -847,116 +862,39 @@ export async function requestHandoff(
   userId: string,
   input: { propertyId: string; notes: string; carryoverAccepted: boolean },
 ) {
-  await assertCap(supabase, userId, "is_onboarding_staff");
-  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
-
-  const [property, tasks] = await Promise.all([
-    supabase.from("properties").select(PROPERTY_FIELDS).eq("id", input.propertyId).single(),
-    // Retired (archived) tasks are no longer requirements and must not block handoff.
-    supabase
-      .from("onboarding_tasks")
-      .select("*")
-      .eq("property_id", input.propertyId)
-      .is("archived_at", null),
-  ]);
-  if (property.error) throw property.error;
-  if (tasks.error) throw tasks.error;
-
-  // Authoritative server-side gate. The UI disables the action, but a stale
-  // or alternate client must never be able to advance a blocked handoff.
-  const [projectRow, openHandoffRow] = await Promise.all([
-    supabase
-      .from("onboarding_projects")
-      .select("id, status, completed_at, furnishing_scope, modules")
-      .eq("property_id", input.propertyId)
-      .neq("status", "cancelled")
-      .maybeSingle(),
-    supabase
-      .from("property_handoffs")
-      .select("id, status, gate_step, accepted_at, live_confirmed_at")
-      .eq("property_id", input.propertyId)
-      .in("status", ["requested", "accepted_pending_live"])
-      .maybeSingle(),
-  ]);
-  if (projectRow.error) throw projectRow.error;
-  if (openHandoffRow.error) throw openHandoffRow.error;
-  const applicableTasks = splitByScope(tasks.data ?? [], projectScope(projectRow.data)).inScope;
-  const { loadStageCaptures } = await import("./onboarding-stage.server");
-  const stageCaptures = await loadStageCaptures(supabase, input.propertyId);
-  const pendingFacts = await supabase
-    .from("property_fact_proposals")
-    .select("id")
-    .eq("property_id", input.propertyId)
-    .eq("status", "pending");
-  if (pendingFacts.error) throw pendingFacts.error;
-  const { checks, openBlocking, ready } = validateHandoff(property.data, applicableTasks);
-  if (openHandoffRow.data) {
-    throw new Error("A handoff is already in review for this home.");
-  }
-  const readiness = handoffReadiness(
-    {
-      property: property.data as never,
-      project: (projectRow.data ?? null) as never,
-      tasks: applicableTasks as never,
-      handoff: null,
-      stageCaptures,
-    },
-    checks,
-    { pendingFacts: pendingFacts.data?.length ?? 0 },
-  );
-  if (readiness.blocked) {
-    throw new Error(
-      `Handoff is blocked and cannot be requested: ${readiness.hardReasons
-        .map((r) => r.label)
-        .join("; ")}.`,
-    );
-  }
-
-  if (!ready && !input.carryoverAccepted) {
-    throw new Error(
-      "Readiness checklist has blocking failures. Resolve them, or accept the open items as carryover work with an owner, due date and reason.",
-    );
-  }
-  if (!ready && input.carryoverAccepted) {
-    const missingCarryover = (tasks.data ?? []).filter(
-      (t) =>
-        openBlocking.includes(t.id) &&
-        (!t.assigned_to || !t.due_on || !(t.carryover_reason ?? "").trim()),
-    );
-    if (missingCarryover.length) {
-      throw new Error(
-        "Every carried-over item needs an assigned owner, a due date and a carryover reason before handoff.",
-      );
-    }
-  }
-
-  // Only the server can persist this request, after the caller-scoped checks above.
+  await assertOnboardingStageAccess(supabase, userId, input.propertyId, "submit");
+  const snapshotResult = await supabase.rpc("read_onboarding_handoff_snapshot", {
+    _property_id: input.propertyId,
+  });
+  if (snapshotResult.error) throw snapshotResult.error;
+  const snapshot = snapshotResult.data as unknown as OnboardingHandoffSnapshot;
+  const prepared = prepareOnboardingHandoff(snapshot, input.carryoverAccepted);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: handoffId, error } = await supabaseAdmin.rpc("create_onboarding_handoff", {
     _property_id: input.propertyId,
     _actor_id: userId,
-    _expected_lifecycle: property.data.lifecycle_status,
+    _expected_lifecycle: snapshot.property.lifecycle_status,
     _request: {
-      checklist: checks,
-      validation: { ready, openBlocking },
-      openTaskIds: openBlocking,
-      carryoverAccepted: input.carryoverAccepted && !ready,
+      checklist: prepared.checks,
+      validation: { ready: prepared.ready, openBlocking: prepared.openBlocking },
+      openTaskIds: prepared.openTaskIds,
+      applicableTaskIds: prepared.applicableTaskIds,
+      carryoverAccepted: input.carryoverAccepted,
       notes: input.notes,
+      snapshot: snapshotResult.data,
     },
   });
   if (error) throw error;
   if (!handoffId) throw new Error("The handoff request could not be recorded.");
-
   await writeAudit({
     actorId: userId,
     action: "handoff_requested",
     entityType: "property",
     entityId: input.propertyId,
-    entityLabel: property.data.name,
-    after: { handoffId, ready, openBlocking },
+    entityLabel: snapshot.property.name,
+    after: { handoffId, ready: prepared.ready, openBlocking: prepared.openBlocking },
   });
-
-  return { id: handoffId, ready, checks };
+  return { id: handoffId, ready: prepared.ready, checks: prepared.checks };
 }
 
 export async function reviewHandoff(

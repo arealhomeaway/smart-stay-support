@@ -125,7 +125,7 @@ export function AttachmentsPanel({
         const { supabase } = await import("@/integrations/supabase/client");
         const put = await supabase.storage
           .from("resolve-attachments")
-          .uploadToSignedUrl(started.path, started.token!, file, { upsert: true });
+          .uploadToSignedUrl(started.path, started.token!, file, { upsert: false });
         if (put.error) throw put.error;
       } catch (err) {
         await complete({ data: { documentId: started.documentId!, ok: false } });

@@ -11,6 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseReviewedOwnerUpdate, type ReviewedOwnerUpdate } from "./owner-reviewed-update";
 import { readAllRows } from "./read-all-rows";
+import { readOwnerProgram, readOwnerProgramProperties } from "./owner-program-reader.server";
 import type { Database } from "@/integrations/supabase/types";
 import {
   benchmarkHours,
@@ -99,6 +100,7 @@ export type ProgramPropertyRow = {
   closingConfirmed: boolean;
   addedOn: string;
   inclusionStatus: string;
+  currentAccess?: boolean;
   onboardingStatus: string;
   launchStatus: string;
   coverage: CoverageState;
@@ -140,27 +142,35 @@ const CLOSED_REVIEW = new Set(["answered", "closed"]);
  * homes with task coverage, its owner tasks, its participation entries and
  * its badges.
  */
-export async function loadProgramAggregate(supabase: Client, programId: string) {
+export async function loadProgramAggregate(
+  supabase: Client,
+  programId: string,
+  options: { ownerView?: boolean; preview?: boolean } = {},
+) {
   const [program, links, reviews, reviewProps, entries, entryProps, badges] = await Promise.all([
-    supabase
-      .from("owner_programs")
-      .select(
-        "id, property_id, owner_user_id, owner_name, owner_email, owner_phone, status, started_on, ends_on, activated_at, activated_by, target_hours, operating_target_hours, onboarding_milestone_hours, onboarding_milestone_day, onboarding_target_hours, ongoing_target_hours, onboarding_lead, operations_lead, dfy_confirmed, internal_notes, completed_at, notify_email, notify_sms_p1, notify_push",
-      )
-      .eq("id", programId)
-      .single(),
-    readAllRows((from, to) =>
-      supabase
-        .from("owner_program_properties")
-        .select(
-          "id, property_id, closing_date, closing_confirmed, added_on, inclusion_status, onboarding_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname, address_line1, city, state, primary_photo_url)",
-          { count: "exact" },
-        )
-        .eq("program_id", programId)
-        .order("added_on")
-        .order("id")
-        .range(from, to),
-    ),
+    options.ownerView
+      ? readOwnerProgram(supabase, programId, options.preview)
+      : supabase
+          .from("owner_programs")
+          .select(
+            "id, property_id, owner_user_id, owner_name, owner_email, owner_phone, status, started_on, ends_on, activated_at, activated_by, target_hours, operating_target_hours, onboarding_milestone_hours, onboarding_milestone_day, onboarding_target_hours, ongoing_target_hours, onboarding_lead, operations_lead, dfy_confirmed, internal_notes, completed_at, notify_email, notify_sms_p1, notify_push",
+          )
+          .eq("id", programId)
+          .single(),
+    options.ownerView
+      ? readOwnerProgramProperties(supabase, programId, options.preview)
+      : readAllRows((from, to) =>
+          supabase
+            .from("owner_program_properties")
+            .select(
+              "id, property_id, closing_date, closing_confirmed, added_on, inclusion_status, onboarding_status, launch_status, coverage_status, last_owner_activity_at, properties(name, nickname, address_line1, city, state, primary_photo_url)",
+              { count: "exact" },
+            )
+            .eq("program_id", programId)
+            .order("added_on")
+            .order("id")
+            .range(from, to),
+        ),
     readAllRows((from, to) =>
       supabase
         .from("owner_reviews")
@@ -277,13 +287,14 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     return {
       id: l.id,
       propertyId: l.property_id,
-      name: prop ? prop.nickname || prop.name : "Property",
+      name: prop ? prop.nickname || prop.name || "Property" : "Previously enrolled property",
       address: prop ? locationOf(prop) : "",
       photoUrl: prop?.primary_photo_url ?? null,
       closingDate: l.closing_date,
       closingConfirmed: l.closing_confirmed,
       addedOn: l.added_on,
       inclusionStatus: l.inclusion_status,
+      currentAccess: "current_access" in l ? l.current_access === true : true,
       onboardingStatus: l.onboarding_status,
       launchStatus: l.launch_status,
       coverage,
@@ -298,7 +309,9 @@ export async function loadProgramAggregate(supabase: Client, programId: string) 
     };
   });
 
-  const included = properties.filter((x) => x.inclusionStatus === "included");
+  const included = properties.filter(
+    (x) => x.inclusionStatus === "included" && x.currentAccess !== false,
+  );
   // An entry that a later entry amends is superseded: only the amending entry
   // carries the current minutes, so the pair can never be counted twice.
   const supersededIds = new Set(

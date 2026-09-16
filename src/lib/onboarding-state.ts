@@ -16,6 +16,7 @@
 
 import { GATE_STEPS, type HandoffCheck } from "./onboarding";
 import { ONBOARDING_STAGES } from "./onboarding";
+import { stageReviewMatchesWork, type StageCapture } from "./onboarding-stage";
 import type { WorkflowTask } from "./onboarding-workflow";
 
 /* -------------------------------------------------------------- lifecycle */
@@ -130,6 +131,9 @@ export function lifecycleEditIssue(
 }
 
 export type StateProject = {
+  modules?: string[] | null;
+  furnishing_scope?: string | null;
+  director?: string | null;
   id: string;
   status: string | null;
   completed_at?: string | null;
@@ -635,17 +639,17 @@ export function handoffReadiness(
 
   const plan = input.tasks.filter((t) => !isPostLock(t, ctx.lockedAt));
   if (input.stageCaptures !== undefined && !life.accepted) {
-    const unreviewed = [...new Set(plan.map((t) => t.stage))].filter(
-      (stage) =>
-        input
-          .stageCaptures!.filter((c) => c.stage === stage)
-          .sort((a, b) => b.revision - a.revision)[0]?.status !== "complete",
-    );
+    const unreviewed = [...new Set(plan.map((t) => t.stage))].filter((stage) => {
+      const capture = input
+        .stageCaptures!.filter((c) => c.stage === stage)
+        .sort((a, b) => b.revision - a.revision)[0];
+      return !stageReviewMatchesWork(capture as StageCapture | undefined, plan, input.project);
+    });
     if (unreviewed.length)
       reasons.push({
         key: "stage_reviews",
         label: "Stage reviews outstanding",
-        detail: `${unreviewed.length} applicable stage(s) need an approved capture.`,
+        detail: `${unreviewed.length} applicable stage(s) need a Director review of the current work and scope.`,
       });
   }
   const open = plan.filter((t) => t.status !== "complete" && t.status !== "carryover");

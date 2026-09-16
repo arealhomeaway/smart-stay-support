@@ -17,6 +17,9 @@ function fileRecordsClient(title: string, enrolled = true) {
         requested_from: null,
         upload_status: "stored",
         visibility: "owner_shared",
+        property_id: "property",
+        is_demo: false,
+        archived_at: null,
       },
       {
         id: "requested-file",
@@ -25,6 +28,9 @@ function fileRecordsClient(title: string, enrolled = true) {
         requested_from: "owner",
         upload_status: "pending",
         visibility: "owner_shared",
+        property_id: "property",
+        is_demo: false,
+        archived_at: null,
       },
     ],
     tickets: [
@@ -41,6 +47,7 @@ function fileRecordsClient(title: string, enrolled = true) {
     ],
   };
   const client = {
+    rpc: async () => ({ data: enrolled, error: null }),
     from: (table: string) => {
       reads.push(table);
       const result = { data: rows[table] ?? [], error: null };
@@ -78,13 +85,21 @@ it("keeps shared and requested files linked to a Ticket without returning its in
   expect(await listOwnerFileRecords(owner, edited.client as never)).toEqual(result);
 });
 
-it("preserves the full Ticket label for staff while treating every nonstaff audience as owner-safe", async () => {
-  for (const roles of [["admin"], ["manager"], ["onboarding"], ["tech"], ["owner", "tech"]]) {
+it("restricts the owner file index to external owner accounts; staff retain their separate record file interface", async () => {
+  for (const roles of [
+    ["admin"],
+    ["manager"],
+    ["onboarding"],
+    ["tech"],
+    ["owner", "tech"],
+    ["vendor"],
+    [],
+  ]) {
     const { client } = fileRecordsClient("Internal maintenance detail");
     const result = await listOwnerFileRecords({ userId: "owner", roles }, client as never);
-    expect(result.records[0]?.label).toBe("ARHA-42 Internal maintenance detail");
+    expect(result.records).toEqual([]);
   }
-  for (const roles of [["owner"], ["vendor"], []]) {
+  for (const roles of [["owner"]]) {
     const { client } = fileRecordsClient("PRIVATE internal title");
     const result = await listOwnerFileRecords({ userId: "owner", roles }, client as never);
     expect(result.records[0]?.label).toBe("Property work · Ticket #42");

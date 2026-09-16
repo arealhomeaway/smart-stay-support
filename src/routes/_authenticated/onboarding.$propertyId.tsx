@@ -1,3 +1,4 @@
+import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import {
   onboardingWorkspaceKey,
@@ -232,6 +233,8 @@ function PropertyWorkspace() {
   const pm = data.people.find((p) => p.id === current.onboarding_owner);
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
   const canEdit = !readOnly && can("handoff_request");
+  const canExecuteProject =
+    !readOnly && (data.reviewCapabilities.is_admin || projectRow?.project_manager === userId);
 
   const project = {
     property: current as unknown as ProjectProperty,
@@ -711,11 +714,9 @@ function PropertyWorkspace() {
           />
           <StageCapturePanel
             propertyId={current.id}
-            canEdit={canEdit && !life.locked}
+            canEdit={canExecuteProject && !life.locked && !openHandoff}
             canReview={
-              !readOnly &&
-              (can("handoff_review") ||
-                data.projects.some((p) => p.property_id === current.id && p.director === userId))
+              !readOnly && !life.locked && !openHandoff && data.reviewCapabilities.can_review_stages
             }
             documents={data.documents.filter((d) => d.entity_id === current.id)}
           />
@@ -852,15 +853,7 @@ function PropertyWorkspace() {
               people={data.people}
               propertyName={current.name}
               canReview={
-                can("handoff_review") ||
-                (Boolean(userId) &&
-                  (openHandoff.gate_step ?? "kati_review") === "kati_review" &&
-                  data.projects.some(
-                    (project) =>
-                      project.property_id === current.id &&
-                      project.status !== "cancelled" &&
-                      project.director === userId,
-                  ))
+                !readOnly && canReviewOnboardingGate(data.reviewCapabilities, openHandoff.gate_step)
               }
               disabled={readOnly}
               onDecision={(input) =>
@@ -919,13 +912,10 @@ function PropertyWorkspace() {
                     </p>
                   )}
                   <RequestHandoffDialog
-                    ready={readiness.ready}
+                    ready={readiness.ready && tasks.every((t) => t.status === "complete")}
                     blockedReasons={readiness.hardReasons}
-                    disabled={!canEdit || readiness.blocked}
-                    carryoverCount={
-                      tasks.filter((t) => t.status !== "complete" && t.status !== "carryover")
-                        .length
-                    }
+                    disabled={!canExecuteProject || readiness.blocked}
+                    carryoverCount={tasks.filter((t) => t.status !== "complete").length}
                     onRequest={(notes2, carryoverAccepted) =>
                       requestHandoff.mutate({
                         data: { propertyId: current.id, notes: notes2, carryoverAccepted },
@@ -1324,7 +1314,7 @@ function RequestHandoffDialog({
           <p className="text-sm text-muted-foreground">
             {ready
               ? "All blocking checks pass. The Director of Onboarding reviews first, then the Director of Operations."
-              : `Blocking checks are failing. You can still request the handoff if the ${carryoverCount} open item(s) are accepted as carryover work with an owner, a due date and a reason — carryover moves to Operations and no longer belongs to Onboarding.`}
+              : `Required checks pass. The ${carryoverCount} remaining item(s) must be accepted as carryover work with an owner, a due date and a reason — carryover moves to Operations and no longer belongs to Onboarding.`}
           </p>
           <Textarea
             rows={4}
@@ -1340,6 +1330,7 @@ function RequestHandoffDialog({
           )}
           <Button
             className="w-full"
+            disabled={blockedReasons.length > 0 || (!ready && !carryover)}
             onClick={() => {
               onRequest(notes.trim(), carryover);
               setOpen(false);

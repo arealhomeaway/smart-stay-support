@@ -13,6 +13,8 @@ export type StageCapture = {
   reason: string;
   actor: string;
   recordedAt: string;
+  taskSnapshot?: WorkflowTask[];
+  scopeSnapshot?: { modules: string[]; furnishing_scope: string; director: string | null };
 };
 
 export function stageCompletionBlockers(
@@ -56,7 +58,7 @@ export function nextStageCapture(input: {
   const status = input.current?.status ?? "draft";
   const reviewAction = ["approve", "return", "reopen"].includes(input.action);
   if (reviewAction && !input.canReview)
-    throw new Error("A Director or supervisor must review this stage.");
+    throw new Error("The Director of Onboarding must review this stage.");
   if (input.action === "reopen" && status !== "complete")
     throw new Error("Only a completed stage can be reopened.");
   if (["approve", "return"].includes(input.action) && status !== "awaiting_review")
@@ -86,4 +88,47 @@ export function nextStageCapture(input: {
     actor: input.actor,
     recordedAt: input.now,
   };
+}
+
+function comparableJson(value: unknown): string {
+  if (Array.isArray(value)) return "[" + value.map(comparableJson).join(",") + "]";
+  if (value && typeof value === "object")
+    return (
+      "{" +
+      Object.entries(value)
+        .filter(([, v]) => v !== undefined)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => JSON.stringify(k) + ":" + comparableJson(v))
+        .join(",") +
+      "}"
+    );
+  return JSON.stringify(value) ?? "null";
+}
+
+/** A completed label cannot stand in for the task/scope revision actually reviewed. */
+export function stageReviewMatchesWork(
+  capture: StageCapture | undefined,
+  tasks: WorkflowTask[],
+  project: {
+    modules?: string[] | null;
+    furnishing_scope?: string | null;
+    director?: string | null;
+  } | null,
+) {
+  if (
+    !capture ||
+    capture.status !== "complete" ||
+    !Array.isArray(capture.taskSnapshot) ||
+    !capture.scopeSnapshot
+  )
+    return false;
+  const scope = {
+    modules: project?.modules ?? [],
+    furnishing_scope: project?.furnishing_scope ?? "full_furnishing",
+    director: project?.director ?? null,
+  };
+  if (comparableJson(scope) !== comparableJson(capture.scopeSnapshot)) return false;
+  const applicable = (rows: WorkflowTask[]) =>
+    rows.filter((t) => t.stage === capture.stage).sort((a, b) => a.id.localeCompare(b.id));
+  return comparableJson(applicable(tasks)) === comparableJson(applicable(capture.taskSnapshot));
 }

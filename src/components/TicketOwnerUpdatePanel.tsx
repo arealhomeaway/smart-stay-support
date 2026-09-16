@@ -6,11 +6,20 @@ import { ticketOwnerUpdates, saveTicketOwnerUpdate } from "@/lib/ticket-owner-up
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ACTION_TYPE_META } from "@/lib/owner-opportunity";
+import {
+  REVIEWED_TICKET_REQUEST_TYPES,
+  reviewedTicketRequestTypeSchema,
+  reviewedTicketRequestText,
+  type ReviewedTicketRequestType,
+} from "@/lib/owner-ticket-intent";
 
 type Draft = {
   issue: string;
   workPerformed: string;
   outcome: string;
+  ownerRequestType: ReviewedTicketRequestType;
+  ownerRequestWhy: string;
   expectedTicketUpdatedAt: string;
   expectedRevision: number;
   expectedOwnerId: string;
@@ -18,6 +27,10 @@ type Draft = {
 };
 
 export function TicketOwnerUpdatePanel({ ticketId }: { ticketId: string }) {
+  return <TicketOwnerUpdateEditor key={ticketId} ticketId={ticketId} />;
+}
+
+function TicketOwnerUpdateEditor({ ticketId }: { ticketId: string }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const load = useServerFn(ticketOwnerUpdates);
   const save = useServerFn(saveTicketOwnerUpdate);
@@ -62,6 +75,7 @@ export function TicketOwnerUpdatePanel({ ticketId }: { ticketId: string }) {
           <p>{latest.issue}</p>
           <p>{latest.work_performed}</p>
           {latest.outcome && <p>{latest.outcome}</p>}
+          {reviewedTicketRequestText(latest) && <p>{reviewedTicketRequestText(latest)}</p>}
           <p className="text-muted-foreground">
             Revision {latest.revision} · {latest.reviewed_at.slice(0, 10)}
           </p>
@@ -77,6 +91,10 @@ export function TicketOwnerUpdatePanel({ ticketId }: { ticketId: string }) {
               issue: latest?.issue ?? "",
               workPerformed: latest?.work_performed ?? "",
               outcome: latest?.outcome ?? "",
+              ownerRequestType:
+                reviewedTicketRequestTypeSchema.safeParse(latest?.owner_request_type).data ??
+                "information_only",
+              ownerRequestWhy: latest?.owner_request_why ?? "",
               expectedTicketUpdatedAt: context.data.ticket.updated_at,
               expectedOwnerId: context.data.ownerRecordId,
               expectedRevision: latest?.revision ?? 0,
@@ -102,6 +120,50 @@ export function TicketOwnerUpdatePanel({ ticketId }: { ticketId: string }) {
               other restricted information. This does not approve spending or change the Ticket's
               status.
             </p>
+            <div className="space-y-1">
+              <Label htmlFor={`${ticketId}-owner-request-type`}>
+                What does the owner need to do?
+              </Label>
+              <select
+                id={`${ticketId}-owner-request-type`}
+                name="ownerRequestType"
+                className="w-full rounded-md border bg-background p-2 text-sm"
+                value={draft.ownerRequestType}
+                required
+                aria-describedby={`${ticketId}-owner-request-help`}
+                onChange={(event) => {
+                  const type = reviewedTicketRequestTypeSchema.parse(event.target.value);
+                  setDraft({ ...draft, ownerRequestType: type, reviewed: false });
+                }}
+              >
+                {REVIEWED_TICKET_REQUEST_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {ACTION_TYPE_META[type].label}
+                  </option>
+                ))}
+              </select>
+              <p id={`${ticketId}-owner-request-help`} className="text-sm text-muted-foreground">
+                Spending approval is determined by the current approval request. Choose Information
+                only when no other action remains. A new reviewed update replaces the current
+                request; earlier revisions stay in participation history. Owner reports of action or
+                payment require staff verification and do not certify completion.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`${ticketId}-owner-request-why`}>Why this request or review?</Label>
+              <Textarea
+                id={`${ticketId}-owner-request-why`}
+                name="ownerRequestWhy"
+                value={draft.ownerRequestWhy}
+                minLength={10}
+                maxLength={1000}
+                required
+                aria-describedby={`owner-update-help-${ticketId}`}
+                onChange={(event) =>
+                  setDraft({ ...draft, ownerRequestWhy: event.target.value, reviewed: false })
+                }
+              />
+            </div>
             {(
               [
                 ["issue", "Issue", 2000, 10],
@@ -185,6 +247,7 @@ export function TicketOwnerUpdatePanel({ ticketId }: { ticketId: string }) {
                 <p>{update.issue}</p>
                 <p>{update.work_performed}</p>
                 <p>{update.outcome}</p>
+                {reviewedTicketRequestText(update) && <p>{reviewedTicketRequestText(update)}</p>}
               </li>
             ))}
           </ol>

@@ -1,3 +1,4 @@
+import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -211,7 +212,7 @@ function Hub() {
           )}
           <DirectorHub
             projects={projects}
-            viewer={{ userId, canReview: can("handoff_review") }}
+            viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
             originToken={originToken}
             lens={lens}
             onLensChange={(v) => setParam({ lens: v })}
@@ -235,12 +236,7 @@ function Hub() {
               reviews={data.reviews as never}
               people={data.people}
               propertyName={data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"}
-              canReview={
-                can("handoff_review") ||
-                (Boolean(userId) &&
-                  (h.gate_step ?? "kati_review") === "kati_review" &&
-                  data.properties.find((p) => p.id === h.property_id)?.onboarding_owner === userId)
-              }
+              canReview={!readOnly && canReviewOnboardingGate(data.reviewCapabilities, h.gate_step)}
               disabled={readOnly}
               onDecision={(input) => reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })}
             />

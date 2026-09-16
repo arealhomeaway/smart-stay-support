@@ -16,6 +16,9 @@ declare module "bun:test" {
   export interface Matchers<T> {
     toBe(expected: T): void;
     toEqual(expected: T): void;
+    toMatchObject(expected: unknown): void;
+    toHaveLength(expected: number): void;
+    toContainEqual(expected: unknown): void;
     toBeNull(): void;
     toBeTruthy(): void;
     toContain(expected: unknown): void;
@@ -23,6 +26,7 @@ declare module "bun:test" {
     toBeLessThanOrEqual(expected: number): void;
     toThrow(expected?: string | RegExp): void;
     readonly not: Matchers<T>;
+    readonly rejects: Matchers<unknown>;
   }
 
   export function expect<T>(actual: T): Matchers<T>;

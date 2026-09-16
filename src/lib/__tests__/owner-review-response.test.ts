@@ -1,3 +1,4 @@
+import { ownerProgramFixture } from "./owner-program-reader-fixture";
 import { expect, it } from "bun:test";
 import { respondToReview } from "../owner-portal.server";
 
@@ -16,7 +17,14 @@ function fixture(reviewChange = {}, programChange = {}) {
   };
   const program = { owner_user_id: "owner", archived_at: null, status: "active", ...programChange };
   const db = {
-    rpc: async (_name: string, args: Record<string, unknown>) => {
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      if (name === "read_owner_programs")
+        return {
+          data: program.archived_at
+            ? []
+            : [{ id: "program", program: ownerProgramFixture(program) }],
+          error: null,
+        };
       updates.push(args);
       return {
         data: null,

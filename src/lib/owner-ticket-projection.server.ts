@@ -143,6 +143,9 @@ export async function loadOwnerTicketProjection(
                   : [],
               ),
             ),
+          updates.data.find(
+            (update) => update.ticket_id === ticket.id && update.property_id === ticket.property_id,
+          ),
         ),
       })),
     );

@@ -77,7 +77,7 @@ function fileName(base: string, ext: string) {
 
 /** Owner-visible report model. Internal notes and other owners never appear. */
 export async function buildOwnerReport(supabase: Client, programId: string) {
-  const agg = await loadProgramAggregate(supabase, programId);
+  const agg = await loadProgramAggregate(supabase, programId, { ownerView: true });
   const p = agg.program;
 
   const propNames = new Map(agg.properties.map((x) => [x.propertyId, x.name] as const));

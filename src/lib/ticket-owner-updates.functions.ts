@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { reviewedTicketRequestTypeSchema } from "./owner-ticket-intent";
 
 export const ticketOwnerUpdates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -22,6 +23,8 @@ export const saveTicketOwnerUpdate = createServerFn({ method: "POST" })
         issue: z.string().trim().min(10).max(2000),
         workPerformed: z.string().trim().min(10).max(3000),
         outcome: z.string().trim().max(2000),
+        ownerRequestType: reviewedTicketRequestTypeSchema,
+        ownerRequestWhy: z.string().trim().min(10).max(1000),
         reviewed: z.literal(true),
       })
       .parse(data),
@@ -38,6 +41,8 @@ export const saveTicketOwnerUpdate = createServerFn({ method: "POST" })
       _work_performed: data.workPerformed,
       _outcome: data.outcome,
       _reviewed: data.reviewed,
+      _owner_request_type: data.ownerRequestType,
+      _owner_request_why: data.ownerRequestWhy,
     });
     if (result.error) throw result.error;
     return { id: result.data };

@@ -1,3 +1,4 @@
+import { ownerProgramFixture } from "./owner-program-reader-fixture";
 import { expect, it } from "bun:test";
 import { logOwnerTime } from "../owner-portal.server";
 import { recordTimeCorrection } from "../owner-program.server";
@@ -26,6 +27,8 @@ it("returns the committed time receipt without fallible follow-up writes or read
       name: string,
       args: { _entry: { confirmed: boolean; phase: string; ownerUpdateRevision: number } },
     ) {
+      if (name === "read_owner_programs")
+        return { data: [{ id: "program", program: ownerProgramFixture() }], error: null };
       expect(name).toBe("log_owner_time_entry");
       expect(args._entry.confirmed).toBe(true);
       expect(args._entry.phase).toBe("onboarding");

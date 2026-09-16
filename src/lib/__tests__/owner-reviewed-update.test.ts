@@ -100,3 +100,43 @@ it("exposes only response text and allowlisted narrative fields from a receipt",
   expect(receipt.ownerUpdate?.revision).toBe(1);
   expect(JSON.stringify(receipt).includes("SECRET")).toBe(false);
 });
+
+it("freezes the response request category and retains request WHY in safe history exports", async () => {
+  const { reviewedOwnerUpdateText } = await import("../owner-reviewed-update");
+  const { ownerTicketRequest } = await import("../owner-ticket-authority");
+  const review = {
+    id: "review",
+    phase: "ongoing",
+    title: "Property work",
+    ticket_id: "ticket",
+    propertyIds: ["home"],
+    recommendation: "The reviewed action",
+    owner_update_revision: 2,
+    updated_at: "first",
+    owner_request: ownerTicketRequest([{ quote_amount: 150 }], {
+      owner_request_type: "action_payment",
+      owner_request_why: "Please report completion for staff verification.",
+    }),
+  };
+  const captured = captureReviewedResponse(review);
+  review.owner_request = ownerTicketRequest([{ quote_amount: 150 }]);
+  expect(captured.requestCategory).toBe("action_payment");
+  const snapshot = {
+    revision: 2,
+    issue: "Issue",
+    work_performed: "Work",
+    outcome: "Outcome",
+    reviewed_at: "2026-09-16",
+    owner_request_type: "action_payment",
+    owner_request_why: "Please report completion for staff verification.",
+    private_note: "SECRET",
+  };
+  expect(parseReviewedOwnerUpdate(snapshot)?.owner_request_type).toBe("action_payment");
+  expect(reviewedOwnerUpdateText(snapshot)).toContain("Action or payment required");
+  expect(reviewedOwnerUpdateText(snapshot)).toContain("staff verification");
+  expect(reviewedOwnerUpdateText(snapshot).includes("SECRET")).toBe(false);
+  expect(
+    parseReviewedOwnerUpdate({ ...snapshot, owner_request_type: null, owner_request_why: null })
+      ?.revision,
+  ).toBe(2);
+});

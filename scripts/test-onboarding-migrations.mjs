@@ -128,6 +128,15 @@ try {
     "supabase/tests/fixtures/onboarding_responsibility_assignments_schema.sql",
     "supabase/migrations/20260916070000_onboarding_responsibility_assignments.sql",
     "supabase/tests/onboarding_responsibility_assignments.test.sql",
+    "supabase/tests/fixtures/owner_program_property_projection_schema.sql",
+    "supabase/migrations/20260916080000_owner_program_property_projection.sql",
+    "supabase/tests/owner_program_property_projection.test.sql",
+    "supabase/tests/fixtures/onboarding_review_responsibilities_schema.sql",
+    "supabase/migrations/20260916090000_onboarding_review_responsibilities.sql",
+    "supabase/tests/onboarding_review_responsibilities.test.sql",
+    "supabase/tests/fixtures/reviewed_ticket_owner_intent_schema.sql",
+    "supabase/migrations/20260916100000_reviewed_ticket_owner_intent.sql",
+    "supabase/tests/reviewed_ticket_owner_intent.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

@@ -180,3 +180,42 @@ it("fails closed when the Ticket boundary rejects the request", async () => {
   }
   expect(message).toBe("Not authorized");
 });
+
+it("uses only the linked reviewed request and preserves canonical approval precedence", async () => {
+  const update = {
+    ticket_id: "ticket",
+    property_id: "home",
+    revision: 2,
+    issue: "A reviewed issue.",
+    work_performed: "Staff checked the repair.",
+    outcome: "Pending response.",
+    reviewed_at: "2026-09-16",
+    owner_request_type: "provide_information",
+    owner_request_why: "Please provide the appliance model for this repair.",
+  };
+  const records = {
+    [names.tickets]: [ticket],
+    [names.updates]: [
+      {
+        ...update,
+        ticket_id: "other-ticket",
+        owner_request_type: "action_payment",
+        owner_request_why: "OTHER OWNER REQUEST",
+      },
+      update,
+    ],
+    [names.work]: [
+      { ticket_id: "ticket", property_id: "home", phase: "permanent", quote_amount: 150 },
+    ],
+  };
+  const result = await loadOwnerTicketProjection(
+    database(records) as never,
+    ["home"],
+    false,
+    "program",
+  );
+  expect(result[0]!.request.category).toBe("provide_information");
+  expect(result[0]!.request.why).toContain("appliance model");
+  expect(result[0]!.request.why.includes("OTHER OWNER")).toBe(false);
+  expect(result[0]!.owner_update_revision).toBe(2);
+});
