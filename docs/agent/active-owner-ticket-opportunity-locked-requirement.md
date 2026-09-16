@@ -14,7 +14,13 @@ User direction received September 15, 2026. This extends the active build goal w
 - Read classification from Resolve's canonical approval/authority logic. The $150 example is illustrative, never a universal threshold. Explain existing management authority accurately; do not turn missing authority evidence into an assertion that work is authorized.
 - Owners can open/review the opportunity, log actual legitimate participation against it, and retain it in participation history. Review-only work qualifies when the owner actually reviews it. Never automatically award hours.
 
-## Current checkpoint — September 16, migrations46–48
+## Current checkpoint — September 16, migrations49–54
+
+**IMPLEMENTED LOCALLY; READY FOR AUTHENTICATED ACCEPTANCE.** The six prior implementation boundaries are addressed. Automatic Ticket coverage, all eight request types and WHY, canonical Owner identity, actual costs, reviewed revisions, review-only participation and the inclusive 100-hour target have local regression evidence. Exactly **100.0 counted hours qualifies**.
+
+Latest validation: **877 unit tests / 129 files / 3282 assertions**, TypeScript, focused lint, production build and all **54 isolated migration checks PASS**. Full-schema, actual-role, storage, simultaneous-session and desktop/390px acceptance remain unproven and require the approved isolated environment. See the current requirements checklist and latest build-progress entry. The historical checkpoints below do not describe remaining local implementation.
+
+## Historical checkpoint — September 16, migrations46–48 (superseded)
 
 **PARTIALLY IMPLEMENTED overall; automatic coverage and all eight request-classification paths are implemented locally.** One Ticket/program opportunity is automatically created/updated with canonical links. Reviewed narratives and request WHY use immutable revisions; canonical pending approval takes precedence, and review-only fallback remains a legitimate participation opportunity. Current Ticket/Property/program/authority/actual-cost projections require canonical scope and active owner-only account access. Time, responses, corrections, exports and new closeouts preserve the selected narrative/request history without creating hours.
 
@@ -25,7 +31,7 @@ Remaining implementation: raw review/history/notification/approval/document poli
 Validation for this checkpoint:835 unit tests/118files/3031assertions, TypeScript, focused lint, production build and all48 isolated migrations PASS. These local results do not establish full owner isolation or authenticated acceptance. **MORE IMPLEMENTATION REQUIRED.**
 ## Initial implementation inventory (historical)
 
-This inventory records the original September 15 gaps. It is retained as history and is superseded by the current checkpoint below and the main requirements checklist.
+This inventory records the original September 15 gaps. It is retained as history and is superseded by the current checkpoint above and the main requirements checklist.
 
 1. `src/lib/owner-opportunity.server.ts` manually inserts thin `owner_reviews` linked to Tickets/properties/programs. Reuse this model. The existing `(program_id, ticket_id)` unique index in migration `20260903175808_873fb28c-18a0-4068-88d4-cb7b6bcef404.sql` provides an existing duplicate boundary; generation must update the same opportunity without losing participation history.
 2. `src/lib/owner-portal.server.ts` currently reads raw Ticket title/description/resolution notes and caps the feed at 120 rows. Raw text is not owner-safe merely because internal comments are absent. The projection and complete Ticket coverage need implementation before acceptance.
