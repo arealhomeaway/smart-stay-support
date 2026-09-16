@@ -9,8 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { recordEvent } from "./owner-participation.server";
-import { opportunityDecisionPath, type OwnerActionType } from "./owner-opportunity";
+import { type OwnerActionType } from "./owner-opportunity";
 
 type Client = SupabaseClient<Database>;
 
@@ -25,6 +24,11 @@ async function assertOpportunityStaff(supabase: Client, userId: string) {
 export type OfferInput = {
   source: "onboarding" | "operations";
   sourceId: string;
+  programId: string;
+  expectedVersion: string;
+  expectedOwnerId: string;
+  expectedSourceUpdatedAt: string;
+  reviewed: true;
   title: string;
   instructions: string;
   actionType: OwnerActionType;
@@ -35,6 +39,7 @@ export type OfferInput = {
 
 type SourceContext = {
   propertyId: string | null;
+  updatedAt: string;
   defaultTitle: string;
   defaultInstructions: string;
   ticketId: string | null;
@@ -51,12 +56,13 @@ async function loadSource(
   if (source === "onboarding") {
     const task = await supabase
       .from("onboarding_tasks")
-      .select("id, property_id, title, detail, stage")
+      .select("id, property_id, title, detail, stage, updated_at")
       .eq("id", sourceId)
       .single();
     if (task.error) throw task.error;
     return {
       propertyId: task.data.property_id,
+      updatedAt: task.data.updated_at,
       defaultTitle: task.data.title,
       defaultInstructions: task.data.detail ?? "",
       ticketId: null,
@@ -67,12 +73,13 @@ async function loadSource(
   }
   const ticket = await supabase
     .from("tickets")
-    .select("id, property_id, title, description")
+    .select("id, property_id, title, description, updated_at")
     .eq("id", sourceId)
     .single();
   if (ticket.error) throw ticket.error;
   return {
     propertyId: ticket.data.property_id,
+    updatedAt: ticket.data.updated_at,
     defaultTitle: ticket.data.title,
     defaultInstructions: ticket.data.description ?? "",
     ticketId: ticket.data.id,
@@ -105,6 +112,14 @@ export async function opportunityContext(
   const link = await programForProperty(supabase, ctx.propertyId);
   if (!link) return { eligible: false as const, reason: "no_program" as const };
 
+  const program = await supabase
+    .from("owner_programs")
+    .select("id, owner_record_id, report_version")
+    .eq("id", link.programId)
+    .single();
+  if (program.error) throw program.error;
+  if (!program.data.owner_record_id)
+    return { eligible: false as const, reason: "no_program" as const };
   const query = supabase
     .from("owner_reviews")
     .select(
@@ -121,6 +136,9 @@ export async function opportunityContext(
   return {
     eligible: true as const,
     programId: link.programId,
+    expectedVersion: program.data.report_version,
+    expectedOwnerId: program.data.owner_record_id,
+    expectedSourceUpdatedAt: ctx.updatedAt,
     ownerName: link.ownerName,
     propertyId: ctx.propertyId,
     defaultTitle: ctx.defaultTitle,
@@ -132,54 +150,24 @@ export async function opportunityContext(
 /** Creates the opportunity. Idempotent per source record. */
 export async function offerToOwner(supabase: Client, userId: string, input: OfferInput) {
   await assertOpportunityStaff(supabase, userId);
-  const ctx = await loadSource(supabase, input.source, input.sourceId);
-  if (!ctx.propertyId) throw new Error("This work is not attached to a property.");
-  const link = await programForProperty(supabase, ctx.propertyId);
-  if (!link) throw new Error("This property is not part of an active owner participation program.");
-
-  const insert = await supabase
-    .from("owner_reviews")
-    .insert({
-      program_id: link.programId,
-      property_id: ctx.propertyId,
-      task_type: "property_specific",
-      source_type: input.source,
-      onboarding_task_id: ctx.onboardingTaskId,
-      ticket_id: ctx.ticketId,
-      owner_action_type: input.actionType,
-      available_from: input.availableFrom,
-      respond_by: input.respondBy,
-      staff_context: input.staffContext || null,
-      phase: ctx.phase,
-      stage: ctx.stage,
-      title: input.title,
-      recommendation: input.instructions,
-      business_question: input.instructions,
-      decision_path: opportunityDecisionPath(input.actionType),
-      status: "awaiting_owner",
-      created_by: userId,
-    } as never)
-    .select("id")
-    .single();
-  if (insert.error) {
-    if (insert.error.code === "23505") {
-      throw new Error("This work has already been offered to the homeowner.");
-    }
-    throw insert.error;
-  }
-
-  await supabase
-    .from("owner_review_properties")
-    .insert({ review_id: insert.data.id, property_id: ctx.propertyId } as never);
-
-  await recordEvent(supabase, {
-    programId: link.programId,
-    kind: "opportunity_created",
-    summary: `Participation opportunity offered: ${input.title}`,
-    actorId: userId,
+  const { data, error } = await supabase.rpc("create_owner_opportunity", {
+    _program_id: input.programId,
+    _expected_version: input.expectedVersion,
+    _expected_owner_id: input.expectedOwnerId,
+    _source: input.source,
+    _source_id: input.sourceId,
+    _expected_source_updated_at: input.expectedSourceUpdatedAt,
+    _title: input.title.trim(),
+    _instructions: input.instructions.trim(),
+    _action_type: input.actionType,
+    _available_from: input.availableFrom,
+    _respond_by: input.respondBy,
+    _staff_context: input.staffContext.trim(),
+    _reviewed: input.reviewed,
   });
-
-  return { ok: true as const, opportunityId: insert.data.id };
+  if (error) throw error;
+  if (!data) throw new Error("The opportunity was not confirmed. Refresh before trying again.");
+  return { ok: true as const, opportunityId: data };
 }
 
 /** Withdraw an opportunity without touching the underlying work. */

@@ -16,6 +16,10 @@
  * untouched; this only makes it legible.
  */
 
+import {
+  independentReadinessForTasks,
+  type IndependentReadiness,
+} from "./onboarding-independent-readiness";
 import { GATE_STEPS, gateLabel } from "./onboarding";
 import { rollupProperty, viewTask, type TaskView, type WorkflowTask } from "./onboarding-workflow";
 import {
@@ -150,9 +154,16 @@ export type ProjectInput = {
   tasks: WorkflowTask[];
   handoff: OpenHandoff;
   /** The Onboarding Project row, when onboarding has actually been started. */
-  project?: (Exclude<StateProject, null> & { director?: string | null }) | null;
+  project?:
+    | (Exclude<StateProject, null> & {
+        director?: string | null;
+        target_handoff_on?: string | null;
+      })
+    | null;
   stageCaptures?: { stage: string; revision: number; status: string }[];
   excludedTaskIds?: string[];
+  /** Null means the protected readiness read is unavailable; undefined is a legacy caller. */
+  independentReadiness?: IndependentReadiness | null;
 };
 
 /**
@@ -257,6 +268,14 @@ export function deriveNextAction(input: ProjectInput): NextAction {
   const views = tasks.map((t) => viewTask(t, tasks, release));
   const open = views.filter((v) => v.status !== "complete" && v.status !== "carryover");
 
+  const independent = independentProjectBlockers(input);
+  if (open.length === 0 && independent.length)
+    return {
+      headline: "Resolve handoff readiness",
+      detail: independent.map((b) => b.what).join("; "),
+      taskId: independent[0]?.taskId || null,
+      waiting: true,
+    };
   if (open.length === 0)
     return {
       headline: "Request handoff",
@@ -334,13 +353,51 @@ const KIND_OWNER: Record<Blocker["kind"], string> = {
   other: "Onboarding team",
 };
 
+function independentProjectBlockers(input: ProjectInput): Blocker[] {
+  if (input.independentReadiness === undefined) return [];
+  const result = independentReadinessForTasks(input.independentReadiness ?? undefined, input.tasks);
+  const rows: Blocker[] = [
+    ...result.financialBlockers.map((row): Blocker => ({
+      taskId: row.taskIds[0] ?? "",
+      what: row.title + ": " + row.issue,
+      owner: "Financial reviewer",
+      followUp: null,
+      kind: "review",
+    })),
+    ...result.fieldBlockers.map((row): Blocker => ({
+      taskId: row.taskIds[0] ?? "",
+      what: row.title + ": " + row.issue,
+      owner: "Field team",
+      followUp: null,
+      kind: "field",
+    })),
+  ];
+  if (result.extras.independentReadinessUnavailable)
+    rows.push({
+      taskId: "",
+      what: "Current financial and field readiness is unavailable. Refresh before handoff.",
+      owner: "Onboarding team",
+      followUp: null,
+      kind: "other",
+    });
+  if (result.extras.pendingFacts)
+    rows.push({
+      taskId: "",
+      what: result.extras.pendingFacts + " property fact proposal(s) await review",
+      owner: "Reviewer",
+      followUp: null,
+      kind: "review",
+    });
+  return rows;
+}
+
 /**
  * Blockers are first class: never "this project is blocked". Each one names
  * what is being waited on, who owns the next step, and when to follow up.
  */
 export function deriveBlockers(input: ProjectInput): Blocker[] {
   const { property, tasks } = input;
-  const out: Blocker[] = [];
+  const out: Blocker[] = independentProjectBlockers(input);
 
   const hasAccess =
     Boolean(property.actual_access_on) || Boolean((property.access_notes ?? "").trim());
@@ -470,7 +527,7 @@ export function deriveRisk(input: ProjectInput): Risk {
         t.status === "carryover" ||
         blockers.some((b) => b.taskId === t.id),
     );
-  if (stopped && input.tasks.length > 0) {
+  if ((stopped && input.tasks.length > 0) || independentProjectBlockers(input).length > 0) {
     level = "blocked";
     if (blockers[0]) reasons.unshift(blockers[0].what);
   }
@@ -480,6 +537,7 @@ export function deriveRisk(input: ProjectInput): Risk {
 
 /** The latest blocking due date is the honest target handoff date. */
 export function targetHandoff(input: ProjectInput): string | null {
+  if (input.project?.target_handoff_on) return input.project.target_handoff_on;
   const dates = input.tasks
     .filter((t) => t.blocks_handoff && t.status !== "complete" && t.due_on)
     .map((t) => t.due_on!)

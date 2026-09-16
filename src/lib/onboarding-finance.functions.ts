@@ -7,7 +7,7 @@ export const getOnboardingFinance = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { loadFinance } = await import("./onboarding-finance.server");
-    return loadFinance(context.supabase, data.propertyId);
+    return loadFinance(context.supabase, data.propertyId, context.userId);
   });
 
 export const createFinancialRequestFn = createServerFn({ method: "POST" })

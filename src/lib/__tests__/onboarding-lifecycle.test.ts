@@ -230,3 +230,43 @@ describe("conditional activation and gates", () => {
     expect(gates.filter((g) => g.state === "current").length).toBe(1);
   });
 });
+
+describe("canonical project handoff context", () => {
+  it("keeps independent finance and field blockers visible after task completion", () => {
+    const summary = summarizeProject(
+      {
+        property: property(),
+        tasks: [task({ status: "complete" })],
+        handoff: null,
+        project: { id: "project", status: "active", target_handoff_on: "2026-09-20" },
+        independentReadiness: {
+          propertyId: "p1",
+          pendingFacts: 0,
+          financials: [
+            { id: "finance", title: "Repair", taskIds: [], issue: "Owner approval required" },
+          ],
+          fieldWork: [],
+        },
+      },
+      "Project manager",
+    );
+    expect(summary.target).toBe("2026-09-20");
+    expect(summary.risk.level).toBe("blocked");
+    expect(summary.blockers[0]?.what).toContain("Owner approval required");
+    expect(summary.next.headline).toBe("Resolve handoff readiness");
+  });
+  it("never labels an unavailable protected readiness read as handoff ready", () => {
+    const summary = summarizeProject(
+      {
+        property: property(),
+        tasks: [task({ status: "complete" })],
+        handoff: null,
+        project: { id: "project", status: "active" },
+        independentReadiness: null,
+      },
+      null,
+    );
+    expect(summary.risk.level).toBe("blocked");
+    expect(summary.next.detail).toContain("unavailable");
+  });
+});

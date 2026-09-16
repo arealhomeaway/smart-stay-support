@@ -478,6 +478,29 @@ export function countableParticipationEntries<
   return entries.filter((entry) => entry.review_status !== "returned" && !superseded.has(entry.id));
 }
 
+/** One inclusive 90-day window; historical rows remain available outside it. */
+export function participationWindowEnd(
+  startedOn: string | null | undefined,
+  endsOn?: string | null,
+) {
+  if (!startedOn) return null;
+  const start = new Date(`${startedOn}T00:00:00Z`);
+  if (!Number.isFinite(start.getTime())) return null;
+  start.setUTCDate(start.getUTCDate() + PROGRAM_TOTAL_DAYS - 1);
+  const lastDay = start.toISOString().slice(0, 10);
+  return endsOn && endsOn < lastDay ? endsOn : lastDay;
+}
+
+export function inParticipationWindow(
+  date: string,
+  startedOn: string | null | undefined,
+  endsOn?: string | null,
+  today = new Date().toISOString().slice(0, 10),
+) {
+  const end = participationWindowEnd(startedOn, endsOn);
+  return !!startedOn && !!end && date >= startedOn && date <= end && date <= today;
+}
+
 /** Use counted minutes, never rounded display hours, to decide completion. */
 export function ownerGoalMet(reportedMinutes: number): boolean {
   return Number.isFinite(reportedMinutes) && reportedMinutes >= OWNER_GOAL_HOURS * 60;

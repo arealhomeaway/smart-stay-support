@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { relativeTime } from "@/lib/tickets";
 import { usDate } from "@/lib/dates";
 import { OwnerReplies } from "./OwnerReplies";
+import { OwnerApprovalPublication } from "./OwnerApprovalPublication";
 
 const KIND_LABEL: Record<string, string> = {
   estimate: "Repair estimate",
@@ -156,9 +157,32 @@ export function ApprovalDetail({
           {a.decision_note ? <PeekRow label="Note" value={a.decision_note} /> : null}
           {q.data?.workOrder ? <PeekRow label="Work order" value={q.data.workOrder.title} /> : null}
 
+          {a.approver_role === "owner" && (
+            <OwnerApprovalPublication
+              key={a.id}
+              approvalId={a.id}
+              onPublished={() => void q.refetch()}
+            />
+          )}
+
           <OwnerReplies
+            key={a.id}
             approvalId={a.id}
+            expectedUpdatedAt={a.updated_at}
+            sourceType={a.entity_type}
             pending={a.status === "pending" && a.approver_role === "owner"}
+            refreshing={q.isFetching}
+            onReviewCurrent={async () => {
+              const current = await q.refetch();
+              if (current.error) throw current.error;
+              if (!current.data) throw new Error("The current approval could not be loaded.");
+              return {
+                expectedUpdatedAt: current.data.approval.updated_at,
+                pending:
+                  current.data.approval.status === "pending" &&
+                  current.data.approval.approver_role === "owner",
+              };
+            }}
             onRecorded={() => void q.refetch()}
           />
 

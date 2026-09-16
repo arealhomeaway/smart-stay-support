@@ -127,12 +127,12 @@ function Hub() {
               h.property_id === p.id &&
               (h.status === "requested" || h.status === "accepted_pending_live"),
           ) ?? null;
-        const pm = data.people.find((x) => x.id === p.onboarding_owner);
         // The Onboarding Project row is authoritative for lifecycle: without
         // it a home with tasks would read as started when it is not.
         const project =
           (data.projects ?? []).find((x) => x.property_id === p.id && x.status !== "cancelled") ??
           null;
+        const pm = data.people.find((x) => x.id === project?.project_manager);
         const scoped = splitByScope(tasks, projectScope(project));
         return summarizeProject(
           {
@@ -142,6 +142,8 @@ function Hub() {
             project: project as never,
             stageCaptures: data.stageCaptures.filter((c) => c.propertyId === p.id),
             excludedTaskIds: scoped.outOfScope.map((x) => x.task.id),
+            independentReadiness:
+              data.independentReadiness.find((row) => row.propertyId === p.id) ?? null,
           },
           pm?.full_name ?? pm?.email ?? null,
         );
@@ -164,7 +166,9 @@ function Hub() {
   const notStartedTestCount = countTestRecords(notStartedAll, (p) => p);
 
   const pendingReviews = data.handoffs.filter(
-    (h) => h.status === "requested" || h.status === "accepted_pending_live",
+    (h) =>
+      (h.status === "requested" || h.status === "accepted_pending_live") &&
+      applyTestDataFilter(data.properties, showTest, (p) => p).some((p) => p.id === h.property_id),
   );
 
   return (

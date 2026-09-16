@@ -9,7 +9,7 @@ import { loadOwnerAnalytics } from "../owner-analytics.server";
 const startedOn = "2020-01-01";
 
 /** The last entry corrects an earlier amount; each activity covers two properties. */
-function fixture(countedMinutes: number) {
+function fixture(countedMinutes: number, retainOutsideWindow = false) {
   const entry = (
     id: string,
     minutes: number,
@@ -26,12 +26,20 @@ function fixture(countedMinutes: number) {
     entry_date: "2020-01-02",
     created_at: "2020-01-02T12:00:00Z",
     flagged: false,
+    is_demo: false,
   });
   const entries = [
     ...Array.from({ length: 4 }, (_, i) => entry(`base-${i}`, 1200)),
     entry("original", 1400),
     entry("correction", countedMinutes - 4800, "original"),
     entry("returned", 80, null, "returned"),
+    ...(retainOutsideWindow
+      ? [
+          { ...entry("before-start", 1200), entry_date: "2019-12-31" },
+          { ...entry("day-91", 1200), entry_date: "2020-03-31" },
+          { ...entry("future", 1200), entry_date: "2099-01-01" },
+        ]
+      : []),
   ];
   const sources: Record<string, Record<string, unknown>[]> = {
     owner_programs: [
@@ -140,9 +148,19 @@ it("uses corrected distinct-entry minutes consistently for the aggregate and clo
     expect(agg.entries.find((entry) => entry.id === "original")?.superseded).toBe(true);
     expect(agg.properties.every((property) => property.sharedMinutes === minutes)).toBe(true);
     expect(agg.goalMet).toBe(expected);
-    expect(completionChecklist(agg).hoursExceeded).toBe(expected);
+    expect(completionChecklist(agg).hoursMet).toBe(expected);
     expect(completionChecklist(agg).allClear).toBe(expected);
   }
+});
+
+it("retains outside-window history while aggregate, badges and staff analytics exclude it", async () => {
+  const agg = await loadProgramAggregate(fixture(6000, true) as never, "program");
+  expect(agg.entries).toHaveLength(10);
+  expect(agg.reportedMinutes).toBe(6000);
+  expect(agg.properties.every((property) => property.sharedMinutes === 6000)).toBe(true);
+  expect(earnedBadges(agg).some((badge) => badge.code === "hundred_plus")).toBe(true);
+  const analytics = await loadOwnerAnalytics(fixture(6000, true) as never);
+  expect(analytics.programs[0]?.reportedHours).toBe(100);
 });
 
 it("awards the 100-hour badge and celebration at the same unrounded counted boundary", async () => {

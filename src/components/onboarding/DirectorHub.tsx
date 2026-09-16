@@ -1,7 +1,3 @@
-import {
-  canReviewOnboardingGate,
-  type OnboardingReviewCapabilities,
-} from "@/lib/onboarding-review-capabilities";
 /**
  * Director Onboarding Hub — the exception surface.
  *
@@ -32,24 +28,8 @@ import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 import { workspaceSearchFromLens } from "@/lib/onboarding-work-views";
 
-export type Lens =
-  | "attention"
-  | "mine"
-  | "at_risk"
-  | "blocked"
-  | "review"
-  | "corrections"
-  | "handoffs"
-  | "up7"
-  | "up14"
-  | "up30"
-  | "all";
-
-export type HubViewer = {
-  userId: string | null;
-  /** True for Director / Operations reviewers who own a gate decision. */
-  reviewCapabilities: OnboardingReviewCapabilities;
-};
+export type { Lens } from "@/lib/onboarding-hub";
+import { matchesOnboardingLens, type Lens, type HubViewer } from "@/lib/onboarding-hub";
 
 const LENSES: { key: Lens; label: string; hint: string }[] = [
   {
@@ -85,58 +65,6 @@ const CHIP_LENSES: Lens[] = [
   "all",
 ];
 
-function awaitingMyReview(p: ProjectSummary, viewer?: HubViewer) {
-  if (!viewer) return false;
-  if (p.stageReviewCount > 0 && viewer.reviewCapabilities.can_review_stages) return true;
-  return p.inReview && canReviewOnboardingGate(viewer.reviewCapabilities, p.gateStep);
-}
-
-/**
- * Every lens reads the same authoritative summary, so the counts reconcile:
- * a live home appears in no attention queue, "blocked" and "at risk" are
- * mutually exclusive derived levels, and a project in review is never also
- * counted as needing a project manager's action.
- */
-function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
-  // Keep accepted homes visible until the Supervisor confirms Live.
-  const live = p.stage === "live";
-  switch (lens) {
-    case "attention":
-      return (
-        !live &&
-        (p.risk.level === "blocked" ||
-          p.risk.level === "at_risk" ||
-          p.property.lifecycle_status === "handoff_corrections" ||
-          p.stageCorrectionCount > 0 ||
-          awaitingMyReview(p, viewer) ||
-          (!p.next.waiting && !p.inReview))
-      );
-    case "mine":
-      return !live && awaitingMyReview(p, viewer);
-    case "at_risk":
-      return !live && p.risk.level === "at_risk";
-    case "blocked":
-      return !live && p.risk.level === "blocked";
-    case "review":
-      return !live && (p.inReview || p.stageReviewCount > 0);
-    case "corrections":
-      return (
-        !live &&
-        (p.property.lifecycle_status === "handoff_corrections" || p.stageCorrectionCount > 0)
-      );
-    case "handoffs":
-      return !live && withinDays(p.target, 14);
-    case "up7":
-      return !live && withinDays(p.target, 7);
-    case "up14":
-      return !live && withinDays(p.target, 14);
-    case "up30":
-      return !live && withinDays(p.target, 30);
-    default:
-      return true;
-  }
-}
-
 export function DirectorHub({
   projects: allProjects,
   viewer,
@@ -171,6 +99,10 @@ export function DirectorHub({
     () => applyTestDataFilter(allProjects, showTest, (p) => p.property),
     [allProjects, showTest],
   );
+  const productionProjects = useMemo(
+    () => applyTestDataFilter(allProjects, false, (p) => p.property),
+    [allProjects],
+  );
   const setLens = onLensChange;
   const setFind = onFindChange;
   const setOwner = onOwnerChange;
@@ -179,21 +111,24 @@ export function DirectorHub({
   const counts = useMemo(
     () =>
       Object.fromEntries(
-        LENSES.map((l) => [l.key, projects.filter((p) => matches(p, l.key, viewer)).length]),
+        LENSES.map((l) => [
+          l.key,
+          productionProjects.filter((p) => matchesOnboardingLens(p, l.key, viewer)).length,
+        ]),
       ) as Record<Lens, number>,
-    [projects, viewer],
+    [productionProjects, viewer],
   );
 
   const visible = useMemo(() => {
     const q = find.trim().toLowerCase();
     return projects
-      .filter((p) => matches(p, lens, viewer))
+      .filter((p) => matchesOnboardingLens(p, lens, viewer))
       .filter((p) => !owner || (p.owner ?? "Unassigned") === owner)
       .filter((p) => !q || `${p.property.name} ${p.owner ?? ""}`.toLowerCase().includes(q))
       .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
   }, [projects, lens, find, owner, viewer]);
 
-  const active = projects.filter((p) => p.stage !== "live");
+  const active = productionProjects.filter((p) => p.stage !== "live");
   const bottleneck = bottleneckStage(active);
   const workload = workloadByOwner(active);
   const activeLensMeta = LENSES.find((l) => l.key === lens);

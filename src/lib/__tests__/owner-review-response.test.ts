@@ -1,96 +1,61 @@
-import { ownerProgramFixture } from "./owner-program-reader-fixture";
 import { expect, it } from "bun:test";
 import { respondToReview } from "../owner-portal.server";
 
-function fixture(reviewChange = {}, programChange = {}) {
-  const updates: Record<string, unknown>[] = [];
-  const filters: [string, unknown][] = [];
-  const review = {
-    id: "review",
-    program_id: "program",
-    title: "Property work",
-    auto_ticket: true,
-    status: "awaiting_owner",
-    available_from: null,
-    updated_at: "2026-09-15T00:00:00Z",
-    ...reviewChange,
-  };
-  const program = { owner_user_id: "owner", archived_at: null, status: "active", ...programChange };
+it("preserves atomic authorization, availability and canonical approval denials", async () => {
+  // SQL tests exercise actual roles, ownership, dates and writes. This boundary
+  // ensures database failures cannot be converted to success or fallback writes.
+  for (const message of [
+    "Different owner",
+    "Program closed",
+    "Opportunity unavailable",
+    "Use the canonical approval request",
+  ]) {
+    const db = {
+      from: () => {
+        throw new Error("No raw owner-table preflight is permitted");
+      },
+      rpc: async (name: string) => {
+        expect(name).toBe("respond_owner_review");
+        return { data: null, error: new Error(message) };
+      },
+    };
+    await expect(
+      respondToReview(db as never, "owner", {
+        reviewId: "review",
+        expectedUpdatedAt: "2026-09-15T00:00:00Z",
+        decision: "acknowledged",
+        response: "Review notes",
+      }),
+    ).rejects.toThrow(message);
+  }
+});
+it("retains the viewed version and exact narrative revision in the single atomic response", async () => {
+  let calls = 0;
   const db = {
-    rpc: async (name: string, args: Record<string, unknown>) => {
-      if (name === "read_owner_programs")
-        return {
-          data: program.archived_at
-            ? []
-            : [{ id: "program", program: ownerProgramFixture(program) }],
-          error: null,
-        };
-      updates.push(args);
-      return {
-        data: null,
-        error: new Error("The opportunity changed. Refresh before responding."),
-      };
+    from: () => {
+      throw new Error("No post-commit read");
     },
-    from: (table: string) => {
-      let writing = false;
-      const query = {
-        select: () => query,
-        eq: (key: string, value: unknown) => {
-          if (writing) filters.push([key, value]);
-          return query;
-        },
-        single: async () => ({ data: table === "owner_reviews" ? review : program, error: null }),
-        update: (patch: Record<string, unknown>) => {
-          writing = true;
-          updates.push(patch);
-          return query;
-        },
-        maybeSingle: async () => ({ data: null, error: null }),
-      };
-      return query;
+    rpc: async (name: string, args: unknown) => {
+      calls++;
+      expect(name).toBe("respond_owner_review");
+      expect(args).toEqual({
+        _review_id: "review",
+        _expected_updated_at: "2026-09-15T00:00:00Z",
+        _decision: "acknowledged",
+        _response: "Review notes",
+        _owner_update_revision: 2,
+      });
+      return { data: "review", error: null };
     },
   };
-  return { db, updates, filters };
-}
-async function attempt(f: ReturnType<typeof fixture>, decision = "acknowledged") {
-  try {
-    await respondToReview(f.db as never, "owner", {
+  expect(
+    await respondToReview(db as never, "owner", {
       reviewId: "review",
       expectedUpdatedAt: "2026-09-15T00:00:00Z",
-      decision,
-      response: "My review notes",
-    });
-    return "";
-  } catch (error) {
-    return (error as Error).message;
-  }
-}
-it("rejects a different owner, closed program and unavailable review without writes", async () => {
-  for (const f of [
-    fixture({}, { owner_user_id: "other" }),
-    fixture({}, { status: "closed" }),
-    fixture({}, { archived_at: "2026-09-15" }),
-    fixture({ status: "answered" }),
-    fixture({ available_from: "2999-01-01T00:00:00Z" }),
-  ]) {
-    expect((await attempt(f)).length > 0).toBe(true);
-    expect(f.updates.length).toBe(0);
-  }
-});
-it("does not record an arbitrary repair approval through a participation response", async () => {
-  const f = fixture();
-  expect(await attempt(f, "approved")).toContain("canonical approval request");
-  expect(f.updates.length).toBe(0);
-});
-it("preserves the automatic request and rejects an acknowledgement when the viewed row changed", async () => {
-  const f = fixture({ updated_at: "2026-09-15T01:00:00Z" });
-  expect(await attempt(f)).toContain("changed");
-  expect(f.updates[0]).toEqual({
-    _review_id: "review",
-    _expected_updated_at: "2026-09-15T00:00:00Z",
-    _decision: "acknowledged",
-    _response: "My review notes",
-    _owner_update_revision: null,
-  });
-  expect(f.filters.length).toBe(0);
+      decision: "acknowledged",
+      response: "Review notes",
+      ownerUpdateRevision: 2,
+    }),
+  ).toEqual({ ok: true });
+  expect(calls).toBe(1);
 });

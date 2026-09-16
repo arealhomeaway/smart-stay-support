@@ -106,6 +106,16 @@ function fixture() {
     ],
   });
   f.setRpc((name, args) => {
+    if (name === "owner_document_access")
+      return {
+        data: f.rows["documents"]!.some(
+          (row) =>
+            row["id"] === args["_document_id"] &&
+            !!row["owner_recipient_id"] &&
+            !!row["owner_recipient_program_id"],
+        ),
+        error: null,
+      };
     if (name === "read_owner_properties")
       return {
         data: [
@@ -152,10 +162,10 @@ it("uses current owner-safe Property/program projections without leaking interna
   expect(result.onboarding.ownerActions[0]?.title).toBe("Owner onboarding review");
   expect(result.activity).toEqual([]);
   expect(result.operations).toEqual({ tickets: [], workOrders: [] });
-  expect(result.documents.find((row) => row.id === "request")?.note).toBe(
+  expect(result.documents.find((row) => row["id"] === "request")?.note).toBe(
     "Please provide the recorded deed.",
   );
-  expect(result.documents.find((row) => row.id === "file")?.uploadedByName).toBe("ARHA");
+  expect(result.documents.find((row) => row["id"] === "file")?.uploadedByName).toBe("ARHA");
   expect(f.reads).not.toContain("owner_program_properties");
   expect(f.reads).not.toContain("audit_log");
   expect(f.reads).not.toContain("profiles");
@@ -202,7 +212,7 @@ it("filters a shared file whose Ticket moved to another Property", async () => {
     is_demo: false,
   });
   const result = await loadPropertyHub(owner, "property", f.client as never);
-  expect(result.documents.map((row) => row.id)).toEqual(["file", "request"]);
+  expect(result.documents.map((row) => row["id"])).toEqual(["file", "request"]);
 });
 
 it("does not return a response when canonical access is revoked during the other Hub reads", async () => {
@@ -223,6 +233,6 @@ it("preserves internal operational context for authorized staff", async () => {
   expect(result.property.internalNotes).toBe("PRIVATE property notes");
   expect(result.onboarding.blockers[0]?.blocker).toBe("PRIVATE blocker");
   expect(result.operations.tickets[0]?.title).toBe("PRIVATE Ticket title");
-  expect(result.documents.find((row) => row.id === "file")?.note).toBe("PRIVATE document note");
+  expect(result.documents.find((row) => row["id"] === "file")?.note).toBe("PRIVATE document note");
   expect(f.rpcCalls).toEqual([]);
 });

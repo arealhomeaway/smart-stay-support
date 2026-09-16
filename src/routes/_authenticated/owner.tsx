@@ -268,6 +268,9 @@ function OwnerHubBody({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ParticipationReportPanel />
+        {data.badgeRefreshPending && (
+          <p className="text-sm text-muted-foreground">Achievements are awaiting a refresh. Your participation record is still available; reopening this page will retry.</p>
+        )}
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
       </div>
 

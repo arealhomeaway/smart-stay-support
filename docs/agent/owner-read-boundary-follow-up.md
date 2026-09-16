@@ -1,10 +1,12 @@
-# Remaining owner read and write boundaries after migrations 46 and 48
+# Owner read and write boundary audit
 
-Status: **implementation required before authenticated acceptance**. This is a read-only source audit of the current feature branch, not evidence from a shared database. No shared migrations or data changes were performed. Migration numbers refer to the branch manifest.
+Current local resolution: migrations49/50/52/54 address the concrete policies and callers below. The original findings are retained as audit evidence. Approval publications/receipts and typed-source writers replace raw approvals; recipient-bound file actions replace raw documents; scoped participation/history/alert readers replace raw child tables; narrow checked writers and lifecycle guards replace independent mutations.52 also removes the legacy owner clause from raw Onboarding task SELECT and requires a current enabled staff recipient for staff-private notifications. Shared-schema/JWT/RLS and true multi-session acceptance remain unverified.
+
+The following is the historical read-only source audit through48, not evidence from a shared database. No shared migrations or data changes were performed. Migration numbers refer to the branch manifest.
 
 Migrations 41/46 remove external-owner raw Ticket, Property and Program reads in favor of explicit projections. Migration 39 removes direct owner review UPDATE; 43 protects time entries, corrections and their history; 44 protects account linking/redemption; 48 preserves reviewed Ticket request revisions. Those protections do **not** remove the permissive policies below. PostgreSQL combines permissive policies with OR, so fixing one narrower policy alone is insufficient.
 
-## Exact unfinished boundaries
+## Original findings and exact source policies
 
 | Priority | Table and surviving policy | Concrete exposure or bypass | Owner caller to move or preserve |
 | --- | --- | --- | --- |
@@ -17,7 +19,7 @@ Migrations 41/46 remove external-owner raw Ticket, Property and Program reads in
 | 2 | `owner_badges`: `Owners read their badges` | Full rows expose `supporting` JSON and `review_note`, beyond the displayed code/date/rule/needs-review fields. Actual role/account revocation and real/demo validation are absent. No owner INSERT/UPDATE policy was found; do not describe badge writes as currently owner-authorized. | Owner aggregate and `loadOwnerHomeByProgram` badge reads. `syncBadges` attempts writes using the owner client; existing staff-only write policy must not be loosened to make these succeed. Preserve derived badges through an explicit trusted, authorized calculation if changed. |
 | 2 | `owner_time_entries`: `Owners read their own time entries`; `owner_time_entry_properties`: `Owners read their entry properties`; `owner_review_properties`: `Owners read their review properties` | Reads use the stored account ID or `private.owns_program` without current account/role/demo authorization. There is no need to discard legitimate historical entry/property links after removal. The entry's activity/evidence/correction explanation is intentionally owner-visible; this finding is about scope revocation and avoiding unrestricted future columns, not labeling all review feedback private. | Owner aggregate entry/link reads, `resubmitOwnerTime` preflight/receipt read and response/report builders. Use a historical projection that retains the original participation context and exact reviewed snapshot, with separate current-operation checks. Migration 43's direct-write/immutable evidence protections must remain intact. |
 
-## Document recipient binding is a separate missing requirement
+## Original document-recipient finding — resolved locally by50
 
 `documents` records Property/entity IDs plus `visibility='owner_shared'` or `requested_from='owner'`. It has no canonical recipient Owner/program binding. If Property P changes from canonical Owner A to canonical Owner B, B can pass the **new** canonical Property checks in 46 and still reach an old owner-shared file originally intended for A, because the Property and linked Ticket IDs have not changed. Matching the current entity and Property alone cannot resolve that ambiguity.
 
@@ -30,7 +32,7 @@ The next implementation must bind future owner shares/requests to the intended *
 - Define historical readers around the recorded canonical Program/Owner/recipient and the account still authorized to that identity. Do not make current Property ownership the sole key for historical access. Role/account revocation still needs a consistent policy. Do not rewrite retained snapshots when adding projections.
 - Keep staff reads and approved service writers functional. Publicly callable RPCs must verify the authenticated actor; service-only functions must accept only the actor verified by middleware. Do not restore broad owner table access to fix a caller.
 
-## Remaining direct-writer checks to finish with those boundaries
+## Original direct-writer checks — resolved locally by49/52/54
 
 `private.lock_owner_time_program` in migration 43 checks owner role, current program and active canonical Owner, but does not inspect `auth.users.deleted_at/banned_until`. `create_owner_matter` in 41 and the service-only owner approval writers also need explicit comparison with the current canonical/account/role contract; safe server preflight is not proof of direct RPC authorization. This is an exact follow-up list, not a request to replace their existing atomic/version/lock checks.
 

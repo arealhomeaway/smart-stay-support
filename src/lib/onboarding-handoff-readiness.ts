@@ -2,6 +2,10 @@ import type { Database } from "@/integrations/supabase/types";
 import { validateHandoff } from "./onboarding";
 import { handoffReadiness } from "./onboarding-state";
 import { projectScope, splitByScope } from "./onboarding-scope";
+import {
+  independentReadinessForTasks,
+  type IndependentReadiness,
+} from "./onboarding-independent-readiness";
 import type { StageCapture } from "./onboarding-stage";
 
 type Tables = Database["public"]["Tables"];
@@ -11,6 +15,7 @@ export type OnboardingHandoffSnapshot = {
   tasks: Tables["onboarding_tasks"]["Row"][];
   stageCaptures: StageCapture[];
   pendingFacts: { id: string }[];
+  independentReadiness: IndependentReadiness;
 };
 
 export function prepareOnboardingHandoff(
@@ -35,7 +40,10 @@ export function prepareOnboardingHandoff(
       handoff: null,
     },
     checks,
-    { pendingFacts: snapshot.pendingFacts.length },
+    {
+      ...independentReadinessForTasks(snapshot.independentReadiness, applicable).extras,
+      pendingFacts: snapshot.pendingFacts.length,
+    },
   );
   if (readiness.blocked)
     throw new Error(

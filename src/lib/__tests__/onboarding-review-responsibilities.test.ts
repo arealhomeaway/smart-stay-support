@@ -74,6 +74,7 @@ function snapshot(status = "carryover") {
     project: { id: "project", status: "active", ...scope },
     tasks: [task],
     pendingFacts: [],
+    independentReadiness: { propertyId: "home", pendingFacts: 0, financials: [], fieldWork: [] },
     stageCaptures: [
       {
         stage: "post_contract",

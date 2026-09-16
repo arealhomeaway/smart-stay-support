@@ -5,11 +5,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
 
 /** The signed-in homeowner's whole hub: program, tickets, reviews, alerts. */
-export const ownerHome = createServerFn({ method: "GET" })
+export const ownerHome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { loadOwnerHome } = await import("./owner-portal.server");
-    return loadOwnerHome(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return loadOwnerHome(context.supabase, context.userId, supabaseAdmin);
   });
 
 /** Read-only preview of a chosen program so a Platform Owner can see the hub. */
@@ -171,6 +172,7 @@ export const decideOwnerApproval = createServerFn({ method: "POST" })
     z
       .object({
         approvalId: z.string().uuid(),
+        publicationId: z.string().uuid(),
         expectedUpdatedAt: z.string().datetime({ offset: true }),
         decision: z.enum(["approved", "declined"]),
         comment: z.string().trim().max(2000).default(""),

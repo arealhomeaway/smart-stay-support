@@ -24,7 +24,7 @@ export function OwnerBadges({
   earned: EarnedBadge[];
   reportedHours: number;
 }) {
-  const earnedCodes = earned.map((b) => b.code);
+  const earnedCodes = earned.filter((badge) => !badge.needs_review).map((badge) => badge.code);
   const next = nextHourBadge(reportedHours, earnedCodes);
 
   return (

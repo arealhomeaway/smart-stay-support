@@ -103,18 +103,20 @@ function fixture(projectLead = false) {
   const db = {
     rpc: async (name: string) => ({
       data:
-        name === "read_onboarding_review_capabilities"
-          ? [
-              {
-                is_admin: false,
-                can_review_stages: false,
-                kati_review: false,
-                micah_review: false,
-                operations_acceptance: false,
-                live_confirmation: false,
-              },
-            ]
-          : name === "is_onboarding_staff",
+        name === "read_onboarding_independent_readiness"
+          ? []
+          : name === "read_onboarding_review_capabilities"
+            ? [
+                {
+                  is_admin: false,
+                  can_review_stages: false,
+                  kati_review: false,
+                  micah_review: false,
+                  operations_acceptance: false,
+                  live_confirmation: false,
+                },
+              ]
+            : name === "is_onboarding_staff",
       error: null,
     }),
     from: (table: string) => {

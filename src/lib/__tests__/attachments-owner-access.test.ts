@@ -1,5 +1,13 @@
 import { describe, expect, it } from "bun:test";
-import { beginUpload, completeUpload, listAttachments, signedFileUrl } from "../attachments.server";
+import {
+  beginUpload,
+  completeUpload,
+  listAttachments,
+  signedFileUrl,
+  setVisibility,
+  requestOwnerDocument,
+  removeAttachment,
+} from "../attachments.server";
 import { ownerPropertyAccess } from "../owner-property-access.server";
 import {
   attachmentRow,
@@ -52,13 +60,13 @@ describe("elevated owner file authorization", () => {
     f.rows["profiles"] = [{ id: "staff", full_name: null, email: "PRIVATE@example.invalid" }];
     const result = await listAttachments(owner, "property", "property", f.client as never);
     expect(JSON.stringify(result)).not.toContain("PRIVATE");
-    expect(result.files.find((row) => row.id === "file")).toMatchObject({
+    expect(result.files.find((row) => row["id"] === "file")).toMatchObject({
       uploaded_by: null,
       uploaded_by_name: "ARHA",
       note: null,
       can_delete: false,
     });
-    expect(result.files.find((row) => row.id === "request")?.note).toBe(
+    expect(result.files.find((row) => row["id"] === "request")?.note).toBe(
       "Please provide the recorded deed.",
     );
     expect(f.reads).not.toContain("profiles");
@@ -94,7 +102,7 @@ describe("elevated owner file authorization", () => {
       attachmentRow({ id: "archived", archived_at: "now" }),
     ]);
     const result = await listAttachments(owner, "property", "property", f.client as never);
-    expect(result.files.map((row) => row.id)).toEqual(["file"]);
+    expect(result.files.map((row) => row["id"])).toEqual(["file"]);
   });
 
   it("checks canonical entity context and stored state before minting a URL", async () => {
@@ -148,163 +156,186 @@ describe("elevated owner file authorization", () => {
   });
 });
 
-describe("upload intent and completion boundaries", () => {
-  it("keeps a matching stored retry idempotent after its request has already completed", async () => {
-    const f = fixture([attachmentRow(), requestRow({ upload_status: "stored" })]);
+describe("atomic upload endpoint contract", () => {
+  it("uses checked soft-removal without deleting storage, and propagates atomic rollback", async () => {
+    const f = fixture();
+    const staff = { userId: "staff", roles: ["manager"] };
+    f.setRpc(() => ({ data: "file", error: null }));
+    expect(await removeAttachment(staff, "file", "Superseded", f.client as never)).toEqual({
+      ok: true,
+    });
+    expect(f.rpcCalls[0]).toEqual({
+      name: "archive_attachment",
+      args: { _actor_id: "staff", _document_id: "file", _reason: "Superseded" },
+    });
+    expect(f.storage).toEqual([]);
+    expect(f.writes).toEqual([]);
+    f.setRpc(() => ({ data: null, error: { message: "history rolled back" } }));
+    await expect(removeAttachment(staff, "file", null, f.client as never)).rejects.toMatchObject({
+      message: "history rolled back",
+    });
+    await expect(removeAttachment(owner, "file", null, f.client as never)).rejects.toThrow(
+      "access",
+    );
+    expect(f.storage).toEqual([]);
+  });
+  it("passes the complete original intent and verified actor to the checked writer before issuing a non-overwrite token", async () => {
+    const f = fixture([requestRow()]);
+    f.setRpc((name, args) =>
+      name === "begin_attachment_upload"
+        ? {
+            data: {
+              documentId: "new",
+              path: (args["_input"] as Record<string, unknown>)["path"],
+              alreadyStored: false,
+            },
+            error: null,
+          }
+        : { data: true, error: null },
+    );
+    expect(await beginUpload(owner, uploadInput, f.client as never)).toMatchObject({
+      documentId: "new",
+      token: "test-token",
+      alreadyStored: false,
+    });
+    expect(f.rpcCalls[0]).toMatchObject({
+      name: "begin_attachment_upload",
+      args: { _actor_id: "owner", _input: { ...uploadInput, kind: "document" } },
+    });
+    expect(f.writes).toEqual([]);
+    expect(f.storage[0]).toMatchObject({ operation: "upload-url", upsert: false });
+  });
+  it("returns committed retry receipts without minting another upload token", async () => {
+    const f = fixture();
+    f.setRpc((_name, args) => ({
+      data: {
+        documentId: "file",
+        path: (args["_input"] as Record<string, unknown>)["path"],
+        alreadyStored: true,
+      },
+      error: null,
+    }));
     expect(await beginUpload(owner, uploadInput, f.client as never)).toMatchObject({
       documentId: "file",
       alreadyStored: true,
+      token: null,
     });
-    expect(f.writes).toEqual([]);
     expect(f.storage).toEqual([]);
   });
-
-  it("rejects upload-key reuse across actor, entity, Property, mode, path or file facts", async () => {
-    for (const override of [
-      { uploaded_by: "other" },
-      { entity_id: "other" },
-      { entity_type: "ticket" },
-      { property_id: "other" },
-      { is_demo: true },
-      { storage_path: "other/path" },
-      { original_filename: "other.pdf" },
-      { mime_type: "text/plain" },
-      { size_bytes: 42 },
-      { archived_at: "now" },
-      { deleted_at: "now" },
-      { upload_status: "failed" },
-    ]) {
-      const f = fixture([attachmentRow(override), requestRow()]);
-      await expect(beginUpload(owner, uploadInput, f.client as never)).rejects.toThrow();
-      expect(f.writes).toEqual([]);
-      expect(f.storage).toEqual([]);
-    }
-  });
-
-  it("rejects unsafe upload path keys before loading or writing a record", async () => {
+  it("rejects unsafe keys and malformed database receipts before storage", async () => {
     const f = fixture();
     await expect(
       beginUpload(owner, { ...uploadInput, uploadKey: "../../other" }, f.client as never),
     ).rejects.toThrow("upload key");
-    expect(f.reads).toEqual([]);
+    expect(f.rpcCalls).toEqual([]);
+    await expect(beginUpload(owner, uploadInput, f.client as never)).rejects.toThrow("confirm");
     expect(f.storage).toEqual([]);
   });
-
-  it("rejects foreign or no-longer-open request slots before issuing an upload token", async () => {
-    for (const override of [
-      { entity_id: "other" },
-      { entity_type: "ticket" },
-      { property_id: "other" },
-      { is_demo: true },
-      { archived_at: "now" },
-      { deleted_at: "now" },
-      { upload_status: "stored" },
-      { uploaded_by: "other" },
-      { storage_path: "other/file" },
+  it("surfaces authorization, original request, unique-key and lifecycle conflicts without a token or partial local writes", async () => {
+    for (const message of [
+      "recipient changed",
+      "request closed",
+      "different upload key",
+      "Property context changed",
     ]) {
-      const f = fixture([requestRow(override)]);
-      await expect(beginUpload(owner, uploadInput, f.client as never)).rejects.toThrow("request");
-      expect(f.writes).toEqual([]);
+      const f = fixture();
+      f.setRpc(() => ({ data: null, error: { message } }));
+      await expect(beginUpload(owner, uploadInput, f.client as never)).rejects.toMatchObject({
+        message,
+      });
       expect(f.storage).toEqual([]);
+      expect(f.writes).toEqual([]);
     }
   });
-
-  it("checks the winning upload intent after a concurrent unique-key conflict", async () => {
-    const f = fixture([requestRow()]);
-    f.setWriteError({ code: "23505", message: "duplicate upload key" });
-    f.setBeforeWrite(() => f.rows["documents"]!.push(attachmentRow({ uploaded_by: "other" })));
-    await expect(beginUpload(owner, uploadInput, f.client as never)).rejects.toThrow("upload key");
-    expect(f.storage).toEqual([]);
-  });
-
-  it("preserves a legitimate requested owner upload and returns its signed intent", async () => {
-    const f = fixture([requestRow()]);
-    const result = await beginUpload(owner, uploadInput, f.client as never);
-    expect(result).toMatchObject({
-      documentId: "created-document",
-      alreadyStored: false,
-      token: "test-token",
-    });
-    expect(f.writes[0]?.values).toMatchObject({
-      property_id: "property",
-      uploaded_by: "owner",
-      visibility: "owner_shared",
-      upload_status: "pending",
-    });
-    expect(f.storage[0]?.operation).toBe("upload-url");
-    expect(f.storage[0]?.upsert).toBe(false);
-  });
-
-  it("never lets a failed completion delete or downgrade a stored file", async () => {
-    const f = fixture();
-    await expect(
-      completeUpload(owner, { documentId: "file", ok: false }, f.client as never),
-    ).rejects.toThrow("stored file");
-    expect(f.writes).toEqual([]);
-    expect(f.storage).toEqual([]);
-  });
-
-  it("retains failed pending attempts and bytes instead of deleting them", async () => {
+  it("rejects a different completion request before consulting storage or completing", async () => {
     const f = fixture([attachmentRow({ upload_status: "pending" })]);
+    await expect(
+      completeUpload(
+        owner,
+        { documentId: "file", ok: true, fulfilsRequestId: "different" },
+        f.client as never,
+      ),
+    ).rejects.toThrow("Original document request");
+    expect(f.storage).toEqual([]);
+    expect(f.rpcCalls.some((r) => r.name === "complete_attachment_upload")).toBe(false);
+  });
+  it("confirms bytes then atomically completes the persisted original request and history", async () => {
+    const f = fixture([attachmentRow({ upload_status: "pending" })]);
+    expect(
+      await completeUpload(owner, { documentId: "file", ok: true }, f.client as never),
+    ).toEqual({ ok: true });
+    expect(f.rpcCalls.at(-1)).toEqual({
+      name: "complete_attachment_upload",
+      args: { _actor_id: "owner", _document_id: "file", _ok: true, _fulfils_request_id: null },
+    });
+    expect(f.storage.map((v) => v.operation)).toEqual(["read-url"]);
+    expect(f.writes).toEqual([]);
+  });
+  it("does not duplicate storage/history writes after a committed completion receipt", async () => {
+    const f = fixture();
+    expect(
+      await completeUpload(owner, { documentId: "file", ok: true }, f.client as never),
+    ).toEqual({ ok: true });
+    expect(f.storage).toEqual([]);
+    expect(f.writes).toEqual([]);
+  });
+  it("records failed attempts through the transaction without deleting bytes", async () => {
+    const f = fixture([attachmentRow({ upload_status: "pending" })]);
+    f.setRpc((name) => ({ data: name !== "complete_attachment_upload", error: null }));
     expect(
       await completeUpload(owner, { documentId: "file", ok: false }, f.client as never),
     ).toEqual({ ok: false });
-    expect(f.rows["documents"]![0]?.["upload_status"]).toBe("failed");
-    expect(f.writes.map((write) => write.operation)).toEqual(["update"]);
     expect(f.storage).toEqual([]);
+    expect(f.writes).toEqual([]);
   });
-
-  it("does not overwrite a completion that wins before a failure update", async () => {
-    const f = fixture([attachmentRow({ upload_status: "pending" })]);
-    f.setBeforeWrite(() => {
-      f.rows["documents"]![0]!["upload_status"] = "stored";
-    });
+  it("fails closed when recipient access or transactional completion fails", async () => {
+    const f = fixture();
+    f.setRpc(() => ({ data: false, error: null }));
     await expect(
-      completeUpload(owner, { documentId: "file", ok: false }, f.client as never),
-    ).rejects.toThrow("changed");
-    expect(f.rows["documents"]![0]?.["upload_status"]).toBe("stored");
-    expect(f.storage).toEqual([]);
-  });
-
-  it("rechecks canonical access and rejects unrelated completion requests before writes", async () => {
-    const revoked = fixture([attachmentRow({ upload_status: "pending" }), requestRow()]);
-    revoked.setRpc(() => ({ data: false, error: null }));
-    await expect(
-      completeUpload(
-        owner,
-        { documentId: "file", ok: true, fulfilsRequestId: "request" },
-        revoked.client as never,
-      ),
+      completeUpload(owner, { documentId: "file", ok: true }, f.client as never),
     ).rejects.toThrow("access");
-    expect(revoked.writes).toEqual([]);
-    expect(revoked.storage).toEqual([]);
-    const foreign = fixture([
-      attachmentRow({ upload_status: "pending" }),
-      requestRow({ property_id: "other" }),
-    ]);
+    expect(f.storage).toEqual([]);
+    f.setRpc((name) =>
+      name === "owner_document_access"
+        ? { data: true, error: null }
+        : { data: null, error: { message: "history rollback" } },
+    );
     await expect(
-      completeUpload(
-        owner,
-        { documentId: "file", ok: true, fulfilsRequestId: "request" },
-        foreign.client as never,
-      ),
-    ).rejects.toThrow("request");
-    expect(foreign.writes).toEqual([]);
-    expect(foreign.storage).toEqual([]);
+      completeUpload(owner, { documentId: "file", ok: true }, f.client as never),
+    ).rejects.toMatchObject({ message: "history rollback" });
+    expect(f.writes).toEqual([]);
   });
-
-  it("completes a legitimate owner request once and returns stored retry receipts without repeated history writes", async () => {
-    const f = fixture([attachmentRow({ upload_status: "pending" }), requestRow()]);
-    const events: unknown[] = [];
-    const audit = async (event: unknown) => {
-      events.push(event);
-    };
-    const input = { documentId: "file", ok: true, fulfilsRequestId: "request" };
-    expect(await completeUpload(owner, input, f.client as never, audit)).toEqual({ ok: true });
-    expect(f.rows["documents"]!.map((row) => row["upload_status"])).toEqual(["stored", "stored"]);
-    expect(events).toHaveLength(1);
-    expect(await completeUpload(owner, input, f.client as never, audit)).toEqual({ ok: true });
-    expect(events).toHaveLength(1);
-    expect(f.writes).toHaveLength(2);
+  it("hides unbound legacy shares until an explicit staff re-share", async () => {
+    const f = fixture([
+      attachmentRow({ owner_recipient_id: null, owner_recipient_program_id: null }),
+    ]);
+    expect((await listAttachments(owner, "property", "property", f.client as never)).files).toEqual(
+      [],
+    );
+    await expect(signedFileUrl(owner, "file", false, f.client as never)).rejects.toThrow();
+    expect(f.storage).toEqual([]);
+  });
+  it("uses checked staff share/request writers and never a second free-text recipient identity", async () => {
+    const f = fixture();
+    const staff = { userId: "staff", roles: ["onboarding"] };
+    f.setRpc((name) => ({
+      data: name === "set_attachment_visibility" ? "file" : "request",
+      error: null,
+    }));
+    expect(await setVisibility(staff, "file", "owner_shared", f.client as never)).toEqual({
+      ok: true,
+    });
+    expect(
+      await requestOwnerDocument(
+        staff,
+        { entityType: "property", entityId: "property", title: "Deed" },
+        f.client as never,
+      ),
+    ).toEqual({ documentId: "request" });
+    expect(f.writes).toEqual([]);
+    expect(f.rpcCalls.map((r) => r.args["_actor_id"])).toEqual(["staff", "staff"]);
+    await expect(setVisibility(owner, "file", "owner_shared", f.client as never)).rejects.toThrow(
+      "access",
+    );
   });
 });

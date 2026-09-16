@@ -55,6 +55,7 @@ export const addOwnerProgramProperty = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         propertyId: z.string().uuid(),
         closingDate: isoDate.nullable().default(null),
       })
@@ -72,6 +73,7 @@ export const removeOwnerProgramProperty = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         propertyId: z.string().uuid(),
         reason: z.string().trim().max(500).default(""),
       })
@@ -90,6 +92,7 @@ export const confirmOwnerPropertyClosing = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         propertyId: z.string().uuid(),
         closingDate: isoDate,
       })
@@ -108,10 +111,9 @@ export const updateOwnerProgram = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
-        ownerName: z.string().trim().max(120).default(""),
-        ownerEmail: z.string().trim().email().max(255).or(z.literal("")).default(""),
-        onboardingLead: z.string().trim().max(120).nullable().default(null),
-        operationsLead: z.string().trim().max(120).nullable().default(null),
+        expectedVersion: z.string().uuid(),
+        onboardingLead: z.string().uuid().nullable().default(null),
+        operationsLead: z.string().uuid().nullable().default(null),
         dfyConfirmed: z.boolean().default(false),
         internalNotes: z.string().trim().max(4000).default(""),
       })
@@ -146,6 +148,7 @@ export const setOwnerProgramStatus = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         status: z.enum([
           "draft",
           "waiting_for_closing",
@@ -199,6 +202,7 @@ export const seedOwnerRoadmap = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         phase: z.enum(["onboarding", "ongoing", "all"]).default("all"),
       })
       .parse(data),

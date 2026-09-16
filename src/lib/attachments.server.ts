@@ -9,7 +9,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { writeAudit } from "@/lib/audit.server";
+
 import { isExternalOwner, ownerPropertyAccess } from "@/lib/owner-property-access.server";
 import {
   ATTACHMENT_BUCKET,
@@ -48,6 +48,8 @@ export type AttachmentRow = {
   created_at: string;
   is_demo?: boolean;
   archived_at?: string | null;
+  owner_recipient_id?: string | null;
+  owner_recipient_program_id?: string | null;
 };
 
 const STAFF_ROLES = ["admin", "manager", "onboarding", "tech"];
@@ -223,6 +225,7 @@ export async function attachmentMatchesCurrentProperty(
   client: Client,
   viewer: Viewer,
   row: {
+    id: string;
     entity_type: string;
     entity_id: string;
     property_id: string | null;
@@ -240,76 +243,25 @@ export async function attachmentMatchesCurrentProperty(
       row.entity_type as AttachmentEntity,
       row.entity_id,
     );
-    return record.propertyId === propertyId && !record.isDemo && fileMatchesRecord(row, record);
+    return (
+      record.propertyId === propertyId &&
+      !record.isDemo &&
+      fileMatchesRecord(row, record) &&
+      (await ownerDocumentAccess(client, viewer, row.id))
+    );
   } catch {
     return false;
   }
 }
 
-async function openOwnerRequest(
-  client: Client,
-  requestId: string | null | undefined,
-  entityType: AttachmentEntity,
-  entityId: string,
-  record: RecordInfo,
-) {
-  if (!requestId) return false;
-  const result = await client
-    .from("documents")
-    .select(
-      "id, entity_id, entity_type, property_id, requested_from, upload_status, uploaded_by, storage_path, is_demo, archived_at, deleted_at",
-    )
-    .eq("id", requestId)
-    .maybeSingle();
-  const row = result.data;
-  return (
-    !result.error &&
-    !!row &&
-    row.entity_id === entityId &&
-    row.entity_type === entityType &&
-    fileMatchesRecord(row, record) &&
-    !row.deleted_at &&
-    row.requested_from === "owner" &&
-    row.upload_status === "pending" &&
-    !row.uploaded_by &&
-    !row.storage_path
-  );
-}
-
-const UPLOAD_INTENT_FIELDS =
-  "id, upload_status, storage_path, uploaded_by, entity_type, entity_id, property_id, original_filename, mime_type, size_bytes, is_demo, archived_at, deleted_at";
-
-function assertSameUpload(
-  row: Database["public"]["Tables"]["documents"]["Row"] | Record<string, unknown>,
-  viewer: Viewer,
-  input: {
-    entityType: AttachmentEntity;
-    entityId: string;
-    filename: string;
-    mimeType: string;
-    sizeBytes: number;
-  },
-  record: RecordInfo,
-  path: string,
-) {
-  if (
-    row.uploaded_by !== viewer.userId ||
-    row.entity_type !== input.entityType ||
-    row.entity_id !== input.entityId ||
-    row.property_id !== record.propertyId ||
-    row.is_demo !== record.isDemo ||
-    row.original_filename !== input.filename ||
-    row.mime_type !== input.mimeType ||
-    row.size_bytes !== input.sizeBytes ||
-    row.storage_path !== path ||
-    row.deleted_at ||
-    row.archived_at ||
-    !["pending", "stored"].includes(String(row.upload_status))
-  ) {
-    throw new Error(
-      "That upload key belongs to a different or completed attempt. Start a new upload.",
-    );
-  }
+/** Canonical intended recipient and current Property access are checked together. */
+export async function ownerDocumentAccess(client: Client, viewer: Viewer, documentId: string) {
+  if (!isExternalOwner(viewer)) return false;
+  const { data, error } = await client.rpc("owner_document_access", {
+    _document_id: documentId,
+    _actor_id: viewer.userId,
+  });
+  return !error && data === true;
 }
 
 /* ------------------------------------------------------------------ */
@@ -331,7 +283,7 @@ export async function listAttachments(
   const { data, error } = await supabaseAdmin
     .from("documents")
     .select(
-      "id, title, original_filename, mime_type, size_bytes, kind, visibility, requested_from, upload_status, uploaded_by, uploaded_at, entity_type, entity_id, property_id, note, category, created_at, is_demo, archived_at",
+      "id, title, original_filename, mime_type, size_bytes, kind, visibility, requested_from, upload_status, uploaded_by, uploaded_at, entity_type, entity_id, property_id, note, category, created_at, is_demo, archived_at, owner_recipient_id, owner_recipient_program_id",
     )
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
@@ -340,8 +292,13 @@ export async function listAttachments(
   if (error) throw error;
 
   const rows = (data ?? []) as AttachmentRow[];
+  const recipientAccess = isStaff(viewer)
+    ? []
+    : await Promise.all(rows.map((row) => ownerDocumentAccess(supabaseAdmin, viewer, row.id)));
   const visible = rows.filter(
-    (r) => canView(viewer, r, owns).allow && (isStaff(viewer) || fileMatchesRecord(r, record)),
+    (r, index) =>
+      canView(viewer, r, owns).allow &&
+      (isStaff(viewer) || (fileMatchesRecord(r, record) && recipientAccess[index])),
   );
 
   const uploaderIds = [...new Set(visible.map((r) => r.uploaded_by).filter(Boolean))] as string[];
@@ -408,82 +365,23 @@ export async function beginUpload(
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.uploadKey))
     throw new Error("Start a new upload with a valid upload key.");
 
-  const record = await loadRecord(supabaseAdmin, viewer, input.entityType, input.entityId);
-  const owns = isStaff(viewer) ? false : await ownerCanReachRecord(supabaseAdmin, viewer, record);
-  if (!isStaff(viewer) && !owns) throw new Error(DENY_UNRELATED);
   const path = storagePathFor(input.entityType, input.entityId, input.uploadKey, input.filename);
-  const existing = await supabaseAdmin
-    .from("documents")
-    .select(UPLOAD_INTENT_FIELDS)
-    .eq("upload_key", input.uploadKey)
-    .maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) assertSameUpload(existing.data, viewer, input, record, path);
-  if (existing.data?.upload_status === "stored")
-    return { documentId: existing.data.id, alreadyStored: true as const, path, token: null };
-
-  const requestSlotOpen = await openOwnerRequest(
-    supabaseAdmin,
-    input.fulfilsRequestId,
-    input.entityType,
-    input.entityId,
-    record,
-  );
-  if (input.fulfilsRequestId && !requestSlotOpen)
-    throw new Error("That document request is no longer open on this record.");
-
-  const allowed = canUpload(viewer, {
-    ownerOfProperty: owns,
-    requestSlotOpen,
-    recordClosed: record.closed,
+  const { data, error } = await supabaseAdmin.rpc("begin_attachment_upload", {
+    _actor_id: viewer.userId,
+    _input: { ...input, path, kind: kindFor(input.mimeType) },
   });
-  if (!allowed.allow) throw new Error(allowed.reason);
-
-  let documentId = existing.data?.id ?? null;
-
-  if (!documentId) {
-    const insert = await supabaseAdmin
-      .from("documents")
-      .insert({
-        entity_type: input.entityType,
-        entity_id: input.entityId,
-        property_id: record.propertyId,
-        title: input.filename,
-        original_filename: input.filename,
-        mime_type: input.mimeType,
-        size_bytes: input.sizeBytes,
-        kind: kindFor(input.mimeType),
-        visibility: isStaff(viewer) ? (input.visibility ?? "internal") : "owner_shared",
-        storage_path: path,
-        upload_key: input.uploadKey,
-        upload_status: "pending",
-        uploaded_by: viewer.userId,
-        note: input.note ?? null,
-        category: input.entityType === "property" ? (input.category ?? "other") : null,
-        is_demo: record.isDemo,
-      })
-      .select("id")
-      .single();
-    if (insert.error) {
-      // 23505 = another pass claimed this exact upload key first.
-      if (insert.error.code === "23505") {
-        const again = await supabaseAdmin
-          .from("documents")
-          .select(UPLOAD_INTENT_FIELDS)
-          .eq("upload_key", input.uploadKey)
-          .maybeSingle();
-        if (again.error) throw again.error;
-        if (again.data) {
-          assertSameUpload(again.data, viewer, input, record, path);
-          if (again.data.upload_status === "stored")
-            return { documentId: again.data.id, alreadyStored: true as const, path, token: null };
-          documentId = again.data.id;
-        } else throw insert.error;
-      } else {
-        throw insert.error;
-      }
-    } else documentId = insert.data.id;
-  }
+  if (error) throw error;
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    typeof data["documentId"] !== "string" ||
+    data["path"] !== path ||
+    typeof data["alreadyStored"] !== "boolean"
+  )
+    throw new Error("Resolve could not confirm the upload intent.");
+  const documentId = data["documentId"];
+  if (data["alreadyStored"]) return { documentId, alreadyStored: true as const, path, token: null };
 
   const signed = await supabaseAdmin.storage
     .from(ATTACHMENT_BUCKET)
@@ -505,123 +403,41 @@ export async function completeUpload(
   viewer: Viewer,
   input: { documentId: string; ok: boolean; fulfilsRequestId?: string | null },
   client?: Client,
-  audit: typeof writeAudit = writeAudit,
 ) {
   const supabaseAdmin =
     client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
-  const { data, error } = await supabaseAdmin
+  // A service-side storage read checks that bytes exist. The checked transaction
+  // revalidates scope and the original request before any database completion.
+  const { data: row, error: readError } = await supabaseAdmin
     .from("documents")
-    .select(UPLOAD_INTENT_FIELDS)
+    .select("id,storage_path,uploaded_by,upload_status,deleted_at,archived_at,fulfils_request_id")
     .eq("id", input.documentId)
     .maybeSingle();
-  if (error || !data || data.deleted_at || data.archived_at || !data.storage_path)
+  if (readError || !row || row.deleted_at || row.archived_at || !row.storage_path)
     throw new Error("That upload is no longer on file.");
-  if (data.uploaded_by !== viewer.userId && !isSupervisor(viewer)) throw new Error(DENY_UNRELATED);
-  const entityType = data.entity_type as AttachmentEntity;
-  const record = await loadRecord(supabaseAdmin, viewer, entityType, data.entity_id);
-  if (
-    !fileMatchesRecord(data, record) ||
-    (!isStaff(viewer) && !(await ownerCanReachRecord(supabaseAdmin, viewer, record)))
-  )
+  if (row.uploaded_by !== viewer.userId && !isSupervisor(viewer)) throw new Error(DENY_UNRELATED);
+  if (!isStaff(viewer) && !(await ownerDocumentAccess(supabaseAdmin, viewer, row.id)))
     throw new Error(DENY_UNRELATED);
-
-  if (data.upload_status === "stored") {
-    if (!input.ok) throw new Error("A stored file cannot be discarded as a failed upload.");
-    return { ok: true as const };
+  if (input.fulfilsRequestId && input.fulfilsRequestId !== row.fulfils_request_id)
+    throw new Error("Original document request cannot change.");
+  if (input.ok && row.upload_status !== "stored") {
+    const head = await supabaseAdmin.storage
+      .from(ATTACHMENT_BUCKET)
+      .createSignedUrl(row.storage_path, 10);
+    if (head.error)
+      throw new Error("Resolve could not find the uploaded file. Please try the upload again.");
   }
-  if (data.upload_status !== "pending")
-    throw new Error("That upload attempt is no longer pending.");
-
-  if (!input.ok) {
-    // Retain the attempt and any bytes. A failure callback must never delete
-    // a file that another completion may already have committed.
-    const failed = await supabaseAdmin
-      .from("documents")
-      .update({ upload_status: "failed" })
-      .eq("id", data.id)
-      .eq("upload_status", "pending")
-      .is("deleted_at", null)
-      .select("id")
-      .maybeSingle();
-    if (failed.error) throw failed.error;
-    if (!failed.data) throw new Error("That upload changed. Refresh the file list.");
-    return { ok: false as const };
-  }
-
-  const requestSlotOpen = await openOwnerRequest(
-    supabaseAdmin,
-    input.fulfilsRequestId,
-    entityType,
-    data.entity_id,
-    record,
-  );
-  if ((input.fulfilsRequestId || !isStaff(viewer)) && !requestSlotOpen)
-    throw new Error("That document request is no longer open on this record.");
-
-  const head = await supabaseAdmin.storage
-    .from(ATTACHMENT_BUCKET)
-    .createSignedUrl(data.storage_path!, 10);
-  if (head.error)
-    throw new Error("Resolve could not find the uploaded file. Please try the upload again.");
-
-  const completed = await supabaseAdmin
-    .from("documents")
-    .update({ upload_status: "stored", uploaded_at: new Date().toISOString() })
-    .eq("id", data.id)
-    .eq("upload_status", "pending")
-    .is("deleted_at", null)
-    .select("id")
-    .maybeSingle();
-  if (completed.error) throw completed.error;
-  if (!completed.data) throw new Error("That upload changed. Refresh the file list.");
-
-  if (input.fulfilsRequestId) {
-    let requestUpdate = supabaseAdmin
-      .from("documents")
-      .update({ upload_status: "stored" })
-      .eq("id", input.fulfilsRequestId)
-      .eq("entity_type", entityType)
-      .eq("entity_id", data.entity_id)
-      .eq("is_demo", record.isDemo)
-      .eq("requested_from", "owner")
-      .eq("upload_status", "pending")
-      .is("deleted_at", null)
-      .is("archived_at", null)
-      .is("uploaded_by", null)
-      .is("storage_path", null);
-    requestUpdate = record.propertyId
-      ? requestUpdate.eq("property_id", record.propertyId)
-      : requestUpdate.is("property_id", null);
-    const request = await requestUpdate.select("id").maybeSingle();
-    if (request.error) throw request.error;
-    if (!request.data)
-      throw new Error("The file is stored, but its request changed. Refresh the file list.");
-  }
-
-  await audit({
-    actorId: viewer.userId,
-    action: "attachment.uploaded",
-    entityType: data.entity_type,
-    entityId: data.entity_id,
-    entityLabel: data.original_filename,
-    after: { documentId: data.id, size: data.size_bytes, type: data.mime_type },
+  const { data, error } = await supabaseAdmin.rpc("complete_attachment_upload", {
+    _actor_id: viewer.userId,
+    _document_id: input.documentId,
+    _ok: input.ok,
+    _fulfils_request_id: input.fulfilsRequestId ?? null,
   });
-
-  // The audit log is the technical record; the Ticket's own Activity feed
-  // (what a person actually reads) needs its own plain-language entry too —
-  // otherwise attaching evidence is invisible on the ticket it was for.
-  if (data.entity_type === "ticket") {
-    await supabaseAdmin.from("ticket_activity").insert({
-      ticket_id: data.entity_id,
-      author_id: viewer.userId,
-      kind: "evidence",
-      event_type: "attachment_uploaded",
-      internal: false,
-      body: `Added ${data.original_filename}.`,
-    });
-  }
-
-  return { ok: true as const };
+  if (error) throw error;
+  if (typeof data !== "boolean") throw new Error("Resolve could not confirm upload completion.");
+  // The receipt includes the file/request/history transaction. No post-commit
+  // database writer can turn success into a misleading retryable failure.
+  return { ok: data };
 }
 
 /** A short-lived link to view or download one file, minted only after the check. */
@@ -657,7 +473,11 @@ export async function signedFileUrl(
     record != null &&
     fileMatchesRecord(data, record) &&
     (await ownerCanReachRecord(supabaseAdmin, viewer, record));
-  const decision = canView(viewer, data as AttachmentRow, owns);
+  const decision = canView(
+    viewer,
+    data as AttachmentRow,
+    owns && (await ownerDocumentAccess(supabaseAdmin, viewer, data.id)),
+  );
   if (!decision.allow) throw new Error(decision.reason);
 
   const signed = await supabaseAdmin.storage
@@ -671,114 +491,61 @@ export async function signedFileUrl(
   return { url: signed.data.signedUrl, expiresInSeconds: SIGNED_URL_SECONDS };
 }
 
-/** Removal keeps the history: the row is marked removed, the bytes are deleted. */
-export async function removeAttachment(viewer: Viewer, documentId: string, reason: string | null) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("documents")
-    .select(
-      "id, uploaded_by, storage_path, entity_type, entity_id, original_filename, visibility, requested_from, deleted_at, upload_status, title, mime_type, size_bytes, kind, property_id, note, created_at, uploaded_at",
-    )
-    .eq("id", documentId)
-    .maybeSingle();
-  if (error || !data || data.deleted_at) throw new Error("That file is no longer on file.");
-
-  const decision = canDelete(viewer, data as AttachmentRow);
-  if (!decision.allow) throw new Error(decision.reason);
-
-  if (data.storage_path)
-    await supabaseAdmin.storage.from(ATTACHMENT_BUCKET).remove([data.storage_path]);
-  const upd = await supabaseAdmin
-    .from("documents")
-    .update({
-      deleted_at: new Date().toISOString(),
-      deleted_by: viewer.userId,
-      delete_reason: reason,
-    })
-    .eq("id", documentId);
-  if (upd.error) throw upd.error;
-
-  await writeAudit({
-    actorId: viewer.userId,
-    action: "attachment.removed",
-    entityType: data.entity_type,
-    entityId: data.entity_id,
-    entityLabel: data.original_filename,
-    reason,
-    before: { documentId, visibility: data.visibility },
+/** Soft removal retains bytes and evidence links; metadata/history commit together. */
+export async function removeAttachment(
+  viewer: Viewer,
+  documentId: string,
+  reason: string | null,
+  client?: Client,
+) {
+  if (!isStaff(viewer)) throw new Error(DENY_UNRELATED);
+  const supabaseAdmin =
+    client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  const { data, error } = await supabaseAdmin.rpc("archive_attachment", {
+    _actor_id: viewer.userId,
+    _document_id: documentId,
+    _reason: reason ?? "",
   });
+  if (error) throw error;
+  if (data !== documentId) throw new Error("Resolve could not confirm the attachment removal.");
   return { ok: true as const };
 }
-
 /** Staff decide whether the homeowner sees a file. */
 export async function setVisibility(
   viewer: Viewer,
   documentId: string,
   visibility: AttachmentVisibility,
+  client?: Client,
 ) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const decision = canChangeVisibility(viewer);
-  if (!decision.allow) throw new Error(decision.reason);
-
-  const { data, error } = await supabaseAdmin
-    .from("documents")
-    .select("id, entity_type, entity_id, original_filename, visibility, deleted_at")
-    .eq("id", documentId)
-    .maybeSingle();
-  if (error || !data || data.deleted_at) throw new Error("That file is no longer on file.");
-
-  const upd = await supabaseAdmin.from("documents").update({ visibility }).eq("id", documentId);
-  if (upd.error) throw upd.error;
-
-  await writeAudit({
-    actorId: viewer.userId,
-    action: "attachment.visibility_changed",
-    entityType: data.entity_type,
-    entityId: data.entity_id,
-    entityLabel: data.original_filename,
-    before: { visibility: data.visibility },
-    after: { visibility },
+  if (!isStaff(viewer)) throw new Error(DENY_UNRELATED);
+  const supabaseAdmin =
+    client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  const { data, error } = await supabaseAdmin.rpc("set_attachment_visibility", {
+    _actor_id: viewer.userId,
+    _document_id: documentId,
+    _visibility: visibility,
   });
+  if (error) throw error;
+  if (data !== documentId) throw new Error("Resolve could not confirm the sharing change.");
   return { ok: true as const };
 }
 
-/** Staff open a slot for the homeowner to upload one specific document. */
+/** Staff explicitly choose the current canonical recipient through enrollment. */
 export async function requestOwnerDocument(
   viewer: Viewer,
   input: { entityType: AttachmentEntity; entityId: string; title: string; note?: string | null },
+  client?: Client,
 ) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (!isStaff(viewer)) throw new Error(DENY_UNRELATED);
-  const record = await loadRecord(supabaseAdmin, viewer, input.entityType, input.entityId);
-
-  const insert = await supabaseAdmin
-    .from("documents")
-    .insert({
-      entity_type: input.entityType,
-      entity_id: input.entityId,
-      property_id: record.propertyId,
-      title: input.title,
-      kind: "document",
-      visibility: "owner_shared",
-      requested_from: "owner",
-      upload_status: "pending",
-      required: true,
-      note: input.note ?? null,
-      uploaded_by: null,
-      is_demo: record.isDemo,
-    })
-    .select("id")
-    .single();
-  if (insert.error) throw insert.error;
-
-  await writeAudit({
-    actorId: viewer.userId,
-    action: "attachment.requested_from_owner",
-    entityType: input.entityType,
-    entityId: input.entityId,
-    entityLabel: input.title,
+  const supabaseAdmin =
+    client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  const { data, error } = await supabaseAdmin.rpc("request_owner_document", {
+    _actor_id: viewer.userId,
+    _input: input,
   });
-  return { documentId: insert.data.id };
+  if (error) throw error;
+  if (typeof data !== "string") throw new Error("Resolve could not confirm the document request.");
+  return { documentId: data };
 }
 
 /* ------------------------------------------------------------------ */

@@ -47,3 +47,39 @@ export function ownerEnrollmentFixture(overrides: Record<string, unknown> = {}) 
     ...overrides,
   };
 }
+
+export function ownerReviewFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "review",
+    program_id: "program",
+    updated_at: "2026-01-01T00:00:00Z",
+    auto_ticket: false,
+    phase: "ongoing",
+    stage: "active",
+    title: "Reviewed request",
+    task_type: "property_specific",
+    recommendation: null,
+    business_question: null,
+    evidence: null,
+    impact: null,
+    decision_path: "review",
+    respond_by: null,
+    status: "awaiting_owner",
+    owner_decision: null,
+    owner_response: null,
+    outcome: null,
+    responded_at: null,
+    ticket_id: null,
+    property_id: "home",
+    attachment_path: null,
+    photos: [],
+    sort_order: 0,
+    source_type: "manual",
+    onboarding_task_id: null,
+    owner_action_type: "review_comment",
+    available_from: null,
+    closed_at: null,
+    property_ids: ["home"],
+    ...overrides,
+  };
+}

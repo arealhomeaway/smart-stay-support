@@ -614,10 +614,13 @@ const CARRYOVER_EXCUSABLE = new Set(["open_work"]);
 export type ReadinessExtras = {
   /** Permanent-fact proposals still waiting on a review decision. */
   pendingFacts?: number;
-  /** Financial requests that block launch (awaiting approval or unsettled). */
+  /** Relevant financial requests with missing or inconsistent authorization. */
   openFinancials?: number;
   /** Field work still open in Breezeway or on the property. */
   openFieldWork?: number;
+  financialReasons?: string[];
+  fieldReasons?: string[];
+  independentReadinessUnavailable?: boolean;
 };
 
 /**
@@ -680,6 +683,12 @@ export function handoffReadiness(
       detail: `${approvals.length} step(s) still need a recorded homeowner decision.`,
     });
 
+  if (extras.independentReadinessUnavailable)
+    reasons.push({
+      key: "independent_readiness",
+      label: "Financial and field readiness is unavailable",
+      detail: "Refresh this project before requesting handoff.",
+    });
   if (extras.pendingFacts)
     reasons.push({
       key: "facts",
@@ -691,14 +700,18 @@ export function handoffReadiness(
     reasons.push({
       key: "financial",
       label: "Launch-blocking financial items are open",
-      detail: `${extras.openFinancials} financial request(s) are not approved or settled.`,
+      detail:
+        extras.financialReasons?.join("; ") ||
+        `${extras.openFinancials} financial request(s) need a valid authorization decision. Accounting settlement is tracked separately.`,
     });
 
   if (extras.openFieldWork)
     reasons.push({
       key: "field",
       label: "Field work is still open",
-      detail: `${extras.openFieldWork} field job(s) have not been completed.`,
+      detail:
+        extras.fieldReasons?.join("; ") ||
+        `${extras.openFieldWork} linked field job(s) need completion or explicit task carryover.`,
     });
 
   if (life.notStarted)

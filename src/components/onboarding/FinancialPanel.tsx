@@ -68,7 +68,11 @@ export function FinancialPanel({
     queryFn: () => load({ data: { propertyId } }),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["onboarding-finance", propertyId] });
+  const invalidate = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["onboarding-finance", propertyId] }),
+      qc.invalidateQueries({ queryKey: ["onboarding-workspace"] }),
+    ]);
   const run = <T,>(fn: (input: T) => Promise<unknown>, ok: string) =>
     ({
       mutationFn: (input: T) => fn(input),
@@ -288,6 +292,12 @@ export function FinancialPanel({
               key={r.id}
               request={r}
               canEdit={canEdit}
+              canDecide={
+                canEdit &&
+                (r.authority_tier === "supervisor"
+                  ? data.decisionCapabilities.supervisor
+                  : r.authority_tier === "owner" && data.decisionCapabilities.owner)
+              }
               sending={send.isPending}
               onSend={() => send.mutate({ data: { requestId: r.id } } as never)}
               onDecide={(approved, note, approvedAmount) =>
@@ -320,9 +330,11 @@ function RequestCard({
   onDecide,
   onInvoice,
   onAccounting,
+  canDecide,
   onSettle,
 }: {
   request: FinancialRequest;
+  canDecide: boolean;
   canEdit: boolean;
   sending: boolean;
   onSend: () => void;
@@ -369,7 +381,7 @@ function RequestCard({
           </Button>
         ) : null}
 
-        {canEdit && status === "awaiting_approval" ? (
+        {canDecide && status === "awaiting_approval" ? (
           <div className="space-y-2">
             {tier === "owner" ? (
               <Button size="sm" variant="outline" onClick={onSend} disabled={sending}>
@@ -378,7 +390,11 @@ function RequestCard({
             ) : null}
             <Textarea
               rows={2}
-              placeholder="Decision note"
+              placeholder={
+                tier === "owner"
+                  ? "Who answered, what they decided, and the reply or evidence reference"
+                  : "Decision and supporting reason"
+              }
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -388,7 +404,7 @@ function RequestCard({
                 disabled={note.trim().length < 3}
                 onClick={() => onDecide(true, note.trim(), null)}
               >
-                Approve
+                {tier === "owner" ? "Record owner approval" : "Approve"}
               </Button>
               <Button
                 size="sm"
@@ -396,7 +412,7 @@ function RequestCard({
                 disabled={note.trim().length < 3}
                 onClick={() => onDecide(false, note.trim(), null)}
               >
-                Decline
+                {tier === "owner" ? "Record owner decline" : "Decline"}
               </Button>
             </div>
           </div>

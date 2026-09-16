@@ -10,7 +10,11 @@ mock.module("@/lib/email.server", () => ({
 }));
 const { sendToAccounting, routeOwnerDecision } = await import("../onboarding-finance.server");
 
-function ownerDeliveryDb(sent: boolean, contactEmail: string | null = "owner@example.invalid") {
+function ownerDeliveryDb(
+  sent: boolean,
+  contactEmail: string | null = "owner@example.invalid",
+  canonicalOwner = true,
+) {
   const writes: unknown[] = [];
   const rows: Record<string, unknown> = {
     approvals: {
@@ -20,8 +24,26 @@ function ownerDeliveryDb(sent: boolean, contactEmail: string | null = "owner@exa
       owner_email_sent_at: sent ? "2026-09-14T00:00:00Z" : null,
       owner_email_to: sent ? "owner@example.invalid" : null,
     },
-    properties: { name: "QA home" },
-    property_owner_contacts: { owner_name: "QA owner", owner_email: contactEmail },
+    properties: {
+      id: "property",
+      name: "QA home",
+      owner_record_id: canonicalOwner ? "owner-record" : null,
+      is_demo: false,
+      archived_at: null,
+    },
+    property_owners: [
+      {
+        id: "owner-record",
+        name: "Canonical Owner",
+        email: contactEmail,
+        phone: null,
+        source: "manual",
+      },
+    ],
+    property_owner_contacts: {
+      owner_name: "Legacy identity",
+      owner_email: "legacy@example.invalid",
+    },
     owner_program_properties: [],
     owner_programs: [],
   };
@@ -29,6 +51,8 @@ function ownerDeliveryDb(sent: boolean, contactEmail: string | null = "owner@exa
     writes,
     db: {
       from: (table: string) => {
+        if (table === "property_owner_contacts")
+          throw new Error("Legacy Owner identity read is forbidden");
         const query = {
           select: () => query,
           eq: () => query,
@@ -38,7 +62,7 @@ function ownerDeliveryDb(sent: boolean, contactEmail: string | null = "owner@exa
           limit: () => query,
           order: () => query,
           range: async (from: number, to: number) => {
-            const data = rows[table] as unknown[];
+            const data = Array.isArray(rows[table]) ? (rows[table] as unknown[]) : [rows[table]];
             return { data: data.slice(from, to + 1), count: data.length, error: null };
           },
           maybeSingle: async () => ({ data: rows[table], error: null }),
@@ -113,6 +137,29 @@ describe("owner delivery retries", () => {
     expect(message).toContain("Add the homeowner's email address");
     expect(emailAttempts).toBe(0);
   });
+});
+
+it("does not use legacy Owner contact copies when canonical identity or receipt recipient differs", async () => {
+  for (const args of [
+    [false, "owner@example.invalid", false],
+    [true, "new-owner@example.invalid", true],
+  ] as const) {
+    const { db, writes } = ownerDeliveryDb(args[0], args[1], args[2]);
+    emailAttempts = 0;
+    const message = await routeOwnerDecision(db as never, "staff", {
+      propertyId: "property",
+      approvalId: "approval",
+      subject: "QA",
+      detail: "",
+      amount: 500,
+    }).then(
+      () => "unsafe",
+      (error: Error) => error.message,
+    );
+    expect(message).toContain(args[2] ? "recipient changed" : "canonical Owner");
+    expect(emailAttempts).toBe(0);
+    expect(writes).toEqual([]);
+  }
 });
 
 describe("financial delivery honesty", () => {

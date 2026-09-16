@@ -8,7 +8,18 @@ export function ownerFileTestClient(initial: Record<string, Row[]> = {}) {
   const writes: { table: string; operation: string; values: Row }[] = [];
   const storage: { operation: string; path: string; upsert?: boolean }[] = [];
   const rpcCalls: { name: string; args: Row }[] = [];
-  let rpc: (name: string, args: Row) => Result = () => ({ data: true, error: null });
+  let rpc: (name: string, args: Row) => Result = (name, args) => ({
+    data:
+      name === "owner_document_access"
+        ? !!rows["documents"]?.some(
+            (row) =>
+              row["id"] === args["_document_id"] &&
+              row["owner_recipient_id"] &&
+              row["owner_recipient_program_id"],
+          )
+        : true,
+    error: null,
+  });
   let beforeWrite: ((table: string, values: Row) => void) | undefined;
   let writeError: { message: string; code?: string } | null = null;
 
@@ -162,6 +173,9 @@ export function attachmentRow(over: Row = {}): Row {
     archived_at: null,
     deleted_at: null,
     upload_key: uploadKey,
+    owner_recipient_id: "canonical-owner",
+    owner_recipient_program_id: "program",
+    fulfils_request_id: "request",
     storage_path: `property/property/${uploadKey}-deed.pdf`,
     ...over,
   };

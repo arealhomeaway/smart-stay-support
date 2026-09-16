@@ -64,13 +64,22 @@ export const placeOwnerReplyFn = createServerFn({ method: "POST" })
 export const recordOwnerReplyDecisionFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { approvalId: string; decision: string; note: string; responseId?: string | null }) => {
+    (input: {
+      approvalId: string;
+      expectedUpdatedAt: string;
+      decision: string;
+      note: string;
+      responseId?: string | null;
+    }) => {
+      if (!input?.expectedUpdatedAt || !Number.isFinite(Date.parse(input.expectedUpdatedAt)))
+        throw new Error("Refresh the current approval before recording its reply.");
       const decision = String(input?.decision ?? "");
       if (!["approved", "declined", "changes_requested"].includes(decision)) {
         throw new Error("Choose Approved, Declined or Changes requested.");
       }
       return {
         approvalId: uuid(input?.approvalId, "approval"),
+        expectedUpdatedAt: input.expectedUpdatedAt,
         decision: decision as "approved" | "declined" | "changes_requested",
         note: String(input?.note ?? "").slice(0, 4000),
         responseId: input?.responseId ? uuid(input.responseId, "reply") : null,

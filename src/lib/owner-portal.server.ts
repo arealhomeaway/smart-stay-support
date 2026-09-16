@@ -13,27 +13,47 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { loadProgramAggregate } from "./owner-participation.server";
-import {
-  findOwnerProgram,
-  readOwnerProgram,
-  readOwnerPropertyLabels,
-} from "./owner-program-reader.server";
+import { findOwnerProgram } from "./owner-program-reader.server";
 import { redeemOwnerInviteAtomically } from "./owner-invite-redemption.server";
-import { syncBadges } from "./owner-badges.server";
+import { readOwnerParticipation } from "./owner-participation-reader.server";
 import { loadOwnerTicketProjection } from "./owner-ticket-projection.server";
 import { ownerNotificationText } from "./owner-notification";
 import { automaticOpportunityView } from "./owner-automatic-opportunity";
 import { ownerProgramProjection } from "./owner-program-projection";
+import { syncProgramBadges } from "./owner-badges.server";
 import { loadOwnerResponseReceipts } from "./owner-response-history.server";
 export type { OwnerTicket } from "./owner-ticket-projection.server";
 
 type Client = SupabaseClient<Database>;
 
 /** Everything the owner hub renders, in one round trip. */
-export async function loadOwnerHome(supabase: Client, userId: string) {
+export async function loadOwnerHome(supabase: Client, userId: string, admin: Client) {
   const program = await findOwnerProgram(supabase, userId);
   if (!program) return { linked: false as const };
-  return loadOwnerHomeByProgram(supabase, program.id);
+  let badgeRefreshPending = false;
+  let badgeVersion: string | null = null;
+  try {
+    const refreshed = await syncProgramBadges(admin, userId, program.id);
+    badgeVersion = typeof refreshed.reportVersion === "string" ? refreshed.reportVersion : null;
+  } catch {
+    // A refresh is recoverable and does not change participation time. The
+    // scoped reads below independently recheck access before returning data.
+    badgeRefreshPending = true;
+  }
+  const home = await loadOwnerHomeByProgram(supabase, program.id);
+  if (!badgeRefreshPending) {
+    const latest = await admin
+      .rpc("owner_badge_refresh_version", {
+        _program_id: program.id,
+        _actor_id: userId,
+      })
+      .then(
+        (result) => (result.error ? null : result.data),
+        () => null,
+      );
+    badgeRefreshPending = !badgeVersion || latest !== badgeVersion;
+  }
+  return { ...home, badgeRefreshPending };
 }
 
 /**
@@ -71,27 +91,14 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
   const propertyIds = agg.includedProperties.map((p) => p.propertyId);
 
   const [alerts, tickets] = await Promise.all([
-    supabase
-      .from("owner_notifications")
-      .select(
-        "id, kind, priority, title, body, ticket_id, review_id, read_at, email_status, sms_status, created_at",
-      )
-      .eq("program_id", agg.program.id)
-      .order("created_at", { ascending: false })
-      .limit(60),
+    readOwnerParticipation(supabase, "alerts", programId, preview),
     loadOwnerTicketProjection(supabase, propertyIds, preview, programId),
   ]);
   if (alerts.error) throw alerts.error;
-  const receipts = await loadOwnerResponseReceipts(supabase, programId);
-
-  // Keep achievements current whenever the owner opens the hub.
-  // A preview never writes: it reads whatever badges already exist.
-  if (!preview) await syncBadges(supabase, agg);
-  const badges = await supabase
-    .from("owner_badges")
-    .select("code, awarded_at, trigger_rule, needs_review")
-    .eq("program_id", agg.program.id)
-    .order("awarded_at");
+  const receipts = await loadOwnerResponseReceipts(supabase, programId, {
+    ownerView: true,
+    preview,
+  });
 
   return {
     linked: true as const,
@@ -105,7 +112,8 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
     ),
     entries: agg.entries,
     responseReceipts: receipts,
-    badges: badges.data ?? agg.badges,
+    badges: agg.badges,
+    badgeRefreshPending: false,
     alerts: (alerts.data ?? []).map((row) => ({ ...row, ...ownerNotificationText(row) })),
     tickets,
     reportedMinutes: agg.reportedMinutes,
@@ -120,11 +128,7 @@ async function loadOwnerHomeByProgram(supabase: Client, programId: string, previ
 
 export async function markAlertsRead(supabase: Client, ids: string[]) {
   if (ids.length === 0) return { ok: true as const };
-  const { error } = await supabase
-    .from("owner_notifications")
-    .update({ read_at: new Date().toISOString() })
-    .in("id", ids)
-    .is("read_at", null);
+  const { error } = await supabase.rpc("mark_owner_alerts_read", { _ids: ids });
   if (error) throw error;
   return { ok: true as const };
 }
@@ -168,87 +172,14 @@ export type LogTimeInput = {
  * linked to several homes but its minutes are stored exactly once, so the
  * combined total can never double count.
  */
-export async function logOwnerTime(supabase: Client, userId: string, input: LogTimeInput) {
+export async function logOwnerTime(supabase: Client, _userId: string, input: LogTimeInput) {
   // Every new entry is anchored to a documented participation opportunity.
   // Legacy entries created before this rule keep their history untouched.
   if (!input.reviewId) {
     throw new Error("Choose the participation opportunity this time belongs to.");
   }
-  const opportunity = await supabase
-    .from("owner_reviews")
-    .select("id, program_id, status, available_from, property_id, task_type")
-    .eq("id", input.reviewId)
-    .eq("program_id", input.programId)
-    .maybeSingle();
-  if (opportunity.error) throw opportunity.error;
-  if (!opportunity.data) {
-    throw new Error("That participation opportunity is not part of your program.");
-  }
-  if (opportunity.data.status === "closed") {
-    throw new Error("That opportunity is no longer available.");
-  }
-  if (
-    opportunity.data.available_from &&
-    new Date(opportunity.data.available_from).getTime() > Date.now()
-  ) {
-    throw new Error("That opportunity is not open yet.");
-  }
-  if (
-    input.propertyIds.length === 0 &&
-    opportunity.data.property_id &&
-    opportunity.data.task_type !== "multi_property"
-  ) {
-    input = { ...input, propertyIds: [opportunity.data.property_id] };
-  }
-  const opportunityPropertyId =
-    opportunity.data.task_type === "multi_property" ? null : opportunity.data.property_id;
-  if (
-    opportunityPropertyId &&
-    input.propertyIds.some((propertyId) => propertyId !== opportunityPropertyId)
-  ) {
-    throw new Error("This participation opportunity belongs to a different property.");
-  }
-
-  const program = await readOwnerProgram(supabase, input.programId);
-  if (program.error) throw program.error;
-  if (!program.data || program.data.owner_user_id !== userId)
-    throw new Error("That participation program is not available to you.");
-  if (!["active", "target_reached"].includes(program.data.status) || !program.data.started_on)
-    throw new Error(
-      "Your ARHA contact must activate this program before new participation can be logged.",
-    );
-  if (
-    input.entryDate < program.data.started_on ||
-    input.entryDate > new Date().toISOString().slice(0, 10)
-  )
-    throw new Error("Choose a date from the program start through today.");
-
-  const links = await supabase
-    .from("owner_program_properties")
-    .select("property_id, closing_date, inclusion_status")
-    .eq("program_id", input.programId);
-  if (links.error) throw links.error;
-
-  // Only homes currently included in the program can carry participation.
-  const allowed = new Map(
-    (links.data ?? [])
-      .filter((l) => l.inclusion_status === "included")
-      .map((l) => [l.property_id, l]),
-  );
-  const chosen = [...new Set(input.propertyIds)].filter((id) => allowed.has(id));
-  if (chosen.length !== new Set(input.propertyIds).size)
-    throw new Error("Participation can only include properties enrolled in this program.");
-  for (const id of chosen) {
-    const link = allowed.get(id)!;
-
-    // A home cannot carry participation from before it closed.
-    if (!link.closing_date || input.entryDate < link.closing_date) {
-      throw new Error(
-        "That date is before this property's closing date. Please choose a date on or after closing.",
-      );
-    }
-  }
-
+  // Eligibility, current enrollment and evidence are checked under database locks.
+  const chosen = [...new Set(input.propertyIds)];
   const { data: entryId, error } = await supabase.rpc("log_owner_time_entry", {
     _entry: { ...input },
     _property_ids: chosen,
@@ -257,7 +188,7 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
   if (!entryId) throw new Error("The participation entry could not be recorded.");
 
   // Activity timestamps and evidence are committed by the same transaction.
-  // The next hub load refreshes badges; a later read failure must never invite
+  // A later read failure must never invite
   // the owner to submit this already-recorded activity a second time.
   return { ok: true as const, entryId, awarded: [] as string[] };
 }
@@ -269,34 +200,9 @@ export async function logOwnerTime(supabase: Client, userId: string, input: LogT
  */
 export async function resubmitOwnerTime(
   supabase: Client,
-  userId: string,
+  _userId: string,
   input: { entryId: string; minutes: number; activity: string; note: string },
 ) {
-  const original = await supabase
-    .from("owner_time_entries")
-    .select(
-      "id, program_id, owner_user_id, phase, entry_date, activity, activity_category, output, comments, review_id, ticket_id, review_status",
-    )
-    .eq("id", input.entryId)
-    .single();
-  if (original.error) throw original.error;
-  if (original.data.owner_user_id !== userId) {
-    throw new Error("That entry belongs to another homeowner.");
-  }
-  if (original.data.review_status !== "returned") {
-    throw new Error("Only an entry your ARHA contact returned to you can be corrected.");
-  }
-
-  const already = await supabase
-    .from("owner_time_entries")
-    .select("id")
-    .eq("amends_entry_id", input.entryId)
-    .limit(1);
-  if (already.error) throw already.error;
-  if ((already.data ?? []).length > 0) {
-    throw new Error("This entry has already been corrected and resubmitted.");
-  }
-
   const corrected = await supabase.rpc("resubmit_owner_time_entry", {
     _entry_id: input.entryId,
     _minutes: input.minutes,
@@ -311,7 +217,7 @@ export async function resubmitOwnerTime(
 /** Owner answers a task that was waiting on them. */
 export async function respondToReview(
   supabase: Client,
-  userId: string,
+  _userId: string,
   input: {
     reviewId: string;
     expectedUpdatedAt: string;
@@ -320,30 +226,7 @@ export async function respondToReview(
     ownerUpdateRevision?: number | null;
   },
 ) {
-  const review = await supabase
-    .from("owner_reviews")
-    .select("id, program_id, title, status, auto_ticket, available_from, updated_at")
-    .eq("id", input.reviewId)
-    .single();
-  if (review.error) throw review.error;
-
-  const program = await readOwnerProgram(supabase, review.data.program_id);
-  if (program.error) throw program.error;
-  if (
-    program.data.owner_user_id !== userId ||
-    ["closed", "completed", "complete"].includes(program.data.status)
-  )
-    throw new Error("This participation program is not available for your response.");
-  if (
-    !["awaiting_owner", "returned"].includes(review.data.status) ||
-    (review.data.available_from && new Date(review.data.available_from).getTime() > Date.now())
-  )
-    throw new Error("This opportunity is not currently awaiting your response.");
-  if (review.data.auto_ticket && input.decision !== "acknowledged")
-    throw new Error(
-      "Use the canonical approval request to approve or decline work. This response records participation only.",
-    );
-
+  // The versioned transaction checks ownership, availability, intent and narrative revision.
   const { data: saved, error } = await supabase.rpc("respond_owner_review", {
     _review_id: input.reviewId,
     _expected_updated_at: input.expectedUpdatedAt,
@@ -353,7 +236,7 @@ export async function respondToReview(
   });
   if (error) throw error;
   if (!saved) throw new Error("The response could not be recorded.");
-  // The next hub load refreshes badges; a badge failure must not report this committed response as failed.
+  // A later read failure must not report this committed response as failed.
   return { ok: true as const };
 }
 
@@ -408,163 +291,8 @@ export async function createOwnerMatter(
   }
   return { ok: true as const, ticketId: matter.ticket_id, ref: matter.ref };
 }
-/* ------------------------------------------------------------------ */
-/* Homeowner approval decisions                                        */
-/* ------------------------------------------------------------------ */
-
-export type OwnerApproval = {
-  id: string;
-  updated_at: string;
-  kind: string;
-  title: string;
-  detail: string | null;
-  amount: number | null;
-  currency: string;
-  status: string;
-  decision_note: string | null;
-  decided_at: string | null;
-  due_on: string | null;
-  evidence_url: string | null;
-  property_id: string | null;
-  property_name: string | null;
-  /** Home is enrolled in the 90-Day Owner Participation Program. */
-  active_owner: boolean;
-  created_at: string;
-};
-
-/**
- * Non-demo owner-role requests addressed to this homeowner. These filters are
- * required even when the account also has staff permissions. Property labels
- * are not an authorization check; current canonical relationship checks remain
- * a separate requirement from the recipient and role boundary.
- */
-export async function loadOwnerApprovals(
-  supabase: Client,
-  userId: string,
-): Promise<OwnerApproval[]> {
-  const { data, error } = await supabase
-    .from("approvals")
-    .select(
-      "id, updated_at, kind, title, detail, amount, currency, status, decision_note, decided_at, due_on, evidence_url, property_id, approver_id, created_at",
-    )
-    .eq("approver_id", userId)
-    .eq("approver_role", "owner")
-    .eq("is_demo", false)
-    .order("created_at", { ascending: false })
-    .limit(100);
-  if (error) throw error;
-  const rows = data ?? [];
-  const ids = [...new Set(rows.map((r) => r.property_id).filter((v): v is string => Boolean(v)))];
-  const labels = await readOwnerPropertyLabels(supabase, ids);
-  const names = new Map(labels.map((property) => [property.id, property.name]));
-  const participation = new Set(
-    labels.filter((property) => property.active).map((property) => property.id),
-  );
-  return rows.map((r) => ({
-    id: r.id,
-    updated_at: r.updated_at,
-    kind: r.kind,
-    title: r.title,
-    detail: r.detail,
-    amount: r.amount,
-    currency: r.currency,
-    status: r.status,
-    decision_note: r.decision_note,
-    decided_at: r.decided_at,
-    due_on: r.due_on,
-    evidence_url: r.evidence_url,
-    property_id: r.property_id,
-    property_name: r.property_id ? (names.get(r.property_id) ?? null) : null,
-    active_owner: Boolean(r.property_id && participation.has(r.property_id)),
-    created_at: r.created_at,
-  }));
-}
-
-/**
- * Record one homeowner decision. Authorisation is enforced server-side and
- * again by RLS. The `status = pending` filter makes the write single-shot:
- * a second submission (or a race) changes zero rows and is reported back
- * instead of silently overwriting the first decision.
- *
- * Nothing here awards participation hours or sends live notifications.
- */
-export async function recordOwnerApproval(
-  supabase: Client,
-  userId: string,
-  input: {
-    approvalId: string;
-    expectedUpdatedAt: string;
-    decision: "approved" | "declined";
-    comment: string;
-  },
-) {
-  const current = await supabase
-    .from("approvals")
-    .select("id, status, property_id, entity_type, entity_id, approver_id, approver_role, is_demo")
-    .eq("id", input.approvalId)
-    .maybeSingle();
-  if (current.error) throw current.error;
-  if (!current.data) throw new Error("That approval request is not available to you.");
-  if (current.data.approver_role !== "owner" || current.data.is_demo !== false) {
-    throw new Error("That request is not available for a homeowner decision.");
-  }
-  if (current.data.approver_id !== userId) {
-    throw new Error("That approval request is addressed to someone else.");
-  }
-  if (current.data.status !== "pending") {
-    throw new Error("A decision was already recorded for this request.");
-  }
-  if (input.decision === "declined" && !input.comment.trim()) {
-    throw new Error("Please add a short note explaining what you would like changed.");
-  }
-
-  let now = new Date().toISOString();
-  if (
-    ["work_order", "onboarding_task", "financial_request"].includes(current.data.entity_type ?? "")
-  ) {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const response = await supabaseAdmin.rpc("record_versioned_owner_response", {
-      _approval_id: input.approvalId,
-      _expected_updated_at: input.expectedUpdatedAt,
-      _owner_id: userId,
-      _approved: input.decision === "approved",
-      _note: input.comment.trim(),
-    });
-    if (response.error) throw response.error;
-    if (!response.data) throw new Error("The owner response could not be recorded.");
-    now = response.data;
-    // Work Order history and global audit commit inside its response transaction.
-    if (current.data.entity_type === "work_order")
-      return { ok: true as const, status: input.decision, decidedAt: now };
-  } else {
-    const { data, error } = await supabase
-      .from("approvals")
-      .update({
-        status: input.decision,
-        decision_note: input.comment.trim() || null,
-        decided_at: now,
-      })
-      .eq("id", input.approvalId)
-      .eq("status", "pending")
-      .eq("updated_at", input.expectedUpdatedAt)
-      .eq("approver_id", userId)
-      .eq("approver_role", "owner")
-      .eq("is_demo", false)
-      .select("id")
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) throw new Error("A decision was already recorded or the recipient changed.");
-  }
-
-  const { writeAudit } = await import("./audit.server");
-  await writeAudit({
-    actorId: userId,
-    action: `owner_approval_${input.decision}`,
-    entityType: "approval",
-    entityId: input.approvalId,
-    reason: input.comment.trim() || null,
-    after: { decidedAt: now },
-  });
-
-  return { ok: true as const, status: input.decision, decidedAt: now };
-}
+export {
+  loadOwnerApprovals,
+  recordOwnerApproval,
+  type OwnerApproval,
+} from "./owner-approval.server";

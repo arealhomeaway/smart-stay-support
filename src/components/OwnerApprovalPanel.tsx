@@ -14,6 +14,7 @@ import { useRouteContext } from "@tanstack/react-router";
 import { CheckCircle2, ClipboardCheck, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { decideOwnerApproval, ownerApprovals } from "@/lib/owner-portal.functions";
+import { captureOwnerDecisionVersion } from "@/lib/owner-approval-context";
 import { usDateTime } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,9 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
   const load = useServerFn(ownerApprovals);
   const decide = useServerFn(decideOwnerApproval);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [versions, setVersions] = useState<Record<string, string>>({});
+  const [versions, setVersions] = useState<
+    Record<string, ReturnType<typeof captureOwnerDecisionVersion>>
+  >({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const q = useQuery({ queryKey: ["owner-approvals", userId], queryFn: () => load() });
@@ -62,6 +65,7 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
     mutationFn: (input: {
       approvalId: string;
       expectedUpdatedAt: string;
+      publicationId: string;
       decision: "approved" | "declined";
     }) => decide({ data: { ...input, comment: notes[input.approvalId] ?? "" } }),
     onMutate: (v) => setBusy(v.approvalId),
@@ -88,6 +92,7 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
   });
 
   if (q.isLoading) return <Skeleton className="h-40 w-full" />;
+  if (q.error) return <p role="alert">{q.error.message}</p>;
 
   const all = q.data?.approvals ?? [];
   const pending = all.filter((a) => a.status === "pending");
@@ -114,8 +119,9 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
 
         {pending.map((a) => {
           const amount = money(a.amount, a.currency);
-          const version = versions[a.id] ?? a.updated_at;
-          const changed = version !== a.updated_at;
+          const version = versions[a.id] ?? captureOwnerDecisionVersion(a);
+          const changed =
+            version.updatedAt !== a.updated_at || version.publicationId !== a.publication_id;
           return (
             <div key={a.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -147,16 +153,25 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
                   View the attached details
                 </a>
               )}
+              {a.blocked_reason && (
+                <p className="mt-2 text-sm" role="status">
+                  {a.blocked_reason}
+                </p>
+              )}
               <Textarea
                 className="mt-3"
                 rows={2}
                 placeholder="Add a note (required if you request changes)"
+                aria-label={`Your response to ${a.title}`}
                 value={notes[a.id] ?? ""}
                 onChange={(e) => {
                   setNotes((n) => ({ ...n, [a.id]: e.target.value }));
-                  setVersions((current) => ({ ...current, [a.id]: current[a.id] ?? a.updated_at }));
+                  setVersions((current) => ({
+                    ...current,
+                    [a.id]: current[a.id] ?? captureOwnerDecisionVersion(a),
+                  }));
                 }}
-                disabled={readOnly}
+                disabled={readOnly || !a.can_respond}
               />
               {changed && (
                 <div className="mt-2 space-y-2" role="status">
@@ -168,7 +183,12 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
                     variant="outline"
                     size="sm"
                     disabled={readOnly || busy === a.id}
-                    onClick={() => setVersions((current) => ({ ...current, [a.id]: a.updated_at }))}
+                    onClick={() =>
+                      setVersions((current) => ({
+                        ...current,
+                        [a.id]: captureOwnerDecisionVersion(a),
+                      }))
+                    }
                   >
                     I have reviewed the updated request
                   </Button>
@@ -177,11 +197,14 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
                   size="sm"
-                  disabled={readOnly || busy === a.id || changed || !version}
+                  disabled={
+                    readOnly || busy === a.id || changed || !a.can_respond || !version.publicationId
+                  }
                   onClick={() =>
                     submit.mutate({
                       approvalId: a.id,
-                      expectedUpdatedAt: version,
+                      expectedUpdatedAt: version.updatedAt,
+                      publicationId: version.publicationId!,
                       decision: "approved",
                     })
                   }
@@ -192,11 +215,14 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={readOnly || busy === a.id || changed || !version}
+                  disabled={
+                    readOnly || busy === a.id || changed || !a.can_respond || !version.publicationId
+                  }
                   onClick={() =>
                     submit.mutate({
                       approvalId: a.id,
-                      expectedUpdatedAt: version,
+                      expectedUpdatedAt: version.updatedAt,
+                      publicationId: version.publicationId!,
                       decision: "declined",
                     })
                   }
@@ -217,7 +243,7 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
         {decided.length > 0 && (
           <div className="pt-2">
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Your decisions
+              Decision history
             </p>
             <div className="space-y-2">
               {decided.map((a) => (
@@ -233,6 +259,19 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
                       </span>
                     )}
                   </div>
+                  {!a.recorded_by_owner && (
+                    <p className="mt-1 text-xs text-muted-foreground">Recorded by ARHA</p>
+                  )}
+                  {a.amount !== null && (
+                    <p className="mt-1 text-sm">Requested amount: {money(a.amount, a.currency)}</p>
+                  )}
+                  {a.detail && <p className="mt-2 whitespace-pre-line">{a.detail}</p>}
+                  {a.revision && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Reviewed summary revision {a.revision}
+                    </p>
+                  )}
+                  {a.blocked_reason && <p className="mt-1 text-sm">{a.blocked_reason}</p>}
                   {a.decision_note && (
                     <p className="mt-1 text-muted-foreground">{a.decision_note}</p>
                   )}

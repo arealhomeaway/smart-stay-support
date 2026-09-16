@@ -1,6 +1,8 @@
 # Active Owner access boundary — September 16
 
-Repository audit through migrations 46–48. This describes branch-local code and isolated checks; no shared backend was inspected or migrated. **MORE IMPLEMENTATION REQUIRED.** Authenticated acceptance is not yet the only major gate.
+Current local audit includes migrations49–54. Safe approval publications, canonical document recipients, explicit participation/history/alert projections, independent handoff readiness, canonical badge recovery and atomic lifecycle/history now address the six prior implementation boundaries. A legacy raw owner Onboarding-task policy and retained staff-notification access after role revocation were also closed. This is local/static evidence; full-schema JWT/RLS, actual concurrent sessions, storage and authenticated desktop/390px acceptance remain required. See the latest build-progress checkpoint for the final validation and verdict. No shared backend was inspected or migrated.
+
+The sections below retain the through48 findings as historical audit context; owner-read-boundary-follow-up.md records their precise local resolutions.
 
 ## Implemented local boundaries
 

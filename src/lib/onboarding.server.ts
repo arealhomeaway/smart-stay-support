@@ -27,6 +27,7 @@ import {
   assertOnboardingStageAccess,
   readOnboardingReviewCapabilities,
 } from "./onboarding-review-access.server";
+import type { IndependentReadiness } from "./onboarding-independent-readiness";
 import { hasOnboardingReview } from "./onboarding-review-capabilities";
 import {
   prepareOnboardingHandoff,
@@ -201,9 +202,20 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     }))
     .filter((c) => projects.some((p) => p.id === c.projectId && p.status !== "cancelled"));
 
+  const independentResult = await supabase.rpc("read_onboarding_independent_readiness", {
+    _property_ids: projects
+      .filter((project) => project.status !== "cancelled")
+      .map((project) => project.property_id),
+  });
+  if (independentResult.error || !Array.isArray(independentResult.data))
+    throw new Error(
+      "Could not verify financial and field readiness. Refresh before reviewing handoff.",
+    );
+  const independentReadiness = independentResult.data as unknown as IndependentReadiness[];
   const workspace = {
     workspaceMode,
     reviewCapabilities,
+    independentReadiness,
     assignedWorkContexts: [] as AssignedWorkContext[],
     properties: props.data ?? [],
     pipeline: inPipeline.map((p) => p.id),
@@ -281,6 +293,9 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     pipeline: workspace.pipeline.filter((id) => managed.has(id)),
     stageCaptures: workspace.stageCaptures.filter((capture) => managed.has(capture.propertyId)),
     handoffs: visibleHandoffs,
+    independentReadiness: workspace.independentReadiness.filter((row) =>
+      managed.has(row.propertyId),
+    ),
     notes: workspace.notes.filter(managedRecord),
     reviews: workspace.reviews.filter(
       (review) => managedRecord(review) && handoffIds.has(review.handoff_id),

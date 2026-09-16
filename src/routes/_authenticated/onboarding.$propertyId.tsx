@@ -45,6 +45,7 @@ import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
+import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
@@ -241,6 +242,10 @@ function PropertyWorkspace() {
     tasks,
     handoff: (openHandoff ?? null) as OpenHandoff,
     project: projectRow as never,
+    stageCaptures: data.stageCaptures.filter((c) => c.propertyId === current.id),
+    excludedTaskIds: outOfScope.map((x) => x.task.id),
+    independentReadiness:
+      data.independentReadiness.find((row) => row.propertyId === current.id) ?? null,
   };
   // One authoritative read, shared by every surface on this page.
   const life = deriveLifecycle({
@@ -259,6 +264,10 @@ function PropertyWorkspace() {
   });
   const roll = rollupProperty(tasks, release);
   const sections = buildSections(tasks, release);
+  const independent = independentReadinessForTasks(
+    data.independentReadiness.find((row) => row.propertyId === current.id),
+    tasks,
+  );
   const readiness = handoffReadiness(
     {
       property: current as never,
@@ -270,6 +279,7 @@ function PropertyWorkspace() {
     validateHandoff(current, tasks as never, {
       includeQuarterlyReview: enabled("quarterly_reviews"),
     }).checks,
+    independent.extras,
   );
   const chain = chainProgress({
     property: current as never,
@@ -897,6 +907,34 @@ function PropertyWorkspace() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {(independent.financialBlockers.length > 0 || independent.fieldBlockers.length > 0) && (
+              <div className="mt-3 space-y-2 text-sm">
+                {independent.financialBlockers.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="block text-primary underline"
+                    onClick={() => void navigate({ search: { ...search, tab: "financial" } })}
+                  >
+                    Review financial request: {item.title}
+                  </button>
+                ))}
+                {independent.fieldBlockers.map((item) => (
+                  <button
+                    key={item.sourceType + item.id}
+                    type="button"
+                    className="block text-primary underline"
+                    onClick={() =>
+                      setOpenTaskId(
+                        item.taskIds.find((id) => tasks.some((task) => task.id === id)) ?? null,
+                      )
+                    }
+                  >
+                    Review linked field work: {item.title}
+                  </button>
+                ))}
               </div>
             )}
             <div className="mt-3">

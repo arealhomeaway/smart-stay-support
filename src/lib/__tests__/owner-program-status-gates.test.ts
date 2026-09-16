@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test";
 import { activateProgram, setProgramStatus } from "../owner-program.server";
-
 async function expectFailure(result: Promise<unknown>, message: string) {
   const actual = await result.then(
     () => "unexpected success",
@@ -9,35 +8,37 @@ async function expectFailure(result: Promise<unknown>, message: string) {
   expect(actual.includes(message)).toBe(true);
 }
 describe("owner program lifecycle action", () => {
-  it("resumes an activated program without changing its clock", async () => {
-    let patch: unknown;
-    let event: unknown;
-    const query = {
-      select: () => query,
-      eq: () => query,
-      single: async () => ({ data: { status: "paused", started_on: "2026-01-01" }, error: null }),
-      update: (value: unknown) => {
-        patch = value;
-        return query;
-      },
-      maybeSingle: async () => ({ data: { id: "program" }, error: null }),
-    };
+  it("sends a viewed version to one atomic status action without raw clock or history writes", async () => {
+    const calls: unknown[] = [];
     const db = {
-      from: (table: string) =>
-        table === "owner_program_events"
-          ? {
-              insert: async (value: unknown) => {
-                event = value;
-                return { error: null };
-              },
-            }
-          : query,
+      from: () => {
+        throw new Error("Separate lifecycle write attempted");
+      },
+      rpc: async (name: string, args: unknown) => {
+        calls.push([name, args]);
+        return {
+          data: { programId: "program", added: 0, reportVersion: "new-version" },
+          error: null,
+        };
+      },
     };
-    await setProgramStatus(db as never, "supervisor", { programId: "program", status: "active" });
-    expect(patch).toEqual({ status: "active" });
-    expect(Boolean(event)).toBe(true);
+    await setProgramStatus(db as never, "supervisor", {
+      programId: "program",
+      expectedVersion: "viewed-version",
+      status: "active",
+    });
+    expect(calls).toEqual([
+      [
+        "change_owner_program",
+        {
+          _program_id: "program",
+          _expected_version: "viewed-version",
+          _action: "status",
+          _status: "active",
+        },
+      ],
+    ]);
   });
-
   it("preserves a supervisor's reviewed version and surfaces competing activation rejection without a separate event", async () => {
     for (const role of ["admin", "manager"]) {
       const activationCalls: Record<string, string>[] = [];
@@ -80,71 +81,32 @@ describe("owner program lifecycle action", () => {
       ]);
     }
   });
-  it("cannot activate a draft or reopen a completed program through status editing", async () => {
-    for (const status of ["draft", "completed", "closed", "complete"]) {
-      const query = {
-        select: () => query,
-        eq: () => query,
-        single: async () => ({
-          data: { status, started_on: status === "draft" ? null : "2026-01-01" },
-          error: null,
-        }),
-        update: () => {
-          throw new Error("unexpected write");
+  it("propagates lifecycle, disabled-account and stale version rejections without a second write", async () => {
+    for (const reason of [
+      "Use the activation or completion checklist",
+      "This program is no longer open for changes",
+      "The program changed",
+      "An enabled staff account is required",
+    ]) {
+      let writes = 0;
+      const db = {
+        from: () => {
+          throw new Error("Raw fallback");
+        },
+        rpc: async () => {
+          writes++;
+          return { data: null, error: new Error(reason) };
         },
       };
       await expectFailure(
-        setProgramStatus({ from: () => query } as never, "supervisor", {
+        setProgramStatus(db as never, "supervisor", {
           programId: "program",
-          status: "active",
+          expectedVersion: "viewed",
+          status: "paused",
         }),
-        "activation or completion checklist",
+        reason,
       );
+      expect(writes).toBe(1);
     }
-  });
-
-  it("does not roll an active program back to pre-activation or resume an unstarted pause", async () => {
-    for (const [status, started_on, next] of [
-      ["active", "2026-01-01", "draft"],
-      ["paused", null, "active"],
-    ] as const) {
-      const query = {
-        select: () => query,
-        eq: () => query,
-        single: async () => ({ data: { status, started_on }, error: null }),
-        update: () => {
-          throw new Error("unexpected write");
-        },
-      };
-      await expectFailure(
-        setProgramStatus({ from: () => query } as never, "supervisor", {
-          programId: "program",
-          status: next,
-        }),
-        "activation or completion checklist",
-      );
-    }
-  });
-
-  it("rejects a stale pause instead of recording a lifecycle event", async () => {
-    const filters: unknown[][] = [];
-    const query = {
-      select: () => query,
-      eq: (...args: unknown[]) => {
-        filters.push(args);
-        return query;
-      },
-      single: async () => ({ data: { status: "active", started_on: "2026-01-01" }, error: null }),
-      update: () => query,
-      maybeSingle: async () => ({ data: null, error: null }),
-    };
-    await expectFailure(
-      setProgramStatus({ from: () => query } as never, "supervisor", {
-        programId: "program",
-        status: "paused",
-      }),
-      "program changed",
-    );
-    expect(filters.some(([key, value]) => key === "status" && value === "active")).toBe(true);
   });
 });

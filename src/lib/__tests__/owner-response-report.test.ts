@@ -1,4 +1,8 @@
-import { ownerProgramFixture, ownerEnrollmentFixture } from "./owner-program-reader-fixture";
+import {
+  ownerProgramFixture,
+  ownerEnrollmentFixture,
+  ownerReviewFixture,
+} from "./owner-program-reader-fixture";
 import { expect, it } from "bun:test";
 import { buildOwnerReport, reportCsv, reportPdf } from "../owner-report.server";
 import { PDFDocument } from "pdf-lib";
@@ -34,6 +38,7 @@ function reportDatabase(includePrivateEvents = false) {
     ],
     owner_reviews: [
       {
+        ...ownerReviewFixture(),
         id: "review",
         title: "LATEST TEXT MUST NOT REPLACE RECEIPTS",
         status: "awaiting_owner",
@@ -58,57 +63,40 @@ function reportDatabase(includePrivateEvents = false) {
       : events,
   };
   return {
-    rpc: (name: string) => {
+    rpc: (name: string, args: { _section?: string } = {}) => {
       if (name === "read_owner_programs")
         return Promise.resolve({
           data: [{ id: "program", program: ownerProgramFixture() }],
           error: null,
         });
-      expect(name).toBe("read_owner_program_properties");
+      const rows =
+        name === "read_owner_program_properties"
+          ? [{ id: "enrollment", enrollment: ownerEnrollmentFixture() }]
+          : (
+              sources[
+                {
+                  reviews: "owner_reviews",
+                  entries: "owner_time_entries",
+                  badges: "owner_badges",
+                  events: "owner_program_events",
+                }[args._section ?? ""] ?? ""
+              ] ?? []
+            ).map((item) => ({
+              id: (item as { id: string }).id,
+              item: { review_id: null, detail: {}, ...(item as object) },
+            }));
       const q = {
         order: () => q,
-        range: async () => ({
-          data: [{ id: "enrollment", enrollment: ownerEnrollmentFixture() }],
-          count: 1,
+        range: async (from: number, to: number) => ({
+          data: rows.slice(from, Math.min(to + 1, from + 100)),
+          count: rows.length,
           error: null,
         }),
       };
       return q;
     },
-    from: (table: string) => {
-      if (["owner_programs", "properties", "owner_program_properties"].includes(table))
-        throw new Error("Owner report must not read raw Program/Property rows");
-      let selectedKinds: string[] | undefined;
-      const q = {
-        select: () => q,
-        eq: () => q,
-        in: (_field: string, kinds: string[]) => {
-          selectedKinds = kinds;
-          return q;
-        },
-        order: () => q,
-        single: async () => ({
-          data: {
-            id: "program",
-            owner_name: "QA Owner",
-            status: "active",
-            started_on: "2026-01-01",
-            ends_on: "2026-03-31",
-          },
-          error: null,
-        }),
-        range: async (from: number, to: number) => {
-          const all = (sources[table] ?? []).filter(
-            (row) => !selectedKinds || selectedKinds.includes((row as { kind: string }).kind),
-          );
-          return {
-            data: all.slice(from, Math.min(to + 1, from + 100)),
-            count: all.length,
-            error: null,
-          };
-        },
-      };
-      return q;
+    from: () => {
+      throw new Error("Owner report must not read raw tables");
     },
   };
 }

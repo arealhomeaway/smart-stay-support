@@ -223,3 +223,8 @@ Exact reviewed narratives are now captured for responses without time entries, r
 ### September 16 report integration and write boundary
 
 Response-only narratives now appear in CSV/PDF and new saved closeouts, with no implied participation hours and no substitution of a later narrative. Owner raw review-table mutation is blocked by an unapplied feature migration while canonical responses and legitimate participation remain supported. All 39 isolated migration files and 739 unit tests pass. This completes these local gaps; broader owner-safe payloads, canonical lifecycle/concurrency and authenticated acceptance keep the overall locked requirement PARTIALLY IMPLEMENTED.
+
+
+### September16 — local implementation and acceptance boundary
+
+The locked Ticket coverage/canonical identity requirement is implemented locally through 54: one safe automatic Ticket/program opportunity; all eight request categories and WHY; canonical authority and actual-cost context; legitimate review-only time; exact narrative/approval/response/time history; and one canonical Owner with explicit enrollment.49/50/52 close remaining raw-owner/private-recipient reads, and54 protects lifecycle/source/history and role/account changes. The participation requirement is **at least 100 hours; exactly 100.0 qualifies**. No production data, shared migration or external delivery was used. Overall acceptance remains **PARTIAL / NOT YET ACCEPTED** until the full-schema, actual-role, storage, concurrent-session and desktop/390px scenarios pass in the approved isolated environment. Latest validation is recorded in build progress.

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { SUPPORTED_OWNER_ACTION_TYPES } from "./owner-opportunity";
+import { OWNER_ACTION_TYPES } from "./owner-opportunity";
 
 const source = z.enum(["onboarding", "operations"]);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
@@ -22,9 +22,14 @@ export const offerOwnerOpportunity = createServerFn({ method: "POST" })
       .object({
         source,
         sourceId: z.string().uuid(),
+        programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
+        expectedOwnerId: z.string().uuid(),
+        expectedSourceUpdatedAt: z.string().datetime({ offset: true }),
+        reviewed: z.literal(true),
         title: z.string().trim().min(3).max(200),
         instructions: z.string().trim().min(3).max(2000),
-        actionType: z.enum(SUPPORTED_OWNER_ACTION_TYPES),
+        actionType: z.enum(OWNER_ACTION_TYPES),
         availableFrom: isoDate.nullable().default(null),
         respondBy: isoDate.nullable().default(null),
         staffContext: z.string().trim().max(1000).default(""),

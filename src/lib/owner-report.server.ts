@@ -14,12 +14,17 @@
 
 import { reviewedOwnerUpdateText } from "./owner-reviewed-update";
 import { loadOwnerResponseReceipts } from "./owner-response-history.server";
-import { readCountedRows } from "./read-all-rows";
+import { readOwnerParticipation } from "./owner-participation-reader.server";
 import { ownerReportAction } from "./owner-report-action";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Client } from "./owner-participation.server";
 import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
-import { PROGRAM_TOTAL_DAYS, hoursFromMinutes } from "./owner-participation";
+import {
+  PROGRAM_TOTAL_DAYS,
+  hoursFromMinutes,
+  participationWindowEnd,
+  inParticipationWindow,
+} from "./owner-participation";
 
 export type ReportEntry = {
   reviewedUpdate?: string;
@@ -62,12 +67,6 @@ function statusLabel(s: string) {
   return STATUS_LABEL[s] ?? s;
 }
 
-function addDays(iso: string, days: number) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
 function fileName(base: string, ext: string) {
   return `${base
     .replace(/[^a-z0-9]+/gi, "-")
@@ -82,7 +81,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
 
   const propNames = new Map(agg.properties.map((x) => [x.propertyId, x.name] as const));
   const startedOn = p.startedOn;
-  const endsOn = p.endsOn ?? (startedOn ? addDays(startedOn, PROGRAM_TOTAL_DAYS - 1) : null);
+  const endsOn = participationWindowEnd(startedOn, p.endsOn);
   const today = new Date().toISOString().slice(0, 10);
   const windowClosed = Boolean(endsOn && endsOn < today) || p.status === "completed";
   const kind: "progress" | "final" = windowClosed ? "final" : "progress";
@@ -97,9 +96,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
     const opp = e.review_id ? opportunities.get(e.review_id) : undefined;
     const returned = e.review_status === "returned";
     const counts = !isSuperseded && !returned;
-    const inPeriod = !startedOn
-      ? true
-      : e.entry_date >= startedOn && (!endsOn || e.entry_date <= endsOn);
+    const inPeriod = inParticipationWindow(e.entry_date, startedOn, endsOn, today);
     return {
       id: e.id,
       date: e.entry_date,
@@ -144,24 +141,17 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
 
   // Participation actions: approvals, returns and revisions. These are a
   // record of what happened — they never add hours on the owner's behalf.
-  const events = await readCountedRows(
-    supabase
-      .from("owner_program_events")
-      .select("id, kind, created_at", { count: "exact" })
-      .eq("program_id", programId)
-      .order("created_at", { ascending: false })
-      .order("id"),
-  );
+  const events = await readOwnerParticipation(supabase, "events", programId);
   if (events.error) throw events.error;
-  const responses = (await loadOwnerResponseReceipts(supabase, programId)).map((receipt) => ({
-    ...receipt,
-    propertyName: receipt.propertyId
-      ? (propNames.get(receipt.propertyId) ?? "Previously enrolled property")
-      : "Program opportunity",
-    inPeriod:
-      (!startedOn || receipt.createdAt.slice(0, 10) >= startedOn) &&
-      (!endsOn || receipt.createdAt.slice(0, 10) <= endsOn),
-  }));
+  const responses = (await loadOwnerResponseReceipts(supabase, programId, { ownerView: true })).map(
+    (receipt) => ({
+      ...receipt,
+      propertyName: receipt.propertyId
+        ? (propNames.get(receipt.propertyId) ?? "Previously enrolled property")
+        : "Program opportunity",
+      inPeriod: inParticipationWindow(receipt.createdAt.slice(0, 10), startedOn, endsOn, today),
+    }),
+  );
   const retainedReviewIds = new Set(responses.map((receipt) => receipt.reviewId));
 
   const actions: ReportAction[] = (events.data ?? [])

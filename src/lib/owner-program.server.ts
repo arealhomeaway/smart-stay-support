@@ -10,37 +10,26 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
+import { type DecisionPath, type ProgramPhase, type TaskTemplate } from "./owner-program";
 import {
-  DEFAULT_ONBOARDING_HOURS,
-  DEFAULT_ONGOING_HOURS,
-  DEFAULT_TARGET_HOURS,
-  type DecisionPath,
-  type ProgramPhase,
-  type TaskTemplate,
-} from "./owner-program";
-import {
-  ACTIVATABLE_STATUSES,
   countableParticipationEntries,
+  inParticipationWindow,
   hoursFromMinutes,
   ownerGoalMet,
-  OPERATING_TARGET_HOURS,
   REPORT_DISCLAIMER,
   progressSnapshot,
   type ProgramStatus,
-  type TaskType,
 } from "./owner-participation";
-import { combinedMinutes, loadProgramAggregate, recordEvent } from "./owner-participation.server";
+import { combinedMinutes, loadProgramAggregate } from "./owner-participation.server";
 import {
   loadOwnerResponseReceipts,
   type OwnerResponseReceipt,
 } from "./owner-response-history.server";
-import { syncBadges } from "./owner-badges.server";
-import { activateOwnerProgramAtomically } from "./owner-program-activation.server";
 import {
-  canonicalEnrollmentOwner,
-  assertEnrollmentOwner,
-} from "./owner-enrollment-identity.server";
-
+  changeOwnerProgramAtomically,
+  createOwnerProgramAtomically,
+} from "./owner-program-lifecycle.server";
+import { activateOwnerProgramAtomically } from "./owner-program-activation.server";
 type Client = SupabaseClient<Database>;
 
 /** Throws unless the caller is an admin or manager. */
@@ -57,12 +46,6 @@ export async function assertSupervisor(supabase: Client, userId: string) {
 
 function locationOf(p: { city: string | null; state: string | null }) {
   return [p.city, p.state].filter(Boolean).join(", ");
-}
-
-function addDays(iso: string, days: number) {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
 }
 
 /** The whole roadmap catalog, in phase / stage / sort order. */
@@ -128,7 +111,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       supabase
         .from("owner_programs")
         .select(
-          "id, owner_user_id, owner_name, owner_email, status, started_on, ends_on, onboarding_lead, operations_lead, dfy_confirmed, last_owner_activity_at",
+          "id, owner_user_id, status, started_on, ends_on, onboarding_lead, operations_lead, dfy_confirmed, last_owner_activity_at, canonical_owner:property_owners(name, email)",
         )
         // Demo programs stay out of the production queue unless demo mode is on.
         .eq("is_demo", demo)
@@ -143,7 +126,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
         .select("id, program_id, property_id, status, respond_by, source_type, available_from"),
       supabase
         .from("owner_time_entries")
-        .select("id, program_id, minutes, review_status, amends_entry_id")
+        .select("id, program_id, minutes, review_status, amends_entry_id, entry_date")
         .eq("is_demo", demo),
       supabase.from("owner_time_entry_properties").select("entry_id, property_id"),
       supabase.from("owner_badges").select("program_id, code"),
@@ -176,7 +159,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
     const myReviews = (reviews.data ?? []).filter((r) => r.program_id === p.id);
     const myEntries = countableParticipationEntries(
       (entries.data ?? []).filter((entry) => entry.program_id === p.id),
-    );
+    ).filter((entry) => inParticipationWindow(entry.entry_date, p.started_on, p.ends_on, today));
     const reported = combinedMinutes(myEntries);
     const snapshot = progressSnapshot({
       status: p.status as ProgramStatus,
@@ -214,8 +197,8 @@ export async function loadPrograms(supabase: Client, demo = false) {
 
     return {
       id: p.id,
-      ownerName: p.owner_name,
-      ownerEmail: p.owner_email,
+      ownerName: p.canonical_owner?.name ?? "Owner link unresolved",
+      ownerEmail: p.canonical_owner?.email ?? null,
       ownerLinked: Boolean(p.owner_user_id),
       status: p.status as ProgramStatus,
       startedOn: p.started_on,
@@ -261,93 +244,10 @@ export { ownerAttention as attentionRank } from "./owner-attention";
 /** Creates a draft program. The 90-day clock is never started here. */
 export async function createProgram(
   supabase: Client,
-  userId: string,
-  input: { propertyId: string; ownerName: string; ownerEmail: string },
+  _userId: string,
+  input: { propertyId: string; ownerName?: string; ownerEmail?: string },
 ) {
-  const { property, owner } = await canonicalEnrollmentOwner(supabase, input.propertyId);
-  const existing = await supabase
-    .from("owner_program_properties")
-    .select("program_id")
-    .eq("property_id", input.propertyId)
-    .eq("inclusion_status", "included")
-    .maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) {
-    const program = await supabase
-      .from("owner_programs")
-      .select("owner_record_id")
-      .eq("id", existing.data.program_id)
-      .single();
-    if (program.error) throw program.error;
-    assertEnrollmentOwner(program.data.owner_record_id, owner.id);
-    return { programId: existing.data.program_id, alreadyExists: true as const };
-  }
-
-  // Reuse by canonical Owner identity without granting portal access or
-  // resetting its clock. Late additions retain the existing administrator gate.
-  {
-    const candidates = await supabase
-      .from("owner_programs")
-      .select("id")
-      .eq("owner_record_id", owner.id)
-      .eq("is_demo", property.is_demo ?? false)
-      .is("archived_at", null)
-      .not("status", "in", "(closed,completed)")
-      .limit(2);
-    if (candidates.error) throw candidates.error;
-    if ((candidates.data?.length ?? 0) > 1) {
-      throw new Error(
-        "This canonical Owner has more than one program. Resolve the duplicate program before enrollment.",
-      );
-    }
-    const candidate = candidates.data?.[0];
-    if (candidate) {
-      await addProgramProperty(supabase, userId, {
-        programId: candidate.id,
-        propertyId: input.propertyId,
-        closingDate: property.actual_closing_on,
-      });
-      return { programId: candidate.id, alreadyExists: true as const };
-    }
-  }
-
-  const { data, error } = await supabase
-    .from("owner_programs")
-    .insert({
-      property_id: input.propertyId,
-      owner_record_id: owner.id,
-      owner_name: owner.name,
-      owner_email: owner.email,
-      status: "draft",
-      started_on: null,
-      ends_on: null,
-      target_hours: DEFAULT_TARGET_HOURS,
-      operating_target_hours: OPERATING_TARGET_HOURS,
-      onboarding_target_hours: DEFAULT_ONBOARDING_HOURS,
-      ongoing_target_hours: DEFAULT_ONGOING_HOURS,
-      created_by: userId,
-      is_demo: property.is_demo ?? false,
-    })
-    .select("id")
-    .single();
-  if (error) throw error;
-
-  const link = await supabase.from("owner_program_properties").insert({
-    program_id: data.id,
-    property_id: input.propertyId,
-    added_by: userId,
-    is_demo: property.is_demo ?? false,
-  });
-  if (link.error) throw link.error;
-
-  await recordEvent(supabase, {
-    programId: data.id,
-    kind: "program_created",
-    summary: "Program created as a draft.",
-    actorId: userId,
-    propertyId: input.propertyId,
-  });
-  return { programId: data.id, alreadyExists: false as const };
+  return createOwnerProgramAtomically(supabase, input.propertyId);
 }
 
 /**
@@ -357,144 +257,62 @@ export async function createProgram(
  */
 export async function addProgramProperty(
   supabase: Client,
-  userId: string,
-  input: { programId: string; propertyId: string; closingDate: string | null },
+  _userId: string,
+  input: {
+    programId: string;
+    expectedVersion: string;
+    propertyId: string;
+    closingDate: string | null;
+  },
 ) {
-  const program = await supabase
-    .from("owner_programs")
-    .select("id, status, started_on, owner_record_id, is_demo")
-    .eq("id", input.programId)
-    .single();
-  if (program.error) throw program.error;
-  const { owner } = await canonicalEnrollmentOwner(supabase, input.propertyId);
-  assertEnrollmentOwner(program.data.owner_record_id, owner.id);
-
-  const alreadyElsewhere = await supabase
-    .from("owner_program_properties")
-    .select("program_id")
-    .eq("property_id", input.propertyId)
-    .eq("inclusion_status", "included")
-    .maybeSingle();
-  if (alreadyElsewhere.error) throw alreadyElsewhere.error;
-  if (alreadyElsewhere.data)
-    throw new Error("That property is already part of a participation program.");
-
-  const started = Boolean(program.data.started_on);
-  if (started) {
-    const admin = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    if (admin.error || !admin.data) {
-      throw new Error(
-        "Adding a property to a program already underway needs administrator approval.",
-      );
-    }
-    if (!input.closingDate || input.closingDate > new Date().toISOString().slice(0, 10)) {
-      throw new Error("Confirm the property's closing date before adding it to an active program.");
-    }
-  }
-
-  const { error } = await supabase.from("owner_program_properties").insert({
-    program_id: input.programId,
-    property_id: input.propertyId,
-    closing_date: input.closingDate,
-    closing_confirmed: Boolean(input.closingDate),
-    added_by: userId,
-    added_on: new Date().toISOString().slice(0, 10),
-    is_demo: program.data.is_demo,
-  });
-  if (error) throw error;
-
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "property_added",
-    summary: started
-      ? "Property added after activation. The 90-day timeline and combined target are unchanged."
-      : "Property added to the program.",
-    actorId: userId,
-    propertyId: input.propertyId,
-    detail: { closingDate: input.closingDate },
-  });
+  await changeOwnerProgramAtomically(supabase, { ...input, action: "add_property" });
   return { ok: true as const };
 }
 
 export async function removeProgramProperty(
   supabase: Client,
-  userId: string,
-  input: { programId: string; propertyId: string; reason: string },
+  _userId: string,
+  input: { programId: string; expectedVersion: string; propertyId: string; reason: string },
 ) {
-  const { error } = await supabase
-    .from("owner_program_properties")
-    .update({ inclusion_status: "removed" })
-    .eq("program_id", input.programId)
-    .eq("property_id", input.propertyId);
-  if (error) throw error;
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "property_removed",
-    summary: "Property removed from the program. Its history is preserved.",
-    actorId: userId,
-    propertyId: input.propertyId,
-    reason: input.reason || null,
-  });
+  await changeOwnerProgramAtomically(supabase, { ...input, action: "remove_property" });
   return { ok: true as const };
 }
 
 /** Records the closing confirmation that gates activation. */
 export async function confirmPropertyClosing(
   supabase: Client,
-  userId: string,
-  input: { programId: string; propertyId: string; closingDate: string },
+  _userId: string,
+  input: { programId: string; expectedVersion: string; propertyId: string; closingDate: string },
 ) {
-  const { error } = await supabase
-    .from("owner_program_properties")
-    .update({ closing_date: input.closingDate, closing_confirmed: true })
-    .eq("program_id", input.programId)
-    .eq("property_id", input.propertyId);
-  if (error) throw error;
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "closing_confirmed",
-    summary: `Closing confirmed for ${input.closingDate}.`,
-    actorId: userId,
-    propertyId: input.propertyId,
-    newValue: input.closingDate,
-  });
+  await changeOwnerProgramAtomically(supabase, { ...input, action: "confirm_closing" });
   return { ok: true as const };
 }
 
 /** Program settings that carry no participation time of their own. */
 export async function updateProgramSettings(
   supabase: Client,
-  userId: string,
+  _userId: string,
   input: {
     programId: string;
-    ownerName: string;
-    ownerEmail: string;
+    expectedVersion: string;
     onboardingLead: string | null;
     operationsLead: string | null;
     dfyConfirmed: boolean;
     internalNotes: string;
   },
 ) {
-  const { error } = await supabase
-    .from("owner_programs")
-    .update({
-      owner_name: input.ownerName || null,
-      owner_email: input.ownerEmail || null,
-      onboarding_lead: input.onboardingLead,
-      operations_lead: input.operationsLead,
-      dfy_confirmed: input.dfyConfirmed,
-      dfy_confirmed_at: input.dfyConfirmed ? new Date().toISOString() : null,
-      internal_notes: input.internalNotes || null,
-    })
-    .eq("id", input.programId);
-  if (error) throw error;
-  await recordEvent(supabase, {
+  const receipt = await changeOwnerProgramAtomically(supabase, {
     programId: input.programId,
-    kind: "program_updated",
-    summary: "Program details updated.",
-    actorId: userId,
+    expectedVersion: input.expectedVersion,
+    action: "settings",
+    settings: {
+      onboardingLead: input.onboardingLead,
+      operationsLead: input.operationsLead,
+      dfyConfirmed: input.dfyConfirmed,
+      internalNotes: input.internalNotes,
+    },
   });
-  return { ok: true as const };
+  return { ok: true as const, reportVersion: receipt.reportVersion };
 }
 
 /**
@@ -513,43 +331,10 @@ export async function activateProgram(
 /** Moves a program between the non-activation lifecycle states. */
 export async function setProgramStatus(
   supabase: Client,
-  userId: string,
-  input: { programId: string; status: ProgramStatus },
+  _userId: string,
+  input: { programId: string; expectedVersion: string; status: ProgramStatus },
 ) {
-  const current = await supabase
-    .from("owner_programs")
-    .select("status, started_on")
-    .eq("id", input.programId)
-    .single();
-  if (current.error) throw current.error;
-
-  const from = current.data.status as ProgramStatus;
-  const preActivation = ACTIVATABLE_STATUSES.includes(from) && !current.data.started_on;
-  const allowed =
-    (preActivation && ACTIVATABLE_STATUSES.includes(input.status)) ||
-    (["active", "target_reached"].includes(from) && input.status === "paused") ||
-    (from === "paused" && Boolean(current.data.started_on) && input.status === "active");
-  if (!allowed) {
-    throw new Error("Use the activation or completion checklist for this lifecycle change.");
-  }
-
-  const { data: updated, error } = await supabase
-    .from("owner_programs")
-    .update({ status: input.status })
-    .eq("id", input.programId)
-    .eq("status", from)
-    .select("id")
-    .maybeSingle();
-  if (error) throw error;
-  if (!updated) throw new Error("The program changed. Refresh before changing its status.");
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "status_changed",
-    summary: `Program status changed to ${input.status.replace(/_/g, " ")}.`,
-    actorId: userId,
-    previousValue: current.data.status,
-    newValue: input.status,
-  });
+  await changeOwnerProgramAtomically(supabase, { ...input, action: "status" });
   return { ok: true as const };
 }
 
@@ -594,74 +379,14 @@ export async function recordTimeCorrection(
  */
 export async function seedRoadmap(
   supabase: Client,
-  userId: string,
-  input: { programId: string; phase: ProgramPhase | "all" },
+  _userId: string,
+  input: { programId: string; expectedVersion: string; phase: ProgramPhase | "all" },
 ) {
-  const program = await supabase
-    .from("owner_programs")
-    .select("id, started_on")
-    .eq("id", input.programId)
-    .single();
-  if (program.error) throw program.error;
-
-  const templates = await loadTaskTemplates(supabase);
-  const wanted = templates.filter((t) => input.phase === "all" || t.phase === input.phase);
-
-  const existing = await supabase
-    .from("owner_reviews")
-    .select("template_id, property_id")
-    .eq("program_id", input.programId);
-  if (existing.error) throw existing.error;
-  const seeded = new Set(
-    (existing.data ?? []).map((r) => `${r.template_id ?? ""}:${r.property_id ?? ""}`),
-  );
-
-  const links = await supabase
-    .from("owner_program_properties")
-    .select("property_id")
-    .eq("program_id", input.programId)
-    .eq("inclusion_status", "included");
-  if (links.error) throw links.error;
-  const propertyIds = (links.data ?? []).map((l) => l.property_id);
-
-  const anchor = program.data.started_on ?? new Date().toISOString().slice(0, 10);
-  const toInsert: Record<string, unknown>[] = [];
-  for (const t of wanted) {
-    // Onboarding work is per home; ongoing operating rhythm is program-wide.
-    const perProperty = t.phase === "onboarding" && propertyIds.length > 0;
-    const targets: (string | null)[] = perProperty ? propertyIds : [null];
-    for (const propertyId of targets) {
-      if (seeded.has(`${t.id}:${propertyId ?? ""}`)) continue;
-      toInsert.push({
-        program_id: input.programId,
-        template_id: t.id,
-        property_id: propertyId,
-        task_type: (propertyId ? "property_specific" : "program_wide") satisfies TaskType,
-        phase: t.phase,
-        stage: t.stage,
-        title: t.title,
-        business_question: t.summary,
-        recommendation: t.summary,
-        impact: t.owner_action,
-        decision_path: t.decision_path,
-        respond_by: addDays(anchor, t.respond_within_days),
-        status: "prepared",
-        sort_order: t.sort_order,
-        created_by: userId,
-      });
-    }
-  }
-
-  if (toInsert.length === 0) return { added: 0 };
-  const { error } = await supabase.from("owner_reviews").insert(toInsert as never);
-  if (error) throw error;
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "roadmap_seeded",
-    summary: `${toInsert.length} owner activities released.`,
-    actorId: userId,
+  const receipt = await changeOwnerProgramAtomically(supabase, {
+    ...input,
+    action: "seed_roadmap",
   });
-  return { added: toInsert.length };
+  return { added: receipt.added };
 }
 
 /** Everything the staff detail view shows for one program. */
@@ -670,7 +395,7 @@ export async function loadProgramDetail(supabase: Client, programId: string) {
   // enrollment/closing/DFY input, including paged property reads.
   const before = await supabase
     .from("owner_programs")
-    .select("report_version")
+    .select("report_version, owner_record_id")
     .eq("id", programId)
     .single();
   if (before.error) throw before.error;
@@ -685,16 +410,31 @@ export async function loadProgramDetail(supabase: Client, programId: string) {
 
   const after = await supabase
     .from("owner_programs")
-    .select("report_version")
+    .select("report_version, owner_record_id")
     .eq("id", programId)
     .single();
   if (after.error) throw after.error;
   if (before.data.report_version !== after.data.report_version) {
     throw new Error("The program changed while loading. Refresh before reviewing activation.");
   }
+  const canonicalOwner = before.data.owner_record_id
+    ? await supabase
+        .from("property_owners")
+        .select("name, email")
+        .eq("id", before.data.owner_record_id)
+        .single()
+    : null;
+  if (canonicalOwner?.error) throw canonicalOwner.error;
+  const staffChoices = await supabase.rpc("owner_program_staff_choices");
+  if (staffChoices.error) throw staffChoices.error;
   return {
+    staffChoices: staffChoices.data ?? [],
     activationVersion: before.data.report_version,
-    program: agg.program,
+    program: {
+      ...agg.program,
+      ownerName: canonicalOwner?.data?.name ?? null,
+      ownerEmail: canonicalOwner?.data?.email ?? null,
+    },
     properties: agg.properties,
     reviews: agg.reviews,
     entries: agg.entries,
@@ -712,11 +452,13 @@ export async function loadProgramDetail(supabase: Client, programId: string) {
 export function completionChecklist(agg: Awaited<ReturnType<typeof loadProgramAggregate>>) {
   const included = agg.includedProperties;
   const openTasks = agg.reviews.filter((r) => !["answered", "closed"].includes(r.status));
-  const entriesAttributed = countableParticipationEntries(agg.entries).every(
-    (entry) => entry.activity.trim().length > 0,
-  );
+  const entriesAttributed = countableParticipationEntries(agg.entries)
+    .filter((entry) =>
+      inParticipationWindow(entry.entry_date, agg.program.startedOn, agg.program.endsOn),
+    )
+    .every((entry) => entry.activity.trim().length > 0);
   return {
-    hoursExceeded: agg.goalMet,
+    hoursMet: agg.goalMet,
     propertyTasksComplete: included.length > 0 && included.every((p) => p.openTasks === 0),
     decisionsReceived: openTasks.filter((r) => r.status === "awaiting_owner").length === 0,
     entriesAttributed,
@@ -748,8 +490,7 @@ export async function completeProgram(
     throw new Error("Only an active program can be completed. Resume a paused program first.");
   }
   const check = completionChecklist(agg);
-  if (!check.hoursExceeded)
-    throw new Error("The homeowner has not yet reported at least 100 hours.");
+  if (!check.hoursMet) throw new Error("The homeowner has not yet reported at least 100 hours.");
   if (!check.propertyTasksComplete) {
     throw new Error("Required owner tasks are still open on one or more properties.");
   }
@@ -769,8 +510,6 @@ export async function completeProgram(
   });
   if (error) throw error;
   if (!completed) throw new Error("The program changed. Refresh before completing it.");
-  const refreshed = await loadProgramAggregate(supabase, programId);
-  await syncBadges(supabase, refreshed);
   return { ok: true as const };
 }
 
@@ -798,7 +537,11 @@ export function buildProgramReportSnapshot(
   responses: OwnerResponseReceipt[] = [],
 ) {
   const countedEntryIds = new Set(
-    countableParticipationEntries(agg.entries).map((entry) => entry.id),
+    countableParticipationEntries(agg.entries)
+      .filter((entry) =>
+        inParticipationWindow(entry.entry_date, agg.program.startedOn, agg.program.endsOn),
+      )
+      .map((entry) => entry.id),
   );
   const nameOf = (id: string) =>
     agg.properties.find((p) => p.propertyId === id)?.name ?? "Property";

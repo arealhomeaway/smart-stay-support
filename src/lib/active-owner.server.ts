@@ -1,22 +1,9 @@
-/**
- * Active Owner (90-Day Owner Participation Program) participation lookup.
- *
- * Source of truth: the existing enrollment records — `owner_program_properties`
- * (the per-property join, `inclusion_status = 'included'`) plus the legacy
- * single-property column `owner_programs.property_id`. Participation is never
- * inferred from the generic `owner` role, and no new tag is created: a person
- * is an Active Owner only for the properties their program is enrolled on.
- */
-
+/** Canonical staff-side membership lookup. Portal authorization uses checked owner RPCs. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { readCountedRows } from "./read-all-rows";
-
 type Client = SupabaseClient<Database>;
-
-/** Programs in these states no longer create new owner obligations. */
-const INACTIVE_PROGRAM = new Set(["closed", "completed"]);
-
+const INACTIVE_PROGRAM = new Set(["closed", "completed", "complete"]);
 export type ActiveOwnerLink = {
   propertyId: string;
   programId: string;
@@ -25,89 +12,98 @@ export type ActiveOwnerLink = {
   programStatus: string;
 };
 
-/**
- * Participation per owner/property relationship, keyed by property id.
- * A property absent from the map is a regular (non-participating) owner home.
- */
+/** Only an explicit current canonical enrollment establishes participation. */
 export async function activeOwnerLinks(
   supabase: Client,
   propertyIds?: string[],
 ): Promise<Map<string, ActiveOwnerLink>> {
   const map = new Map<string, ActiveOwnerLink>();
-  const ids = propertyIds?.filter(Boolean) ?? null;
-  if (ids && ids.length === 0) return map;
-
-  // Every explicit link is read, not just the included ones: an explicit
-  // exclusion must win over the legacy single-property column below.
-  let joinQuery = supabase
-    .from("owner_program_properties")
-    .select(
-      "property_id, program_id, inclusion_status, owner_programs!inner(id, owner_user_id, owner_name, status)",
-      { count: "exact" },
-    )
-    .order("program_id")
-    .order("property_id");
-  if (ids) joinQuery = joinQuery.in("property_id", ids);
-
-  let legacyQuery = supabase
-    .from("owner_programs")
-    .select("id, property_id, owner_user_id, owner_name, status", { count: "exact" })
-    .not("property_id", "is", null)
-    .order("id");
-  if (ids) legacyQuery = legacyQuery.in("property_id", ids);
-
-  const [joined, legacy] = await Promise.all([
-    readCountedRows(joinQuery),
-    readCountedRows(legacyQuery),
-  ]);
-
-  if (joined.error) throw joined.error;
-  if (legacy.error) throw legacy.error;
-
-  /** Property ids that carry an explicit decision, whatever that decision is. */
-  const explicit = new Set<string>();
-
-  for (const row of joined.data ?? []) {
-    const program = row.owner_programs as unknown as {
-      id: string;
-      owner_user_id: string | null;
-      owner_name: string | null;
-      status: string;
-    } | null;
-    if (!program) continue;
-    explicit.add(row.property_id);
-    if (INACTIVE_PROGRAM.has(program.status)) continue;
-    if (row.inclusion_status !== "included") continue;
-    map.set(row.property_id, {
-      propertyId: row.property_id,
-      programId: program.id,
-      ownerUserId: program.owner_user_id,
-      ownerName: program.owner_name,
-      programStatus: program.status,
-    });
+  const ids = propertyIds ? [...new Set(propertyIds.filter(Boolean))] : null;
+  if (ids?.length === 0) return map;
+  const batches = ids
+    ? Array.from({ length: Math.ceil(ids.length / 100) }, (_, i) =>
+        ids.slice(i * 100, i * 100 + 100),
+      )
+    : [null];
+  const duplicateProperties = new Set<string>();
+  for (const batch of batches) {
+    let query = supabase
+      .from("owner_program_properties")
+      .select(
+        "property_id, program_id, inclusion_status, archived_at, is_demo, owner_programs!inner(id, owner_record_id, owner_user_id, status, archived_at, is_demo)",
+        { count: "exact" },
+      )
+      .order("program_id")
+      .order("property_id");
+    if (batch) query = query.in("property_id", batch);
+    const joined = await readCountedRows(query);
+    const current = joined.data.filter(
+      (row) => row.inclusion_status === "included" && !row.archived_at,
+    );
+    const homes = [...new Set(current.map((row) => row.property_id))];
+    for (let offset = 0; offset < homes.length; offset += 100) {
+      const properties = await readCountedRows(
+        supabase
+          .from("properties")
+          .select("id, owner_record_id, archived_at, is_demo", { count: "exact" })
+          .in("id", homes.slice(offset, offset + 100))
+          .order("id"),
+      );
+      const ownerIds = [
+        ...new Set(
+          properties.data
+            .map((row) => row.owner_record_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+      if (!ownerIds.length) continue;
+      const owners = await readCountedRows(
+        supabase
+          .from("property_owners")
+          .select("id, name", { count: "exact" })
+          .in("id", ownerIds)
+          .eq("active", true)
+          .order("id"),
+      );
+      const byOwner = new Map(owners.data.map((owner) => [owner.id, owner]));
+      for (const home of properties.data) {
+        if (home.archived_at || !home.owner_record_id || !byOwner.has(home.owner_record_id))
+          continue;
+        for (const row of current.filter((enrollment) => enrollment.property_id === home.id)) {
+          const program = row.owner_programs;
+          if (
+            !program ||
+            program.archived_at ||
+            INACTIVE_PROGRAM.has(program.status) ||
+            program.owner_record_id !== home.owner_record_id ||
+            program.is_demo !== home.is_demo ||
+            row.is_demo !== home.is_demo
+          )
+            continue;
+          if (map.has(home.id)) {
+            duplicateProperties.add(home.id);
+            continue;
+          }
+          map.set(home.id, {
+            propertyId: home.id,
+            programId: program.id,
+            ownerUserId: program.owner_user_id,
+            ownerName: byOwner.get(home.owner_record_id)?.name ?? null,
+            programStatus: program.status,
+          });
+        }
+      }
+    }
   }
-
-  for (const p of legacy.data ?? []) {
-    // An explicit link row — included or excluded — is the decision. The legacy
-    // single-property column only fills the gap where no link row exists.
-    if (!p.property_id || map.has(p.property_id) || explicit.has(p.property_id)) continue;
-    if (INACTIVE_PROGRAM.has(p.status)) continue;
-    map.set(p.property_id, {
-      propertyId: p.property_id,
-      programId: p.id,
-      ownerUserId: p.owner_user_id,
-      ownerName: p.owner_name,
-      programStatus: p.status,
-    });
-  }
-
+  if (duplicateProperties.size)
+    throw new Error(
+      "A Property has conflicting canonical participation programs. Resolve enrollment before continuing.",
+    );
   return map;
 }
-
 export async function activeOwnerFor(
   supabase: Client,
   propertyId: string,
 ): Promise<ActiveOwnerLink | null> {
-  const map = await activeOwnerLinks(supabase, [propertyId]);
-  return map.get(propertyId) ?? null;
+  return (await activeOwnerLinks(supabase, [propertyId])).get(propertyId) ?? null;
 }

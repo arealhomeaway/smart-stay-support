@@ -10,12 +10,14 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseReviewedOwnerUpdate, type ReviewedOwnerUpdate } from "./owner-reviewed-update";
+import { readOwnerParticipation } from "./owner-participation-reader.server";
 import { readAllRows } from "./read-all-rows";
 import { readOwnerProgram, readOwnerProgramProperties } from "./owner-program-reader.server";
 import type { Database } from "@/integrations/supabase/types";
 import {
   benchmarkHours,
   countableParticipationEntries,
+  inParticipationWindow,
   hoursFromMinutes,
   ownerGoalMet,
   progressSnapshot,
@@ -171,57 +173,69 @@ export async function loadProgramAggregate(
             .order("id")
             .range(from, to),
         ),
-    readAllRows((from, to) =>
-      supabase
-        .from("owner_reviews")
-        .select(
-          "id, updated_at, auto_ticket, phase, stage, title, task_type, recommendation, business_question, evidence, impact, decision_path, respond_by, status, owner_decision, owner_response, outcome, responded_at, ticket_id, property_id, attachment_path, photos, sort_order, source_type, onboarding_task_id, owner_action_type, available_from, staff_context, closed_at",
-          { count: "exact" },
-        )
-        .eq("program_id", programId)
-        .order("sort_order")
-        .order("id")
-        .range(from, to),
-    ),
-    readAllRows((from, to) =>
-      supabase
-        .from("owner_review_properties")
-        .select("review_id, property_id, owner_reviews!inner(program_id)", { count: "exact" })
-        .eq("owner_reviews.program_id", programId)
-        .order("review_id")
-        .order("property_id")
-        .range(from, to),
-    ),
-    readAllRows((from, to) =>
-      supabase
-        .from("owner_time_entries")
-        .select(
-          "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, owner_update_revision, owner_update_snapshot, amends_entry_id, correction_reason, review_status, reviewed_by, reviewed_at, review_note, attested, flagged, created_at",
-          { count: "exact" },
-        )
-        .eq("program_id", programId)
-        .order("entry_date", { ascending: false })
-        .order("id")
-        .range(from, to),
-    ),
-    readAllRows((from, to) =>
-      supabase
-        .from("owner_time_entry_properties")
-        .select("entry_id, property_id, owner_time_entries!inner(program_id)", { count: "exact" })
-        .eq("owner_time_entries.program_id", programId)
-        .order("entry_id")
-        .order("property_id")
-        .range(from, to),
-    ),
-    readAllRows((from, to) =>
-      supabase
-        .from("owner_badges")
-        .select("code, awarded_at, trigger_rule, needs_review", { count: "exact" })
-        .eq("program_id", programId)
-        .order("awarded_at")
-        .order("code")
-        .range(from, to),
-    ),
+    options.ownerView
+      ? readOwnerParticipation(supabase, "reviews", programId, options.preview)
+      : readAllRows((from, to) =>
+          supabase
+            .from("owner_reviews")
+            .select(
+              "id, updated_at, auto_ticket, phase, stage, title, task_type, recommendation, business_question, evidence, impact, decision_path, respond_by, status, owner_decision, owner_response, outcome, responded_at, ticket_id, property_id, attachment_path, photos, sort_order, source_type, onboarding_task_id, owner_action_type, available_from, staff_context, closed_at",
+              { count: "exact" },
+            )
+            .eq("program_id", programId)
+            .order("sort_order")
+            .order("id")
+            .range(from, to),
+        ),
+    options.ownerView
+      ? Promise.resolve({ data: [], error: null })
+      : readAllRows((from, to) =>
+          supabase
+            .from("owner_review_properties")
+            .select("review_id, property_id, owner_reviews!inner(program_id)", { count: "exact" })
+            .eq("owner_reviews.program_id", programId)
+            .order("review_id")
+            .order("property_id")
+            .range(from, to),
+        ),
+    options.ownerView
+      ? readOwnerParticipation(supabase, "entries", programId, options.preview)
+      : readAllRows((from, to) =>
+          supabase
+            .from("owner_time_entries")
+            .select(
+              "id, phase, entry_date, minutes, activity, activity_category, decision_outcome, output, comments, attachment_path, review_id, ticket_id, owner_update_revision, owner_update_snapshot, amends_entry_id, correction_reason, review_status, reviewed_by, reviewed_at, review_note, attested, flagged, created_at",
+              { count: "exact" },
+            )
+            .eq("program_id", programId)
+            .order("entry_date", { ascending: false })
+            .order("id")
+            .range(from, to),
+        ),
+    options.ownerView
+      ? Promise.resolve({ data: [], error: null })
+      : readAllRows((from, to) =>
+          supabase
+            .from("owner_time_entry_properties")
+            .select("entry_id, property_id, owner_time_entries!inner(program_id)", {
+              count: "exact",
+            })
+            .eq("owner_time_entries.program_id", programId)
+            .order("entry_id")
+            .order("property_id")
+            .range(from, to),
+        ),
+    options.ownerView
+      ? readOwnerParticipation(supabase, "badges", programId, options.preview)
+      : readAllRows((from, to) =>
+          supabase
+            .from("owner_badges")
+            .select("code, awarded_at, trigger_rule, needs_review", { count: "exact" })
+            .eq("program_id", programId)
+            .order("awarded_at")
+            .order("code")
+            .range(from, to),
+        ),
   ]);
 
   for (const r of [program, links, reviews, reviewProps, entries, entryProps, badges]) {
@@ -235,15 +249,17 @@ export async function loadProgramAggregate(
   const entryRows: EntryRow[] = (entries.data ?? []).map((e) => ({
     ...e,
     owner_update_snapshot: parseReviewedOwnerUpdate(e.owner_update_snapshot),
-    propertyIds: (entryProps.data ?? [])
-      .filter((l) => l.entry_id === e.id)
-      .map((l) => l.property_id),
+    propertyIds:
+      "property_ids" in e
+        ? e.property_ids
+        : (entryProps.data ?? []).filter((l) => l.entry_id === e.id).map((l) => l.property_id),
   }));
 
   const reviewRows: ReviewRow[] = (reviews.data ?? []).map((r) => {
-    const linked = (reviewProps.data ?? [])
-      .filter((l) => l.review_id === r.id)
-      .map((l) => l.property_id);
+    const linked =
+      "property_ids" in r
+        ? r.property_ids
+        : (reviewProps.data ?? []).filter((l) => l.review_id === r.id).map((l) => l.property_id);
     const ids = linked.length > 0 ? linked : r.property_id ? [r.property_id] : [];
     return {
       ...r,
@@ -253,7 +269,9 @@ export async function loadProgramAggregate(
     };
   });
 
-  const countable = countableParticipationEntries(entryRows);
+  const inPeriod = (entry: EntryRow) =>
+    inParticipationWindow(entry.entry_date, p.started_on, p.ends_on);
+  const countable = countableParticipationEntries(entryRows).filter(inPeriod);
   const today = new Date().toISOString().slice(0, 10);
 
   const properties: ProgramPropertyRow[] = (links.data ?? []).map((l) => {
@@ -326,7 +344,9 @@ export async function loadProgramAggregate(
     countable.filter((e) => e.review_status !== "approved"),
   );
   const returnedMinutes = combinedMinutes(
-    entryRows.filter((e) => e.review_status === "returned" && !supersededIds.has(e.id)),
+    entryRows.filter(
+      (e) => inPeriod(e) && e.review_status === "returned" && !supersededIds.has(e.id),
+    ),
   );
 
   const snapshot = progressSnapshot({

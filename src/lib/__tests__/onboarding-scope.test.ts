@@ -116,3 +116,23 @@ describe("repair authority", () => {
     expect(repairApprovalGuidance("Install curtains")).toBeNull();
   });
 });
+
+it("maps each locked module to an explicit applicability reason in the existing scope engine", () => {
+  const cases = [
+    ["utilities", "Utility account transfer"],
+    ["repairs", "Make-ready repairs"],
+    ["smart_lock", "Smart lock setup"],
+    ["existing_appliances", "Existing appliance assessment"],
+    ["new_appliances", "New appliance delivery"],
+    ["pool", "Pool service setup"],
+    ["hoa", "HOA covenant documents"],
+    ["cameras", "Camera setup"],
+    ["furniture_warranty", "Furniture warranty registration"],
+    ["landscaping", "Landscaping service"],
+    ["active_owner", "Active Owner participation"],
+  ] as const;
+  for (const [module, title] of cases) {
+    expect(appliesToScope(title, { furnishing: "full_furnishing", modules: [module] })).toBe(true);
+    expect(outOfScopeReason(title, { furnishing: "full_furnishing", modules: [] })).not.toBeNull();
+  }
+});

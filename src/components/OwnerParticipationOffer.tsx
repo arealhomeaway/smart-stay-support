@@ -1,3 +1,4 @@
+import { captureOwnerOfferVersion, sameOwnerOfferVersion } from "@/lib/owner-lifecycle-version";
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -83,16 +84,27 @@ function OwnerParticipationOfferContent({ source, sourceId }: OwnerParticipation
   const [availableFrom, setAvailableFrom] = useState("");
   const [respondBy, setRespondBy] = useState("");
   const [staffContext, setStaffContext] = useState("");
+  const [offerVersion, setOfferVersion] = useState<ReturnType<
+    typeof captureOwnerOfferVersion
+  > | null>(null);
+  const [offerReviewed, setOfferReviewed] = useState(false);
+  const offerChanged = Boolean(
+    offerVersion && (!ctx.data?.eligible || !sameOwnerOfferVersion(offerVersion, ctx.data)),
+  );
   const [withdrawal, setWithdrawal] = useState<OpportunityWithdrawalDraft | null>(null);
   const [withdrawalError, setWithdrawalError] = useState("");
   const withdrawalReasonId = useId();
 
   const save = useMutation({
-    mutationFn: () =>
-      offer({
+    mutationFn: () => {
+      if (!offerVersion || offerChanged || !offerReviewed)
+        throw new Error("Review the current Owner and source context before offering this work.");
+      return offer({
         data: {
           source,
           sourceId,
+          ...offerVersion,
+          reviewed: true,
           title: title.trim(),
           instructions: instructions.trim(),
           actionType,
@@ -100,13 +112,18 @@ function OwnerParticipationOfferContent({ source, sourceId }: OwnerParticipation
           respondBy: respondBy || null,
           staffContext: staffContext.trim(),
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Offered to the homeowner.");
       setOpen(false);
       void qc.invalidateQueries({ queryKey: key });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      setOfferReviewed(false);
+      void ctx.refetch();
+    },
   });
 
   const withdraw = useMutation({
@@ -288,8 +305,10 @@ function OwnerParticipationOfferContent({ source, sourceId }: OwnerParticipation
         size="sm"
         variant="outline"
         onClick={() => {
-          setTitle(ctx.data.eligible ? ctx.data.defaultTitle : "");
-          setInstructions(ctx.data.eligible ? ctx.data.defaultInstructions : "");
+          setTitle("");
+          setInstructions("");
+          setOfferVersion(ctx.data.eligible ? captureOwnerOfferVersion(ctx.data) : null);
+          setOfferReviewed(false);
           setOpen(true);
         }}
       >
@@ -306,9 +325,22 @@ function OwnerParticipationOfferContent({ source, sourceId }: OwnerParticipation
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            <p className="text-sm">
+              Canonical Owner: {ctx.data.ownerName ?? "Owner relationship needs review"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Staff source context: {ctx.data.defaultTitle}
+            </p>
             <div className="space-y-1">
               <Label htmlFor="opp-title">Owner-facing title</Label>
-              <Input id="opp-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Input
+                id="opp-title"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setOfferReviewed(false);
+                }}
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="opp-instructions">What the owner is being asked to do</Label>
@@ -316,12 +348,21 @@ function OwnerParticipationOfferContent({ source, sourceId }: OwnerParticipation
                 id="opp-instructions"
                 rows={3}
                 value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
+                onChange={(e) => {
+                  setInstructions(e.target.value);
+                  setOfferReviewed(false);
+                }}
               />
             </div>
             <div className="space-y-1">
               <Label>Action type</Label>
-              <Select value={actionType} onValueChange={(v) => setActionType(v as OwnerActionType)}>
+              <Select
+                value={actionType}
+                onValueChange={(v) => {
+                  setActionType(v as OwnerActionType);
+                  setOfferReviewed(false);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -364,12 +405,50 @@ function OwnerParticipationOfferContent({ source, sourceId }: OwnerParticipation
               />
             </div>
           </div>
+          {offerChanged && (
+            <div role="status" className="space-y-2">
+              <p>
+                The program, Owner or source work changed. Review the current context above. Your
+                draft has been kept.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={save.isPending}
+                onClick={() => {
+                  if (ctx.data?.eligible) {
+                    setOfferVersion(captureOwnerOfferVersion(ctx.data));
+                    setOfferReviewed(false);
+                  }
+                }}
+              >
+                I reviewed the current context
+              </Button>
+            </div>
+          )}
+          <label className="flex gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={offerReviewed}
+              disabled={offerChanged || save.isPending}
+              onChange={(event) => setOfferReviewed(event.target.checked)}
+            />
+            I reviewed the owner-facing explanation for this Owner. It explains why participation is
+            requested and excludes guest personal details, private staff notes and access
+            credentials.
+          </label>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button
-              disabled={save.isPending || title.trim().length < 3 || instructions.trim().length < 3}
+              disabled={
+                save.isPending ||
+                offerChanged ||
+                !offerReviewed ||
+                title.trim().length < 3 ||
+                instructions.trim().length < 3
+              }
               onClick={() => save.mutate()}
             >
               Offer to owner

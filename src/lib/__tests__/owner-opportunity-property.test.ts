@@ -1,31 +1,19 @@
-import { ownerProgramFixture } from "./owner-program-reader-fixture";
 import { expect, it } from "bun:test";
 import { logOwnerTime } from "../owner-portal.server";
 import { activateProgram } from "../owner-program.server";
 
-it("rejects program-wide time before activation or before the program start", async () => {
+it("preserves atomic program activation/date rejection without a stale eligibility preflight", async () => {
   for (const status of ["draft", "active"]) {
     const db = {
-      rpc: async (name: string) => {
-        expect(name).toBe("read_owner_programs");
-        return {
-          data: [
-            { id: "program", program: ownerProgramFixture({ status, started_on: "2026-09-10" }) },
-          ],
-          error: null,
-        };
+      from: () => {
+        throw new Error("No stale raw owner reads");
       },
-      from: (table: string) => {
-        const row =
-          table === "owner_reviews"
-            ? { id: "opportunity", property_id: null, status: "open" }
-            : { owner_user_id: "owner", status, started_on: "2026-09-10" };
-        const query = {
-          select: () => query,
-          eq: () => query,
-          maybeSingle: async () => ({ data: row, error: null }),
+      rpc: async (name: string) => {
+        expect(name).toBe("log_owner_time_entry");
+        return {
+          data: null,
+          error: new Error(status === "draft" ? "activate this program" : "program start"),
         };
-        return query;
       },
     };
     let message = "";
@@ -87,18 +75,15 @@ it("rejects activation without supervisor authority before reading or writing th
 
 it("rejects a property-specific opportunity logged against another home before writing", async () => {
   let reads = 0;
-  const query = {
-    select: () => query,
-    eq: () => query,
-    maybeSingle: async () => ({
-      data: { id: "opportunity", property_id: "home-a", status: "open", available_from: null },
-      error: null,
-    }),
-  };
   const db = {
     from: () => {
       reads++;
-      return query;
+      throw new Error("Owner raw table read");
+    },
+    rpc: async (name: string, args: { _property_ids: string[] }) => {
+      expect(name).toBe("log_owner_time_entry");
+      expect(args._property_ids).toEqual(["home-b"]);
+      return { data: null, error: new Error("That opportunity belongs to a different property.") };
     },
   };
   let message = "";
@@ -122,5 +107,5 @@ it("rejects a property-specific opportunity logged against another home before w
     message = (error as Error).message;
   }
   expect(message).toContain("different property");
-  expect(reads).toBe(1);
+  expect(reads).toBe(0);
 });

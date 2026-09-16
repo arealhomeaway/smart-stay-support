@@ -4,6 +4,11 @@ import { offerToOwner, opportunityContext, type OfferInput } from "../owner-oppo
 const offer: OfferInput = {
   source: "operations",
   sourceId: "ticket",
+  programId: "program",
+  expectedVersion: "version",
+  expectedOwnerId: "canonical-owner",
+  expectedSourceUpdatedAt: "source-version",
+  reviewed: true,
   title: "Owner review",
   instructions: "Review the property work.",
   actionType: "information_only",

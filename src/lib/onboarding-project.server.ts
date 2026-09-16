@@ -399,13 +399,54 @@ export async function ensureActiveOwnerEnrollment(
   return { programId: result.programId, created: !result.alreadyExists };
 }
 
-/** Owner name, phone and email for the staff-facing contact strip. */
+/** Canonical Owner contact only; legacy name/email copies never select an identity. */
 export async function loadOwnerContacts(supabase: Client, propertyIds: string[]) {
-  if (propertyIds.length === 0) return [];
-  const { data, error } = await supabase
-    .from("property_owner_contacts")
-    .select("property_id, owner_name, owner_email, owner_phone, source, match_status")
-    .in("property_id", propertyIds);
-  if (error) throw error;
-  return data ?? [];
+  const ids = [...new Set(propertyIds)];
+  const contacts: {
+    property_id: string;
+    owner_record_id: string;
+    owner_name: string | null;
+    owner_email: string | null;
+    owner_phone: string | null;
+    source: string;
+    match_status: string;
+  }[] = [];
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    const properties = await readCountedRows(
+      supabase
+        .from("properties")
+        .select("id, owner_record_id", { count: "exact" })
+        .in("id", ids.slice(offset, offset + 100))
+        .order("id"),
+    );
+    const ownerIds = [
+      ...new Set(
+        properties.data.map((p) => p.owner_record_id).filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (!ownerIds.length) continue;
+    const owners = await readCountedRows(
+      supabase
+        .from("property_owners")
+        .select("id, name, email, phone, source", { count: "exact" })
+        .in("id", ownerIds)
+        .eq("active", true)
+        .order("id"),
+    );
+    const byId = new Map(owners.data.map((owner) => [owner.id, owner]));
+    for (const property of properties.data) {
+      const owner = property.owner_record_id ? byId.get(property.owner_record_id) : undefined;
+      if (owner)
+        contacts.push({
+          property_id: property.id,
+          owner_record_id: owner.id,
+          owner_name: owner.name,
+          owner_email: owner.email,
+          owner_phone: owner.phone,
+          source: owner.source,
+          match_status: "canonical",
+        });
+    }
+  }
+  return contacts;
 }

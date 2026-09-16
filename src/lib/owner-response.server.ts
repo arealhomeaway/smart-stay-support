@@ -212,65 +212,37 @@ export type OwnerDecision = "approved" | "declined" | "changes_requested";
  */
 export async function recordOwnerEmailDecision(
   db: Db,
-  userId: string,
-  input: { approvalId: string; decision: OwnerDecision; note: string; responseId?: string | null },
+  _userId: string,
+  input: {
+    approvalId: string;
+    expectedUpdatedAt: string;
+    decision: OwnerDecision;
+    note: string;
+    responseId?: string | null;
+  },
 ) {
-  const note = (input.note ?? "").trim();
-  if (note.length < 3)
-    throw new Error("Record what the homeowner said before saving the decision.");
-
-  const approval = await db
-    .from("approvals")
-    .select("id, status, title, entity_type, entity_id")
-    .eq("id", input.approvalId)
-    .maybeSingle();
-  if (approval.error) throw approval.error;
-  if (!approval.data) throw new Error("That decision is not available.");
-  if (approval.data.status !== "pending") {
-    throw new Error("This decision has already been recorded.");
-  }
-
-  const now = new Date().toISOString();
-  const { error } = await db
-    .from("approvals")
-    .update({
-      status: input.decision,
-      decision_note: note,
-      decided_at: now,
-      responded_at: now,
-      response_channel: "email",
-      recorded_by: userId,
-    })
-    .eq("id", input.approvalId)
-    .eq("status", "pending");
-  if (error) throw error;
-
-  // Onboarding steps keep their own owner-approval state in step with the
-  // canonical record.
-  if (approval.data.entity_type === "onboarding_task" && approval.data.entity_id) {
-    await db
-      .from("onboarding_tasks")
-      .update({
-        owner_approval_status: input.decision === "approved" ? "approved" : "changes_requested",
-      })
-      .eq("id", approval.data.entity_id);
-  }
-
-  if (input.responseId) {
-    await db
-      .from("approval_email_responses")
-      .update({ status: "recorded", linked_by: userId, linked_at: now })
-      .eq("id", input.responseId);
-  }
-
-  await writeAudit({
-    actorId: userId,
-    action: "owner_email_decision_recorded",
-    entityType: "approval",
-    entityId: input.approvalId,
-    entityLabel: approval.data.title,
-    reason: note,
-    after: { decision: input.decision, channel: "email" },
+  const note = input.note.trim();
+  if (note.length < 3 || note.length > 2000)
+    throw new Error(
+      "Record what the homeowner said and where its evidence is retained (3–2000 characters).",
+    );
+  if (!input.expectedUpdatedAt) throw new Error("Refresh the approval before recording its reply.");
+  const { data, error } = await db.rpc("record_owner_email_decision", {
+    _approval_id: input.approvalId,
+    _expected_updated_at: input.expectedUpdatedAt,
+    _decision: input.decision,
+    _note: note,
+    _response_id: input.responseId ?? null,
   });
+  if (error) throw error;
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    data["ok"] !== true ||
+    data["approvalId"] !== input.approvalId
+  ) {
+    throw new Error("The owner reply was not confirmed. Refresh before trying again.");
+  }
   return { ok: true as const };
 }

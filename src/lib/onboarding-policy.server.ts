@@ -6,14 +6,18 @@ import { writeAudit } from "./audit.server";
 type Client = SupabaseClient<Database>;
 const KEY = "onboarding_authority_policy";
 
-export async function loadOnboardingPolicy(supabase: Client) {
+export async function loadOnboardingPolicySnapshot(supabase: Client) {
   const { data, error } = await supabase
     .from("app_settings")
     .select("value")
     .eq("key", KEY)
     .maybeSingle();
   if (error) throw error;
-  return readAuthorityPolicy(data?.value ?? null);
+  return { policy: readAuthorityPolicy(data?.value ?? null), storedValue: data?.value ?? null };
+}
+
+export async function loadOnboardingPolicy(supabase: Client) {
+  return (await loadOnboardingPolicySnapshot(supabase)).policy;
 }
 
 export async function setOnboardingPolicy(

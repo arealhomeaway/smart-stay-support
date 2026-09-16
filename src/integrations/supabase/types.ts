@@ -1406,6 +1406,10 @@ export type Database = {
       }
       documents: {
         Row: {
+          owner_recipient_id: string | null
+          owner_recipient_program_id: string | null
+          fulfils_request_id: string | null
+          fulfilled_by_document_id: string | null
           archived_at: string | null
           category: string | null
           created_at: string
@@ -1436,6 +1440,10 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          owner_recipient_id?: string | null
+          owner_recipient_program_id?: string | null
+          fulfils_request_id?: string | null
+          fulfilled_by_document_id?: string | null
           archived_at?: string | null
           category?: string | null
           created_at?: string
@@ -1466,6 +1474,10 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          owner_recipient_id?: string | null
+          owner_recipient_program_id?: string | null
+          fulfils_request_id?: string | null
+          fulfilled_by_document_id?: string | null
           archived_at?: string | null
           category?: string | null
           created_at?: string
@@ -4185,6 +4197,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_programs_owner_record_id_fkey"
+            columns: ["owner_record_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "owner_programs_property_id_fkey"
             columns: ["property_id"]
@@ -7885,6 +7904,38 @@ export type Database = {
       }
     }
     Functions: {
+      record_owner_email_decision: { Args: { _approval_id: string; _expected_updated_at: string; _decision: string; _note: string; _response_id?: string | null }; Returns: Json }
+      create_owner_program: { Args: { _property_id: string }; Returns: Json }
+      change_owner_program: { Args: { _program_id: string; _expected_version: string; _action: string; _property_id?: string | null; _closing_date?: string | null; _settings?: Json | null; _status?: string | null; _reason?: string | null; _phase?: string | null }; Returns: Json }
+      create_owner_opportunity: { Args: { _program_id: string; _expected_version: string; _expected_owner_id: string; _source: string; _source_id: string; _expected_source_updated_at: string; _title: string; _instructions: string; _action_type: string; _available_from: string | null; _respond_by: string | null; _staff_context: string; _reviewed: boolean }; Returns: string }
+      owner_program_staff_choices: { Args: Record<PropertyKey, never>; Returns: { id: string; label: string }[] }
+      archive_attachment: { Args: { _actor_id: string; _document_id: string; _reason: string }; Returns: string }
+      owner_badge_refresh_version: { Args: { _program_id: string; _actor_id: string }; Returns: string }
+      refresh_owner_badges: { Args: { _program_id: string; _expected_version: string; _actor_id: string }; Returns: Json }
+
+      create_onboarding_financial_request: { Args: { _actor_id: string; _property_id: string; _request: Json }; Returns: Json }
+      read_owner_participation: {
+        Args: { _section: string; _program_id?: string | null; _preview?: boolean; _record_id?: string | null }
+        Returns: { id: string; item: Json }[]
+      }
+      mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
+      read_onboarding_independent_readiness: { Args: { _property_ids: string[] }; Returns: Json }
+      read_owner_approvals: { Args: Record<PropertyKey, never>; Returns: { id: string; approval: Json }[] }
+      read_owner_approval_publication_context: { Args: { _approval_id: string }; Returns: Json }
+      publish_owner_approval: {
+        Args: { _approval_id: string; _expected_updated_at: string; _expected_revision: number; _expected_owner_id: string; _expected_program_id: string; _expected_recipient_id: string; _title: string; _detail: string; _reviewed: boolean }
+        Returns: string
+      }
+      respond_owner_approval: {
+        Args: { _approval_id: string; _publication_id: string; _expected_updated_at: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      begin_attachment_upload: { Args: { _actor_id: string; _input: Json }; Returns: Json }
+      complete_attachment_upload: { Args: { _actor_id: string; _document_id: string; _ok: boolean; _fulfils_request_id?: string | null }; Returns: boolean }
+      set_attachment_visibility: { Args: { _actor_id: string; _document_id: string; _visibility: string }; Returns: string }
+      request_owner_document: { Args: { _actor_id: string; _input: Json }; Returns: string }
+      owner_document_access: { Args: { _document_id: string; _actor_id?: string | null }; Returns: boolean }
+
       activate_owner_program: {
         Args: { _program_id: string; _expected_version: string; _started_on: string }
         Returns: string
