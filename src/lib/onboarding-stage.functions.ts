@@ -6,8 +6,8 @@ export const getStageCaptures = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
-    const { loadStageCaptures } = await import("./onboarding-stage.server");
-    return loadStageCaptures(context.supabase, data.propertyId);
+    const { loadStageCapturesForActor } = await import("./onboarding-stage.server");
+    return loadStageCapturesForActor(context.supabase, context.userId, data.propertyId);
   });
 
 export const saveStageCaptureFn = createServerFn({ method: "POST" })

@@ -15,6 +15,7 @@
 import { reviewedOwnerUpdateText } from "./owner-reviewed-update";
 import { loadOwnerResponseReceipts } from "./owner-response-history.server";
 import { readCountedRows } from "./read-all-rows";
+import { ownerReportAction } from "./owner-report-action";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Client } from "./owner-participation.server";
 import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
@@ -146,7 +147,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const events = await readCountedRows(
     supabase
       .from("owner_program_events")
-      .select("id, kind, summary, created_at, new_value", { count: "exact" })
+      .select("id, kind, created_at", { count: "exact" })
       .eq("program_id", programId)
       .order("created_at", { ascending: false })
       .order("id"),
@@ -163,15 +164,9 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   }));
   const retainedReviewIds = new Set(responses.map((receipt) => receipt.reviewId));
 
-  const OWNER_VISIBLE = /^(entry|review|program|decision)/;
   const actions: ReportAction[] = (events.data ?? [])
-    .filter((e) => OWNER_VISIBLE.test(e.kind))
-    .map((e) => ({
-      date: (e.created_at ?? "").slice(0, 10),
-      kind: e.kind.replace(/_/g, " "),
-      summary: e.summary,
-      document: e.new_value ?? "",
-    }));
+    .map(ownerReportAction)
+    .filter((action): action is ReportAction => action !== null);
 
   const decisions = agg.reviews
     .filter((r) => r.responded_at && !retainedReviewIds.has(r.id))

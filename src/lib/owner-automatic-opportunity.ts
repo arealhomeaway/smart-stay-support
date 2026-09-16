@@ -2,10 +2,12 @@ import type { ReviewRow } from "./owner-participation.server";
 import type { OwnerTicket } from "./owner-ticket-projection.server";
 import { ownerTicketRequest } from "./owner-ticket-authority";
 import { opportunityDecisionPath } from "./owner-opportunity";
+import { ownerReviewProjection } from "./owner-review-projection";
 
 /** Current authority is read from canonical work; durable participation history stays on the review. */
 export function automaticOpportunityView(review: ReviewRow, ticket?: OwnerTicket): ReviewRow {
-  if (!review.auto_ticket) return review;
+  const projected = ownerReviewProjection(review);
+  if (!review.auto_ticket) return projected;
   const linked =
     ticket &&
     ticket.id === review.ticket_id &&
@@ -15,7 +17,7 @@ export function automaticOpportunityView(review: ReviewRow, ticket?: OwnerTicket
       : undefined;
   const request = linked?.request ?? ownerTicketRequest([]);
   return {
-    ...review,
+    ...projected,
     owner_request: request,
     owner_update_revision: linked?.owner_update_revision ?? null,
     title: linked?.title ?? "Recorded property work",

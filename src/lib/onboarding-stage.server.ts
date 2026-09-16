@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
+import { assertOnboardingPropertyManagement } from "./onboarding-task-access.server";
 import {
   nextStageCapture,
   stageCompletionBlockers,
@@ -8,6 +9,18 @@ import {
 } from "./onboarding-stage";
 
 type Client = SupabaseClient<Database>;
+
+async function assertStageAccess(db: Client, userId: string, propertyId: string) {
+  const access = await db.rpc("is_onboarding_staff", { _user_id: userId });
+  if (access.error || !access.data) throw new Error("You do not have access to stage capture.");
+  await assertOnboardingPropertyManagement(db, userId, propertyId);
+}
+
+/** Public reads use the same property responsibility boundary as stage writes. */
+export async function loadStageCapturesForActor(db: Client, userId: string, propertyId: string) {
+  await assertStageAccess(db, userId, propertyId);
+  return loadStageCaptures(db, propertyId);
+}
 
 export async function loadStageCaptures(db: Client, propertyId: string) {
   const project = await db
@@ -43,9 +56,9 @@ export async function saveStageCapture(
     evidenceIds: string[];
     reason: string;
   },
+  writer?: Pick<Client, "rpc">,
 ) {
-  const access = await db.rpc("is_onboarding_staff", { _user_id: userId });
-  if (access.error || !access.data) throw new Error("You do not have access to stage capture.");
+  await assertStageAccess(db, userId, input.propertyId);
   const [project, tasks, captures, supervisor, property, facts, evidence] = await Promise.all([
     db
       .from("onboarding_projects")
@@ -114,8 +127,9 @@ export async function saveStageCapture(
   });
   // Only the trusted server can append this event kind; the RPC compares the
   // complete task snapshot and revision in one transaction before recording.
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.rpc("record_onboarding_stage_capture", {
+  const persistence =
+    writer ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  const { error } = await persistence.rpc("record_onboarding_stage_capture", {
     _project_id: project.data.id,
     _actor: userId,
     _expected_revision: input.expectedRevision,

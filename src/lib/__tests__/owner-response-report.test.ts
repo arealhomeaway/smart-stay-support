@@ -2,7 +2,7 @@ import { expect, it } from "bun:test";
 import { buildOwnerReport, reportCsv, reportPdf } from "../owner-report.server";
 import { PDFDocument } from "pdf-lib";
 
-function reportDatabase() {
+function reportDatabase(includePrivateEvents = false) {
   const events = Array.from({ length: 205 }, (_, i) => ({
     id: `receipt-${i}`,
     review_id: "review",
@@ -43,14 +43,29 @@ function reportDatabase() {
     owner_time_entries: [],
     owner_time_entry_properties: [],
     owner_badges: [],
-    owner_program_events: events,
+    owner_program_events: includePrivateEvents
+      ? [
+          ...events,
+          {
+            id: "private",
+            kind: "program_updated",
+            created_at: "2026-01-03",
+            summary: "PRIVATE STAFF NOTES",
+            new_value: "PRIVATE ACCESS CREDENTIALS",
+          },
+        ]
+      : events,
   };
   return {
     from: (table: string) => {
+      let selectedKinds: string[] | undefined;
       const q = {
         select: () => q,
         eq: () => q,
-        in: () => q,
+        in: (_field: string, kinds: string[]) => {
+          selectedKinds = kinds;
+          return q;
+        },
         order: () => q,
         single: async () => ({
           data: {
@@ -63,7 +78,9 @@ function reportDatabase() {
           error: null,
         }),
         range: async (from: number, to: number) => {
-          const all = sources[table] ?? [];
+          const all = (sources[table] ?? []).filter(
+            (row) => !selectedKinds || selectedKinds.includes((row as { kind: string }).kind),
+          );
           return {
             data: all.slice(from, Math.min(to + 1, from + 100)),
             count: all.length,
@@ -89,4 +106,12 @@ it("exports all response revisions without creating time entries or substituting
   expect(csv.includes("PRIVATE")).toBe(false);
   const pdf = await PDFDocument.load(await reportPdf(report));
   expect(pdf.getPageCount() > 1).toBe(true);
+});
+
+it("excludes private program audit narratives from the complete owner report", async () => {
+  const report = await buildOwnerReport(reportDatabase(true) as never, "program");
+  expect(report.responses.length).toBe(205);
+  expect(report.actions.length).toBe(1);
+  expect(report.actions[0]?.summary).toBe("ARHA updated the participation program details.");
+  expect(JSON.stringify(report).includes("PRIVATE")).toBe(false);
 });
