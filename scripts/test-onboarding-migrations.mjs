@@ -113,6 +113,12 @@ try {
     "supabase/tests/fixtures/owner_opportunity_closure_schema.sql",
     "supabase/migrations/20260916020000_atomic_owner_opportunity_closure.sql",
     "supabase/tests/owner_opportunity_closure.test.sql",
+    "supabase/tests/fixtures/owner_ticket_access_boundary_schema.sql",
+    "supabase/migrations/20260916030000_owner_ticket_access_boundary.sql",
+    "supabase/tests/owner_ticket_access_boundary.test.sql",
+    "supabase/tests/fixtures/owner_program_activation_schema.sql",
+    "supabase/migrations/20260916040000_atomic_owner_program_activation.sql",
+    "supabase/tests/owner_program_activation.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);

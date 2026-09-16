@@ -14,7 +14,6 @@ import {
   DEFAULT_ONBOARDING_HOURS,
   DEFAULT_ONGOING_HOURS,
   DEFAULT_TARGET_HOURS,
-  PROGRAM_DAYS,
   type DecisionPath,
   type ProgramPhase,
   type TaskTemplate,
@@ -36,6 +35,7 @@ import {
   type OwnerResponseReceipt,
 } from "./owner-response-history.server";
 import { syncBadges } from "./owner-badges.server";
+import { activateOwnerProgramAtomically } from "./owner-program-activation.server";
 import {
   canonicalEnrollmentOwner,
   assertEnrollmentOwner,
@@ -336,6 +336,7 @@ export async function createProgram(
     program_id: data.id,
     property_id: input.propertyId,
     added_by: userId,
+    is_demo: property.is_demo ?? false,
   });
   if (link.error) throw link.error;
 
@@ -361,7 +362,7 @@ export async function addProgramProperty(
 ) {
   const program = await supabase
     .from("owner_programs")
-    .select("id, status, started_on, owner_record_id")
+    .select("id, status, started_on, owner_record_id, is_demo")
     .eq("id", input.programId)
     .single();
   if (program.error) throw program.error;
@@ -398,6 +399,7 @@ export async function addProgramProperty(
     closing_confirmed: Boolean(input.closingDate),
     added_by: userId,
     added_on: new Date().toISOString().slice(0, 10),
+    is_demo: program.data.is_demo,
   });
   if (error) throw error;
 
@@ -503,74 +505,11 @@ export async function updateProgramSettings(
 export async function activateProgram(
   supabase: Client,
   userId: string,
-  input: { programId: string; startedOn: string },
+  input: { programId: string; expectedVersion: string; startedOn: string },
 ) {
-  const program = await supabase
-    .from("owner_programs")
-    .select("id, status, started_on, dfy_confirmed")
-    .eq("id", input.programId)
-    .single();
-  if (program.error) throw program.error;
-  if (
-    program.data.started_on ||
-    !ACTIVATABLE_STATUSES.includes(program.data.status as ProgramStatus)
-  ) {
-    throw new Error("This program has already been activated.");
-  }
-  if (!program.data.dfy_confirmed) {
-    throw new Error("Confirm with DFY that these properties run as one combined program first.");
-  }
-
-  const links = await supabase
-    .from("owner_program_properties")
-    .select("property_id, closing_confirmed, closing_date")
-    .eq("program_id", input.programId)
-    .eq("inclusion_status", "included");
-  if (links.error) throw links.error;
-  if ((links.data ?? []).length === 0)
-    throw new Error("Add at least one property before activating.");
-  if ((links.data ?? []).some((l) => !l.closing_confirmed)) {
-    throw new Error("Every property must have a confirmed closing date before activation.");
-  }
-
-  if (
-    input.startedOn > new Date().toISOString().slice(0, 10) ||
-    (links.data ?? []).some((link) => !link.closing_date || link.closing_date > input.startedOn)
-  ) {
-    throw new Error(
-      "The program start must be on or after every included property's closing and no later than today.",
-    );
-  }
-
-  const { data: activated, error } = await supabase
-    .from("owner_programs")
-    .update({
-      started_on: input.startedOn,
-      ends_on: addDays(input.startedOn, PROGRAM_DAYS - 1),
-      status: "active",
-      activated_at: new Date().toISOString(),
-      activated_by: userId,
-    })
-    .eq("id", input.programId)
-    .eq("status", program.data.status)
-    .eq("dfy_confirmed", true)
-    .is("started_on", null)
-    .select("id")
-    .maybeSingle();
-  if (error) throw error;
-  if (!activated)
-    throw new Error("The program changed or was activated. Refresh before continuing.");
-
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "program_activated",
-    summary: `90-day program activated starting ${input.startedOn}.`,
-    actorId: userId,
-    newValue: input.startedOn,
-  });
-  return { ok: true as const };
+  await assertSupervisor(supabase, userId);
+  return activateOwnerProgramAtomically(supabase, input);
 }
-
 /** Moves a program between the non-activation lifecycle states. */
 export async function setProgramStatus(
   supabase: Client,
@@ -727,6 +666,14 @@ export async function seedRoadmap(
 
 /** Everything the staff detail view shows for one program. */
 export async function loadProgramDetail(supabase: Client, programId: string) {
+  // Bracket the aggregate so the displayed activation version covers every
+  // enrollment/closing/DFY input, including paged property reads.
+  const before = await supabase
+    .from("owner_programs")
+    .select("report_version")
+    .eq("id", programId)
+    .single();
+  if (before.error) throw before.error;
   const agg = await loadProgramAggregate(supabase, programId);
   const history = await supabase
     .from("owner_program_events")
@@ -736,7 +683,17 @@ export async function loadProgramDetail(supabase: Client, programId: string) {
     .limit(100);
   if (history.error) throw history.error;
 
+  const after = await supabase
+    .from("owner_programs")
+    .select("report_version")
+    .eq("id", programId)
+    .single();
+  if (after.error) throw after.error;
+  if (before.data.report_version !== after.data.report_version) {
+    throw new Error("The program changed while loading. Refresh before reviewing activation.");
+  }
   return {
+    activationVersion: before.data.report_version,
     program: agg.program,
     properties: agg.properties,
     reviews: agg.reviews,

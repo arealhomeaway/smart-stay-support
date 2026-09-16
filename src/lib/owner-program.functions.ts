@@ -127,11 +127,16 @@ export const updateOwnerProgram = createServerFn({ method: "POST" })
 export const activateOwnerProgram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ programId: z.string().uuid(), startedOn: isoDate }).parse(data),
+    z
+      .object({
+        programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
+        startedOn: isoDate,
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, activateProgram } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { activateProgram } = await import("./owner-program.server");
     return activateProgram(context.supabase, context.userId, data);
   });
 

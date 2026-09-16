@@ -3,6 +3,8 @@
 Goal: `onboarding-active-owner-build-goal.md`. Branch: `codex/onboarding-active-owner-build`.
 Base: `e813389`; implementation began from `b6a4376` on September 14, 2026.
 
+> Latest verified checkpoint: September 16 Ticket access/activation (below): 772 unit tests, TypeScript, focused lint, production build and 42 isolated migrations PASS. Verdict: MORE IMPLEMENTATION REQUIRED. The remaining-work list in that checkpoint supersedes older entries.
+
 ## Source and safety decisions
 
 Read all four required plans and AGENTS.md. Existing project, scope, state, lifecycle,
@@ -633,3 +635,44 @@ Exact remaining implementation items at this checkpoint:
 Authenticated acceptance is NOT yet the only major gate. Verdict: MORE IMPLEMENTATION REQUIRED. No access is needed for further local implementation. Later acceptance needs a separately approved isolated backend with synthetic data, outbound delivery disabled, PM, Director, operational-readiness, Operations acceptance/supervisor, unrelated staff, admin and two unrelated owner accounts. Same-person PM/Director is an additional scenario, not a requirement for separate people.
 
 The user-reported ledger reconciliation of migrations 01–22 and intentional deferral of 23–27 remains recorded. Backend status for 28–40 is unverified and their shared application remains unauthorized. No shared/live migration, deployment, merge, production write, account change, delivery or external deletion occurred.
+
+## September 16 — Ticket access and atomic activation checkpoint
+
+Continued from 983ccb36be0143e838a466d2ad5489c4517ef9ff on codex/onboarding-active-owner-build, preserving all previous commits and work. The at-least-100 rule remains locked: exactly 100.0 counted hours qualifies; no greater-than threshold was introduced.
+
+Completed locally:
+
+- Migration41 replaces owner raw Ticket reads with a canonical current-Property RPC and structural field allowlist. It requires active canonical Owner, current included/nonarchived/matching-demo enrollment and Property, and actual program account or authorized admin preview. It retains every eligible operational Ticket, including work without Work Orders and archived Ticket history.
+- Owner Ticket SELECT/INSERT policies are removed. Assigned Ticket/activity/checklist access requires actual vendor role, so self-assignment is not a privilege. Vendor UPDATE checks the proposed assignment and retains the existing demo restriction; staff responsibility is preserved.
+- Owner matter creation locks current program/Owner/Property/enrollment, requires active confirmed post-closing eligibility, uses fixed operational columns and canonical active_task, and commits Ticket/opportunity/history atomically. Failed history writes leave no partial Ticket or opportunity. Invoker time logging keeps the exact opportunity Ticket ID and uses the safe read instead of raw Ticket SELECT.
+- Owner attachment labels use only the safe Ticket reference. All four record-loader paths receive verified caller roles; legitimate staff labels are retained. This does not resolve broader attachment authorization.
+- Migration42 atomically activates the browser-reviewed program version, DFY confirmation, confirmed closings and canonical current Owner/Property/demo state. Program/enrollment guards serialize relevant writes before changes, require admin plus confirmed closing for late additions, reject direct activation/reset and preserve one 90-day clock/provenance. Demo activation is admin-only. Existing create/add actions now preserve enrollment demo mode.
+- The activation dialog retains the reviewed version, included-property facts and selected start date through failure/refetch. A changed context requires explicit rereview. Detail loading brackets aggregate reads with the version so later metadata cannot silently stand in for the displayed facts.
+
+Final validation:
+
+- Full unit suite: 772 tests across 109 files, 2576 assertions, zero failures.
+- TypeScript: PASS. The final run includes corrected index-signature access in the adapted activation tests.
+- Focused lint: PASS, zero errors/warnings. Existing owner-route/generated-type formatting exception preserved; no broad formatting cleanup.
+- Production client/server build: PASS, isolated output .codex-qa.local/build-20260916-ticket-activation. No deployment ran.
+- All 42 isolated branch migrations: PASS. Inventory, runner and manifest each contain exactly 42, with zero differences. Fixtures use actual changed policy names/roles where relevant but remain a simplified in-memory schema.
+- Static/diff review: completed. Review caught and corrected archived enrollment/Property access, vendor proposed-assignment validation, actual Ticket record-type compatibility and demo activation authorization. Whitespace check passes.
+- Evidence logs: .codex-qa.local/ticket-activation-unit.log, ticket-activation-typescript.log, ticket-activation-lint.log, ticket-activation-build.log and ticket-activation-migrations.log.
+- Requirements table: 5 PASS, 42 PARTIAL, 1 BLOCKED, 4 NOT YET ACCEPTED. Full per-file manifest 42 includes purposes, order, data/constraint/trigger/RLS/permission behavior, preconditions and pre/post checks.
+
+Exact remaining implementation items:
+
+1. Canonical safe Program/Property/review/event/notification/document reads and elevated attachment/Property Hub checks; preserve historical participation separately from current operational access. Close raw time/link/event/approval/document writers. Make invite/account linkage atomic. Review legacy manually published content.
+2. Remaining lifecycle/enrollment/removal/reassignment, time/correction/response/closeout and scheduling concurrency. Activation protection does not close every later transition or direct writer; full trigger graphs and concurrent sessions remain unverified.
+3. Handoff rechecks for tasks, unresolved facts, stage captures, finance/carryover and assignments, plus direct handoff-status/review-history bypasses.
+4. Director assignment validation and alignment of project Director versus legacy Property-PM permissions; explicit readiness and Operations acceptance responsibilities. The same person holding PM/Director still performs separate actions.
+5. Revised linked approval workflow and remaining supervisor preparation/decision/cost writers, retaining immutable approval evidence; atomic manual opportunity creation/link/history.
+6. Six remaining automatic Welcome Packet request classifications linked to explicit canonical operational intent/WHY. Automatic authority currently selects approve_only or information_only; manual offers support all eight.
+7. Complete module/Director-queue evidence mapping, aggregate/report/badge/90-day-window reconciliation, and durable activity/badge/delivery recovery.
+8. After implementation: approved isolated full-schema JWT/RLS, genuine simultaneous-session, desktop/390px and end-to-end role acceptance.
+
+Authenticated acceptance is NOT the only major gate. Verdict: MORE IMPLEMENTATION REQUIRED. No access/approval is needed from Emily for further independent local implementation. Later acceptance needs a separately approved isolated backend with full baseline/verified ledger, synthetic data, outbound delivery disabled, admin, PM, Director, operational-readiness, Operations acceptance/supervisor, unrelated staff, genuine vendor and two unrelated owner sessions. Add anonymous and same-person PM/Director scenarios.
+
+Emily's next action: review the current defect list and checkpoint in draft PR #10; no live migration or acceptance sign-in is needed to unblock further local work. When implementation is ready, identify the approved isolated target and test-role access.
+
+The user-reported Lovable ledger reconciliation for 01–22 and intentional deferral of 23–27 remain recorded. Status of 28–42 is unverified and shared/live application remains unauthorized. No merge, publish/deploy, shared migration, production-data/account change, external delivery or deletion occurred.

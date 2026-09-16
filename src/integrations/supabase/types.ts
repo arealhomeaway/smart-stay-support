@@ -7882,6 +7882,10 @@ export type Database = {
       }
     }
     Functions: {
+      activate_owner_program: {
+        Args: { _program_id: string; _expected_version: string; _started_on: string }
+        Returns: string
+      }
       close_owner_opportunity: {
         Args: { _review_id: string; _expected_updated_at: string; _reason: string }
         Returns: string
@@ -7890,6 +7894,17 @@ export type Database = {
         Args: { _work_order_id: string; _expected_updated_at: string; _quote: number | null;
           _second_quote: number | null; _final_cost: number | null; _scope: string; _reason: string }
         Returns: string
+      }
+      read_owner_tickets: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: { id: string; ref: number; property_id: string; category: string;
+          priority: string; status: string; reported_at: string; resolved_at: string | null;
+          owner_participation_path: string | null; owner_submitted: boolean | null }[]
+      }
+      create_owner_matter: {
+        Args: { _program_id: string; _property_id: string; _path: string; _title: string;
+          _description: string; _category: string }
+        Returns: { ticket_id: string; ref: number }[]
       }
       read_owner_ticket_financial_context: {
         Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }

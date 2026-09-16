@@ -41,36 +41,37 @@ it("rejects program-wide time before activation or before the program start", as
   }
 });
 
-it("rejects activation before an included property's closing without writing", async () => {
-  let writes = 0;
+it("rejects activation without supervisor authority before reading or writing the program", async () => {
+  const checkedRoles: string[] = [];
+  let activationCalls = 0;
   const db = {
-    from: (table: string) => {
-      const row =
-        table === "owner_programs"
-          ? { status: "ready_for_onboarding", dfy_confirmed: true }
-          : [{ closing_confirmed: true, closing_date: "2026-09-10" }];
-      const query = {
-        select: () => query,
-        eq: () => query,
-        single: async () => ({ data: row, error: null }),
-        update: () => {
-          writes++;
-          return query;
-        },
-        then: (resolve: (value: unknown) => unknown) =>
-          Promise.resolve({ data: row, error: null }).then(resolve),
-      };
-      return query;
+    from: () => {
+      throw new Error("The unauthorized caller must not read or write program tables.");
+    },
+    rpc: async (name: string, args: Record<string, string>) => {
+      if (name === "activate_owner_program") {
+        activationCalls++;
+        throw new Error("The unauthorized caller must not invoke activation.");
+      }
+      expect(name).toBe("has_role");
+      expect(args["_user_id"]).toBe("staff");
+      checkedRoles.push(args["_role"]!);
+      return { data: false, error: null };
     },
   };
   let message = "";
   try {
-    await activateProgram(db as never, "staff", { programId: "program", startedOn: "2026-09-01" });
+    await activateProgram(db as never, "staff", {
+      programId: "program",
+      expectedVersion: "reviewed-version",
+      startedOn: "2026-09-01",
+    });
   } catch (error) {
     message = (error as Error).message;
   }
-  expect(message).toContain("every included property's closing");
-  expect(writes).toBe(0);
+  expect(message).toContain("Only a supervisor");
+  expect(checkedRoles.sort()).toEqual(["admin", "manager"]);
+  expect(activationCalls).toBe(0);
 });
 
 it("rejects a property-specific opportunity logged against another home before writing", async () => {

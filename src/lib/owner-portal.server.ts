@@ -466,16 +466,9 @@ export async function redeemOwnerInvite(
 
 export type OwnerParticipationPath = "inform" | "consult" | "approve" | "emergency";
 
-const PATH_PRIORITY: Record<OwnerParticipationPath, string> = {
-  emergency: "p1",
-  approve: "p3",
-  consult: "p3",
-  inform: "p3",
-};
-
 export async function createOwnerMatter(
   supabase: Client,
-  userId: string,
+  _userId: string,
   input: {
     programId: string;
     propertyId: string;
@@ -485,53 +478,23 @@ export async function createOwnerMatter(
     category: string;
   },
 ) {
-  const link = await supabase
-    .from("owner_program_properties")
-    .select("property_id, inclusion_status")
-    .eq("program_id", input.programId)
-    .eq("property_id", input.propertyId)
-    .maybeSingle();
-  if (link.error) throw link.error;
-  if (!link.data || link.data.inclusion_status !== "included") {
-    throw new Error("That home is not part of your program.");
-  }
-
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("tickets")
-    .insert({
-      title: input.title,
-      description: input.description || null,
-      category: input.category,
-      priority: PATH_PRIORITY[input.path],
-      status: "open",
-      record_type: "ticket",
-      source_channel: "owner",
-      initiator_type: "owner",
-      owner_participation_path: input.path,
-      owner_submitted: true,
-      owner_submitted_by: userId,
-      property_id: input.propertyId,
-      created_by: userId,
-      reported_at: now,
-    })
-    .select("id, ref")
-    .single();
-  if (error) throw error;
-
-  await recordEvent(supabase, {
-    programId: input.programId,
-    kind: "owner_matter_opened",
-    summary: `Homeowner opened “${input.title}” (${input.path})`,
-    actorId: userId,
-    propertyId: input.propertyId,
-    newValue: input.path,
-    detail: { ticketId: data.id, ref: data.ref },
+  // The signed-in database identity is the actor; no caller-supplied actor or
+  // operational columns are accepted. Ticket + opportunity + event are atomic.
+  const { data, error } = await supabase.rpc("create_owner_matter", {
+    _program_id: input.programId,
+    _property_id: input.propertyId,
+    _path: input.path,
+    _title: input.title,
+    _description: input.description,
+    _category: input.category,
   });
-
-  return { ok: true as const, ticketId: data.id, ref: data.ref };
+  if (error) throw error;
+  const matter = data?.[0];
+  if (!matter?.ticket_id || !Number.isFinite(matter.ref)) {
+    throw new Error("The property matter was not confirmed. Refresh before trying again.");
+  }
+  return { ok: true as const, ticketId: matter.ticket_id, ref: matter.ref };
 }
-
 /* ------------------------------------------------------------------ */
 /* Homeowner approval decisions                                        */
 /* ------------------------------------------------------------------ */

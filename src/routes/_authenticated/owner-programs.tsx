@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
-  CalendarClock,
   ClipboardCheck,
   Copy,
   Eye,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  activateOwnerProgram,
   addOwnerProgramProperty,
   completeOwnerProgram,
   confirmOwnerPropertyClosing,
@@ -53,6 +51,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { usDate } from "@/lib/dates";
 import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
 import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
+import { OwnerProgramActivation } from "@/components/OwnerProgramActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -522,7 +521,6 @@ function ProgramDetail({
   const qc = useQueryClient();
   const loadDetail = useServerFn(ownerProgramDetail);
   const seed = useServerFn(seedOwnerRoadmap);
-  const activate = useServerFn(activateOwnerProgram);
   const addProperty = useServerFn(addOwnerProgramProperty);
   const removeProperty = useServerFn(removeOwnerProgramProperty);
   const confirmClosing = useServerFn(confirmOwnerPropertyClosing);
@@ -532,7 +530,6 @@ function ProgramDetail({
   const invite = useServerFn(createOwnerInvite);
   const report = useServerFn(ownerProgramReport);
 
-  const [startOn, setStartOn] = useState(row.startedOn ?? today());
   const [newProperty, setNewProperty] = useState("");
   const [newClosing, setNewClosing] = useState(today());
   const [ownerName, setOwnerName] = useState(row.ownerName ?? "");
@@ -801,32 +798,24 @@ function ProgramDetail({
           {notActivated ? "Activate the 90-day program" : "Timeline"}
         </h3>
         {notActivated ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-2">
-              <Label htmlFor={`start-${programId}`}>Day one</Label>
-              <Input
-                id={`start-${programId}`}
-                type="date"
-                className="w-44"
-                value={startOn}
-                onChange={(e) => setStartOn(e.target.value)}
-              />
-            </div>
-            <Button
-              size="sm"
-              onClick={() =>
-                void run(
-                  () => activate({ data: { programId, startedOn: startOn } }),
-                  "Program activated. The 90-day clock has started.",
-                )
-              }
-            >
-              <CalendarClock className="size-4" /> Activate program
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Requires DFY confirmation and a confirmed closing on every home.
+          detail.data ? (
+            <OwnerProgramActivation
+              context={{
+                programId,
+                reportVersion: detail.data.activationVersion,
+                status: detail.data.program.status,
+                startedOn: detail.data.program.startedOn,
+                dfyConfirmed: detail.data.program.dfyConfirmed,
+                properties: detail.data.properties,
+              }}
+              initialStartDate={today()}
+              onRefresh={refresh}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Load current program details before reviewing activation.
             </p>
-          </div>
+          )
         ) : (
           <p className="text-sm text-muted-foreground">
             Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usDate(row.startedOn)} · ends{" "}

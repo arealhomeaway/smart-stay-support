@@ -24,19 +24,7 @@ export type OwnerTicket = {
   owner_participation_path: string | null;
   owner_submitted: boolean | null;
 };
-type Ticket = Pick<
-  Database["public"]["Tables"]["tickets"]["Row"],
-  | "id"
-  | "ref"
-  | "property_id"
-  | "category"
-  | "priority"
-  | "status"
-  | "reported_at"
-  | "resolved_at"
-  | "owner_participation_path"
-  | "owner_submitted"
->;
+type Ticket = Database["public"]["Functions"]["read_owner_tickets"]["Returns"][number];
 
 /** Never spread a source Ticket or publish its unrestricted text fields. */
 export function projectOwnerTicket(ticket: Ticket): OwnerTicket {
@@ -63,7 +51,7 @@ export function projectOwnerTicket(ticket: Ticket): OwnerTicket {
   };
 }
 
-/** Ticket RLS remains in force; authority RPC independently validates canonical enrollment. */
+/** Each RPC validates the current canonical Owner, enrollment, Property and demo mode. */
 export async function loadOwnerTicketProjection(
   supabase: SupabaseClient<Database>,
   includedPropertyIds: string[],
@@ -74,16 +62,19 @@ export async function loadOwnerTicketProjection(
   const tickets: OwnerTicket[] = [];
   // Bound URL filters as well as result pages. Archived work remains part of history.
   for (let offset = 0; offset < ids.length; offset += 100) {
-    let query = supabase
-      .from("tickets")
-      .select(
-        "id, ref, property_id, category, priority, status, reported_at, resolved_at, owner_participation_path, owner_submitted",
-        { count: "exact" },
-      )
-      .in("property_id", ids.slice(offset, offset + 100));
-    if (!preview) query = query.eq("is_demo", false);
     const result = await readCountedRows(
-      query.order("reported_at", { ascending: false }).order("id"),
+      supabase
+        .rpc(
+          "read_owner_tickets",
+          {
+            _program_id: programId,
+            _property_ids: ids.slice(offset, offset + 100),
+            _preview: preview,
+          },
+          { count: "exact" },
+        )
+        .order("reported_at", { ascending: false })
+        .order("id"),
     );
     const work = await readCountedRows(
       supabase

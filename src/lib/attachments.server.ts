@@ -122,8 +122,12 @@ export function canChangeVisibility(viewer: Viewer): Decision {
 
 type RecordInfo = { propertyId: string | null; closed: boolean; label: string; isDemo: boolean };
 
-async function loadRecord(entityType: AttachmentEntity, entityId: string): Promise<RecordInfo> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+async function loadRecord(
+  supabaseAdmin: Client,
+  viewer: Viewer,
+  entityType: AttachmentEntity,
+  entityId: string,
+): Promise<RecordInfo> {
   if (entityType === "property") {
     const { data, error } = await supabaseAdmin
       .from("properties")
@@ -144,7 +148,10 @@ async function loadRecord(entityType: AttachmentEntity, entityId: string): Promi
     return {
       propertyId: data.property_id,
       closed: data.status === "closed" || data.archived_at != null,
-      label: `ARHA-${data.ref} ${data.title}`,
+      // Sharing a file does not also authorize the Ticket's internal narrative.
+      label: isStaff(viewer)
+        ? `ARHA-${data.ref} ${data.title}`
+        : `Property work · Ticket #${data.ref}`,
       isDemo: data.is_demo,
     };
   }
@@ -183,7 +190,7 @@ export async function listAttachments(
   entityId: string,
 ) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const record = await loadRecord(entityType, entityId);
+  const record = await loadRecord(supabaseAdmin, viewer, entityType, entityId);
   const owns = isStaff(viewer) ? false : await ownerOwnsProperty(viewer.userId, record.propertyId);
   if (!isStaff(viewer) && !owns) throw new Error(DENY_UNRELATED);
 
@@ -255,7 +262,7 @@ export async function beginUpload(
   const valid = validateFile({ name: input.filename, type: input.mimeType, size: input.sizeBytes });
   if (!valid.ok) throw new Error(valid.message);
 
-  const record = await loadRecord(input.entityType, input.entityId);
+  const record = await loadRecord(supabaseAdmin, viewer, input.entityType, input.entityId);
   const owns = isStaff(viewer) ? false : await ownerOwnsProperty(viewer.userId, record.propertyId);
 
   let requestSlotOpen = false;
@@ -524,7 +531,7 @@ export async function requestOwnerDocument(
 ) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (!isStaff(viewer)) throw new Error(DENY_UNRELATED);
-  const record = await loadRecord(input.entityType, input.entityId);
+  const record = await loadRecord(supabaseAdmin, viewer, input.entityType, input.entityId);
 
   const insert = await supabaseAdmin
     .from("documents")
@@ -565,8 +572,9 @@ export async function requestOwnerDocument(
  * library: it lists only the records where a coordinator has either shared a
  * file with this owner or opened an upload slot for them.
  */
-export async function listOwnerFileRecords(viewer: Viewer) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+export async function listOwnerFileRecords(viewer: Viewer, client?: Client) {
+  const supabaseAdmin =
+    client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 
   const props = await supabaseAdmin
     .from("owner_program_properties")
@@ -607,7 +615,7 @@ export async function listOwnerFileRecords(viewer: Viewer) {
   const records = [];
   for (const g of grouped.values()) {
     try {
-      const record = await loadRecord(g.entityType, g.entityId);
+      const record = await loadRecord(supabaseAdmin, viewer, g.entityType, g.entityId);
       records.push({ ...g, label: record.label });
     } catch {
       // A record the owner can no longer reach simply drops out of the list.

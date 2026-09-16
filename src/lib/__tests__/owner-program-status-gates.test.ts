@@ -38,40 +38,47 @@ describe("owner program lifecycle action", () => {
     expect(Boolean(event)).toBe(true);
   });
 
-  it("rejects competing activation before recording an activation event", async () => {
-    const filters: unknown[][] = [];
-    const db = {
-      from: (table: string) => {
-        if (table === "owner_program_events") throw new Error("unexpected event");
-        const result =
-          table === "owner_programs"
-            ? { status: "draft", started_on: null, dfy_confirmed: true }
-            : [{ closing_confirmed: true, closing_date: "2020-01-01" }];
-        const query = {
-          select: () => query,
-          eq: (...args: unknown[]) => {
-            filters.push(args);
-            return query;
-          },
-          is: (...args: unknown[]) => {
-            filters.push(args);
-            return query;
-          },
-          single: async () => ({ data: result, error: null }),
-          update: () => query,
-          maybeSingle: async () => ({ data: null, error: null }),
-          then: (resolve: (value: unknown) => unknown) =>
-            Promise.resolve({ data: result, error: null }).then(resolve),
-        };
-        return query;
-      },
-    };
-    await expectFailure(
-      activateProgram(db as never, "supervisor", { programId: "program", startedOn: "2020-01-01" }),
-      "program changed or was activated",
-    );
-    expect(filters.some(([key, value]) => key === "started_on" && value === null)).toBe(true);
-    expect(filters.some(([key, value]) => key === "status" && value === "draft")).toBe(true);
+  it("preserves a supervisor's reviewed version and surfaces competing activation rejection without a separate event", async () => {
+    for (const role of ["admin", "manager"]) {
+      const activationCalls: Record<string, string>[] = [];
+      const checkedRoles: string[] = [];
+      const db = {
+        from: () => {
+          throw new Error("Activation must not reread a fresh version or append a separate event.");
+        },
+        rpc: async (name: string, args: Record<string, string>) => {
+          if (name === "has_role") {
+            expect(args["_user_id"]).toBe("supervisor");
+            checkedRoles.push(args["_role"]!);
+            return { data: args["_role"] === role, error: null };
+          }
+          expect(name).toBe("activate_owner_program");
+          expect(checkedRoles.sort()).toEqual(["admin", "manager"]);
+          activationCalls.push(args);
+          return {
+            data: null,
+            error: new Error(
+              "The program or its properties changed. Review current details before activating.",
+            ),
+          };
+        },
+      };
+      await expectFailure(
+        activateProgram(db as never, "supervisor", {
+          programId: "program",
+          expectedVersion: "version-reviewed-before-competing-activation",
+          startedOn: "2020-01-01",
+        }),
+        "The program or its properties changed",
+      );
+      expect(activationCalls).toEqual([
+        {
+          _program_id: "program",
+          _expected_version: "version-reviewed-before-competing-activation",
+          _started_on: "2020-01-01",
+        },
+      ]);
+    }
   });
   it("cannot activate a draft or reopen a completed program through status editing", async () => {
     for (const status of ["draft", "completed", "closed", "complete"]) {
