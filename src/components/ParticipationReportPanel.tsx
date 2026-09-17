@@ -7,19 +7,8 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { ownerReport, ownerReportFile } from "@/lib/owner-report.functions";
+import { saveOwnerReportFile } from "@/lib/owner-report-download";
 import { usCalendarDate } from "@/lib/dates";
-
-function saveFile(file: { filename: string; mime: string; base64: string }) {
-  const bin = atob(file.base64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
-  const url = URL.createObjectURL(new Blob([bytes], { type: file.mime }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file.filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 /**
  * Self-serve Hours & Participation Report. Nothing here waits on staff: the
@@ -40,7 +29,7 @@ export function ParticipationReportPanel() {
   const download = async (format: "pdf" | "csv") => {
     setBusy(format);
     try {
-      saveFile(await fetchFile({ data: { format } }));
+      saveOwnerReportFile(await fetchFile({ data: { format } }));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not build the report");
     } finally {
