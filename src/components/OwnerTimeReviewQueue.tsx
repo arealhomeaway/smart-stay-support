@@ -28,14 +28,14 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useRole } from "@/hooks/useRole";
-import { usDate } from "@/lib/dates";
+import { usCalendarDate } from "@/lib/dates";
 
 function EntryDetails({ entry }: { entry: TimeReviewRow }) {
   return (
     <div className="min-w-0 space-y-1 break-words">
       <p className="font-medium">{entry.activity}</p>
       <p className="text-sm text-muted-foreground">
-        {entry.ownerName || "Owner"} · {usDate(entry.entryDate)} · {entry.minutes} minutes
+        {entry.ownerName || "Owner"} · {usCalendarDate(entry.entryDate)} · {entry.minutes} minutes
         {entry.propertyNames.length > 0 && ` · ${entry.propertyNames.join(", ")}`}
       </p>
       <p className="text-sm text-muted-foreground">

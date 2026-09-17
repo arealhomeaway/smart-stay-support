@@ -83,7 +83,10 @@ export function ProjectScopePanel({
       setOpen(false);
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      refresh();
+    },
   });
   const update = useMutation({
     mutationFn: useServerFn(updateOnboardingProjectFn),

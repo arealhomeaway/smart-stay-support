@@ -587,6 +587,8 @@ export async function ensureOwnerApprovalRequest(
     isDemo: boolean;
     /** Version label of the item being reviewed, e.g. "Mood boards v2". */
     version?: string | null;
+    /** Plan setup preserves pending decisions; staff routes them when the work is ready. */
+    deferDelivery?: boolean;
   },
 ): Promise<{ approvalId: string | null; channel: "in_app" | "email" | "none" }> {
   const detail = [input.detail || null, input.version ? `Version reviewed: ${input.version}` : null]
@@ -599,6 +601,7 @@ export async function ensureOwnerApprovalRequest(
   });
   if (prepared.error) throw prepared.error;
   if (!prepared.data) throw new Error("The approval could not be prepared.");
+  if (input.deferDelivery) return { approvalId: prepared.data, channel: "none" };
   const saved = await supabase
     .from("approvals")
     .select("id, title, detail")

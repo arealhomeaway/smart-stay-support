@@ -77,10 +77,18 @@ export function TemplatePanel({
           {preview ? (
             <Button
               size="sm"
-              disabled={readOnly || doApply.isPending || preview.toCreate.length === 0}
+              disabled={
+                readOnly ||
+                doApply.isPending ||
+                (preview.toCreate.length === 0 && preview.subtasksToCreate === 0)
+              }
               onClick={() => doApply.mutate()}
             >
-              {doApply.isPending ? "Applying…" : `Add ${preview.toCreate.length} tasks`}
+              {doApply.isPending
+                ? "Applying…"
+                : preview.toCreate.length > 0
+                  ? `Add ${preview.toCreate.length} tasks`
+                  : `Add ${preview.subtasksToCreate} subtasks`}
             </Button>
           ) : null}
         </div>
@@ -89,6 +97,7 @@ export function TemplatePanel({
           <div className="space-y-2 rounded-md border p-3">
             <div className="flex flex-wrap gap-2 text-xs">
               <Badge variant="secondary">{preview.toCreate.length} to add</Badge>
+              <Badge variant="secondary">{preview.subtasksToCreate} subtasks to add</Badge>
               <Badge variant="outline">{preview.skipped.length} already present</Badge>
               {preview.anchors.planned_closing ? (
                 <Badge variant="outline">Planned closing {preview.anchors.planned_closing}</Badge>

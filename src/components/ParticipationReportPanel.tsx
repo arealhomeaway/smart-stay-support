@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { ownerReport, ownerReportFile } from "@/lib/owner-report.functions";
-import { usDate } from "@/lib/dates";
+import { usCalendarDate } from "@/lib/dates";
 
 function saveFile(file: { filename: string; mime: string; base64: string }) {
   const bin = atob(file.base64);
@@ -102,9 +102,9 @@ export function ParticipationReportPanel() {
           </div>
         </div>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Period {data.program.startedOn ? usDate(data.program.startedOn) : "not started"} to{" "}
-          {data.program.endsOn ? usDate(data.program.endsOn) : "n/a"} · {data.entries.length}{" "}
-          entries in period
+          Period {data.program.startedOn ? usCalendarDate(data.program.startedOn) : "not started"}{" "}
+          to {data.program.endsOn ? usCalendarDate(data.program.endsOn) : "n/a"} ·{" "}
+          {data.entries.length} entries in period
           {data.outsidePeriod.length > 0
             ? ` · ${data.outsidePeriod.length} entries dated outside the period are listed separately`
             : ""}

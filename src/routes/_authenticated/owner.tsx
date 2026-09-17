@@ -16,7 +16,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
-import { usDate, usDateTime } from "@/lib/dates";
+import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -283,7 +283,7 @@ function OwnerHubBody({
               return (
                 <details key={entry.id} className="rounded-lg border p-3 text-sm">
                   <summary className="cursor-pointer">
-                    {usDate(entry.entry_date)} · {entry.activity} · Revision {reviewed.revision}
+                    {usCalendarDate(entry.entry_date)} · {entry.activity} · Revision {reviewed.revision}
                     {entry.superseded ? " · Superseded entry" : ""}
                   </summary>
                   <div className="mt-2 space-y-2 whitespace-pre-wrap">
@@ -434,7 +434,7 @@ function ReviewRow({
         ) : null}
         <p className="mt-1 text-xs text-muted-foreground">
           {names ? `${names} · ` : ""}
-          {review.respond_by ? `Please respond by ${usDate(review.respond_by)}` : "No due date"}
+          {review.respond_by ? `Please respond by ${usCalendarDate(review.respond_by)}` : "No due date"}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">

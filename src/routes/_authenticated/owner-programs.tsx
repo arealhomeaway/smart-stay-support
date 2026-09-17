@@ -48,7 +48,7 @@ import {
 } from "@/lib/owner-participation";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
-import { usDate } from "@/lib/dates";
+import { usCalendarDate, usDate } from "@/lib/dates";
 import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
 import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
 import { OwnerProgramActivation } from "@/components/OwnerProgramActivation";
@@ -605,9 +605,9 @@ function ProgramDetail({
                     {p.inclusionStatus !== "included" ? " (removed)" : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {p.address || "No address"} · added {usDate(p.addedOn)} ·{" "}
+                    {p.address || "No address"} · added {usCalendarDate(p.addedOn)} ·{" "}
                     {p.closingConfirmed
-                      ? `closed ${usDate(p.closingDate)}`
+                      ? `closed ${usCalendarDate(p.closingDate)}`
                       : "closing not confirmed"}
                   </p>
                 </div>
@@ -782,8 +782,8 @@ function ProgramDetail({
           )
         ) : (
           <p className="text-sm text-muted-foreground">
-            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usDate(row.startedOn)} · ends{" "}
-            {usDate(row.endsOn)}
+            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usCalendarDate(row.startedOn)} · ends{" "}
+            {usCalendarDate(row.endsOn)}
           </p>
         )}
         <div className="flex flex-wrap gap-2">
@@ -904,7 +904,7 @@ function ProgramDetail({
                     ) : null}
                     {r.respond_by ? (
                       <span className="text-muted-foreground">
-                        Respond by {usDate(r.respond_by)}
+                        Respond by {usCalendarDate(r.respond_by)}
                       </span>
                     ) : null}
                     {r.owner_decision ? (
@@ -942,7 +942,7 @@ function ProgramDetail({
                 <div>
                   <p className="font-medium">{e.activity}</p>
                   <p className="text-xs text-muted-foreground">
-                    {usDate(e.entry_date)} · {formatDuration(e.minutes)} ·{" "}
+                    {usCalendarDate(e.entry_date)} · {formatDuration(e.minutes)} ·{" "}
                     {e.activity_category ?? "uncategorized"}
                     {e.amends_entry_id ? " · correction" : ""}
                   </p>

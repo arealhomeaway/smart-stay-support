@@ -10,7 +10,7 @@ import {
   type OwnerActivationDraft,
 } from "@/lib/owner-program-activation";
 import { ACTIVATABLE_STATUSES, PROGRAM_STATUS_META } from "@/lib/owner-participation";
-import { usDate } from "@/lib/dates";
+import { usCalendarDate } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +45,7 @@ function ActivationFacts({ snapshot }: { snapshot: OwnerActivationDraft }) {
             <li key={property.propertyId}>
               {property.name} —{" "}
               {property.closingConfirmed && property.closingDate
-                ? `closing confirmed ${usDate(property.closingDate)}`
+                ? `closing confirmed ${usCalendarDate(property.closingDate)}`
                 : "closing not confirmed"}
             </li>
           ))}
