@@ -1,0 +1,3867 @@
+{
+  "source_file": "ARHA_Breezeway_Full_Workflows (3).docx",
+  "source_sha256": "e42c06866923c8cebd58ca3f2b026fc326f55339aa94123b41fd466c2d222bf3",
+  "extraction": "Verbatim non-empty paragraph archive bounded by exact template headings. Response type and photo markers are inferred from explicit source text only; ambiguous requiredness and conditions require field review before enabling submission.",
+  "templates": [
+    {
+      "external_template_id": 581109,
+      "name": "OKC departure",
+      "version": "source-2026-08-27",
+      "source_paragraph_range": [
+        249,
+        526
+      ],
+      "items": [
+        {
+          "source_paragraph": 249,
+          "text": "ARHA Departure Clean (Updated)  [Template ID: 581109]",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 250,
+          "text": "Department: Cleaning",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 251,
+          "text": "Depending on the length of stay, cleaning should be done at or around 3:00pm, so we can start the Quality and Arrival Inspection.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 252,
+          "text": "Each house should have the following:",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 253,
+          "text": "Kitchen:",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 254,
+          "text": "1 bottle of dish soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 255,
+          "text": "1 bottle of hand soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 256,
+          "text": "1 sponge",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 257,
+          "text": "2 rolls of paper towels",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 258,
+          "text": "10 dishwasher tabs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 259,
+          "text": "6 trash bags under the sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 260,
+          "text": "4 bags of coffee",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 261,
+          "text": "6Kcups if applicable",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 262,
+          "text": "Coffee filters",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 263,
+          "text": "Bathrooms:",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 264,
+          "text": "3 rolls in each bathroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 265,
+          "text": "(1 holder- 2 under sink)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 266,
+          "text": "1 set of bathroom amenities",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 267,
+          "text": "1 bottle of hand soap per sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 268,
+          "text": "Laundry Room:",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 269,
+          "text": "10 detergent pods",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 270,
+          "text": "10 dryer sheets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 271,
+          "text": "Let us know ASAP if ou need any wash clothes, bath towels , or hand towels. There should be around 10-12 towels in each property, 6-8 wash clothes, and 4-6 hand towels.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 272,
+          "text": "Make sure each TV has a remote and in the holder if provided.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 273,
+          "text": "Section: Prior to Cleaning",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 274,
+          "text": "(Text) Before you begin cleaning, do a full walkthrough of the property. Look for any issues that need attention—such as maintenance problems, carpet stains, odors, damages, or anything out of place. If anything needs repair or looks unusual, use the \"Issues\" tab in the task, then see if it has already been reported, if not, click \"Report an Issue\" to create a new item. Note: If an issue is not documented at the start of the cleaning, it will be considered missed during your walkthrough and may become your responsibility to address.",
+          "response_type_marker": "Text",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 275,
+          "text": "(Photo) Photos of garage openers",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 276,
+          "text": "(Yes / No) Check all rooms and areas. Do any interior light bulbs need to be replaced? Please let us know if you can not replace them during the clean, then use the \"Report an Issue\" button.",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 277,
+          "text": "Section: Cleaning Summary",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 278,
+          "text": "(Text) Please leave a brief summary on state of the home upon arrival. If the guest isnt worthy of 5 Stars, please note why.",
+          "response_type_marker": "Text",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 279,
+          "text": "Section: Interior",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 280,
+          "text": "▸ Living Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 281,
+          "text": "Wipe down all furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 282,
+          "text": "Vacuum/mop/sweep",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 283,
+          "text": "Wipe dust off ceiling fan blades, attach photo  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 284,
+          "text": "(Photo) Photo under coffee table",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 285,
+          "text": "(Condition) After photo of living room [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 286,
+          "text": "▸ Couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 287,
+          "text": "Remove all cushions to discard of any crumbs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 288,
+          "text": "Place decorative pillows",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 289,
+          "text": "Wash throw blankets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 290,
+          "text": "Vacuum under couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 291,
+          "text": "(Photo) Photo under couch",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 292,
+          "text": "(Condition) Condition of couch. Provide after photo (with and without cushions) [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 293,
+          "text": "▸ Kitchen",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 294,
+          "text": "Clean all surfaces (counters, cabinets - inside and outside, etc)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 295,
+          "text": "Restock kitchen Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 296,
+          "text": "10 trash bags placed under sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 297,
+          "text": "10 dishwasher pods",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 298,
+          "text": "Refill or replace dish soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 299,
+          "text": "Refill or replace hand soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 300,
+          "text": "Paper towel rolls (there should be 2 total - 1 on the holder & 1 under the sink)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 301,
+          "text": "1 new sponge",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 302,
+          "text": "1 roll of dog waste bags placed under the sink  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 303,
+          "text": "(Photo) Photos of kitchen supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 304,
+          "text": "(Photo) More photos of kitchen supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 305,
+          "text": "Wipe out drawers/cabinet. Clean any crumbs (specifically silverware drawer)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 306,
+          "text": "(Condition) After photo of kitchen [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 307,
+          "text": "▸ Trash",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 308,
+          "text": "Empty trash can",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 309,
+          "text": "Wipe inside and outside of trash can",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 310,
+          "text": "replace with new bag",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 311,
+          "text": "Photo of emptied trash can  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 312,
+          "text": "▸ Dishware",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 313,
+          "text": "Please check all kitchen ware. Ensure each of these items are clean, organized in the cabinets/drawers, stored neatly, and accounted for. Let us know if anything is missing or damaged since the last clean so that it can be replaced. Photos of the damages can be added to the specific question below (see reference photo of items that need replacing below)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 314,
+          "text": "Silverware and utensils (forks, knives, spoons, serving utensils, cooking tools)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 315,
+          "text": "Photo of all Cookware (pots, pans, lids, baking sheets) Let us know if any need to be replaced (see reference photo)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 316,
+          "text": "(Photo) More photos of kitchen items",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 317,
+          "text": "Dishware (plates, bowls, cups, glassware) There should be at least 2 items per bed. (example: at least 6 cups if there are 3 beds)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 318,
+          "text": "Confirm none of the dishware has cracks",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 319,
+          "text": "▸ Sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 320,
+          "text": "Wipe down sink and polish faucet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 321,
+          "text": "Clean backsplash",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 322,
+          "text": "Confirm water runs (hot and cold) and has no active leaks or dripping.  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 323,
+          "text": "▸ Garbage Disposal",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 324,
+          "text": "Run with dish soap to make sure all food and debris is gone and smells fresh",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 325,
+          "text": "▸ Dishwasher",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 326,
+          "text": "If full, confirm all items clean, then empty all dishes",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 327,
+          "text": "Make sure door closes tightly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 328,
+          "text": "Fill rinse aid",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 329,
+          "text": "(Condition) After photo of inside and outside. [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 330,
+          "text": "▸ Refrigerator",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 331,
+          "text": "Remove all food and clean shelves/drawers",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 332,
+          "text": "Wipe down front of fridge (use stainless cleaner if necessary)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 333,
+          "text": "Make sure temperature is on a normal setting ### ARHA Departure Clean (Updated) [dept: Cleaning] [id: 581109] Description: Depending on the length of stay, cleaning should be done at or around 3:00pm, so we can start the Quality and Arrival Inspection. Each house should have the following: Kitchen: 1 bottle of dish soap 1 bottle of hand soap 1 sponge 2 rolls of paper towels 10 dishwasher tabs 6 trash bags under the sink 4 bags of coffee 6Kcups if applicable Coffee filters Bathrooms: 3 rolls in each bathroom (1 holder- 2 under sink) 1 set of bathroom amenities 1 bottle of hand soap per sink Laundry Room: 10 detergent pods 10 dryer sheets Let us know ASAP if ou need any wash clothes, bath towels , or hand towels. There should be around 10-12 towels in each property, 6-8 wash clothes, and 4-6 hand towels. Make sure each TV has a remote and in the holder if provided.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 334,
+          "text": "Section: Prior to Cleaning",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 335,
+          "text": "(Text) Before you begin cleaning, do a full walkthrough of the property. Look for any issues that need attention—such as maintenance problems, carpet stains, odors, damages, or anything out of place. If anything needs repair or looks unusual, use the \"Issues\" tab in the task, then see if it has already been reported, if not, click \"Report an Issue\" to create a new item. Note: If an issue is not documented at the start of the cleaning, it will be considered missed during your walkthrough and may become your responsibility to address.",
+          "response_type_marker": "Text",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 336,
+          "text": "(Photo) Photos of garage openers",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 337,
+          "text": "(Yes / No) Check all rooms and areas. Do any interior light bulbs need to be replaced? Please let us know if you can not replace them during the clean, then use the \"Report an Issue\" button.",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 338,
+          "text": "Section: Cleaning Summary",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 339,
+          "text": "(Text) Please leave a brief summary on state of the home upon arrival. If the guest isnt worthy of 5 Stars, please note why.",
+          "response_type_marker": "Text",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 340,
+          "text": "Section: Interior",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 341,
+          "text": "▸ Living Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 342,
+          "text": "Wipe down all furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 343,
+          "text": "Vacuum/mop/sweep",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 344,
+          "text": "Wipe dust off ceiling fan blades, attach photo  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 345,
+          "text": "(Photo) Photo under coffee table",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 346,
+          "text": "(Condition) After photo of living room [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 347,
+          "text": "▸ Couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 348,
+          "text": "Remove all cushions to discard of any crumbs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 349,
+          "text": "Place decorative pillows",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 350,
+          "text": "Wash throw blankets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 351,
+          "text": "Vacuum under couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 352,
+          "text": "(Photo) Photo under couch",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 353,
+          "text": "(Condition) Condition of couch. Provide after photo (with and without cushions) [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 354,
+          "text": "▸ Kitchen",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 355,
+          "text": "Clean all surfaces (counters, cabinets - inside and outside, etc)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 356,
+          "text": "Restock kitchen Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 357,
+          "text": "10 trash bags placed under sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 358,
+          "text": "10 dishwasher pods",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 359,
+          "text": "Refill or replace dish soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 360,
+          "text": "Refill or replace hand soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 361,
+          "text": "Paper towel rolls (there should be 2 total - 1 on the holder & 1 under the sink)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 362,
+          "text": "1 new sponge",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 363,
+          "text": "1 roll of dog waste bags placed under the sink  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 364,
+          "text": "(Photo) Photos of kitchen supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 365,
+          "text": "(Photo) More photos of kitchen supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 366,
+          "text": "Wipe out drawers/cabinet. Clean any crumbs (specifically silverware drawer)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 367,
+          "text": "(Condition) After photo of kitchen [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 368,
+          "text": "▸ Trash",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 369,
+          "text": "Empty trash can",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 370,
+          "text": "Wipe inside and outside of trash can",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 371,
+          "text": "replace with new bag",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 372,
+          "text": "Photo of emptied trash can  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 373,
+          "text": "▸ Dishware",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 374,
+          "text": "Please check all kitchen ware. Ensure each of these items are clean, organized in the cabinets/drawers, stored neatly, and accounted for. Let us know if anything is missing or damaged since the last clean so that it can be replaced. Photos of the damages can be added to the specific question below (see reference photo of items that need replacing below)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 375,
+          "text": "Silverware and utensils (forks, knives, spoons, serving utensils, cooking tools)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 376,
+          "text": "Photo of all Cookware (pots, pans, lids, baking sheets) Let us know if any need to be replaced (see reference photo)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 377,
+          "text": "(Photo) More photos of kitchen items",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 378,
+          "text": "Dishware (plates, bowls, cups, glassware) There should be at least 2 items per bed. (example: at least 6 cups if there are 3 beds)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 379,
+          "text": "Confirm none of the dishware has cracks",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 380,
+          "text": "▸ Sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 381,
+          "text": "Wipe down sink and polish faucet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 382,
+          "text": "Clean backsplash",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 383,
+          "text": "Confirm water runs (hot and cold) and has no active leaks or dripping.  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 384,
+          "text": "▸ Garbage Disposal",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 385,
+          "text": "Run with dish soap to make sure all food and debris is gone and smells fresh",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 386,
+          "text": "▸ Dishwasher",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 387,
+          "text": "If full, confirm all items clean, then empty all dishes",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 388,
+          "text": "Make sure door closes tightly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 389,
+          "text": "Fill rinse aid",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 390,
+          "text": "(Condition) After photo of inside and outside. [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 391,
+          "text": "▸ Refrigerator",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 392,
+          "text": "Remove all food and clean shelves/drawers",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 393,
+          "text": "Wipe down front of fridge (use stainless cleaner if necessary)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 394,
+          "text": "Make sure temperature is on a normal setting",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 395,
+          "text": "(Condition) After photo of inside and outside [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 396,
+          "text": "▸ Microwave",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 397,
+          "text": "Wipe down front and back",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 398,
+          "text": "Remove and clean tray",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 399,
+          "text": "Make sure all buttons function properly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 400,
+          "text": "(Condition) After photo of inside and outside [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 401,
+          "text": "▸ Toaster",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 402,
+          "text": "Remove all crumbs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 403,
+          "text": "Wipe under toaster",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 404,
+          "text": "▸ Stove Top",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 405,
+          "text": "Clean thoroughly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 406,
+          "text": "Test all burners  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 407,
+          "text": "(Condition) After photo of inside and outside of oven [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 408,
+          "text": "(Yes / No) Is there an oven liner? If yes, please remove. (Also throw away any we have for the guest to use)",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 409,
+          "text": "▸ Coffee Maker",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 410,
+          "text": "Clean thoroughly (inside and outside)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 411,
+          "text": "(Condition) After photo of filter area [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 412,
+          "text": "Restock Coffee Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 413,
+          "text": "10 K Cups",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 414,
+          "text": "6 Individual Coffee packets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 415,
+          "text": "Coffee filters as needed  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 416,
+          "text": "(Photo) More photos of coffee supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 417,
+          "text": "▸ Dining Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 418,
+          "text": "Wipe down table and chairs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 419,
+          "text": "Tidy any table decor",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 420,
+          "text": "Let us know and take photos of any damage / broken chairs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 421,
+          "text": "(Photo) After photo of dining room.",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 422,
+          "text": "▸ Bedroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 423,
+          "text": "Vacuum/mop/sweep floor",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 424,
+          "text": "Dust/wipe all furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 425,
+          "text": "Open and check all drawers for items left behind. Vacuum/clean out",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 426,
+          "text": "Wipe dust off ceiling fan blades, attach photo  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 427,
+          "text": "▸ Bed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 428,
+          "text": "Remove sheets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 429,
+          "text": "Inspect mattress pad, pillows, comforters for stains (add photo below)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 430,
+          "text": "Make bed with clean linens",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 431,
+          "text": "(Photo) Photos of linens before & after wash. Be sure to highlight any stains. We need both, before & after photos for claim documentation",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 432,
+          "text": "Look under bed for trash any items that may have been left behind (tag and return to office)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 433,
+          "text": "(Condition) Condition of bed frame, headboard and mattress [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 434,
+          "text": "Decorative pillows placed neatly on bed  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 435,
+          "text": "(Photo) After photo of cleaned bedroom, all angles. Please make sure we have a photo of each part of the bedroom .",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 436,
+          "text": "(Photo) More photos of bedroom.",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 437,
+          "text": "▸ Bathroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 438,
+          "text": "Empty waste basket and replace plastic bag",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 439,
+          "text": "Clean all mirrors",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 440,
+          "text": "Restock Bathroom Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 441,
+          "text": "3 full toilet paper rolls (1 on the holder, the remaining in the cabinet above the toilet or under the sink)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 442,
+          "text": "Refill or replace hand soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 443,
+          "text": "Toiletries (1 of each: body wash, shampoo, conditioner, lotion)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 444,
+          "text": "Take a picture of ALL towels for reference",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 445,
+          "text": "1 hand towel per sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 446,
+          "text": "2-3 bath towels per bed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 447,
+          "text": "2-3 washcloths per bed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 448,
+          "text": "1 bathmat per sink and shower/tub  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 449,
+          "text": "(Photo) Take photo of hair dryer / or more supplies (only 1 hair dryer per home is needed)",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 450,
+          "text": "▸ Shower/Bathtub",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 451,
+          "text": "Clean, scrub and sanitize",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 452,
+          "text": "Clean any glass shower",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 453,
+          "text": "Make sure there is no mildew or mold on shower",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 454,
+          "text": "Ensure shower head is working and tub drains",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 455,
+          "text": "(Photo) Please carefully inspect all bathrooms for any signs of mold, grout deterioration, water damage, or leaks. Be thorough around tubs, showers, sinks, and toilets. Take clear photos of anything questionable or any areas you were unable to fully clean.",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 456,
+          "text": "(Condition) After photo of shower/bathtub [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 457,
+          "text": "▸ Toilet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 458,
+          "text": "Flush to ensure no slow flushing or broken plumbing",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 459,
+          "text": "Put toilet seat down",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 460,
+          "text": "Clean, scrub and sanitize",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 461,
+          "text": "Fold toilet paper roll like the photo below or similar decorative design  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 462,
+          "text": "▸ Sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 463,
+          "text": "Clean, scrub and sanitize",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 464,
+          "text": "Make sure that hot and cold water works and sink drains",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 465,
+          "text": "Polish faucet  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 466,
+          "text": "▸ Laundry Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 467,
+          "text": "Restock Laundry Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 468,
+          "text": "10 Laundry Pods",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 469,
+          "text": "10 dryer sheets  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 470,
+          "text": "(Photo) More photos of laundry supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 471,
+          "text": "▸ Washer/Dryer",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 472,
+          "text": "Make sure both are empty",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 473,
+          "text": "Clean lint trap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 474,
+          "text": "Leave washer door/lid open to prevent mildew  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 475,
+          "text": "Check and clean soap dispense area  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 476,
+          "text": "(Photo) Take photo of washer and dryer",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 477,
+          "text": "▸ Office",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 478,
+          "text": "Dust/wipe all furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 479,
+          "text": "Open all drawers for left items",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 480,
+          "text": "Section: Please take a picture of the storage closet.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 481,
+          "text": "(Yes / No) Is there a container of laundry pods that is at least half full?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 482,
+          "text": "(Yes / No) Is there a box of dryer sheets?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 483,
+          "text": "(Yes / No) Is there a container of dishwasher pods that is at least half full?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 484,
+          "text": "(Yes / No) 2 bottles of dish soap?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 485,
+          "text": "(Yes / No) Are there about 3 bottles of hand soap or a large refill bottle?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 486,
+          "text": "(Yes / No) Is there a box of trash bags?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 487,
+          "text": "(Yes / No) Are there at least 4-6 rolls of paper towels?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 488,
+          "text": "(Yes / No) Are there at least 6 rolls of toilet paper?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 489,
+          "text": "(Yes / No) Is there a box of coffee packs?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 490,
+          "text": "(Yes / No) Is there a box of K-Cups?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 491,
+          "text": "(Yes / No) Package of coffee filters?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 492,
+          "text": "(Yes / No) Are lightbulbs available ?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 493,
+          "text": "(Yes / No) At least 3 kitchen sponges?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 494,
+          "text": "(Yes / No) Set of King sheets?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 495,
+          "text": "(Yes / No) Extra Queen or Full sheet set?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 496,
+          "text": "(Condition) Photo of Storage closet [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 497,
+          "text": "Section: Exterior",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 498,
+          "text": "Picked up and disposed of any dog poop in the backyard (if present). Please notify us if there was any. An additional charge of $25-$50 may apply, depending on the amount collected, in addition to the cleaning fee. Photos are REQUIRED! If you notice dog poop but do not pick it up, please notify us immediately so we can arrange for someone to come out before the next guest arrives.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 499,
+          "text": "(Yes / No) Walk around the house. Are there any active wasp nests that need to be sprayed or knocked down? If yes, please take photo.",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 500,
+          "text": "(Yes / No) Inspect all windows -Is there are any new damages or cracks? If so, please attach photo and where the window is located.",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 501,
+          "text": "▸ Deck",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 502,
+          "text": "Sweep",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 503,
+          "text": "(Condition) After photo [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 504,
+          "text": "▸ Patio Furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 505,
+          "text": "(Photo) Check ALL patio furniture and take photos of any damages or stains.",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 506,
+          "text": "Wipe down all furniture and return to correct place",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 507,
+          "text": "(Photo) After photo of patio furniture",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 508,
+          "text": "▸ Exterior Light",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 509,
+          "text": "Check lightbullbs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 510,
+          "text": "Check/clean bugs or webs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 511,
+          "text": "▸ Garage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 512,
+          "text": "Sweep out garage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 513,
+          "text": "(Yes / No) Any large trash items that need to be hauled away? After photo [PHOTO REQUIRED]",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 514,
+          "text": "Section: Before you leave",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 515,
+          "text": "(Yes / No) Do all TV's turn on?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 516,
+          "text": "Inspect all AC intake vents. If dirty or dusty, clean and wipe down thoroughly. Photo required.  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 517,
+          "text": "(Yes / No) Is the Wi-fi working?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 518,
+          "text": "Vacuum is on site",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 519,
+          "text": "Confirm it is emptied and ready for guests to use  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 520,
+          "text": "Set temperature (summer 74 - cool; winter 67 - heat)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 521,
+          "text": "Spray air freshener in the entry way as you are walking out.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 522,
+          "text": "Secure property - lock all doors and windows DO NOT SET ALARM",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 523,
+          "text": "(Yes / No) Are trash cans on the side of the house so our trash service can take them to the curb on their trash day? [PHOTO REQUIRED]",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 524,
+          "text": "Take a picture of the trash cans outside so we can see how full they are  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 525,
+          "text": "(Text) What keys are in the lockbox? (examples: spare front door, back door, cluster mailbox) [PHOTO REQUIRED]",
+          "response_type_marker": "Text",
+          "explicit_photo_required": true
+        }
+      ]
+    },
+    {
+      "external_template_id": 581110,
+      "name": "Non-OKC departure",
+      "version": "source-2026-08-27",
+      "source_paragraph_range": [
+        680,
+        864
+      ],
+      "items": [
+        {
+          "source_paragraph": 680,
+          "text": "Non- OKC ARHA Departure Clean (Updated)  [Template ID: 581110]",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 681,
+          "text": "Department: Cleaning",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 682,
+          "text": "Cleaning tasks for turnover cleanings.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 683,
+          "text": "Section: Prior to Cleaning",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 684,
+          "text": "(Text) Before you begin cleaning, do a full walkthrough of the property. Look for any issues that need attention—such as maintenance problems, carpet stains, odors, damages, or anything out of place. If anything needs repair or looks unusual, use the \"Issues\" tab in the task, then see if it has already been reported, if not, click \"Report an Issue\" to create a new item. Note: If an issue is not documented at the start of the cleaning, it will be considered missed during your walkthrough and may become your responsibility to address.",
+          "response_type_marker": "Text",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 685,
+          "text": "(Photo) Photo of garage openers",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 686,
+          "text": "(Yes / No) Check all rooms and areas. Do any interior light bulbs need to be replaced? Please let us know if you can not replace them during the clean, and report them using the \"Report an Issue\" button. [PHOTO REQUIRED]",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 687,
+          "text": "Section: Cleaning Summary",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 688,
+          "text": "(Text) Please leave a brief summary on state of the home upon arrival. If the guest isnt worthy of 5 Stars, please note why.",
+          "response_type_marker": "Text",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 689,
+          "text": "Section: Interior",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 690,
+          "text": "Wipe/dust all baseboards",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 691,
+          "text": "▸ Living Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 692,
+          "text": "Wipe down all furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 693,
+          "text": "Vacuum/mop/sweep",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 694,
+          "text": "Wipe and dust ceiling fan blades, attach photo  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 695,
+          "text": "(Photo) Photo under coffee table",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 696,
+          "text": "(Condition) After photo of living room [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 697,
+          "text": "▸ Couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 698,
+          "text": "Remove all cushions to check for trash",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 699,
+          "text": "Wash throw blankets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 700,
+          "text": "Vacuum any crumbs/debris",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 701,
+          "text": "Vacuum under couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 702,
+          "text": "Decorative pillows/ throw blankets placed neatly on couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 703,
+          "text": "(Condition) Condition of couch. Provide after photos (with and without cushions) [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 704,
+          "text": "(Photo) Photo under couch",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 705,
+          "text": "▸ Kitchen",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 706,
+          "text": "Clean all surfaces (all counters and cabinets)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 707,
+          "text": "Restocked Kitchen Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 708,
+          "text": "10 trash bags placed under sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 709,
+          "text": "10 dishwasher pods placed under sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 710,
+          "text": "Refill or replace dish soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 711,
+          "text": "Refill or replace hand soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 712,
+          "text": "Paper towel rolls (there should be 2 total - 1 on the holder & 1 under the sink)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 713,
+          "text": "1 new sponge",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 714,
+          "text": "1 roll of dog waste bags placed under the sink  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 715,
+          "text": "(Photo) Photos of supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 716,
+          "text": "(Photo) More photo of supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 717,
+          "text": "Wipe out drawers/cabinet. Clean any crumbs (specifically silverware drawer)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 718,
+          "text": "(Photo) After photo of kitchen",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 719,
+          "text": "▸ Trash",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 720,
+          "text": "Empty trash can",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 721,
+          "text": "Wipe inside and outside of trash can",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 722,
+          "text": "Replace with new bag",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 723,
+          "text": "Photo of emptied trash can  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 724,
+          "text": "▸ Dishware",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 725,
+          "text": "Please check all kitchen ware. Ensure each of these items are clean, organized in the cabinets/drawers, stored neatly, and accounted for. Let us know if anything is missing or damaged since the last clean so it can be replaced. Photos of the damages can be added to the specific question below (see reference photo of items that need replacing below)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 726,
+          "text": "(Photo) Photo of all silverware and utensils (forks, knives, spoons, serving utensils, cooking tools)",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 727,
+          "text": "(Photo) Photo of all cookware (pots, pans, lids, baking sheets). Please check all items. Let us know if any need to be replaced (see reference photo)",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 728,
+          "text": "(Photo) More photos of kitchen items",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 729,
+          "text": "(Photo) Photo of all dishware (plates, bowls, cups, glassware, wine glasses) There should be at least 2 items per bed. (example: at least 6 cups if there are 3 beds)",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 730,
+          "text": "Make sure none of the dishware has cracks",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 731,
+          "text": "▸ Sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 732,
+          "text": "Wipe down sink and polish faucet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 733,
+          "text": "Confirm water runs and no active leaks or dripping  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 734,
+          "text": "▸ Garbage Disposal",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 735,
+          "text": "Run with dish soap to make sure all food and debris is gone and smells fresh",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 736,
+          "text": "▸ Dishwasher",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 737,
+          "text": "If full, confirm all items are clean",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 738,
+          "text": "Empty all dishes",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 739,
+          "text": "Make sure door closes tightly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 740,
+          "text": "Fill rinse aid",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 741,
+          "text": "(Condition) After photo of inside and outside. [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 742,
+          "text": "▸ Refrigerator",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 743,
+          "text": "Remove all food",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 744,
+          "text": "Clean all shelves/drawers fridge and freezer",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 745,
+          "text": "Wipe down front of fridge (use stainless cleaner if necessary)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 746,
+          "text": "Make sure temperature is on a normal setting",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 747,
+          "text": "(Condition) After photo of inside and outside [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 748,
+          "text": "▸ Microwave",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 749,
+          "text": "Wipe down inside and out",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 750,
+          "text": "Remove and clean tray",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 751,
+          "text": "Buttons work and functions properly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 752,
+          "text": "(Condition) After photo of inside and outside [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 753,
+          "text": "▸ Toaster",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 754,
+          "text": "Remove all crumbs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 755,
+          "text": "Wipe under toaster",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 756,
+          "text": "▸ Stove Top",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 757,
+          "text": "Clean thoroughly both the stove top and oven inside",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 758,
+          "text": "Test all burners - let us know if any are not working",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 759,
+          "text": "(Yes / No) Is there an oven liner? If yes, please trash",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 760,
+          "text": "(Condition) After photo of inside and outside of oven [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 761,
+          "text": "▸ Coffee Maker",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 762,
+          "text": "Clean thoroughly (inside and outside)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 763,
+          "text": "(Photo) After photo of filter area",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 764,
+          "text": "Restocked Coffee Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 765,
+          "text": "10 k-cups",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 766,
+          "text": "6 pre-packaged coffee packets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 767,
+          "text": "Coffee filters (as needed)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 768,
+          "text": "(Photo) More photos of coffee supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 769,
+          "text": "▸ Dining Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 770,
+          "text": "Wipe down table top and chairs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 771,
+          "text": "Tidy any table decor",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 772,
+          "text": "Let us know if there are any broken chairs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 773,
+          "text": "(Photo) After photo of dining room",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 774,
+          "text": "▸ Bedroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 775,
+          "text": "Vacuum/mop/sweep floor",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 776,
+          "text": "Dust/wipe all furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 777,
+          "text": "Open and check all drawers for items left behind. Vacuum/clean out",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 778,
+          "text": "Wipe and dust ceiling fan blades, attach photo  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 779,
+          "text": "▸ Bed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 780,
+          "text": "Remove sheets",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 781,
+          "text": "Inspect mattress pad, pillows, comforters for stains (add photo below)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 782,
+          "text": "Make bed with clean linens",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 783,
+          "text": "(Photo) Photos of linens before & after wash. Be sure to highlight any stains. We need both, before & after photos for claim documentation",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 784,
+          "text": "(Condition) Condition of bed frame, headboard and mattress [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 785,
+          "text": "Look under bed for any trash or items that may have been left behind  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 786,
+          "text": "Decorative pillows placed neatly on bed  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 787,
+          "text": "(Photo) After photo of cleaned bedroom",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 788,
+          "text": "▸ Bathroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 789,
+          "text": "Empty waste basket and replace plastic bag",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 790,
+          "text": "Clean all mirrors",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 791,
+          "text": "Restocked Bathroom Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 792,
+          "text": "3 full toilet paper rolls (1 on the holder, the remaining in the cabinet above the toilet or under the sink)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 793,
+          "text": "Refill or replace hand soap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 794,
+          "text": "Toiletries (1 of each: body wash, shampoo, conditioner, lotion)  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 795,
+          "text": "Take a picture of ALL towels",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 796,
+          "text": "1 hand towel per sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 797,
+          "text": "2-3 bath towels per bed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 798,
+          "text": "2-3 washcloths per bed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 799,
+          "text": "1 bathmat per sink and shower/tub  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 800,
+          "text": "(Photo) Take photo of hair dryer / or more supplies (only 1 hair dryer per home is needed)",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 801,
+          "text": "▸ Shower/Bathtub",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 802,
+          "text": "Clean, scrub and sanitize floor/tub",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 803,
+          "text": "Clean any glass shower",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 804,
+          "text": "Ensure shower head is working and tub drains",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 805,
+          "text": "(Photo) Please carefully inspect all bathrooms for any signs of mold, grout deterioration, water damage, or leaks. Be thorough around tubs, showers, sinks, and toilets. Take clear photos of anything questionable or any areas you were unable to fully clean.",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 806,
+          "text": "(Condition) After photo of shower/bathtub [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 807,
+          "text": "▸ Toilet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 808,
+          "text": "Clean, scrub and sanitize entire toilet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 809,
+          "text": "Flush to ensure no slow flushing or broken plumbing",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 810,
+          "text": "Put toilet seat down",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 811,
+          "text": "Fold toilet paper roll like the photo below",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 812,
+          "text": "(Photo) After photo of toilet",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 813,
+          "text": "▸ Sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 814,
+          "text": "Clean, scrub and sanitize sink and faucet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 815,
+          "text": "Make sure both hot and cold water works and sink drains",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 816,
+          "text": "Polish faucet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 817,
+          "text": "(Photo) After photo of sink(s)",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 818,
+          "text": "▸ Laundry Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 819,
+          "text": "Restocked Laundry Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 820,
+          "text": "10 laundry pods",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 821,
+          "text": "10 dryer sheets  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 822,
+          "text": "(Photo) More photos of laundry supplies",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 823,
+          "text": "▸ Washer/Dryer",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 824,
+          "text": "Make sure both are empty",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 825,
+          "text": "Clean lint trap",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 826,
+          "text": "Leave washer door/lid open to prevent mildew",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 827,
+          "text": "Check and clean soap dispense area  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 828,
+          "text": "(Photo) Photo of washer and dryer",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 829,
+          "text": "▸ Office",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 830,
+          "text": "Dust/wipe all furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 831,
+          "text": "Open all drawers and check for left items",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 832,
+          "text": "Section: Exterior",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 833,
+          "text": "(Yes / No) Is there dog poop in the backyard?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 834,
+          "text": "If you notice dog poop but do not pick it up, please notify us immediately so we can arrange for someone to come out before the next guest arrives. Photos are REQUIRED!",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 835,
+          "text": "(Yes / No) Walk around the house. Are there any active wasp nests that need to be sprayed or knocked down? If yes, but you cannot spray them, please let us know.",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 836,
+          "text": "(Yes / No) Inspect all windows - are there any new damages or cracks?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 837,
+          "text": "▸ Deck",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 838,
+          "text": "Sweep",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 839,
+          "text": "(Condition) After photo [PHOTO REQUIRED]",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 840,
+          "text": "▸ Patio Furniture",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 841,
+          "text": "Wipe down all furniture and return to correct place",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 842,
+          "text": "Let us know if there are any damages or stains",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 843,
+          "text": "(Photo) After photo of patio furniture",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 844,
+          "text": "▸ Exterior Light",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 845,
+          "text": "Check/replace any lightbulbs that are out",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 846,
+          "text": "Clean any bugs or webs around light fixtures",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 847,
+          "text": "▸ Garage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 848,
+          "text": "Sweep out garage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 849,
+          "text": "(Yes / No) Any large trash items that need to be hauled away? After photo [PHOTO REQUIRED]",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 850,
+          "text": "Section: Before you leave",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 851,
+          "text": "(Yes / No) Is the Wi-fi working?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 852,
+          "text": "All TVs turn on and are working",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 853,
+          "text": "Turn off all TVs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 854,
+          "text": "All remotes are accounted for and in their holders",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 855,
+          "text": "Vacuum is on site",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 856,
+          "text": "Confirm is it emptied and ready for guests to use  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 857,
+          "text": "Inspect all AC intake vents. Clean, dust and wipe down thoroughly. Add after photo.  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 858,
+          "text": "Set temperature (summer 74 - cool; winter 67 - heat)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 859,
+          "text": "Spray air freshener in the entry way as you are walking out",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 860,
+          "text": "Secure property - lock all doors and windows - DO NOT SET ALARM",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 861,
+          "text": "Take a picture of the trash cans outside. Let us know if they are too full.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 862,
+          "text": "Please check the Trash Notes in the Property Profile and ensure the cans are where they are supposed to be so our trash valet team can access them.  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 863,
+          "text": "(Text) What keys are in the lockbox? (examples: spare front door, back door, cluster mailbox) [PHOTO REQUIRED]",
+          "response_type_marker": "Text",
+          "explicit_photo_required": true
+        }
+      ]
+    },
+    {
+      "external_template_id": 32834,
+      "name": "Quality and Arrival Inspection",
+      "version": "source-2026-08-27",
+      "source_paragraph_range": [
+        865,
+        987
+      ],
+      "items": [
+        {
+          "source_paragraph": 865,
+          "text": "ARHA Quality and Arrival Inspection  [Template ID: 32834]",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 866,
+          "text": "Department: Inspection",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 867,
+          "text": "Before our next guest arrives, this inspection should be completed after the cleaner gets done.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 868,
+          "text": "Cleaner should be done around 3:00, giving you time to review their work. Making sure the home is ready for guests.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 869,
+          "text": "Replace light bulbs as needed. Note if housekeeper missed anything, please make it right. Small issues should be handled/cleaned. If anything major needs to be done, please let us know so we can get someone out there asap.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 870,
+          "text": "After QC is done, complete the QC Scoring Form: https://arha.fillout.com/cleaning_qc",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 871,
+          "text": "Section: Interior",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 872,
+          "text": "No cobwebs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 873,
+          "text": "Visually check all vents (for mold and dust)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 874,
+          "text": "Visually check all walls and baseboards for paint touchups, chips, scuffs, etc",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 875,
+          "text": "(Yes / No) Is the property clean?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 876,
+          "text": "▸ Kitchen",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 877,
+          "text": "Spot check kitchen contents (dishes, glasses, pots/pans, etc)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 878,
+          "text": "Empty trash",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 879,
+          "text": "Trash bags are available under sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 880,
+          "text": "Ensure items in cabinets are organized",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 881,
+          "text": "(Condition) please report the overall condition of all appliances",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 882,
+          "text": "▸ Refrigerator",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 883,
+          "text": "Take photo of inside",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 884,
+          "text": "Set to normal setting  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 885,
+          "text": "(Condition) Condition of fridge",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 886,
+          "text": "▸ Dishwasher",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 887,
+          "text": "(Condition) Functional and no smell",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 888,
+          "text": "No water in the bottom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 889,
+          "text": "All dishes have been removed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 890,
+          "text": "(Yes / No) Does the rinse aid need to be refilled?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 891,
+          "text": "▸ Microwave",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 892,
+          "text": "Ensure working properly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 893,
+          "text": "Is the time correct?",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 894,
+          "text": "Take photo of inside  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 895,
+          "text": "▸ Small Appliance",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 896,
+          "text": "Make sure there are no crumbs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 897,
+          "text": "▸ Garbage Disposal",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 898,
+          "text": "Run with water on to ensure it works",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 899,
+          "text": "Treat if smell is detected",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 900,
+          "text": "▸ Sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 901,
+          "text": "(Yes / No) Has it been cleaned properly?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 902,
+          "text": "Check for clean sponge",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 903,
+          "text": "Paper towels nearby",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 904,
+          "text": "Check for hot water",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 905,
+          "text": "▸ Bathroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 906,
+          "text": "All countertops and cabinets are clean (run had across counter to feel for spots)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 907,
+          "text": "Amenities have been placed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 908,
+          "text": "(Yes / No) Are there extra towels and are they folded neatly? [PHOTO REQUIRED]",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 909,
+          "text": "(Yes / No) Is the grout in good shape?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 910,
+          "text": "▸ Toilet",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 911,
+          "text": "(Condition) Works properly and has been flushed",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 912,
+          "text": "Place seat down",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 913,
+          "text": "▸ Shower/Bathtub",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 914,
+          "text": "Make sure there is no mildew, mold or buildup",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 915,
+          "text": "Make sure there is no mildew, mold or buildup",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 916,
+          "text": "Replace if mold or rust is apparent on bottom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 917,
+          "text": "Check liners and curtains",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 918,
+          "text": "(Condition) Water runs and drains properly",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 919,
+          "text": "▸ Mirror",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 920,
+          "text": "Clean and free of streaks",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 921,
+          "text": "(Condition) No cracks or chips",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 922,
+          "text": "▸ Sink",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 923,
+          "text": "Run water to ensure faucet works and drains properly",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 924,
+          "text": "Confirm no drip once turned off",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 925,
+          "text": "Confirm hot water",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 926,
+          "text": "▸ Bathroom Fan",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 927,
+          "text": "(Condition) Condition",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 928,
+          "text": "▸ Bedroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 929,
+          "text": "Drapes and blinds are clean and open",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 930,
+          "text": "Before you leave take a photo  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 931,
+          "text": "▸ Bed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 932,
+          "text": "Comforter and sheets are clean",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 933,
+          "text": "Bed is made using hospital corners (see photo for reference)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 934,
+          "text": "Look under and remove any left items  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 935,
+          "text": "▸ Television",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 936,
+          "text": "Turn on, change channel and adjust volume to test. Turn off",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 937,
+          "text": "Leave remote in holder on the wall. If none, place on dresser. Provide picture.",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 938,
+          "text": "(Condition) Works",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 939,
+          "text": "▸ Dresser",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 940,
+          "text": "Open all drawers to remove any items and dirt",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 941,
+          "text": "▸ Pillows",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 942,
+          "text": "(Yes / No) Are the pillows in good contion?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 943,
+          "text": "(Yes / No) Are there pillow encasements?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 944,
+          "text": "▸ Living Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 945,
+          "text": "No dirt, crumbs or pet hair",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 946,
+          "text": "Empty contents in vacuum",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 947,
+          "text": "(Photo) Take picture of the living room",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 948,
+          "text": "▸ Sleeper Sofa",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 949,
+          "text": "Clean sheets are available",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 950,
+          "text": "Remove cushions to ensure no dirt",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 951,
+          "text": "▸ Couch",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 952,
+          "text": "Remove all cushions and check for dirt, change",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 953,
+          "text": "All pillows are clean and facing the right direction",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 954,
+          "text": "(Condition) No tears or stains",
+          "response_type_marker": "Condition",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 955,
+          "text": "▸ Lamp",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 956,
+          "text": "Confirm plugged in and shades are straight",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 957,
+          "text": "▸ Television",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 958,
+          "text": "Turn on to check functionality",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 959,
+          "text": "Adjust volume and channel",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 960,
+          "text": "Leave remote in holder on the wall. If none, place on dresser. Provide picture.  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 961,
+          "text": "▸ Dining Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 962,
+          "text": "(Yes / No) Chairs are pushed in and table clean?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 963,
+          "text": "▸ Chandelier",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 964,
+          "text": "Free of cobwebs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 965,
+          "text": "All lights work",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 966,
+          "text": "▸ Dining Table and Chairs",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 967,
+          "text": "Table is cleaned",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 968,
+          "text": "All chairs are pushed in",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 969,
+          "text": "Shake chairs and table to ensure sturdy",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 970,
+          "text": "Tighten any loose pieces",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 971,
+          "text": "▸ Thermostat",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 972,
+          "text": "Set temperature (summer 74 - cool; winter 66 - heat)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 973,
+          "text": "▸ Wireless (WiFi) Router",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 974,
+          "text": "Ensure internet is working",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 975,
+          "text": "Open a new webpage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 976,
+          "text": "Section: Supplies",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 977,
+          "text": "▸ Firepit",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 978,
+          "text": "Wood is available for fire pit (if applicable)",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 979,
+          "text": "Section: Garage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 980,
+          "text": "(Photo) Photo of garage",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 981,
+          "text": "(Yes / No) Does anything need to be hauled off? If yes, please create a report and assign task",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 982,
+          "text": "(Photo) Photo of trash bins (if trash full, assign trash to be hauled before arrival of next guest)",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 983,
+          "text": "Section: Exterior",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 984,
+          "text": "(Text) Please check the front and backyard to ensure everything is in order. Look for any issues that need attention, such as overgrown trees or bushes, tall grass, weeds that need to be pulled, or trash. If there are any items that require attention but cannot be addressed during your QC, please notify us so we can take care of them.",
+          "response_type_marker": "Text",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 985,
+          "text": "Section: QC Scoring Form",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 986,
+          "text": "(Yes / No) After QC is done, did you complete the QC Scoring Form: https://arha.fillout.com/cleaning_qc",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        }
+      ]
+    },
+    {
+      "external_template_id": 818192,
+      "name": "Vacancy Cleaning",
+      "version": "source-2026-08-27",
+      "source_paragraph_range": [
+        1166,
+        1219
+      ],
+      "items": [
+        {
+          "source_paragraph": 1166,
+          "text": "ARHA Vacancy Cleaning  [Template ID: 818192]",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1167,
+          "text": "Department: Cleaning",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1168,
+          "text": "To be used if a house is sitting vacant greater than 1 week",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1169,
+          "text": "- ensuring home is still guest ready, no dead bugs, dust build up, water leaks, etc",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1170,
+          "text": "- overall surface cleaning and addressing any other items before future guests arrive",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1171,
+          "text": "Section: General",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1172,
+          "text": "Dust and wipe all surfaces",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1173,
+          "text": "Vacuum all floors",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1174,
+          "text": "Dust all fixtures and fans",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1175,
+          "text": "Check and wipe down all window seals of any dust [CONTINUATION of ARHA Vacancy Cleaning id:818192 - Section: General bullets continued, then Living Room section starts]",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1176,
+          "text": "(bullet, text cut at chunk boundary, approx: \"Check under furniture/beds f)or dead bugs\"",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1177,
+          "text": "Checked under sinks, water heater, and washer hookups for leaks - confirm none found",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1178,
+          "text": "Section: Living Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1179,
+          "text": "Check for dead bugs and cobwebs - clean where needed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1180,
+          "text": "Wipe all surfaces",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1181,
+          "text": "Check and vacuum couches/chairs for debris  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 1182,
+          "text": "(Photo) Photo of completed living room",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1183,
+          "text": "Section: Kitchen",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1184,
+          "text": "Check for dead bugs and cobwebs - clean where needed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1185,
+          "text": "Wipe all surfaces",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1186,
+          "text": "Wipe down sink if needed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1187,
+          "text": "Run water in sink to prevent dry trap sewer smell",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1188,
+          "text": "Photo of sink  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 1189,
+          "text": "Ensure oven/stove top still clean, wipe down if needed  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 1190,
+          "text": "Check dishwasher, ensure it is cracked to eliminate mildew smell",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1191,
+          "text": "Check fridge/freezer running properly, no spoiled food or odor",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1192,
+          "text": "(Photo) Photo of completed kitchen",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1193,
+          "text": "Section: Bedroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1194,
+          "text": "Check for dead bugs and cobwebs - clean where needed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1195,
+          "text": "Wipe all surfaces",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1196,
+          "text": "Confirm bed is made properly  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 1197,
+          "text": "(Photo) Photo of completed bedroom",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1198,
+          "text": "Section: Bathroom",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1199,
+          "text": "Check for dead bugs and cobwebs - clean where needed",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1200,
+          "text": "Wipe all surfaces",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1201,
+          "text": "Run water in sink/tub/shower and flush toilet to prevent dry trap sewer smell",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1202,
+          "text": "Check toilet, scrub if needed  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 1203,
+          "text": "Check shower/tub for dead bugs, mold, debris - clean where needed  [Photo required]",
+          "response_type_marker": null,
+          "explicit_photo_required": true
+        },
+        {
+          "source_paragraph": 1204,
+          "text": "(Photo) Photo of completed bathroom",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1205,
+          "text": "Section: Laundry Room",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1206,
+          "text": "Wipe down washer/dryer of dust",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1207,
+          "text": "Confirm lint trap is clean",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1208,
+          "text": "Check for leaks around washer hookups",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1209,
+          "text": "Keep washer door open or cracked to prevent mildew smell",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1210,
+          "text": "(Photo) Photo of completed laundry room",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1211,
+          "text": "Section: Garage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1212,
+          "text": "Sweep out Garage",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1213,
+          "text": "(Photo) Photo of completed garage",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1214,
+          "text": "Section: Before you leave",
+          "response_type_marker": null,
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1215,
+          "text": "(Yes / No) Smoke/CO detectors checked - no chirping?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1216,
+          "text": "(Yes / No) Heat/AC working and thermostat set to correct temp?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1217,
+          "text": "(Yes / No) All doors and windows locked/sealed, smart lock working?",
+          "response_type_marker": "Yes / No",
+          "explicit_photo_required": false
+        },
+        {
+          "source_paragraph": 1218,
+          "text": "(Photo) Photo of trash cans",
+          "response_type_marker": "Photo",
+          "explicit_photo_required": false
+        }
+      ]
+    }
+  ]
+}

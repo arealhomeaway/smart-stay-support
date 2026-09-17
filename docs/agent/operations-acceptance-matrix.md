@@ -24,6 +24,10 @@ The historical local Supabase/Docker setup plan in `.codex-qa.local` is an archi
 | OA-10 | Owner approvals and private-field boundaries | Existing SQL and service tests, migration manifest checks | Separate owner and unrelated owner sign-ins with synthetic property/approval | RLS denials, reviewed snapshot and decision history |
 | OA-11 | Desktop and mobile usability for PC, James, Micah and Emily | Read-only review of non-mutating screens | Each real-role synthetic session for action flows | Role-by-role observation and launch blocker / later / future classification |
 | OA-12 | Migration/automation isolation and reset | Static migration checks | Staging setup, disabled jobs, captured queues and complete reseed | Environment inventory, reset receipt and no production resource IDs |
+| OA-13 | Market-specific checklist transcription, required/conditional answers, photos and authorized evidence exception | Source paragraph comparison and pure rules | Synthetic OKC/non-OKC clean, QC and vacancy task with real cleaner/inspector roles and storage | Field-by-field parity sign-off for 581109/581110/32834/818192, rejected omissions, exception audit |
+| OA-14 | Checkout trigger, offer/accept, clean submit, inspection, correction and readiness | Pure state/readiness tests | Real authenticated synthetic reservation and task lifecycle | Actor/timestamps, assignment history, correction rounds, blocked/ready transitions |
+| OA-15 | Companywide Cleaning Review and finding decisions | Schema/code checks | Synthetic review with multiple findings, claim/deposit decision and unrelated role denial | Exact finding codes, cost/evidence links, explicit decision audit, no automatic charge |
+| OA-16 | Supervisor daily log and reference catalog | Static schema/source checks | Synthetic workload aggregation, Director review and tag scope/legacy checks | Count reconciliation, role routing, external IDs and historical mapping |
 
 ## Reporting lanes
 
@@ -36,9 +40,9 @@ The historical local Supabase/Docker setup plan in `.codex-qa.local` is an archi
 
 | Lane | Result | Limit |
 |---|---|---|
-| Passed through code or isolated automated testing | TypeScript `tsc --noEmit` passed on `codex/ops-launch-pass-2`. The production Vite build passed at the last code checkpoint. Static migration inspection found 181 SQL files, no duplicate filename timestamp prefixes, and no migration or generated Supabase type changes relative to the PR #10 base. The feedback register has 33 distinct IDs. | Bun-based focused tests could not be run because the Bun runner is unavailable; no test result is claimed for them. Static checks do not prove migration behavior against a database. |
+| Passed through code or isolated automated testing | TypeScript `tsc --noEmit`, production Vite build, focused ESLint, four Node isolated cleaning-rule tests and a checklist archive boundary check passed. The archive contains 636 paragraphs from the four approved active templates, with no legacy or unused template heading. The feedback register has 39 unique IDs. | Bun-based legacy tests still lack a runner. The new cleaning migration is **unapplied** and unvalidated against a database; the checklist archive preserves source paragraphs, but field-level requiredness and conditions need transcription review. |
 | Verified through safe read-only UI review | None on this Operations branch. | The existing PR #10 Preview is a different branch; shared Preview is treated as a published-backend environment and has not been used for Operations acceptance. |
-| Blocked pending isolated authenticated acceptance | OA-01 through OA-12 action, role, RLS, storage and reset cases. | No separate backend and synthetic accounts have been verified. |
+| Blocked pending isolated authenticated acceptance | OA-01 through OA-16 action, role, RLS, storage and reset cases. | No separate backend and synthetic accounts have been verified. The cleaning schema grants authenticated users read access only when they are staff; task writes are intentionally unexposed until transition and permission gates are built and tested. |
 | Blocked pending external sandbox credentials | Microsoft 365 delivery and Breezeway/OwnerRez integration calls. | No isolated provider bindings or captured delivery endpoints have been verified. |
 
 Until staging exists, do not create, update, assign, complete, approve, reopen or delete shared operational records. Do not trigger external messages, webhooks, sync writes or automations, and do not use real people or properties as disposable fixtures.
