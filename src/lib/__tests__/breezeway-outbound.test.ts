@@ -30,15 +30,24 @@ class FakeBreezewayError extends Error {
   }
 }
 
-type Call = { path: string; method: string };
+type Call = {
+  path: string;
+  method: string;
+  body: unknown;
+  allowWrite: boolean | undefined;
+  retry: boolean | undefined;
+};
 const calls: Call[] = [];
-let responder: (path: string, options: { method?: string }) => unknown = () => ({ id: 900001 });
+let responder: (path: string, options: { method?: string; body?: unknown }) => unknown = () => ({ id: 900001 });
 
 mock.module("@/lib/breezeway.server", () => ({
   BreezewayError: FakeBreezewayError,
   listBreezewayProperties: async () => [],
-  breezewayRequest: async (path: string, options: { method?: string } = {}) => {
-    calls.push({ path, method: options.method ?? "GET" });
+  breezewayRequest: async (
+    path: string,
+    options: { method?: string; body?: unknown; allowWrite?: boolean; retry?: boolean } = {},
+  ) => {
+    calls.push({ path, method: options.method ?? "GET", body: options.body, allowWrite: options.allowWrite, retry: options.retry });
     return responder(path, options);
   },
 }));
@@ -224,6 +233,20 @@ describe("feature flag and pilot lock", () => {
 });
 
 describe("happy path", () => {
+  it("sends the verified home and task fields with explicit write and no retry", async () => {
+    const result = await createOutboundTask(input("key-payload-000000000"), "actor");
+    expect(result.ok).toBe(true);
+    const sent = calls.find((call) => call.method === "POST");
+    expect(sent?.path).toBe("/task/");
+    expect(sent?.allowWrite).toBe(true);
+    expect(sent?.retry).toBe(false);
+    expect(sent?.body).toMatchObject({
+      home_id: 1473933,
+      name: "Fix the tap",
+      type_department: "maintenance",
+      type_priority: "normal",
+    });
+  });
   it("creates exactly one Breezeway task and records the id", async () => {
     const result = await createOutboundTask(input("key-happy-00000000000"), "actor");
     expect(result.ok).toBe(true);
