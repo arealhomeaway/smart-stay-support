@@ -65,6 +65,16 @@ Status means **code evidence only** unless an explicit isolated test result is l
 
 **Local environment checkpoint:** The repository contains a disposable PGlite PostgreSQL fixture runtime under ignored `.codex-qa.local`. The forward owner-alert migration and dedicated SQL test passed there. Supabase CLI, Docker and `psql` were not available on the command path; no local Supabase Auth/Storage/server stack, captured delivery or synthetic authenticated accounts were verified. Therefore every real-role workflow and property/Storage boundary case below remains **BLOCKED**, not passed: Emily oversight, Micah oversight, James assignment/escalation/reopen, PC intake/classification/Work Order/evidence, vendor isolation, owner isolation, and cross-property direct access. The isolated SQL fixture is migration-runtime evidence only.
 
+| Authenticated acceptance case | Result | Required isolated proof |
+|---|---|---|
+| Emily / Platform Owner oversight and safe delivery | **BLOCKED** | Real Auth, role/RLS, oversight drill-down and captured notifications |
+| Micah / Director oversight and escalation | **BLOCKED** | Director seat, role/RLS, assigned and blocked work, cross-role denial |
+| James / Supervisor assignment, P1–P3 escalation, correction and reopen | **BLOCKED** | Real Auth/RLS transitions, audit actor/time and rejected unauthorized actions |
+| Property Coordinator intake, ownership, Work Order, evidence and completion | **BLOCKED** | Full synthetic authenticated flow, Storage policy and supervisor-only denials |
+| Vendor assigned-work and internal-field boundary | **BLOCKED** | Vendor Auth/RLS with assigned and unrelated synthetic properties |
+| Owner and unrelated-property isolation | **BLOCKED** | Owner Auth/RLS, direct URL/API access and Storage downloads |
+| Breezeway and OwnerRez provider sandbox | **BLOCKED** | Sandboxed credentials, captured outbound delivery and synthetic provider records |
+
 ## Work log
 
 - Deferred checkpoint: seven files committed as `7a7fced` on a separate pushed branch. Launch branch returned to clean `7672770`.
@@ -76,4 +86,5 @@ Status means **code evidence only** unless an explicit isolated test result is l
 - Clean candidate validation: 182 migration filenames, zero duplicate 14-digit versions and zero cleaning migrations; 108 focused isolated tests passed, TypeScript and semantic focused lint passed, production build passed with the required native build permission, and `git diff --check` passed. Generated types retain `breezeway_outbound_tasks.work_order_id`; no native cleaning table reference was found in the generated types.
 - OwnerRez Operations context pass: API responses are filtered to the requested OwnerRez listing before occupancy/guest selection, even when a response contains another property's booking. Ticket snapshot writes are conditional on an empty snapshot timestamp to preserve the first result under concurrent requests. Synthetic fetch and database mocks cover matching, cancelled, cross-property and ambiguous bookings, unmapped property and concurrent snapshot behavior: 11 OwnerRez tests passed, 0 failed across three files. TypeScript, semantic focused lint and production build passed. No OwnerRez request was sent.
 - Breezeway outbound contract extension: the in-memory test now asserts the verified home ID, task title, department and priority in the outbound payload, plus explicit write permission and disabled automatic retry for the non-idempotent POST. All five Breezeway mock suites passed 98/98 tests with zero failures; they cover existing webhook, duplicate, uncertain-outcome and manual-reconciliation behavior. They do not establish live provider sandbox acceptance. TypeScript, semantic focused lint and `git diff --check` passed.
+- Adjacent Operations regression suite passed 100/100 synthetic tests across seven files covering Work Orders, Ticket lifecycle, Property Hub, Team Queue, Oversight and attachment owner boundary. This is isolated code evidence; no real Auth, RLS or Storage policy acceptance was performed.
 - Production Vite build passed. Static filename check found 184 migration files and no duplicate 14-digit version prefix; it identified the three deferred cleaning migrations. Generated types include `breezeway_outbound_tasks.work_order_id`; this is static consistency evidence, not a database test. A pure check confirmed the three maintenance priority maps contain only P1–P3.
