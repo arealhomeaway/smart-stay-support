@@ -1,11 +1,11 @@
 # Onboarding / Active Owner build progress
 
-> **Current rollout — September 17, 2026:** Follow the [practical Lovable launch-candidate checklist](onboarding-active-owner-launch-candidate.md) for current status and the eight primary human workflows. The user now authorizes the existing Lovable/shared backend after backup/export and verified delivery/job pause, including required migrations, preview reconciliation and synthetic testing; this supersedes older isolated-only approval language and checkpoint verdicts below. Preserve completed architecture and privacy protections; only actual launch blockers delay rollout. Application Publish and PR merge remain prohibited. The checklist records the managed backup, pending export approval, partial Outlook pause, narrow approval-notification privacy fix and cloud tests not yet run.
+> **Current shared rollout — September 17, 2026:** **READY FOR AUTHENTICATED ACCEPTANCE / TEAM REVIEW.** Git refs match `eebd9f7`; the existing `c8b4f73` shared client works with applied RPC55 and passed genuine owner approval. All **55 canonical migrations** are applied. **892 tests / 133 files / 3404 assertions**, TypeScript/build, strict 14-file lint and all 55 migration checks PASS. No implementation blocker is identified. Actual Kati/Micah/James stage/handoff acceptance and saved reports remain unaccepted. See the [launch checklist](onboarding-active-owner-launch-candidate.md) for exact preview/containment evidence. No new share link, merge or Publish.
 
 Goal: `onboarding-active-owner-build-goal.md`. Branch: `codex/onboarding-active-owner-build`.
 Base: `e813389`; implementation began from `b6a4376` on September 14, 2026.
 
-> Latest checkpoint: September 16 owner projections, reviewed requests and Onboarding responsibilities (at the end of this file). App validation passes: 835 tests, TypeScript, focused lint and production build. All 48 isolated migrations pass; inventory, runner and manifest match exactly. Verdict remains MORE IMPLEMENTATION REQUIRED; the newest remaining-work list supersedes historical entries.
+> Historical local checkpoint: September 16 owner projections, reviewed requests and Onboarding responsibilities (at the end of this file). App validation passes: 835 tests, TypeScript, focused lint and production build. All 48 isolated migrations pass; inventory, runner and manifest match exactly. Verdict remains MORE IMPLEMENTATION REQUIRED; the newest remaining-work list supersedes historical entries.
 
 ## Source and safety decisions
 
@@ -762,7 +762,7 @@ All 52 requirements are reconciled: **5 PASS, 42 PARTIAL, 1 BLOCKED, 4 NOT YET A
 
 **Emily's first action:** identify/approve that isolated acceptance target and provide its test-role sessions. Keep draft PR #10 unmerged and shared migrations unapplied. The user's reported ledger 01–22 reconciliation and intentional deferral 23–27 remain recorded; 28–54 backend status is unknown.
 
-**Verdict: READY FOR AUTHENTICATED ACCEPTANCE.** Authenticated/full-schema/environment acceptance is now the only major gate. Implementation work stops at this clean verified checkpoint. No merge, deployment/publication, shared/live migration, production account/data change, external delivery or deletion occurred.
+**Historical local verdict: READY FOR AUTHENTICATED ACCEPTANCE.** Authenticated/full-schema/environment acceptance is now the only major gate. Implementation work stops at this clean verified checkpoint. No merge, deployment/publication, shared/live migration, production account/data change, external delivery or deletion occurred.
 
 UNATTENDED-SAFE: YES. APPROVAL-SAFE OVERNIGHT: YES. The authorized local run needed no desktop interaction; blocked optional/external actions were skipped.
 
@@ -772,4 +772,4 @@ Read-only verification confirmed the implementation checkpoint `264b6c68460abaea
 
 The remote preview refs were also verified: `lovable/onboarding-active-owner-livepreview` remains at `f8e0e712057474151098f3ca7b21bdf754a77678`; `lovable/onboarding-active-owner-preview` remains at `626b33a7e751a648d6f05309bd4d851f2e1c3036`. Neither represents the final implementation checkpoint. They were not changed. The complete goal's usable Lovable acceptance-preview requirement is therefore unproven, in addition to the isolated schema/role/storage/browser gates above. Preview alignment or reconciliation needs separate authorization; this audit does not authorize a reset, merge, deployment or shared migration.
 
-The local verdict remains **READY FOR AUTHENTICATED ACCEPTANCE**. The full goal remains open until its acceptance-preview and environment evidence is available. No further independent implementation work is identified in the six-boundary scope.
+At this historical checkpoint, the local verdict was **READY FOR AUTHENTICATED ACCEPTANCE**. The full goal remains open until its acceptance-preview and environment evidence is available. No further independent implementation work is identified in the six-boundary scope.
