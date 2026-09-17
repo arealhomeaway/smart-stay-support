@@ -7,7 +7,16 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { EmptyState, LoadingRows, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
+import { Button } from "@/components/ui/button";
+import {
+  EmptyState,
+  LoadingRows,
+  PageHeader,
+  SectionCard,
+  StatTile,
+  SegmentedControl,
+} from "@/components/ui/page";
+import { usDate } from "@/lib/dates";
 import {
   WorkOrderRowCard,
   useWorkOrderPropertyNames,
@@ -34,6 +43,9 @@ import {
 import type { WorkOrderRow } from "@/lib/work-order-types";
 
 export const Route = createFileRoute("/_authenticated/work-orders/")({
+  validateSearch: (raw: Record<string, unknown>) => ({
+    view: raw["view"] === "scheduled" ? ("scheduled" as const) : undefined,
+  }),
   component: WorkOrdersHome,
 });
 
@@ -49,6 +61,8 @@ const BUCKET_HELP: Record<WorkOrderBucket, string> = {
 };
 
 function WorkOrdersHome() {
+  const navigate = Route.useNavigate();
+  const view = Route.useSearch().view === "scheduled" ? "scheduled" : "action";
   const workOrders = useWorkOrders();
   const requirements = useWorkOrderRequirements();
   const propertyNames = useWorkOrderPropertyNames();
@@ -89,12 +103,55 @@ function WorkOrdersHome() {
 
   const open = (workOrders.data ?? []).filter(isOpenWorkOrder);
   const committed = open.reduce((sum, w) => sum + (w.approved_amount ?? w.quote_amount ?? 0), 0);
+  const scheduled = useMemo(() => {
+    const rows = (workOrders.data ?? [])
+      .filter((row) => isOpenWorkOrder(row) && (row.scheduled_for || row.vendor_eta_at))
+      .sort((a, b) =>
+        (a.scheduled_for ?? a.vendor_eta_at ?? "").localeCompare(
+          b.scheduled_for ?? b.vendor_eta_at ?? "",
+        ),
+      );
+    const dates = new Map<string, WorkOrderRow[]>();
+    for (const row of rows) {
+      const date = (row.scheduled_for ?? row.vendor_eta_at ?? "").slice(0, 10);
+      dates.set(date, [...(dates.get(date) ?? []), row]);
+    }
+    return dates;
+  }, [workOrders.data]);
+
+  const renderRow = (row: WorkOrderRow) => (
+    <WorkOrderRowCard
+      key={row.id}
+      workOrder={row}
+      requirements={reqMap.get(row.id) ?? []}
+      propertyName={propertyNames.data?.get(row.property_id ?? "") ?? "Property unlinked"}
+      propertyPhotoUrl={propertyPhotos.get(row.property_id ?? "") ?? null}
+      ownerName={nameFor(row.assigned_to)}
+      canEdit={!readOnly}
+      onOpen={() => setOpenId(row.id)}
+    />
+  );
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="Work orders"
         description="Today's queue — maintenance execution, ordered by what is still unresolved. Work orders start on the ticket where the issue was reported."
+      />
+
+      <SegmentedControl
+        ariaLabel="Work order view"
+        value={view}
+        onChange={(value) =>
+          void navigate({
+            search: { view: value === "scheduled" ? "scheduled" : undefined },
+            replace: true,
+          })
+        }
+        options={[
+          { value: "action", label: "Action list" },
+          { value: "scheduled", label: "Scheduled work" },
+        ]}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -108,13 +165,36 @@ function WorkOrdersHome() {
         <StatTile label="Committed spend, open" value={money(committed)} />
       </div>
 
-      {workOrders.isLoading ? (
+      {workOrders.isError ? (
+        <EmptyState
+          title="Work orders could not be loaded"
+          hint="Try again before relying on this schedule."
+          action={<Button onClick={() => void workOrders.refetch()}>Try again</Button>}
+        />
+      ) : workOrders.isLoading ? (
         <LoadingRows />
       ) : open.length === 0 && (buckets.get("closed")?.length ?? 0) === 0 ? (
         <EmptyState
           title="No work orders open"
           hint="Create one from the ticket where the maintenance issue was reported."
         />
+      ) : view === "scheduled" ? (
+        scheduled.size === 0 ? (
+          <EmptyState
+            title="No work orders scheduled"
+            hint="Set a schedule or vendor arrival time on an open work order to see it here."
+          />
+        ) : (
+          [...scheduled.entries()].map(([date, rows]) => (
+            <SectionCard
+              key={date}
+              title={usDate(date)}
+              description={`${rows.length} work order${rows.length === 1 ? "" : "s"}`}
+            >
+              <div className="space-y-2">{rows.map(renderRow)}</div>
+            </SectionCard>
+          ))
+        )
       ) : (
         BUCKET_ORDER.map((bucket) => {
           const rows = buckets.get(bucket) ?? [];
@@ -125,22 +205,7 @@ function WorkOrdersHome() {
               title={BUCKET_LABELS[bucket]}
               description={BUCKET_HELP[bucket]}
             >
-              <div className="space-y-2">
-                {rows.map((row) => (
-                  <WorkOrderRowCard
-                    key={row.id}
-                    workOrder={row}
-                    requirements={reqMap.get(row.id) ?? []}
-                    propertyName={
-                      propertyNames.data?.get(row.property_id ?? "") ?? "Property unlinked"
-                    }
-                    propertyPhotoUrl={propertyPhotos.get(row.property_id ?? "") ?? null}
-                    ownerName={nameFor(row.assigned_to)}
-                    canEdit={!readOnly}
-                    onOpen={() => setOpenId(row.id)}
-                  />
-                ))}
-              </div>
+              <div className="space-y-2">{rows.map(renderRow)}</div>
             </SectionCard>
           );
         })

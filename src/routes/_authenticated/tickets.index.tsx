@@ -266,6 +266,7 @@ function TicketsPage() {
                       ownerName={
                         currentOwnerId(t) ? displayName(people.get(currentOwnerId(t) ?? "")) : null
                       }
+                      viewerId={userId}
                       originSearch={originSearch}
                     />
                   ))}
@@ -283,6 +284,7 @@ function TicketsPage() {
               ownerName={
                 currentOwnerId(t) ? displayName(people.get(currentOwnerId(t) ?? "")) : null
               }
+              viewerId={userId}
               originSearch={originSearch}
             />
           ))}
@@ -391,16 +393,19 @@ function nextActionLabel(t: {
 function TicketWorkCard({
   t,
   ownerName,
+  viewerId,
   originSearch,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
   ownerName: string | null;
+  viewerId: string | null;
   originSearch: { from: string };
 }) {
   const sla = slaState(t);
   const live =
     sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
+  const nextOwnerIsViewer = Boolean(viewerId && currentOwnerId(t) === viewerId);
 
   return (
     <Link
@@ -433,10 +438,16 @@ function TicketWorkCard({
           {t.work_types?.name ?? t.category}
         </p>
         <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm">
-          <span className="font-medium text-primary">{nextActionLabel(t)}</span>
+          <span className="font-medium text-primary">
+            {!nextOwnerIsViewer && t.pending_handoff_to !== viewerId
+              ? "Track next step"
+              : nextActionLabel(t)}
+          </span>
           <span className="text-muted-foreground">·</span>
           {ownerName ? (
-            <span className="text-foreground">{ownerName}</span>
+            <span className="text-foreground">
+              {nextOwnerIsViewer ? "You own the next action" : `Next action owner: ${ownerName}`}
+            </span>
           ) : (
             <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
           )}
