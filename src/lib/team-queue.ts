@@ -21,6 +21,8 @@ export type TeamQueueFilters = {
   status: string;
   property: string;
   market: string;
+  city: string;
+  state: string;
   workType: string;
   due: string;
   /** "all" | "today" | "3d" | "7d" | "older" */
@@ -41,6 +43,8 @@ export const DEFAULT_TEAM_QUEUE_FILTERS: TeamQueueFilters = {
   status: "active",
   property: "all",
   market: "all",
+  city: "all",
+  state: "all",
   workType: "all",
   due: "all",
   age: "all",
@@ -76,7 +80,12 @@ export type TeamQueueTicket = {
   status: string;
   property_id?: string | null;
   work_type_id?: string | null;
-  properties?: { market?: string | null; name?: string | null } | null;
+  properties?: {
+    market?: string | null;
+    city?: string | null;
+    state?: string | null;
+    name?: string | null;
+  } | null;
   reported_at?: string | null;
   next_review_at?: string | null;
   waiting_on?: string | null;
@@ -133,6 +142,8 @@ export function applyTeamQueueFilters(
     if (filters.priority !== "all" && t.priority !== filters.priority) return false;
     if (filters.property !== "all" && t.property_id !== filters.property) return false;
     if (filters.market !== "all" && t.properties?.market !== filters.market) return false;
+    if (filters.city !== "all" && t.properties?.city !== filters.city) return false;
+    if (filters.state !== "all" && t.properties?.state !== filters.state) return false;
     if (filters.workType !== "all" && t.work_type_id !== filters.workType) return false;
 
     if (filters.due !== "all") {
@@ -193,6 +204,8 @@ export function activeFilterCount(f: TeamQueueFilters) {
   if (f.status !== "active") n++;
   if (f.property !== "all") n++;
   if (f.market !== "all") n++;
+  if (f.city !== "all") n++;
+  if (f.state !== "all") n++;
   if (f.workType !== "all") n++;
   if (f.due !== "all") n++;
   if (f.age !== "all") n++;

@@ -72,6 +72,8 @@ export const Route = createFileRoute("/_authenticated/team-queue")({
       "status",
       "property",
       "market",
+      "city",
+      "state",
       "workType",
       "due",
       "age",
@@ -103,6 +105,8 @@ function TeamQueuePage() {
     status: params["status"] ?? "active",
     property: params["property"] ?? "all",
     market: params["market"] ?? "all",
+    city: params["city"] ?? "all",
+    state: params["state"] ?? "all",
     workType: params["workType"] ?? "all",
     due: params["due"] ?? "all",
     age: params["age"] ?? "all",
@@ -141,7 +145,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname, market), work_types(name)")
+        .select("*, properties(name, nickname, market, city, state), work_types(name)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -173,6 +177,24 @@ function TeamQueuePage() {
       [
         ...new Set(
           all.map((t) => t.properties?.market).filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [all],
+  );
+  const cities = useMemo(
+    () =>
+      [
+        ...new Set(
+          all.map((t) => t.properties?.city).filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [all],
+  );
+  const states = useMemo(
+    () =>
+      [
+        ...new Set(
+          all.map((t) => t.properties?.state).filter((value): value is string => Boolean(value)),
         ),
       ].sort(),
     [all],
@@ -255,6 +277,8 @@ function TeamQueuePage() {
                   status: undefined,
                   property: undefined,
                   market: undefined,
+                  city: undefined,
+                  state: undefined,
                   workType: undefined,
                   due: undefined,
                   age: undefined,
@@ -402,6 +426,24 @@ function TeamQueuePage() {
                 options={[
                   { value: "all", label: "Any type" },
                   ...workTypes.map(([value, label]) => ({ value, label })),
+                ]}
+              />
+              <FilterSelect
+                label="City"
+                value={filters.city}
+                onChange={(v) => setParam({ city: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any city" },
+                  ...cities.map((city) => ({ value: city, label: city })),
+                ]}
+              />
+              <FilterSelect
+                label="State"
+                value={filters.state}
+                onChange={(v) => setParam({ state: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any state" },
+                  ...states.map((state) => ({ value: state, label: state })),
                 ]}
               />
               <FilterSelect
