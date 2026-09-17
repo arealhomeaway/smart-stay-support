@@ -71,6 +71,9 @@ export const Route = createFileRoute("/_authenticated/team-queue")({
       "priority",
       "status",
       "property",
+      "market",
+      "workType",
+      "due",
       "age",
       "flags",
       "q",
@@ -99,6 +102,9 @@ function TeamQueuePage() {
     priority: params["priority"] ?? "all",
     status: params["status"] ?? "active",
     property: params["property"] ?? "all",
+    market: params["market"] ?? "all",
+    workType: params["workType"] ?? "all",
+    due: params["due"] ?? "all",
     age: params["age"] ?? "all",
     waiting: flags.has("waiting"),
     unassigned: flags.has("unassigned"),
@@ -132,7 +138,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname), work_types(name)")
+        .select("*, properties(name, nickname, market), work_types(name)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -157,6 +163,23 @@ function TeamQueuePage() {
       if (t.property_id)
         map.set(t.property_id, t.properties?.nickname ?? t.properties?.name ?? "Property");
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [all]);
+
+  const markets = useMemo(
+    () =>
+      [
+        ...new Set(
+          all.map((t) => t.properties?.market).filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [all],
+  );
+  const workTypes = useMemo(() => {
+    const types = new Map<string, string>();
+    for (const ticket of all)
+      if (ticket.work_type_id && ticket.work_types?.name)
+        types.set(ticket.work_type_id, ticket.work_types.name);
+    return [...types.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [all]);
 
   const owners = useMemo(() => {
@@ -228,6 +251,9 @@ function TeamQueuePage() {
                   priority: undefined,
                   status: undefined,
                   property: undefined,
+                  market: undefined,
+                  workType: undefined,
+                  due: undefined,
                   age: undefined,
                   flags: undefined,
                   q: undefined,
@@ -351,6 +377,36 @@ function TeamQueuePage() {
                 value={filters.age}
                 onChange={(v) => setParam({ age: v === "all" ? undefined : v })}
                 options={AGE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              />
+              <FilterSelect
+                label="Market"
+                value={filters.market}
+                onChange={(v) => setParam({ market: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any market" },
+                  ...markets.map((market) => ({ value: market, label: market })),
+                ]}
+              />
+              <FilterSelect
+                label="Work type"
+                value={filters.workType}
+                onChange={(v) => setParam({ workType: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any type" },
+                  ...workTypes.map(([value, label]) => ({ value, label })),
+                ]}
+              />
+              <FilterSelect
+                label="Next due"
+                value={filters.due}
+                onChange={(v) => setParam({ due: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any date" },
+                  { value: "overdue", label: "Overdue" },
+                  { value: "today", label: "Today" },
+                  { value: "next7", label: "Next 7 days" },
+                  { value: "unscheduled", label: "No date" },
+                ]}
               />
             </div>
             <Input

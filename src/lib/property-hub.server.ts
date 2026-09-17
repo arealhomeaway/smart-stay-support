@@ -168,97 +168,87 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
   }
   const owns = !staff;
 
+  const [tasks, tickets, docs, approvals, handoff, programLink, outbound, links, conflicts] =
+    await Promise.all([
+      supabaseAdmin
+        .from("onboarding_tasks")
+        .select(
+          "id, title, stage, status, due_on, blocks_handoff, blocker, requires_owner_approval, owner_approval_status, assigned_to, parent_task_id, sort_order, archived_at",
+        )
+        .eq("property_id", propertyId)
+        .eq("is_demo", p.is_demo)
+        .is("archived_at", null)
+        .order("sort_order"),
+      supabaseAdmin
+        .from("tickets")
+        .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
+        .eq("property_id", propertyId)
+        .eq("is_demo", p.is_demo)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin
+        .from("documents")
+        .select(
+          "id, title, kind, visibility, upload_status, uploaded_at, uploaded_by, entity_type, entity_id, property_id, mime_type, size_bytes, category, original_filename, note, requested_from, is_demo, archived_at",
+        )
 
-  const [
-    tasks,
-    tickets,
-    docs,
-    approvals,
-    handoff,
-    programLink,
-    outbound,
-    links,
-    conflicts,
-  ] = await Promise.all([
-    supabaseAdmin
-      .from("onboarding_tasks")
-      .select(
-        "id, title, stage, status, due_on, blocks_handoff, blocker, requires_owner_approval, owner_approval_status, assigned_to, parent_task_id, sort_order, archived_at",
-      )
-      .eq("property_id", propertyId)
-      .eq("is_demo", p.is_demo)
-      .is("archived_at", null)
-      .order("sort_order"),
-    supabaseAdmin
-      .from("tickets")
-      .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
-      .eq("property_id", propertyId)
-      .eq("is_demo", p.is_demo)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(25),
-    supabaseAdmin
-      .from("documents")
-      .select(
-        "id, title, kind, visibility, upload_status, uploaded_at, uploaded_by, entity_type, entity_id, property_id, mime_type, size_bytes, category, original_filename, note, requested_from, is_demo, archived_at",
-      )
-
-      .eq("property_id", propertyId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(50),
-    supabaseAdmin
-      .from("approvals")
-      .select("id, title, kind, status, due_on, decided_at, decision_note, created_at")
-      .eq("property_id", propertyId)
-      .eq("is_demo", p.is_demo)
-      .order("created_at", { ascending: false })
-      .limit(25),
-    supabaseAdmin
-      .from("property_handoffs")
-      .select(
-        "id, status, gate_step, requested_at, kati_decision, kati_at, micah_decision, micah_at, accepted_at, live_confirmed_at",
-      )
-      .eq("property_id", propertyId)
-      .eq("is_demo", p.is_demo)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1),
-    staff
-      ? supabaseAdmin
-          .from("owner_program_properties")
-          .select(
-            "program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)",
-          )
-          .eq("property_id", propertyId)
-          .is("archived_at", null)
-          .limit(1)
-      : Promise.resolve({ data: [], error: null }),
-    staff
-      ? supabaseAdmin
-          .from("breezeway_outbound_tasks")
-          .select("id, title, status, source_type, created_at, breezeway_task_id, last_synced_at")
-          .eq("property_id", propertyId)
-          .order("created_at", { ascending: false })
-          .limit(15)
-      : Promise.resolve({ data: [], error: null }),
-    staff
-      ? supabaseAdmin
-          .from("property_external_links")
-          .select(
-            "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
-          )
-          .eq("property_id", propertyId)
-      : Promise.resolve({ data: [], error: null }),
-    staff
-      ? supabaseAdmin
-          .from("field_conflicts")
-          .select("id, field_label, field_key, resolve_value, external_value, system, status")
-          .eq("entity_type", "property")
-          .eq("entity_id", propertyId)
-          .eq("status", "open")
-      : Promise.resolve({ data: [], error: null }),
-  ]);
+        .eq("property_id", propertyId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabaseAdmin
+        .from("approvals")
+        .select("id, title, kind, status, due_on, decided_at, decision_note, created_at")
+        .eq("property_id", propertyId)
+        .eq("is_demo", p.is_demo)
+        .order("created_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin
+        .from("property_handoffs")
+        .select(
+          "id, status, gate_step, requested_at, kati_decision, kati_at, micah_decision, micah_at, accepted_at, live_confirmed_at",
+        )
+        .eq("property_id", propertyId)
+        .eq("is_demo", p.is_demo)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1),
+      staff
+        ? supabaseAdmin
+            .from("owner_program_properties")
+            .select(
+              "program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)",
+            )
+            .eq("property_id", propertyId)
+            .is("archived_at", null)
+            .limit(1)
+        : Promise.resolve({ data: [], error: null }),
+      staff
+        ? supabaseAdmin
+            .from("breezeway_outbound_tasks")
+            .select("id, title, status, source_type, created_at, breezeway_task_id, last_synced_at")
+            .eq("property_id", propertyId)
+            .order("created_at", { ascending: false })
+            .limit(15)
+        : Promise.resolve({ data: [], error: null }),
+      staff
+        ? supabaseAdmin
+            .from("property_external_links")
+            .select(
+              "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
+            )
+            .eq("property_id", propertyId)
+        : Promise.resolve({ data: [], error: null }),
+      staff
+        ? supabaseAdmin
+            .from("field_conflicts")
+            .select("id, field_label, field_key, resolve_value, external_value, system, status")
+            .eq("entity_type", "property")
+            .eq("entity_id", propertyId)
+            .eq("status", "open")
+        : Promise.resolve({ data: [], error: null }),
+    ]);
 
   // Quarterly reviews ship behind a launch-state flag. While the flag is OFF
   // the records and scheduler stay untouched, but the Hub must not surface a
