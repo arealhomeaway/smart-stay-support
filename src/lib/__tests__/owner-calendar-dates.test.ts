@@ -1,11 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { usCalendarDate } from "../dates";
+import { usCalendarDate, usDate } from "../dates";
 
-describe("Active Owner calendar-date labels", () => {
+describe("Active Owner and Onboarding calendar-date labels", () => {
   it("preserves enrollment, closing, program and participation dates", () => {
     for (const [value, label] of [
       ["2026-09-17", "09/17/2026"],
+      ["2026-10-01", "10/01/2026"],
       ["2026-01-01", "01/01/2026"],
       ["2026-03-08", "03/08/2026"],
       ["2026-11-01", "11/01/2026"],
@@ -13,7 +14,15 @@ describe("Active Owner calendar-date labels", () => {
       ["2026-12-31", "12/31/2026"],
     ] as const) {
       expect(usCalendarDate(value)).toBe(label);
+      expect(usDate(value)).toBe(label);
     }
+  });
+
+  it("preserves generic date fallbacks for missing and invalid values", () => {
+    for (const value of [null, undefined, "", "invalid", "2026-02-30", NaN, new Date(NaN)]) {
+      expect(usDate(value, "Not set")).toBe("Not set");
+    }
+    expect(usDate(null)).toBe("—");
   });
 
   it("uses the supplied fallback for missing or invalid calendar dates", () => {
@@ -38,7 +47,11 @@ describe("Active Owner calendar-date labels", () => {
         process.stdout.write(JSON.stringify({
           closing: usCalendarDate("2026-09-17"),
           yearStart: usCalendarDate("2026-01-01"),
+          handoff: usDate("2026-10-01"),
+          genericYearStart: usDate("2026-01-01"),
           timestampDate: usDate(timestamp),
+          dateObject: usDate(new Date(timestamp)),
+          epochNumber: usDate(Date.parse(timestamp)),
           timestampDateTime: usDateTime(timestamp),
         }));
       `;
@@ -51,7 +64,11 @@ describe("Active Owner calendar-date labels", () => {
       expect(JSON.parse(result.stdout)).toEqual({
         closing: "09/17/2026",
         yearStart: "01/01/2026",
+        handoff: "10/01/2026",
+        genericYearStart: "01/01/2026",
         timestampDate,
+        dateObject: timestampDate,
+        epochNumber: timestampDate,
         timestampDateTime: `${timestampDate} · ${timestampTime}`,
       });
     });
