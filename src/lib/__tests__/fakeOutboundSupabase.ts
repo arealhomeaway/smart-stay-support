@@ -25,6 +25,8 @@ export function createFakeOutboundStore() {
     workOrders: [] as Row[],
     nextId: 1,
     failNextOutboundUpdate: 0,
+    failNextWorkOrderInsert: 0,
+    raceNextWorkOrderInsert: 0,
   };
 
   function tableRows(table: string): Row[] {
@@ -38,6 +40,15 @@ export function createFakeOutboundStore() {
   }
 
   function insertWorkOrder(payload: Row) {
+    if (state.raceNextWorkOrderInsert > 0) {
+      state.raceNextWorkOrderInsert -= 1;
+      state.workOrders.push({ id: `wo-${state.nextId++}`, closed_at: null, ...payload });
+      return { data: null, error: { code: "23505", message: "concurrent Work Order" } };
+    }
+    if (state.failNextWorkOrderInsert > 0) {
+      state.failNextWorkOrderInsert -= 1;
+      return { data: null, error: { code: "53300", message: "simulated Work Order failure" } };
+    }
     const row: Row = { id: `wo-${state.nextId++}`, closed_at: null, ...payload };
     state.workOrders.push(row);
     return { data: row, error: null };
@@ -231,6 +242,12 @@ export function createFakeOutboundStore() {
     failNextUpdate: (n = 1) => {
       state.failNextOutboundUpdate = n;
     },
+    failNextWorkOrderInsert: (n = 1) => {
+      state.failNextWorkOrderInsert = n;
+    },
+    raceNextWorkOrderInsert: (n = 1) => {
+      state.raceNextWorkOrderInsert = n;
+    },
     reset: () => {
       state.flags = [];
       state.tickets = [];
@@ -240,6 +257,8 @@ export function createFakeOutboundStore() {
       state.workOrders = [];
       state.nextId = 1;
       state.failNextOutboundUpdate = 0;
+      state.failNextWorkOrderInsert = 0;
+      state.raceNextWorkOrderInsert = 0;
     },
   };
 }

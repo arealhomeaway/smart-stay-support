@@ -408,6 +408,9 @@ export async function createOutboundTask(
       .eq("ticket_id", input.sourceId)
       .is("closed_at", null)
       .maybeSingle();
+    if (openWo.error) {
+      return { ok: false, message: "Could not verify the ticket's open Resolve Work Order." };
+    }
     if (openWo.data) {
       workOrderId = openWo.data.id;
     } else {
@@ -434,10 +437,25 @@ export async function createOutboundTask(
         })
         .select("id")
         .single();
-      // A racing request may have opened one first — that's fine, this send
-      // still proceeds and simply isn't linked to a Work Order this instant;
-      // the ticket's Work Order panel is unaffected either way.
-      if (!createdWo.error) workOrderId = createdWo.data.id;
+      if (!createdWo.error) {
+        workOrderId = createdWo.data.id;
+      } else if (createdWo.error.code === "23505") {
+        // A concurrent action may have created the one open Work Order. Re-read
+        // its canonical id, and refuse dispatch if that link is still uncertain.
+        const racedWo = await db
+          .from("work_orders")
+          .select("id")
+          .eq("ticket_id", input.sourceId)
+          .is("closed_at", null)
+          .maybeSingle();
+        if (!racedWo.error) workOrderId = racedWo.data?.id ?? null;
+      }
+    }
+    if (!workOrderId) {
+      return {
+        ok: false,
+        message: "Could not confirm a canonical Resolve Work Order. Nothing was sent to Breezeway.",
+      };
     }
   }
 
