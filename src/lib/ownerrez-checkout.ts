@@ -113,8 +113,7 @@ export type CleanerEligibility = {
   effectiveTo?: string | null;
 };
 export type AssignmentDecision =
-  | { kind: "property_default" | "market_fallback"; cleanerId: string }
-  | { kind: "unassigned"; atRisk: true };
+  { kind: "property_default"; cleanerId: string } | { kind: "unassigned"; atRisk: true };
 
 export function selectCleaner(
   cleaners: readonly CleanerEligibility[],
@@ -143,10 +142,33 @@ export function selectCleaner(
     .filter((cleaner) => cleaner.defaultPropertyIds.includes(propertyId))
     .sort(byPriority)[0];
   if (specific) return { kind: "property_default", cleanerId: specific.id };
-  const fallback = eligible.sort(byPriority)[0];
-  return fallback
-    ? { kind: "market_fallback", cleanerId: fallback.id }
-    : { kind: "unassigned", atRisk: true };
+  return { kind: "unassigned", atRisk: true };
+}
+
+/** Market eligibility provides human dispatch choices, not an automatic default. */
+export function manualCleanerChoices(
+  cleaners: readonly CleanerEligibility[],
+  propertyId: string,
+  canonicalMarket: string | null,
+  serviceType: string,
+  workAt: string,
+): CleanerEligibility[] {
+  if (!canonicalMarket?.trim()) return [];
+  const when = Date.parse(workAt);
+  if (!Number.isFinite(when)) throw new Error("Work time is invalid.");
+  return cleaners
+    .filter(
+      (cleaner) =>
+        cleaner.active &&
+        cleaner.verificationStatus === "verified" &&
+        cleaner.eligibleMarkets.includes(canonicalMarket) &&
+        cleaner.serviceTypes.includes(serviceType) &&
+        (!cleaner.eligiblePropertyIds.length || cleaner.eligiblePropertyIds.includes(propertyId)) &&
+        (!cleaner.blackoutUntil || Date.parse(cleaner.blackoutUntil) < when) &&
+        (!cleaner.effectiveFrom || Date.parse(cleaner.effectiveFrom) <= when) &&
+        (!cleaner.effectiveTo || Date.parse(cleaner.effectiveTo) >= when),
+    )
+    .sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id));
 }
 
 export function acceptanceDeadlineResult(

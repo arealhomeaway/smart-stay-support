@@ -13,7 +13,7 @@ CREATE UNIQUE INDEX cleaning_turnovers_ownerrez_booking_unique ON public.cleanin
 
 ALTER TABLE public.cleaning_tasks
   ADD COLUMN cleaner_eligibility_id uuid,
-  ADD COLUMN assignment_route text CHECK (assignment_route IN ('property_default','market_fallback','unassigned')),
+  ADD COLUMN assignment_route text CHECK (assignment_route IN ('property_default','unassigned')),
   ADD COLUMN assignment_at_risk boolean NOT NULL DEFAULT false,
   ADD COLUMN acceptance_deadline_at timestamptz;
 ALTER TABLE public.cleaning_task_events ALTER COLUMN actor_id DROP NOT NULL;
@@ -224,12 +224,12 @@ BEGIN
       WHERE c.active AND c.verification_status='VERIFIED'
         AND property_row.market=ANY(c.eligible_markets)
         AND 'departure'=ANY(c.service_types)
+        AND property_row.id=ANY(c.default_property_ids)
         AND (cardinality(c.eligible_property_ids)=0 OR property_row.id=ANY(c.eligible_property_ids))
         AND (c.blackout_until IS NULL OR c.blackout_until<checkout_time)
         AND (c.effective_from IS NULL OR c.effective_from<=checkout_time)
         AND (c.effective_to IS NULL OR c.effective_to>=checkout_time)
-      ORDER BY CASE WHEN property_row.id=ANY(c.default_property_ids) THEN 0 ELSE 1 END,
-               c.backup_priority,c.id LIMIT 1;
+      ORDER BY c.backup_priority,c.id LIMIT 1;
     INSERT INTO public.cleaning_tasks
       (turnover_id,property_id,template_ref_id,task_kind,state,assigned_user_id,
        assigned_vendor_org_id,cleaner_eligibility_id,assignment_route,assignment_at_risk,
@@ -237,9 +237,7 @@ BEGIN
     VALUES (turnover_row.id,property_row.id,template_row.id,'departure',
       CASE WHEN cleaner_row.id IS NULL THEN 'scheduled' WHEN cleaner_row.acceptance_required THEN 'offered' ELSE 'accepted' END,
       cleaner_row.internal_user_id,cleaner_row.external_vendor_org_id,cleaner_row.id,
-      CASE WHEN cleaner_row.id IS NULL THEN 'unassigned'
-           WHEN property_row.id=ANY(cleaner_row.default_property_ids) THEN 'property_default'
-           ELSE 'market_fallback' END,
+      CASE WHEN cleaner_row.id IS NULL THEN 'unassigned' ELSE 'property_default' END,
       cleaner_row.id IS NULL,
       CASE WHEN cleaner_row.acceptance_required AND cleaner_row.acceptance_window IS NOT NULL
            THEN now()+cleaner_row.acceptance_window ELSE NULL END,

@@ -26,6 +26,7 @@ import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/j
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedOperationsSandboxRouteImport } from './routes/_authenticated/operations-sandbox'
 import { Route as AuthenticatedOpsAnalyticsRouteImport } from './routes/_authenticated/ops-analytics'
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
@@ -161,6 +162,12 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOperationsSandboxRoute =
+  AuthenticatedOperationsSandboxRouteImport.update({
+    id: '/operations-sandbox',
+    path: '/operations-sandbox',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOpsAnalyticsRoute =
   AuthenticatedOpsAnalyticsRouteImport.update({
     id: '/ops-analytics',
@@ -448,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/map': typeof AuthenticatedMapRoute
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/operations-sandbox': typeof AuthenticatedOperationsSandboxRoute
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
@@ -511,6 +519,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
+  '/operations-sandbox': typeof AuthenticatedOperationsSandboxRoute
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
@@ -577,6 +586,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
+  '/_authenticated/operations-sandbox': typeof AuthenticatedOperationsSandboxRoute
   '/_authenticated/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/map'
     | '/onboarding'
+    | '/operations-sandbox'
     | '/ops-analytics'
     | '/oversight'
     | '/owner'
@@ -708,6 +719,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/join'
     | '/map'
+    | '/operations-sandbox'
     | '/ops-analytics'
     | '/oversight'
     | '/owner'
@@ -773,6 +785,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/map'
     | '/_authenticated/onboarding'
+    | '/_authenticated/operations-sandbox'
     | '/_authenticated/ops-analytics'
     | '/_authenticated/oversight'
     | '/_authenticated/owner'
@@ -959,6 +972,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/operations-sandbox': {
+      id: '/_authenticated/operations-sandbox'
+      path: '/operations-sandbox'
+      fullPath: '/operations-sandbox'
+      preLoaderRoute: typeof AuthenticatedOperationsSandboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ops-analytics': {
@@ -1403,6 +1423,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRouteWithChildren
+  AuthenticatedOperationsSandboxRoute: typeof AuthenticatedOperationsSandboxRoute
   AuthenticatedOpsAnalyticsRoute: typeof AuthenticatedOpsAnalyticsRoute
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
@@ -1440,6 +1461,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRouteWithChildren,
+  AuthenticatedOperationsSandboxRoute: AuthenticatedOperationsSandboxRoute,
   AuthenticatedOpsAnalyticsRoute: AuthenticatedOpsAnalyticsRoute,
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,

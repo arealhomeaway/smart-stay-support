@@ -4,6 +4,7 @@ import {
   acceptanceDeadlineResult,
   deriveSupervisorDailyCounts,
   eventIdempotencyKey,
+  manualCleanerChoices,
   planCheckoutEvent,
   selectCleaner,
   turnoverKey,
@@ -99,9 +100,13 @@ test("verified default wins; unverified and blacked-out cleaners never dispatch"
     cleanerId: "default",
   });
   assert.deepEqual(selectCleaner(candidates, "p2", "OKC", "departure", event.checkoutAt), {
-    kind: "market_fallback",
-    cleanerId: "fallback",
+    kind: "unassigned",
+    atRisk: true,
   });
+  assert.deepEqual(
+    manualCleanerChoices(candidates, "p2", "OKC", "departure", event.checkoutAt).map((x) => x.id),
+    ["fallback", "default"],
+  );
   assert.deepEqual(selectCleaner(candidates, "p1", null, "departure", event.checkoutAt), {
     kind: "unassigned",
     atRisk: true,

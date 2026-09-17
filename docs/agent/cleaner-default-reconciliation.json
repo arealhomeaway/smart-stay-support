@@ -1,0 +1,23 @@
+{
+  "purpose": "James or Micah verifies current Breezeway property-default assignments before any automatic cleaning assignment.",
+  "authoritative_source": "Current verified Breezeway property-default assignment configuration",
+  "verification_status": "NEEDS VERIFICATION",
+  "rows": [],
+  "row_schema": {
+    "canonical_property_id": "Resolve property UUID",
+    "property_name_address_for_review": "Human-readable property identity; never used for matching",
+    "canonical_market": "Resolve properties.market value",
+    "breezeway_property_id": "Current Breezeway property ID",
+    "current_default_cleaner": "Current default cleaner or company display name",
+    "cleaner_vendor_identifier": "Verified Resolve user or vendor organization ID",
+    "backup_cleaner_identifier": "Only if formally designated; otherwise null",
+    "service_type": "departure, inspection or vacancy",
+    "effective_date": "ISO date",
+    "source": "Current Breezeway property-default configuration and source record reference",
+    "verified_by": "Resolve user ID of James or Micah",
+    "verification_date": "ISO date and time",
+    "notes": "Review notes or discrepancies",
+    "active_status": "active or inactive"
+  },
+  "import_rule": "Rows without a current Breezeway default source, verifier and verification date remain unverified and may not dispatch work automatically. Market eligibility is only a manual choice filter."
+}
