@@ -64,6 +64,7 @@ export type TemplatePreview = {
   propertyId: string;
   templateKey: string;
   toCreate: { key: string; stage: string; title: string; dueOn: string | null; subtasks: number }[];
+  subtasksToCreate: number;
   skipped: { title: string; reason: string }[];
   anchors: {
     planned_closing: string | null;
@@ -96,7 +97,9 @@ async function loadContext(supabase: Client, propertyId: string) {
 
   const existing = await supabase
     .from("onboarding_tasks")
-    .select("id, title, stage, parent_task_id")
+    .select(
+      "id, title, stage, parent_task_id, detail, due_on, requires_owner_approval, owner_approval_status",
+    )
     .eq("property_id", propertyId)
     .is("archived_at", null);
   if (existing.error) throw existing.error;
@@ -117,7 +120,7 @@ async function loadContext(supabase: Client, propertyId: string) {
   const parentIdByKey = new Map(
     rows.filter((t) => !t.parent_task_id).map((t) => [taskKey(t.stage, t.title), t.id] as const),
   );
-  return { property: property.data, anchors, taken, takenSubs, parentIdByKey };
+  return { property: property.data, anchors, taken, takenSubs, parentIdByKey, existing: rows };
 }
 
 function dueFor(t: TemplateTask, anchors: TemplatePreview["anchors"]) {
@@ -132,11 +135,19 @@ export async function previewOnboardingTemplate(
   input: { propertyId: string },
 ): Promise<TemplatePreview> {
   await assertOnboardingStaff(supabase, userId);
-  const { anchors, taken } = await loadContext(supabase, input.propertyId);
+  const { anchors, taken, takenSubs, parentIdByKey } = await loadContext(
+    supabase,
+    input.propertyId,
+  );
 
   const toCreate: TemplatePreview["toCreate"] = [];
   const skipped: TemplatePreview["skipped"] = [];
+  let subtasksToCreate = 0;
   for (const t of FULL_FURNISHING_TEMPLATE) {
+    const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
+    subtasksToCreate += (t.subtasks ?? []).filter(
+      (title) => !parentId || !takenSubs.has(subKey(parentId, title)),
+    ).length;
     if (taken.has(taskKey(t.stage, t.title))) {
       skipped.push({ title: t.title, reason: "Already on this property" });
       continue;
@@ -149,16 +160,24 @@ export async function previewOnboardingTemplate(
       subtasks: t.subtasks?.length ?? 0,
     });
   }
-  return { propertyId: input.propertyId, templateKey: TEMPLATE_KEY, toCreate, skipped, anchors };
+  return {
+    propertyId: input.propertyId,
+    templateKey: TEMPLATE_KEY,
+    toCreate,
+    subtasksToCreate,
+    skipped,
+    anchors,
+  };
 }
 
 export async function applyOnboardingTemplate(
   supabase: Client,
   userId: string,
   input: { propertyId: string },
+  audit: typeof writeAudit = writeAudit,
 ) {
   await assertOnboardingStaff(supabase, userId);
-  const { property, anchors, taken, takenSubs, parentIdByKey } = await loadContext(
+  const { property, anchors, taken, takenSubs, parentIdByKey, existing } = await loadContext(
     supabase,
     input.propertyId,
   );
@@ -195,30 +214,47 @@ export async function applyOnboardingTemplate(
     is_demo: property.is_demo,
     ...seatFields(t.role, t.stage, seatHolders),
   }));
+  const approvalTasks = existing.filter(
+    (t) =>
+      !t.parent_task_id &&
+      t.requires_owner_approval &&
+      ["pending", "awaiting_owner"].includes(t.owner_approval_status) &&
+      FULL_FURNISHING_TEMPLATE.some(
+        (template) => taskKey(template.stage, template.title) === taskKey(t.stage, t.title),
+      ),
+  );
 
   if (rows.length) {
     const inserted = await supabase
       .from("onboarding_tasks")
       .insert(rows)
-      .select("id, title, stage");
+      .select(
+        "id, title, stage, parent_task_id, detail, due_on, requires_owner_approval, owner_approval_status",
+      );
     if (inserted.error) throw inserted.error;
     for (const r of inserted.data ?? []) {
       parentIdByKey.set(taskKey(r.stage, r.title), r.id);
+      if (r.requires_owner_approval) approvalTasks.push(r);
     }
-    // Homeowner decision records for the steps that need one.
-    const { ensureOwnerApprovalRequest } = await import("./onboarding.server");
-    for (const r of inserted.data ?? []) {
-      const t = pending.find((x) => taskKey(x.stage, x.title) === taskKey(r.stage, r.title));
-      if (!t || !needsOwnerApproval(t)) continue;
-      await ensureOwnerApprovalRequest(supabase, userId, {
-        taskId: r.id,
-        propertyId: input.propertyId,
-        title: t.title,
-        detail: t.detail ?? "",
-        dueOn: dueFor(t, anchors),
-        isDemo: property.is_demo,
-      });
-    }
+  }
+
+  // Prepare canonical decisions without contacting an owner during plan setup.
+  // Retry also repairs requests omitted by an earlier interrupted setup; the RPC
+  // reuses pending approvals and preserves any decision already recorded.
+  const { ensureOwnerApprovalRequest } = await import("./onboarding.server");
+  for (const task of approvalTasks) {
+    const template = FULL_FURNISHING_TEMPLATE.find(
+      (entry) => taskKey(entry.stage, entry.title) === taskKey(task.stage, task.title),
+    );
+    await ensureOwnerApprovalRequest(supabase, userId, {
+      taskId: task.id,
+      propertyId: input.propertyId,
+      title: task.title,
+      detail: template?.detail ?? "",
+      dueOn: task.due_on,
+      isDemo: property.is_demo,
+      deferDelivery: true,
+    });
   }
 
   // Subtasks are reconciled for EVERY template task, including ones that
@@ -257,7 +293,7 @@ export async function applyOnboardingTemplate(
     if (subs.error) throw subs.error;
   }
 
-  await writeAudit({
+  await audit({
     actorId: userId,
     action: "onboarding_template_applied",
     entityType: "property",

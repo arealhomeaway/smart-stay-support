@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS documents(id uuid PRIMARY KEY,entity_type text,entity_id uuid,archived_at timestamptz);
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS deleted_at timestamptz, ADD COLUMN IF NOT EXISTS upload_status text NOT NULL DEFAULT 'stored', ADD COLUMN IF NOT EXISTS is_demo boolean NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS storage_path text, ADD COLUMN IF NOT EXISTS external_url text;
+ALTER TABLE onboarding_tasks ADD COLUMN IF NOT EXISTS blocks_handoff boolean NOT NULL DEFAULT true, ADD COLUMN IF NOT EXISTS evidence_required boolean NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS evidence_note text, ADD COLUMN IF NOT EXISTS blocker text;
+-- Local-only baseline policies/columns for the full protected reviewer workflow.
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS onboarding_owner uuid;
+ALTER TABLE property_handoffs ADD COLUMN IF NOT EXISTS archived_at timestamptz;
+ALTER TABLE property_handoffs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE handoff_reviews ENABLE ROW LEVEL SECURITY;
+GRANT SELECT,INSERT,UPDATE ON property_handoffs TO authenticated;
+GRANT SELECT,INSERT ON handoff_reviews TO authenticated;
+GRANT ALL ON property_handoffs,handoff_reviews,onboarding_project_events,onboarding_tasks,properties TO service_role;
+CREATE POLICY "Staff read handoffs" ON property_handoffs FOR SELECT TO authenticated USING(public.is_onboarding_staff(auth.uid()));
+CREATE POLICY "Onboarding staff request handoffs" ON property_handoffs FOR INSERT TO authenticated WITH CHECK(public.is_onboarding_staff(auth.uid()));
+CREATE POLICY "Supervisors review handoffs" ON property_handoffs FOR UPDATE TO authenticated USING(public.is_supervisor(auth.uid()) OR EXISTS(SELECT 1 FROM properties p WHERE p.id=property_id AND p.onboarding_owner=auth.uid())) WITH CHECK(public.is_supervisor(auth.uid()) OR EXISTS(SELECT 1 FROM properties p WHERE p.id=property_id AND p.onboarding_owner=auth.uid()));
+CREATE POLICY "Staff read handoff reviews" ON handoff_reviews FOR SELECT TO authenticated USING(public.is_onboarding_staff(auth.uid()));
+CREATE POLICY "Reviewers record decisions" ON handoff_reviews FOR INSERT TO authenticated WITH CHECK(public.is_onboarding_staff(auth.uid()));
+CREATE POLICY "Reviewer fixture staff read properties" ON properties FOR SELECT TO authenticated USING(public.is_onboarding_staff(auth.uid()));
+CREATE POLICY "Reviewer fixture staff update properties" ON properties FOR UPDATE TO authenticated USING(public.is_onboarding_staff(auth.uid())) WITH CHECK(public.is_onboarding_staff(auth.uid()));
+CREATE POLICY "Reviewer fixture staff manage tasks" ON onboarding_tasks FOR ALL TO authenticated USING(public.is_onboarding_staff(auth.uid())) WITH CHECK(public.is_onboarding_staff(auth.uid()));
+GRANT SELECT,INSERT,UPDATE,DELETE ON onboarding_tasks TO authenticated;
+GRANT SELECT,UPDATE ON properties TO authenticated;
+INSERT INTO auth.users(id) VALUES('00000000-0000-4000-8000-000000000008'),('00000000-0000-4000-8000-000000000009');
+INSERT INTO user_roles(user_id,role) VALUES('00000000-0000-4000-8000-000000000008','manager'),('00000000-0000-4000-8000-000000000009','manager');

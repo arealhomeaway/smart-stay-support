@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { writeAudit } from "./audit.server";
+import { assertOnboardingPropertyManagement } from "./onboarding-task-access.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -46,6 +47,7 @@ export type SchedulePreviewRow = {
   anchor: ScheduleAnchor;
   offsetDays: number;
   currentDue: string | null;
+  expectedUpdatedAt: string;
   proposedDue: string;
   changed: boolean;
   conflict: string | null;
@@ -77,6 +79,7 @@ export async function saveScheduleAnchors(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
+  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
   const { error } = await supabase
     .from("properties")
     .update({
@@ -103,6 +106,7 @@ export async function previewScheduleRecalc(
   input: { propertyId: string },
 ): Promise<SchedulePreview> {
   await assertOnboardingStaff(supabase, userId);
+  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
 
   const property = await supabase
     .from("properties")
@@ -120,7 +124,7 @@ export async function previewScheduleRecalc(
   const tasks = await supabase
     .from("onboarding_tasks")
     .select(
-      "id, title, stage, status, due_on, schedule_anchor, schedule_offset_days, due_on_overridden",
+      "id, title, stage, status, due_on, schedule_anchor, schedule_offset_days, due_on_overridden, updated_at",
     )
     .eq("property_id", input.propertyId)
     .is("archived_at", null)
@@ -167,6 +171,7 @@ export async function previewScheduleRecalc(
       anchor,
       offsetDays: t.schedule_offset_days,
       currentDue: t.due_on,
+      expectedUpdatedAt: t.updated_at,
       proposedDue: proposed,
       changed: t.due_on !== proposed,
       conflict,
@@ -181,34 +186,52 @@ export async function applyScheduleRecalc(
   supabase: Client,
   userId: string,
   input: { propertyId: string; taskIds: string[] },
+  audit: typeof writeAudit = writeAudit,
 ) {
   await assertOnboardingStaff(supabase, userId);
   const preview = await previewScheduleRecalc(supabase, userId, { propertyId: input.propertyId });
   const chosen = preview.rows.filter((r) => input.taskIds.includes(r.taskId) && r.changed);
 
-  for (const row of chosen) {
-    const { error } = await supabase
-      .from("onboarding_tasks")
-      .update({
-        due_on: row.proposedDue,
-        due_on_source: `${row.anchor}${row.offsetDays >= 0 ? "+" : ""}${row.offsetDays}d`,
-      })
-      .eq("id", row.taskId)
-      .eq("due_on_overridden", false);
-    if (error) throw error;
+  const applied: { taskId: string; from: string | null; to: string }[] = [];
+  try {
+    for (const row of chosen) {
+      const { data, error } = await supabase
+        .from("onboarding_tasks")
+        .update({
+          due_on: row.proposedDue,
+          due_on_source: row.anchor + (row.offsetDays >= 0 ? "+" : "") + row.offsetDays + "d",
+        })
+        .eq("id", row.taskId)
+        .eq("property_id", input.propertyId)
+        .eq("updated_at", row.expectedUpdatedAt)
+        .neq("status", "complete")
+        .eq("due_on_overridden", false)
+        .is("archived_at", null)
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        throw new Error(
+          row.title +
+            " changed while dates were recalculated. Refresh before continuing. " +
+            applied.length +
+            " earlier date changes were saved and recorded.",
+        );
+      }
+      applied.push({ taskId: row.taskId, from: row.currentDue, to: row.proposedDue });
+    }
+  } finally {
+    if (applied.length) {
+      await audit({
+        actorId: userId,
+        action: "onboarding_dates_recalculated",
+        entityType: "property",
+        entityId: input.propertyId,
+        after: { applied },
+      });
+    }
   }
-
-  await writeAudit({
-    actorId: userId,
-    action: "onboarding_dates_recalculated",
-    entityType: "property",
-    entityId: input.propertyId,
-    after: {
-      applied: chosen.map((c) => ({ taskId: c.taskId, from: c.currentDue, to: c.proposedDue })),
-    },
-  });
-
-  return { ok: true as const, applied: chosen.length };
+  return { ok: true as const, applied: applied.length };
 }
 
 /** Record the anchor/offset a task follows, or mark its date as manual. */
@@ -223,6 +246,13 @@ export async function setTaskSchedule(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select("property_id")
+    .eq("id", input.taskId)
+    .single();
+  if (task.error) throw task.error;
+  await assertOnboardingPropertyManagement(supabase, userId, task.data.property_id);
   const { error } = await supabase
     .from("onboarding_tasks")
     .update({

@@ -7,7 +7,7 @@ export const getOnboardingFinance = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { loadFinance } = await import("./onboarding-finance.server");
-    return loadFinance(context.supabase, data.propertyId);
+    return loadFinance(context.supabase, data.propertyId, context.userId);
   });
 
 export const createFinancialRequestFn = createServerFn({ method: "POST" })
@@ -86,7 +86,11 @@ export const settleFinancialRequestFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
-      .object({ requestId: z.string().uuid(), note: z.string().trim().min(3).max(1000) })
+      .object({
+        requestId: z.string().uuid(),
+        note: z.string().trim().min(3).max(1000),
+        actualAmount: z.number().min(0).max(1_000_000),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
@@ -150,6 +154,7 @@ export const proposeFactFn = createServerFn({ method: "POST" })
     z
       .object({
         propertyId: z.string().uuid(),
+        assetId: z.string().uuid().nullable().optional(),
         fieldKey: z.string().trim().min(2).max(60),
         proposedValue: z.string().trim().min(1).max(2000),
         taskId: z.string().uuid().nullable().optional(),
@@ -192,4 +197,19 @@ export const setFinancialReconciliationFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { setFinancialReconciliation } = await import("./onboarding-finance.server");
     return setFinancialReconciliation(context.supabase, context.userId, data);
+  });
+export const createOnboardingAssetFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        name: z.string().trim().min(1).max(160),
+        kind: z.string().trim().min(1).max(80),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { createOnboardingAsset } = await import("./onboarding-finance.server");
+    return createOnboardingAsset(context.supabase, context.userId, data);
   });

@@ -59,6 +59,40 @@ describe("applicability", () => {
 });
 
 describe("split and summary", () => {
+  it("inherits exclusions through nested subtasks regardless of row order", () => {
+    const { inScope, outOfScope } = splitByScope(
+      [
+        { id: "child", title: "Review measurements", parent_task_id: "parent" },
+        { id: "parent", title: "Design plan", parent_task_id: null },
+        { id: "grandchild", title: "Upload evidence", parent_task_id: "child" },
+      ],
+      { furnishing: "no_furnishing", modules: defaultModules() },
+    );
+    expect(inScope.length).toBe(0);
+    expect(outOfScope.length).toBe(3);
+  });
+
+  it("keeps appliance delivery independent from furniture scope", () => {
+    expect(
+      appliesToScope("New appliance delivery", {
+        furnishing: "no_furnishing",
+        modules: ["new_appliances"],
+      }),
+    ).toBe(true);
+    expect(
+      appliesToScope("Existing appliance inspection", {
+        furnishing: "full_furnishing",
+        modules: [],
+      }),
+    ).toBe(false);
+    expect(
+      appliesToScope("Active Owner participation", {
+        furnishing: "full_furnishing",
+        modules: [],
+      }),
+    ).toBe(false);
+  });
+
   it("separates skipped work with a reason instead of hiding it", () => {
     const scope = { furnishing: "full_furnishing" as const, modules: defaultModules() };
     const { inScope, outOfScope } = splitByScope(
@@ -81,4 +115,24 @@ describe("repair authority", () => {
     expect(repairApprovalGuidance("Make-ready repair list")).toContain("$350");
     expect(repairApprovalGuidance("Install curtains")).toBeNull();
   });
+});
+
+it("maps each locked module to an explicit applicability reason in the existing scope engine", () => {
+  const cases = [
+    ["utilities", "Utility account transfer"],
+    ["repairs", "Make-ready repairs"],
+    ["smart_lock", "Smart lock setup"],
+    ["existing_appliances", "Existing appliance assessment"],
+    ["new_appliances", "New appliance delivery"],
+    ["pool", "Pool service setup"],
+    ["hoa", "HOA covenant documents"],
+    ["cameras", "Camera setup"],
+    ["furniture_warranty", "Furniture warranty registration"],
+    ["landscaping", "Landscaping service"],
+    ["active_owner", "Active Owner participation"],
+  ] as const;
+  for (const [module, title] of cases) {
+    expect(appliesToScope(title, { furnishing: "full_furnishing", modules: [module] })).toBe(true);
+    expect(outOfScopeReason(title, { furnishing: "full_furnishing", modules: [] })).not.toBeNull();
+  }
 });

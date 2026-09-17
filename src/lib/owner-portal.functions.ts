@@ -5,11 +5,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date");
 
 /** The signed-in homeowner's whole hub: program, tickets, reviews, alerts. */
-export const ownerHome = createServerFn({ method: "GET" })
+export const ownerHome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { loadOwnerHome } = await import("./owner-portal.server");
-    return loadOwnerHome(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return loadOwnerHome(context.supabase, context.userId, supabaseAdmin);
   });
 
 /** Read-only preview of a chosen program so a Platform Owner can see the hub. */
@@ -71,6 +72,7 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
         // Mandatory: context-free time entries are not allowed.
         reviewId: z.string().uuid(),
         ticketId: z.string().uuid().nullable().default(null),
+        ownerUpdateRevision: z.number().int().positive().nullable().default(null),
         propertyIds: z.array(z.string().uuid()).max(25).default([]),
         confirmed: z.literal(true, {
           message: "Please confirm the entry reflects the time you personally spent.",
@@ -110,6 +112,8 @@ export const answerOwnerReview = createServerFn({ method: "POST" })
     z
       .object({
         reviewId: z.string().uuid(),
+        expectedUpdatedAt: z.string().datetime({ offset: true }),
+        ownerUpdateRevision: z.number().int().positive().nullable().default(null),
         decision: z.string().trim().min(1).max(60),
         response: z.string().trim().max(2000).default(""),
       })
@@ -168,6 +172,8 @@ export const decideOwnerApproval = createServerFn({ method: "POST" })
     z
       .object({
         approvalId: z.string().uuid(),
+        publicationId: z.string().uuid(),
+        expectedUpdatedAt: z.string().datetime({ offset: true }),
         decision: z.enum(["approved", "declined"]),
         comment: z.string().trim().max(2000).default(""),
       })

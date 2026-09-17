@@ -1,0 +1,1 @@
+ALTER TABLE tickets ADD COLUMN updated_at timestamptz NOT NULL DEFAULT '2026-09-15T00:00:00Z';

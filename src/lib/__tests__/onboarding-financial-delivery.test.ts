@@ -1,0 +1,218 @@
+import { describe, expect, it, mock } from "bun:test";
+let delivery: "failed" | "skipped" = "failed";
+let emailAttempts = 0;
+mock.module("@/lib/email.server", () => ({
+  sendEmail: async () => {
+    emailAttempts++;
+    return { status: delivery, error: "Delivery unavailable in test" };
+  },
+  emailShell: () => "Test only",
+}));
+const { sendToAccounting, routeOwnerDecision } = await import("../onboarding-finance.server");
+
+function ownerDeliveryDb(
+  sent: boolean,
+  contactEmail: string | null = "owner@example.invalid",
+  canonicalOwner = true,
+) {
+  const writes: unknown[] = [];
+  const rows: Record<string, unknown> = {
+    approvals: {
+      id: "approval",
+      status: "pending",
+      ref: null,
+      owner_email_sent_at: sent ? "2026-09-14T00:00:00Z" : null,
+      owner_email_to: sent ? "owner@example.invalid" : null,
+    },
+    properties: {
+      id: "property",
+      name: "QA home",
+      owner_record_id: canonicalOwner ? "owner-record" : null,
+      is_demo: false,
+      archived_at: null,
+    },
+    property_owners: [
+      {
+        id: "owner-record",
+        name: "Canonical Owner",
+        email: contactEmail,
+        phone: null,
+        source: "manual",
+      },
+    ],
+    property_owner_contacts: {
+      owner_name: "Legacy identity",
+      owner_email: "legacy@example.invalid",
+    },
+    owner_program_properties: [],
+    owner_programs: [],
+  };
+  return {
+    writes,
+    db: {
+      from: (table: string) => {
+        if (table === "property_owner_contacts")
+          throw new Error("Legacy Owner identity read is forbidden");
+        const query = {
+          select: () => query,
+          eq: () => query,
+          is: () => query,
+          in: () => query,
+          not: () => query,
+          limit: () => query,
+          order: () => query,
+          range: async (from: number, to: number) => {
+            const data = Array.isArray(rows[table]) ? (rows[table] as unknown[]) : [rows[table]];
+            return { data: data.slice(from, to + 1), count: data.length, error: null };
+          },
+          maybeSingle: async () => ({ data: rows[table], error: null }),
+          update: (value: unknown) => {
+            writes.push(value);
+            return query;
+          },
+          then: (resolve: (value: unknown) => unknown) =>
+            Promise.resolve({ data: rows[table], error: null }).then(resolve),
+        };
+        return query;
+      },
+    },
+  };
+}
+
+describe("owner delivery retries", () => {
+  it("does not send again when delivery is already recorded", async () => {
+    const { db } = ownerDeliveryDb(true);
+    emailAttempts = 0;
+    const result = await routeOwnerDecision(db as never, "staff", {
+      propertyId: "property",
+      approvalId: "approval",
+      subject: "QA",
+      detail: "",
+      amount: 500,
+    });
+    expect(result.channel).toBe("email");
+    expect(emailAttempts).toBe(0);
+  });
+  it("keeps failed delivery claimed without recording a sent timestamp", async () => {
+    const { db, writes } = ownerDeliveryDb(false);
+    delivery = "failed";
+    emailAttempts = 0;
+    let message = "";
+    try {
+      await routeOwnerDecision(db as never, "staff", {
+        propertyId: "property",
+        approvalId: "approval",
+        subject: "QA",
+        detail: "",
+        amount: 500,
+      });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain("Delivery is uncertain");
+    expect(emailAttempts).toBe(1);
+    expect(
+      writes.every(
+        (write) =>
+          !Object.hasOwn(write as object, "owner_email_sent_at") &&
+          !Object.hasOwn(write as object, "accounting_sent_at"),
+      ),
+    ).toBe(true);
+  });
+  it("surfaces a missing homeowner email instead of claiming delivery", async () => {
+    const { db } = ownerDeliveryDb(false, null);
+    emailAttempts = 0;
+    let message = "";
+    try {
+      await routeOwnerDecision(db as never, "staff", {
+        propertyId: "property",
+        approvalId: "approval",
+        subject: "QA",
+        detail: "",
+        amount: 500,
+      });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain("Add the homeowner's email address");
+    expect(emailAttempts).toBe(0);
+  });
+});
+
+it("does not use legacy Owner contact copies when canonical identity or receipt recipient differs", async () => {
+  for (const args of [
+    [false, "owner@example.invalid", false],
+    [true, "new-owner@example.invalid", true],
+  ] as const) {
+    const { db, writes } = ownerDeliveryDb(args[0], args[1], args[2]);
+    emailAttempts = 0;
+    const message = await routeOwnerDecision(db as never, "staff", {
+      propertyId: "property",
+      approvalId: "approval",
+      subject: "QA",
+      detail: "",
+      amount: 500,
+    }).then(
+      () => "unsafe",
+      (error: Error) => error.message,
+    );
+    expect(message).toContain(args[2] ? "recipient changed" : "canonical Owner");
+    expect(emailAttempts).toBe(0);
+    expect(writes).toEqual([]);
+  }
+});
+
+describe("financial delivery honesty", () => {
+  for (const status of ["failed", "skipped"] as const)
+    it(`${status} delivery never marks accounting sent`, async () => {
+      delivery = status;
+      const writes: unknown[] = [];
+      const rows: Record<string, unknown> = {
+        financial_requests: {
+          id: "request",
+          property_id: "property",
+          title: "QA repair",
+          status: "invoiced",
+          estimate_amount: 150,
+          approved_amount: 150,
+          invoice_amount: 150,
+        },
+        app_settings: { value: { email: "accounting@example.invalid" } },
+        properties: { name: "QA property" },
+      };
+      const db = {
+        rpc: async () => ({ data: true, error: null }),
+        from: (table: string) => {
+          const query = {
+            select: () => query,
+            eq: () => query,
+            is: () => query,
+            maybeSingle: async () => ({ data: rows[table], error: null }),
+            update: (value: unknown) => {
+              writes.push(value);
+              return query;
+            },
+            then: (resolve: (value: unknown) => unknown) =>
+              Promise.resolve({ data: rows[table], error: null }).then(resolve),
+          };
+          return query;
+        },
+      };
+      let message = "";
+      try {
+        await sendToAccounting(db as never, "staff", { requestId: "request" });
+      } catch (error) {
+        message = (error as Error).message;
+      }
+      expect(message).toContain(
+        status === "failed" ? "Delivery is uncertain" : "Email was not attempted",
+      );
+      expect(
+        writes.every(
+          (write) =>
+            !Object.hasOwn(write as object, "owner_email_sent_at") &&
+            !Object.hasOwn(write as object, "accounting_sent_at"),
+        ),
+      ).toBe(true);
+    });
+});

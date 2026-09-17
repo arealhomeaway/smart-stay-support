@@ -11,6 +11,7 @@ import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { parseWorkOrderCost, editWorkOrderCostDraft } from "@/lib/work-order-cost-input";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskWorkspace } from "@/components/ui/workspace";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,7 @@ import {
   money,
   nextAction,
   nextCheckpoint,
-  ownerApprovalRequest,
+  ownerApprovalText,
   secondQuoteAdvice,
   supervisorApprovalRequest,
   supervisorApproved,
@@ -189,40 +190,12 @@ export function WorkOrderDrawer({
     },
   });
 
-  /** Is this property enrolled with an Active Owner who decides in Resolve? */
-  const activeOwner = useQuery({
-    queryKey: ["work-order-active-owner", workOrder?.property_id],
-    enabled: !!workOrder?.property_id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("owner_program_properties")
-        .select("owner_programs!inner(id, owner_user_id, owner_name, status)")
-        .eq("property_id", workOrder!.property_id as string)
-        .limit(5);
-      const row = (data ?? [])
-        .map(
-          (r) =>
-            (
-              r as {
-                owner_programs: {
-                  id: string;
-                  owner_user_id: string | null;
-                  owner_name: string | null;
-                  status: string | null;
-                };
-              }
-            ).owner_programs,
-        )
-        .find((p) => p && p.status !== "archived" && p.owner_user_id);
-      return row ?? null;
-    },
-  });
-
   const reqs = (requirements.data ?? []) as RequirementLike[];
   const progress = useMemo(() => evidenceProgress(reqs), [reqs]);
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["work-orders"] });
+    qc.invalidateQueries({ queryKey: ["owner-home"] });
     qc.invalidateQueries({ queryKey: ["work-order-requirements"] });
     qc.invalidateQueries({ queryKey: ["work-order-evidence", workOrder?.id] });
     qc.invalidateQueries({ queryKey: ["work-order-events", workOrder?.id] });
@@ -261,58 +234,70 @@ export function WorkOrderDrawer({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveCost = useMutation({
+    mutationFn: async () => {
+      if (!workOrder) throw new Error("Choose a Work Order first.");
+      const read = (key: "quote_amount" | "second_quote_amount" | "final_cost" | "scope") =>
+        fields[key] ?? String(workOrder[key] ?? "");
+      const result = await supabase.rpc("save_work_order_costs", {
+        _work_order_id: workOrder.id,
+        _expected_updated_at: fields["cost_version"] ?? workOrder.updated_at,
+        _quote: parseWorkOrderCost(read("quote_amount")),
+        _second_quote: parseWorkOrderCost(read("second_quote_amount")),
+        _final_cost: parseWorkOrderCost(read("final_cost")),
+        _scope: read("scope"),
+        _reason: fields["cost_reason"] ?? "",
+      });
+      if (result.error) throw result.error;
+      return { workOrderId: workOrder.id, ticketId: workOrder.ticket_id };
+    },
+    onSuccess: (saved) => {
+      qc.invalidateQueries({ queryKey: ticketWorkOrdersQueryKey(saved.ticketId) });
+      if (shownId.current === saved.workOrderId) {
+        setFields((current) => {
+          const next = { ...current };
+          for (const key of [
+            "quote_amount",
+            "second_quote_amount",
+            "final_cost",
+            "scope",
+            "cost_version",
+            "cost_reason",
+          ])
+            delete next[key];
+          return next;
+        });
+      }
+      refresh();
+      toast.success("Costs and history saved");
+    },
+    onError: (error: Error) => {
+      refresh();
+      toast.error(error.message);
+    },
+  });
+
   /** Owner approval goes through the existing approvals architecture. */
   const requestApproval = useMutation({
     mutationFn: async () => {
       if (!workOrder) return;
-      const request = ownerApprovalRequest(workOrder);
-      const program = activeOwner.data;
-      const { data, error } = await supabase
-        .from("approvals")
-        .insert({
-          entity_type: "work_order",
-          entity_id: workOrder.id,
-          property_id: workOrder.property_id,
-          kind: request.kind,
-          title: request.title,
-          detail: (workOrder.scope ?? workOrder.title) as string,
-          amount: request.amount,
-          requested_by: userId,
-          approver_role: "owner",
-          // Active Owners decide in Resolve; standard owners answer by email
-          // and staff transcribe the decision onto this same record.
-          approver_id: program?.owner_user_id ?? null,
-          status: "pending",
-          is_demo: workOrder.is_demo,
-        } as never)
-        .select("id")
-        .single();
-      if (error) throw error;
-
-      const { error: updateError } = await supabase
-        .from("work_orders")
-        .update({
-          approval_id: (data as { id: string }).id,
-          approval_status: "pending",
-          approval_requested_at: new Date().toISOString(),
-          approval_requested_by: userId,
-        })
-        .eq("id", workOrder.id);
-      if (updateError) throw updateError;
-
-      await supabase.from("work_order_events").insert({
-        work_order_id: workOrder.id,
-        author_id: userId,
-        event_type: "owner_approval_requested",
-        body: `Owner approval requested for ${money(workOrder.quote_amount)}`,
-        detail: request.detail as never,
-        is_demo: workOrder.is_demo,
+      const ownerText = ownerApprovalText(fields["owner_approval_summary"] ?? "");
+      const { error } = await supabase.rpc("prepare_work_order_owner_approval", {
+        _work_order_id: workOrder.id,
+        _expected_updated_at: fields["owner_approval_version"] ?? workOrder.updated_at,
+        _owner_summary: ownerText.detail,
       });
+      if (error) throw error;
     },
     onSuccess: () => {
       refresh();
       qc.invalidateQueries({ queryKey: ["approvals"] });
       toast.success("Owner approval requested");
+      setFields((current) => ({
+        ...current,
+        owner_approval_summary: "",
+        owner_approval_version: "",
+      }));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -321,7 +306,6 @@ export function WorkOrderDrawer({
   const recordDecision = useMutation({
     mutationFn: async (outcome: OwnerApprovalOutcome) => {
       if (!workOrder) return;
-      const decidedAt = new Date().toISOString();
       const approvedAmount =
         outcome === "approved"
           ? fields["approved_amount"]
@@ -329,39 +313,14 @@ export function WorkOrderDrawer({
             : workOrder.quote_amount
           : null;
 
-      if (workOrder.approval_id) {
-        const { error } = await supabase
-          .from("approvals")
-          .update({
-            status:
-              outcome === "approved" ? "approved" : outcome === "declined" ? "declined" : "pending",
-            decision_note: note,
-            decided_at: outcome === "info_requested" ? null : decidedAt,
-            approver_role: "owner",
-          })
-          .eq("id", workOrder.approval_id);
-        if (error) throw error;
-      }
-
-      const { error } = await supabase
-        .from("work_orders")
-        .update({
-          approval_status: outcome,
-          approval_note: note,
-          approval_decided_at: outcome === "info_requested" ? null : decidedAt,
-          approved_amount: approvedAmount,
-        })
-        .eq("id", workOrder.id);
-      if (error) throw error;
-
-      await supabase.from("work_order_events").insert({
-        work_order_id: workOrder.id,
-        author_id: userId,
-        event_type: `owner_${outcome}`,
-        body: `${OWNER_APPROVAL_OUTCOME_LABELS[outcome]} — ${note}`,
-        detail: { outcome, approved_amount: approvedAmount, recorded_by: userId } as never,
-        is_demo: workOrder.is_demo,
+      const { error } = await supabase.rpc("record_staff_work_order_owner_decision", {
+        _work_order_id: workOrder.id,
+        _expected_updated_at: workOrder.updated_at,
+        _outcome: outcome,
+        _approved_amount: approvedAmount,
+        _note: note,
       });
+      if (error) throw error;
     },
     onSuccess: () => {
       setNote("");
@@ -499,6 +458,11 @@ export function WorkOrderDrawer({
     fields[key as string] ??
     (workOrder[key] === null || workOrder[key] === undefined ? "" : String(workOrder[key]));
   const set = (key: string, v: string) => setFields((f) => ({ ...f, [key]: v }));
+  const setCost = (key: string, value: string) =>
+    setFields((current) => editWorkOrderCostDraft(current, workOrder, key, value));
+  const staleCost = Boolean(
+    fields["cost_version"] && fields["cost_version"] !== workOrder.updated_at,
+  );
 
   const verdict = evaluateAuthority({ ...workOrder, quote_amount: value("quote_amount") || null });
   const commitments = commitmentStatus(workOrder);
@@ -582,31 +546,31 @@ export function WorkOrderDrawer({
               label="Quote"
               k="quote_amount"
               value={value}
-              set={set}
-              readOnly={readOnly}
+              set={setCost}
+              readOnly={readOnly || saveCost.isPending}
             />
             <MoneyField
               label="Second quote"
               k="second_quote_amount"
               value={value}
-              set={set}
-              readOnly={readOnly}
+              set={setCost}
+              readOnly={readOnly || saveCost.isPending}
             />
             <MoneyField
               label="Final cost"
               k="final_cost"
               value={value}
-              set={set}
-              readOnly={readOnly}
+              set={setCost}
+              readOnly={readOnly || saveCost.isPending}
             />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Scope of work</Label>
             <Textarea
               rows={2}
-              disabled={readOnly}
+              disabled={readOnly || saveCost.isPending}
               value={value("scope")}
-              onChange={(e) => set("scope", e.target.value)}
+              onChange={(e) => setCost("scope", e.target.value)}
             />
           </div>
           {advice.recommended ? (
@@ -614,28 +578,49 @@ export function WorkOrderDrawer({
               {advice.reason} This is guidance, not a block.
             </p>
           ) : null}
+          <div className="space-y-1">
+            <Label htmlFor="work-order-cost-reason">Reason or cost evidence</Label>
+            <Textarea
+              id="work-order-cost-reason"
+              value={fields["cost_reason"] ?? ""}
+              maxLength={2000}
+              disabled={readOnly || saveCost.isPending}
+              onChange={(event) => setCost("cost_reason", event.target.value)}
+            />
+          </div>
+          {staleCost && (
+            <div role="alert" className="space-y-2 text-sm">
+              <p>
+                The Work Order changed. Your draft is preserved. Current quote:{" "}
+                {money(workOrder.quote_amount)}, second quote:{" "}
+                {money(workOrder.second_quote_amount)}, actual cost: {money(workOrder.final_cost)}.
+              </p>
+              <p className="whitespace-pre-wrap">
+                Current scope: {workOrder.scope || "Not recorded"}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={readOnly || saveCost.isPending}
+                onClick={() =>
+                  setFields((current) => ({ ...current, cost_version: workOrder.updated_at }))
+                }
+              >
+                I reviewed the current costs and scope
+              </Button>
+            </div>
+          )}
           <Button
             size="sm"
-            disabled={readOnly || save.isPending}
-            onClick={() =>
-              save.mutate({
-                patch: {
-                  quote_amount: numOrNull(value("quote_amount")),
-                  second_quote_amount: numOrNull(value("second_quote_amount")),
-                  final_cost: numOrNull(value("final_cost")),
-                  scope: value("scope") || null,
-                  quote_received_at: value("quote_amount")
-                    ? (workOrder.quote_received_at ?? stamp())
-                    : null,
-                  authority_level: verdict.level,
-                },
-                event: "cost",
-                body: `Cost updated — quote ${money(numOrNull(value("quote_amount")))}`,
-                detail: { authority: verdict.level, reason: verdict.reason },
-              })
+            disabled={
+              readOnly ||
+              saveCost.isPending ||
+              staleCost ||
+              (fields["cost_reason"] ?? "").trim().length < 3
             }
+            onClick={() => saveCost.mutate()}
           >
-            Save cost
+            {saveCost.isPending ? "Saving…" : "Save cost"}
           </Button>
         </section>
 
@@ -730,14 +715,53 @@ export function WorkOrderDrawer({
             <>
               <div className="flex flex-wrap gap-2">
                 {workOrder.approval_status === "not_required" || !workOrder.approval_id ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={readOnly || requestApproval.isPending}
-                    onClick={() => requestApproval.mutate()}
+                  <form
+                    className="w-full space-y-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (!readOnly && !requestApproval.isPending) requestApproval.mutate();
+                    }}
                   >
-                    Request owner approval
-                  </Button>
+                    <Label htmlFor={`owner-summary-${workOrder.id}`}>
+                      Explanation for the owner (required)
+                    </Label>
+                    <Textarea
+                      id={`owner-summary-${workOrder.id}`}
+                      name="owner_approval_summary"
+                      aria-describedby={`owner-summary-help-${workOrder.id}`}
+                      required
+                      minLength={20}
+                      maxLength={4000}
+                      rows={4}
+                      disabled={readOnly || requestApproval.isPending}
+                      value={fields["owner_approval_summary"] ?? ""}
+                      onChange={(event) =>
+                        setFields((current) => ({
+                          ...current,
+                          owner_approval_summary: event.target.value,
+                          owner_approval_version:
+                            current["owner_approval_version"] || workOrder.updated_at,
+                        }))
+                      }
+                    />
+                    <p
+                      id={`owner-summary-help-${workOrder.id}`}
+                      className="text-xs text-muted-foreground"
+                    >
+                      The owner will see this explanation with the requested amount. Describe the
+                      issue, work already performed, proposed repair and why a decision is needed.
+                      Review it for guest personal information, private staff notes and access
+                      credentials before requesting approval.
+                    </p>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="outline"
+                      disabled={readOnly || requestApproval.isPending}
+                    >
+                      Request owner approval
+                    </Button>
+                  </form>
                 ) : null}
               </div>
 

@@ -34,13 +34,13 @@ Every existing `owner_programs` row has one `property_id`. The migration copies 
 ## Benchmark, statuses, alerts, badges
 
 - Benchmark: `60 × day/35` through day 35, then `60 + 45 × (day-35)/55`, capped at 105. Program-level only, decimal stored, whole hours displayed. Never writes hours anywhere.
-- Statuses: Not Started / On Track / Slightly Behind (1–4.9) / Action Needed (5–9.9) / Significantly Behind (10+) / Target Reached (**strictly above 100**) / Program Completed. Behind alerts suppressed for days 1–7.
+- Statuses: Not Started / On Track / Slightly Behind (1–4.9) / Action Needed (5–9.9) / Significantly Behind (10+) / Target Reached (**at least 100; exactly 100.0 qualifies, locked September 16**) / Program Completed. Behind alerts suppressed for days 1–7.
 - Owner alerts fire only on the seven defined triggers, deduped 7 days unless severity increases, encouraging tone, no tax language. Internal property-coverage alerts are separate and speak only to open tasks and decisions.
 - Badges: all hour and portfolio badges listed in the brief, with restrained animation, recorded rule + supporting records, and a review flag if a correction invalidates one. Program Complete requires staff closeout, not hours.
 
 ## Screens
 
-- **Owner Hub**: "Your 90-Day Participation Progress" header (Day X of 90, combined hours, benchmark, variance, % of 105, days remaining, status, next milestone, hours to exceed 100, onboarding vs operations), then per-property cards showing task coverage only — no per-property hour targets. "My Achievements" section. Log-participation dialog gains activity category, multi-property selection, decision/outcome, optional attachment, and keeps the manual-entry disclaimer and confirmation checkbox.
+- **Owner Hub**: "Your 90-Day Participation Progress" header (Day X of 90, combined hours, benchmark, variance, % of 105, days remaining, status, next milestone, hours to reach 100, onboarding vs operations), then per-property cards showing task coverage only — no per-property hour targets. "My Achievements" section. Log-participation dialog gains activity category, multi-property selection, decision/outcome, optional attachment, and keeps the manual-entry disclaimer and confirmation checkbox.
 - **Staff**: one row per program with the full column set from the brief, plus an "Owners Needing Attention" view in the specified priority order, activation checklist (all properties closed + DFY confirmed + onboarding meeting) and admin-approved late property additions that never reset the 90 days.
 - **Report**: one combined closeout report with the required disclaimer, generated before completion is allowed.
 

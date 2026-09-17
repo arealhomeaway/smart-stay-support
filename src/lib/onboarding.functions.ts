@@ -6,7 +6,7 @@ export const getOnboardingWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { loadOnboardingWorkspace } = await import("./onboarding.server");
-    return loadOnboardingWorkspace(context.supabase);
+    return loadOnboardingWorkspace(context.supabase, context.userId);
   });
 
 export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
@@ -95,6 +95,7 @@ export const reviewHandoffFn = createServerFn({ method: "POST" })
     z
       .object({
         handoffId: z.string().uuid(),
+        expectedStep: z.string().min(1).max(60),
         decision: z.enum(["accepted", "returned"]),
         corrections: z.string().trim().max(2000).default(""),
         exceptionReason: z.string().trim().max(1000).optional(),
@@ -328,16 +329,16 @@ const moduleEnum = z.enum([
 export const getOnboardingProjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { loadProjects } = await import("./onboarding-project.server");
-    return loadProjects(context.supabase);
+    const { loadProjectsForActor } = await import("./onboarding-project.server");
+    return loadProjectsForActor(context.supabase, context.userId);
   });
 
 export const getPropertyProject = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
-    const { loadProjectForProperty } = await import("./onboarding-project.server");
-    return loadProjectForProperty(context.supabase, data.propertyId);
+    const { loadPropertyProjectForActor } = await import("./onboarding-project.server");
+    return loadPropertyProjectForActor(context.supabase, context.userId, data.propertyId);
   });
 
 export const startOnboardingProjectFn = createServerFn({ method: "POST" })
@@ -379,6 +380,7 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
         furnishingScope: z.enum(["full_furnishing", "no_furnishing"]).optional(),
         modules: z.array(moduleEnum).max(20).optional(),
         notes: z.string().trim().max(2000).nullable().optional(),
+        externalRefs: z.record(z.string(), z.string().trim().max(300)).optional(),
         reason: z.string().trim().max(500).nullable().optional(),
       })
       .parse(data),
@@ -386,4 +388,22 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { updateProject } = await import("./onboarding-project.server");
     return updateProject(context.supabase, context.userId, data);
+  });
+
+export const overrideOnboardingTaskDateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        expectedUpdatedAt: z.string().datetime({ offset: true }),
+        dueOn: z.string().date().nullable(),
+        reason: z.string().trim().min(3).max(1000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { overrideOnboardingTaskDate } = await import("./onboarding.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return overrideOnboardingTaskDate(context.supabase, context.userId, data, supabaseAdmin);
   });

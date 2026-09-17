@@ -1,4 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
+import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
+import {
+  onboardingWorkspaceKey,
+  canManageOnboardingProperty,
+} from "@/lib/onboarding-workspace-view";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -39,11 +45,19 @@ import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
+import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
+import {
+  WORK_FILTER_LABELS,
+  matchesWorkFilter,
+  validateWorkspaceSearch,
+  type WorkFilter,
+} from "@/lib/onboarding-work-views";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
+import { StageCapturePanel } from "@/components/onboarding/StageCapturePanel";
 import { CurrentWork } from "@/components/onboarding/CurrentWork";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
@@ -100,6 +114,7 @@ import {
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
+  validateSearch: validateWorkspaceSearch,
   head: () => ({
     meta: [
       { title: "Property onboarding workflow — Resolve" },
@@ -123,6 +138,8 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
 
 function PropertyWorkspace() {
   const { propertyId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
   const { can, readOnly, userId, roles } = useRole();
@@ -133,8 +150,9 @@ function PropertyWorkspace() {
   const { origin } = useRecordOrigin("onboarding");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["onboarding-workspace"],
+    queryKey: onboardingWorkspaceKey(userId),
     queryFn: () => load(),
+    enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 
@@ -149,6 +167,7 @@ function PropertyWorkspace() {
       onError: (e: Error) => toast.error(e.message),
     });
 
+  const saveDate = mut(useServerFn(overrideOnboardingTaskDateFn), "Date override recorded.");
   const saveTask = mut(useServerFn(saveOnboardingTaskFn), "Task saved.");
   const setLifecycle = mut(useServerFn(setPropertyLifecycleFn), "Lifecycle updated.");
   const requestHandoff = mut(useServerFn(requestHandoffFn), "Handoff requested.");
@@ -189,6 +208,11 @@ function PropertyWorkspace() {
   );
 
   if (isLoading || !data) return <LoadingPage />;
+  if (
+    data.workspaceMode === "assigned" ||
+    data.assignedWorkContexts.some((context) => context.propertyId === propertyId)
+  )
+    return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
   if (!current)
     return (
       <EmptyState title="Home not found" hint="This property is not in the onboarding workspace." />
@@ -210,12 +234,18 @@ function PropertyWorkspace() {
   const pm = data.people.find((p) => p.id === current.onboarding_owner);
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
   const canEdit = !readOnly && can("handoff_request");
+  const canExecuteProject =
+    !readOnly && (data.reviewCapabilities.is_admin || projectRow?.project_manager === userId);
 
   const project = {
     property: current as unknown as ProjectProperty,
     tasks,
     handoff: (openHandoff ?? null) as OpenHandoff,
     project: projectRow as never,
+    stageCaptures: data.stageCaptures.filter((c) => c.propertyId === current.id),
+    excludedTaskIds: outOfScope.map((x) => x.task.id),
+    independentReadiness:
+      data.independentReadiness.find((row) => row.propertyId === current.id) ?? null,
   };
   // One authoritative read, shared by every surface on this page.
   const life = deriveLifecycle({
@@ -229,19 +259,27 @@ function PropertyWorkspace() {
     project: projectRow as never,
     tasks,
     handoff: (openHandoff ?? null) as never,
+    stageCaptures: data.stageCaptures.filter((c) => c.propertyId === current.id),
+    excludedTaskIds: outOfScope.map((x) => x.task.id),
   });
   const roll = rollupProperty(tasks, release);
   const sections = buildSections(tasks, release);
+  const independent = independentReadinessForTasks(
+    data.independentReadiness.find((row) => row.propertyId === current.id),
+    tasks,
+  );
   const readiness = handoffReadiness(
     {
       property: current as never,
       project: projectRow as never,
       tasks,
       handoff: (openHandoff ?? null) as never,
+      stageCaptures: data.stageCaptures.filter((c) => c.propertyId === current.id),
     },
     validateHandoff(current, tasks as never, {
       includeQuarterlyReview: enabled("quarterly_reviews"),
     }).checks,
+    independent.extras,
   );
   const chain = chainProgress({
     property: current as never,
@@ -358,16 +396,17 @@ function PropertyWorkspace() {
         onOpenTask={setOpenTaskId}
       />
 
-      <Tabs defaultValue="overview" className="space-y-5">
-        <TabsList>
+      <Tabs
+        value={search.tab}
+        onValueChange={(tab) => void navigate({ search: { ...search, tab }, replace: true })}
+        className="space-y-5"
+      >
+        <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="workflow">All work</TabsTrigger>
+          <TabsTrigger value="workflow">Work</TabsTrigger>
           <TabsTrigger value="property">Property</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="handoff">Handoff</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="activity">History</TabsTrigger>
         </TabsList>
 
@@ -491,13 +530,21 @@ function PropertyWorkspace() {
                     },
                   } as never)
                 }
-                disabled={readOnly}
+                disabled={
+                  readOnly ||
+                  Boolean(current.handoff_accepted_at) ||
+                  !["onboarding", "paused"].includes(current.lifecycle_status ?? "")
+                }
               >
                 <SelectTrigger className="w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LIFECYCLE.map((l) => (
+                  {LIFECYCLE.filter((l) =>
+                    ["onboarding", "paused", "offboarded", current.lifecycle_status].includes(
+                      l.value,
+                    ),
+                  ).map((l) => (
                     <SelectItem key={l.value} value={l.value}>
                       {l.label}
                     </SelectItem>
@@ -507,31 +554,10 @@ function PropertyWorkspace() {
             </div>
             <div className="flex flex-col gap-1">
               <Label className="eyebrow">Stage</Label>
-              <Select
-                value={current.onboarding_stage ?? "post_contract"}
-                onValueChange={(v) =>
-                  setLifecycle.mutate({
-                    data: {
-                      propertyId: current.id,
-                      status: (current.lifecycle_status ?? "onboarding") as never,
-                      stage: v,
-                      reason: "Stage advanced in the onboarding workspace",
-                    },
-                  } as never)
-                }
-                disabled={readOnly}
-              >
-                <SelectTrigger className="w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ONBOARDING_STAGES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <p className="text-sm">{stageLabel(current.onboarding_stage)}</p>
+              <p className="text-xs text-muted-foreground">
+                Stage capture and review control progression.
+              </p>
             </div>
           </div>
 
@@ -657,13 +683,52 @@ function PropertyWorkspace() {
               </ul>
             </section>
           )}
+          <div className="space-y-2">
+            <Label htmlFor="work-filter">Show work</Label>
+            <select
+              id="work-filter"
+              className="w-full rounded-md border bg-background p-2 text-sm sm:max-w-xs"
+              value={search.workFilter}
+              onChange={(event) =>
+                void navigate({
+                  search: { ...search, workFilter: event.target.value as WorkFilter },
+                  replace: true,
+                })
+              }
+            >
+              {Object.entries(WORK_FILTER_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
           <WorkflowTable
             tasks={tasks}
+            visibleTaskIds={tasks
+              .filter((task) =>
+                matchesWorkFilter(
+                  viewTask(task, tasks, release),
+                  search.workFilter,
+                  data.stageCaptures.find(
+                    (capture) => capture.propertyId === current.id && capture.stage === task.stage,
+                  )?.status,
+                ),
+              )
+              .map((task) => task.id)}
             outOfScope={outOfScope}
             people={data.people}
             selectedId={openTaskId}
             release={release}
             onSelect={(t) => setOpenTaskId(t.id)}
+          />
+          <StageCapturePanel
+            propertyId={current.id}
+            canEdit={canExecuteProject && !life.locked && !openHandoff}
+            canReview={
+              !readOnly && !life.locked && !openHandoff && data.reviewCapabilities.can_review_stages
+            }
+            documents={data.documents.filter((d) => d.entity_id === current.id)}
           />
           {!life.locked && (
             <TemplatePanel
@@ -672,11 +737,91 @@ function PropertyWorkspace() {
               readOnly={!canEdit}
             />
           )}
+          <details className="surface space-y-4 p-4">
+            <summary className="cursor-pointer font-medium">Timeline and milestones</summary>
+            <SchedulePanel
+              propertyId={current.id}
+              plannedClosingOn={
+                (current as { planned_closing_on?: string | null }).planned_closing_on ?? null
+              }
+              actualClosingOn={
+                (current as { actual_closing_on?: string | null }).actual_closing_on ?? null
+              }
+              actualAccessOn={
+                (current as { actual_access_on?: string | null }).actual_access_on ?? null
+              }
+              canEdit={canEdit}
+              onChange={() => void refresh()}
+            />
+            <section className="surface p-4">
+              <p className="font-medium">Section timeline</p>
+              <p className="text-sm text-muted-foreground">
+                Where each workflow section should land, from the dates Resolve calculated. Only
+                milestone-level dates are shown — individual task dates live in the Workflow tab.
+              </p>
+              <div className="mt-3 space-y-2">
+                {sections.map((s) => {
+                  const dates = s.tasks
+                    .map((v) => v.task.due_on)
+                    .filter((d): d is string => Boolean(d))
+                    .sort();
+                  const late = s.tasks.filter((v) => v.overdue).length;
+                  return (
+                    <div
+                      key={s.key}
+                      className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3 text-sm"
+                    >
+                      <span className="min-w-0 flex-1 truncate font-medium">{s.label}</span>
+                      <span className="numeric text-xs text-muted-foreground">
+                        {dates.length > 0 ? `${dates[0]} → ${dates.at(-1)}` : "No dates set"}
+                      </span>
+                      <Chip
+                        className={stateChip(
+                          s.state === "complete"
+                            ? "done"
+                            : s.state === "blocked"
+                              ? "blocked"
+                              : "active",
+                        )}
+                      >
+                        {s.done}/{s.total}
+                      </Chip>
+                      {late > 0 && <Chip className={stateChip("blocked")}>{late} late</Chip>}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </details>
+          <details className="surface space-y-4 p-4">
+            <summary className="cursor-pointer font-medium">Task calendar</summary>
+            <TaskCalendar
+              tasks={tasks}
+              people={data.people}
+              onSelect={(t) => setOpenTaskId(t.id)}
+            />
+          </details>
         </TabsContent>
 
         {/* ------------------------------------------------------- Property */}
         <TabsContent value="property" className="space-y-4">
           <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
+          <details className="surface space-y-4 p-4">
+            <summary className="cursor-pointer font-medium">Documents and media</summary>
+            <PhotoStrip entityType="property" entityId={current.id} title="Photos" limit={16} />
+            <AttachmentsPanel
+              entityType="property"
+              entityId={current.id}
+              title="Property documents & media"
+            />
+            <OperationsContextPanel
+              property={current as never}
+              tasks={tasks as never}
+              records={data.externalRecords as never}
+              documents={data.documents as never}
+              documentsEnabled={docsEnabled}
+            />
+          </details>
         </TabsContent>
 
         {/* ------------------------------------------------------ Financial */}
@@ -718,10 +863,7 @@ function PropertyWorkspace() {
               people={data.people}
               propertyName={current.name}
               canReview={
-                can("handoff_review") ||
-                (Boolean(userId) &&
-                  (openHandoff.gate_step ?? "kati_review") === "kati_review" &&
-                  current.onboarding_owner === userId)
+                !readOnly && canReviewOnboardingGate(data.reviewCapabilities, openHandoff.gate_step)
               }
               disabled={readOnly}
               onDecision={(input) =>
@@ -767,6 +909,34 @@ function PropertyWorkspace() {
                 </ul>
               </div>
             )}
+            {(independent.financialBlockers.length > 0 || independent.fieldBlockers.length > 0) && (
+              <div className="mt-3 space-y-2 text-sm">
+                {independent.financialBlockers.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="block text-primary underline"
+                    onClick={() => void navigate({ search: { ...search, tab: "financial" } })}
+                  >
+                    Review financial request: {item.title}
+                  </button>
+                ))}
+                {independent.fieldBlockers.map((item) => (
+                  <button
+                    key={item.sourceType + item.id}
+                    type="button"
+                    className="block text-primary underline"
+                    onClick={() =>
+                      setOpenTaskId(
+                        item.taskIds.find((id) => tasks.some((task) => task.id === id)) ?? null,
+                      )
+                    }
+                  >
+                    Review linked field work: {item.title}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="mt-3">
               {openHandoff ? (
                 <Chip className={stateChip("waiting")}>
@@ -780,13 +950,10 @@ function PropertyWorkspace() {
                     </p>
                   )}
                   <RequestHandoffDialog
-                    ready={readiness.ready}
+                    ready={readiness.ready && tasks.every((t) => t.status === "complete")}
                     blockedReasons={readiness.hardReasons}
-                    disabled={!canEdit || readiness.blocked}
-                    carryoverCount={
-                      tasks.filter((t) => t.status !== "complete" && t.status !== "carryover")
-                        .length
-                    }
+                    disabled={!canExecuteProject || readiness.blocked}
+                    carryoverCount={tasks.filter((t) => t.status !== "complete").length}
                     onRequest={(notes2, carryoverAccepted) =>
                       requestHandoff.mutate({
                         data: { propertyId: current.id, notes: notes2, carryoverAccepted },
@@ -800,83 +967,10 @@ function PropertyWorkspace() {
         </TabsContent>
 
         {/* ------------------------------------------------------- Timeline */}
-        <TabsContent value="timeline" className="space-y-4">
-          <SchedulePanel
-            propertyId={current.id}
-            plannedClosingOn={
-              (current as { planned_closing_on?: string | null }).planned_closing_on ?? null
-            }
-            actualClosingOn={
-              (current as { actual_closing_on?: string | null }).actual_closing_on ?? null
-            }
-            actualAccessOn={
-              (current as { actual_access_on?: string | null }).actual_access_on ?? null
-            }
-            canEdit={canEdit}
-            onChange={() => void refresh()}
-          />
-          <section className="surface p-4">
-            <p className="font-medium">Section timeline</p>
-            <p className="text-sm text-muted-foreground">
-              Where each workflow section should land, from the dates Resolve calculated. Only
-              milestone-level dates are shown — individual task dates live in the Workflow tab.
-            </p>
-            <div className="mt-3 space-y-2">
-              {sections.map((s) => {
-                const dates = s.tasks
-                  .map((v) => v.task.due_on)
-                  .filter((d): d is string => Boolean(d))
-                  .sort();
-                const late = s.tasks.filter((v) => v.overdue).length;
-                return (
-                  <div
-                    key={s.key}
-                    className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 truncate font-medium">{s.label}</span>
-                    <span className="numeric text-xs text-muted-foreground">
-                      {dates.length > 0 ? `${dates[0]} → ${dates.at(-1)}` : "No dates set"}
-                    </span>
-                    <Chip
-                      className={stateChip(
-                        s.state === "complete"
-                          ? "done"
-                          : s.state === "blocked"
-                            ? "blocked"
-                            : "active",
-                      )}
-                    >
-                      {s.done}/{s.total}
-                    </Chip>
-                    {late > 0 && <Chip className={stateChip("blocked")}>{late} late</Chip>}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </TabsContent>
 
         {/* ------------------------------------------------------- Calendar */}
-        <TabsContent value="calendar">
-          <TaskCalendar tasks={tasks} people={data.people} onSelect={(t) => setOpenTaskId(t.id)} />
-        </TabsContent>
 
         {/* ---------------------------------------------------------- Files */}
-        <TabsContent value="files" className="space-y-4">
-          <PhotoStrip entityType="property" entityId={current.id} title="Photos" limit={16} />
-          <AttachmentsPanel
-            entityType="property"
-            entityId={current.id}
-            title="Property documents & media"
-          />
-          <OperationsContextPanel
-            property={current as never}
-            tasks={tasks as never}
-            records={data.externalRecords as never}
-            documents={data.documents as never}
-            documentsEnabled={docsEnabled}
-          />
-        </TabsContent>
 
         {/* ------------------------------------------------------- Activity */}
         <TabsContent value="activity" className="space-y-4">
@@ -913,8 +1007,17 @@ function PropertyWorkspace() {
         release={release}
         approvals={approvals as never}
         canRecordException={can("handoff_review")}
+        canManageTask={canManageOnboardingProperty(
+          userId,
+          can("handoff_review"),
+          openTask?.property_id,
+          data.projects,
+        )}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
+        onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>
+          saveDate.mutate({ data: { taskId, expectedUpdatedAt, dueOn, reason } } as never)
+        }
         onSubmitApproval={(taskId, version, note) =>
           submitApproval.mutate({ data: { taskId, version, note } } as never)
         }
@@ -1249,7 +1352,7 @@ function RequestHandoffDialog({
           <p className="text-sm text-muted-foreground">
             {ready
               ? "All blocking checks pass. The Director of Onboarding reviews first, then the Director of Operations."
-              : `Blocking checks are failing. You can still request the handoff if the ${carryoverCount} open item(s) are accepted as carryover work with an owner, a due date and a reason — carryover moves to Operations and no longer belongs to Onboarding.`}
+              : `Required checks pass. The ${carryoverCount} remaining item(s) must be accepted as carryover work with an owner, a due date and a reason — carryover moves to Operations and no longer belongs to Onboarding.`}
           </p>
           <Textarea
             rows={4}
@@ -1265,6 +1368,7 @@ function RequestHandoffDialog({
           )}
           <Button
             className="w-full"
+            disabled={blockedReasons.length > 0 || (!ready && !carryover)}
             onClick={() => {
               onRequest(notes.trim(), carryover);
               setOpen(false);

@@ -14,9 +14,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   hoursFromMinutes,
+  inParticipationWindow,
   progressSnapshot,
   OPERATING_TARGET_HOURS,
   OWNER_GOAL_HOURS,
+  ownerGoalMet,
   type ProgramStatus,
   type ProgressState,
 } from "./owner-participation";
@@ -36,6 +38,7 @@ export type OwnerProgramMetric = {
   properties: number;
   entries: number;
   reportedHours: number;
+  goalMet: boolean;
   approvedHours: number;
   pendingHours: number;
   returnedHours: number;
@@ -89,7 +92,7 @@ export async function loadOwnerAnalytics(
 ): Promise<OwnerAnalytics> {
   const base = supabase
     .from("owner_programs")
-    .select("id, owner_name, owner_email, status, started_on, ends_on")
+    .select("id, status, started_on, ends_on, canonical_owner:property_owners(name, email)")
     .is("archived_at", null);
   const programs = await (
     options.demo ? base.eq("is_demo", true) : base.or("is_demo.is.null,is_demo.eq.false")
@@ -125,7 +128,9 @@ export async function loadOwnerAnalytics(
   const [entries, links] = await Promise.all([
     supabase
       .from("owner_time_entries")
-      .select("id, program_id, minutes, review_status, amends_entry_id, flagged, created_at")
+      .select(
+        "id, program_id, minutes, review_status, amends_entry_id, flagged, created_at, entry_date",
+      )
       .in("program_id", ids),
     supabase
       .from("owner_program_properties")
@@ -153,12 +158,16 @@ export async function loadOwnerAnalytics(
     const superseded = new Set(
       mine.map((e) => e.amends_entry_id).filter((id): id is string => Boolean(id)),
     );
-    const countable = mine.filter((e) => e.review_status !== "returned" && !superseded.has(e.id));
+    const inPeriod = (e: { entry_date: string }) =>
+      inParticipationWindow(e.entry_date, p.started_on, p.ends_on);
+    const countable = mine.filter(
+      (e) => inPeriod(e) && e.review_status !== "returned" && !superseded.has(e.id),
+    );
     const reported = combinedMinutes(countable);
     const approved = combinedMinutes(countable.filter((e) => e.review_status === "approved"));
     const pending = combinedMinutes(countable.filter((e) => e.review_status !== "approved"));
     const returned = combinedMinutes(
-      mine.filter((e) => e.review_status === "returned" && !superseded.has(e.id)),
+      mine.filter((e) => inPeriod(e) && e.review_status === "returned" && !superseded.has(e.id)),
     );
 
     const snapshot = progressSnapshot({
@@ -177,8 +186,8 @@ export async function loadOwnerAnalytics(
 
     return {
       programId: p.id,
-      ownerName: p.owner_name ?? "Homeowner",
-      ownerEmail: p.owner_email,
+      ownerName: p.canonical_owner?.name ?? "Owner link unresolved",
+      ownerEmail: p.canonical_owner?.email ?? null,
       status: p.status as ProgramStatus,
       startedOn: p.started_on,
       endsOn: p.ends_on,
@@ -187,6 +196,7 @@ export async function loadOwnerAnalytics(
       properties: propertyCount.get(p.id) ?? 0,
       entries: countable.length,
       reportedHours: hoursFromMinutes(reported),
+      goalMet: ownerGoalMet(reported),
       approvedHours: hoursFromMinutes(approved),
       pendingHours: hoursFromMinutes(pending),
       returnedHours: hoursFromMinutes(returned),
@@ -221,7 +231,7 @@ export async function loadOwnerAnalytics(
       pendingHours: sum(metrics, (m) => m.pendingHours),
       pendingEntries: metrics.reduce((n, m) => n + m.pendingEntries, 0),
       flaggedEntries: metrics.reduce((n, m) => n + m.flaggedEntries, 0),
-      goalMet: metrics.filter((m) => m.reportedHours > OWNER_GOAL_HOURS).length,
+      goalMet: metrics.filter((m) => m.goalMet).length,
       behind: active.filter(
         (m) => m.state === "action_needed" || m.state === "significantly_behind",
       ).length,

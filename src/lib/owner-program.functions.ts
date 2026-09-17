@@ -55,6 +55,7 @@ export const addOwnerProgramProperty = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         propertyId: z.string().uuid(),
         closingDate: isoDate.nullable().default(null),
       })
@@ -72,6 +73,7 @@ export const removeOwnerProgramProperty = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         propertyId: z.string().uuid(),
         reason: z.string().trim().max(500).default(""),
       })
@@ -90,6 +92,7 @@ export const confirmOwnerPropertyClosing = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         propertyId: z.string().uuid(),
         closingDate: isoDate,
       })
@@ -108,10 +111,9 @@ export const updateOwnerProgram = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
-        ownerName: z.string().trim().max(120).default(""),
-        ownerEmail: z.string().trim().email().max(255).or(z.literal("")).default(""),
-        onboardingLead: z.string().trim().max(120).nullable().default(null),
-        operationsLead: z.string().trim().max(120).nullable().default(null),
+        expectedVersion: z.string().uuid(),
+        onboardingLead: z.string().uuid().nullable().default(null),
+        operationsLead: z.string().uuid().nullable().default(null),
         dfyConfirmed: z.boolean().default(false),
         internalNotes: z.string().trim().max(4000).default(""),
       })
@@ -127,11 +129,16 @@ export const updateOwnerProgram = createServerFn({ method: "POST" })
 export const activateOwnerProgram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ programId: z.string().uuid(), startedOn: isoDate }).parse(data),
+    z
+      .object({
+        programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
+        startedOn: isoDate,
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, activateProgram } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { activateProgram } = await import("./owner-program.server");
     return activateProgram(context.supabase, context.userId, data);
   });
 
@@ -141,6 +148,7 @@ export const setOwnerProgramStatus = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         status: z.enum([
           "draft",
           "waiting_for_closing",
@@ -164,7 +172,8 @@ export const completeOwnerProgram = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { assertSupervisor, completeProgram } = await import("./owner-program.server");
     await assertSupervisor(context.supabase, context.userId);
-    return completeProgram(context.supabase, context.userId, data.programId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return completeProgram(context.supabase, context.userId, data.programId, supabaseAdmin);
   });
 
 /** Supervisor: record a correction without overwriting what the owner entered. */
@@ -182,7 +191,8 @@ export const correctOwnerTimeEntry = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { assertSupervisor, recordTimeCorrection } = await import("./owner-program.server");
     await assertSupervisor(context.supabase, context.userId);
-    return recordTimeCorrection(context.supabase, context.userId, data);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return recordTimeCorrection(context.supabase, context.userId, data, supabaseAdmin);
   });
 
 /** Supervisor: release owner activities from the roadmap catalog. */
@@ -192,6 +202,7 @@ export const seedOwnerRoadmap = createServerFn({ method: "POST" })
     z
       .object({
         programId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         phase: z.enum(["onboarding", "ongoing", "all"]).default("all"),
       })
       .parse(data),
@@ -262,6 +273,7 @@ export const reviewOwnerTimeEntry = createServerFn({ method: "POST" })
     z
       .object({
         entryId: z.string().uuid(),
+        expectedVersion: z.string().uuid(),
         decision: z.enum(["approved", "returned", "flagged"]),
         note: z.string().trim().max(1000).default(""),
       })

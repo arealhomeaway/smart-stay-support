@@ -8,16 +8,27 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
+import { deliveryClaim, guardedDelivery } from "./onboarding-delivery.server";
 import { writeAudit } from "./audit.server";
-import { recordProjectEvent } from "./onboarding-project.server";
+import { readOnboardingReviewCapabilities } from "./onboarding-review-access.server";
+import { loadOwnerContacts, recordProjectEvent } from "./onboarding-project.server";
+import { loadOnboardingPolicy, loadOnboardingPolicySnapshot } from "./onboarding-policy.server";
 import {
   authorityTier,
   AUTHORITY_TIER_LABELS,
   authorityGuidance,
   money,
 } from "./maintenance-policy";
-import { financialNextAction, variance, type FinancialRequest } from "./onboarding-finance";
+import {
+  FACT_FIELDS,
+  ASSET_FACT_FIELDS,
+  canRecordInvoice,
+  financialNextAction,
+  tierFor,
+  variance,
+  type FinancialRequest,
+} from "./onboarding-finance";
 
 type Client = SupabaseClient<Database>;
 
@@ -34,14 +45,15 @@ async function assertOnboardingStaff(supabase: Client, userId: string) {
 }
 
 async function projectFor(supabase: Client, propertyId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("onboarding_projects")
-    .select("id, is_demo")
+    .select("id, is_demo, project_manager")
     .eq("property_id", propertyId)
     .neq("status", "cancelled")
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (error) throw error;
   return data ?? null;
 }
 
@@ -111,14 +123,12 @@ export async function accountingRecipient(supabase: Client): Promise<string | nu
 export async function setAccountingRecipient(supabase: Client, userId: string, email: string) {
   const isAdmin = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (!isAdmin.data) throw new Error("Only an administrator can set the accounting recipient.");
-  const { error } = await supabase
-    .from("app_settings")
-    .upsert({
-      key: ACCOUNTING_SETTING_KEY,
-      value: { email },
-      updated_by: userId,
-      updated_at: new Date().toISOString(),
-    });
+  const { error } = await supabase.from("app_settings").upsert({
+    key: ACCOUNTING_SETTING_KEY,
+    value: { email },
+    updated_by: userId,
+    updated_at: new Date().toISOString(),
+  });
   if (error) throw error;
   await writeAudit({
     actorId: userId,
@@ -135,8 +145,23 @@ export async function setAccountingRecipient(supabase: Client, userId: string, e
 /* Financial requests                                                  */
 /* ------------------------------------------------------------------ */
 
-export async function loadFinance(supabase: Client, propertyId: string) {
-  const [requests, accounts, costs, facts, recipient, owner] = await Promise.all([
+export async function loadFinance(supabase: Client, propertyId: string, userId: string) {
+  const [capabilities, project] = await Promise.all([
+    readOnboardingReviewCapabilities(supabase),
+    projectFor(supabase, propertyId),
+  ]);
+  const [
+    requests,
+    accounts,
+    costs,
+    facts,
+    recipient,
+    owner,
+    property,
+    reviewers,
+    authorityPolicy,
+    assets,
+  ] = await Promise.all([
     supabase
       .from("financial_requests")
       .select("*")
@@ -158,23 +183,43 @@ export async function loadFinance(supabase: Client, propertyId: string) {
       .eq("property_id", propertyId)
       .order("created_at", { ascending: false }),
     accountingRecipient(supabase),
+    loadOwnerContacts(supabase, [propertyId]),
     supabase
-      .from("property_owner_contacts")
-      .select("owner_name, owner_email, owner_phone")
-      .eq("property_id", propertyId)
+      .from("properties")
+      .select("wifi_notes, access_notes, address_line1, city, state, postal_code, nickname")
+      .eq("id", propertyId)
       .maybeSingle(),
+    supabase.from("profiles").select("id, full_name"),
+    loadOnboardingPolicy(supabase),
+    supabase
+      .from("property_assets")
+      .select("*")
+      .eq("property_id", propertyId)
+      .is("archived_at", null)
+      .order("name"),
   ]);
   if (requests.error) throw requests.error;
   if (accounts.error) throw accounts.error;
   if (costs.error) throw costs.error;
   if (facts.error) throw facts.error;
+  if (property.error) throw property.error;
+  if (reviewers.error) throw reviewers.error;
+  if (assets.error) throw assets.error;
   return {
     requests: requests.data ?? [],
+    decisionCapabilities: {
+      supervisor: capabilities.micah_review || capabilities.operations_acceptance,
+      owner: capabilities.can_review_stages || project?.project_manager === userId,
+    },
     utilities: accounts.data ?? [],
     utilityCosts: costs.data ?? [],
     factProposals: facts.data ?? [],
     accountingRecipient: recipient,
-    ownerContact: owner.data ?? null,
+    ownerContact: owner[0] ?? null,
+    currentFacts: property.data ?? null,
+    assets: assets.data ?? [],
+    reviewers: reviewers.data ?? [],
+    authorityPolicy,
   };
 }
 
@@ -192,55 +237,57 @@ export async function createFinancialRequest(
     emergency?: boolean;
     emergencyReason?: string | null | undefined;
   },
+  writer?: Pick<Client, "rpc">,
 ) {
   await assertOnboardingStaff(supabase, userId);
-  const project = await projectFor(supabase, input.propertyId);
-  const tier = authorityTier(input.estimateAmount, { emergency: input.emergency ?? false });
-  if (tier === "emergency" && !input.emergencyReason) {
+
+  if (input.taskId) {
+    const task = await supabase
+      .from("onboarding_tasks")
+      .select("id")
+      .eq("id", input.taskId)
+      .eq("property_id", input.propertyId)
+      .maybeSingle();
+    if (task.error) throw task.error;
+    if (!task.data) throw new Error("That task is not available for this property.");
+  }
+  const { policy, storedValue } = await loadOnboardingPolicySnapshot(supabase);
+  const tier = authorityTier(input.estimateAmount, { emergency: input.emergency ?? false, policy });
+  if (tier === "emergency" && !input.emergencyReason?.trim()) {
     throw new Error("An emergency needs a recorded reason before it can proceed.");
   }
-  const { data, error } = await supabase
-    .from("financial_requests")
-    .insert({
-      property_id: input.propertyId,
-      project_id: project?.id ?? null,
+  const persistence =
+    writer ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  const { data, error } = await persistence.rpc("create_onboarding_financial_request", {
+    _actor_id: userId,
+    _property_id: input.propertyId,
+    _request: {
       task_id: input.taskId ?? null,
       kind: input.kind,
       title: input.title,
       vendor: input.vendor ?? null,
       description: input.description ?? null,
       estimate_amount: input.estimateAmount,
-      authority_tier: tier,
       emergency: input.emergency ?? false,
       emergency_reason: input.emergencyReason ?? null,
-      status: "estimate",
-      created_by: userId,
-      is_demo: project?.is_demo ?? false,
-    })
-    .select("*")
-    .maybeSingle();
+      authority_policy: policy,
+      expected_policy: storedValue,
+    } as Json,
+  });
   if (error) throw error;
+  const created = data as unknown as FinancialRequest | null;
+  if (!created?.id)
+    throw new Error("The financial request was not saved. Refresh before retrying.");
 
-  if (project) {
-    await recordProjectEvent(supabase, {
-      projectId: project.id,
-      propertyId: input.propertyId,
-      kind: "financial_request_created",
-      summary: `${input.title} — ${money(input.estimateAmount)} (${AUTHORITY_TIER_LABELS[tier]})`,
-      detail: authorityGuidance(input.estimateAmount, { emergency: input.emergency ?? false }),
-      actor: userId,
-      isDemo: project.is_demo ?? false,
-    });
-  }
   await writeAudit({
     actorId: userId,
     action: "financial_request_created",
     entityType: "financial_request",
-    entityId: data?.id ?? input.propertyId,
+    entityId: created.id,
     entityLabel: input.title,
     after: { amount: input.estimateAmount, tier },
   });
-  return data as FinancialRequest;
+  return created;
 }
 
 /**
@@ -265,44 +312,23 @@ export async function sendFinancialForApproval(
   if (row.error) throw row.error;
   const request = row.data as FinancialRequest | null;
   if (!request) throw new Error("That request is not available.");
-  const tier = authorityTier(request.estimate_amount, { emergency: request.emergency });
+  if (request.estimate_amount == null || !Number.isFinite(request.estimate_amount)) {
+    throw new Error("Record a valid estimate before requesting approval.");
+  }
+  const tier = tierFor(request);
   if (tier === "proceed") {
     throw new Error(
-      `Under ${money(200)} no approval is needed — record the invoice when it arrives.`,
+      "This request can proceed under its recorded authority — record the invoice when it arrives.",
     );
   }
 
-  const approverRole = tier === "owner" ? "owner" : "supervisor";
-  const { data: approval, error } = await supabase
-    .from("approvals")
-    .insert({
-      entity_type: "financial_request",
-      entity_id: request.id,
-      property_id: request.property_id,
-      kind: `onboarding_${request.kind}`,
-      title: request.title,
-      detail: [request.description, request.vendor ? `Vendor: ${request.vendor}` : null]
-        .filter(Boolean)
-        .join("\n"),
-      amount: request.estimate_amount,
-      requested_by: userId,
-      approver_role: approverRole,
-      status: "pending",
-      is_demo: request.is_demo,
-    })
-    .select("id")
-    .maybeSingle();
+  const { data: approvalId, error } = await supabase.rpc("prepare_onboarding_financial_approval", {
+    _request_id: request.id,
+    _expected_amount: request.estimate_amount,
+    _expected_tier: tier,
+  });
   if (error) throw error;
-
-  await supabase
-    .from("financial_requests")
-    .update({
-      status: "awaiting_approval",
-      authority_tier: tier,
-      approval_id: approval?.id ?? null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", request.id);
+  if (!approvalId) throw new Error("The approval could not be prepared.");
 
   const link = `/onboarding/${request.property_id}?tab=financial`;
   if (tier === "supervisor") {
@@ -312,7 +338,10 @@ export async function sendFinancialForApproval(
         userId: id,
         kind: "approval_needed",
         title: `Approve ${money(request.estimate_amount)} — ${request.title}`,
-        body: authorityGuidance(request.estimate_amount),
+        body: authorityGuidance(
+          request.estimate_amount,
+          request.authority_policy ? { policy: request.authority_policy } : {},
+        ),
         linkPath: link,
         entityType: "financial_request",
         entityId: request.id,
@@ -323,7 +352,7 @@ export async function sendFinancialForApproval(
   } else {
     await routeOwnerDecision(supabase, userId, {
       propertyId: request.property_id,
-      approvalId: approval?.id ?? null,
+      approvalId,
       subject: request.title,
       amount: Number(request.estimate_amount ?? 0),
       detail: request.description ?? "",
@@ -336,9 +365,9 @@ export async function sendFinancialForApproval(
     entityType: "financial_request",
     entityId: request.id,
     entityLabel: request.title,
-    after: { tier, approvalId: approval?.id ?? null },
+    after: { tier, approvalId },
   });
-  return { ok: true as const, tier, approvalId: approval?.id ?? null };
+  return { ok: true as const, tier, approvalId };
 }
 
 /**
@@ -359,51 +388,70 @@ export async function routeOwnerDecision(
     detail: string;
   },
 ) {
-  const { activeOwnerFor } = await import("./active-owner.server");
-  const link = await activeOwnerFor(supabase, input.propertyId);
+  if (!input.approvalId) throw new Error("Save the approval before routing its decision.");
+  const canonical = await supabase
+    .from("approvals")
+    .select("id, status, ref, owner_email_to, owner_email_sent_at")
+    .eq("id", input.approvalId)
+    .eq("property_id", input.propertyId)
+    .maybeSingle();
+  if (canonical.error) throw canonical.error;
+  if (!canonical.data || canonical.data.status !== "pending") {
+    throw new Error("This approval is not available for delivery. Refresh its decision status.");
+  }
+  const contact = (await loadOwnerContacts(supabase, [input.propertyId]))[0];
+  if (!contact)
+    throw new Error("Link an active canonical Owner to this property before routing a decision.");
   const property = await supabase
     .from("properties")
-    .select("name")
+    .select("name, is_demo, archived_at")
     .eq("id", input.propertyId)
     .maybeSingle();
-  const home = property.data?.name ?? "your home";
-
-  if (link?.ownerUserId && input.approvalId) {
-    await supabase
+  if (property.error) throw property.error;
+  if (!property.data || property.data.archived_at || property.data.is_demo) {
+    throw new Error("Only a current real property can route an owner decision.");
+  }
+  const home = property.data.name;
+  const { activeOwnerFor } = await import("./active-owner.server");
+  const ownerUserId = (await activeOwnerFor(supabase, input.propertyId))?.ownerUserId;
+  if (ownerUserId) {
+    const routed = await supabase
       .from("approvals")
-      .update({ approver_id: link.ownerUserId })
-      .eq("id", input.approvalId);
+      .update({ approver_id: ownerUserId })
+      .eq("id", input.approvalId)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
+    if (routed.error) throw routed.error;
+    if (!routed.data) throw new Error("The approval changed before it could reach the owner.");
     return { channel: "in_app" as const, to: null };
   }
 
-  // Standard owner: Resolve generates the email and keeps it tied to the record.
-  const contact = await supabase
-    .from("property_owner_contacts")
-    .select("owner_name, owner_email")
-    .eq("property_id", input.propertyId)
-    .not("owner_email", "is", null)
-    .limit(1)
-    .maybeSingle();
-  const to = contact.data?.owner_email ?? null;
-  if (!to) return { channel: "none" as const, to: null };
+  const to = contact.owner_email?.trim() || null;
+  if (canonical.data.owner_email_sent_at && canonical.data.owner_email_to) {
+    if (!to || canonical.data.owner_email_to.trim().toLowerCase() !== to.toLowerCase()) {
+      throw new Error(
+        "The canonical Owner recipient changed after delivery. Reconcile that delivery before routing again.",
+      );
+    }
+    return { channel: "email" as const, to: canonical.data.owner_email_to };
+  }
+
+  // Standard owners use the same canonical Owner record, even without a program account.
+  if (!to)
+    throw new Error(
+      "The approval is saved. Add the homeowner's email address to the canonical Owner record before sending it.",
+    );
 
   // Every approval carries one short reference. Resolve prints it in the
   // subject and the body, so when the homeowner replies the answer can be filed
   // against this exact decision rather than guessed at.
   const { approvalRef } = await import("./approval-reference");
-  let reference: string | null = null;
-  if (input.approvalId) {
-    const row = await supabase
-      .from("approvals")
-      .select("ref")
-      .eq("id", input.approvalId)
-      .maybeSingle();
-    reference = approvalRef(row.data?.ref ?? null);
-  }
+  const reference = approvalRef(canonical.data.ref ?? null);
 
   const { sendEmail, emailShell } = await import("./email.server");
   const body = [
-    `${contact.data?.owner_name ?? "Hello"},`,
+    `${contact.owner_name ?? "Hello"},`,
     "",
     `We need your decision before we go ahead with the following at ${home}:`,
     "",
@@ -421,23 +469,36 @@ export async function routeOwnerDecision(
     .join("\n");
 
   const html = emailShell(`Approval needed for ${home}`, body, undefined, "owner");
-  const result = await sendEmail({
-    to,
-    subject: `Approval needed — ${input.subject} at ${home}${reference ? ` [${reference}]` : ""}`,
-    html,
-    purpose: "onboarding_owner_approval",
+  const result = await guardedDelivery({
+    ...deliveryClaim(supabase, {
+      table: "approvals",
+      id: input.approvalId,
+      recipient: to,
+      actor: userId,
+    }),
+    send: () =>
+      sendEmail({
+        singleAttempt: true,
+        to,
+        subject: `Approval needed — ${input.subject} at ${home}${reference ? ` [${reference}]` : ""}`,
+        html,
+        purpose: "onboarding_owner_approval",
+      }),
+    recordSent: async () => {
+      const recorded = await supabase
+        .from("approvals")
+        .update({
+          external_reference: `email:${to}`,
+          owner_email_to: to,
+          owner_email_sent_at: new Date().toISOString(),
+        })
+        .eq("id", input.approvalId!)
+        .select("id")
+        .maybeSingle();
+      if (recorded.error) throw recorded.error;
+      if (!recorded.data) throw new Error("Delivery record missing");
+    },
   });
-  if (input.approvalId) {
-    await supabase
-      .from("approvals")
-      .update({
-        external_reference: `email:${to}`,
-        detail: `Sent to ${to} (${result.status})`,
-        owner_email_to: to,
-        owner_email_sent_at: new Date().toISOString(),
-      })
-      .eq("id", input.approvalId);
-  }
   await writeAudit({
     actorId: userId,
     action: "owner_approval_emailed",
@@ -461,58 +522,20 @@ export async function decideFinancialRequest(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
-  const row = await supabase
-    .from("financial_requests")
-    .select("*")
-    .eq("id", input.requestId)
-    .maybeSingle();
-  if (row.error) throw row.error;
-  const request = row.data as FinancialRequest | null;
-  if (!request) throw new Error("That request is not available.");
-  if (!input.note || input.note.trim().length < 3) {
-    throw new Error("Record who decided and what they said.");
-  }
-
-  const now = new Date().toISOString();
-  if (request.approval_id) {
-    await supabase
-      .from("approvals")
-      .update({
-        status: input.approved ? "approved" : "declined",
-        decision_note: input.note,
-        decided_at: now,
-      })
-      .eq("id", request.approval_id);
-  }
-  await supabase
-    .from("financial_requests")
-    .update({
-      status: input.approved ? "approved" : "declined",
-      approved_amount: input.approved ? (input.approvedAmount ?? request.estimate_amount) : null,
-      approved_at: input.approved ? now : null,
-      updated_at: now,
-    })
-    .eq("id", request.id);
-
-  const project = await projectFor(supabase, request.property_id);
-  if (project) {
-    await recordProjectEvent(supabase, {
-      projectId: project.id,
-      propertyId: request.property_id,
-      kind: input.approved ? "financial_request_approved" : "financial_request_declined",
-      summary: `${request.title} — ${input.approved ? "approved" : "declined"}`,
-      detail: input.note,
-      actor: userId,
-      isDemo: project.is_demo ?? false,
-    });
-  }
+  const { error } = await supabase.rpc("decide_onboarding_financial_request", {
+    _request_id: input.requestId,
+    _approved: input.approved,
+    _note: input.note,
+    ...(input.approvedAmount != null ? { _approved_amount: input.approvedAmount } : {}),
+  });
+  if (error) throw error;
   await writeAudit({
     actorId: userId,
     action: input.approved ? "financial_request_approved" : "financial_request_declined",
     entityType: "financial_request",
-    entityId: request.id,
-    entityLabel: request.title,
+    entityId: input.requestId,
     reason: input.note,
+    after: { approvedAmount: input.approvedAmount ?? null },
   });
   return { ok: true as const };
 }
@@ -538,9 +561,15 @@ export async function recordInvoice(
   const request = row.data as FinancialRequest | null;
   if (!request) throw new Error("That request is not available.");
 
+  if (!canRecordInvoice(request))
+    throw new Error(
+      "This request needs approval or already has an invoice. Refresh its current status.",
+    );
+  if (!Number.isFinite(input.invoiceAmount) || input.invoiceAmount < 0)
+    throw new Error("Enter a valid invoice amount.");
   const merged = { ...request, invoice_amount: input.invoiceAmount };
   const delta = variance(merged);
-  if (delta != null && delta > 0 && !input.varianceNote) {
+  if (delta != null && delta > 0 && !input.varianceNote?.trim()) {
     const baseline = Number(request.approved_amount ?? request.estimate_amount ?? 0);
     if (baseline <= 0 || delta / baseline > 0.1) {
       throw new Error(
@@ -549,7 +578,7 @@ export async function recordInvoice(
     }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("financial_requests")
     .update({
       invoice_amount: input.invoiceAmount,
@@ -559,8 +588,15 @@ export async function recordInvoice(
       status: "invoiced",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", request.id);
+    .eq("id", request.id)
+    .eq("status", request.status)
+    .is("invoice_amount", null)
+    .is("invoice_at", null)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!data)
+    throw new Error("The request changed before the invoice was saved. Refresh and review it.");
 
   await writeAudit({
     actorId: userId,
@@ -590,6 +626,15 @@ export async function sendToAccounting(
   if (!request) throw new Error("That request is not available.");
   if (request.invoice_amount == null)
     throw new Error("Record the invoice before sending it to accounting.");
+
+  if (
+    request.accounting_sent_at &&
+    request.accounting_recipient &&
+    ["sent_to_accounting", "settled"].includes(request.status)
+  )
+    return { ok: true as const, to: request.accounting_recipient, delivery: "sent" as const };
+  if (request.status !== "invoiced")
+    throw new Error("Only an invoiced request can be sent to accounting.");
 
   const to = await accountingRecipient(supabase);
   if (!to) {
@@ -622,23 +667,40 @@ export async function sendToAccounting(
     undefined,
     "staff",
   );
-  const result = await sendEmail({
-    to,
-    subject: `Onboarding cost — ${request.title}`,
-    html,
-    purpose: "onboarding_accounting",
+  const result = await guardedDelivery({
+    ...deliveryClaim(supabase, {
+      table: "financial_requests",
+      id: request.id,
+      recipient: to,
+      actor: userId,
+    }),
+    send: () =>
+      sendEmail({
+        singleAttempt: true,
+        to,
+        subject: `Onboarding cost — ${request.title}`,
+        html,
+        purpose: "onboarding_accounting",
+      }),
+    recordSent: async () => {
+      const { data, error } = await supabase
+        .from("financial_requests")
+        .update({
+          status: "sent_to_accounting",
+          accounting_recipient: to,
+          accounting_sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.id)
+        .eq("status", "invoiced")
+        .select("id")
+        .maybeSingle();
+      if (error || !data)
+        throw new Error(
+          "The accounting email was sent, but its handoff could not be recorded. Verify delivery before retrying.",
+        );
+    },
   });
-
-  const { error } = await supabase
-    .from("financial_requests")
-    .update({
-      status: "sent_to_accounting",
-      accounting_recipient: to,
-      accounting_sent_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", request.id);
-  if (error) throw error;
   await writeAudit({
     actorId: userId,
     action: "financial_sent_to_accounting",
@@ -654,21 +716,31 @@ export async function sendToAccounting(
 export async function settleFinancialRequest(
   supabase: Client,
   userId: string,
-  input: { requestId: string; note: string },
+  input: { requestId: string; note: string; actualAmount: number },
 ) {
   await assertOnboardingStaff(supabase, userId);
+  if (!Number.isFinite(input.actualAmount) || input.actualAmount < 0)
+    throw new Error("Enter the actual paid amount.");
   const { data, error } = await supabase
     .from("financial_requests")
     .update({
       status: "settled",
       settled_at: new Date().toISOString(),
       settlement_note: input.note,
+      actual_amount: input.actualAmount,
+      actual_recorded_by: userId,
+      actual_recorded_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.requestId)
+    .eq("status", "sent_to_accounting")
     .select("title, property_id")
     .maybeSingle();
   if (error) throw error;
+  if (!data)
+    throw new Error(
+      "Only a request handed to accounting can be settled. Refresh its current status.",
+    );
   await writeAudit({
     actorId: userId,
     action: "financial_request_settled",
@@ -676,6 +748,7 @@ export async function settleFinancialRequest(
     entityId: input.requestId,
     entityLabel: data?.title ?? "Financial request",
     reason: input.note,
+    after: { actualAmount: input.actualAmount },
   });
   return { ok: true as const };
 }
@@ -714,12 +787,20 @@ export async function saveUtilityAccount(
     account_label: input.accountLabel,
     status: input.status,
     responsible: input.responsible,
-    service_start_on: input.serviceStartOn || null,
-    notes: input.notes ?? null,
+    ...(input.serviceStartOn !== undefined
+      ? { service_start_on: input.serviceStartOn || null }
+      : {}),
+    ...(input.notes !== undefined ? { notes: input.notes } : {}),
     updated_at: new Date().toISOString(),
   };
   const query = input.id
-    ? supabase.from("utility_accounts").update(patch).eq("id", input.id).select("id").maybeSingle()
+    ? supabase
+        .from("utility_accounts")
+        .update(patch)
+        .eq("id", input.id)
+        .eq("property_id", input.propertyId)
+        .select("id")
+        .maybeSingle()
     : supabase
         .from("utility_accounts")
         .insert({ ...patch, created_by: userId, is_demo: project?.is_demo ?? false })
@@ -727,6 +808,7 @@ export async function saveUtilityAccount(
         .maybeSingle();
   const { data, error } = await query;
   if (error) throw error;
+  if (!data) throw new Error("That utility account is not available for this property.");
   await writeAudit({
     actorId: userId,
     action: input.id ? "utility_account_updated" : "utility_account_added",
@@ -752,6 +834,18 @@ export async function recordUtilityCost(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
+  if (!Number.isFinite(input.amount) || input.amount < 0)
+    throw new Error("Enter a valid utility cost.");
+  if (input.periodStart && input.periodEnd && input.periodStart > input.periodEnd)
+    throw new Error("The billing period must end on or after its start date.");
+  const account = await supabase
+    .from("utility_accounts")
+    .select("id")
+    .eq("id", input.accountId)
+    .eq("property_id", input.propertyId)
+    .maybeSingle();
+  if (account.error) throw account.error;
+  if (!account.data) throw new Error("That utility account is not available for this property.");
   const project = await projectFor(supabase, input.propertyId);
   const { error } = await supabase.from("utility_costs").insert({
     account_id: input.accountId,
@@ -772,22 +866,13 @@ export async function recordUtilityCost(
 /* Permanent facts                                                     */
 /* ------------------------------------------------------------------ */
 
-const FACT_FIELDS: Record<string, string> = {
-  wifi_notes: "Wi-Fi notes",
-  access_notes: "Access notes",
-  address_line1: "Street address",
-  city: "City",
-  state: "State",
-  postal_code: "Postal code",
-  nickname: "Nickname",
-};
-
 /** Field capture never overwrites: it proposes, and a human compares. */
 export async function proposeFact(
   supabase: Client,
   userId: string,
   input: {
     propertyId: string;
+    assetId?: string | null | undefined;
     fieldKey: string;
     proposedValue: string;
     taskId?: string | null | undefined;
@@ -795,20 +880,47 @@ export async function proposeFact(
   },
 ) {
   await assertOnboardingStaff(supabase, userId);
-  const label = FACT_FIELDS[input.fieldKey] ?? input.fieldKey;
+  const label = (input.assetId ? ASSET_FACT_FIELDS : FACT_FIELDS)[input.fieldKey];
+  if (!label) throw new Error("This field cannot be changed through onboarding fact review.");
   const property = await supabase
     .from("properties")
     .select("*")
     .eq("id", input.propertyId)
     .maybeSingle();
   if (property.error) throw property.error;
-  const current = (property.data as Record<string, unknown> | null)?.[input.fieldKey];
+  if (!property.data) throw new Error("That property is not available.");
+  if (input.taskId) {
+    const task = await supabase
+      .from("onboarding_tasks")
+      .select("id")
+      .eq("id", input.taskId)
+      .eq("property_id", input.propertyId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (task.error) throw task.error;
+    if (!task.data) throw new Error("Choose a current task belonging to this property.");
+  }
+  let target: Record<string, unknown> = property.data;
+  if (input.assetId) {
+    const asset = await supabase
+      .from("property_assets")
+      .select("*")
+      .eq("id", input.assetId)
+      .eq("property_id", input.propertyId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (asset.error) throw asset.error;
+    if (!asset.data) throw new Error("Choose a current asset belonging to this property.");
+    target = asset.data;
+  }
+  const current = target[input.fieldKey];
   const project = await projectFor(supabase, input.propertyId);
 
   const { data, error } = await supabase
     .from("property_fact_proposals")
     .insert({
       property_id: input.propertyId,
+      asset_id: input.assetId ?? null,
       project_id: project?.id ?? null,
       task_id: input.taskId ?? null,
       field_key: input.fieldKey,
@@ -852,41 +964,12 @@ export async function decideFact(
   if (!proposal) throw new Error("That proposed change is not available.");
   if (proposal.status !== "pending") throw new Error("That change has already been reviewed.");
 
-  if (input.accept) {
-    const patch = {
-      [proposal.field_key]: proposal.proposed_value,
-    } as Database["public"]["Tables"]["properties"]["Update"];
-    const { error } = await supabase
-      .from("properties")
-      .update(patch)
-      .eq("id", proposal.property_id);
-    if (error) throw error;
-  }
-  const { error } = await supabase
-    .from("property_fact_proposals")
-    .update({
-      status: input.accept ? "accepted" : "rejected",
-      reviewed_by: userId,
-      reviewed_at: new Date().toISOString(),
-      decision_note: input.note ?? null,
-    })
-    .eq("id", proposal.id);
+  const { error } = await supabase.rpc("review_onboarding_fact", {
+    _proposal_id: proposal.id,
+    _accept: input.accept,
+    ...(input.note != null ? { _note: input.note } : {}),
+  });
   if (error) throw error;
-
-  const project = await projectFor(supabase, proposal.property_id);
-  if (project) {
-    await recordProjectEvent(supabase, {
-      projectId: project.id,
-      propertyId: proposal.property_id,
-      kind: input.accept ? "fact_accepted" : "fact_rejected",
-      summary: `${proposal.field_label} — ${input.accept ? "updated" : "kept as recorded"}`,
-      priorValue: proposal.current_value,
-      newValue: input.accept ? proposal.proposed_value : proposal.current_value,
-      detail: input.note ?? null,
-      actor: userId,
-      isDemo: project.is_demo ?? false,
-    });
-  }
   await writeAudit({
     actorId: userId,
     action: input.accept ? "property_fact_accepted" : "property_fact_rejected",
@@ -939,4 +1022,39 @@ export async function setFinancialReconciliation(
     after: { status: input.status, propertyId: data?.property_id ?? null },
   });
   return { ok: true as const };
+}
+export async function createOnboardingAsset(
+  supabase: Client,
+  userId: string,
+  input: { propertyId: string; name: string; kind: string },
+) {
+  await assertOnboardingStaff(supabase, userId);
+  const property = await supabase
+    .from("properties")
+    .select("id,is_demo")
+    .eq("id", input.propertyId)
+    .maybeSingle();
+  if (property.error) throw property.error;
+  if (!property.data) throw new Error("That property is not available.");
+  const result = await supabase
+    .from("property_assets")
+    .insert({
+      property_id: input.propertyId,
+      name: input.name.trim(),
+      kind: input.kind.trim(),
+      created_by: userId,
+      is_demo: property.data.is_demo ?? false,
+    })
+    .select("id")
+    .single();
+  if (result.error) throw result.error;
+  await writeAudit({
+    actorId: userId,
+    action: "property_asset_added",
+    entityType: "property_asset",
+    entityId: result.data.id,
+    entityLabel: input.name,
+    after: { propertyId: input.propertyId, kind: input.kind },
+  });
+  return result.data;
 }

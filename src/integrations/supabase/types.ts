@@ -14,6 +14,16 @@ export type Database = {
   }
   public: {
     Tables: {
+      ticket_owner_updates: {
+        Row: {
+          id: string; ticket_id: string; property_id: string; owner_record_id: string;
+          revision: number; issue: string; work_performed: string; outcome: string; owner_request_type: string | null; owner_request_why: string | null;
+          reviewed_by: string; reviewed_at: string; source_updated_at: string; is_demo: boolean;
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -163,6 +173,8 @@ export type Database = {
           kind: string
           owner_email_conversation_id: string | null
           owner_email_sent_at: string | null
+          onboarding_delivery_history: Json
+          onboarding_delivery_attempt: Json | null
           owner_email_to: string | null
           property_id: string | null
           recorded_by: string | null
@@ -194,6 +206,8 @@ export type Database = {
           kind: string
           owner_email_conversation_id?: string | null
           owner_email_sent_at?: string | null
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           owner_email_to?: string | null
           property_id?: string | null
           recorded_by?: string | null
@@ -225,6 +239,8 @@ export type Database = {
           kind?: string
           owner_email_conversation_id?: string | null
           owner_email_sent_at?: string | null
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           owner_email_to?: string | null
           property_id?: string | null
           recorded_by?: string | null
@@ -1390,6 +1406,10 @@ export type Database = {
       }
       documents: {
         Row: {
+          owner_recipient_id: string | null
+          owner_recipient_program_id: string | null
+          fulfils_request_id: string | null
+          fulfilled_by_document_id: string | null
           archived_at: string | null
           category: string | null
           created_at: string
@@ -1420,6 +1440,10 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          owner_recipient_id?: string | null
+          owner_recipient_program_id?: string | null
+          fulfils_request_id?: string | null
+          fulfilled_by_document_id?: string | null
           archived_at?: string | null
           category?: string | null
           created_at?: string
@@ -1450,6 +1474,10 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          owner_recipient_id?: string | null
+          owner_recipient_program_id?: string | null
+          fulfils_request_id?: string | null
+          fulfilled_by_document_id?: string | null
           archived_at?: string | null
           category?: string | null
           created_at?: string
@@ -2090,6 +2118,12 @@ export type Database = {
       }
       financial_requests: {
         Row: {
+          authority_policy: Json | null
+          actual_amount: number | null
+          actual_recorded_at: string | null
+          actual_recorded_by: string | null
+          onboarding_delivery_history: Json
+          onboarding_delivery_attempt: Json | null
           accounting_recipient: string | null
           accounting_sent_at: string | null
           approval_id: string | null
@@ -2120,7 +2154,13 @@ export type Database = {
           vendor: string | null
         }
         Insert: {
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           accounting_recipient?: string | null
+          actual_amount?: number | null
+          actual_recorded_at?: string | null
+          actual_recorded_by?: string | null
+          authority_policy?: Json | null
           accounting_sent_at?: string | null
           approval_id?: string | null
           approved_amount?: number | null
@@ -2150,7 +2190,13 @@ export type Database = {
           vendor?: string | null
         }
         Update: {
+          onboarding_delivery_history?: Json
+          onboarding_delivery_attempt?: Json | null
           accounting_recipient?: string | null
+          actual_amount?: number | null
+          actual_recorded_at?: string | null
+          actual_recorded_by?: string | null
+          authority_policy?: Json | null
           accounting_sent_at?: string | null
           approval_id?: string | null
           approved_amount?: number | null
@@ -4033,6 +4079,8 @@ export type Database = {
           archive_reason: string | null
           archived_at: string | null
           archived_by: string | null
+          report_version: string
+          completion_report: Json | null
           completed_at: string | null
           completed_by: string | null
           created_at: string
@@ -4058,6 +4106,7 @@ export type Database = {
           owner_email: string | null
           owner_name: string | null
           owner_phone: string | null
+          owner_record_id: string | null
           owner_user_id: string | null
           property_id: string | null
           started_on: string | null
@@ -4071,6 +4120,8 @@ export type Database = {
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
+          report_version?: string
+          completion_report?: Json | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -4096,6 +4147,7 @@ export type Database = {
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          owner_record_id?: string | null
           owner_user_id?: string | null
           property_id?: string | null
           started_on?: string | null
@@ -4109,6 +4161,8 @@ export type Database = {
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
+          report_version?: string
+          completion_report?: Json | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
@@ -4134,6 +4188,7 @@ export type Database = {
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          owner_record_id?: string | null
           owner_user_id?: string | null
           property_id?: string | null
           started_on?: string | null
@@ -4142,6 +4197,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_programs_owner_record_id_fkey"
+            columns: ["owner_record_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "owner_programs_property_id_fkey"
             columns: ["property_id"]
@@ -4191,6 +4253,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           attachment_path: string | null
+          auto_ticket: boolean
           available_from: string | null
           business_question: string | null
           closed_at: string | null
@@ -4228,6 +4291,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           attachment_path?: string | null
+          auto_ticket?: boolean
           available_from?: string | null
           business_question?: string | null
           closed_at?: string | null
@@ -4265,6 +4329,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           attachment_path?: string | null
+          auto_ticket?: boolean
           available_from?: string | null
           business_question?: string | null
           closed_at?: string | null
@@ -4399,6 +4464,8 @@ export type Database = {
       }
       owner_time_entries: {
         Row: {
+          owner_update_revision: number | null
+          owner_update_snapshot: Json | null
           activity: string
           activity_category: string | null
           amends_entry_id: string | null
@@ -4420,12 +4487,15 @@ export type Database = {
           program_id: string
           review_id: string | null
           review_note: string | null
+          review_version: string
           review_status: string
           reviewed_at: string | null
           reviewed_by: string | null
           ticket_id: string | null
         }
         Insert: {
+          owner_update_revision?: number | null
+          owner_update_snapshot?: Json | null
           activity: string
           activity_category?: string | null
           amends_entry_id?: string | null
@@ -4447,12 +4517,15 @@ export type Database = {
           program_id: string
           review_id?: string | null
           review_note?: string | null
+          review_version?: string
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           ticket_id?: string | null
         }
         Update: {
+          owner_update_revision?: number | null
+          owner_update_snapshot?: Json | null
           activity?: string
           activity_category?: string | null
           amends_entry_id?: string | null
@@ -4474,6 +4547,7 @@ export type Database = {
           program_id?: string
           review_id?: string | null
           review_note?: string | null
+          review_version?: string
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -5179,8 +5253,60 @@ export type Database = {
           },
         ]
       }
+      property_assets: {
+        Row: {
+          id: string
+          property_id: string
+          name: string
+          kind: string
+          manufacturer: string | null
+          model: string | null
+          serial_number: string | null
+          location: string | null
+          warranty_notes: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          archived_at: string | null
+          is_demo: boolean
+        }
+        Insert: {
+          id?: string
+          property_id: string
+          name: string
+          kind: string
+          manufacturer?: string | null
+          model?: string | null
+          serial_number?: string | null
+          location?: string | null
+          warranty_notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          archived_at?: string | null
+          is_demo?: boolean
+        }
+        Update: {
+          id?: string
+          property_id?: string
+          name?: string
+          kind?: string
+          manufacturer?: string | null
+          model?: string | null
+          serial_number?: string | null
+          location?: string | null
+          warranty_notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          archived_at?: string | null
+          is_demo?: boolean
+        }
+        Relationships: []
+      }
       property_fact_proposals: {
         Row: {
+          asset_id: string | null
           created_at: string
           current_value: string | null
           decision_note: string | null
@@ -5200,6 +5326,7 @@ export type Database = {
           task_id: string | null
         }
         Insert: {
+          asset_id?: string | null
           created_at?: string
           current_value?: string | null
           decision_note?: string | null
@@ -5219,6 +5346,7 @@ export type Database = {
           task_id?: string | null
         }
         Update: {
+          asset_id?: string | null
           created_at?: string
           current_value?: string | null
           decision_note?: string | null
@@ -7770,9 +7898,217 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      onboarding_stage_captures: {
+        Row: { project_id: string; property_id: string; new_value: string }
+        Relationships: []
+      }
     }
     Functions: {
+      record_owner_email_decision: { Args: { _approval_id: string; _expected_updated_at: string; _decision: string; _note: string; _response_id?: string | null }; Returns: Json }
+      create_owner_program: { Args: { _property_id: string }; Returns: Json }
+      change_owner_program: { Args: { _program_id: string; _expected_version: string; _action: string; _property_id?: string | null; _closing_date?: string | null; _settings?: Json | null; _status?: string | null; _reason?: string | null; _phase?: string | null }; Returns: Json }
+      create_owner_opportunity: { Args: { _program_id: string; _expected_version: string; _expected_owner_id: string; _source: string; _source_id: string; _expected_source_updated_at: string; _title: string; _instructions: string; _action_type: string; _available_from: string | null; _respond_by: string | null; _staff_context: string; _reviewed: boolean }; Returns: string }
+      owner_program_staff_choices: { Args: Record<PropertyKey, never>; Returns: { id: string; label: string }[] }
+      archive_attachment: { Args: { _actor_id: string; _document_id: string; _reason: string }; Returns: string }
+      owner_badge_refresh_version: { Args: { _program_id: string; _actor_id: string }; Returns: string }
+      refresh_owner_badges: { Args: { _program_id: string; _expected_version: string; _actor_id: string }; Returns: Json }
+
+      create_onboarding_financial_request: { Args: { _actor_id: string; _property_id: string; _request: Json }; Returns: Json }
+      read_owner_participation: {
+        Args: { _section: string; _program_id?: string | null; _preview?: boolean; _record_id?: string | null }
+        Returns: { id: string; item: Json }[]
+      }
+      mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
+      read_onboarding_independent_readiness: { Args: { _property_ids: string[] }; Returns: Json }
+      read_owner_approvals: { Args: Record<PropertyKey, never>; Returns: { id: string; approval: Json }[] }
+      read_owner_approval_publication_context: { Args: { _approval_id: string }; Returns: Json }
+      publish_owner_approval: {
+        Args: { _approval_id: string; _expected_updated_at: string; _expected_revision: number; _expected_owner_id: string; _expected_program_id: string; _expected_recipient_id: string; _title: string; _detail: string; _reviewed: boolean }
+        Returns: string
+      }
+      respond_owner_approval: {
+        Args: { _approval_id: string; _publication_id: string; _expected_updated_at: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      begin_attachment_upload: { Args: { _actor_id: string; _input: Json }; Returns: Json }
+      complete_attachment_upload: { Args: { _actor_id: string; _document_id: string; _ok: boolean; _fulfils_request_id?: string | null }; Returns: boolean }
+      set_attachment_visibility: { Args: { _actor_id: string; _document_id: string; _visibility: string }; Returns: string }
+      request_owner_document: { Args: { _actor_id: string; _input: Json }; Returns: string }
+      owner_document_access: { Args: { _document_id: string; _actor_id?: string | null }; Returns: boolean }
+
+      activate_owner_program: {
+        Args: { _program_id: string; _expected_version: string; _started_on: string }
+        Returns: string
+      }
+      close_owner_opportunity: {
+        Args: { _review_id: string; _expected_updated_at: string; _reason: string }
+        Returns: string
+      }
+      save_work_order_costs: {
+        Args: { _work_order_id: string; _expected_updated_at: string; _quote: number | null;
+          _second_quote: number | null; _final_cost: number | null; _scope: string; _reason: string }
+        Returns: string
+      }
+      read_owner_tickets: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: { id: string; ref: number; property_id: string; category: string;
+          priority: string; status: string; reported_at: string; resolved_at: string | null;
+          owner_participation_path: string | null; owner_submitted: boolean | null }[]
+      }
+      create_owner_matter: {
+        Args: { _program_id: string; _property_id: string; _path: string; _title: string;
+          _description: string; _category: string }
+        Returns: { ticket_id: string; ref: number }[]
+      }
+      read_owner_ticket_financial_context: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: (Database["public"]["Functions"]["read_owner_ticket_authority"]["Returns"][number] & { final_cost: number | null })[]
+      }
+      save_ticket_owner_update: {
+        Args: { _ticket_id: string; _actor_id: string; _expected_ticket_updated_at: string;
+          _expected_revision: number; _expected_owner_id: string; _issue: string; _work_performed: string; _outcome: string; _reviewed: boolean; _owner_request_type: string; _owner_request_why: string }
+        Returns: string
+      }
+      read_owner_ticket_updates: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: { ticket_id: string; property_id: string; revision: number; issue: string;
+          work_performed: string; outcome: string; reviewed_at: string; owner_request_type: string | null; owner_request_why: string | null }[]
+      }
+      read_owner_ticket_authority: {
+        Args: { _program_id: string; _property_ids: string[]; _preview?: boolean }
+        Returns: {
+          id: string; ticket_id: string; property_id: string; phase: string;
+          quote_amount: number | null; approved_amount: number | null;
+          approval_id: string | null; approval_status: string;
+          contractual_exception: boolean; emergency_reason: string | null;
+          receipt_id: string | null; receipt_status: string | null;
+          receipt_amount: number | null; receipt_decided_at: string | null;
+        }[]
+      }
+      respond_owner_review: {
+        Args: { _review_id: string; _expected_updated_at: string; _decision: string; _response: string; _owner_update_revision: number | null }
+        Returns: string
+      }
+      create_onboarding_handoff: {
+        Args: { _property_id: string; _actor_id: string; _expected_lifecycle: string | null; _request: Json }
+        Returns: string
+      }
+      override_onboarding_task_date: {
+        Args: { _task_id: string; _actor_id: string; _expected_updated_at: string; _due_on: string | null; _reason: string }
+        Returns: string
+      }
+      complete_owner_program: {
+        Args: { _program_id: string; _actor_id: string; _expected_version: string; _report: Json }
+        Returns: string
+      }
+      correct_owner_time_entry: {
+        Args: { _entry_id: string; _actor_id: string; _minutes: number; _reason: string }
+        Returns: string
+      }
+      review_owner_time_entry: {
+        Args: { _entry_id: string; _expected_version: string; _decision: string; _note: string }
+        Returns: string
+      }
+      redeem_owner_invite: {
+        Args: { _user_id: string; _code: string }
+        Returns: string
+      }
+      owner_property_access: {
+        Args: { _property_id: string; _actor_id?: string | null }
+        Returns: boolean
+      }
+      read_owner_programs: {
+        Args: { _program_id?: string | null; _preview?: boolean; _actor_id?: string | null }
+        Returns: { id: string; program: Json }[]
+      }
+      read_owner_properties: {
+        Args: { _property_ids: string[]; _program_id?: string | null; _preview?: boolean; _actor_id?: string | null }
+        Returns: { id: string; program_id: string; program_status: string; property: Json }[]
+      }
+      read_owner_program_properties: {
+        Args: { _program_id: string; _preview?: boolean }
+        Returns: { id: string; enrollment: Json }[]
+      }
+      save_owner_alert_preferences: {
+        Args: { _email: boolean; _sms_p1: boolean; _push: boolean; _phone: string }
+        Returns: string
+      }
+      read_onboarding_review_capabilities: {
+        Args: Record<PropertyKey, never>
+        Returns: { is_admin: boolean; can_review_stages: boolean; kati_review: boolean; micah_review: boolean; operations_acceptance: boolean; live_confirmation: boolean }[]
+      }
+      read_onboarding_handoff_snapshot: {
+        Args: { _property_id: string }
+        Returns: Json
+      }
+      read_onboarding_assignment_authority: {
+        Args: Record<PropertyKey, never>
+        Returns: { director_id: string | null; can_assign: boolean }[]
+      }
+      log_owner_time_entry: {
+        Args: { _entry: Json; _property_ids: string[] }
+        Returns: string
+      }
+      resubmit_owner_time_entry: {
+        Args: { _entry_id: string; _minutes: number; _activity: string; _note: string }
+        Returns: string
+      }
+      reconcile_onboarding_delivery: {
+        Args: { _kind: string; _record_id: string; _attempt_id: string; _delivered: boolean; _note: string }
+        Returns: undefined
+      }
+      record_owner_financial_response: {
+        Args: { _approval_id: string; _owner_id: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      record_owner_task_response: {
+        Args: { _approval_id: string; _owner_id: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      decide_onboarding_task_approval: {
+        Args: { _task_id: string; _approved: boolean; _note: string; _evidence_url?: string }
+        Returns: string
+      }
+      prepare_onboarding_task_approval: {
+        Args: { _task_id: string; _property_id: string; _detail: string }
+        Returns: string
+      }
+      record_owner_work_order_response: {
+        Args: { _approval_id: string; _owner_id: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      record_versioned_owner_response: {
+        Args: { _approval_id: string; _owner_id: string; _expected_updated_at: string; _approved: boolean; _note: string }
+        Returns: string
+      }
+      prepare_work_order_owner_approval: {
+        Args: { _work_order_id: string; _expected_updated_at: string; _owner_summary: string }
+        Returns: string
+      }
+      record_staff_work_order_owner_decision: {
+        Args: { _work_order_id: string; _expected_updated_at: string; _outcome: string; _approved_amount: number | null; _note: string }
+        Returns: string
+      }
+      prepare_onboarding_financial_approval: {
+        Args: { _request_id: string; _expected_amount: number; _expected_tier: string }
+        Returns: string
+      }
+      review_onboarding_handoff: {
+        Args: { _handoff_id: string; _expected_step: string; _decision: string; _note?: string; _exception?: string }
+        Returns: Json
+      }
+      decide_onboarding_financial_request: {
+        Args: { _request_id: string; _approved: boolean; _note: string; _approved_amount?: number }
+        Returns: undefined
+      }
+      record_onboarding_stage_capture: {
+        Args: { _project_id: string; _actor: string; _expected_revision: number; _capture: Json; _tasks: Json; _scope: Json }
+        Returns: undefined
+      }
+      review_onboarding_fact: {
+        Args: { _proposal_id: string; _accept: boolean; _note?: string }
+        Returns: Json
+      }
       archive_demo_environment: {
         Args: { _actor?: string; _reason?: string }
         Returns: undefined

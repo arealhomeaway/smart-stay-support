@@ -9,37 +9,17 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { recordEvent } from "./owner-participation.server";
-import { writeAudit } from "./audit.server";
+import type { ReviewDecision, TimeReviewRow } from "./owner-time-review";
+export type { ReviewDecision, TimeReviewRow } from "./owner-time-review";
 
 type Client = SupabaseClient<Database>;
-
-export type ReviewDecision = "approved" | "returned" | "flagged";
-
-export type TimeReviewRow = {
-  id: string;
-  programId: string;
-  ownerName: string | null;
-  entryDate: string;
-  minutes: number;
-  phase: string;
-  activity: string;
-  activityCategory: string | null;
-  output: string | null;
-  reviewStatus: string;
-  reviewNote: string | null;
-  reviewedAt: string | null;
-  flagged: boolean;
-  propertyNames: string[];
-  createdAt: string;
-};
 
 /** Every owner-reported entry awaiting or carrying an internal decision. */
 export async function loadTimeReviewQueue(supabase: Client, includeAll = false) {
   const entries = await supabase
     .from("owner_time_entries")
     .select(
-      "id, program_id, entry_date, minutes, phase, activity, activity_category, output, review_status, review_note, reviewed_at, flagged, created_at",
+      "id, program_id, entry_date, minutes, phase, activity, activity_category, output, review_status, review_note, reviewed_at, review_version, flagged, created_at",
     )
     .eq("is_demo", false)
     .order("entry_date", { ascending: false })
@@ -86,6 +66,7 @@ export async function loadTimeReviewQueue(supabase: Client, includeAll = false) 
       reviewStatus: e.review_status,
       reviewNote: e.review_note,
       reviewedAt: e.reviewed_at,
+      reviewVersion: e.review_version,
       flagged: e.flagged,
       propertyNames: names,
       createdAt: e.created_at,
@@ -93,59 +74,28 @@ export async function loadTimeReviewQueue(supabase: Client, includeAll = false) 
   });
 }
 
-/** Records a reviewer decision. The reported minutes are left untouched. */
+/** Record the displayed version and its review/history/audit in one database action. */
 export async function reviewTimeEntry(
   supabase: Client,
   userId: string,
-  input: { entryId: string; decision: ReviewDecision; note: string },
+  input: { entryId: string; expectedVersion: string; decision: ReviewDecision; note: string },
 ) {
+  if (!input.expectedVersion) {
+    throw new Error("Review the current entry before recording a decision.");
+  }
   if (input.decision !== "approved" && !input.note.trim()) {
     throw new Error("Returning or flagging an entry requires a reason the owner can read.");
   }
-
-  const entry = await supabase
-    .from("owner_time_entries")
-    .select("id, program_id, minutes, activity, review_status")
-    .eq("id", input.entryId)
-    .single();
-  if (entry.error) throw entry.error;
-
-  const { error } = await supabase
-    .from("owner_time_entries")
-    .update({
-      review_status: input.decision,
-      review_note: input.note.trim() || null,
-      reviewed_by: userId,
-      reviewed_at: new Date().toISOString(),
-      flagged: input.decision === "flagged",
-    })
-    .eq("id", input.entryId);
+  const { data, error } = await supabase.rpc("review_owner_time_entry", {
+    _entry_id: input.entryId,
+    _expected_version: input.expectedVersion,
+    _decision: input.decision,
+    _note: input.note.trim(),
+  });
   if (error) throw error;
-
-  await recordEvent(supabase, {
-    programId: entry.data.program_id,
-    kind: "time_entry_reviewed",
-    summary: `Entry ${input.decision}: ${entry.data.activity}`,
-    actorId: userId,
-    entryId: input.entryId,
-    previousValue: entry.data.review_status,
-    newValue: input.decision,
-    reason: input.note.trim() || null,
-  });
-
-  await writeAudit({
-    actorId: userId,
-    action: `owner_time_entry_${input.decision}`,
-    entityType: "owner_time_entry",
-    entityId: input.entryId,
-    reason: input.note.trim() || null,
-    before: { review_status: entry.data.review_status },
-    after: { review_status: input.decision },
-  });
-
+  if (data !== input.entryId) throw new Error("The participation review could not be recorded.");
   return { ok: true as const };
 }
-
 /* ---------------------------------------------------------------- *
  * Program rules — configurable, never hard-coded.
  * ---------------------------------------------------------------- */

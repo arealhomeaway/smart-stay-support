@@ -1,11 +1,12 @@
+import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
+import { ownerAttention as attentionReason } from "@/lib/owner-attention";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
-  CalendarClock,
   ClipboardCheck,
   Copy,
   Eye,
@@ -18,7 +19,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  activateOwnerProgram,
   addOwnerProgramProperty,
   completeOwnerProgram,
   confirmOwnerPropertyClosing,
@@ -31,7 +31,6 @@ import {
   removeOwnerProgramProperty,
   seedOwnerRoadmap,
   startOwnerProgram,
-  updateOwnerProgram,
 } from "@/lib/owner-program.functions";
 import { DECISION_PATHS, PHASE_LABELS, type TaskTemplate } from "@/lib/owner-program";
 import {
@@ -42,7 +41,6 @@ import {
   PROGRAM_STATUS_META,
   PROGRAM_TOTAL_DAYS,
   PROGRESS_META,
-  REPORT_DISCLAIMER,
   formatDuration,
   type CoverageState,
   type ProgramStatus,
@@ -50,12 +48,21 @@ import {
 } from "@/lib/owner-participation";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
-import { usDate } from "@/lib/dates";
+import { usCalendarDate, usDate } from "@/lib/dates";
 import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
 import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
+import { OwnerProgramActivation } from "@/components/OwnerProgramActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -108,6 +115,7 @@ type ProgramRow = {
   day: number;
   daysLeft: number;
   reportedHours: number;
+  goalMet: boolean;
   benchmark: number;
   variance: number;
   progressState: string;
@@ -149,27 +157,6 @@ const PROGRESS_STATE_TONE: Record<string, StatusTone> = {
   program_completed: "resolved",
 };
 
-/** Attention ordering, mirrored client-side so the queue can sort instantly. */
-function attentionReason(row: ProgramRow) {
-  if (row.status !== "active" && row.status !== "target_reached") return null;
-  const quiet = row.lastOwnerActivityAt
-    ? Math.floor((Date.now() - new Date(row.lastOwnerActivityAt).getTime()) / 86_400_000)
-    : Infinity;
-  const behind = -row.variance;
-  if (behind >= 10) return { rank: 1, reason: "10+ hours behind pace" };
-  if (behind >= 5) return { rank: 2, reason: "5+ hours behind pace" };
-  if (quiet >= 7 && row.openTasks > 0)
-    return { rank: 3, reason: "No activity for 7 days with open tasks" };
-  if (row.daysLeft < 10 && row.reportedHours <= OWNER_GOAL_HOURS)
-    return { rank: 4, reason: "Under 10 days remaining and not past 100 hours" };
-  if (row.properties.some((p) => p.overdue > 0))
-    return { rank: 5, reason: "Overdue property decisions" };
-  if (row.properties.some((p) => p.coverage === "no_activity"))
-    return { rank: 6, reason: "A property has no owner activity yet" };
-  if (behind >= 1) return { rank: 7, reason: "Slightly behind pace" };
-  return null;
-}
-
 function OwnerProgramsPage() {
   return (
     <SupervisorOnly>
@@ -186,8 +173,6 @@ function ProgramsBoard() {
 
   const [selected, setSelected] = useState<string | null>(null);
   const [propertyId, setPropertyId] = useState("");
-  const [ownerName, setOwnerName] = useState("");
-  const [ownerEmail, setOwnerEmail] = useState("");
 
   const { demoMode } = useDemo();
   // Staff can look at the non-production QA/demo programs without leaving
@@ -205,7 +190,7 @@ function ProgramsBoard() {
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-programs"] });
 
   const create = useMutation({
-    mutationFn: () => enroll({ data: { propertyId, ownerName, ownerEmail } }),
+    mutationFn: () => enroll({ data: { propertyId } }),
     onSuccess: (r) => {
       toast.success(
         r.alreadyExists
@@ -213,8 +198,6 @@ function ProgramsBoard() {
           : "Draft program created. Confirm closing, then activate.",
       );
       setPropertyId("");
-      setOwnerName("");
-      setOwnerEmail("");
       setSelected(r.programId);
       invalidate();
     },
@@ -310,25 +293,9 @@ function ProgramsBoard() {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="ownerName">Owner name</Label>
-          <Input
-            id="ownerName"
-            value={ownerName}
-            onChange={(e) => setOwnerName(e.target.value)}
-            maxLength={120}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="ownerEmail">Owner email</Label>
-          <Input
-            id="ownerEmail"
-            type="email"
-            value={ownerEmail}
-            onChange={(e) => setOwnerEmail(e.target.value)}
-            maxLength={255}
-          />
-        </div>
+        <p className="text-sm text-muted-foreground md:col-span-2">
+          Enrollment uses the canonical Owner already linked to the selected Property.
+        </p>
         <div className="flex items-end md:col-span-4">
           <Button onClick={() => create.mutate()} disabled={!propertyId || create.isPending}>
             {create.isPending ? "Creating…" : "Create draft program"}
@@ -542,25 +509,29 @@ function ProgramDetail({
   const qc = useQueryClient();
   const loadDetail = useServerFn(ownerProgramDetail);
   const seed = useServerFn(seedOwnerRoadmap);
-  const activate = useServerFn(activateOwnerProgram);
   const addProperty = useServerFn(addOwnerProgramProperty);
   const removeProperty = useServerFn(removeOwnerProgramProperty);
   const confirmClosing = useServerFn(confirmOwnerPropertyClosing);
-  const saveSettings = useServerFn(updateOwnerProgram);
   const complete = useServerFn(completeOwnerProgram);
   const correct = useServerFn(correctOwnerTimeEntry);
   const invite = useServerFn(createOwnerInvite);
   const report = useServerFn(ownerProgramReport);
 
-  const [startOn, setStartOn] = useState(row.startedOn ?? today());
   const [newProperty, setNewProperty] = useState("");
   const [newClosing, setNewClosing] = useState(today());
-  const [ownerName, setOwnerName] = useState(row.ownerName ?? "");
-  const [ownerEmail, setOwnerEmail] = useState(row.ownerEmail ?? "");
-  const [onboardingLead, setOnboardingLead] = useState(row.onboardingLead ?? "");
-  const [operationsLead, setOperationsLead] = useState(row.operationsLead ?? "");
-  const [dfy, setDfy] = useState(row.dfyConfirmed);
-  const [notes, setNotes] = useState("");
+  const [enrollmentVersion, setEnrollmentVersion] = useState<string | null>(null);
+  const [correction, setCorrection] = useState<{
+    entryId: string;
+    activity: string;
+    entryDate: string;
+    originalMinutes: number;
+    minutes: string;
+    reason: string;
+  } | null>(null);
+  const [correctionSaving, setCorrectionSaving] = useState(false);
+  const [correctionError, setCorrectionError] = useState("");
+  const correctionMinutesId = useId();
+  const correctionReasonId = useId();
 
   const detail = useQuery({
     queryKey: ["owner-program", programId],
@@ -577,12 +548,15 @@ function ProgramDetail({
         toast.success(message);
         refresh();
       })
-      .catch((e: Error) => toast.error(e.message));
+      .catch((e: Error) => {
+        toast.error(e.message);
+        refresh();
+      });
 
   const downloadReport = async () => {
     try {
       const data = await report({ data: { programId } });
-      const blob = new Blob([JSON.stringify({ disclaimer: REPORT_DISCLAIMER, ...data }, null, 2)], {
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: "application/json",
       });
       const url = URL.createObjectURL(blob);
@@ -601,6 +575,20 @@ function ProgramDetail({
     return (
       <div className="border-t pt-6">
         <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
+  if (detail.isError || !detail.data) {
+    return (
+      <div className="space-y-3 border-t pt-6" role="alert">
+        <p className="text-sm text-destructive">
+          {detail.error?.message ??
+            "Program details are unavailable. Reload before changing the program."}
+        </p>
+        <Button variant="outline" onClick={() => void detail.refetch()}>
+          Reload program details
+        </Button>
       </div>
     );
   }
@@ -637,9 +625,9 @@ function ProgramDetail({
                     {p.inclusionStatus !== "included" ? " (removed)" : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {p.address || "No address"} · added {usDate(p.addedOn)} ·{" "}
+                    {p.address || "No address"} · added {usCalendarDate(p.addedOn)} ·{" "}
                     {p.closingConfirmed
-                      ? `closed ${usDate(p.closingDate)}`
+                      ? `closed ${usCalendarDate(p.closingDate)}`
                       : "closing not confirmed"}
                   </p>
                 </div>
@@ -658,7 +646,12 @@ function ProgramDetail({
                         void run(
                           () =>
                             confirmClosing({
-                              data: { programId, propertyId: p.propertyId, closingDate: today() },
+                              data: {
+                                programId,
+                                expectedVersion: detail.data!.activationVersion,
+                                propertyId: p.propertyId,
+                                closingDate: today(),
+                              },
                             }),
                           "Closing confirmed.",
                         )
@@ -677,6 +670,7 @@ function ProgramDetail({
                             removeProperty({
                               data: {
                                 programId,
+                                expectedVersion: detail.data!.activationVersion,
                                 propertyId: p.propertyId,
                                 reason: "Removed by staff",
                               },
@@ -696,7 +690,13 @@ function ProgramDetail({
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-56 space-y-2">
             <Label>Add another home</Label>
-            <Select value={newProperty} onValueChange={setNewProperty}>
+            <Select
+              value={newProperty}
+              onValueChange={(value) => {
+                setNewProperty(value);
+                setEnrollmentVersion(detail.data?.activationVersion ?? null);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Choose a home" />
               </SelectTrigger>
@@ -722,12 +722,19 @@ function ProgramDetail({
           <Button
             size="sm"
             variant="outline"
-            disabled={!newProperty}
+            disabled={
+              !newProperty || !detail.data || enrollmentVersion !== detail.data.activationVersion
+            }
             onClick={() =>
               void run(
                 () =>
                   addProperty({
-                    data: { programId, propertyId: newProperty, closingDate: newClosing },
+                    data: {
+                      programId,
+                      expectedVersion: enrollmentVersion!,
+                      propertyId: newProperty,
+                      closingDate: newClosing,
+                    },
                   }),
                 "Property added. The timeline and combined goal are unchanged.",
               )
@@ -736,83 +743,37 @@ function ProgramDetail({
             Add property
           </Button>
         </div>
+        {enrollmentVersion &&
+          detail.data &&
+          enrollmentVersion !== detail.data.activationVersion && (
+            <div role="status" className="space-y-2">
+              <p>
+                The program changed. Review its current enrollment before adding the selected
+                Property; your draft has been kept.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEnrollmentVersion(detail.data!.activationVersion)}
+              >
+                I reviewed the current enrollment
+              </Button>
+            </div>
+          )}
       </section>
 
       <Separator />
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold">Program setup</h3>
-        <div className="grid gap-3 md:grid-cols-4">
-          <div className="space-y-2">
-            <Label>Owner name</Label>
-            <Input
-              value={ownerName}
-              onChange={(e) => setOwnerName(e.target.value)}
-              maxLength={120}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Owner email</Label>
-            <Input
-              value={ownerEmail}
-              onChange={(e) => setOwnerEmail(e.target.value)}
-              maxLength={255}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Onboarding lead</Label>
-            <Input
-              value={onboardingLead}
-              onChange={(e) => setOnboardingLead(e.target.value)}
-              maxLength={120}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Operations lead</Label>
-            <Input
-              value={operationsLead}
-              onChange={(e) => setOperationsLead(e.target.value)}
-              maxLength={120}
-            />
-          </div>
-          <div className="space-y-2 md:col-span-4">
-            <Label>Internal notes</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              maxLength={4000}
-              rows={2}
-            />
-          </div>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={dfy} onCheckedChange={(v) => setDfy(v === true)} />
-          DFY has confirmed these properties run as one combined program.
-        </label>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            void run(
-              () =>
-                saveSettings({
-                  data: {
-                    programId,
-                    ownerName,
-                    ownerEmail,
-                    onboardingLead: onboardingLead || null,
-                    operationsLead: operationsLead || null,
-                    dfyConfirmed: dfy,
-                    internalNotes: notes,
-                  },
-                }),
-              "Program details saved.",
-            )
-          }
-        >
-          Save details
-        </Button>
-      </section>
+      {detail.data && (
+        <OwnerProgramSetup
+          key={programId}
+          programId={programId}
+          version={detail.data.activationVersion}
+          program={detail.data.program}
+          staffChoices={detail.data.staffChoices}
+          onRefresh={refresh}
+        />
+      )}
 
       <Separator />
 
@@ -821,36 +782,28 @@ function ProgramDetail({
           {notActivated ? "Activate the 90-day program" : "Timeline"}
         </h3>
         {notActivated ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-2">
-              <Label htmlFor={`start-${programId}`}>Day one</Label>
-              <Input
-                id={`start-${programId}`}
-                type="date"
-                className="w-44"
-                value={startOn}
-                onChange={(e) => setStartOn(e.target.value)}
-              />
-            </div>
-            <Button
-              size="sm"
-              onClick={() =>
-                void run(
-                  () => activate({ data: { programId, startedOn: startOn } }),
-                  "Program activated. The 90-day clock has started.",
-                )
-              }
-            >
-              <CalendarClock className="size-4" /> Activate program
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Requires DFY confirmation and a confirmed closing on every home.
+          detail.data ? (
+            <OwnerProgramActivation
+              context={{
+                programId,
+                reportVersion: detail.data.activationVersion,
+                status: detail.data.program.status,
+                startedOn: detail.data.program.startedOn,
+                dfyConfirmed: detail.data.program.dfyConfirmed,
+                properties: detail.data.properties,
+              }}
+              initialStartDate={today()}
+              onRefresh={refresh}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Load current program details before reviewing activation.
             </p>
-          </div>
+          )
         ) : (
           <p className="text-sm text-muted-foreground">
-            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usDate(row.startedOn)} · ends{" "}
-            {usDate(row.endsOn)}
+            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usCalendarDate(row.startedOn)} · ends{" "}
+            {usCalendarDate(row.endsOn)}
           </p>
         )}
         <div className="flex flex-wrap gap-2">
@@ -858,7 +811,14 @@ function ProgramDetail({
             size="sm"
             onClick={() =>
               void run(
-                () => seed({ data: { programId, phase: "onboarding" } }),
+                () =>
+                  seed({
+                    data: {
+                      programId,
+                      expectedVersion: detail.data!.activationVersion,
+                      phase: "onboarding",
+                    },
+                  }),
                 "Onboarding activities released.",
               )
             }
@@ -870,7 +830,14 @@ function ProgramDetail({
             variant="outline"
             onClick={() =>
               void run(
-                () => seed({ data: { programId, phase: "ongoing" } }),
+                () =>
+                  seed({
+                    data: {
+                      programId,
+                      expectedVersion: detail.data!.activationVersion,
+                      phase: "ongoing",
+                    },
+                  }),
                 "Operating activities released.",
               )
             }
@@ -957,7 +924,7 @@ function ProgramDetail({
                     ) : null}
                     {r.respond_by ? (
                       <span className="text-muted-foreground">
-                        Respond by {usDate(r.respond_by)}
+                        Respond by {usCalendarDate(r.respond_by)}
                       </span>
                     ) : null}
                     {r.owner_decision ? (
@@ -995,7 +962,7 @@ function ProgramDetail({
                 <div>
                   <p className="font-medium">{e.activity}</p>
                   <p className="text-xs text-muted-foreground">
-                    {usDate(e.entry_date)} · {formatDuration(e.minutes)} ·{" "}
+                    {usCalendarDate(e.entry_date)} · {formatDuration(e.minutes)} ·{" "}
                     {e.activity_category ?? "uncategorized"}
                     {e.amends_entry_id ? " · correction" : ""}
                   </p>
@@ -1004,25 +971,15 @@ function ProgramDetail({
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    const raw = window.prompt(
-                      "Corrected minutes for this entry",
-                      String(e.minutes),
-                    );
-                    if (!raw) return;
-                    const minutes = Number(raw);
-                    if (!Number.isFinite(minutes) || minutes < 1) {
-                      toast.error("Enter a valid number of minutes.");
-                      return;
-                    }
-                    const reason = window.prompt("Reason for the correction");
-                    if (!reason) {
-                      toast.error("A correction needs a reason.");
-                      return;
-                    }
-                    void run(
-                      () => correct({ data: { entryId: e.id, minutes, reason } }),
-                      "Correction recorded.",
-                    );
+                    setCorrection({
+                      entryId: e.id,
+                      activity: e.activity,
+                      entryDate: e.entry_date,
+                      originalMinutes: e.minutes,
+                      minutes: String(e.minutes),
+                      reason: "",
+                    });
+                    setCorrectionError("");
                   }}
                 >
                   Record correction
@@ -1031,6 +988,110 @@ function ProgramDetail({
             ))}
           </div>
         )}
+        <Dialog
+          open={correction !== null}
+          onOpenChange={(open) => {
+            if (!open && !correctionSaving) setCorrection(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Record participation correction</DialogTitle>
+              <DialogDescription>
+                Enter the corrected total minutes for this entry and explain the change. The
+                original entry and its links stay in the history.
+              </DialogDescription>
+            </DialogHeader>
+            {correction && (
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (correctionSaving) return;
+                  const minutes = Number(correction.minutes);
+                  const reason = correction.reason.trim();
+                  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+                    setCorrectionError("Enter a whole number of minutes between 1 and 1440.");
+                    return;
+                  }
+                  if (reason.length < 3) {
+                    setCorrectionError("Explain the correction in at least 3 characters.");
+                    return;
+                  }
+                  setCorrectionSaving(true);
+                  setCorrectionError("");
+                  void run(
+                    () =>
+                      correct({ data: { entryId: correction.entryId, minutes, reason } })
+                        .then(() => setCorrection(null))
+                        .catch((error: Error) => {
+                          setCorrectionError(error.message);
+                          throw error;
+                        }),
+                    "Correction recorded.",
+                  ).finally(() => setCorrectionSaving(false));
+                }}
+              >
+                <div className="rounded-md border p-3 text-sm">
+                  <p className="font-medium">{correction.activity}</p>
+                  <p className="text-muted-foreground">
+                    {usCalendarDate(correction.entryDate)} · Currently{" "}
+                    {formatDuration(correction.originalMinutes)}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={correctionMinutesId}>Corrected minutes</Label>
+                  <Input
+                    id={correctionMinutesId}
+                    type="number"
+                    min={1}
+                    max={1440}
+                    step={1}
+                    required
+                    value={correction.minutes}
+                    disabled={correctionSaving}
+                    onChange={(event) =>
+                      setCorrection({ ...correction, minutes: event.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={correctionReasonId}>Reason for correction</Label>
+                  <Textarea
+                    id={correctionReasonId}
+                    rows={3}
+                    required
+                    minLength={3}
+                    maxLength={500}
+                    value={correction.reason}
+                    disabled={correctionSaving}
+                    onChange={(event) =>
+                      setCorrection({ ...correction, reason: event.target.value })
+                    }
+                  />
+                </div>
+                {correctionError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {correctionError}
+                  </p>
+                )}
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={correctionSaving}
+                    onClick={() => setCorrection(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={correctionSaving}>
+                    {correctionSaving ? "Recording…" : "Record correction"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </section>
 
       <Separator />
@@ -1041,8 +1102,8 @@ function ProgramDetail({
         </h3>
         <ul className="space-y-1 text-sm">
           <ChecklistItem
-            ok={Boolean(checklist?.hoursExceeded)}
-            label={`More than ${OWNER_GOAL_HOURS} hours reported`}
+            ok={Boolean(checklist?.hoursMet)}
+            label={`At least ${OWNER_GOAL_HOURS} hours reported`}
           />
           <ChecklistItem
             ok={Boolean(checklist?.propertyTasksComplete)}

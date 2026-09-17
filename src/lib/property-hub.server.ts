@@ -20,6 +20,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { buildPropertyDetailGroups } from "@/lib/property-details";
 import { propertyAddress } from "@/lib/property-address";
 import { isWorkingStatus } from "@/lib/ticket-lifecycle";
+import { attachmentMatchesCurrentProperty } from "@/lib/attachments.server";
+import { isExternalOwner, ownerPropertyAccess } from "@/lib/owner-property-access.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -51,18 +53,9 @@ export type HubField = {
 
 export type HubSection = { id: string; title: string; blurb?: string; fields: HubField[] };
 
-async function ownerOwnsProperty(userId: string, propertyId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("owner_program_properties")
-    .select("property_id, inclusion_status, archived_at, owner_programs!inner(owner_user_id)")
-    .eq("property_id", propertyId)
-    .eq("owner_programs.owner_user_id", userId);
-  return (data ?? []).some((r) => r.inclusion_status === "included" && r.archived_at == null);
-}
-
 export async function loadViewer(supabase: Client, userId: string): Promise<Viewer> {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  if (error) throw new Error("Could not confirm your access level.");
   return { userId, roles: (data ?? []).map((r) => r.role as string) };
 }
 
@@ -72,19 +65,56 @@ function fmtDate(v: string | null | undefined) {
 }
 
 /** The whole Hub in one round trip. Access is decided here, not in the UI. */
-export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+export async function loadPropertyHub(viewer: Viewer, propertyId: string, client?: Client) {
+  const supabaseAdmin =
+    client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
   const staff = isStaff(viewer);
-  const owns = staff ? false : await ownerOwnsProperty(viewer.userId, propertyId);
-  if (!staff && !owns) throw new Error(DENY);
-
-  const property = await supabaseAdmin
-    .from("properties")
-    .select("*")
-    .eq("id", propertyId)
-    .maybeSingle();
-  if (property.error || !property.data) throw new Error("That property could not be found.");
-  const p = property.data;
+  type Property = Database["public"]["Tables"]["properties"]["Row"];
+  type ProgramSummary = {
+    id: string;
+    owner_name: string | null;
+    status: string;
+    started_on: string | null;
+    ends_on: string | null;
+  };
+  let p: Property;
+  let ownerProgram: ProgramSummary | null = null;
+  if (staff) {
+    const property = await supabaseAdmin
+      .from("properties")
+      .select("*")
+      .eq("id", propertyId)
+      .maybeSingle();
+    if (property.error || !property.data) throw new Error("That property could not be found.");
+    p = property.data;
+  } else {
+    if (!isExternalOwner(viewer)) throw new Error(DENY);
+    const result = await supabaseAdmin.rpc("read_owner_properties", {
+      _property_ids: [propertyId],
+      _actor_id: viewer.userId,
+    });
+    const scoped = result.data?.find((row) => row.id === propertyId);
+    if (
+      result.error ||
+      !scoped ||
+      !scoped.property ||
+      typeof scoped.property !== "object" ||
+      Array.isArray(scoped.property) ||
+      scoped.property["id"] !== propertyId
+    )
+      throw new Error(DENY);
+    // The database returns only its explicit owner-safe Property projection.
+    p = scoped.property as unknown as Property;
+    const programs = await supabaseAdmin.rpc("read_owner_programs", {
+      _program_id: scoped.program_id,
+      _actor_id: viewer.userId,
+    });
+    const program = programs.data?.find((row) => row.id === scoped.program_id)?.program;
+    if (programs.error || !program || typeof program !== "object" || Array.isArray(program))
+      throw new Error(DENY);
+    ownerProgram = program as unknown as ProgramSummary;
+  }
+  const owns = !staff;
 
   const [
     tasks,
@@ -104,19 +134,21 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         "id, title, stage, status, due_on, blocks_handoff, blocker, requires_owner_approval, owner_approval_status, assigned_to, parent_task_id, sort_order, archived_at",
       )
       .eq("property_id", propertyId)
+      .eq("is_demo", p.is_demo)
       .is("archived_at", null)
       .order("sort_order"),
     supabaseAdmin
       .from("tickets")
       .select("id, ref, title, status, priority, created_at, assigned_to, work_type_id")
       .eq("property_id", propertyId)
+      .eq("is_demo", p.is_demo)
       .is("archived_at", null)
       .order("created_at", { ascending: false })
       .limit(25),
     supabaseAdmin
       .from("documents")
       .select(
-        "id, title, kind, visibility, upload_status, uploaded_at, uploaded_by, entity_type, entity_id, mime_type, size_bytes, category, original_filename, note",
+        "id, title, kind, visibility, upload_status, uploaded_at, uploaded_by, entity_type, entity_id, property_id, mime_type, size_bytes, category, original_filename, note, requested_from, is_demo, archived_at",
       )
 
       .eq("property_id", propertyId)
@@ -127,6 +159,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       .from("approvals")
       .select("id, title, kind, status, due_on, decided_at, decision_note, created_at")
       .eq("property_id", propertyId)
+      .eq("is_demo", p.is_demo)
       .order("created_at", { ascending: false })
       .limit(25),
     supabaseAdmin
@@ -135,40 +168,51 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         "id, status, gate_step, requested_at, kati_decision, kati_at, micah_decision, micah_at, accepted_at, live_confirmed_at",
       )
       .eq("property_id", propertyId)
+      .eq("is_demo", p.is_demo)
       .is("archived_at", null)
       .order("created_at", { ascending: false })
       .limit(1),
-    supabaseAdmin
-      .from("owner_program_properties")
-      .select(
-        "program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)",
-      )
-      .eq("property_id", propertyId)
-      .is("archived_at", null)
-      .limit(1),
-    supabaseAdmin
-      .from("audit_log")
-      .select("id, action, entity_type, entity_label, actor_label, reason, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin
-      .from("breezeway_outbound_tasks")
-      .select("id, title, status, source_type, created_at, breezeway_task_id, last_synced_at")
-      .eq("property_id", propertyId)
-      .order("created_at", { ascending: false })
-      .limit(15),
-    supabaseAdmin
-      .from("property_external_links")
-      .select(
-        "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
-      )
-      .eq("property_id", propertyId),
-    supabaseAdmin
-      .from("field_conflicts")
-      .select("id, field_label, field_key, resolve_value, external_value, system, status")
-      .eq("entity_type", "property")
-      .eq("entity_id", propertyId)
-      .eq("status", "open"),
+    staff
+      ? supabaseAdmin
+          .from("owner_program_properties")
+          .select(
+            "program_id, inclusion_status, onboarding_status, owner_programs(id, owner_name, status, started_on, ends_on, target_hours)",
+          )
+          .eq("property_id", propertyId)
+          .is("archived_at", null)
+          .limit(1)
+      : Promise.resolve({ data: [], error: null }),
+    staff
+      ? supabaseAdmin
+          .from("audit_log")
+          .select("id, action, entity_type, entity_label, actor_label, reason, created_at")
+          .order("created_at", { ascending: false })
+          .limit(200)
+      : Promise.resolve({ data: [], error: null }),
+    staff
+      ? supabaseAdmin
+          .from("breezeway_outbound_tasks")
+          .select("id, title, status, source_type, created_at, breezeway_task_id, last_synced_at")
+          .eq("property_id", propertyId)
+          .order("created_at", { ascending: false })
+          .limit(15)
+      : Promise.resolve({ data: [], error: null }),
+    staff
+      ? supabaseAdmin
+          .from("property_external_links")
+          .select(
+            "id, kind, label, url, context, staff_only, canonical, needs_replacement, source, note, as_of",
+          )
+          .eq("property_id", propertyId)
+      : Promise.resolve({ data: [], error: null }),
+    staff
+      ? supabaseAdmin
+          .from("field_conflicts")
+          .select("id, field_label, field_key, resolve_value, external_value, system, status")
+          .eq("entity_type", "property")
+          .eq("entity_id", propertyId)
+          .eq("status", "open")
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   // Quarterly reviews ship behind a launch-state flag. While the flag is OFF
@@ -196,14 +240,21 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
   // Resolved and closed both mean the frontline work is finished, so neither
   // belongs in an "open tickets" count. Only working statuses are open.
   const openTickets = (tickets.data ?? []).filter((t) => isWorkingStatus(String(t.status)));
-  const program = (programLink.data ?? [])[0]?.owner_programs as unknown as {
-    id: string;
-    owner_name: string | null;
-    status: string;
-    started_on: string | null;
-    ends_on: string | null;
-    target_hours: number | null;
-  } | null;
+  const program = staff
+    ? ((programLink.data ?? [])[0]?.owner_programs as unknown as ProgramSummary | null)
+    : ownerProgram;
+  const documentCandidates = (docs.data ?? []).filter(
+    (d) => staff || d.visibility === "owner_shared" || d.requested_from === "owner",
+  );
+  const documentAccess = staff
+    ? []
+    : await Promise.all(
+        documentCandidates.map((row) =>
+          attachmentMatchesCurrentProperty(supabaseAdmin, viewer, row, propertyId),
+        ),
+      );
+  const documentRows = documentCandidates.filter((_, index) => staff || documentAccess[index]);
+  const currentHandoff = (handoff.data ?? [])[0] ?? null;
 
   const sections: HubSection[] = [
     {
@@ -473,7 +524,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
     new Set((docs.data ?? []).map((d) => d.uploaded_by).filter((x): x is string => Boolean(x))),
   );
   const uploaderNames = new Map<string, string>();
-  if (uploaderIds.length > 0) {
+  if (staff && uploaderIds.length > 0) {
     const { data: people } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name")
@@ -560,6 +611,9 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       });
   }
 
+  if (!staff && !(await ownerPropertyAccess(supabaseAdmin, viewer.userId, propertyId)))
+    throw new Error(DENY);
+
   return {
     viewer: { staff, supervisor: isSupervisor(viewer), owner: owns },
     property: {
@@ -601,8 +655,8 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       ownerActions: ownerActions.length,
       handoffGatesOpen: gates.length,
       unassignedTasks: staff ? unassigned : null,
-      quarterlyDue: quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null,
-      documents: (docs.data ?? []).filter((d) => staff || d.visibility === "owner_shared").length,
+      quarterlyDue: staff && quarterlyLive ? fmtDate(p.quarterly_review_due_on) : null,
+      documents: documentRows.length,
       program: program
         ? {
             id: program.id,
@@ -645,24 +699,44 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
       subtaskTotal: subs.length,
       subtaskComplete: subsComplete,
       percent: top.length ? Math.round((complete / top.length) * 100) : 0,
-      blockers: blocked
-        .slice(0, 10)
-        .map((t) => ({ id: t.id, title: t.title, blocker: t.blocker, stage: t.stage })),
-      ownerActions: ownerActions
-        .slice(0, 10)
-        .map((t) => ({ id: t.id, title: t.title, stage: t.stage, dueOn: t.due_on })),
+      blockers: blocked.slice(0, 10).map((t) => ({
+        id: t.id,
+        title: staff ? t.title : "Onboarding work",
+        blocker: staff ? t.blocker : null,
+        stage: t.stage,
+      })),
+      ownerActions: ownerActions.slice(0, 10).map((t) => ({
+        id: t.id,
+        title: staff ? t.title : "Owner onboarding review",
+        stage: t.stage,
+        dueOn: t.due_on,
+      })),
       current: top
         .filter((t) => t.status !== "complete")
         .slice(0, staff ? 15 : 5)
         .map((t) => ({
           id: t.id,
-          title: t.title,
+          title: staff ? t.title : "Onboarding work",
           stage: t.stage,
           status: t.status,
           dueOn: t.due_on,
           assigned: Boolean(t.assigned_to),
         })),
-      handoff: (handoff.data ?? [])[0] ?? null,
+      handoff:
+        staff || !currentHandoff
+          ? currentHandoff
+          : {
+              id: currentHandoff.id,
+              status: currentHandoff.status,
+              gate_step: currentHandoff.gate_step,
+              requested_at: currentHandoff.requested_at,
+              kati_decision: currentHandoff.kati_decision,
+              kati_at: currentHandoff.kati_at,
+              micah_decision: currentHandoff.micah_decision,
+              micah_at: currentHandoff.micah_at,
+              accepted_at: currentHandoff.accepted_at,
+              live_confirmed_at: currentHandoff.live_confirmed_at,
+            },
     },
     operations: staff
       ? {
@@ -685,27 +759,31 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
           })),
         }
       : { tickets: [], workOrders: [] },
-    documents: (docs.data ?? [])
-      .filter((d) => staff || d.visibility === "owner_shared")
-      .map((d) => ({
-        id: d.id,
-        title: d.title,
-        kind: d.kind,
-        visibility: d.visibility,
-        status: d.upload_status,
-        uploadedAt: d.uploaded_at,
-        uploadedByName: d.uploaded_by ? (uploaderNames.get(d.uploaded_by) ?? "ARHA staff") : null,
-        entityType: d.entity_type,
-        entityId: d.entity_id,
-        category: d.category,
-        filename: d.original_filename,
-        note: d.note,
-      })),
+    documents: documentRows.map((d) => ({
+      id: d.id,
+      title: d.title,
+      kind: d.kind,
+      visibility: d.visibility,
+      status: d.upload_status,
+      uploadedAt: d.uploaded_at,
+      uploadedByName: d.uploaded_by
+        ? staff
+          ? (uploaderNames.get(d.uploaded_by) ?? "ARHA staff")
+          : d.uploaded_by === viewer.userId
+            ? "You"
+            : "ARHA"
+        : null,
+      entityType: d.entity_type,
+      entityId: d.entity_id,
+      category: d.category,
+      filename: d.original_filename,
+      note: staff || d.requested_from === "owner" ? d.note : null,
+    })),
 
     approvals: {
       ownerActions: ownerActions.map((t) => ({
         id: t.id,
-        title: t.title,
+        title: staff ? t.title : "Owner onboarding review",
         stage: t.stage,
         status: t.owner_approval_status ?? "pending",
       })),
@@ -715,7 +793,7 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string) {
         )
         .map((t) => ({
           id: t.id,
-          title: t.title,
+          title: staff ? t.title : "Owner onboarding review",
           stage: t.stage,
           status: t.owner_approval_status ?? "pending",
         })),

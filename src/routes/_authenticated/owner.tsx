@@ -16,7 +16,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
-import { usDate, usDateTime } from "@/lib/dates";
+import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,9 +39,14 @@ import {
 import {
   MANUAL_ENTRY_CONFIRMATION,
   MANUAL_ENTRY_NOTICE,
+  parseOwnerMinutes,
   OWNER_GOAL_LABEL,
 } from "@/lib/owner-participation";
+import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
+import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
+import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
+import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
 import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
@@ -61,7 +66,14 @@ export const Route = createFileRoute("/_authenticated/owner")({
 });
 
 type Review = {
+  owner_update_revision?: number | null;
   id: string;
+  phase: string;
+  auto_ticket?: boolean;
+  owner_request?: OwnerTicketRequest;
+  responded_at?: string | null;
+  owner_response?: string | null;
+  updated_at?: string;
   title: string;
   recommendation: string | null;
   business_question: string | null;
@@ -78,12 +90,18 @@ function firstName(name: string | null | undefined) {
 }
 
 function OwnerHub() {
+  const { user } = Route.useRouteContext();
   const { ownerPreview } = useOwnerPreview();
   const load = useServerFn(ownerHome);
   const loadPreview = useServerFn(ownerHomePreview);
 
   const home = useQuery({
-    queryKey: ["owner-home", ownerPreview?.programId ?? null],
+    queryKey: [
+      "owner-home",
+      user.id,
+      ownerPreview ? "preview" : "owner",
+      ownerPreview?.programId ?? null,
+    ],
     queryFn: () =>
       ownerPreview ? loadPreview({ data: { programId: ownerPreview.programId } }) : load(),
   });
@@ -99,7 +117,13 @@ function OwnerHub() {
     );
   }
 
-  return <OwnerHubBody data={home.data} preview={Boolean(ownerPreview)} />;
+  return (
+    <OwnerHubBody
+      key={`${user.id}:${home.data.program.id}:${Boolean(ownerPreview)}`}
+      data={home.data}
+      preview={Boolean(ownerPreview)}
+    />
+  );
 }
 
 function OwnerHubBody({
@@ -110,12 +134,16 @@ function OwnerHubBody({
   preview: boolean;
 }) {
   const qc = useQueryClient();
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ["owner-home"] });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["owner-home"] });
+    void qc.invalidateQueries({ queryKey: ["owner-report"] });
+  };
 
   const { program, properties, reviews, badges, alerts, tickets, snapshot } = data;
 
-  const openReviews = (reviews as Review[]).filter(
-    (r) => r.status === "awaiting_owner" || r.status === "returned",
+  const openReviews = (reviews as Review[]).filter((r) => ownerReviewPresentation(r).attention);
+  const availableReviews = (reviews as Review[]).filter(
+    (r) => r.auto_ticket && !ownerReviewPresentation(r).attention,
   );
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
@@ -135,8 +163,6 @@ function OwnerHubBody({
       kind: t.status === "closed" ? "completed" : "handoff",
       label: t.title,
       when: usDate(t.reported_at),
-      to: "/tickets/$ticketId",
-      params: { ticketId: t.id },
     }));
     return [...fromAlerts, ...fromTickets]
       .sort((a, b) => (a.when && b.when ? (a.when < b.when ? 1 : -1) : 0))
@@ -157,7 +183,7 @@ function OwnerHubBody({
       />
 
       {targetReached ? (
-        <Celebrate title="You've passed 100 hours of reported participation.">
+        <Celebrate title="You've reached at least 100 hours of reported participation.">
           Thank you for the time you've put in. Your final report will be ready when your 90 days
           close.
         </Celebrate>
@@ -216,12 +242,123 @@ function OwnerHubBody({
 
       <OwnerApprovalPanel readOnly={preview} />
 
+      <SectionCard
+        title="Property work to review"
+        description="Review what is happening at your homes, retain your participation history, and log time you actually spend reviewing."
+      >
+        {availableReviews.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No property work is available to review yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {availableReviews.map((r) => (
+              <ReviewRow
+                key={r.id}
+                review={r}
+                properties={properties}
+                programId={program.id}
+                onDone={invalidate}
+                readOnly={preview}
+              />
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <ParticipationReportPanel />
+        {data.badgeRefreshPending && (
+          <p className="text-sm text-muted-foreground">
+            Achievements are awaiting a refresh. Your participation record is still available;
+            reopening this page will retry.
+          </p>
+        )}
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
       </div>
 
+      <SectionCard title="Reviewed updates in your participation history">
+        <div className="space-y-2">
+          {data.entries
+            .filter((entry) => entry.owner_update_snapshot)
+            .map((entry) => {
+              const reviewed = entry.owner_update_snapshot!;
+              return (
+                <details key={entry.id} className="rounded-lg border p-3 text-sm">
+                  <summary className="cursor-pointer">
+                    {usCalendarDate(entry.entry_date)} · {entry.activity} · Revision{" "}
+                    {reviewed.revision}
+                    {entry.superseded ? " · Superseded entry" : ""}
+                  </summary>
+                  <div className="mt-2 space-y-2 whitespace-pre-wrap">
+                    <p>{reviewed.issue}</p>
+                    <p>{reviewed.work_performed}</p>
+                    {reviewed.outcome && <p>{reviewed.outcome}</p>}
+                    {reviewedTicketRequestText(reviewed) && (
+                      <p>{reviewedTicketRequestText(reviewed)}</p>
+                    )}
+                    <p className="text-muted-foreground">
+                      Owner update reviewed {usDate(reviewed.reviewed_at)}. Retained with this
+                      participation entry.
+                    </p>
+                  </div>
+                </details>
+              );
+            })}
+          {!data.entries.some((entry) => entry.owner_update_snapshot) && (
+            <p className="text-sm text-muted-foreground">
+              No participation entries have a saved owner-update revision yet.
+            </p>
+          )}
+        </div>
+      </SectionCard>
+
       <OwnerFilesPanel />
+
+      <SectionCard title="Your recorded review responses">
+        <div className="space-y-2">
+          {data.responseReceipts.map((receipt) => (
+            <details key={receipt.id} className="rounded-lg border p-3 text-sm">
+              <summary className="cursor-pointer">
+                {usDateTime(receipt.createdAt)} · Review response
+                {receipt.ownerUpdate ? ` · Revision ${receipt.ownerUpdate.revision}` : ""}
+              </summary>
+              <div className="mt-2 space-y-2 whitespace-pre-wrap">
+                <p className="text-muted-foreground">
+                  {properties.find((property) => property.propertyId === receipt.propertyId)
+                    ?.name ??
+                    (receipt.propertyId ? "Previously enrolled property" : "Program opportunity")}
+                  {receipt.ticketId
+                    ? ` · ${tickets.find((ticket) => ticket.id === receipt.ticketId)?.title ?? "Property work"}`
+                    : ""}
+                </p>
+                <p>{receipt.response || "Review acknowledged without a note."}</p>
+                {receipt.ownerUpdate ? (
+                  <>
+                    <p>{receipt.ownerUpdate.issue}</p>
+                    <p>{receipt.ownerUpdate.work_performed}</p>
+                    {receipt.ownerUpdate.outcome && <p>{receipt.ownerUpdate.outcome}</p>}
+                    {reviewedTicketRequestText(receipt.ownerUpdate) && (
+                      <p>{reviewedTicketRequestText(receipt.ownerUpdate)}</p>
+                    )}
+                    <p className="text-muted-foreground">
+                      This is the reviewed narrative retained with this response. A response does
+                      not add participation hours.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No narrative revision was retained with this response.
+                  </p>
+                )}
+              </div>
+            </details>
+          ))}
+          {data.responseReceipts.length === 0 && (
+            <p className="text-sm text-muted-foreground">No review responses recorded yet.</p>
+          )}
+        </div>
+      </SectionCard>
 
       <SectionCard title="Recent activity" description="What's happened lately across your homes.">
         <ActivityList events={events} emptyLabel="Nothing has happened yet." />
@@ -250,11 +387,31 @@ function ReviewRow({
 }) {
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState("");
+  const presentation = ownerReviewPresentation(review);
+  const canRespond =
+    !readOnly &&
+    ["awaiting_owner", "returned"].includes(review.status) &&
+    Boolean(review.updated_at);
+  const [responseContext, setResponseContext] = useState<ReturnType<
+    typeof captureReviewedResponse
+  > | null>(null);
+  const setResponseOpen = (next: boolean) => {
+    if (next && !open) setResponseContext(captureReviewedResponse(review));
+    setOpen(next);
+  };
   const answer = useServerFn(answerOwnerReview);
 
   const respond = useMutation({
     mutationFn: (decision: string) =>
-      answer({ data: { reviewId: review.id, decision, response: response.trim() } }),
+      answer({
+        data: {
+          reviewId: responseContext?.id ?? review.id,
+          expectedUpdatedAt: responseContext?.expectedUpdatedAt ?? "",
+          ownerUpdateRevision: responseContext?.ownerUpdateRevision ?? null,
+          decision,
+          response: response.trim(),
+        },
+      }),
     onSuccess: () => {
       toast.success("Thanks — your response was recorded.");
       setOpen(false);
@@ -274,46 +431,66 @@ function ReviewRow({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold">{review.title}</p>
-          <StatusBadge tone={reviewTone(review.status)}>
-            {review.status === "returned" ? "Sent back to you" : "Waiting on you"}
-          </StatusBadge>
+          <StatusBadge tone={reviewTone(review.status)}>{presentation.label}</StatusBadge>
         </div>
         {review.business_question ? (
           <p className="mt-1 text-sm text-muted-foreground">{review.business_question}</p>
         ) : null}
         <p className="mt-1 text-xs text-muted-foreground">
           {names ? `${names} · ` : ""}
-          {review.respond_by ? `Please respond by ${usDate(review.respond_by)}` : "No due date"}
+          {review.respond_by
+            ? `Please respond by ${usCalendarDate(review.respond_by)}`
+            : "No due date"}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <LogTimeButton review={review} programId={programId} onDone={onDone} readOnly={readOnly} />
-        <Button size="sm" variant="outline" disabled={readOnly} onClick={() => setOpen(true)}>
-          <MessageSquare className="size-4" /> Respond
+        <LogTimeButton
+          review={review}
+          programId={programId}
+          onDone={onDone}
+          readOnly={readOnly || review.status === "closed"}
+        />
+        <Button size="sm" variant="outline" onClick={() => setResponseOpen(true)}>
+          <MessageSquare className="size-4" />{" "}
+          {review.auto_ticket || !canRespond ? "Review details" : "Respond"}
         </Button>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setResponseOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{review.title}</DialogTitle>
+            <DialogTitle>{responseContext?.title ?? review.title}</DialogTitle>
             <DialogDescription>
-              {review.recommendation ?? "Share your decision or note below."}
+              {responseContext?.description ?? "Share your decision or note below."}
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            rows={4}
-            placeholder="Your response"
-            value={response}
-            onChange={(e) => setResponse(e.target.value)}
-          />
+          {review.auto_ticket ? (
+            <p className="text-sm text-muted-foreground">
+              {ownerTicketResponseGuidance(responseContext?.requestCategory)}
+            </p>
+          ) : null}
+          {review.owner_response ? (
+            <p className="text-sm whitespace-pre-wrap">
+              Your recorded response: {review.owner_response}
+            </p>
+          ) : null}
+          {canRespond ? (
+            <Textarea
+              rows={4}
+              placeholder="Your response"
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+            />
+          ) : null}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={respond.isPending} onClick={() => respond.mutate("acknowledged")}>
-              Send response
-            </Button>
+            {canRespond ? (
+              <Button disabled={respond.isPending} onClick={() => respond.mutate("acknowledged")}>
+                Send response
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -333,31 +510,40 @@ function LogTimeButton({
   readOnly: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [minutes, setMinutes] = useState("30");
+  const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
+    null,
+  );
+  const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const log = useServerFn(logOwnerParticipation);
 
   const save = useMutation({
-    mutationFn: () =>
-      log({
+    mutationFn: () => {
+      if (!reviewed) throw new Error("Open the opportunity before logging participation.");
+      if (reviewed.phase !== "onboarding" && reviewed.phase !== "ongoing") {
+        throw new Error("This opportunity needs a valid participation phase.");
+      }
+      return log({
         data: {
           programId,
-          phase: "ongoing",
+          phase: reviewed.phase,
           entryDate: new Date().toISOString().slice(0, 10),
-          minutes: Math.max(1, Math.min(1440, Number(minutes) || 0)),
+          minutes: parseOwnerMinutes(minutes),
           activity: activity.trim(),
-          reviewId: review.id,
-          ticketId: review.ticket_id,
-          propertyIds: review.propertyIds,
+          reviewId: reviewed.id,
+          ticketId: reviewed.ticketId,
+          ownerUpdateRevision: reviewed.ownerUpdateRevision,
+          propertyIds: reviewed.propertyIds,
           confirmed: true,
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Time logged.");
       setOpen(false);
       setActivity("");
-      setMinutes("30");
+      setMinutes("");
       setConfirmed(false);
       onDone();
     },
@@ -366,7 +552,15 @@ function LogTimeButton({
 
   return (
     <>
-      <Button size="sm" variant="outline" disabled={readOnly} onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={readOnly}
+        onClick={() => {
+          setReviewed(captureReviewedOpportunity(review));
+          setOpen(true);
+        }}
+      >
         <Clock className="size-4" /> Log time
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -376,6 +570,11 @@ function LogTimeButton({
             <DialogDescription>{MANUAL_ENTRY_NOTICE}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {reviewed?.description && (
+              <p className="max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
+                {reviewed.description}
+              </p>
+            )}
             <div className="space-y-1">
               <Label htmlFor="log-activity">What did you do?</Label>
               <Textarea

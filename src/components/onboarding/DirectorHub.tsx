@@ -26,25 +26,10 @@ import {
 import { cn } from "@/lib/utils";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
+import { workspaceSearchFromLens } from "@/lib/onboarding-work-views";
 
-export type Lens =
-  | "attention"
-  | "mine"
-  | "at_risk"
-  | "blocked"
-  | "review"
-  | "corrections"
-  | "handoffs"
-  | "up7"
-  | "up14"
-  | "up30"
-  | "all";
-
-export type HubViewer = {
-  userId: string | null;
-  /** True for Director / Operations reviewers who own a gate decision. */
-  canReview: boolean;
-};
+export type { Lens } from "@/lib/onboarding-hub";
+import { matchesOnboardingLens, type Lens, type HubViewer } from "@/lib/onboarding-hub";
 
 const LENSES: { key: Lens; label: string; hint: string }[] = [
   {
@@ -60,7 +45,7 @@ const LENSES: { key: Lens; label: string; hint: string }[] = [
   { key: "corrections", label: "Corrections", hint: "Returned from a review gate." },
   { key: "at_risk", label: "At risk", hint: "Derived from overdue, blocked or evidence gaps." },
   { key: "blocked", label: "Blocked", hint: "Nothing can move until the blocker clears." },
-  { key: "review", label: "Handoff queue", hint: "Sitting at a handoff review gate." },
+  { key: "review", label: "Review queue", hint: "Stage captures and handoffs awaiting review." },
   { key: "handoffs", label: "Upcoming handoffs", hint: "Target handoff within 14 days." },
   { key: "up7", label: "Next 7 days", hint: "Target handoff within 7 days." },
   { key: "up14", label: "Next 14 days", hint: "Target handoff within 14 days." },
@@ -79,56 +64,6 @@ const CHIP_LENSES: Lens[] = [
   "handoffs",
   "all",
 ];
-
-function awaitingMyReview(p: ProjectSummary, viewer?: HubViewer) {
-  if (!p.inReview || !viewer) return false;
-  const step = p.gateStep ?? "kati_review";
-  if (step === "kati_review" && viewer.userId && p.property.onboarding_owner === viewer.userId)
-    return true;
-  return viewer.canReview;
-}
-
-/**
- * Every lens reads the same authoritative summary, so the counts reconcile:
- * a live home appears in no attention queue, "blocked" and "at risk" are
- * mutually exclusive derived levels, and a project in review is never also
- * counted as needing a project manager's action.
- */
-function matches(p: ProjectSummary, lens: Lens, viewer?: HubViewer) {
-  // Accepted homes are history: they belong to Operations, not this hub.
-  const live = p.accepted || p.stage === "live";
-  switch (lens) {
-    case "attention":
-      return (
-        !live &&
-        (p.risk.level === "blocked" ||
-          p.risk.level === "at_risk" ||
-          p.property.lifecycle_status === "handoff_corrections" ||
-          awaitingMyReview(p, viewer) ||
-          (!p.next.waiting && !p.inReview))
-      );
-    case "mine":
-      return !live && awaitingMyReview(p, viewer);
-    case "at_risk":
-      return !live && p.risk.level === "at_risk";
-    case "blocked":
-      return !live && p.risk.level === "blocked";
-    case "review":
-      return !live && p.inReview;
-    case "corrections":
-      return !live && p.property.lifecycle_status === "handoff_corrections";
-    case "handoffs":
-      return !live && withinDays(p.target, 14);
-    case "up7":
-      return !live && withinDays(p.target, 7);
-    case "up14":
-      return !live && withinDays(p.target, 14);
-    case "up30":
-      return !live && withinDays(p.target, 30);
-    default:
-      return true;
-  }
-}
 
 export function DirectorHub({
   projects: allProjects,
@@ -164,6 +99,10 @@ export function DirectorHub({
     () => applyTestDataFilter(allProjects, showTest, (p) => p.property),
     [allProjects, showTest],
   );
+  const productionProjects = useMemo(
+    () => applyTestDataFilter(allProjects, false, (p) => p.property),
+    [allProjects],
+  );
   const setLens = onLensChange;
   const setFind = onFindChange;
   const setOwner = onOwnerChange;
@@ -172,21 +111,24 @@ export function DirectorHub({
   const counts = useMemo(
     () =>
       Object.fromEntries(
-        LENSES.map((l) => [l.key, projects.filter((p) => matches(p, l.key, viewer)).length]),
+        LENSES.map((l) => [
+          l.key,
+          productionProjects.filter((p) => matchesOnboardingLens(p, l.key, viewer)).length,
+        ]),
       ) as Record<Lens, number>,
-    [projects, viewer],
+    [productionProjects, viewer],
   );
 
   const visible = useMemo(() => {
     const q = find.trim().toLowerCase();
     return projects
-      .filter((p) => matches(p, lens, viewer))
+      .filter((p) => matchesOnboardingLens(p, lens, viewer))
       .filter((p) => !owner || (p.owner ?? "Unassigned") === owner)
       .filter((p) => !q || `${p.property.name} ${p.owner ?? ""}`.toLowerCase().includes(q))
       .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
   }, [projects, lens, find, owner, viewer]);
 
-  const active = projects.filter((p) => !p.accepted && p.stage !== "live");
+  const active = productionProjects.filter((p) => p.stage !== "live");
   const bottleneck = bottleneckStage(active);
   const workload = workloadByOwner(active);
   const activeLensMeta = LENSES.find((l) => l.key === lens);
@@ -236,7 +178,7 @@ export function DirectorHub({
             </p>
           )}
           {visible.map((p) => (
-            <ProjectRow key={p.property.id} project={p} originToken={originToken} />
+            <ProjectRow key={p.property.id} project={p} originToken={originToken} lens={lens} />
           ))}
         </div>
       </section>
@@ -444,16 +386,23 @@ function PortfolioCard({
 function ProjectRow({
   project: p,
   originToken,
+  lens,
 }: {
   project: ProjectSummary;
   originToken?: string | undefined;
+  lens: Lens;
 }) {
   const stage = lifecycleStageMeta(p.stage);
   return (
     <Link
       to="/onboarding/$propertyId"
       params={{ propertyId: p.property.id }}
-      search={(originToken ? { from: originToken } : undefined) as never}
+      search={
+        {
+          ...workspaceSearchFromLens(lens, Boolean(p.gateStep)),
+          ...(originToken ? { from: originToken } : {}),
+        } as never
+      }
       className="surface flex flex-col gap-2 p-3 transition hover:bg-muted/40 lg:flex-row lg:items-center lg:gap-4"
     >
       <PropertyPhoto

@@ -33,6 +33,7 @@ import { GuidanceCard } from "@/components/GuidanceCard";
 import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
+import { TicketOwnerUpdatePanel } from "@/components/TicketOwnerUpdatePanel";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { HandoffPanel } from "@/components/HandoffPanel";
 import { FinalReviewPanel } from "@/components/FinalReviewPanel";
@@ -1425,6 +1426,9 @@ function TicketDetail() {
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 pt-4">
+            {role.can("work_orders_internal") && (
+              <TicketOwnerUpdatePanel key={ticket.id} ticketId={ticket.id} />
+            )}
             <div className="space-y-3 text-sm">
               <Field
                 label="Address"

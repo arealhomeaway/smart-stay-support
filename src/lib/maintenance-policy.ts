@@ -158,6 +158,45 @@ export function normalisePriority(value: string | null | undefined): Priority {
  *  - emergency — mitigation proceeds under a documented exception.
  */
 export type AuthorityTier = "proceed" | "supervisor" | "owner" | "emergency";
+export type AuthorityPolicy = {
+  version: string;
+  supervisorApprovalThreshold: number;
+  ownerApprovalThreshold: number;
+};
+
+/** Missing configuration uses the approved baseline; malformed configuration fails closed. */
+export function readAuthorityPolicy(value: unknown): AuthorityPolicy {
+  if (value == null)
+    return {
+      version: MAINTENANCE_POLICY.version,
+      supervisorApprovalThreshold: MAINTENANCE_POLICY.supervisorApprovalThreshold,
+      ownerApprovalThreshold: MAINTENANCE_POLICY.ownerApprovalThreshold,
+    };
+  if (typeof value !== "object" || Array.isArray(value))
+    throw new Error("Invalid authority policy configuration.");
+  const policy = value as Partial<AuthorityPolicy>;
+  if (
+    typeof policy.version !== "string" ||
+    !policy.version.trim() ||
+    policy.version.length > 120 ||
+    typeof policy.supervisorApprovalThreshold !== "number" ||
+    typeof policy.ownerApprovalThreshold !== "number" ||
+    !Number.isFinite(policy.supervisorApprovalThreshold) ||
+    !Number.isFinite(policy.ownerApprovalThreshold) ||
+    policy.supervisorApprovalThreshold < 0 ||
+    policy.ownerApprovalThreshold < policy.supervisorApprovalThreshold ||
+    policy.ownerApprovalThreshold > 1000000
+  ) {
+    throw new Error(
+      "Enter a policy version and valid supervisor/owner thresholds in ascending order.",
+    );
+  }
+  return {
+    version: policy.version.trim(),
+    supervisorApprovalThreshold: policy.supervisorApprovalThreshold,
+    ownerApprovalThreshold: policy.ownerApprovalThreshold,
+  };
+}
 
 export const AUTHORITY_TIER_LABELS: Record<AuthorityTier, string> = {
   proceed: "Proceed — no approval needed",
@@ -168,24 +207,24 @@ export const AUTHORITY_TIER_LABELS: Record<AuthorityTier, string> = {
 
 export function authorityTier(
   amount: number | null | undefined,
-  options: { emergency?: boolean } = {},
+  options: { emergency?: boolean; policy?: AuthorityPolicy } = {},
 ): AuthorityTier {
   if (options.emergency) return "emergency";
   const value = Number(amount ?? 0);
-  if (!Number.isFinite(value) || value < MAINTENANCE_POLICY.supervisorApprovalThreshold)
-    return "proceed";
-  if (value <= MAINTENANCE_POLICY.ownerApprovalThreshold) return "supervisor";
+  const policy = options.policy ?? MAINTENANCE_POLICY;
+  if (!Number.isFinite(value) || value < policy.supervisorApprovalThreshold) return "proceed";
+  if (value <= policy.ownerApprovalThreshold) return "supervisor";
   return "owner";
 }
 
 /** Plain-language sentence for the tier a given amount falls into. */
 export function authorityGuidance(
   amount: number | null | undefined,
-  options: { emergency?: boolean } = {},
+  options: { emergency?: boolean; policy?: AuthorityPolicy } = {},
 ): string {
   const tier = authorityTier(amount, options);
-  const sup = money(MAINTENANCE_POLICY.supervisorApprovalThreshold);
-  const own = money(MAINTENANCE_POLICY.ownerApprovalThreshold);
+  const sup = money((options.policy ?? MAINTENANCE_POLICY).supervisorApprovalThreshold);
+  const own = money((options.policy ?? MAINTENANCE_POLICY).ownerApprovalThreshold);
   switch (tier) {
     case "emergency":
       return `Emergency: mitigate now and record the exception — reason, scope, amount, who decided and evidence. Anything beyond stopping the immediate problem still follows the normal ladder.`;
@@ -199,9 +238,9 @@ export function authorityGuidance(
 }
 
 /** The full ladder, for guidance panels that explain it up front. */
-export function authorityLadder(): string[] {
-  const sup = money(MAINTENANCE_POLICY.supervisorApprovalThreshold);
-  const own = money(MAINTENANCE_POLICY.ownerApprovalThreshold);
+export function authorityLadder(policy: AuthorityPolicy = MAINTENANCE_POLICY): string[] {
+  const sup = money(policy.supervisorApprovalThreshold);
+  const own = money(policy.ownerApprovalThreshold);
   return [
     `Under ${sup} — proceed, record the cost.`,
     `${sup} to ${own} — supervisor approves, homeowner is told afterwards.`,

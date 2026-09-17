@@ -11,6 +11,7 @@ import {
   deriveRisk,
   deriveStage,
   gateProgress,
+  summarizeProject,
   type ProjectProperty,
 } from "@/lib/onboarding-lifecycle";
 
@@ -63,6 +64,47 @@ function task(over: Partial<WorkflowTask> = {}): WorkflowTask {
 }
 
 describe("stage derivation", () => {
+  it("surfaces stage review ownership and corrections before handoff", () => {
+    const summary = summarizeProject(
+      {
+        property: property(),
+        tasks: [],
+        handoff: null,
+        project: { id: "project", status: "active", director: "director" },
+        stageCaptures: [
+          { stage: "post_contract", revision: 2, status: "awaiting_review" },
+          { stage: "phase1_inspection", revision: 4, status: "correction_required" },
+        ],
+      },
+      null,
+    );
+    expect(summary.stageReviewCount).toBe(1);
+    expect(summary.stageCorrectionCount).toBe(1);
+    expect(summary.directorId).toBe("director");
+    expect(summary.gateStep).toBe(null);
+  });
+  it("keeps accepted homes in the review queue until Supervisor Live confirmation", () => {
+    const summary = summarizeProject(
+      {
+        property: property({
+          lifecycle_status: "handoff_requested",
+          handoff_accepted_at: "2026-09-14T00:00:00Z",
+        }),
+        tasks: [],
+        handoff: {
+          id: "h",
+          property_id: "p1",
+          status: "accepted_pending_live",
+          gate_step: "live_confirmation",
+        },
+      },
+      null,
+    );
+    expect(summary.accepted).toBe(true);
+    expect(summary.inReview).toBe(true);
+    expect(summary.gateStep).toBe("live_confirmation");
+    expect(summary.stage).not.toBe("live");
+  });
   it("holds a home in Pre-Close until access exists", () => {
     const p = property({ access_notes: null, actual_access_on: null });
     expect(deriveStage({ property: p, tasks: [task()], handoff: null })).toBe("pre_close");
@@ -186,5 +228,45 @@ describe("conditional activation and gates", () => {
     expect(gates[0]?.state).toBe("current");
     expect(gates[1]?.state).toBe("upcoming");
     expect(gates.filter((g) => g.state === "current").length).toBe(1);
+  });
+});
+
+describe("canonical project handoff context", () => {
+  it("keeps independent finance and field blockers visible after task completion", () => {
+    const summary = summarizeProject(
+      {
+        property: property(),
+        tasks: [task({ status: "complete" })],
+        handoff: null,
+        project: { id: "project", status: "active", target_handoff_on: "2026-09-20" },
+        independentReadiness: {
+          propertyId: "p1",
+          pendingFacts: 0,
+          financials: [
+            { id: "finance", title: "Repair", taskIds: [], issue: "Owner approval required" },
+          ],
+          fieldWork: [],
+        },
+      },
+      "Project manager",
+    );
+    expect(summary.target).toBe("2026-09-20");
+    expect(summary.risk.level).toBe("blocked");
+    expect(summary.blockers[0]?.what).toContain("Owner approval required");
+    expect(summary.next.headline).toBe("Resolve handoff readiness");
+  });
+  it("never labels an unavailable protected readiness read as handoff ready", () => {
+    const summary = summarizeProject(
+      {
+        property: property(),
+        tasks: [task({ status: "complete" })],
+        handoff: null,
+        project: { id: "project", status: "active" },
+        independentReadiness: null,
+      },
+      null,
+    );
+    expect(summary.risk.level).toBe("blocked");
+    expect(summary.next.detail).toContain("unavailable");
   });
 });

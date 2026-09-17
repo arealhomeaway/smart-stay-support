@@ -8,6 +8,18 @@
  */
 
 export const OWNER_ACTION_TYPES = [
+  "approve_only",
+  "review_comment",
+  "review_decide",
+  "provide_information",
+  "attend_respond",
+  "action_payment",
+  "information_only",
+  "research_recommend",
+] as const;
+
+/** Retain stored values and older callers without offering a second taxonomy for new work. */
+export const LEGACY_OWNER_ACTION_TYPES = [
   "participate",
   "review",
   "approve",
@@ -16,12 +28,56 @@ export const OWNER_ACTION_TYPES = [
   "document",
 ] as const;
 
-export type OwnerActionType = (typeof OWNER_ACTION_TYPES)[number];
+export const SUPPORTED_OWNER_ACTION_TYPES = [
+  ...OWNER_ACTION_TYPES,
+  ...LEGACY_OWNER_ACTION_TYPES,
+] as const;
+export type OwnerActionType = (typeof SUPPORTED_OWNER_ACTION_TYPES)[number];
 
 export const ACTION_TYPE_META: Record<
   OwnerActionType,
   { label: string; verb: string; hint: string }
 > = {
+  approve_only: {
+    label: "Approve only",
+    verb: "Approve",
+    hint: "Review the request and record your approval or rejection.",
+  },
+  review_comment: {
+    label: "Review & comment",
+    verb: "Comment",
+    hint: "Review the information and share your comments.",
+  },
+  review_decide: {
+    label: "Review & decide",
+    verb: "Decide",
+    hint: "Review the options and record your decision.",
+  },
+  provide_information: {
+    label: "Provide information",
+    verb: "Respond",
+    hint: "Provide the information requested so the work can proceed.",
+  },
+  attend_respond: {
+    label: "Attend & respond",
+    verb: "Attend",
+    hint: "Attend the scheduled activity and record your response.",
+  },
+  action_payment: {
+    label: "Action or payment required",
+    verb: "Take action",
+    hint: "Complete the requested action or payment and record the outcome.",
+  },
+  information_only: {
+    label: "Information only",
+    verb: "Review",
+    hint: "No response is required. You may review this work and log time you actually spend reviewing it.",
+  },
+  research_recommend: {
+    label: "Research & recommend",
+    verb: "Recommend",
+    hint: "Research the options and share your recommendation.",
+  },
   participate: {
     label: "Participate",
     verb: "Take part",
@@ -33,6 +89,14 @@ export const ACTION_TYPE_META: Record<
   research: { label: "Research", verb: "Research", hint: "Look into options and report back." },
   document: { label: "Document", verb: "Document", hint: "Record notes, photos or details." },
 };
+
+/** Reuse the existing response workflow; informational work must not become an approval gate. */
+export function opportunityDecisionPath(
+  actionType: OwnerActionType,
+): "approve" | "inform" | "consult" {
+  if (actionType === "approve" || actionType === "approve_only") return "approve";
+  return actionType === "information_only" ? "inform" : "consult";
+}
 
 export type OpportunitySource = "onboarding" | "operations" | "program";
 

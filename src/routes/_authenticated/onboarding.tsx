@@ -1,3 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useRole } from "@/hooks/useRole";
+import { getOnboardingWorkspace } from "@/lib/onboarding.functions";
+import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { RequireCapability } from "@/components/RequireCapability";
 
@@ -28,10 +33,21 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 });
 
 function OnboardingLayout() {
+  const { userId } = useRole();
+  const load = useServerFn(getOnboardingWorkspace);
+  const { data } = useQuery({
+    queryKey: onboardingWorkspaceKey(userId),
+    queryFn: () => load(),
+    enabled: Boolean(userId),
+  });
   return (
     <div className="space-y-5">
       <nav className="flex flex-wrap items-center gap-1" aria-label="Onboarding views">
-        <SubLink to="/onboarding">Director hub</SubLink>
+        {data && data.workspaceMode !== "assigned" && (
+          <SubLink to="/onboarding">
+            {data.workspaceMode === "portfolio" ? "Director hub" : "Project hub"}
+          </SubLink>
+        )}
         <SubLink to="/onboarding/my-work">My work</SubLink>
       </nav>
       <Outlet />

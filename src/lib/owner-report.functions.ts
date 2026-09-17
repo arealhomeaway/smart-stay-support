@@ -9,14 +9,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 async function ownProgramId(supabase: never, userId: string) {
   const client = supabase as unknown as import("./owner-participation.server").Client;
-  const { data, error } = await client
-    .from("owner_programs")
-    .select("id")
-    .eq("owner_user_id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error("No participation program is linked to this account.");
-  return data.id;
+  const { findOwnerProgram } = await import("./owner-program-reader.server");
+  const program = await findOwnerProgram(client, userId);
+  if (!program) throw new Error("No participation program is linked to this account.");
+  return program.id;
 }
 
 /** Report model for the portal panel — same numbers the files carry. */

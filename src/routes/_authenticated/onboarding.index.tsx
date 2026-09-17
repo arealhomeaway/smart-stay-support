@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
+import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
@@ -15,6 +17,7 @@ import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { summarizeProject, type ProjectProperty } from "@/lib/onboarding-lifecycle";
 import { type WorkflowTask } from "@/lib/onboarding-workflow";
+import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
@@ -25,13 +28,13 @@ import {
 export const Route = createFileRoute("/_authenticated/onboarding/")({
   head: () => ({
     meta: [
-      { title: "Director onboarding hub — Resolve" },
+      { title: "Onboarding hub — Resolve" },
       {
         name: "description",
         content:
           "What needs attention today across every home in onboarding: derived risk, first-class blockers, review gates, upcoming handoffs and workload by project manager.",
       },
-      { property: "og:title", content: "Director onboarding hub — Resolve" },
+      { property: "og:title", content: "Onboarding hub — Resolve" },
       {
         property: "og:description",
         content:
@@ -68,7 +71,7 @@ function Hub() {
   const qc = useQueryClient();
   const { can, readOnly, userId } = useRole();
   const { enabled } = useFeatureFlags();
-  const { token: originToken } = useWorkspaceOrigin("Director hub");
+  const { token: originToken } = useWorkspaceOrigin("Onboarding hub");
   const navigate = Route.useNavigate();
   const params = Route.useSearch();
   const lens = params.lens ?? "attention";
@@ -89,8 +92,9 @@ function Hub() {
     });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["onboarding-workspace"],
+    queryKey: onboardingWorkspaceKey(userId),
     queryFn: () => load(),
+    enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 
@@ -123,20 +127,32 @@ function Hub() {
               h.property_id === p.id &&
               (h.status === "requested" || h.status === "accepted_pending_live"),
           ) ?? null;
-        const pm = data.people.find((x) => x.id === p.onboarding_owner);
         // The Onboarding Project row is authoritative for lifecycle: without
         // it a home with tasks would read as started when it is not.
         const project =
           (data.projects ?? []).find((x) => x.property_id === p.id && x.status !== "cancelled") ??
           null;
+        const pm = data.people.find((x) => x.id === project?.project_manager);
+        const scoped = splitByScope(tasks, projectScope(project));
         return summarizeProject(
-          { property: p as unknown as ProjectProperty, tasks, handoff, project: project as never },
+          {
+            property: p as unknown as ProjectProperty,
+            tasks: scoped.inScope,
+            handoff,
+            project: project as never,
+            stageCaptures: data.stageCaptures.filter((c) => c.propertyId === p.id),
+            excludedTaskIds: scoped.outOfScope.map((x) => x.task.id),
+            independentReadiness:
+              data.independentReadiness.find((row) => row.propertyId === p.id) ?? null,
+          },
           pm?.full_name ?? pm?.email ?? null,
         );
       });
   }, [data]);
 
   if (isLoading || !data) return <LoadingPage />;
+  if (data.workspaceMode === "assigned")
+    return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
 
   // Homes in the pipeline where nobody has started an Onboarding Project yet.
   // A property existing is not the same as onboarding being under way.
@@ -150,14 +166,16 @@ function Hub() {
   const notStartedTestCount = countTestRecords(notStartedAll, (p) => p);
 
   const pendingReviews = data.handoffs.filter(
-    (h) => h.status === "requested" || h.status === "accepted_pending_live",
+    (h) =>
+      (h.status === "requested" || h.status === "accepted_pending_live") &&
+      applyTestDataFilter(data.properties, showTest, (p) => p).some((p) => p.id === h.property_id),
   );
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Onboarding"
-        title="Director hub"
+        title={data.workspaceMode === "portfolio" ? "Director hub" : "Project hub"}
         description="What needs attention today, what is at risk and why, which homes are waiting on a review gate, and which handoffs land this week."
         actions={<AddPropertyDialog disabled={readOnly} />}
       />
@@ -198,7 +216,7 @@ function Hub() {
           )}
           <DirectorHub
             projects={projects}
-            viewer={{ userId, canReview: can("handoff_review") }}
+            viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
             originToken={originToken}
             lens={lens}
             onLensChange={(v) => setParam({ lens: v })}
@@ -222,12 +240,7 @@ function Hub() {
               reviews={data.reviews as never}
               people={data.people}
               propertyName={data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"}
-              canReview={
-                can("handoff_review") ||
-                (Boolean(userId) &&
-                  (h.gate_step ?? "kati_review") === "kati_review" &&
-                  data.properties.find((p) => p.id === h.property_id)?.onboarding_owner === userId)
-              }
+              canReview={!readOnly && canReviewOnboardingGate(data.reviewCapabilities, h.gate_step)}
               disabled={readOnly}
               onDecision={(input) => reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })}
             />

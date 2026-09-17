@@ -33,6 +33,7 @@ export function WorkflowTable({
   onSelect,
   outOfScope = [],
   release,
+  visibleTaskIds,
 }: {
   tasks: WorkflowTask[];
   people: Person[];
@@ -40,13 +41,38 @@ export function WorkflowTable({
   onSelect: (task: WorkflowTask) => void;
   /** Authoritative release context — decides what may read "Ready". */
   release?: ReleaseContext;
+  /** Filter presentation while preserving the complete dependency context. */
+  visibleTaskIds?: string[];
   /** Work this project's scope switched off — shown, never counted as missing. */
   outOfScope?: { task: WorkflowTask; reason: string }[];
 }) {
-  const sections = useMemo(() => buildSections(tasks, release), [tasks, release]);
+  const sections = useMemo(() => {
+    const built = buildSections(tasks, release);
+    if (!visibleTaskIds) return built;
+    const visible = new Set(visibleTaskIds);
+    return built
+      .map((section) => {
+        const shown = section.tasks.filter((view) => visible.has(view.task.id));
+        return {
+          ...section,
+          tasks: shown,
+          total: shown.length,
+          done: shown.filter((view) => ["complete", "carryover"].includes(view.status)).length,
+        };
+      })
+      .filter((section) => section.total > 0);
+  }, [tasks, release, visibleTaskIds]);
   const active = useMemo(() => activeSectionKey(sections), [sections]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [showSkipped, setShowSkipped] = useState(false);
+
+  if (visibleTaskIds && sections.length === 0 && tasks.length > 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No tasks match this work filter. Choose All work to see the full plan.
+      </p>
+    );
+  }
 
   if (tasks.length === 0 && outOfScope.length === 0) {
     return (
@@ -59,7 +85,12 @@ export function WorkflowTable({
   return (
     <div className="space-y-3">
       {sections.map((s) => {
-        const expanded = open[s.key] ?? (s.state !== "complete" || s.key === active);
+        const expanded =
+          open[s.key] ??
+          (s.state === "active" ||
+            s.state === "blocked" ||
+            s.key === active ||
+            s.tasks.some((view) => view.task.id === selectedId));
         return (
           <Section
             key={s.key}

@@ -123,6 +123,8 @@ type SendInput = {
   /** What this message is for — shows in the delivery log. */
   purpose?: string;
   ticketId?: string | null;
+  /** A saved onboarding attempt owns recovery after an uncertain provider response. */
+  singleAttempt?: boolean;
 };
 
 const MAX_ATTEMPTS = 3;
@@ -247,7 +249,8 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
     return { status: "failed", error };
   }
 
-  while (attempts < MAX_ATTEMPTS) {
+  const attemptLimit = input.singleAttempt ? 1 : MAX_ATTEMPTS;
+  while (attempts < attemptLimit) {
     attempts++;
     try {
       const res = await fetch(`${GATEWAY_URL}${path}`, {
@@ -278,7 +281,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       console.error(`Outlook sendMail failed [${res.status}] ${path}: ${detail}`);
       lastError = `Mail provider [${res.status}]: ${detail.slice(0, 300)}`;
 
-      if (!RETRYABLE.has(res.status) || attempts >= MAX_ATTEMPTS) break;
+      if (!RETRYABLE.has(res.status) || attempts >= attemptLimit) break;
       const retryAfter = Number(res.headers.get("retry-after"));
       await sleep(
         Number.isFinite(retryAfter) && retryAfter > 0
@@ -287,7 +290,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       );
     } catch (err) {
       lastError = err instanceof Error ? err.message : "Email failed";
-      if (attempts >= MAX_ATTEMPTS) break;
+      if (attempts >= attemptLimit) break;
       await sleep(500 * 2 ** (attempts - 1));
     }
   }

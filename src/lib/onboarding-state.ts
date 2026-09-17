@@ -16,6 +16,7 @@
 
 import { GATE_STEPS, type HandoffCheck } from "./onboarding";
 import { ONBOARDING_STAGES } from "./onboarding";
+import { stageReviewMatchesWork, type StageCapture } from "./onboarding-stage";
 import type { WorkflowTask } from "./onboarding-workflow";
 
 /* -------------------------------------------------------------- lifecycle */
@@ -112,7 +113,27 @@ export type StateProperty = {
   is_demo?: boolean | null;
 };
 
+/** Routine lifecycle edits cannot replace project start, stage review, or handoff. */
+export function lifecycleEditIssue(
+  property: Pick<StateProperty, "lifecycle_status" | "onboarding_stage" | "handoff_accepted_at">,
+  input: { status: string; stage?: string | null | undefined },
+): string | null {
+  if (input.stage !== undefined && input.stage !== property.onboarding_stage)
+    return "Use stage capture and review to advance or reopen work.";
+  if (
+    property.handoff_accepted_at ||
+    !["onboarding", "paused"].includes(property.lifecycle_status ?? "")
+  )
+    return "Use Start Onboarding or the handoff review chain for this home's current lifecycle.";
+  if (!["onboarding", "paused", "offboarded"].includes(input.status))
+    return "Use the handoff review chain to request, return, accept or confirm this home Live.";
+  return null;
+}
+
 export type StateProject = {
+  modules?: string[] | null;
+  furnishing_scope?: string | null;
+  director?: string | null;
   id: string;
   status: string | null;
   completed_at?: string | null;
@@ -132,6 +153,8 @@ export type StateInput = {
   /** In-scope, non-archived tasks for this property. */
   tasks: WorkflowTask[];
   handoff: StateHandoff;
+  stageCaptures?: { stage: string; revision: number; status: string }[] | undefined;
+  excludedTaskIds?: string[] | undefined;
 };
 
 export function today(): string {
@@ -230,19 +253,22 @@ export function deriveLifecycle(input: StateInput): LifecycleState {
     (Boolean(property.handoff_accepted_at) || property.lifecycle_status === "active_operations");
 
   if (accepted) {
+    const live =
+      property.lifecycle_status === "active_operations" || Boolean(handoff?.live_confirmed_at);
     return {
-      phase: "live",
-      label: PHASE_LABEL.live,
+      phase: live ? "live" : "live_confirmation",
+      label: live ? PHASE_LABEL.live : PHASE_LABEL.live_confirmation,
       accepted: true,
-      live: true,
+      live,
       corrections: false,
       notStarted: false,
       locked: true,
       lockedAt,
-      chainKey: "complete",
-      staleHandoff: Boolean(handoff),
-      explain:
-        "Operations accepted this home. The onboarding plan is history and is locked to further plan work.",
+      chainKey: live ? "complete" : "live_confirmation",
+      staleHandoff: live && Boolean(handoff),
+      explain: live
+        ? "Operations confirmed this home Live. The onboarding plan is locked to history."
+        : "Operations accepted ownership. The Supervisor must still confirm the home Live.",
     };
   }
 
@@ -383,6 +409,7 @@ export const RELEASE_LABEL: Record<ReleaseState, string> = {
 };
 
 export type ReleaseContext = {
+  excludedTaskIds?: string[] | undefined;
   /** Stage keys whose work is released for action. */
   released: Set<string>;
   /** Why each unreleased stage is not released yet. */
@@ -405,8 +432,7 @@ export function buildReleaseContext(input: StateInput): ReleaseContext {
   const { property, tasks } = input;
   const life = deriveLifecycle(input);
   const accessReached = accessConfirmed(property);
-  const closingReached =
-    milestoneReached(property.actual_closing_on) || milestoneReached(property.planned_closing_on);
+  const closingReached = milestoneReached(property.actual_closing_on);
 
   const released = new Set<string>();
   const reasons = new Map<string, string>();
@@ -433,6 +459,12 @@ export function buildReleaseContext(input: StateInput): ReleaseContext {
       (t) => t.stage === stage && t.status !== "complete" && t.status !== "carryover",
     );
     if (openHere.length > 0) priorOpen = label;
+    else if (input.stageCaptures !== undefined && planTasks.some((t) => t.stage === stage)) {
+      const capture = input.stageCaptures
+        .filter((c) => c.stage === stage)
+        .sort((a, b) => b.revision - a.revision)[0];
+      if (capture?.status !== "complete") priorOpen = `${label} review`;
+    }
   });
 
   return {
@@ -444,6 +476,7 @@ export function buildReleaseContext(input: StateInput): ReleaseContext {
     closingReached,
     lockedAt: life.lockedAt,
     locked: life.locked,
+    excludedTaskIds: input.excludedTaskIds,
   };
 }
 
@@ -488,7 +521,7 @@ export function releaseState(
     };
 
   // Milestone-anchored work waits for the milestone itself.
-  if (task.schedule_anchor === "planned_closing" || task.schedule_anchor === "actual_closing") {
+  if (task.schedule_anchor === "actual_closing") {
     if (!ctx.closingReached)
       return {
         state: "future",
@@ -504,9 +537,10 @@ export function releaseState(
     };
 
   const waitingOn = (task.depends_on ?? [])
+    .filter((id) => !ctx.excludedTaskIds?.includes(id))
     .map((id) => all.find((t) => t.id === id))
-    .filter((t) => t && t.status !== "complete" && t.status !== "carryover")
-    .map((t) => t!.title);
+    .filter((t) => !t || (t.status !== "complete" && t.status !== "carryover"))
+    .map((t) => t?.title ?? "a prerequisite that is not available");
   if (waitingOn.length > 0)
     return { state: "waiting", reason: `Waiting on ${waitingOn.join(", ")}.`, canComplete: false };
 
@@ -534,20 +568,20 @@ export function releaseState(
   if ((task.blocker ?? "").trim())
     return { state: "waiting", reason: `Blocked — ${task.blocker!.trim()}`, canComplete: false };
 
-  const reopened = Boolean(task.completed_at) && task.status !== "complete";
-  if (reopened)
-    return {
-      state: "correction_required",
-      reason: "Reopened after completion — a correction is required.",
-      canComplete: true,
-    };
-
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   if (evidenceMissing)
     return {
       state: "in_progress",
       reason: "Required evidence is not recorded yet.",
       canComplete: false,
+    };
+
+  const reopened = Boolean(task.completed_at) && task.status !== "complete";
+  if (reopened)
+    return {
+      state: "correction_required",
+      reason: "Reopened after completion — a correction is required.",
+      canComplete: true,
     };
 
   if ((task.evidence_note ?? "").trim() || task.exception_reason)
@@ -580,10 +614,13 @@ const CARRYOVER_EXCUSABLE = new Set(["open_work"]);
 export type ReadinessExtras = {
   /** Permanent-fact proposals still waiting on a review decision. */
   pendingFacts?: number;
-  /** Financial requests that block launch (awaiting approval or unsettled). */
+  /** Relevant financial requests with missing or inconsistent authorization. */
   openFinancials?: number;
   /** Field work still open in Breezeway or on the property. */
   openFieldWork?: number;
+  financialReasons?: string[];
+  fieldReasons?: string[];
+  independentReadinessUnavailable?: boolean;
 };
 
 /**
@@ -604,6 +641,20 @@ export function handoffReadiness(
   }
 
   const plan = input.tasks.filter((t) => !isPostLock(t, ctx.lockedAt));
+  if (input.stageCaptures !== undefined && !life.accepted) {
+    const unreviewed = [...new Set(plan.map((t) => t.stage))].filter((stage) => {
+      const capture = input
+        .stageCaptures!.filter((c) => c.stage === stage)
+        .sort((a, b) => b.revision - a.revision)[0];
+      return !stageReviewMatchesWork(capture as StageCapture | undefined, plan, input.project);
+    });
+    if (unreviewed.length)
+      reasons.push({
+        key: "stage_reviews",
+        label: "Stage reviews outstanding",
+        detail: `${unreviewed.length} applicable stage(s) need a Director review of the current work and scope.`,
+      });
+  }
   const open = plan.filter((t) => t.status !== "complete" && t.status !== "carryover");
   if (open.length > 0)
     reasons.push({
@@ -632,6 +683,12 @@ export function handoffReadiness(
       detail: `${approvals.length} step(s) still need a recorded homeowner decision.`,
     });
 
+  if (extras.independentReadinessUnavailable)
+    reasons.push({
+      key: "independent_readiness",
+      label: "Financial and field readiness is unavailable",
+      detail: "Refresh this project before requesting handoff.",
+    });
   if (extras.pendingFacts)
     reasons.push({
       key: "facts",
@@ -643,14 +700,18 @@ export function handoffReadiness(
     reasons.push({
       key: "financial",
       label: "Launch-blocking financial items are open",
-      detail: `${extras.openFinancials} financial request(s) are not approved or settled.`,
+      detail:
+        extras.financialReasons?.join("; ") ||
+        `${extras.openFinancials} financial request(s) need a valid authorization decision. Accounting settlement is tracked separately.`,
     });
 
   if (extras.openFieldWork)
     reasons.push({
       key: "field",
       label: "Field work is still open",
-      detail: `${extras.openFieldWork} field job(s) have not been completed.`,
+      detail:
+        extras.fieldReasons?.join("; ") ||
+        `${extras.openFieldWork} linked field job(s) need completion or explicit task carryover.`,
     });
 
   if (life.notStarted)
@@ -673,7 +734,7 @@ export function handoffReadiness(
 /** Display state of the handoff chain for the rail. */
 export function chainProgress(input: StateInput) {
   const life = deriveLifecycle(input);
-  const currentKey = life.accepted ? "complete" : life.chainKey;
+  const currentKey = life.live ? "complete" : life.chainKey;
   const index = currentKey ? HANDOFF_CHAIN.findIndex((s) => s.key === currentKey) : -1;
   return HANDOFF_CHAIN.map((s, i) => ({
     ...s,

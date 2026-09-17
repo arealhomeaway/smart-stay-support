@@ -8,14 +8,21 @@
  */
 
 export const PROGRAM_TOTAL_DAYS = 90;
-/** What the owner is told: more than 100 hours. Never "100". */
+/** Locked participation target: exactly 100 documented hours qualifies. */
 export const OWNER_GOAL_HOURS = 100;
 /** ARHA's internal operating target used for pacing and the progress ring. */
 export const OPERATING_TARGET_HOURS = 105;
 export const ONBOARDING_MILESTONE_HOURS = 60;
 export const ONBOARDING_MILESTONE_DAY = 35;
 
-export const OWNER_GOAL_LABEL = "More than 100 hours";
+export const OWNER_GOAL_LABEL = "At least 100 hours";
+
+export function parseOwnerMinutes(value: string): number {
+  const minutes = Number(value);
+  if (!value.trim() || !Number.isInteger(minutes) || minutes < 1 || minutes > 1440)
+    throw new Error("Enter the actual time spent, from 1 to 1440 whole minutes.");
+  return minutes;
+}
 
 export const MANUAL_ENTRY_NOTICE =
   "Enter the actual time you personally spent completing this activity. ARHA does not assign or recommend a standard amount of time.";
@@ -256,8 +263,8 @@ export function progressSnapshot(input: {
   let state: ProgressState;
   if (input.status === "completed" || input.status === "complete" || input.status === "closed") {
     state = "program_completed";
-  } else if (reportedHours > OWNER_GOAL_HOURS) {
-    // Strictly above 100 — exactly 100 is not yet "reached".
+  } else if (ownerGoalMet(input.reportedMinutes)) {
+    // Compare actual minutes so display rounding cannot satisfy the goal early.
     state = "target_reached";
   } else if (!active) {
     state = "not_started";
@@ -279,7 +286,7 @@ export function progressSnapshot(input: {
       100,
       Math.round((reportedHours / OPERATING_TARGET_HOURS) * 1000) / 10,
     ),
-    hoursToGoal: Math.max(0, Math.round((OWNER_GOAL_HOURS + 0.1 - reportedHours) * 10) / 10),
+    hoursToGoal: Math.ceil(Math.max(0, OWNER_GOAL_HOURS - input.reportedMinutes / 60) * 100) / 100,
     state,
     next: nextMilestone(day),
   };
@@ -368,10 +375,10 @@ export const BADGES: BadgeDef[] = [
   },
   {
     code: "hundred_plus",
-    name: "100+ Milestone",
+    name: "100-Hour Milestone",
     kind: "hours",
     hours: 100,
-    requirement: "More than 100 reported hours",
+    requirement: "At least 100 reported hours",
   },
   {
     code: "program_complete",
@@ -461,4 +468,40 @@ export function parseReviewPhotos(raw: unknown): ReviewPhoto[] {
     .map((p) => (typeof p === "string" ? { url: p } : (p as ReviewPhoto)))
     .filter((p) => p && typeof p.url === "string" && p.url.length > 0)
     .map((p) => ({ url: p.url, caption: p.caption ?? null }));
+}
+
+/** Corrections replace earlier entries; returned work does not count toward progress. */
+export function countableParticipationEntries<
+  T extends { id: string; amends_entry_id: string | null; review_status: string },
+>(entries: T[]): T[] {
+  const superseded = new Set(entries.map((entry) => entry.amends_entry_id).filter(Boolean));
+  return entries.filter((entry) => entry.review_status !== "returned" && !superseded.has(entry.id));
+}
+
+/** One inclusive 90-day window; historical rows remain available outside it. */
+export function participationWindowEnd(
+  startedOn: string | null | undefined,
+  endsOn?: string | null,
+) {
+  if (!startedOn) return null;
+  const start = new Date(`${startedOn}T00:00:00Z`);
+  if (!Number.isFinite(start.getTime())) return null;
+  start.setUTCDate(start.getUTCDate() + PROGRAM_TOTAL_DAYS - 1);
+  const lastDay = start.toISOString().slice(0, 10);
+  return endsOn && endsOn < lastDay ? endsOn : lastDay;
+}
+
+export function inParticipationWindow(
+  date: string,
+  startedOn: string | null | undefined,
+  endsOn?: string | null,
+  today = new Date().toISOString().slice(0, 10),
+) {
+  const end = participationWindowEnd(startedOn, endsOn);
+  return !!startedOn && !!end && date >= startedOn && date <= end && date <= today;
+}
+
+/** Use counted minutes, never rounded display hours, to decide completion. */
+export function ownerGoalMet(reportedMinutes: number): boolean {
+  return Number.isFinite(reportedMinutes) && reportedMinutes >= OWNER_GOAL_HOURS * 60;
 }

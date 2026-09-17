@@ -38,7 +38,12 @@ function JoinPage() {
   const link = useMutation({
     mutationFn: () => redeem({ data: { code } }),
     onSuccess: (res) => {
-      toast.success("Your access is set. Welcome to Resolve.");
+      toast.success(
+        res.pendingSeatAssignment
+          ? "Your account access is set. A platform administrator must still assign your leadership seat."
+          : "Your access is set. Welcome to Resolve.",
+        { duration: res.pendingSeatAssignment ? 15000 : 4000 },
+      );
       void navigate({ to: res.role === "vendor" ? "/vendor" : "/dashboard" });
     },
     onError: (e: Error) => toast.error(e.message),

@@ -1,0 +1,74 @@
+BEGIN;
+CREATE FUNCTION pg_temp.badge_assert(ok boolean,message text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF NOT coalesce(ok,false) THEN RAISE EXCEPTION '%',message; END IF; END $$;
+CREATE FUNCTION pg_temp.badge_denied(statement text,expected text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN BEGIN EXECUTE statement; EXCEPTION WHEN OTHERS THEN IF SQLERRM LIKE '%'||expected||'%' THEN RETURN; ELSE RAISE; END IF; END; RAISE EXCEPTION 'Expected denial: %',statement; END $$;
+INSERT INTO auth.users(id,email,email_confirmed_at) VALUES('00000000-0000-4000-9053-000000000001','owner53@example.test',now()),('00000000-0000-4000-9053-000000000002','other53@example.test',now()),('00000000-0000-4000-9053-000000000003','staff53@example.test',now());
+INSERT INTO user_roles(user_id,role) VALUES('00000000-0000-4000-9053-000000000001','owner'),('00000000-0000-4000-9053-000000000002','owner'),('00000000-0000-4000-9053-000000000003','admin');
+INSERT INTO property_owners(id,name,active) VALUES('00000000-0000-4000-9053-000000000011','Owner53',true);
+INSERT INTO properties(id,name,owner_record_id,is_demo) VALUES('00000000-0000-4000-9053-000000000021','Home53','00000000-0000-4000-9053-000000000011',false),('00000000-0000-4000-9053-000000000022','Second53','00000000-0000-4000-9053-000000000011',false);
+SELECT set_config('test.actor','00000000-0000-4000-9053-000000000003',true);
+INSERT INTO owner_programs(id,property_id,owner_record_id,owner_user_id,status,is_demo) VALUES('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000021','00000000-0000-4000-9053-000000000011','00000000-0000-4000-9053-000000000001','draft',false);
+INSERT INTO owner_program_properties(program_id,property_id,inclusion_status,closing_date,closing_confirmed) VALUES('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000021','included',current_date-110,true),('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000022','included',current_date-110,true);
+UPDATE owner_programs SET status='active',started_on=current_date-100,ends_on=current_date-11 WHERE id='00000000-0000-4000-9053-000000000031';
+INSERT INTO owner_time_entries(id,program_id,owner_user_id,phase,entry_date,minutes,activity,review_status,attested,is_demo)
+ SELECT ('00000000-0000-4000-9053-'||lpad((100+i)::text,12,'0'))::uuid,'00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001','ongoing',current_date-100+(i-1)*7,CASE WHEN i=1 THEN 1199 ELSE 1200 END,'Actual retained participation','approved',true,false FROM generate_series(1,5) i;
+INSERT INTO owner_time_entry_properties(entry_id,property_id) SELECT e.id,h.id FROM owner_time_entries e CROSS JOIN properties h WHERE e.program_id='00000000-0000-4000-9053-000000000031' AND h.owner_record_id='00000000-0000-4000-9053-000000000011';
+-- Legacy/outside-window rows remain in history but cannot inflate achievements.
+INSERT INTO owner_time_entries(id,program_id,owner_user_id,phase,entry_date,minutes,activity,review_status,attested,is_demo) VALUES
+ ('00000000-0000-4000-9053-000000000111','00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001','ongoing',current_date-101,1400,'Before start','approved',true,false),
+ ('00000000-0000-4000-9053-000000000112','00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001','ongoing',current_date-10,1400,'Day91','approved',true,false),
+ ('00000000-0000-4000-9053-000000000113','00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001','ongoing',current_date+1,1400,'Future','approved',true,false),
+ ('00000000-0000-4000-9053-000000000114','00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001','ongoing',current_date-99,1400,'Returned','returned',true,false);
+SET LOCAL ROLE service_role;
+SELECT set_config('test.badge_version',owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001')::text,true);
+SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',current_setting('test.badge_version')::uuid,'00000000-0000-4000-9053-000000000001');
+SELECT pg_temp.badge_denied($q$SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',current_setting('test.badge_version')::uuid,'00000000-0000-4000-9053-000000000001')$q$,'Participation changed');
+RESET ROLE;
+SELECT pg_temp.badge_assert(NOT EXISTS(SELECT 1 FROM owner_badges WHERE code='hundred_plus'),'5999 minutes rounded up, shared links doubled, or outside/returned time counted');
+SELECT pg_temp.badge_assert((SELECT supporting->>'reportedMinutes'='5999' FROM owner_badges WHERE code='first_step'),'Canonical badge total mismatch');
+SELECT pg_temp.badge_assert(EXISTS(SELECT 1 FROM owner_badges WHERE code='consistent_participation'),'Counted separate weeks lost');
+SELECT pg_temp.badge_assert(EXISTS(SELECT 1 FROM owner_badges WHERE code='portfolio_participant'),'Retained multi-property participation lost');
+INSERT INTO owner_time_entries(id,program_id,owner_user_id,phase,entry_date,minutes,activity,review_status,attested,is_demo,amends_entry_id) VALUES('00000000-0000-4000-9053-000000000121','00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001','ongoing',current_date-100,1200,'Corrected actual amount','approved',true,false,'00000000-0000-4000-9053-000000000101');
+INSERT INTO owner_time_entry_properties(entry_id,property_id) VALUES('00000000-0000-4000-9053-000000000121','00000000-0000-4000-9053-000000000021'),('00000000-0000-4000-9053-000000000121','00000000-0000-4000-9053-000000000022');
+SET LOCAL ROLE service_role;
+SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001'),'00000000-0000-4000-9053-000000000001');
+RESET ROLE;
+SELECT pg_temp.badge_assert((SELECT NOT needs_review AND supporting->>'reportedMinutes'='6000' FROM owner_badges WHERE code='hundred_plus'),'Exactly6000 did not qualify');
+SELECT set_config('test.badge_awarded',(SELECT awarded_at::text FROM owner_badges WHERE code='hundred_plus'),true);
+UPDATE owner_time_entries SET review_status='returned' WHERE id='00000000-0000-4000-9053-000000000121';
+CREATE FUNCTION pg_temp.fail_badge_history() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.kind='badge_flagged' THEN RAISE EXCEPTION 'injected badge history failure'; END IF;RETURN NEW; END $$;
+CREATE TRIGGER fail_badge_history BEFORE INSERT ON owner_program_events FOR EACH ROW EXECUTE FUNCTION pg_temp.fail_badge_history();
+SET LOCAL ROLE service_role;
+SELECT pg_temp.badge_denied($q$SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001'),'00000000-0000-4000-9053-000000000001')$q$,'injected badge history failure');
+RESET ROLE;
+SELECT pg_temp.badge_assert((SELECT NOT needs_review FROM owner_badges WHERE code='hundred_plus'),'Badge flag survived failed history');
+DROP TRIGGER fail_badge_history ON owner_program_events;
+SET LOCAL ROLE service_role;
+SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001'),'00000000-0000-4000-9053-000000000001');
+SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001'),'00000000-0000-4000-9053-000000000001');
+RESET ROLE;
+SELECT pg_temp.badge_assert((SELECT needs_review AND awarded_at=current_setting('test.badge_awarded')::timestamptz FROM owner_badges WHERE code='hundred_plus'),'Flag erased original award');
+SELECT pg_temp.badge_assert((SELECT count(*) FROM owner_program_events WHERE kind='badge_flagged' AND new_value='hundred_plus')=1,'Repeated refresh duplicated flag');
+INSERT INTO owner_time_entries(id,program_id,owner_user_id,phase,entry_date,minutes,activity,review_status,attested,is_demo,amends_entry_id) VALUES('00000000-0000-4000-9053-000000000122','00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001','ongoing',current_date-100,1200,'Resubmitted corrected participation','approved',true,false,'00000000-0000-4000-9053-000000000121');
+SET LOCAL ROLE service_role;
+SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001'),'00000000-0000-4000-9053-000000000001');
+SELECT pg_temp.badge_denied($q$SELECT owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000002')$q$,'access denied');
+SELECT pg_temp.badge_denied($q$INSERT INTO owner_badges(program_id,code,trigger_rule) VALUES('00000000-0000-4000-9053-000000000031','fake','fake')$q$,'checked canonical badge');
+RESET ROLE;
+SELECT pg_temp.badge_assert((SELECT NOT needs_review AND review_note IS NULL AND awarded_at=current_setting('test.badge_awarded')::timestamptz FROM owner_badges WHERE code='hundred_plus'),'Recovery did not retain award identity');
+SELECT pg_temp.badge_assert((SELECT count(*) FROM owner_program_events WHERE kind='badge_recovered' AND new_value='hundred_plus')=1,'Missing atomic recovery history');
+SELECT pg_temp.badge_denied($q$DELETE FROM owner_badges WHERE code='hundred_plus'$q$,'Retain badge history');
+SELECT set_config('test.actor','00000000-0000-4000-9053-000000000001',true);
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.badge_denied($q$SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',NULL,auth.uid())$q$,'permission denied');
+RESET ROLE;
+UPDATE owner_time_entries SET review_status='returned' WHERE program_id='00000000-0000-4000-9053-000000000031';
+SET LOCAL ROLE service_role;
+SELECT refresh_owner_badges('00000000-0000-4000-9053-000000000031',owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001'),'00000000-0000-4000-9053-000000000001');
+RESET ROLE;
+SELECT pg_temp.badge_assert((SELECT bool_and(needs_review) FROM owner_badges WHERE code IN('first_step','consistent_participation','on_track_owner','portfolio_participant')),'Returned entries retained false first-step/weekly/portfolio achievements');
+SELECT pg_temp.badge_assert((SELECT count(*) FROM owner_time_entries WHERE program_id='00000000-0000-4000-9053-000000000031')=11,'Badge recovery mutated participation history');
+DELETE FROM user_roles WHERE user_id='00000000-0000-4000-9053-000000000001';
+SET LOCAL ROLE service_role;
+SELECT pg_temp.badge_denied($q$SELECT owner_badge_refresh_version('00000000-0000-4000-9053-000000000031','00000000-0000-4000-9053-000000000001')$q$,'access denied');
+RESET ROLE;
+ROLLBACK;

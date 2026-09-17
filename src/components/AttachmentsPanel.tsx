@@ -85,6 +85,13 @@ export function AttachmentsPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ name: string; pct: number } | null>(null);
   const [retry, setRetry] = useState<File | null>(null);
+  const uploadAttempt = useRef<{
+    file: File;
+    key: string;
+    category: string | null;
+    requestId: string | null;
+    bytesUploaded: boolean;
+  } | null>(null);
 
   const list = useServerFn(listAttachmentsFn);
   const begin = useServerFn(beginUploadFn);
@@ -104,7 +111,17 @@ export function AttachmentsPanel({
       const check = validateFile({ name: file.name, type: file.type, size: file.size });
       if (!check.ok) throw new Error(check.message);
 
-      const uploadKey = crypto.randomUUID();
+      if (uploadAttempt.current?.file !== file) {
+        uploadAttempt.current = {
+          file,
+          key: crypto.randomUUID(),
+          category: propertyLevel ? category : null,
+          requestId: fulfilsRequestId,
+          bytesUploaded: false,
+        };
+      }
+      const attempt = uploadAttempt.current;
+      const uploadKey = attempt.key;
       setProgress({ name: file.name, pct: 5 });
       const started = await begin({
         data: {
@@ -114,31 +131,40 @@ export function AttachmentsPanel({
           filename: file.name,
           mimeType: file.type,
           sizeBytes: file.size,
-          category: propertyLevel ? category : null,
-          fulfilsRequestId,
+          category: attempt.category,
+          fulfilsRequestId: attempt.requestId,
         },
       });
       if (started.alreadyStored) return { skipped: true as const };
 
       setProgress({ name: file.name, pct: 35 });
       try {
-        const { supabase } = await import("@/integrations/supabase/client");
-        const put = await supabase.storage
-          .from("resolve-attachments")
-          .uploadToSignedUrl(started.path, started.token!, file, { upsert: true });
-        if (put.error) throw put.error;
+        if (!attempt.bytesUploaded) {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const put = await supabase.storage
+            .from("resolve-attachments")
+            .uploadToSignedUrl(started.path, started.token!, file, { upsert: false });
+          if (put.error) throw put.error;
+          attempt.bytesUploaded = true;
+        }
       } catch (err) {
-        await complete({ data: { documentId: started.documentId!, ok: false } });
+        uploadAttempt.current = null;
+        await complete({
+          data: { documentId: started.documentId!, ok: false, fulfilsRequestId: attempt.requestId },
+        });
         throw err instanceof Error ? err : new Error("The upload did not finish.");
       }
 
       setProgress({ name: file.name, pct: 85 });
-      await complete({ data: { documentId: started.documentId!, ok: true, fulfilsRequestId } });
+      await complete({
+        data: { documentId: started.documentId!, ok: true, fulfilsRequestId: attempt.requestId },
+      });
       return { skipped: false as const };
     },
     onSuccess: (r) => {
       setProgress(null);
       setRetry(null);
+      uploadAttempt.current = null;
       toast.success(r.skipped ? "That file was already on this record." : "File added.");
       for (const queryKey of attachmentUploadInvalidationKeys(entityType, entityId)) {
         void qc.invalidateQueries({ queryKey });
@@ -175,7 +201,10 @@ export function AttachmentsPanel({
       share({
         data: { documentId: v.documentId, visibility: v.shared ? "owner_shared" : "internal" },
       }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: key }),
+    onSuccess: () => {
+      for (const queryKey of [key, ["property-hub"], ["owner-files"], ["owner-home"]])
+        void qc.invalidateQueries({ queryKey });
+    },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Sharing could not be changed."),
   });
@@ -296,13 +325,29 @@ export function AttachmentsPanel({
                   </span>
                 )}
                 {f.can_share ? (
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Switch
-                      checked={f.visibility === "owner_shared"}
-                      onCheckedChange={(shared) => toggleShare.mutate({ documentId: f.id, shared })}
-                    />
-                    Owner
-                  </label>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex items-center gap-2">
+                      <Switch
+                        checked={f.visibility === "owner_shared" && !!f.owner_recipient_id}
+                        onCheckedChange={(shared) =>
+                          toggleShare.mutate({ documentId: f.id, shared })
+                        }
+                      />
+                      Owner
+                    </label>
+                    {f.visibility === "owner_shared" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={toggleShare.isPending}
+                        onClick={() => toggleShare.mutate({ documentId: f.id, shared: true })}
+                      >
+                        {f.owner_recipient_id
+                          ? "Re-share to current owner"
+                          : "Review and share to current owner"}
+                      </Button>
+                    ) : null}
+                  </div>
                 ) : null}
                 {f.upload_status === "stored" && f.original_filename ? (
                   <>

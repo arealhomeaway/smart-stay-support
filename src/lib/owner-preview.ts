@@ -15,8 +15,10 @@ export type OwnerPreviewSelection = {
   origin: string;
 };
 
-const KEY = "resolve.owner-preview";
-const EVENT = "resolve:owner-preview";
+export const OWNER_PREVIEW_KEY = "resolve.owner-preview";
+export const OWNER_PREVIEW_EVENT = "resolve:owner-preview";
+const KEY = OWNER_PREVIEW_KEY;
+const EVENT = OWNER_PREVIEW_EVENT;
 
 export function readOwnerPreview(): OwnerPreviewSelection | null {
   if (typeof window === "undefined") return null;

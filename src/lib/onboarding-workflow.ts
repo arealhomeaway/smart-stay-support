@@ -47,6 +47,7 @@ export type WorkflowTask = {
   completed_at: string | null;
   /** Present on rows loaded from the database; used for accepted-plan locking. */
   created_at?: string | null;
+  updated_at?: string | null;
 };
 
 /* ---------------------------------------------------------------- statuses */

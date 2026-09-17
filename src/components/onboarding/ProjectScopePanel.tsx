@@ -83,7 +83,10 @@ export function ProjectScopePanel({
       setOpen(false);
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      toast.error(e.message);
+      refresh();
+    },
   });
   const update = useMutation({
     mutationFn: useServerFn(updateOnboardingProjectFn),
@@ -163,6 +166,7 @@ export function ProjectScopePanel({
         propertyName={propertyName}
         people={people}
         busy={start.isPending || update.isPending}
+        canAssign={data?.assignments.canAssign ?? false}
         initial={
           project
             ? {
@@ -175,6 +179,7 @@ export function ProjectScopePanel({
                 possessionOn: project.possession_on ?? "",
                 targetHandoffOn: project.target_handoff_on ?? "",
                 notes: project.notes ?? "",
+                externalRefs: (project.external_refs ?? {}) as Record<string, string>,
               }
             : {
                 furnishing: "full_furnishing",
@@ -183,12 +188,13 @@ export function ProjectScopePanel({
                   hoa: hints?.hoa ?? null,
                 }),
                 branch: "",
-                projectManager: null,
-                director: null,
+                projectManager: data?.assignments.projectManagerId ?? null,
+                director: data?.assignments.directorId ?? null,
                 plannedClosingOn: hints?.planned_closing_on ?? "",
                 possessionOn: "",
                 targetHandoffOn: "",
                 notes: "",
+                externalRefs: {},
               }
         }
         editing={Boolean(project)}
@@ -206,6 +212,7 @@ export function ProjectScopePanel({
                 furnishingScope: v.furnishing,
                 modules: v.modules,
                 notes: v.notes || null,
+                externalRefs: v.externalRefs,
                 reason: reason.trim(),
               },
             });
@@ -222,7 +229,7 @@ export function ProjectScopePanel({
                 furnishingScope: v.furnishing,
                 modules: v.modules,
                 notes: v.notes || null,
-                externalRefs: {},
+                externalRefs: v.externalRefs,
               },
             });
           }
@@ -242,6 +249,7 @@ type ScopeValues = {
   possessionOn: string;
   targetHandoffOn: string;
   notes: string;
+  externalRefs: Record<string, string>;
 };
 
 function ScopeDialog({
@@ -252,6 +260,7 @@ function ScopeDialog({
   initial,
   editing,
   busy,
+  canAssign,
   onSubmit,
 }: {
   open: boolean;
@@ -261,6 +270,7 @@ function ScopeDialog({
   initial: ScopeValues;
   editing: boolean;
   busy: boolean;
+  canAssign: boolean;
   onSubmit: (values: ScopeValues, reason: string) => void;
 }) {
   const [v, setV] = useState<ScopeValues>(initial);
@@ -346,12 +356,14 @@ function ScopeDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <PersonField
               label="Project manager"
+              disabled={!canAssign}
               people={people}
               value={v.projectManager}
               onChange={(id) => setV((p) => ({ ...p, projectManager: id }))}
             />
             <PersonField
               label="Director"
+              disabled={!canAssign}
               people={people}
               value={v.director}
               onChange={(id) => setV((p) => ({ ...p, director: id }))}
@@ -385,6 +397,14 @@ function ScopeDialog({
             </Field>
           </div>
 
+          {!canAssign && (
+            <p className="text-xs text-muted-foreground">
+              {editing
+                ? "Project responsibility is assigned by the Onboarding Director or a platform administrator."
+                : "You will be the project manager. The Director comes from the current Onboarding leadership assignment; if vacant, an administrator must assign it."}
+            </p>
+          )}
+
           <Field label="Notes">
             <Textarea
               rows={2}
@@ -392,6 +412,36 @@ function ScopeDialog({
               onChange={(e) => setV((p) => ({ ...p, notes: e.target.value }))}
             />
           </Field>
+
+          <fieldset className="space-y-3">
+            <legend className="eyebrow">External references</legend>
+            <p className="text-xs text-muted-foreground">
+              Link existing source records for context. Saving a reference does not update the
+              source system.
+            </p>
+            {(["asana", "notion", "property_folder"] as const).map((key) => (
+              <div key={key} className="space-y-1">
+                <Label htmlFor={`project-ref-${key}`}>
+                  {key === "property_folder"
+                    ? "Property folder"
+                    : key === "asana"
+                      ? "Asana project"
+                      : "Notion record"}
+                </Label>
+                <Input
+                  id={`project-ref-${key}`}
+                  value={v.externalRefs[key] ?? ""}
+                  maxLength={300}
+                  onChange={(e) =>
+                    setV((p) => ({
+                      ...p,
+                      externalRefs: { ...p.externalRefs, [key]: e.target.value },
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </fieldset>
 
           {editing && (
             <Field label="Why is the scope changing? (required)">
@@ -438,15 +488,21 @@ function PersonField({
   people,
   value,
   onChange,
+  disabled,
 }: {
   label: string;
   people: Person[];
   value: string | null;
   onChange: (id: string | null) => void;
+  disabled: boolean;
 }) {
   return (
     <Field label={label}>
-      <Select value={value ?? "none"} onValueChange={(x) => onChange(x === "none" ? null : x)}>
+      <Select
+        disabled={disabled}
+        value={value ?? "none"}
+        onValueChange={(x) => onChange(x === "none" ? null : x)}
+      >
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>

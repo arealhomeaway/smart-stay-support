@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AUTHORITY_TIER_LABELS, authorityLadder, authorityTier } from "@/lib/maintenance-policy";
+import { OnboardingAuthorityPanel } from "./OnboardingAuthorityPanel";
+import { DeliveryReconciliationPanel } from "./DeliveryReconciliationPanel";
 import {
   FINANCIAL_KINDS,
   FINANCIAL_STATUS_LABELS,
@@ -31,6 +33,7 @@ import {
   financialStatus,
   financialTotals,
   tierFor,
+  canRecordInvoice,
   varianceLabel,
   varianceNeedsNote,
   type FinancialRequest,
@@ -60,12 +63,16 @@ export function FinancialPanel({
 }) {
   const qc = useQueryClient();
   const load = useServerFn(getOnboardingFinance);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["onboarding-finance", propertyId],
     queryFn: () => load({ data: { propertyId } }),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["onboarding-finance", propertyId] });
+  const invalidate = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["onboarding-finance", propertyId] }),
+      qc.invalidateQueries({ queryKey: ["onboarding-workspace"] }),
+    ]);
   const run = <T,>(fn: (input: T) => Promise<unknown>, ok: string) =>
     ({
       mutationFn: (input: T) => fn(input),
@@ -73,7 +80,11 @@ export function FinancialPanel({
         toast.success(ok);
         invalidate();
       },
-      onError: (e: Error) => toast.error(e.message),
+      onError: (e: Error) => {
+        toast.error(e.message);
+        // The canonical request may have been prepared before delivery failed.
+        void invalidate();
+      },
     }) as const;
 
   const create = useMutation(run(useServerFn(createFinancialRequestFn), "Cost request created."));
@@ -98,15 +109,17 @@ export function FinancialPanel({
   });
   const [recipientEmail, setRecipientEmail] = useState("");
 
+  if (error) return <p role="alert">Costs could not be loaded: {error.message}</p>;
   if (isLoading || !data) return <p className="text-muted-foreground">Loading costs…</p>;
 
   const requests = (data.requests ?? []) as unknown as FinancialRequest[];
   const totals = financialTotals(requests);
   const amount = Number(form.estimateAmount || 0);
-  const tier = authorityTier(amount, { emergency: form.emergency });
+  const tier = authorityTier(amount, { emergency: form.emergency, policy: data.authorityPolicy });
 
   return (
     <div className="space-y-5">
+      <DeliveryReconciliationPanel propertyId={propertyId} canEdit={canEdit} />
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3">
           <CardTitle>Spend authority</CardTitle>
@@ -219,10 +232,17 @@ export function FinancialPanel({
         </CardHeader>
         <CardContent className="space-y-2">
           <ul className="space-y-1 text-sm text-muted-foreground">
-            {authorityLadder().map((line) => (
+            {authorityLadder(data.authorityPolicy).map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>
+          <p className="text-xs text-muted-foreground">Policy: {data.authorityPolicy.version}</p>
+          {isAdmin && canEdit ? (
+            <OnboardingAuthorityPanel
+              policy={data.authorityPolicy}
+              onSaved={() => void invalidate()}
+            />
+          ) : null}
           <div className="flex flex-wrap gap-4 pt-2 text-sm">
             <span>Estimated {money(totals.estimated)}</span>
             <span>Awaiting approval {totals.awaitingApproval}</span>
@@ -272,6 +292,13 @@ export function FinancialPanel({
               key={r.id}
               request={r}
               canEdit={canEdit}
+              canDecide={
+                canEdit &&
+                (r.authority_tier === "supervisor"
+                  ? data.decisionCapabilities.supervisor
+                  : r.authority_tier === "owner" && data.decisionCapabilities.owner)
+              }
+              sending={send.isPending}
               onSend={() => send.mutate({ data: { requestId: r.id } } as never)}
               onDecide={(approved, note, approvedAmount) =>
                 decide.mutate({
@@ -284,7 +311,9 @@ export function FinancialPanel({
                 } as never)
               }
               onAccounting={() => accounting.mutate({ data: { requestId: r.id } } as never)}
-              onSettle={(note) => settle.mutate({ data: { requestId: r.id, note } } as never)}
+              onSettle={(note, actualAmount) =>
+                settle.mutate({ data: { requestId: r.id, note, actualAmount } } as never)
+              }
             />
           ))}
         </div>
@@ -296,25 +325,30 @@ export function FinancialPanel({
 function RequestCard({
   request,
   canEdit,
+  sending,
   onSend,
   onDecide,
   onInvoice,
   onAccounting,
+  canDecide,
   onSettle,
 }: {
   request: FinancialRequest;
+  canDecide: boolean;
   canEdit: boolean;
+  sending: boolean;
   onSend: () => void;
   onDecide: (approved: boolean, note: string, approvedAmount: number | null) => void;
   onInvoice: (amount: number, ref: string | null, note: string | null) => void;
   onAccounting: () => void;
-  onSettle: (note: string) => void;
+  onSettle: (note: string, actualAmount: number) => void;
 }) {
   const status = financialStatus(request);
   const tier = tierFor(request);
   const [note, setNote] = useState("");
   const [invoiceAmount, setInvoiceAmount] = useState("");
   const [invoiceRef, setInvoiceRef] = useState("");
+  const [actualAmount, setActualAmount] = useState("");
 
   return (
     <Card>
@@ -329,14 +363,16 @@ function RequestCard({
       <CardContent className="space-y-3 text-sm">
         <div className="flex flex-wrap gap-4 text-muted-foreground">
           <span>Estimate {money(request.estimate_amount)}</span>
+          <span>Policy {request.authority_policy?.version ?? "Recorded legacy authority"}</span>
           <span>Approved {money(request.approved_amount)}</span>
+          <span>Actual paid {money(request.actual_amount ?? null)}</span>
           <span>Invoice {money(request.invoice_amount)}</span>
           {request.vendor ? <span>Vendor {request.vendor}</span> : null}
           <span>{varianceLabel(request)}</span>
         </div>
 
-        {canEdit && status === "estimate" ? (
-          <Button size="sm" onClick={onSend}>
+        {canEdit && status === "estimate" && (tier === "owner" || tier === "supervisor") ? (
+          <Button size="sm" onClick={onSend} disabled={sending}>
             {tier === "owner"
               ? "Send to homeowner"
               : tier === "supervisor"
@@ -345,11 +381,20 @@ function RequestCard({
           </Button>
         ) : null}
 
-        {canEdit && status === "awaiting_approval" ? (
+        {canDecide && status === "awaiting_approval" ? (
           <div className="space-y-2">
+            {tier === "owner" ? (
+              <Button size="sm" variant="outline" onClick={onSend} disabled={sending}>
+                {sending ? "Checking delivery…" : "Retry owner delivery"}
+              </Button>
+            ) : null}
             <Textarea
               rows={2}
-              placeholder="Decision note"
+              placeholder={
+                tier === "owner"
+                  ? "Who answered, what they decided, and the reply or evidence reference"
+                  : "Decision and supporting reason"
+              }
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -359,7 +404,7 @@ function RequestCard({
                 disabled={note.trim().length < 3}
                 onClick={() => onDecide(true, note.trim(), null)}
               >
-                Approve
+                {tier === "owner" ? "Record owner approval" : "Approve"}
               </Button>
               <Button
                 size="sm"
@@ -367,13 +412,13 @@ function RequestCard({
                 disabled={note.trim().length < 3}
                 onClick={() => onDecide(false, note.trim(), null)}
               >
-                Decline
+                {tier === "owner" ? "Record owner decline" : "Decline"}
               </Button>
             </div>
           </div>
         ) : null}
 
-        {canEdit && (status === "approved" || (status === "estimate" && tier === "proceed")) ? (
+        {canEdit && canRecordInvoice(request) ? (
           <div className="flex flex-wrap gap-2">
             <Input
               className="max-w-[8rem]"
@@ -392,10 +437,18 @@ function RequestCard({
               size="sm"
               variant="outline"
               disabled={!invoiceAmount}
-              onClick={() => onInvoice(Number(invoiceAmount), invoiceRef.trim() || null, null)}
+              onClick={() =>
+                onInvoice(Number(invoiceAmount), invoiceRef.trim() || null, note.trim() || null)
+              }
             >
               Record invoice
             </Button>
+            <Input
+              aria-label="Invoice variance explanation"
+              placeholder="Explain any amount above approval"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
         ) : null}
 
@@ -434,6 +487,17 @@ function RequestCard({
 
         {canEdit && status === "sent_to_accounting" ? (
           <div className="flex flex-wrap gap-2">
+            <div className="space-y-1">
+              <Label htmlFor={`actual-${request.id}`}>Actual paid amount</Label>
+              <Input
+                id={`actual-${request.id}`}
+                type="number"
+                min="0"
+                step="0.01"
+                value={actualAmount}
+                onChange={(e) => setActualAmount(e.target.value)}
+              />
+            </div>
             <Input
               className="max-w-sm"
               placeholder="Settlement note"
@@ -442,8 +506,13 @@ function RequestCard({
             />
             <Button
               size="sm"
-              disabled={note.trim().length < 3}
-              onClick={() => onSettle(note.trim())}
+              disabled={
+                note.trim().length < 3 ||
+                actualAmount === "" ||
+                !Number.isFinite(Number(actualAmount)) ||
+                Number(actualAmount) < 0
+              }
+              onClick={() => onSettle(note.trim(), Number(actualAmount))}
             >
               Mark settled
             </Button>

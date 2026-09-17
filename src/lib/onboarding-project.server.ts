@@ -13,8 +13,15 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { defaultModules, type FurnishingScope, type ModuleKey } from "./onboarding-scope";
+import { type FurnishingScope, type ModuleKey } from "./onboarding-scope";
 import { writeAudit } from "./audit.server";
+import { readCountedRows } from "./read-all-rows";
+import { assertOnboardingPropertyManagement } from "./onboarding-task-access.server";
+import {
+  assertEligibleProjectAssignees,
+  readOnboardingAssignmentAuthority,
+  resolveNewProjectAssignments,
+} from "./onboarding-assignment.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -25,9 +32,11 @@ async function assertOnboardingStaff(supabase: Client, userId: string) {
     supabase.rpc("is_onboarding_staff", { _user_id: userId }),
     supabase.rpc("is_supervisor", { _user_id: userId }),
   ]);
+  if (staff.error || supervisor.error) throw new Error("Could not verify onboarding access.");
   if (!staff.data && !supervisor.data) {
     throw new Error("You do not have access to change onboarding projects.");
   }
+  return { supervisor: Boolean(supervisor.data) };
 }
 
 export async function recordProjectEvent(
@@ -59,13 +68,36 @@ export async function recordProjectEvent(
 }
 
 /** Every project, newest first. Read-only for any internal staff member. */
-export async function loadProjects(supabase: Client) {
-  const { data, error } = await supabase
+export async function loadProjects(supabase: Client, leadId?: string) {
+  let query = supabase
     .from("onboarding_projects")
-    .select("*")
-    .order("started_at", { ascending: false });
+    .select("*", { count: "exact" })
+    .order("started_at", { ascending: false })
+    .order("id");
+  if (leadId) query = query.or(`project_manager.eq.${leadId},director.eq.${leadId}`);
+  const { data, error } = await readCountedRows(query);
   if (error) throw error;
   return data ?? [];
+}
+
+/** Public server endpoint projection; raw loaders also support already-scoped internal workflows. */
+export async function loadProjectsForActor(supabase: Client, userId: string) {
+  const access = await assertOnboardingStaff(supabase, userId);
+  return loadProjects(supabase, access.supervisor ? undefined : userId);
+}
+
+export async function loadPropertyProjectForActor(
+  supabase: Client,
+  userId: string,
+  propertyId: string,
+) {
+  await assertOnboardingStaff(supabase, userId);
+  await assertOnboardingPropertyManagement(supabase, userId, propertyId);
+  const [result, assignments] = await Promise.all([
+    loadProjectForProperty(supabase, propertyId),
+    readOnboardingAssignmentAuthority(supabase),
+  ]);
+  return { ...result, assignments: { ...assignments, projectManagerId: userId } };
 }
 
 export async function loadProjectForProperty(supabase: Client, propertyId: string) {
@@ -84,6 +116,7 @@ export async function loadProjectForProperty(supabase: Client, propertyId: strin
       .limit(100),
   ]);
   if (project.error) throw project.error;
+  if (events.error) throw events.error;
   return { project: project.data ?? null, events: events.data ?? [] };
 }
 
@@ -114,7 +147,7 @@ export async function startOnboardingProject(
   userId: string,
   input: StartProjectInput,
 ) {
-  await assertOnboardingStaff(supabase, userId);
+  const access = await assertOnboardingStaff(supabase, userId);
 
   const property = await supabase
     .from("properties")
@@ -135,25 +168,22 @@ export async function startOnboardingProject(
     .maybeSingle();
   if (existing.error) throw existing.error;
   if (existing.data) {
+    assertProjectLead(existing.data, userId, access.supervisor);
     // A project that exists with no plan is the broken state this repairs:
     // re-running Start onboarding fills the plan in without creating a
     // second project.
-    const count = await supabase
-      .from("onboarding_tasks")
-      .select("id", { count: "exact", head: true })
-      .eq("property_id", input.propertyId);
-    if (!count.error && (count.count ?? 0) === 0) {
-      try {
-        const { applyOnboardingTemplate } = await import("./onboarding-template.server");
-        await applyOnboardingTemplate(supabase, userId, { propertyId: input.propertyId });
-      } catch {
-        // Plan can still be applied from the Work tab.
+    if (existing.data.status === "active" || existing.data.status === "planning") {
+      if ((existing.data.modules ?? []).includes("active_owner")) {
+        await ensureActiveOwnerEnrollment(supabase, userId, input.propertyId);
       }
+      const { applyOnboardingTemplate } = await import("./onboarding-template.server");
+      await applyOnboardingTemplate(supabase, userId, { propertyId: input.propertyId });
     }
     return existing.data;
   }
 
-  const modules = input.modules.length ? input.modules : defaultModules();
+  const modules = input.modules;
+  const assignments = await resolveNewProjectAssignments(supabase, userId, input);
 
   const { data, error } = await supabase
     .from("onboarding_projects")
@@ -161,8 +191,8 @@ export async function startOnboardingProject(
       property_id: input.propertyId,
       status: "active",
       branch: input.branch,
-      project_manager: input.projectManager,
-      director: input.director,
+      project_manager: assignments.projectManager,
+      director: assignments.director,
       planned_closing_on: input.plannedClosingOn,
       possession_on: input.possessionOn,
       target_handoff_on: input.targetHandoffOn,
@@ -185,8 +215,8 @@ export async function startOnboardingProject(
   if (!property.data.actual_access_on && input.possessionOn) {
     patch.actual_access_on = input.possessionOn;
   }
-  if (!property.data.onboarding_owner && input.projectManager) {
-    patch.onboarding_owner = input.projectManager;
+  if (!property.data.onboarding_owner && data.project_manager) {
+    patch.onboarding_owner = data.project_manager;
   }
   if (property.data.lifecycle_status !== "onboarding") patch.lifecycle_status = "onboarding";
   patch.onboarding_started_at = new Date().toISOString();
@@ -200,18 +230,11 @@ export async function startOnboardingProject(
   // Starting onboarding has to hand the team a plan, not an empty shell.
   // applyOnboardingTemplate deduplicates by task title, so this stays safe on
   // a retry and never doubles an existing plan.
-  let plannedTasks = 0;
-  try {
-    const { applyOnboardingTemplate } = await import("./onboarding-template.server");
-    const applied = await applyOnboardingTemplate(supabase, userId, {
-      propertyId: input.propertyId,
-    });
-    plannedTasks = (applied as { created?: number } | null)?.created ?? 0;
-  } catch {
-    // The project is real either way; the plan can be applied from the Work
-    // tab. Never leave the caller with a half-created project.
-    plannedTasks = 0;
-  }
+  const { applyOnboardingTemplate } = await import("./onboarding-template.server");
+  const applied = await applyOnboardingTemplate(supabase, userId, {
+    propertyId: input.propertyId,
+  });
+  const plannedTasks = applied.created;
 
   await recordProjectEvent(supabase, {
     projectId: data.id,
@@ -249,10 +272,11 @@ export async function updateProject(
     furnishingScope?: FurnishingScope | undefined;
     modules?: ModuleKey[] | undefined;
     notes?: string | null | undefined;
+    externalRefs?: Record<string, string> | undefined;
     reason?: string | null | undefined;
   },
 ) {
-  await assertOnboardingStaff(supabase, userId);
+  const access = await assertOnboardingStaff(supabase, userId);
 
   const current = await supabase
     .from("onboarding_projects")
@@ -260,6 +284,23 @@ export async function updateProject(
     .eq("id", input.projectId)
     .single();
   if (current.error) throw current.error;
+  const assignmentsChanging =
+    (input.projectManager !== undefined && input.projectManager !== current.data.project_manager) ||
+    (input.director !== undefined && input.director !== current.data.director);
+  if (assignmentsChanging) {
+    const authority = await readOnboardingAssignmentAuthority(supabase);
+    if (!authority.canAssign) {
+      throw new Error(
+        "Only a platform administrator or the trusted Onboarding Director can change project responsibility.",
+      );
+    }
+    await assertEligibleProjectAssignees(supabase, [
+      input.projectManager === undefined ? current.data.project_manager : input.projectManager,
+      input.director === undefined ? current.data.director : input.director,
+    ]);
+  } else {
+    assertProjectLead(current.data, userId, access.supervisor);
+  }
 
   // A scope change after initialization must always carry a reason: History
   // has to explain why this home stopped being asked for that work.
@@ -282,14 +323,19 @@ export async function updateProject(
   if (input.furnishingScope !== undefined) patch.furnishing_scope = input.furnishingScope;
   if (input.modules !== undefined) patch.modules = input.modules;
   if (input.notes !== undefined) patch.notes = input.notes;
+  if (input.externalRefs !== undefined) patch.external_refs = input.externalRefs;
 
   const { data, error } = await supabase
     .from("onboarding_projects")
     .update(patch)
     .eq("id", input.projectId)
+    .eq("property_id", current.data.property_id)
+    .eq("updated_at", current.data.updated_at)
+    .eq("status", current.data.status)
     .select("*")
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error("The project changed. Refresh before saving your changes.");
 
   const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
   if (scopeChanged) {
@@ -304,9 +350,7 @@ export async function updateProject(
       actor: userId,
       isDemo: data.is_demo,
     });
-    const nowActiveOwner =
-      (data.modules ?? []).includes("active_owner") &&
-      !(current.data.modules ?? []).includes("active_owner");
+    const nowActiveOwner = (data.modules ?? []).includes("active_owner");
     if (nowActiveOwner) await ensureActiveOwnerEnrollment(supabase, userId, data.property_id);
   } else {
     await recordProjectEvent(supabase, {
@@ -320,6 +364,12 @@ export async function updateProject(
     });
   }
   return data;
+}
+
+function assertProjectLead(project: ProjectRow, userId: string, supervisor: boolean) {
+  if (!supervisor && project.project_manager !== userId && project.director !== userId) {
+    throw new Error("Only a supervisor or this project's lead can change it.");
+  }
 }
 
 function describeScope(row: ProjectRow) {
@@ -340,37 +390,63 @@ export async function ensureActiveOwnerEnrollment(
   userId: string,
   propertyId: string,
 ) {
-  const existing = await supabase
-    .from("owner_program_properties")
-    .select("program_id")
-    .eq("property_id", propertyId)
-    .eq("inclusion_status", "included")
-    .maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) return { programId: existing.data.program_id, created: false as const };
-
-  const contact = await supabase
-    .from("property_owner_contacts")
-    .select("owner_name, owner_email")
-    .eq("property_id", propertyId)
-    .maybeSingle();
-
   const { createProgram } = await import("./owner-program.server");
   const result = await createProgram(supabase, userId, {
     propertyId,
-    ownerName: contact.data?.owner_name ?? "",
-    ownerEmail: contact.data?.owner_email ?? "",
+    ownerName: "",
+    ownerEmail: "",
   });
   return { programId: result.programId, created: !result.alreadyExists };
 }
 
-/** Owner name, phone and email for the staff-facing contact strip. */
+/** Canonical Owner contact only; legacy name/email copies never select an identity. */
 export async function loadOwnerContacts(supabase: Client, propertyIds: string[]) {
-  if (propertyIds.length === 0) return [];
-  const { data, error } = await supabase
-    .from("property_owner_contacts")
-    .select("property_id, owner_name, owner_email, owner_phone, source, match_status")
-    .in("property_id", propertyIds);
-  if (error) throw error;
-  return data ?? [];
+  const ids = [...new Set(propertyIds)];
+  const contacts: {
+    property_id: string;
+    owner_record_id: string;
+    owner_name: string | null;
+    owner_email: string | null;
+    owner_phone: string | null;
+    source: string;
+    match_status: string;
+  }[] = [];
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    const properties = await readCountedRows(
+      supabase
+        .from("properties")
+        .select("id, owner_record_id", { count: "exact" })
+        .in("id", ids.slice(offset, offset + 100))
+        .order("id"),
+    );
+    const ownerIds = [
+      ...new Set(
+        properties.data.map((p) => p.owner_record_id).filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (!ownerIds.length) continue;
+    const owners = await readCountedRows(
+      supabase
+        .from("property_owners")
+        .select("id, name, email, phone, source", { count: "exact" })
+        .in("id", ownerIds)
+        .eq("active", true)
+        .order("id"),
+    );
+    const byId = new Map(owners.data.map((owner) => [owner.id, owner]));
+    for (const property of properties.data) {
+      const owner = property.owner_record_id ? byId.get(property.owner_record_id) : undefined;
+      if (owner)
+        contacts.push({
+          property_id: property.id,
+          owner_record_id: owner.id,
+          owner_name: owner.name,
+          owner_email: owner.email,
+          owner_phone: owner.phone,
+          source: owner.source,
+          match_status: "canonical",
+        });
+    }
+  }
+  return contacts;
 }
