@@ -317,6 +317,10 @@ export async function loadPropertyHub(viewer: Viewer, propertyId: string, client
         .limit(25),
     ),
   );
+  if (activityBatches.some((batch) => batch.error))
+    throw new Error(
+      "Property activity could not be loaded. Try again before relying on this history.",
+    );
   const activityRows = mergePropertyActivity(
     activityBatches.map(
       (b: { data: PropertyActivityRow[] | null }) => (b.data ?? []) as PropertyActivityRow[],

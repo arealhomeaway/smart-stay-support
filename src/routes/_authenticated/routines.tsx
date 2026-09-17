@@ -72,7 +72,7 @@ function useGenerateCleaningReviews() {
       const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       const { data: cleans, error } = await supabase
         .from("breezeway_work_orders")
-        .select("id, name, property_id, scheduled_date, status, department")
+        .select("id, name, property_id, scheduled_date, status, department, properties(is_demo)")
         .eq("department", "cleaning")
         .in("status", ["finished", "completed", "complete"])
         .gte("scheduled_date", since)
@@ -80,7 +80,7 @@ function useGenerateCleaningReviews() {
       if (error) throw error;
 
       const rows = (cleans ?? [])
-        .filter((c) => c.property_id)
+        .filter((c) => c.property_id && c.properties?.is_demo === false)
         .map((c) => ({
           kind: "cleaning_review",
           event_key: cleaningReviewKey(c.id),
@@ -91,6 +91,7 @@ function useGenerateCleaningReviews() {
             ? new Date(`${c.scheduled_date}T18:00:00`).toISOString()
             : new Date().toISOString(),
           team: "property_operations",
+          is_demo: false,
         }));
       if (rows.length === 0) return 0;
 
@@ -108,6 +109,7 @@ function useGenerateCleaningReviews() {
 
 function RoutinesPage() {
   const qc = useQueryClient();
+  const { demoMode } = useDemo();
   const seat = useSeat();
   const generate = useGenerateCleaningReviews();
   const [openRow, setOpenRow] = useState<RoutineRow | null>(null);
@@ -116,14 +118,14 @@ function RoutinesPage() {
 
   // One idempotent generation pass when the screen opens.
   useEffect(() => {
-    generate.mutate();
+    // Demo and acceptance sessions must never materialize live Breezeway work.
+    if (!demoMode) generate.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [demoMode]);
 
   // Routine work follows the same demo lens as every other queue: demo rows
   // only inside the demo environment, live rows only outside it. Before this,
   // seeded scenarios leaked into the real routine queue.
-  const { demoMode } = useDemo();
   const { data, isLoading } = useQuery({
     queryKey: ["routine-controls", demoMode],
     queryFn: async () => {
