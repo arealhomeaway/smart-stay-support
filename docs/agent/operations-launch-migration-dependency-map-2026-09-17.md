@@ -27,4 +27,4 @@ An earlier Active Owner migration, `20260916140000_owner_participation_read_boun
 
 ## Validation boundary
 
-The dependency conclusion is based on commit/file inspection and static import/type searches. It is not migration-runtime proof. Before promoting the candidate, verify migration order and generated types, run isolated tests/typecheck/build, and apply migrations only to a genuinely isolated local backend. The three excluded migrations must not be present in the candidate tree.
+The dependency conclusion is based on commit/file inspection and static import/type searches. The forward owner-alert correction and its constraint test passed in the repository's isolated in-memory PGlite fixture runner; that runner does not prove full historical migration application, real Supabase Auth/RLS, or provider delivery. Before promoting the candidate, verify migration order and generated types, run isolated tests/typecheck/build, and apply the full chain only to a genuinely isolated local backend. The three excluded migrations must not be present in the candidate tree.
