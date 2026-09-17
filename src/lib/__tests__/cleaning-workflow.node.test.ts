@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   atRiskTaskIds,
   expiredOfferIds,
+  offerSyntheticTask,
   writeSyntheticTask,
   type SyntheticCleaningTask,
 } from "../cleaning-workflow.ts";
@@ -78,6 +79,39 @@ test("correction round preserves original submission and review reason", () => {
   );
 });
 
+test("inspector may review a departure clean without becoming its cleaner", () => {
+  const answer = [
+    { fieldId: "walkthrough", value: "Synthetic condition", photoRefs: ["synthetic-photo"] },
+  ];
+  const submitted = writeSyntheticTask(
+    writeSyntheticTask(
+      writeSyntheticTask(task, "accept", cleaner, at, "Accepted"),
+      "begin",
+      cleaner,
+      at,
+      "Started",
+    ),
+    "submit",
+    cleaner,
+    at,
+    "Submitted",
+    answer,
+  );
+  const inspector = { id: "synthetic-inspector", role: "inspector" as const };
+  const reviewing = writeSyntheticTask(
+    submitted,
+    "begin_review",
+    inspector,
+    at,
+    "Inspection started",
+  );
+  assert.equal(
+    writeSyntheticTask(reviewing, "require_correction", inspector, at, "Photo needs correction")
+      .state,
+    "correction_required",
+  );
+});
+
 test("unapproved checklist and premature inspection are blocked", () => {
   const accepted = writeSyntheticTask(
     { ...task, checklistApproved: false },
@@ -115,4 +149,12 @@ test("expiry and unassigned views expose at-risk tasks without writes", () => {
     expiredOfferIds([task, unassigned], new Map([[task.id, "2026-10-05T16:00:00Z"]]), at),
     [task.id],
   );
+});
+
+test("manual dispatch creates an offer and audit event from an unassigned task", () => {
+  const unassigned = { ...task, state: "scheduled" as const, assignedUserId: null };
+  const offered = offerSyntheticTask(unassigned, "synthetic-cleaner", pc, at);
+  assert.equal(offered.state, "offered");
+  assert.equal(offered.events[0]?.action, "manual_offer");
+  assert.throws(() => offerSyntheticTask(offered, "another-cleaner", pc, at));
 });

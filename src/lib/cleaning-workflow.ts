@@ -48,6 +48,38 @@ export type TaskAction =
   | "decline"
   | "expire";
 
+export function offerSyntheticTask(
+  task: SyntheticCleaningTask,
+  cleanerId: string,
+  actor: TaskActor,
+  at: string,
+): SyntheticCleaningTask {
+  if (task.state !== "scheduled" || task.assignedUserId || !cleanerId)
+    throw new Error("Only an unassigned scheduled task can be offered.");
+  if (
+    actor.role !== "pc" &&
+    actor.role !== "operations_supervisor" &&
+    actor.role !== "director_operations"
+  )
+    throw new Error("Operations dispatch role required.");
+  return {
+    ...task,
+    state: "offered",
+    assignedUserId: cleanerId,
+    events: [
+      ...task.events,
+      {
+        at,
+        actorId: actor.id,
+        action: "manual_offer",
+        from: "scheduled",
+        to: "offered",
+        note: "Manual verified cleaner choice",
+      },
+    ],
+  };
+}
+
 export function writeSyntheticTask(
   task: SyntheticCleaningTask,
   action: TaskAction,
@@ -61,6 +93,7 @@ export function writeSyntheticTask(
   const isWorker =
     actor.id === task.assignedUserId && (actor.role === "cleaner" || actor.role === "inspector");
   const isReviewer =
+    (actor.role === "inspector" && task.kind === "departure") ||
     actor.role === "pc" ||
     actor.role === "operations_supervisor" ||
     actor.role === "director_operations";
