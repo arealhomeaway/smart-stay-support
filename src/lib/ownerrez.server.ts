@@ -124,7 +124,10 @@ export async function stayForListing(ownerRezPropertyId: string): Promise<StaySn
 
   const todayKey = ymd(today);
   const bookings = (data.items ?? []).filter(
-    (b) => !b.is_block && (b.status ?? "Active").toLowerCase() !== "cancelled",
+    (b) =>
+      String(b.property_id) === ownerRezPropertyId &&
+      !b.is_block &&
+      (b.status ?? "Active").toLowerCase() !== "cancelled",
   );
 
   const arrivingToday = bookings.find((b) => b.arrival?.slice(0, 10) === todayKey);
@@ -232,6 +235,7 @@ export async function currentGuestForListing(ownerRezPropertyId: string): Promis
   const todayKey = ymd(today);
   const active = (data.items ?? []).filter(
     (b) =>
+      String(b.property_id) === ownerRezPropertyId &&
       !b.is_block &&
       (b.status ?? "Active").toLowerCase() !== "cancelled" &&
       (b.arrival?.slice(0, 10) ?? "9999") <= todayKey &&
