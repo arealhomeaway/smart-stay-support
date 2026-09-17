@@ -2,7 +2,7 @@ import { OwnerProgramSetup } from "@/components/OwnerProgramSetup";
 import { ownerAttention as attentionReason } from "@/lib/owner-attention";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -55,6 +55,14 @@ import { OwnerProgramActivation } from "@/components/OwnerProgramActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -512,6 +520,18 @@ function ProgramDetail({
   const [newProperty, setNewProperty] = useState("");
   const [newClosing, setNewClosing] = useState(today());
   const [enrollmentVersion, setEnrollmentVersion] = useState<string | null>(null);
+  const [correction, setCorrection] = useState<{
+    entryId: string;
+    activity: string;
+    entryDate: string;
+    originalMinutes: number;
+    minutes: string;
+    reason: string;
+  } | null>(null);
+  const [correctionSaving, setCorrectionSaving] = useState(false);
+  const [correctionError, setCorrectionError] = useState("");
+  const correctionMinutesId = useId();
+  const correctionReasonId = useId();
 
   const detail = useQuery({
     queryKey: ["owner-program", programId],
@@ -951,25 +971,15 @@ function ProgramDetail({
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    const raw = window.prompt(
-                      "Corrected minutes for this entry",
-                      String(e.minutes),
-                    );
-                    if (!raw) return;
-                    const minutes = Number(raw);
-                    if (!Number.isFinite(minutes) || minutes < 1) {
-                      toast.error("Enter a valid number of minutes.");
-                      return;
-                    }
-                    const reason = window.prompt("Reason for the correction");
-                    if (!reason) {
-                      toast.error("A correction needs a reason.");
-                      return;
-                    }
-                    void run(
-                      () => correct({ data: { entryId: e.id, minutes, reason } }),
-                      "Correction recorded.",
-                    );
+                    setCorrection({
+                      entryId: e.id,
+                      activity: e.activity,
+                      entryDate: e.entry_date,
+                      originalMinutes: e.minutes,
+                      minutes: String(e.minutes),
+                      reason: "",
+                    });
+                    setCorrectionError("");
                   }}
                 >
                   Record correction
@@ -978,6 +988,110 @@ function ProgramDetail({
             ))}
           </div>
         )}
+        <Dialog
+          open={correction !== null}
+          onOpenChange={(open) => {
+            if (!open && !correctionSaving) setCorrection(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Record participation correction</DialogTitle>
+              <DialogDescription>
+                Enter the corrected total minutes for this entry and explain the change. The
+                original entry and its links stay in the history.
+              </DialogDescription>
+            </DialogHeader>
+            {correction && (
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (correctionSaving) return;
+                  const minutes = Number(correction.minutes);
+                  const reason = correction.reason.trim();
+                  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+                    setCorrectionError("Enter a whole number of minutes between 1 and 1440.");
+                    return;
+                  }
+                  if (reason.length < 3) {
+                    setCorrectionError("Explain the correction in at least 3 characters.");
+                    return;
+                  }
+                  setCorrectionSaving(true);
+                  setCorrectionError("");
+                  void run(
+                    () =>
+                      correct({ data: { entryId: correction.entryId, minutes, reason } })
+                        .then(() => setCorrection(null))
+                        .catch((error: Error) => {
+                          setCorrectionError(error.message);
+                          throw error;
+                        }),
+                    "Correction recorded.",
+                  ).finally(() => setCorrectionSaving(false));
+                }}
+              >
+                <div className="rounded-md border p-3 text-sm">
+                  <p className="font-medium">{correction.activity}</p>
+                  <p className="text-muted-foreground">
+                    {usCalendarDate(correction.entryDate)} · Currently{" "}
+                    {formatDuration(correction.originalMinutes)}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={correctionMinutesId}>Corrected minutes</Label>
+                  <Input
+                    id={correctionMinutesId}
+                    type="number"
+                    min={1}
+                    max={1440}
+                    step={1}
+                    required
+                    value={correction.minutes}
+                    disabled={correctionSaving}
+                    onChange={(event) =>
+                      setCorrection({ ...correction, minutes: event.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={correctionReasonId}>Reason for correction</Label>
+                  <Textarea
+                    id={correctionReasonId}
+                    rows={3}
+                    required
+                    minLength={3}
+                    maxLength={500}
+                    value={correction.reason}
+                    disabled={correctionSaving}
+                    onChange={(event) =>
+                      setCorrection({ ...correction, reason: event.target.value })
+                    }
+                  />
+                </div>
+                {correctionError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {correctionError}
+                  </p>
+                )}
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={correctionSaving}
+                    onClick={() => setCorrection(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={correctionSaving}>
+                    {correctionSaving ? "Recording…" : "Record correction"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </section>
 
       <Separator />
