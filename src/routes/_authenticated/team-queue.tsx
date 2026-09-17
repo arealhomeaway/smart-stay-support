@@ -111,6 +111,7 @@ function TeamQueuePage() {
     due: params["due"] ?? "all",
     age: params["age"] ?? "all",
     waiting: flags.has("waiting"),
+    untouched: flags.has("untouched"),
     unassigned: flags.has("unassigned"),
     escalated: flags.has("escalated"),
     blocked: flags.has("blocked"),
@@ -232,6 +233,11 @@ function TeamQueuePage() {
   const flagButtons: { key: string; label: string; count: number }[] = useMemo(() => {
     const active = all.filter((t) => !["resolved", "closed"].includes(t.status));
     return [
+      {
+        key: "untouched",
+        label: "Untouched",
+        count: active.filter((t) => !t.acknowledged_at && !t.action_started_at).length,
+      },
       {
         key: "unassigned",
         label: "Unassigned",

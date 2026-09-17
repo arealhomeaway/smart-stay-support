@@ -29,6 +29,7 @@ export type TeamQueueFilters = {
   age: string;
   /** Boolean flags, all off by default. */
   waiting: boolean;
+  untouched: boolean;
   unassigned: boolean;
   escalated: boolean;
   blocked: boolean;
@@ -49,6 +50,7 @@ export const DEFAULT_TEAM_QUEUE_FILTERS: TeamQueueFilters = {
   due: "all",
   age: "all",
   waiting: false,
+  untouched: false,
   unassigned: false,
   escalated: false,
   blocked: false,
@@ -88,6 +90,8 @@ export type TeamQueueTicket = {
   } | null;
   reported_at?: string | null;
   next_review_at?: string | null;
+  acknowledged_at?: string | null;
+  action_started_at?: string | null;
   waiting_on?: string | null;
   escalation_level?: string | null;
   handoff_status?: string | null;
@@ -178,6 +182,7 @@ export function applyTeamQueueFilters(
     }
 
     if (filters.waiting && t.status !== "waiting") return false;
+    if (filters.untouched && (t.acknowledged_at || t.action_started_at)) return false;
     if (filters.unassigned && !isUnassigned(t)) return false;
     if (filters.escalated && !isEscalated(t)) return false;
     if (filters.blocked && !isBlocked(t)) return false;
@@ -210,6 +215,7 @@ export function activeFilterCount(f: TeamQueueFilters) {
   if (f.due !== "all") n++;
   if (f.age !== "all") n++;
   if (f.waiting) n++;
+  if (f.untouched) n++;
   if (f.unassigned) n++;
   if (f.escalated) n++;
   if (f.blocked) n++;
