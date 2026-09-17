@@ -128,7 +128,10 @@ function TeamQueuePage() {
     const nextFlags = new Set(flags);
     if (nextFlags.has(flag)) nextFlags.delete(flag);
     else nextFlags.add(flag);
-    setParam({ flags: [...nextFlags].join(",") || undefined });
+    setParam({
+      flags: [...nextFlags].join(",") || undefined,
+      status: filters.status === "closed" ? undefined : params["status"],
+    });
   };
 
   const people = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s])), [staff]);
@@ -290,7 +293,12 @@ function TeamQueuePage() {
           size="sm"
           variant={filters.status === "closed" ? "default" : "outline"}
           aria-pressed={filters.status === "closed"}
-          onClick={() => setParam({ status: filters.status === "closed" ? undefined : "closed" })}
+          onClick={() =>
+            setParam({
+              status: filters.status === "closed" ? undefined : "closed",
+              flags: undefined,
+            })
+          }
         >
           Closed
         </Button>
