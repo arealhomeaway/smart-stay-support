@@ -1,5 +1,7 @@
 # Operations authenticated acceptance gate
 
+> **Scope correction (09/17/2026):** The [current Operations launch matrix](operations-launch-recovery-2026-09-17.md#current-scope-acceptance-matrix) governs release acceptance. Cleaning turnover, cleaner tasks, native inspection/readiness, guest billing and deposit cases below are deferred research, not current launch blockers. Keep them for traceability only. P1–P3 is the sole active priority model.
+
 **Release blocker:** No isolated authenticated Operations test environment has been verified. The current Lovable Preview must be treated as sharing the published backend. Code checks and read-only UI review cannot substitute for real authentication, role checks, row-level security, storage and workflow writes in a separate environment. Do not claim the Operations launch candidate has passed authenticated acceptance until this gate is met.
 
 ## Environment contract
