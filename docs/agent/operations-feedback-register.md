@@ -1,6 +1,8 @@
 # Operations Feedback Register
 
-**Established:** 09/17/2026. **Scope:** evidence recovered for the Operations launch pass. The historical reference to “45 items” is unverified; it is not a target count. This register currently contains **33** distinct requirements. A source summary is evidence that a requirement or concern was recorded, not proof that the product works. “Already working” below means the inspected code provides the named behavior; authenticated role acceptance is tracked separately.
+> **Scope correction (09/17/2026):** Use [Operations launch recovery](operations-launch-recovery-2026-09-17.md) and Emily's Operations Scope and Recovery Plan as the current launch boundary. Native cleaning, cleaner routing/checklists/inspections/readiness, guest billing and deposit workflows in this historical register are **deferred**, even where a row below says “launch blocker.” Breezeway dispatch remains required; Resolve priorities are P1–P3 only. The row text below is retained for traceability, not current release authorization.
+
+**Established:** 09/17/2026. **Scope:** evidence recovered for the Operations launch pass. The historical reference to “45 items” is unverified; it is not a target count. This clean candidate's register contains **33** distinct source-linked requirements. A source summary is evidence that a requirement or concern was recorded, not proof that the product works. “Already working” below means the inspected code provides the named behavior; authenticated role acceptance is tracked separately.
 
 ## Source key
 
