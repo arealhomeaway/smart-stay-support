@@ -269,7 +269,10 @@ function OwnerHubBody({
       <div className="grid gap-4 lg:grid-cols-2">
         <ParticipationReportPanel />
         {data.badgeRefreshPending && (
-          <p className="text-sm text-muted-foreground">Achievements are awaiting a refresh. Your participation record is still available; reopening this page will retry.</p>
+          <p className="text-sm text-muted-foreground">
+            Achievements are awaiting a refresh. Your participation record is still available;
+            reopening this page will retry.
+          </p>
         )}
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
       </div>
@@ -283,7 +286,8 @@ function OwnerHubBody({
               return (
                 <details key={entry.id} className="rounded-lg border p-3 text-sm">
                   <summary className="cursor-pointer">
-                    {usCalendarDate(entry.entry_date)} · {entry.activity} · Revision {reviewed.revision}
+                    {usCalendarDate(entry.entry_date)} · {entry.activity} · Revision{" "}
+                    {reviewed.revision}
                     {entry.superseded ? " · Superseded entry" : ""}
                   </summary>
                   <div className="mt-2 space-y-2 whitespace-pre-wrap">
@@ -434,7 +438,9 @@ function ReviewRow({
         ) : null}
         <p className="mt-1 text-xs text-muted-foreground">
           {names ? `${names} · ` : ""}
-          {review.respond_by ? `Please respond by ${usCalendarDate(review.respond_by)}` : "No due date"}
+          {review.respond_by
+            ? `Please respond by ${usCalendarDate(review.respond_by)}`
+            : "No due date"}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">

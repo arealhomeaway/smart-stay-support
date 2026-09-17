@@ -155,6 +155,8 @@ try {
     "supabase/tests/fixtures/owner_lifecycle_history_schema.sql",
     "supabase/migrations/20260916160000_owner_lifecycle_history.sql",
     "supabase/tests/owner_lifecycle_history.test.sql",
+    "supabase/migrations/20260917010000_initial_work_order_owner_request.sql",
+    "supabase/tests/initial_work_order_owner_request.test.sql",
   ]) {
     await db.exec(readFileSync(path, "utf8"));
     console.log(`PASS ${path}`);
