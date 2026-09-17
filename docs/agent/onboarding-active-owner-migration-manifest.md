@@ -1,5 +1,7 @@
 # Onboarding + Active Owner migration manifest
 
+> **Current authorization — September 17, 2026:** Follow the [practical Lovable launch-candidate checklist](onboarding-active-owner-launch-candidate.md). The user now authorizes the existing Lovable/shared backend rollout after backup/export and verified delivery/job pause, including required migrations, preview reconciliation and synthetic primary-workflow tests. This supersedes the isolated-only approval language retained below as historical context. Application Publish and PR merge remain prohibited; stop before damaging existing production data or sending a real external communication. The linked checklist records the current backup approval boundary, partial Outlook pause and outstanding cloud acceptance.
+
 This is the review manifest for draft PR #10 on `codex/onboarding-active-owner-build`. It is **not permission to apply migrations**. Shared/live/Lovable backend migration, production writes, deployment, merge and message delivery remain prohibited. Any application and post-apply scenarios below are for a separately approved, isolated acceptance database with synthetic data and outbound delivery disabled.
 
 ## Inventory and evidence boundary

@@ -1,5 +1,7 @@
 # Onboarding and Active Owner requirement audit
 
+> **Current rollout standard — September 17, 2026:** The [practical Lovable launch-candidate checklist](onboarding-active-owner-launch-candidate.md) governs current execution and finding severity. The user now authorizes existing Lovable/shared-backend migrations and synthetic primary-workflow testing after backup/export and verified delivery/job pause, superseding older isolated-only approval language below. Preserve the requirements and existing safeguards; do not equate every historical PARTIAL or untested rare case with a launch blocker. Application Publish and PR merge remain prohibited. Current backup/export access, partial Outlook pause, identified approval-notification privacy fix and cloud acceptance status are recorded in the linked checklist.
+
 Working audit, not acceptance approval. Sources: the active build goal and its four referenced plans, re-read during the overnight run. The September 3 staged model supersedes the September 1 workspace tabs; the active goal requires Full Furnishing and No Furnishings. The broader beta plan supplies safety and integration constraints, not authorization to activate its external workflows.
 
 PASS means the stated local check is proven. PARTIAL means implementation or verification remains incomplete. BLOCKED means a specific external/permission boundary prevents that item. NOT YET ACCEPTED means interactive acceptance remains outstanding. A local PASS does not imply authenticated acceptance.

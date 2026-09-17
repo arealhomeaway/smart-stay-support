@@ -1,5 +1,7 @@
 # Onboarding / Active Owner build progress
 
+> **Current rollout — September 17, 2026:** Follow the [practical Lovable launch-candidate checklist](onboarding-active-owner-launch-candidate.md) for current status and the eight primary human workflows. The user now authorizes the existing Lovable/shared backend after backup/export and verified delivery/job pause, including required migrations, preview reconciliation and synthetic testing; this supersedes older isolated-only approval language and checkpoint verdicts below. Preserve completed architecture and privacy protections; only actual launch blockers delay rollout. Application Publish and PR merge remain prohibited. The checklist records the managed backup, pending export approval, partial Outlook pause, narrow approval-notification privacy fix and cloud tests not yet run.
+
 Goal: `onboarding-active-owner-build-goal.md`. Branch: `codex/onboarding-active-owner-build`.
 Base: `e813389`; implementation began from `b6a4376` on September 14, 2026.
 
