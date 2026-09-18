@@ -106,6 +106,26 @@ const frontlineGroup: NavGroup = {
       tour: "routines",
       capability: "routines",
     },
+    // Frontline/team workflows — PCs and operations staff perform this work
+    // directly. Supervisors may oversee it, but it is not supervisor-owned,
+    // so it lives here rather than under Supervision. Gated on claims_work,
+    // matching what /claims and /recovery already require to open — the nav
+    // item used to require the stricter claims_oversight, which hid it from
+    // tech/onboarding roles that could already reach the page by URL.
+    {
+      to: "/claims",
+      label: "Claims",
+      icon: ReceiptText,
+      tour: "claims",
+      capability: "claims_work",
+    },
+    {
+      to: "/recovery",
+      label: "Guest recovery",
+      icon: HeartHandshake,
+      tour: "recovery",
+      capability: "claims_work",
+    },
 
     {
       to: "/properties",
@@ -141,20 +161,6 @@ const navGroups: NavGroup[] = [
         icon: ShieldAlert,
         tour: "oversight",
         capability: "oversight",
-      },
-      {
-        to: "/claims",
-        label: "Claims",
-        icon: ReceiptText,
-        tour: "claims",
-        capability: "claims_oversight",
-      },
-      {
-        to: "/recovery",
-        label: "Guest recovery",
-        icon: HeartHandshake,
-        tour: "recovery",
-        capability: "claims_oversight",
       },
       {
         to: "/onboarding",

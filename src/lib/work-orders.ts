@@ -694,6 +694,44 @@ export function workOrderBucket(wo: WorkOrderLike, now = new Date()): WorkOrderB
 export { EMERGENCY_REASON_LABELS, MAINTENANCE_POLICY_VERSION, money };
 
 /* ------------------------------------------------------------------ */
+/* Ownership                                                           */
+/* ------------------------------------------------------------------ */
+
+export type WorkOrderReassignment = {
+  patch: { assigned_to: string };
+  event: "reassigned";
+  body: string;
+  detail: { from: string | null; to: string; actor: string | null };
+};
+
+/**
+ * A supervisor moving internal ownership of a Work Order — who inside
+ * Resolve is on the hook for getting it done — to someone else. This is
+ * deliberately narrow: `patch` can only ever carry `assigned_to`, so a
+ * reassignment can never touch `vendor_name` or any other field, however
+ * the caller assembles it. The internal owner is not the vendor, and
+ * reassigning the former must never imply anything about the latter —
+ * `vendor_name`/vendor contact stays exactly what it was, and a future
+ * vendor-delivery recipient (PDF/email/share, not built yet) is a
+ * separate concept this never touches or assumes.
+ */
+export function workOrderReassignment(input: {
+  fromOwnerId: string | null;
+  toUserId: string;
+  toUserName: string;
+  actorId: string | null;
+}): WorkOrderReassignment {
+  return {
+    patch: { assigned_to: input.toUserId },
+    event: "reassigned",
+    body: input.fromOwnerId
+      ? `Reassigned to ${input.toUserName}`
+      : `Assigned to ${input.toUserName}`,
+    detail: { from: input.fromOwnerId, to: input.toUserId, actor: input.actorId },
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Owner approval                                                      */
 /* ------------------------------------------------------------------ */
 

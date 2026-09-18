@@ -405,3 +405,97 @@ export function dueLabel(dueAt: string | null | undefined, status: string) {
   if (mins < 0) return { text: `Overdue by ${formatMinutes(mins)}`, overdue: true };
   return { text: `Due in ${formatMinutes(mins)}`, overdue: false };
 }
+
+export type TicketActionStartState = {
+  status: string;
+  acknowledged_at: string | null;
+  action_started_at: string | null;
+  current_action_owner: string | null;
+  assignment_source: string | null;
+};
+
+export type TicketActionStartEvent = { kind: string; body: string; eventType: string };
+
+export type TicketActionStartPlan = {
+  patch: {
+    acknowledged_at: string;
+    action_started_at: string;
+    status?: string;
+    current_action_owner?: string;
+    assignment_source?: string;
+    assignment_note?: null;
+  };
+  events: TicketActionStartEvent[];
+};
+
+/**
+ * What used to be the "Start working" button's one click — acknowledge,
+ * start the clock, take ownership if nobody has legitimately claimed it,
+ * move status out of "open" — now derived instead of manually triggered,
+ * so it can fire from the first real action a ticket receives instead of
+ * a dedicated gate. Pure: returns `null` once `action_started_at` is
+ * already set, so calling this on every action is always safe and never
+ * fires twice.
+ *
+ * `acknowledged_at` is often already set by the time this runs — ticket
+ * creation stamps it unconditionally, before anyone has actually engaged.
+ * That's a data backfill, not the moment someone acknowledged the work, so
+ * the gate for everything here — including whether to log "Acknowledged"
+ * at all — is `action_started_at`, the one field nothing else in this
+ * codebase writes automatically. Whenever this plan fires, it is
+ * genuinely the first real action, so both events always fire, in order.
+ */
+export function ticketActionStartPlan(
+  ticket: TicketActionStartState,
+  actorId: string | null,
+  now: string,
+): TicketActionStartPlan | null {
+  if (ticket.action_started_at) return null;
+  const patch: TicketActionStartPlan["patch"] = {
+    acknowledged_at: ticket.acknowledged_at ?? now,
+    action_started_at: now,
+  };
+  if (ticket.status === "open") patch.status = "in_progress";
+
+  // A ticket auto-routed to a seat (assignment_source "automatic", or no
+  // assignment_source at all) has not been legitimately claimed by anyone
+  // yet — the acting user takes it, the same "a human decided this"
+  // convention MatterOwnershipPanel's own manual assign already uses. An
+  // owner set with assignment_source "manual" — a deliberate assignment —
+  // is left untouched: the first person to merely add a note never
+  // silently steals a ticket someone else was actually given.
+  const legitimatelyClaimed =
+    Boolean(ticket.current_action_owner) && ticket.assignment_source === "manual";
+  if (!legitimatelyClaimed && actorId) {
+    patch.current_action_owner = actorId;
+    patch.assignment_source = "manual";
+    patch.assignment_note = null;
+  }
+
+  const events: TicketActionStartEvent[] = [
+    {
+      kind: "acknowledged",
+      body: "Acknowledged — this ticket is being worked.",
+      eventType: "acknowledged",
+    },
+    { kind: "action_started", body: "Work started on this ticket.", eventType: "action_started" },
+  ];
+  return { patch, events };
+}
+
+/**
+ * "Unassigned" must mean no owner — never "the owner's profile hasn't
+ * loaded yet". The profile for a ticket's owner is fetched by id, so the
+ * moment ownership changes (e.g. ticketActionStartPlan claiming it for
+ * the acting user) that's a brand new lookup with nothing cached yet.
+ * Without separating "no owner" from "owner set, profile pending", that
+ * loading gap reads as a regression to Unassigned even though the owner
+ * was already correctly set in the same write that started the clock.
+ */
+export function ticketAssigneeName(
+  ownerId: string | null,
+  profile: { full_name?: string | null; email?: string | null } | null | undefined,
+): string {
+  if (!ownerId) return "Unassigned";
+  return profile?.full_name ?? profile?.email ?? "…";
+}

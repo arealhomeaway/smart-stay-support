@@ -16,6 +16,7 @@ import { ChevronRight } from "lucide-react";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { StatusBadge, ticketTone } from "@/components/ui/status";
 import { usDate, usDateTime } from "@/lib/dates";
+import { workloadByPerson } from "@/lib/oversight";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/ui/page";
@@ -423,15 +424,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
     (s?.profiles ?? []).find((p) => p.id === id)?.email ??
     "Unassigned";
 
-  const workload = Object.entries(
-    open.reduce<Record<string, number>>((acc, t) => {
-      const key = t.current_action_owner ?? t.assigned_to ?? "unassigned";
-      acc[key] = (acc[key] ?? 0) + 1;
-      return acc;
-    }, {}),
-  )
-    .map(([id, count]) => ({ id, who: id === "unassigned" ? "Unassigned" : nameFor(id), count }))
-    .sort((a, b) => b.count - a.count);
+  const workload = workloadByPerson(open, nameFor);
 
   const trend = (pick: (t: (typeof open)[number]) => string) =>
     Object.entries(
@@ -717,7 +710,12 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         >
           {workload.length === 0 && <p className="text-muted-foreground">Nothing open.</p>}
           {workload.map((w) => (
-            <div key={w.id} className="flex items-center gap-3">
+            <Link
+              key={w.id}
+              to="/team-queue"
+              search={{ assignee: w.id }}
+              className="-mx-1 flex items-center gap-3 rounded-md px-1 transition-colors hover:bg-secondary"
+            >
               <span className="w-40 truncate">{w.who}</span>
               <div className="h-2 flex-1 rounded-full bg-secondary">
                 <div
@@ -728,7 +726,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
                 />
               </div>
               <span className="w-6 text-right text-muted-foreground">{w.count}</span>
-            </div>
+            </Link>
           ))}
         </SectionCard>
 

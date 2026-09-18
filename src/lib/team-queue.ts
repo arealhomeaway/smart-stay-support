@@ -20,10 +20,16 @@ export type TeamQueueFilters = {
   /** "active" (default) | a ticket status | "all" */
   status: string;
   property: string;
+  market: string;
+  city: string;
+  state: string;
+  workType: string;
+  due: string;
   /** "all" | "today" | "3d" | "7d" | "older" */
   age: string;
   /** Boolean flags, all off by default. */
   waiting: boolean;
+  untouched: boolean;
   unassigned: boolean;
   escalated: boolean;
   blocked: boolean;
@@ -37,8 +43,14 @@ export const DEFAULT_TEAM_QUEUE_FILTERS: TeamQueueFilters = {
   priority: "all",
   status: "active",
   property: "all",
+  market: "all",
+  city: "all",
+  state: "all",
+  workType: "all",
+  due: "all",
   age: "all",
   waiting: false,
+  untouched: false,
   unassigned: false,
   escalated: false,
   blocked: false,
@@ -69,8 +81,17 @@ export type TeamQueueTicket = {
   priority: string;
   status: string;
   property_id?: string | null;
+  work_type_id?: string | null;
+  properties?: {
+    market?: string | null;
+    city?: string | null;
+    state?: string | null;
+    name?: string | null;
+  } | null;
   reported_at?: string | null;
   next_review_at?: string | null;
+  acknowledged_at?: string | null;
+  action_started_at?: string | null;
   waiting_on?: string | null;
   escalation_level?: string | null;
   handoff_status?: string | null;
@@ -82,6 +103,7 @@ export type TeamQueueTicket = {
   pending_handoff_to?: string | null;
   response_due_at?: string | null;
   action_due_at?: string | null;
+  next_action_due_at?: string | null;
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -123,6 +145,22 @@ export function applyTeamQueueFilters(
 
     if (filters.priority !== "all" && t.priority !== filters.priority) return false;
     if (filters.property !== "all" && t.property_id !== filters.property) return false;
+    if (filters.market !== "all" && t.properties?.market !== filters.market) return false;
+    if (filters.city !== "all" && t.properties?.city !== filters.city) return false;
+    if (filters.state !== "all" && t.properties?.state !== filters.state) return false;
+    if (filters.workType !== "all" && t.work_type_id !== filters.workType) return false;
+
+    if (filters.due !== "all") {
+      const due = t.next_action_due_at ?? t.action_due_at ?? t.response_due_at;
+      if (!due) return filters.due === "unscheduled";
+      const dueTime = new Date(due).getTime();
+      const now = Date.now();
+      if (filters.due === "unscheduled") return false;
+      if (filters.due === "overdue" && dueTime >= now) return false;
+      if (filters.due === "today" && new Date(due).toDateString() !== new Date(now).toDateString())
+        return false;
+      if (filters.due === "next7" && (dueTime < now || dueTime > now + 7 * DAY)) return false;
+    }
 
     const owner = currentOwnerId(t);
     if (filters.assignee === "unassigned") {
@@ -144,6 +182,7 @@ export function applyTeamQueueFilters(
     }
 
     if (filters.waiting && t.status !== "waiting") return false;
+    if (filters.untouched && (t.acknowledged_at || t.action_started_at)) return false;
     if (filters.unassigned && !isUnassigned(t)) return false;
     if (filters.escalated && !isEscalated(t)) return false;
     if (filters.blocked && !isBlocked(t)) return false;
@@ -169,8 +208,14 @@ export function activeFilterCount(f: TeamQueueFilters) {
   if (f.priority !== "all") n++;
   if (f.status !== "active") n++;
   if (f.property !== "all") n++;
+  if (f.market !== "all") n++;
+  if (f.city !== "all") n++;
+  if (f.state !== "all") n++;
+  if (f.workType !== "all") n++;
+  if (f.due !== "all") n++;
   if (f.age !== "all") n++;
   if (f.waiting) n++;
+  if (f.untouched) n++;
   if (f.unassigned) n++;
   if (f.escalated) n++;
   if (f.blocked) n++;

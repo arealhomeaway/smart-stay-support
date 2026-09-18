@@ -30,15 +30,24 @@ class FakeBreezewayError extends Error {
   }
 }
 
-type Call = { path: string; method: string };
+type Call = {
+  path: string;
+  method: string;
+  body: unknown;
+  allowWrite: boolean | undefined;
+  retry: boolean | undefined;
+};
 const calls: Call[] = [];
-let responder: (path: string, options: { method?: string }) => unknown = () => ({ id: 900001 });
+let responder: (path: string, options: { method?: string; body?: unknown }) => unknown = () => ({ id: 900001 });
 
 mock.module("@/lib/breezeway.server", () => ({
   BreezewayError: FakeBreezewayError,
   listBreezewayProperties: async () => [],
-  breezewayRequest: async (path: string, options: { method?: string } = {}) => {
-    calls.push({ path, method: options.method ?? "GET" });
+  breezewayRequest: async (
+    path: string,
+    options: { method?: string; body?: unknown; allowWrite?: boolean; retry?: boolean } = {},
+  ) => {
+    calls.push({ path, method: options.method ?? "GET", body: options.body, allowWrite: options.allowWrite, retry: options.retry });
     return responder(path, options);
   },
 }));
@@ -224,6 +233,20 @@ describe("feature flag and pilot lock", () => {
 });
 
 describe("happy path", () => {
+  it("sends the verified home and task fields with explicit write and no retry", async () => {
+    const result = await createOutboundTask(input("key-payload-000000000"), "actor");
+    expect(result.ok).toBe(true);
+    const sent = calls.find((call) => call.method === "POST");
+    expect(sent?.path).toBe("/task/");
+    expect(sent?.allowWrite).toBe(true);
+    expect(sent?.retry).toBe(false);
+    expect(sent?.body).toMatchObject({
+      home_id: 1473933,
+      name: "Fix the tap",
+      type_department: "maintenance",
+      type_priority: "normal",
+    });
+  });
   it("creates exactly one Breezeway task and records the id", async () => {
     const result = await createOutboundTask(input("key-happy-00000000000"), "actor");
     expect(result.ok).toBe(true);
@@ -240,6 +263,26 @@ describe("happy path", () => {
  * Order, never a second repair record — see breezeway-outbound.server.ts.
  */
 describe("canonical Work Order linkage", () => {
+  it("does not dispatch a repair when its canonical Work Order cannot be created", async () => {
+    store.failNextWorkOrderInsert();
+    const result = await createOutboundTask(input("key-wo-failed-000000"), "actor");
+    expect(result.ok).toBe(false);
+    expect(store.workOrders().length).toBe(0);
+    expect(store.outbound().length).toBe(0);
+    expect(calls.filter((c) => c.method === "POST").length).toBe(0);
+  });
+
+  it("links the canonical Work Order created by a concurrent action", async () => {
+    store.raceNextWorkOrderInsert();
+    const result = await createOutboundTask(input("key-wo-race-00000000"), "actor");
+    expect(result.ok).toBe(true);
+    expect(store.workOrders().length).toBe(1);
+    const workOrderId = store.workOrders()[0]!["id"];
+    if (result.ok) expect(result.link.workOrderId).toBe(workOrderId as string);
+    expect(store.outbound()[0]!["work_order_id"]).toBe(workOrderId);
+    expect(calls.filter((c) => c.method === "POST").length).toBe(1);
+  });
+
   it("creates a Work Order for a ticket that does not have one yet, and links it", async () => {
     expect(store.workOrders().length).toBe(0);
     const result = await createOutboundTask(input("key-wo-create-0000000"), "actor");

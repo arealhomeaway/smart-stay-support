@@ -74,8 +74,17 @@ export async function applyReservationSnapshot(db: Db, ticketId: string): Promis
       url: ownerRezBookingUrl(stay.reservation_id),
     });
 
-    const { error } = await db.from("tickets").update(columns).eq("id", ticketId);
+    // A second lookup may finish after the first one. Keep the earliest
+    // snapshot instead of silently replacing it with a later reservation.
+    const { data: saved, error } = await db
+      .from("tickets")
+      .update(columns)
+      .eq("id", ticketId)
+      .is("reservation_snapshot_at", null)
+      .select("id")
+      .maybeSingle();
     if (error) return { applied: false, reason: "error" };
+    if (!saved) return { applied: false, reason: "already_snapshotted" };
     return { applied: true, bookingId: columns.ownerrez_booking_id };
   } catch {
     // Never let an integration read break ticket creation.

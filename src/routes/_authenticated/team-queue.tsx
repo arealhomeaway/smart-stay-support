@@ -71,6 +71,11 @@ export const Route = createFileRoute("/_authenticated/team-queue")({
       "priority",
       "status",
       "property",
+      "market",
+      "city",
+      "state",
+      "workType",
+      "due",
       "age",
       "flags",
       "q",
@@ -99,8 +104,14 @@ function TeamQueuePage() {
     priority: params["priority"] ?? "all",
     status: params["status"] ?? "active",
     property: params["property"] ?? "all",
+    market: params["market"] ?? "all",
+    city: params["city"] ?? "all",
+    state: params["state"] ?? "all",
+    workType: params["workType"] ?? "all",
+    due: params["due"] ?? "all",
     age: params["age"] ?? "all",
     waiting: flags.has("waiting"),
+    untouched: flags.has("untouched"),
     unassigned: flags.has("unassigned"),
     escalated: flags.has("escalated"),
     blocked: flags.has("blocked"),
@@ -122,7 +133,10 @@ function TeamQueuePage() {
     const nextFlags = new Set(flags);
     if (nextFlags.has(flag)) nextFlags.delete(flag);
     else nextFlags.add(flag);
-    setParam({ flags: [...nextFlags].join(",") || undefined });
+    setParam({
+      flags: [...nextFlags].join(",") || undefined,
+      status: filters.status === "closed" ? undefined : params["status"],
+    });
   };
 
   const people = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s])), [staff]);
@@ -132,7 +146,7 @@ function TeamQueuePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tickets")
-        .select("*, properties(name, nickname), work_types(name)")
+        .select("*, properties(name, nickname, market, city, state), work_types(name)")
         .eq("is_demo", demoMode)
         .is("archived_at", null)
         .order("reported_at", { ascending: false });
@@ -157,6 +171,41 @@ function TeamQueuePage() {
       if (t.property_id)
         map.set(t.property_id, t.properties?.nickname ?? t.properties?.name ?? "Property");
     return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [all]);
+
+  const markets = useMemo(
+    () =>
+      [
+        ...new Set(
+          all.map((t) => t.properties?.market).filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [all],
+  );
+  const cities = useMemo(
+    () =>
+      [
+        ...new Set(
+          all.map((t) => t.properties?.city).filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [all],
+  );
+  const states = useMemo(
+    () =>
+      [
+        ...new Set(
+          all.map((t) => t.properties?.state).filter((value): value is string => Boolean(value)),
+        ),
+      ].sort(),
+    [all],
+  );
+  const workTypes = useMemo(() => {
+    const types = new Map<string, string>();
+    for (const ticket of all)
+      if (ticket.work_type_id && ticket.work_types?.name)
+        types.set(ticket.work_type_id, ticket.work_types.name);
+    return [...types.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [all]);
 
   const owners = useMemo(() => {
@@ -184,6 +233,11 @@ function TeamQueuePage() {
   const flagButtons: { key: string; label: string; count: number }[] = useMemo(() => {
     const active = all.filter((t) => !["resolved", "closed"].includes(t.status));
     return [
+      {
+        key: "untouched",
+        label: "Untouched",
+        count: active.filter((t) => !t.acknowledged_at && !t.action_started_at).length,
+      },
       {
         key: "unassigned",
         label: "Unassigned",
@@ -228,6 +282,11 @@ function TeamQueuePage() {
                   priority: undefined,
                   status: undefined,
                   property: undefined,
+                  market: undefined,
+                  city: undefined,
+                  state: undefined,
+                  workType: undefined,
+                  due: undefined,
                   age: undefined,
                   flags: undefined,
                   q: undefined,
@@ -260,6 +319,19 @@ function TeamQueuePage() {
             <span className="numeric ml-1.5 opacity-70">{f.count}</span>
           </Button>
         ))}
+        <Button
+          size="sm"
+          variant={filters.status === "closed" ? "default" : "outline"}
+          aria-pressed={filters.status === "closed"}
+          onClick={() =>
+            setParam({
+              status: filters.status === "closed" ? undefined : "closed",
+              flags: undefined,
+            })
+          }
+        >
+          Closed
+        </Button>
         <Button
           size="sm"
           variant={filters.assignee === userId ? "default" : "outline"}
@@ -343,6 +415,54 @@ function TeamQueuePage() {
                 value={filters.age}
                 onChange={(v) => setParam({ age: v === "all" ? undefined : v })}
                 options={AGE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              />
+              <FilterSelect
+                label="Market"
+                value={filters.market}
+                onChange={(v) => setParam({ market: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any market" },
+                  ...markets.map((market) => ({ value: market, label: market })),
+                ]}
+              />
+              <FilterSelect
+                label="Work type"
+                value={filters.workType}
+                onChange={(v) => setParam({ workType: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any type" },
+                  ...workTypes.map(([value, label]) => ({ value, label })),
+                ]}
+              />
+              <FilterSelect
+                label="City"
+                value={filters.city}
+                onChange={(v) => setParam({ city: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any city" },
+                  ...cities.map((city) => ({ value: city, label: city })),
+                ]}
+              />
+              <FilterSelect
+                label="State"
+                value={filters.state}
+                onChange={(v) => setParam({ state: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any state" },
+                  ...states.map((state) => ({ value: state, label: state })),
+                ]}
+              />
+              <FilterSelect
+                label="Next due"
+                value={filters.due}
+                onChange={(v) => setParam({ due: v === "all" ? undefined : v })}
+                options={[
+                  { value: "all", label: "Any date" },
+                  { value: "overdue", label: "Overdue" },
+                  { value: "today", label: "Today" },
+                  { value: "next7", label: "Next 7 days" },
+                  { value: "unscheduled", label: "No date" },
+                ]}
               />
             </div>
             <Input

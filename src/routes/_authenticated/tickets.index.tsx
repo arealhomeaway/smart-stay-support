@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemo } from "@/components/DemoProvider";
 import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTeam";
@@ -27,9 +27,10 @@ import {
   slaState,
   statusTone,
 } from "@/lib/tickets";
-import { useRole } from "@/hooks/useRole";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
-import { QUEUE_TABS, currentOwnerId, matchesTab, queueSort, type QueueTab } from "@/lib/matters";
+import { currentOwnerId, queueSort } from "@/lib/matters";
+import { MY_WORK_VIEWS, matchesMyWorkView, type MyWorkView } from "@/lib/my-work";
+import { isBlocked } from "@/lib/team-queue";
 
 export const Route = createFileRoute("/_authenticated/tickets/")({
   head: () => ({
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/_authenticated/tickets/")({
   validateSearch: (raw: Record<string, unknown>): TicketQueueSearch => {
     const out: TicketQueueSearch = {};
     if (typeof raw["tab"] === "string" && raw["tab"]) out.tab = raw["tab"];
+    if (raw["view"] === "board") out.view = "board";
     if (typeof raw["priority"] === "string" && raw["priority"]) out.priority = raw["priority"];
     if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
     return out;
@@ -65,19 +67,26 @@ type TicketQueueSearch = {
   tab?: string | undefined;
   priority?: string | undefined;
   q?: string | undefined;
+  view?: "board" | undefined;
 };
 
 function TicketsPage() {
   const navigate = Route.useNavigate();
   const params = Route.useSearch();
   const search = params.q ?? "";
-  const tab = (params.tab ?? "mine") as QueueTab;
+  const requestedTab =
+    params.tab === "mine" ? "active" : params.tab === "closed" ? "completed" : params.tab;
+  const tab: MyWorkView = MY_WORK_VIEWS.some((view) => view.value === requestedTab)
+    ? (requestedTab as MyWorkView)
+    : "active";
+  const view = params.view === "board" ? "board" : "list";
   const priority = params.priority ?? "all";
   const setParam = (patch: TicketQueueSearch) =>
     void navigate({
       search: (prev: TicketQueueSearch) => {
         const next: TicketQueueSearch = { ...prev, ...patch };
-        if (!next.tab || next.tab === "mine") delete next.tab;
+        if (!next.tab || next.tab === "active") delete next.tab;
+        if (next.view !== "board") delete next.view;
         if (!next.priority || next.priority === "all") delete next.priority;
         if (!next.q) delete next.q;
         return next;
@@ -90,12 +99,11 @@ function TicketsPage() {
 
   const { demoMode } = useDemo();
   const userId = useCurrentUserId();
-  const { isSupervisor } = useRole();
   const { data: staff } = useStaffDirectory();
 
   const people = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s])), [staff]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["tickets", demoMode],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -113,13 +121,13 @@ function TicketsPage() {
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
-    for (const t of QUEUE_TABS)
-      c[t.value] = all.filter((x) => matchesTab(x, t.value, userId)).length;
+    for (const t of MY_WORK_VIEWS)
+      c[t.value] = all.filter((x) => matchesMyWorkView(x, t.value, userId)).length;
     return c;
   }, [all, userId]);
 
   const tickets = all
-    .filter((t) => matchesTab(t, tab, userId))
+    .filter((t) => matchesMyWorkView(t, tab, userId))
     .filter((t) => priority === "all" || t.priority === priority)
     .filter((t) => {
       const q = search.trim().toLowerCase();
@@ -137,12 +145,16 @@ function TicketsPage() {
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     })
-    .sort(queueSort);
+    .sort(
+      tab === "completed"
+        ? (a, b) => (b.resolved_at ?? "").localeCompare(a.resolved_at ?? "")
+        : queueSort,
+    );
 
   // The queue the employee is actually looking at, remembered so a ticket can
   // be opened, worked and left without rebuilding this page.
   const { token, originSearch } = useWorkspaceOrigin(
-    tab === "mine" ? "My work" : (QUEUE_TABS.find((x) => x.value === tab)?.label ?? "Tickets"),
+    `My work · ${MY_WORK_VIEWS.find((x) => x.value === tab)?.label ?? "Active"}`,
     tickets.map((t) => ({
       id: t.id,
       label: t.title,
@@ -151,13 +163,7 @@ function TicketsPage() {
   );
   void token;
 
-  const activeTab = QUEUE_TABS.find((t) => t.value === tab);
-  // My work is exactly that: what this person is carrying, and what they have
-  // finished. Everyone else's work lives in Team Queue; exceptions live in
-  // Oversight. A coordinator should never have to filter their own day.
-  const visibleTabs = QUEUE_TABS.filter(
-    (t) => t.value === "mine" || t.value === "closed" || (t.supervisory && isSupervisor),
-  );
+  const activeTab = MY_WORK_VIEWS.find((t) => t.value === tab);
 
   return (
     <div className="space-y-6">
@@ -190,11 +196,21 @@ function TicketsPage() {
           ariaLabel="Ticket queue"
           value={tab}
           onChange={setTab}
-          options={visibleTabs.map((t) => ({
+          options={MY_WORK_VIEWS.map((t) => ({
             value: t.value,
             label: t.label,
             count: counts[t.value] ?? 0,
           }))}
+        />
+
+        <SegmentedControl
+          ariaLabel="Work layout"
+          value={view}
+          onChange={(value) => setParam({ view: value === "board" ? "board" : undefined })}
+          options={[
+            { value: "list", label: "List" },
+            { value: "board", label: "Board" },
+          ]}
         />
 
         <FilterPopover
@@ -205,17 +221,60 @@ function TicketsPage() {
         />
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <EmptyState
+          title="Your work could not be loaded."
+          hint="Try again before relying on this queue."
+          action={<Button onClick={() => void refetch()}>Try again</Button>}
+        />
+      ) : isLoading ? (
         <LoadingRows rows={6} />
       ) : tickets.length === 0 ? (
         <EmptyState
-          title={tab === "mine" ? "You are clear." : "No tickets match this view."}
+          title={tab === "active" ? "You are clear." : "No tickets match this view."}
           hint={
-            tab === "mine"
+            tab === "active"
               ? "Nothing is assigned to you right now — check the team queue for unassigned work."
               : "Try a different queue, priority or search term."
           }
         />
+      ) : view === "board" ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {(["Needs action", "In progress", "Waiting or blocked"] as const).map((lane) => {
+            const laneTickets = tickets.filter((ticket) => {
+              if (tab === "completed") return lane === "In progress";
+              if (
+                ticket.status === "waiting" ||
+                ticket.status === "awaiting_guest" ||
+                isBlocked(ticket)
+              )
+                return lane === "Waiting or blocked";
+              if (!ticket.acknowledged_at || !ticket.action_started_at || slaState(ticket).breached)
+                return lane === "Needs action";
+              return lane === "In progress";
+            });
+            return (
+              <section key={lane} className="rounded-xl border bg-muted/20 p-3" aria-label={lane}>
+                <h2 className="mb-3 text-sm font-semibold">
+                  {lane} · {laneTickets.length}
+                </h2>
+                <div className="space-y-2">
+                  {laneTickets.map((t) => (
+                    <TicketWorkCard
+                      key={t.id}
+                      t={t}
+                      ownerName={
+                        currentOwnerId(t) ? displayName(people.get(currentOwnerId(t) ?? "")) : null
+                      }
+                      viewerId={userId}
+                      originSearch={originSearch}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       ) : (
         <div className="space-y-2">
           {tickets.map((t) => (
@@ -225,6 +284,7 @@ function TicketsPage() {
               ownerName={
                 currentOwnerId(t) ? displayName(people.get(currentOwnerId(t) ?? "")) : null
               }
+              viewerId={userId}
               originSearch={originSearch}
             />
           ))}
@@ -321,9 +381,9 @@ function nextActionLabel(t: {
   action_started_at: string | null;
   handoff_status?: string | null;
 }) {
-  if (!t.acknowledged_at) return t.priority === "p1" ? "Acknowledge now" : "Acknowledge";
+  if (!t.acknowledged_at) return t.priority === "p1" ? "Review urgently" : "Review and act";
   if (t.handoff_status === "pending") return "Accept handoff";
-  if (!t.action_started_at) return "Start work";
+  if (!t.action_started_at) return "Take next action";
   if (t.status === "waiting") return "Follow up";
   if (t.status === "awaiting_guest") return "Awaiting guest reply";
   if (t.status === "resolved") return "Confirm closure";
@@ -333,16 +393,19 @@ function nextActionLabel(t: {
 function TicketWorkCard({
   t,
   ownerName,
+  viewerId,
   originSearch,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
   ownerName: string | null;
+  viewerId: string | null;
   originSearch: { from: string };
 }) {
   const sla = slaState(t);
   const live =
     sla.response?.met === false ? sla.response : sla.action?.met === false ? sla.action : null;
+  const nextOwnerIsViewer = Boolean(viewerId && currentOwnerId(t) === viewerId);
 
   return (
     <Link
@@ -375,10 +438,16 @@ function TicketWorkCard({
           {t.work_types?.name ?? t.category}
         </p>
         <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm">
-          <span className="font-medium text-primary">{nextActionLabel(t)}</span>
+          <span className="font-medium text-primary">
+            {!nextOwnerIsViewer && t.pending_handoff_to !== viewerId
+              ? "Track next step"
+              : nextActionLabel(t)}
+          </span>
           <span className="text-muted-foreground">·</span>
           {ownerName ? (
-            <span className="text-foreground">{ownerName}</span>
+            <span className="text-foreground">
+              {nextOwnerIsViewer ? "You own the next action" : `Next action owner: ${ownerName}`}
+            </span>
           ) : (
             <Chip className={ownershipChip("unassigned")}>Unassigned</Chip>
           )}

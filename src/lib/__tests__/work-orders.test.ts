@@ -20,6 +20,7 @@ import {
   recentlyCompleted,
   repeatMaintenanceProperties,
   workOrderEvidenceSlots,
+  workOrderReassignment,
   workOrderSort,
 } from "@/lib/work-orders";
 
@@ -379,5 +380,60 @@ describe("owner approval, evidence and oversight", () => {
       now,
     );
     expect(repeats).toEqual([{ property_id: "a", count: 2 }]);
+  });
+});
+
+describe("workOrderReassignment — supervisor reassignment stays internal-ownership-only", () => {
+  it("writes assigned_to only — never vendor_name or any other field", () => {
+    const result = workOrderReassignment({
+      fromOwnerId: "coord-1",
+      toUserId: "coord-2",
+      toUserName: "Jamie Rivera",
+      actorId: "sup-1",
+    });
+    expect(result.patch).toEqual({ assigned_to: "coord-2" });
+    expect(Object.keys(result.patch)).toEqual(["assigned_to"]);
+  });
+
+  it("logs from/to/actor in detail, for the work_order_events row", () => {
+    const result = workOrderReassignment({
+      fromOwnerId: "coord-1",
+      toUserId: "coord-2",
+      toUserName: "Jamie Rivera",
+      actorId: "sup-1",
+    });
+    expect(result.detail).toEqual({ from: "coord-1", to: "coord-2", actor: "sup-1" });
+    expect(result.event).toBe("reassigned");
+  });
+
+  it("says 'Reassigned' when the Work Order already had an owner", () => {
+    const result = workOrderReassignment({
+      fromOwnerId: "coord-1",
+      toUserId: "coord-2",
+      toUserName: "Jamie Rivera",
+      actorId: "sup-1",
+    });
+    expect(result.body).toBe("Reassigned to Jamie Rivera");
+  });
+
+  it("says 'Assigned' (not 'Reassigned') for a first assignment out of Unassigned", () => {
+    const result = workOrderReassignment({
+      fromOwnerId: null,
+      toUserId: "coord-2",
+      toUserName: "Jamie Rivera",
+      actorId: "sup-1",
+    });
+    expect(result.body).toBe("Assigned to Jamie Rivera");
+    expect(result.detail.from).toBeNull();
+  });
+
+  it("records a system-triggered reassignment (no actor) as null, never a guessed id", () => {
+    const result = workOrderReassignment({
+      fromOwnerId: "coord-1",
+      toUserId: "coord-2",
+      toUserName: "Jamie Rivera",
+      actorId: null,
+    });
+    expect(result.detail.actor).toBeNull();
   });
 });
