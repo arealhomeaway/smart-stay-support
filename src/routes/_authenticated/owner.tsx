@@ -51,8 +51,18 @@ import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
 import { useOwnerPreview } from "@/lib/owner-preview";
+import { CollectionViewControls } from "@/components/CollectionViewControls";
+import { CollectionCalendar } from "@/components/CollectionCalendar";
+import { validCalendarMonth } from "@/lib/collection-calendar";
 
 export const Route = createFileRoute("/_authenticated/owner")({
+  validateSearch: (raw: Record<string, unknown>): OwnerSearch => {
+    const out: OwnerSearch = {};
+    if (raw["reviewView"] === "list" || raw["reviewView"] === "calendar") out.reviewView = raw["reviewView"];
+    if (raw["reviewSort"] === "due" || raw["reviewSort"] === "recent") out.reviewSort = raw["reviewSort"];
+    if (typeof raw["month"] === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(raw["month"])) out.month = raw["month"];
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "Your home — Resolve" },
@@ -64,6 +74,8 @@ export const Route = createFileRoute("/_authenticated/owner")({
   }),
   component: OwnerHub,
 });
+
+type OwnerSearch = { reviewView?: "list" | "calendar" | undefined; reviewSort?: "due" | "recent" | undefined; month?: string | undefined };
 
 type Review = {
   owner_update_revision?: number | null;
@@ -134,6 +146,10 @@ function OwnerHubBody({
   preview: boolean;
 }) {
   const qc = useQueryClient();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const reviewView = search.reviewView ?? "status";
+  const reviewSort = search.reviewSort ?? "default";
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["owner-home"] });
     void qc.invalidateQueries({ queryKey: ["owner-report"] });
@@ -141,10 +157,13 @@ function OwnerHubBody({
 
   const { program, properties, reviews, badges, alerts, tickets, snapshot } = data;
 
-  const openReviews = (reviews as Review[]).filter((r) => ownerReviewPresentation(r).attention);
-  const availableReviews = (reviews as Review[]).filter(
+  const sortReviews = (rows: Review[]) => reviewSort === "default" ? rows : rows.sort((a, b) => reviewSort === "due" ?
+    (a.respond_by ?? "9999").localeCompare(b.respond_by ?? "9999") :
+    (b.updated_at ?? "").localeCompare(a.updated_at ?? ""));
+  const openReviews = sortReviews((reviews as Review[]).filter((r) => ownerReviewPresentation(r).attention));
+  const availableReviews = sortReviews((reviews as Review[]).filter(
     (r) => r.auto_ticket && !ownerReviewPresentation(r).attention,
-  );
+  ));
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
   const percent = snapshot.percentOfTarget;
@@ -218,7 +237,20 @@ function OwnerHubBody({
         </div>
       </div>
 
-      <SectionCard
+      <CollectionViewControls label="Active Owner reviews" view={reviewView} views={[
+        { value: "status", label: "By status" }, { value: "list", label: "List" }, { value: "calendar", label: "Review deadlines" },
+      ]} onViewChange={(view) => void navigate({ search: (previous) => ({ ...previous, reviewView: view === "status" ? undefined : view }), replace: true })}
+        sort={reviewSort} sortOptions={[{ value: "default", label: "Current order" }, { value: "due", label: "Due date" }, { value: "recent", label: "Recently updated" }]}
+        onSortChange={(sort) => void navigate({ search: (previous) => ({ ...previous, reviewSort: sort === "default" ? undefined : sort as "due" | "recent" }), replace: true })} />
+      {reviewView === "calendar" && <CollectionCalendar label="Owner review deadlines" month={validCalendarMonth(search.month)}
+        onMonthChange={(month) => void navigate({ search: (previous) => ({ ...previous, month }), replace: true })}
+        items={[...openReviews, ...availableReviews].filter((review) => review.respond_by).map((review) => ({ id: review.id, date: review.respond_by!.slice(0, 10), review }))}
+        renderItem={(item) => <span>{item.review.title}</span>} />}
+      {reviewView === "list" && <SectionCard title="Property reviews" description="Your open review items, with the items needing your answer first.">
+        {[...openReviews, ...availableReviews].length === 0 ? <p className="text-sm text-muted-foreground">No property reviews are available.</p> :
+          <div className="space-y-3">{[...openReviews, ...availableReviews].map((review) => <ReviewRow key={review.id} review={review} properties={properties} programId={program.id} onDone={invalidate} readOnly={preview} />)}</div>}
+      </SectionCard>}
+      {reviewView !== "list" && <SectionCard
         title="Needs your attention"
         description="A short question or decision from your ARHA team."
       >
@@ -238,11 +270,11 @@ function OwnerHubBody({
             ))}
           </div>
         )}
-      </SectionCard>
+      </SectionCard>}
 
       <OwnerApprovalPanel readOnly={preview} />
 
-      <SectionCard
+      {reviewView !== "list" && <SectionCard
         title="Property work to review"
         description="Review what is happening at your homes, retain your participation history, and log time you actually spend reviewing."
       >
@@ -264,7 +296,7 @@ function OwnerHubBody({
             ))}
           </div>
         )}
-      </SectionCard>
+      </SectionCard>}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ParticipationReportPanel />

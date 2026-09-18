@@ -52,6 +52,9 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
     if (typeof raw["lens"] === "string" && raw["lens"]) out.lens = raw["lens"] as Lens;
     if (typeof raw["find"] === "string" && raw["find"]) out.find = raw["find"];
     if (typeof raw["owner"] === "string" && raw["owner"]) out.owner = raw["owner"];
+    if (raw["view"] === "list" || raw["view"] === "kanban" || raw["view"] === "calendar") out.view = raw["view"];
+    if (raw["sort"] === "name" || raw["sort"] === "stage") out.sort = raw["sort"];
+    if (typeof raw["month"] === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(raw["month"])) out.month = raw["month"];
     if (raw["showTest"] === true || raw["showTest"] === "true") out.showTest = true;
     return out;
   },
@@ -63,6 +66,9 @@ type HubSearch = {
   lens?: Lens | undefined;
   find?: string | undefined;
   owner?: string | undefined;
+  view?: "list" | "kanban" | "calendar" | undefined;
+  sort?: "name" | "stage" | undefined;
+  month?: string | undefined;
   showTest?: boolean | undefined;
 };
 
@@ -224,6 +230,12 @@ function Hub() {
             onFindChange={(v) => setParam({ find: v || undefined })}
             owner={owner}
             onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
+            view={params.view ?? "list"}
+            onViewChange={(v) => setParam({ view: v === "list" ? undefined : v })}
+            sort={params.sort ?? "target"}
+            onSortChange={(v) => setParam({ sort: v === "target" ? undefined : v as "name" | "stage" })}
+            month={params.month}
+            onMonthChange={(v) => setParam({ month: v })}
             showTest={showTest}
             onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
           />

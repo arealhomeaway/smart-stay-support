@@ -24,6 +24,7 @@ import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { RequireCapability } from "@/components/RequireCapability";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
+import { CollectionViewControls } from "@/components/CollectionViewControls";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/_authenticated/properties")({
     if (typeof raw["q"] === "string" && raw["q"]) out.q = raw["q"];
     if (typeof raw["market"] === "string" && raw["market"]) out.market = raw["market"];
     if (typeof raw["status"] === "string" && raw["status"]) out.status = raw["status"];
+    if (raw["sort"] === "market") out.sort = "market";
     if (raw["test"] === true || raw["test"] === "true") out.test = true;
     return out;
   },
@@ -61,6 +63,7 @@ type PropertySearch = {
   q?: string | undefined;
   market?: string | undefined;
   status?: string | undefined;
+  sort?: "market" | undefined;
   test?: boolean | undefined;
 };
 
@@ -143,6 +146,7 @@ function PropertiesPage() {
         if (!next.q) delete next.q;
         if (!next.market || next.market === "all") delete next.market;
         if (!next.status || next.status === "all") delete next.status;
+        if (!next.sort) delete next.sort;
         if (!next.test) delete next.test;
         return next;
       },
@@ -190,7 +194,7 @@ function PropertiesPage() {
     ]
       .filter(Boolean)
       .some((v) => String(v).toLowerCase().includes(q));
-  });
+  }).sort((a, b) => params.sort === "market" ? (a.market ?? "").localeCompare(b.market ?? "") || a.name.localeCompare(b.name) : a.name.localeCompare(b.name));
 
   const { originSearch } = useWorkspaceOrigin(
     "Properties",
@@ -223,7 +227,12 @@ function PropertiesPage() {
 
       {/* Page-local finder. Address, name, market, neighbourhood, owner or
           OwnerRez ID — no global search round trip. */}
-      <div className="surface flex flex-wrap items-center gap-3 p-3">
+      <CollectionViewControls label="Properties" view="list" views={[{ value: "list", label: "List" }]} onViewChange={() => {}}
+        activeFilters={Number(Boolean(find)) + Number(marketFilter !== "all") + Number(statusFilter !== "all") + Number(showTest)}
+        onClear={() => setParam({ q: undefined, market: undefined, status: undefined, test: undefined })}
+        sort={params.sort ?? "name"} sortOptions={[{ value: "name", label: "Name" }, { value: "market", label: "Market" }]}
+        onSortChange={(sort) => setParam({ sort: sort === "market" ? "market" : undefined })}
+        filters={<>
         <div className="relative min-w-[16rem] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -262,7 +271,7 @@ function PropertiesPage() {
         <span className="numeric shrink-0 text-sm text-muted-foreground">
           {isLoading ? "…" : `${visible.length} of ${data?.properties.length ?? 0}`}
         </span>
-      </div>
+        </>} />
 
       {isLoading || !data ? (
         <LoadingRows rows={4} />

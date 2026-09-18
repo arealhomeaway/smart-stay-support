@@ -18,6 +18,7 @@ import {
   RISK_STATE,
   bottleneckStage,
   lifecycleStageMeta,
+  stageIndex,
   withinDays,
   workloadByOwner,
   type LifecycleStage,
@@ -27,6 +28,9 @@ import { cn } from "@/lib/utils";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
 import { workspaceSearchFromLens } from "@/lib/onboarding-work-views";
+import { CollectionViewControls } from "@/components/CollectionViewControls";
+import { CollectionCalendar } from "@/components/CollectionCalendar";
+import { validCalendarMonth } from "@/lib/collection-calendar";
 
 export type { Lens } from "@/lib/onboarding-hub";
 import { matchesOnboardingLens, type Lens, type HubViewer } from "@/lib/onboarding-hub";
@@ -75,6 +79,12 @@ export function DirectorHub({
   onFindChange,
   owner,
   onOwnerChange,
+  view,
+  onViewChange,
+  sort,
+  onSortChange,
+  month,
+  onMonthChange,
   showTest,
   onShowTestChange,
 }: {
@@ -89,6 +99,12 @@ export function DirectorHub({
   onFindChange: (find: string) => void;
   owner: string | null;
   onOwnerChange: (owner: string | null) => void;
+  view: "list" | "kanban" | "calendar";
+  onViewChange: (view: "list" | "kanban" | "calendar") => void;
+  sort: "target" | "name" | "stage";
+  onSortChange: (sort: "target" | "name" | "stage") => void;
+  month?: string | undefined;
+  onMonthChange: (month: string) => void;
   showTest: boolean;
   onShowTestChange: (showTest: boolean) => void;
 }) {
@@ -125,8 +141,10 @@ export function DirectorHub({
       .filter((p) => matchesOnboardingLens(p, lens, viewer))
       .filter((p) => !owner || (p.owner ?? "Unassigned") === owner)
       .filter((p) => !q || `${p.property.name} ${p.owner ?? ""}`.toLowerCase().includes(q))
-      .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"));
-  }, [projects, lens, find, owner, viewer]);
+      .sort((a, b) => sort === "name" ? a.property.name.localeCompare(b.property.name) :
+        sort === "stage" ? stageIndex(a.stage) - stageIndex(b.stage) || (a.target ?? "9999").localeCompare(b.target ?? "9999") :
+          (a.target ?? "9999").localeCompare(b.target ?? "9999"));
+  }, [projects, lens, find, owner, viewer, sort]);
 
   const active = productionProjects.filter((p) => p.stage !== "live");
   const bottleneck = bottleneckStage(active);
@@ -171,15 +189,31 @@ export function DirectorHub({
           )}
         </div>
 
+        <CollectionViewControls label="Onboarding projects" view={view} views={[
+          { value: "list", label: "List" }, { value: "kanban", label: "Kanban by stage" }, { value: "calendar", label: "Target handoffs" },
+        ]} onViewChange={onViewChange} filters={<span className="text-xs text-muted-foreground">{activeLensMeta?.label}</span>}
+          sort={sort} sortOptions={[{ value: "target", label: "Target date" }, { value: "name", label: "Property name" }, { value: "stage", label: "Stage" }]}
+          onSortChange={(next) => onSortChange(next as "target" | "name" | "stage")}
+          activeFilters={Number(Boolean(owner)) + Number(Boolean(find)) + Number(lens !== "attention")}
+          onClear={() => { setOwner(null); setFind(""); setLens("attention"); }} />
         <div className="space-y-2">
           {visible.length === 0 && (
             <p className="surface p-4 text-sm text-muted-foreground">
               Nothing in this view. {activeLensMeta?.hint}
             </p>
           )}
-          {visible.map((p) => (
+          {view === "list" && visible.map((p) => (
             <ProjectRow key={p.property.id} project={p} originToken={originToken} lens={lens} />
           ))}
+          {view === "kanban" && <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {LIFECYCLE_STAGES.filter((stage) => visible.some((project) => project.stage === stage.value)).map((stage) => <section key={stage.value} className="rounded-lg border bg-muted/30 p-3">
+              <h3 className="mb-3 text-sm font-semibold">{stage.label} ({visible.filter((project) => project.stage === stage.value).length})</h3>
+              <div className="space-y-2">{visible.filter((project) => project.stage === stage.value).map((project) => <PortfolioCard key={project.property.id} project={project} originToken={originToken} />)}</div>
+            </section>)}
+          </div>}
+          {view === "calendar" && <CollectionCalendar label="Onboarding target handoffs" month={validCalendarMonth(month)} onMonthChange={onMonthChange}
+            items={visible.filter((project) => project.target).map((project) => ({ id: project.property.id, date: project.target!, project }))}
+            renderItem={(item) => <Link to="/onboarding/$propertyId" params={{ propertyId: item.project.property.id }} search={{ from: originToken } as never} className="font-medium hover:underline">{item.project.property.name}</Link>} />}
         </div>
       </section>
 
