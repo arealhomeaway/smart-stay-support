@@ -45,6 +45,8 @@ import type { WorkOrderRow } from "@/lib/work-order-types";
 export const Route = createFileRoute("/_authenticated/work-orders/")({
   validateSearch: (raw: Record<string, unknown>) => ({
     view: raw["view"] === "scheduled" ? ("scheduled" as const) : undefined,
+    open: typeof raw["open"] === "string" ? raw["open"] : undefined,
+    from: typeof raw["from"] === "string" ? raw["from"] : undefined,
   }),
   component: WorkOrdersHome,
 });
@@ -62,7 +64,8 @@ const BUCKET_HELP: Record<WorkOrderBucket, string> = {
 
 function WorkOrdersHome() {
   const navigate = Route.useNavigate();
-  const view = Route.useSearch().view === "scheduled" ? "scheduled" : "action";
+  const search = Route.useSearch();
+  const view = search.view === "scheduled" ? "scheduled" : "action";
   const workOrders = useWorkOrders();
   const requirements = useWorkOrderRequirements();
   const propertyNames = useWorkOrderPropertyNames();
@@ -80,7 +83,7 @@ function WorkOrdersHome() {
   // order into a different bucket and empty out the section it was opened
   // from. A drawer owned by that section would unmount with it — this one
   // doesn't, because it is looked up from the full, unfiltered list.
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(search.open ?? null);
   const lastOpen = useRef<WorkOrderRow | null>(null);
   const fromAll = (workOrders.data ?? []).find((w) => w.id === openId) ?? null;
   if (fromAll) lastOpen.current = fromAll;
@@ -99,7 +102,7 @@ function WorkOrdersHome() {
       map.get(bucket)?.push(row);
     }
     return map;
-  }, [workOrders.data, reqMap]);
+  }, [workOrders.data]);
 
   const open = (workOrders.data ?? []).filter(isOpenWorkOrder);
   const committed = open.reduce((sum, w) => sum + (w.approved_amount ?? w.quote_amount ?? 0), 0);
@@ -144,7 +147,7 @@ function WorkOrdersHome() {
         value={view}
         onChange={(value) =>
           void navigate({
-            search: { view: value === "scheduled" ? "scheduled" : undefined },
+            search: { ...search, view: value === "scheduled" ? "scheduled" : undefined },
             replace: true,
           })
         }

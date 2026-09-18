@@ -37,7 +37,7 @@ describe("work-orders.index.tsx — the drawer survives a bucket transition", ()
     .replace(/\r\n/g, "\n");
 
   it("owns its own openId state at the page, not via a per-bucket WorkOrderListSection", () => {
-    expect(src).toContain("const [openId, setOpenId] = useState<string | null>(null);");
+    expect(src).toContain("const [openId, setOpenId] = useState<string | null>(search.open ?? null);");
     expect(src).not.toContain("WorkOrderListSection");
   });
 

@@ -10,6 +10,7 @@
 
 import { OPEN_STATUSES, slaState } from "@/lib/tickets";
 import { currentOwnerId, isUnassigned } from "@/lib/matters";
+import { mostUrgentPriority } from "@/lib/geo";
 
 export type TeamQueueFilters = {
   /** "all" | user id | "unassigned" */
@@ -24,6 +25,14 @@ export type TeamQueueFilters = {
   city: string;
   state: string;
   workType: string;
+  kind: string;
+  vendor: string;
+  dispatch: string;
+  acceptance: string;
+  completion: string;
+  dateFrom: string;
+  dateTo: string;
+  scheduled: boolean;
   due: string;
   /** "all" | "today" | "3d" | "7d" | "older" */
   age: string;
@@ -47,6 +56,14 @@ export const DEFAULT_TEAM_QUEUE_FILTERS: TeamQueueFilters = {
   city: "all",
   state: "all",
   workType: "all",
+  kind: "all",
+  vendor: "all",
+  dispatch: "all",
+  acceptance: "all",
+  completion: "all",
+  dateFrom: "",
+  dateTo: "",
+  scheduled: false,
   due: "all",
   age: "all",
   waiting: false,
@@ -82,6 +99,7 @@ export type TeamQueueTicket = {
   status: string;
   property_id?: string | null;
   work_type_id?: string | null;
+  kind?: "work_order";
   properties?: {
     market?: string | null;
     city?: string | null;
@@ -104,6 +122,21 @@ export type TeamQueueTicket = {
   response_due_at?: string | null;
   action_due_at?: string | null;
   next_action_due_at?: string | null;
+  due_at?: string | null;
+  vendor_name?: string | null;
+  vendor_status?: string | null;
+  workOrder?: {
+    id: string;
+    priority: string;
+    vendor_name: string | null;
+    scheduled_for: string | null;
+    vendor_eta_at: string | null;
+    vendor_acknowledged_at: string | null;
+    vendor_completed_at: string | null;
+    closed_at: string | null;
+  } | null;
+  dispatchState?: string | null;
+  dispatchSyncedAt?: string | null;
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -129,6 +162,10 @@ export function isEscalated(t: TeamQueueTicket) {
   return Boolean(t.escalation_level || sla.escalation);
 }
 
+export function effectiveOperationsPriority(t: TeamQueueTicket): string {
+  return mostUrgentPriority([t.priority, t.workOrder?.closed_at ? null : t.workOrder?.priority]);
+}
+
 export function applyTeamQueueFilters(
   rows: TeamQueueTicket[],
   filters: TeamQueueFilters,
@@ -143,23 +180,36 @@ export function applyTeamQueueFilters(
       return false;
     }
 
-    if (filters.priority !== "all" && t.priority !== filters.priority) return false;
+    if (filters.priority !== "all" && effectiveOperationsPriority(t) !== filters.priority) return false;
     if (filters.property !== "all" && t.property_id !== filters.property) return false;
     if (filters.market !== "all" && t.properties?.market !== filters.market) return false;
     if (filters.city !== "all" && t.properties?.city !== filters.city) return false;
     if (filters.state !== "all" && t.properties?.state !== filters.state) return false;
     if (filters.workType !== "all" && t.work_type_id !== filters.workType) return false;
+    if (filters.kind === "ticket" && t.kind === "work_order") return false;
+    if (filters.kind === "work_order" && t.kind !== "work_order") return false;
+    if (filters.vendor !== "all" && (t.workOrder?.vendor_name ?? t.vendor_name) !== filters.vendor) return false;
+    if (filters.dispatch !== "all" && (t.dispatchState ?? "not_sent") !== filters.dispatch) return false;
+    if (filters.acceptance !== "all" && (t.workOrder?.vendor_acknowledged_at ? "accepted" : "pending") !== filters.acceptance) return false;
+    if (filters.completion !== "all" && (t.workOrder?.vendor_completed_at ? "complete" : "pending") !== filters.completion) return false;
+    if (filters.scheduled && !t.workOrder?.scheduled_for && !t.workOrder?.vendor_eta_at) return false;
+    const relevantDate = t.next_action_due_at ?? t.action_due_at ?? t.response_due_at ?? t.due_at ?? t.workOrder?.scheduled_for;
+    if (filters.dateFrom && (!relevantDate || relevantDate.slice(0, 10) < filters.dateFrom)) return false;
+    if (filters.dateTo && (!relevantDate || relevantDate.slice(0, 10) > filters.dateTo)) return false;
 
     if (filters.due !== "all") {
-      const due = t.next_action_due_at ?? t.action_due_at ?? t.response_due_at;
-      if (!due) return filters.due === "unscheduled";
-      const dueTime = new Date(due).getTime();
-      const now = Date.now();
-      if (filters.due === "unscheduled") return false;
-      if (filters.due === "overdue" && dueTime >= now) return false;
-      if (filters.due === "today" && new Date(due).toDateString() !== new Date(now).toDateString())
-        return false;
-      if (filters.due === "next7" && (dueTime < now || dueTime > now + 7 * DAY)) return false;
+      const due = relevantDate;
+      if (!due) {
+        if (filters.due !== "unscheduled") return false;
+      } else {
+        const dueTime = new Date(due).getTime();
+        const now = Date.now();
+        if (filters.due === "unscheduled") return false;
+        if (filters.due === "overdue" && dueTime >= now) return false;
+        if (filters.due === "today" && new Date(due).toDateString() !== new Date(now).toDateString())
+          return false;
+        if (filters.due === "next7" && (dueTime < now || dueTime > now + 7 * DAY)) return false;
+      }
     }
 
     const owner = currentOwnerId(t);
@@ -212,6 +262,14 @@ export function activeFilterCount(f: TeamQueueFilters) {
   if (f.city !== "all") n++;
   if (f.state !== "all") n++;
   if (f.workType !== "all") n++;
+  if (f.kind !== "all") n++;
+  if (f.vendor !== "all") n++;
+  if (f.dispatch !== "all") n++;
+  if (f.acceptance !== "all") n++;
+  if (f.completion !== "all") n++;
+  if (f.dateFrom) n++;
+  if (f.dateTo) n++;
+  if (f.scheduled) n++;
   if (f.due !== "all") n++;
   if (f.age !== "all") n++;
   if (f.waiting) n++;

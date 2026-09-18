@@ -10,7 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { OPEN_STATUSES } from "@/lib/tickets";
-import type { MapPin } from "@/lib/geo";
+import { validCoordinates, type MapPin } from "@/lib/geo";
 
 type Client = SupabaseClient<Database>;
 
@@ -56,7 +56,7 @@ async function geocodeOne(address: string): Promise<GeocodeHit | null> {
 
   if (res.status === 403) {
     const details: Array<{ reason?: string }> =
-      ((await res.json().catch(() => null)) as any)?.error?.details ?? [];
+      ((await res.json().catch(() => null)) as { error?: { details?: Array<{ reason?: string }> } } | null)?.error?.details ?? [];
     const reason = details.find((d) => d.reason)?.reason;
     if (reason === "API_KEY_HTTP_REFERRER_BLOCKED") {
       throw new Error(
@@ -175,10 +175,11 @@ export async function loadJobMap(supabase: Client) {
       supabase
         .from("properties")
         .select(
-          "id, name, formatted_address, address_line1, city, state, postal_code, latitude, longitude",
+          "id, name, formatted_address, address_line1, city, state, market, postal_code, latitude, longitude",
         )
         .eq("active", true)
-        .not("latitude", "is", null),
+        .eq("is_demo", false)
+        .is("archived_at", null),
       supabase
         .from("tickets")
         .select("id, ref, title, priority, status, due_at, property_id, vendor_name, vendor_status")
@@ -206,11 +207,14 @@ export async function loadJobMap(supabase: Client) {
     byProperty.set(t.property_id as string, list);
   }
 
-  const pins: MapPin[] = (props ?? []).map((p) => ({
+  const located = (props ?? []).filter((p) => validCoordinates(p.latitude, p.longitude));
+  const pins: MapPin[] = located.map((p) => ({
     propertyId: p.id,
     name: p.name,
+    market: p.market,
+    city: p.city,
+    state: p.state,
     address:
-      p.formatted_address ??
       addressLine({
         id: p.id,
         name: p.name,
@@ -218,17 +222,22 @@ export async function loadJobMap(supabase: Client) {
         city: p.city,
         state: p.state,
         postal_code: p.postal_code,
-      }),
+      }) || p.formatted_address || "",
     lat: p.latitude as number,
     lng: p.longitude as number,
     openJobs: byProperty.get(p.id) ?? [],
   }));
 
-  const { count: unpinned } = await supabase
-    .from("properties")
-    .select("id", { count: "exact", head: true })
-    .eq("active", true)
-    .is("latitude", null);
-
-  return { pins, unpinned: unpinned ?? 0 };
+  const exceptions = (props ?? [])
+    .filter((p) => !validCoordinates(p.latitude, p.longitude))
+    .map((p) => ({
+      propertyId: p.id,
+      name: p.name,
+      address: addressLine({
+        id: p.id, name: p.name, address_line1: p.address_line1,
+        city: p.city, state: p.state, postal_code: p.postal_code,
+      }) || p.formatted_address || "",
+      reason: p.latitude === null || p.longitude === null ? "Missing coordinates" : "Invalid coordinates",
+    }));
+  return { pins, unpinned: exceptions.length, exceptions };
 }
