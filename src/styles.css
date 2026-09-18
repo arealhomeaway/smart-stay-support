@@ -111,6 +111,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.625rem;
   /* ARHA core palette + the expressive secondary system. */
   --brand-teal: oklch(0.664 0.113 203.1); /* #03A7B2 */
@@ -202,6 +203,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --brand-teal: oklch(0.72 0.108 203.1);
   --brand-gold: oklch(0.74 0.095 80.5);
   --brand-ink: oklch(0.199 0.01 220);
@@ -278,6 +280,16 @@
   --module-coverage: var(--sky);
   --module-override: var(--amber);
   --triage: var(--cool-grey);
+}
+
+/* Google Maps renders its own controls outside Tailwind's component tree. */
+.dark .gm-style .gm-control-active,
+.dark .gm-style .gm-style-mtc button {
+  background-color: var(--color-card) !important;
+  color: var(--color-foreground) !important;
+}
+.dark .gm-style .gm-control-active img {
+  filter: invert(1);
 }
 
 /**

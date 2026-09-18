@@ -60,6 +60,7 @@ import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { type Capability } from "@/lib/permissions";
 import { parseOperationsSearch } from "@/lib/operations-view-state";
+import { ThemeControl } from "@/components/ThemeProvider";
 
 type NavItem = {
   to: string;
@@ -495,6 +496,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="hidden text-sm font-medium sm:inline">{workspace}</span>
 
               <div className="ml-auto flex flex-1 flex-wrap items-center justify-end gap-2">
+                <ThemeControl />
                 <GlobalSearch targets={searchTargets} />
                 {showLogTicket && (
                   <Button

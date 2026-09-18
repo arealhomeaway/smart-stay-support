@@ -22,6 +22,7 @@ import { useRole } from "@/hooks/useRole";
 import { jobMap } from "@/lib/geo.functions";
 import { activeMapCount, directionsUrl, type MapPin } from "@/lib/geo";
 import { JobMap, type MapViewport } from "@/components/JobMap";
+import { CollectionViewControls } from "@/components/CollectionViewControls";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { WorkOrderRow } from "@/lib/work-order-types";
 import { standaloneOperationsOrders } from "@/lib/operations-population";
@@ -91,18 +92,6 @@ function TeamQueuePage() {
   const lens = params["lens"] === "mine" ? "mine" : "team";
   const view = operationsView(params);
   const loadMap = useServerFn(jobMap);
-  const [darkMode, setDarkMode] = useState(false);
-  useEffect(() => {
-    const preferred = window.localStorage.getItem("preferred-theme") === "dark";
-    document.documentElement.classList.toggle("dark", preferred);
-    setDarkMode(preferred);
-  }, []);
-  const toggleDarkMode = () => {
-    const next = !darkMode;
-    document.documentElement.classList.toggle("dark", next);
-    window.localStorage.setItem("preferred-theme", next ? "dark" : "light");
-    setDarkMode(next);
-  };
   const map = useQuery({
     queryKey: ["job-map", view],
     queryFn: () => loadMap(),
@@ -460,32 +449,14 @@ function TeamQueuePage() {
         </div>
       )}
 
-      <nav aria-label="Operations work views" className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
-        {(["list", "kanban", "map", "calendar"] as const).map((option) => (
-          <Button key={option} size="sm" variant={view === option ? "default" : "ghost"}
-            aria-current={view === option ? "page" : undefined}
-            disabled={!operationsAccess && option !== "list"}
-            onClick={() => void navigate({ search: withOperationsView(params, option) })}>
-            {{ list: "List", kanban: "Kanban", map: "Work Map", calendar: "Calendar" }[option]}
-          </Button>
-        ))}
-        <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
-        <Button size="sm" variant={lens === "team" ? "secondary" : "ghost"}
-          onClick={() => setParam({ lens: undefined })}>Team Queue</Button>
-        <Button size="sm" variant={lens === "mine" ? "secondary" : "ghost"}
-          onClick={() => setParam({ lens: "mine" })}>My Work</Button>
-        <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          Sort
-          <select aria-label="Sort Operations work" className="rounded border border-input bg-background px-2 py-1.5 text-foreground"
-            value={params["sort"] ?? "priority"}
-            onChange={(event) => setParam({ sort: event.target.value === "priority" ? undefined : event.target.value })}>
-            <option value="priority">Priority</option><option value="due">Due</option><option value="newest">Newest</option>
-          </select>
-        </label>
-        <Button size="sm" variant="outline" onClick={toggleDarkMode} aria-label={darkMode ? "Use light mode" : "Use dark mode"}>
-          {darkMode ? "Light mode" : "Dark mode"}
-        </Button>
-      </nav>
+      <CollectionViewControls label="Operations work" view={view}
+        views={[{ value: "list", label: "List" }, { value: "kanban", label: "Kanban", disabled: !operationsAccess },
+          { value: "map", label: "Work Map", disabled: !operationsAccess }, { value: "calendar", label: "Calendar", disabled: !operationsAccess }]}
+        onViewChange={(option) => void navigate({ search: withOperationsView(params, option) })}
+        filters={<><Button size="sm" variant={lens === "team" ? "secondary" : "ghost"} onClick={() => setParam({ lens: undefined })}>Team Queue</Button>
+          <Button size="sm" variant={lens === "mine" ? "secondary" : "ghost"} onClick={() => setParam({ lens: "mine" })}>My Work</Button></>}
+        sort={params["sort"] ?? "priority"} sortOptions={[{ value: "priority", label: "Priority" }, { value: "due", label: "Due" }, { value: "newest", label: "Newest" }]}
+        onSortChange={(sort) => setParam({ sort: sort === "priority" ? undefined : sort })} />
 
       <div className="flex flex-wrap items-center gap-2">
         {flagButtons.map((f) => (
