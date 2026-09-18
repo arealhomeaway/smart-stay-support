@@ -55,7 +55,7 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
   if (!center) throw new Error("We could not locate that place. Try a fuller address or ZIP code.");
 
   const { data, error } = await supabase.from("properties")
-    .select("id,name,address_line1,city,state,postal_code,formatted_address,latitude,longitude,bedrooms,bathrooms,max_guests,primary_photo_url,primary_photo_source,listing_public_url,ownerrez_property_id,ownerrez_synced_at")
+    .select("id,name,address_line1,city,state,postal_code,formatted_address,latitude,longitude,bedrooms,bathrooms,max_guests,property_type,primary_photo_url,primary_photo_source,listing_public_url,ownerrez_property_id,ownerrez_synced_at")
     .eq("active", true).eq("is_demo", false).is("archived_at", null)
     .not("ownerrez_property_id", "is", null);
   if (error) throw error;
@@ -66,6 +66,8 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
     address: addressLine(row) || row.formatted_address || "Address unavailable",
     lat: row.latitude!, lng: row.longitude!, bedrooms: row.bedrooms,
     bathrooms: row.bathrooms, maxGuests: row.max_guests,
+    propertyType: row.ownerrez_synced_at ? row.property_type : null,
+    petFriendly: null, amenities: [],
     imageUrl: row.primary_photo_source === "ownerrez_listing" ? safePublicUrl(row.primary_photo_url) : null,
     bookingUrl: row.ownerrez_synced_at ? verifiedPublicListingUrl(row.listing_public_url) : null,
   }));

@@ -6,6 +6,14 @@ function ascii(value: string) {
   return value.normalize("NFKD").replace(/[^\x20-\x7e]/g, "-");
 }
 
+export function propertyPdfFacts(result: AvailabilityResult) {
+  return {
+    capacity: `Bedrooms: ${result.bedrooms ?? "Not listed"}    Bathrooms: ${result.bathrooms ?? "Not listed"}    Guests: ${result.maxGuests ?? "Not listed"}`,
+    pets: `Pets: ${result.petFriendly === null ? "Not specified" : result.petFriendly ? "Pet-friendly" : "Not pet-friendly"}`,
+    amenities: result.amenities.length ? ascii(`Amenities: ${result.amenities.join(", ")}`).slice(0, 95) : null,
+  };
+}
+
 /** Generates external-only wording. Internal conflict dates never enter this document. */
 export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { checkIn: string; checkOut: string; location: string }) {
   if (!results.length || results.some((result) => result.status === "unavailable" || !verifiedPublicListingUrl(result.bookingUrl)))
@@ -17,6 +25,7 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
   const teal = rgb(0.02, 0.43, 0.43);
   const brandLogo = await pdf.embedPng(ARHA_WHITE_LOGO_BASE64);
   for (const [index, result] of results.entries()) {
+    const facts = propertyPdfFacts(result);
     const page = pdf.addPage([612, 792]);
     page.drawRectangle({ x: 0, y: 742, width: 612, height: 50, color: navy });
     if (brandLogo) page.drawImage(brandLogo, { x: 38, y: 749, width: 54, height: 36 });
@@ -45,10 +54,16 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
         }
       } catch { /* The PDF stays useful when the image host blocks cross-origin fetches. */ }
     }
-    page.drawText(`Bedrooms: ${result.bedrooms ?? "Not listed"}    Bathrooms: ${result.bathrooms ?? "Not listed"}    Guests: ${result.maxGuests ?? "Not listed"}`, {
+    page.drawText(facts.capacity, {
       x: 38, y, size: 11, font: regular,
     });
     y -= 24;
+    page.drawText(facts.pets, { x: 38, y, size: 11, font: regular });
+    y -= 20;
+    if (facts.amenities) {
+      page.drawText(facts.amenities, { x: 38, y, size: 10, font: regular });
+      y -= 20;
+    }
     page.drawText(externalAvailabilityText(result), { x: 38, y, size: 11, font: bold, color: teal });
     y -= 30;
     if (result.bookingUrl) {

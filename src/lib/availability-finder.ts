@@ -16,6 +16,9 @@ export type AvailabilityProperty = {
   bedrooms: number | null;
   bathrooms: number | null;
   maxGuests: number | null;
+  propertyType: string | null;
+  petFriendly: boolean | null;
+  amenities: string[];
   imageUrl: string | null;
   bookingUrl: string | null;
 };

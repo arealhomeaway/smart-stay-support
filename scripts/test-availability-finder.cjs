@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const jiti = require('jiti')(path.join(process.cwd(), 'scripts/test-availability-finder.cjs'));
 const finder = jiti(path.join(process.cwd(), 'src/lib/availability-finder.ts'));
-const { propertyOptionsPdf } = jiti(path.join(process.cwd(), 'src/lib/availability-options-pdf.ts'));
+const { propertyOptionsPdf, propertyPdfFacts } = jiti(path.join(process.cwd(), 'src/lib/availability-options-pdf.ts'));
+const { filterFinderResults, parseFinderFilters, activeFinderFilters } = jiti(path.join(process.cwd(), 'src/lib/availability-filters.ts'));
 const { activePublicListing } = jiti(path.join(process.cwd(), 'src/lib/availability-listing.ts'));
 const { PDFDocument, PDFName } = require('pdf-lib');
 const { ownerRezGet } = jiti(path.join(process.cwd(), 'src/lib/ownerrez.server.ts'));
@@ -15,7 +16,7 @@ const stay = { checkIn: '2026-10-01', checkOut: '2026-12-31', location: 'Dallas,
 const url = 'https://arealhomeaway.hosted.ownerrez.com/foxtail';
 const property = (over = {}) => ({
   id: 'home-1', name: 'Foxtail', address: '123 Main St, Dallas, TX', lat: 32.7767, lng: -96.797,
-  bedrooms: 3, bathrooms: 2, maxGuests: 6, imageUrl: null, bookingUrl: url,
+  bedrooms: 3, bathrooms: 2, maxGuests: 6, propertyType: 'House', petFriendly: null, amenities: [], imageUrl: null, bookingUrl: url,
   distanceMiles: 4, status: 'available', strConflicts: [], nonMovableConflicts: [], ...over,
 });
 
@@ -46,6 +47,33 @@ test('20-mile population is shared by map/list and sorted by distance', () => {
   const nearby = finder.nearbyProperties([property({ id: 'outside', lat: 33.3 }), property({ id: 'near', lat: 32.78 }), property({ id: 'middle', lat: 32.9 })], { lat: 32.7767, lng: -96.797 });
   assert.deepEqual(nearby.map((row) => row.id), ['near', 'middle']);
   assert.deepEqual(finder.visibleResults(nearby.map((row) => ({ ...row, status: row.id === 'near' ? 'available' : 'unavailable' })), false).map((row) => row.id), ['near']);
+});
+test('bedroom, bathroom, capacity and combined filters fail closed on missing values', () => {
+  const rows = [property(), property({ id: 'small', bedrooms: 1, bathrooms: 1, maxGuests: 2 }), property({ id: 'unknown', bedrooms: null, bathrooms: null, maxGuests: null })];
+  for (const patch of [{ minBedrooms: 3 }, { minBathrooms: 2 }, { minGuests: 6 }, { minBedrooms: 3, minBathrooms: 2, minGuests: 6 }]) {
+    const result = filterFinderResults(rows, { ...parseFinderFilters({}), ...patch });
+    assert.deepEqual(result.map((row) => row.id), ['home-1']);
+  }
+});
+test('pet-friendly required excludes unknown and false but no pets needed remains inclusive', () => {
+  const rows = [property(), property({ id: 'yes', petFriendly: true }), property({ id: 'no', petFriendly: false })];
+  assert.deepEqual(filterFinderResults(rows, { ...parseFinderFilters({}), pets: 'required' }).map((row) => row.id), ['yes']);
+  assert.equal(filterFinderResults(rows, { ...parseFinderFilters({}), pets: 'none' }).length, 3);
+});
+test('radius, property type, classification, verified amenities and sort compose for map/list', () => {
+  const rows = [property({ id: 'near', distanceMiles: 4, bedrooms: 2, amenities: ['Parking'] }),
+    property({ id: 'far', distanceMiles: 18, propertyType: 'Condo', status: 'conditional', bedrooms: 5, amenities: ['Parking'] }),
+    property({ id: 'outside', distanceMiles: 21, amenities: ['Parking'] })];
+  const filters = { ...parseFinderFilters({ radius: '20', sort: 'bedrooms', amenities: 'Parking' }), propertyType: 'Condo', status: 'conditional' };
+  const population = filterFinderResults(rows, filters);
+  assert.deepEqual(population.map((row) => row.id), ['far']);
+  assert.deepEqual(filterFinderResults(rows, { ...filters, radius: 10 }), []);
+});
+test('finder URL filters parse safely and active chips represent removable state', () => {
+  const filters = parseFinderFilters({ minBedrooms: '3', minBathrooms: '2', minGuests: '6', pets: 'required', radius: '10', status: 'conditional', propertyType: 'House', amenities: 'Parking', sort: 'guests' });
+  assert.equal(filters.minBedrooms, 3); assert.equal(filters.radius, 10); assert.equal(filters.sort, 'guests');
+  assert.ok(activeFinderFilters(filters).some((chip) => chip.label === 'Pet-friendly required'));
+  assert.equal(parseFinderFilters({ radius: '50', minBedrooms: '-1' }).radius, 20);
 });
 test('owner and vendor cannot access finder', () => {
   for (const role of ['owner', 'vendor']) assert.equal(finder.canUseAvailabilityFinder([role]), false);
@@ -124,4 +152,15 @@ test('PDF CTA, readable URL and image share the same public hyperlink', async ()
     const text = Buffer.from(bytes).toString('latin1');
     assert.ok(!text.includes('2026-11-05'));
   } finally { global.fetch = originalFetch; }
+});
+test('PDF uses only the explicitly supplied properties and includes verified attributes', async () => {
+  const selected = property({ petFriendly: true, amenities: ['Parking', 'Workspace'] });
+  const facts = propertyPdfFacts(selected);
+  assert.match(facts.capacity, /Bedrooms: 3.*Bathrooms: 2.*Guests: 6/);
+  assert.equal(facts.pets, 'Pets: Pet-friendly');
+  assert.match(facts.amenities, /Parking, Workspace/);
+  assert.equal(propertyPdfFacts(property()).pets, 'Pets: Not specified');
+  const pdf = await PDFDocument.load(await propertyOptionsPdf([selected], stay));
+  assert.equal(pdf.getPageCount(), 1);
+  assert.equal(pdf.getPages()[0].node.Annots().size(), 1);
 });
