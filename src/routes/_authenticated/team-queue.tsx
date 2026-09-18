@@ -723,13 +723,16 @@ function TeamQueuePage() {
                 </SheetHeader>
                 {selectedPin && <div className="space-y-4 px-4 pb-6 text-sm">
                   <p className="text-muted-foreground">{selectedPin.market || "Market not set"} · {activeMapCount(selectedPin)} active issue{activeMapCount(selectedPin) === 1 ? "" : "s"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedPin.openJobs.filter((job) => job.ticketId && !["closed", "resolved"].includes(job.status)).length} active Tickets · {selectedPin.openJobs.filter((job) => job.workOrderId).length} canonical Work Orders
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     <Button asChild size="sm" variant="outline"><Link to="/property/$propertyId" params={{ propertyId: selectedPin.propertyId }} search={originSearch as never}>Open Property</Link></Button>
                     <Button asChild size="sm" variant="outline"><a href={directionsUrl(selectedPin)} target="_blank" rel="noopener noreferrer">Directions</a></Button>
                   </div>
                   {selectedPin.openJobs.length ? selectedPin.openJobs.map((job) => (
                     <div key={job.id} className="space-y-2 rounded-lg border border-border bg-card p-3">
-                      <div className="flex items-start justify-between gap-2"><strong>#{job.ref ?? "—"} {job.title}</strong>
+                      <div className="flex items-start justify-between gap-2"><strong>{job.ticketId ? `#${job.ref}` : "Work Order"} {job.title}</strong>
                         <StatusBadge tone={ticketTone(job.status)}>{job.priority.toUpperCase()}</StatusBadge></div>
                       <div className="grid grid-cols-2 gap-1 text-xs">
                         <span>Status: {job.status}</span><span>Owner: {job.assigneeId ? displayName(people.get(job.assigneeId)) : "Unassigned"}</span>
