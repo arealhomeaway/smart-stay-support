@@ -93,7 +93,8 @@ const frontlineGroup: NavGroup = {
     // Coverage overlaps all day and the next available person still has to
     // handle the work, so the shared queue is open to every coordinator.
     { to: "/team-queue", label: "Team Queue", icon: Users, tour: "team-queue" },
-    { to: "/map", label: "Work map", icon: MapPinned, tour: "map", capability: "work_orders_internal" },
+    { to: "/map", label: "Work Map", icon: MapPinned, tour: "map", capability: "work_orders_internal" },
+    { to: "/availability-finder", label: "Availability Finder", icon: MapPinned, tour: "availability-finder", capability: "work_orders_internal" },
     {
       to: "/work-orders",
       label: "Work orders",

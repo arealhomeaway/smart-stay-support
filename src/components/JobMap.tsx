@@ -13,7 +13,7 @@ declare global {
 
 let loader: Promise<void> | null = null;
 
-function loadMaps() {
+export function loadMaps() {
   if (typeof window === "undefined") return Promise.reject(new Error("no window"));
   if (window.google?.maps) return Promise.resolve();
   if (loader) return loader;

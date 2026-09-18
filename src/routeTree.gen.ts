@@ -16,6 +16,7 @@ import { Route as AwaitingAccessRouteImport } from './routes/awaiting-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
+import { Route as AuthenticatedAvailabilityFinderRouteImport } from './routes/_authenticated/availability-finder'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
@@ -109,6 +110,12 @@ const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAvailabilityFinderRoute =
+  AuthenticatedAvailabilityFinderRouteImport.update({
+    id: '/availability-finder',
+    path: '/availability-finder',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
   id: '/claims',
   path: '/claims',
@@ -438,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
@@ -504,6 +512,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -567,6 +576,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
+  '/_authenticated/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
@@ -635,6 +645,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/analytics'
     | '/audit'
+    | '/availability-finder'
     | '/claims'
     | '/coach'
     | '/command-center'
@@ -701,6 +712,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/analytics'
     | '/audit'
+    | '/availability-finder'
     | '/coach'
     | '/command-center'
     | '/dashboard'
@@ -763,6 +775,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/analytics'
     | '/_authenticated/audit'
+    | '/_authenticated/availability-finder'
     | '/_authenticated/claims'
     | '/_authenticated/coach'
     | '/_authenticated/command-center'
@@ -889,6 +902,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/audit'
       preLoaderRoute: typeof AuthenticatedAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/availability-finder': {
+      id: '/_authenticated/availability-finder'
+      path: '/availability-finder'
+      fullPath: '/availability-finder'
+      preLoaderRoute: typeof AuthenticatedAvailabilityFinderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/claims': {
@@ -1393,6 +1413,7 @@ const AuthenticatedWorkOrdersRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedAvailabilityFinderRoute: typeof AuthenticatedAvailabilityFinderRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
@@ -1430,6 +1451,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedAvailabilityFinderRoute: AuthenticatedAvailabilityFinderRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,

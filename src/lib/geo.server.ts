@@ -37,7 +37,7 @@ export function addressLine(p: PropertyAddress) {
 
 type GeocodeHit = { lat: number; lng: number; formatted: string };
 
-async function geocodeOne(address: string): Promise<GeocodeHit | null> {
+export async function geocodeOne(address: string): Promise<GeocodeHit | null> {
   const lovableKey = process.env["LOVABLE_API_KEY"];
   const connectionKey = process.env["GOOGLE_MAPS_API_KEY"];
   if (!lovableKey || !connectionKey) {

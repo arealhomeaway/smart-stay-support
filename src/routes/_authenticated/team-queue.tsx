@@ -466,7 +466,7 @@ function TeamQueuePage() {
             aria-current={view === option ? "page" : undefined}
             disabled={!operationsAccess && option !== "list"}
             onClick={() => void navigate({ search: withOperationsView(params, option) })}>
-            {{ list: "List", kanban: "Kanban", map: "Map", calendar: "Calendar" }[option]}
+            {{ list: "List", kanban: "Kanban", map: "Work Map", calendar: "Calendar" }[option]}
           </Button>
         ))}
         <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
