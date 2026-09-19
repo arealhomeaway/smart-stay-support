@@ -1,13 +1,19 @@
 # Operations launch recovery — working record
 
-> **09/18/2026 current direction:** Emily superseded the isolated Supabase/backend launch gate recorded in earlier sections of this historical working record. Current acceptance uses practical, risk-based authenticated browser review of the existing Lovable/GitHub application without shared-data or provider writes. The current Operations branch contains two separate maps: **Work Map** for operational Tickets and Work Orders, and **Availability Finder** for internal direct-booking and placement inquiries. The Availability Finder uses live read-only OwnerRez reservations, a fixed 20-mile radius, and a public-listing-link-gated Property Options PDF. It does not move reservations or guarantee availability. See the [acceptance matrix](operations-acceptance-matrix.md) for browser review limits.
+> **09/18/2026 current direction:** Emily superseded the isolated Supabase/backend launch gate recorded in earlier sections of this historical working record. Current acceptance uses practical, risk-based authenticated browser review of the existing Lovable/GitHub application without shared-data or provider writes. The current Operations branch contains two separate maps: **Work Map** for operational Tickets and Work Orders, and **Availability Finder** for internal direct-booking and placement inquiries. The Availability Finder uses live read-only OwnerRez reservations, a selectable 5/10/15/20-mile radius with 20 as the default and maximum, and a public-listing-link-gated Property Options PDF. It does not move reservations or guarantee availability. See the [acceptance matrix](operations-acceptance-matrix.md) for browser review limits.
+
+## 09/18 overnight completion checkpoint
+
+Branch `codex/ops-overnight-completion-pass` starts at `3072e821919419debcaf1f5aba9a7f5e3620045c`. The pass adds source-safe Availability Finder filters and selected-only PDF facts, one persistent Light/Dark/System theme, reusable collection controls, applicable Onboarding/Active Owner calendars, automatic priority at Ticket intake, and an audited supervisor/director priority correction. The ticket workspace continues to derive one current stage from the existing work type, steps, canonical Work Order, evidence and closure rules. Breezeway remains the vendor dispatch channel and OwnerRez remains read-only reservation context.
+
+No migration, shared-backend record, provider record, publication, deployment, or Lovable connected branch was changed. Native cleaning, Finance, billing, Vendor Portal, inventory and P4 remain deferred or retired. The implementation and its morning acceptance guide are recorded in [operations-overnight-handoff-2026-09-18.md](operations-overnight-handoff-2026-09-18.md).
 
 ## Current Work Map and Availability Finder requirements
 
 | Tool | Purpose and source | Current implementation | Acceptance still needed |
 |---|---|---|---|
 | Work Map | Operations Tickets and Work Orders; Emily's 09/18/2026 direction preserves the map pass | Existing `team-queue` Map tab is labeled Work Map; existing map pins, list, board, calendar and filters remain | Authenticated non-destructive role, navigation, dark-mode and responsive review |
-| Availability Finder | Direct-booking and placement inquiry; Emily's 09/18/2026 finder and active-link requests | Staff-only dates/location search, fixed 20 miles, distance-sorted synchronized map/list, live OwnerRez booking reads, Available / Conditional STR relocation / Unavailable, selected-property PDF and copied email summary | Authenticated non-destructive browser review of actual OwnerRez response, public listing accuracy, PDF download outside Resolve, and click-through of every property CTA and image |
+| Availability Finder | Direct-booking and placement inquiry; Emily's 09/18/2026 finder and active-link requests | Staff-only dates/location search, selectable 5/10/15/20 miles, synchronized map/list, composable verified-field filters and URL state, live OwnerRez booking reads, Available / Conditional STR relocation / Unavailable, selected-property PDF and copied email summary | Authenticated non-destructive browser review of actual OwnerRez response, public listing accuracy, filter/map state, PDF download outside Resolve, and click-through of every property CTA and image |
 
 The existing OwnerRez integration audit verifies `/bookings` reservation fields and `/properties` listing facts, but it does not verify a complete availability calendar, rate, minimum-stay or restriction endpoint for this account. Finder “Available” means no conflict was found in the fetched OwnerRez reservation set; Operations must make the final availability decision. The existing guest-context rule treats stays of 28 or more nights as mid-term. Other non-movable restrictions beyond a returned `is_block` booking cannot be inferred from absent OwnerRez fields. Search fails closed on a provider error or incomplete pagination. Only a current OwnerRez-sourced public URL on an approved ARHA listing host can enter the PDF, and export probes each selected public page before rendering. Missing, malformed or inactive links block export. The source URL and photo coverage, host redirects, and real booking-query semantics require authenticated read-only browser acceptance on the selected branch. No authenticated end-to-end acceptance is claimed by code tests alone.
 
@@ -37,7 +43,7 @@ Resolve owns Tickets, canonical Work Orders, ownership, priorities **P1–P3**, 
 | OwnerRez | Listing/guest/stay reads and Ticket reservation snapshot exist | Mapping/freshness/failure acceptance incomplete |
 | P1–P3 | UI, routing and final Ticket/work-type constraints use three priorities | A later owner notification projection still permits a stored P4 value; live schema unverified |
 | Team feedback | 33-row source-linked evidence register exists on this clean candidate | Historical “45 items” unverified; register has off-scope launch claims |
-| Authenticated acceptance | Matrix records required scenarios | No separate backend/Auth/Storage/delivery bindings verified |
+| Authenticated acceptance | Matrix records practical, risk-based scenarios | Non-destructive review on the exact branch remains; mutating cases require a separately authorized disposable QA record |
 
 ## Source and decision notes
 
@@ -64,7 +70,7 @@ Status means **code evidence only** unless an explicit isolated test result is l
 
 | Case | Safe isolated checks now | Authenticated/sandbox gate |
 |---|---|---|
-| OA-OPS-01 P1–P3 intake, classification, SLA, escalation and queue reporting | Type/route inspection, pure priority/routing tests, final constraint migration review | Synthetic PC/James/Micah records, role writes, clocks and report parity on separate backend |
+| OA-OPS-01 P1–P3 intake, classification, SLA, escalation and queue reporting | Type/route inspection, pure priority/routing tests, final constraint migration review | Read-only PC/James/Micah browser review; a priority-correction write requires an explicitly authorized disposable QA record |
 | OA-OPS-02 ownership, handoff and canonical Work Order lifecycle | Unit/service mocks and build | Real Auth/RLS, one-open constraint, evidence, rejection/correction, reopen and immutable history |
 | OA-OPS-03 Breezeway dispatch and recovery | Existing mocked outbound/webhook tests, static mapping/constraint audit; provider flag remains OFF | Captured/sandbox outbound and inbound under canonical WO, duplicate races, uncertain send, admin recovery, last sync, vendor complete vs Resolve close |
 | OA-OPS-04 OwnerRez context | Pure mapping/snapshot tests and code review | Synthetic property/booking/guest with missing and conflicting IDs, freshness and unrelated-property denial |
@@ -72,7 +78,7 @@ Status means **code evidence only** unless an explicit isolated test result is l
 | OA-OPS-06 communication | Template/permission code checks | Captured email/notification delivery to synthetic recipients only |
 | OA-OPS-07 team usability | Read-only local review where possible | Emily/Kati two-screen exact-account/record path after authenticated acceptance |
 
-**Environment release gate:** separate backend/database, Auth users, Storage, secrets and queues; synthetic PC, James, Micah, Emily, vendor and owner accounts; synthetic properties/reservations/Tickets/Work Orders/files; external delivery disabled or captured; reset/reseed; unmistakable staging label. No shared Preview workflow writes or real provider dispatch.
+**Historical environment plan, superseded:** the separate backend/database, synthetic-account and reset/reseed plan below is retained for traceability. Emily removed it as a launch requirement on 09/18/2026. Current acceptance is non-destructive on the exact Lovable branch. No shared Preview workflow writes or real provider dispatch are authorized by this record.
 
 **Local environment checkpoint:** The repository contains a disposable PGlite PostgreSQL fixture runtime under ignored `.codex-qa.local`. The forward owner-alert migration and dedicated SQL test passed there. Supabase CLI, Docker and `psql` were not available on the command path; no local Supabase Auth/Storage/server stack, captured delivery or synthetic authenticated accounts were verified. Therefore every real-role workflow and property/Storage boundary case below remains **BLOCKED**, not passed: Emily oversight, Micah oversight, James assignment/escalation/reopen, PC intake/classification/Work Order/evidence, vendor isolation, owner isolation, and cross-property direct access. The isolated SQL fixture is migration-runtime evidence only.
 

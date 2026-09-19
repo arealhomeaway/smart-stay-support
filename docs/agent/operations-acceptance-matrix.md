@@ -1,10 +1,19 @@
 # Operations authenticated acceptance gate
 
-> **Current acceptance direction (09/18/2026):** Emily superseded the separate Supabase/backend requirement below. It is not a launch blocker. Use practical, risk-based authenticated browser review in the existing Lovable/GitHub application, with non-destructive reads of normally visible data. Do not use real records as disposable fixtures, send provider writes, apply migrations, or claim unperformed end-to-end acceptance. The historical environment contract and matrix below are retained only as a record of the earlier plan. For the Availability Finder, review role access, search, 20-mile map/list behavior, conflict display, dark mode, responsive layout, PDF download, and every PDF public-listing link. PDF generation is read-only with respect to shared application data.
+> **Current acceptance direction (09/18/2026):** Emily superseded the separate Supabase/backend requirement below. It is not a launch blocker. Use practical, risk-based authenticated browser review in the existing Lovable/GitHub application, with non-destructive reads of normally visible data. Do not use real records as disposable fixtures, send provider writes, apply migrations, or claim unperformed end-to-end acceptance. The historical environment contract and matrix below are retained only as a record of the earlier plan. For the Availability Finder, review role access, search, the selectable 5/10/15/20-mile map/list population, filter and URL state, conflict display, theme, responsive layout, selected-only PDF download, and every PDF public-listing link. PDF generation is read-only with respect to shared application data.
 
 > **Scope correction (09/17/2026):** The [current Operations launch matrix](operations-launch-recovery-2026-09-17.md#current-scope-acceptance-matrix) governs release acceptance. Cleaning turnover, cleaner tasks, native inspection/readiness, guest billing and deposit cases below are deferred research, not current launch blockers. Keep them for traceability only. P1–P3 is the sole active priority model.
 
-**Release blocker:** No isolated authenticated Operations test environment has been verified. The current Lovable Preview must be treated as sharing the published backend. Code checks and read-only UI review cannot substitute for real authentication, role checks, row-level security, storage and workflow writes in a separate environment. Do not claim the Operations launch candidate has passed authenticated acceptance until this gate is met.
+**Historical gate, superseded:** A separate authenticated Operations test environment was previously listed as a release blocker. Emily explicitly removed that requirement on 09/18/2026. The current Lovable Preview may share the published backend, so browser acceptance stays non-destructive and provider writes remain prohibited. Code checks do not replace the remaining practical authenticated browser review.
+
+## Current branch acceptance additions
+
+| Case | Automated evidence | Remaining non-destructive browser review |
+|---|---|---|
+| OA-13 Availability filters and PDF | Combined and missing-metadata filters, map/list parity, URL state, public URL rejection and PDF hyperlink tests | Search real visible data, change radius and filters, reload/back, select properties, open downloaded PDF outside Resolve and click every CTA/image |
+| OA-14 Global theme | Persistence, pre-paint bootstrap, launch-portal wiring and fixed light PDF tests | Light/Dark/System across shell, maps, forms, dialogs, tabs and responsive layouts |
+| OA-15 Shared collection views | Calendar mechanics, URL-origin state and applicable-control tests | Team Queue, Onboarding, Active Owner and Properties view/filter/sort/return behavior by authorized role |
+| OA-16 Guided Ticket work | Automatic intake priority, supervisor denial/correction unit checks plus existing stage, lifecycle, Work Order and provider contract tests | Read-only inspection of representative existing Tickets by PC/supervisor/director; any mutating acceptance requires Emily to identify disposable QA records first |
 
 ## Environment contract
 
@@ -42,7 +51,7 @@ The historical local Supabase/Docker setup plan in `.codex-qa.local` is an archi
 |---|---|---|
 | Passed through code or isolated automated testing | TypeScript `tsc --noEmit` passed on `codex/ops-launch-pass-2`. The production Vite build passed at the last code checkpoint. Static migration inspection found 181 SQL files, no duplicate filename timestamp prefixes, and no migration or generated Supabase type changes relative to the PR #10 base. The feedback register has 33 distinct IDs. | Bun-based focused tests could not be run because the Bun runner is unavailable; no test result is claimed for them. Static checks do not prove migration behavior against a database. |
 | Verified through safe read-only UI review | None on this Operations branch. | The existing PR #10 Preview is a different branch; shared Preview is treated as a published-backend environment and has not been used for Operations acceptance. |
-| Blocked pending isolated authenticated acceptance | OA-01 through OA-12 action, role, RLS, storage and reset cases. | No separate backend and synthetic accounts have been verified. |
+| Blocked pending separately authorized mutation | OA-03 through OA-10 and OA-12 write-path cases. | Use non-destructive review now; do not mutate shared records unless Emily identifies a disposable QA record for that exact test. A separate backend is not a launch requirement. |
 | Blocked pending external sandbox credentials | Microsoft 365 delivery and Breezeway/OwnerRez integration calls. | No isolated provider bindings or captured delivery endpoints have been verified. |
 
-Until staging exists, do not create, update, assign, complete, approve, reopen or delete shared operational records. Do not trigger external messages, webhooks, sync writes or automations, and do not use real people or properties as disposable fixtures.
+While Preview may share the published backend, do not create, update, assign, complete, approve, reopen or delete shared operational records during this acceptance pass. Do not trigger external messages, webhooks, sync writes or automations, and do not use real people or properties as disposable fixtures.
