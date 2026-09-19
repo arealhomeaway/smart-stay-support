@@ -29,7 +29,6 @@ import {
   GUEST_IMPACT,
   OCCUPANCY_STATUS,
   OUTCOME_TYPES,
-  PRIORITIES,
   SOURCE_CHANNELS,
   labelFor,
   mechanicalPriority,
@@ -110,7 +109,6 @@ function NewMatter() {
   const setStatus = useServerFn(setTicketStatusFn);
   const [mode, setMode] = useState<Mode>("ticket");
   const [saving, setSaving] = useState(false);
-  const [priorityTouched, setPriorityTouched] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   // Everything Resolve can decide for itself stays folded away until asked for.
   const [advanced, setAdvanced] = useState(false);
@@ -126,8 +124,6 @@ function NewMatter() {
 
     guest_impact: "none",
     occupancy_status: "vacant",
-    priority: "p3",
-    priority_override_reason: "",
     functional_role_code: "",
     cross_team: false,
     source_channel: "guest_message",
@@ -292,10 +288,6 @@ function NewMatter() {
     [workType, form.guest_impact, form.occupancy_status, situation],
   );
 
-  useEffect(() => {
-    if (!priorityTouched) setForm((f) => ({ ...f, priority: mechanical }));
-  }, [mechanical, priorityTouched]);
-
   // Prefill occupancy and guest from the live reservation instead of guessing.
   // Guards against an out-of-order response: react-query's queryKey already
   // scopes the cache by property_id, but this also refuses to apply a
@@ -319,8 +311,7 @@ function NewMatter() {
     }
   }, [workType]);
 
-  const overridden = Boolean(workType && form.priority !== mechanical);
-  const meta = priorityMeta(form.priority);
+  const meta = priorityMeta(mechanical);
 
   const resolvedPlaybookId = useMemo(() => {
     if (form.playbook_id !== "auto") return form.playbook_id === "none" ? null : form.playbook_id;
@@ -343,10 +334,6 @@ function NewMatter() {
       toast.error("Pick a work type — it sets the owning role and the response standard.");
       return;
     }
-    if (overridden && !form.priority_override_reason.trim()) {
-      toast.error(`The rubric says ${mechanical.toUpperCase()}. Document why you changed it.`);
-      return;
-    }
     if (mode === "one_touch" && !form.resolution_notes.trim()) {
       toast.error("Write what you did — that is the whole record.");
       return;
@@ -367,7 +354,7 @@ function NewMatter() {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id ?? null;
       const now = new Date();
-      const { response_due_at, action_due_at } = slaDueDates(form.priority, now, workType);
+      const { response_due_at, action_due_at } = slaDueDates(mechanical, now, workType);
       const oneTouch = mode === "one_touch";
 
       const { data: ticket, error } = await supabase
@@ -390,8 +377,8 @@ function NewMatter() {
           guest_impact: form.guest_impact,
           occupancy_status: form.occupancy_status,
           suggested_priority: mechanical,
-          priority: form.priority,
-          priority_override_reason: overridden ? form.priority_override_reason.trim() : null,
+          priority: mechanical,
+          priority_override_reason: null,
           source_channel: form.source_channel,
           source_reference: sourceReference,
           ownerrez_booking_id: stay?.ok ? stay.data.booking_id : null,
@@ -662,7 +649,7 @@ function NewMatter() {
                   Looks like
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className={priorityTone(form.priority)}>
+                  <Badge variant="outline" className={priorityTone(mechanical)}>
                     {meta.short}
                   </Badge>
                   <span className="font-medium">{situation?.label ?? workType.name}</span>
@@ -879,28 +866,12 @@ function NewMatter() {
                 {mode === "ticket" && (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Priority</Label>
-                      <Select
-                        value={form.priority}
-                        onValueChange={(v) => {
-                          setPriorityTouched(true);
-                          setForm({ ...form, priority: v });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PRIORITIES.map((p) => (
-                            <SelectItem key={p.value} value={p.value}>
-                              {p.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Calculated priority</Label>
+                      <p className="rounded-md border border-border bg-secondary/40 px-3 py-2 text-sm font-medium">
+                        {meta.short} · {meta.summary}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        Rubric says <span className="font-medium">{mechanical.toUpperCase()}</span>{" "}
-                        · {meta.summary}
+                        Resolve assigns this from the work type, guest impact and occupancy. A supervisor can record a correction after intake.
                       </p>
                     </div>
 
@@ -955,22 +926,6 @@ function NewMatter() {
                         · {role.coverage_window}
                       </p>
                     )}
-                  </div>
-                )}
-
-                {mode === "ticket" && overridden && (
-                  <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
-                    <Label htmlFor="override">
-                      Why {form.priority.toUpperCase()} instead of {mechanical.toUpperCase()}?
-                    </Label>
-                    <Input
-                      id="override"
-                      placeholder="Guest is elderly and alone in the home"
-                      value={form.priority_override_reason}
-                      onChange={(e) =>
-                        setForm({ ...form, priority_override_reason: e.target.value })
-                      }
-                    />
                   </div>
                 )}
 
@@ -1062,7 +1017,7 @@ function NewMatter() {
 
             {mode === "ticket" && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
-                <Badge variant="outline" className={priorityTone(form.priority)}>
+                <Badge variant="outline" className={priorityTone(mechanical)}>
                   {meta.short}
                 </Badge>
                 <span className="text-muted-foreground">

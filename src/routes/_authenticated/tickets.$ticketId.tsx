@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { humanizeHistoryText } from "@/lib/ticket-lifecycle";
 import { finalReviewRequirement } from "@/lib/final-review";
 import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
+import { correctTicketPriorityFn } from "@/lib/ticket-priority.functions";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { breezewayOutboundState } from "@/lib/breezeway-outbound.functions";
@@ -96,7 +97,9 @@ import {
 } from "@/components/ui/select";
 import {
   CATEGORIES,
+  GUEST_IMPACT,
   OUTCOME_TYPES,
+  PRIORITIES,
   STATUSES,
   WAITING_ON,
   isClosed,
@@ -105,7 +108,6 @@ import {
   priorityTone,
   relativeTime,
   slaState,
-  statusTone,
   ticketAssigneeName,
 } from "@/lib/tickets";
 
@@ -184,7 +186,7 @@ function TicketDetail() {
         supabase
           .from("tickets")
           .select(
-            "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
+            "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, operating_standard, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
           .eq("is_demo", demoMode)
@@ -592,13 +594,6 @@ function TicketDetail() {
       "step_completed",
     );
     await refresh();
-  }
-
-  async function changeStatus(status: string) {
-    if (!(await applyStatus(status))) return;
-    await log("status", `Status changed to ${labelFor(STATUSES, status)}.`, "status_changed");
-    await refresh();
-    toast.success("Status updated.");
   }
 
   /** Supervisor cleanup for duplicates, tests and junk — never a frontline action. */
@@ -1065,7 +1060,6 @@ function TicketDetail() {
             role={role}
             branches={activeBranch}
             onChanged={refresh}
-            onStatus={changeStatus}
             onDelete={deleteTicket}
           />
         </div>
@@ -1087,6 +1081,26 @@ function TicketDetail() {
           <div className="space-y-5 lg:col-span-2">
             <section aria-label="Current work">
               <h2 className="eyebrow text-muted-foreground">Current work</h2>
+              <div className="mt-2 rounded-lg border border-border bg-card p-4 text-sm">
+                <p className="font-medium">{workType?.name ?? labelFor(CATEGORIES, ticket.category)}</p>
+                <p className="mt-1 text-muted-foreground">
+                  {ticket.description?.trim() || ticket.title}
+                </p>
+                {workType?.operating_standard && (
+                  <p className="mt-3 border-t border-border pt-3 text-muted-foreground">
+                    <span className="font-medium text-foreground">Work type standard: </span>
+                    {workType.operating_standard}
+                  </p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-muted-foreground">
+                  <span>Owner: <strong className="text-foreground">{assigneeName}</strong></span>
+                  <span>Action due: <strong className="text-foreground">{ticket.action_due_at ? usDateTime(ticket.action_due_at) : "Not set"}</strong></span>
+                  <span>Guest: <strong className="text-foreground">{labelFor(GUEST_IMPACT, ticket.guest_impact)}</strong></span>
+                  {ticket.vendor_status && ticket.vendor_status !== "none" && (
+                    <span>Vendor: <strong className="text-foreground">{ticket.vendor_status.replaceAll("_", " ")}</strong></span>
+                  )}
+                </div>
+              </div>
 
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">
@@ -1546,7 +1560,6 @@ function MoreActions({
   role,
   branches,
   onChanged,
-  onStatus,
   onDelete,
 }: {
   ticket: Record<string, unknown> & { id: string; status: string; record_type?: string | null };
@@ -1554,9 +1567,35 @@ function MoreActions({
   role: ReturnType<typeof useRole>;
   branches: { claim: boolean; recovery: boolean };
   onChanged: () => Promise<void> | void;
-  onStatus: (status: string) => void;
   onDelete: () => void;
 }) {
+  const correctPriority = useServerFn(correctTicketPriorityFn);
+  const [correctedPriority, setCorrectedPriority] = useState(String(ticket["priority"]));
+  const [priorityReason, setPriorityReason] = useState("");
+  const [prioritySaving, setPrioritySaving] = useState(false);
+  useEffect(() => setCorrectedPriority(String(ticket["priority"])), [ticket]);
+
+  async function savePriorityCorrection() {
+    setPrioritySaving(true);
+    try {
+      await correctPriority({
+        data: {
+          ticketId: ticket.id,
+          priority: correctedPriority,
+          reason: priorityReason,
+          isDemo: Boolean(ticket["is_demo"]),
+        },
+      });
+      toast.success("Priority corrected and recorded in the ticket history.");
+      setPriorityReason("");
+      await onChanged();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The priority could not be corrected.");
+    } finally {
+      setPrioritySaving(false);
+    }
+  }
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -1611,27 +1650,40 @@ function MoreActions({
               <TicketClaimPanel ticket={ticket as any} />
             </IncidentBranch>
           )}
-          {role.isSupervisor && (
+          {role.isSupervisor && !role.readOnly && (
             <div className="space-y-1.5 border-t border-border pt-4">
-              <Label className="text-xs text-muted-foreground">Status (supervisor)</Label>
-              <Select value={ticket.status} onValueChange={onStatus} disabled={closed}>
+              <Label className="text-xs text-muted-foreground">Correct priority</Label>
+              <p className="text-xs text-muted-foreground">
+                Calculated {String(ticket["suggested_priority"] ?? "not recorded").toUpperCase()} · current {String(ticket["priority"]).toUpperCase()}. A reason and the person making the correction are kept in history.
+              </p>
+              <Select value={correctedPriority} onValueChange={setCorrectedPriority}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((s) => (
+                  {PRIORITIES.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
                       {s.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {closed && (
-                // Reopening has one home: the explicit action in Current Work.
-                <p className="text-xs text-muted-foreground">
-                  This ticket is closed. Use “Reopen this ticket” to put it back into work.
-                </p>
-              )}
+              <Label htmlFor="priority-correction-reason" className="sr-only">Reason for priority correction</Label>
+              <Textarea
+                id="priority-correction-reason"
+                rows={2}
+                placeholder="Why does this issue need a different priority?"
+                value={priorityReason}
+                onChange={(event) => setPriorityReason(event.target.value)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={prioritySaving || correctedPriority === ticket["priority"] || priorityReason.trim().length < 10}
+                onClick={savePriorityCorrection}
+              >
+                Save priority correction
+              </Button>
             </div>
           )}
           {role.isSupervisor && (
