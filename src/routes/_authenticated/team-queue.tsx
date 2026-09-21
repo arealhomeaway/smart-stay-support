@@ -111,6 +111,9 @@ function TeamQueuePage() {
     enabled: operationsAccess && view === "map",
   });
 
+  // Tickets picked for a batch change from this queue.
+  const [selectedTickets, setSelectedTickets] = useState<string[]>([]);
+
   const flagParam = params["flags"] ?? "";
   const sortParam = params["sort"] ?? "priority";
   const flags = useMemo(() => new Set(flagParam.split(",").filter(Boolean)), [flagParam]);
