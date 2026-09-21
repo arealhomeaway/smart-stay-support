@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 
-type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; pets?: number | undefined; amenities?: string | undefined };
+type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined };
+
+function countParam(value: unknown, max: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(max, Math.trunc(parsed)) : undefined;
+}
 
 const AMENITY_KEYS = AMENITY_SPECS.map((spec) => spec.key);
 function parseAmenities(value: string | undefined): AmenityKey[] {
