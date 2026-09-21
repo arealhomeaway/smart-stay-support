@@ -39,6 +39,7 @@ function WorkOrdersLayout() {
       <nav className="flex flex-wrap items-center gap-1" aria-label="Work order views">
         <SubLink to="/work-orders">Today</SubLink>
         <SubLink to="/work-orders/my-work-orders">Mine</SubLink>
+        <SubLink to="/work-orders/calendar">Calendar</SubLink>
         {isSupervisor ? <SubLink to="/work-orders/manager">Manager</SubLink> : null}
       </nav>
       <Outlet />
