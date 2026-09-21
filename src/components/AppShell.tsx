@@ -54,7 +54,7 @@ import { useAmbientOrigin } from "@/components/nav/NavContext";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
+import { DemoButton, PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
@@ -522,6 +522,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </IconAction>
                 {!vendorMode && !ownerMode && <NotificationBell placement="header" />}
                 <ThemeToggle />
+                <DemoButton />
                 <PortalSwitcher />
                 <Tooltip>
                   <TooltipTrigger asChild>
