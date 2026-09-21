@@ -1287,7 +1287,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review the Standard Inspection Results",
     role: "Project Manager",
     detail:
-      'Review the results:\n Access the inspection results using the link below:\n the Standard Inspection results on this task in Resolve\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
+      'Review the results:\n Open the Standard Inspection results on this task in Resolve.\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1200,
@@ -1466,7 +1466,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review the Final Inspection Results",
     role: "Project Manager",
     detail:
-      'Review the results:\n Access the inspection results using the link below:\n the Final Inspection results on this task in Resolve\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
+      'Review the results:\n Open the Final Inspection results on this task in Resolve.\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1380,
