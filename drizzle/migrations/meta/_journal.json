@@ -43,6 +43,13 @@
       "when": 1790014443322,
       "tag": "0005_onboarding_task_stage_history",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790016663332,
+      "tag": "0006_email_composer_cc_bcc_schedule_attachments",
+      "breakpoints": true
     }
   ]
 }
