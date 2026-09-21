@@ -59,7 +59,7 @@ describe("Demo controls — accessibility", () => {
 
     it("hides the decorative icons from screen readers", () => {
       const icons = headerButton().match(/aria-hidden="true"/g) ?? [];
-      expect(icons.length).toBeGreaterThanOrEqual(2);
+      expect(icons.length).toBeGreaterThan(1);
     });
   });
 
