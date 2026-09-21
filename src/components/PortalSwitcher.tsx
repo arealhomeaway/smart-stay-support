@@ -217,8 +217,9 @@ export function ViewAsBanner() {
         <Button
           size="sm"
           variant="outline"
-          className="min-h-11 w-full shrink-0 sm:min-h-9 sm:w-auto"
+          className="min-h-11 w-full shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-9 sm:w-auto"
           onClick={() => exitDemo()}
+          aria-label="Leave the demo environment"
         >
           Leave demo
         </Button>
