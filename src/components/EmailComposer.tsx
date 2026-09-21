@@ -716,7 +716,13 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               onClick={() => sending.mutate()}
             >
               <Send className="size-4" aria-hidden />
-              {sending.isPending ? "Sending…" : "Send"}
+              {sending.isPending
+                ? scheduled
+                  ? "Scheduling…"
+                  : "Sending…"
+                : scheduled
+                  ? "Schedule"
+                  : "Send"}
             </Button>
           </div>
         </TabsContent>
