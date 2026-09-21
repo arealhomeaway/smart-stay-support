@@ -53,6 +53,7 @@ import { RouteProgress } from "@/components/nav/RouteProgress";
 import { useAmbientOrigin } from "@/components/nav/NavContext";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
@@ -478,7 +479,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </SidebarContent>
         <SidebarFooter>
-          {!vendorMode && !ownerMode && <NotificationBell placement="sidebar" />}
           <p className="px-2 pb-1 text-[0.65rem] leading-relaxed text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
             Every home. Every guest. Every time.
           </p>
@@ -520,6 +520,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   <CircleHelp className="size-4" aria-hidden="true" />
                 </IconAction>
+                {!vendorMode && !ownerMode && <NotificationBell placement="header" />}
+                <ThemeToggle />
                 <PortalSwitcher />
                 <Tooltip>
                   <TooltipTrigger asChild>
