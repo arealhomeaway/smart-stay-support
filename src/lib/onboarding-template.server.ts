@@ -10,7 +10,7 @@
  *    date is already recorded on the property. Everything else is left blank
  *    for the existing preview-and-confirm recalculation flow.
  *  - Demo/test properties propagate is_demo so the plan stays out of live KPIs.
- *  - No external system is touched: no Breezeway, OwnerRez, Asana or Notion
+ *  - No external system is touched: no Breezeway or OwnerRez
  *    writes. Breezeway template IDs are recorded as text on the task only.
  */
 
@@ -76,7 +76,7 @@ export type TemplatePreview = {
 /**
  * Identity of a template row on a property. Title alone is NOT unique: the
  * ARHA plan legitimately repeats "Update project status in Asana" once per
- * phase and the weekly owner update twice, and subtasks such as "Add to Notion"
+ * phase and the weekly owner update twice, and subtasks such as "Record in Resolve"
  * repeat under different parents. Identity is therefore stage + title for
  * top-level tasks, and stage + parent + title for subtasks.
  */

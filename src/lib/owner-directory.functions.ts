@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * plus the coverage numbers a supervisor needs before release.
  *
  * Read-only against OwnerRez — nothing is ever written back to OwnerRez or
- * Notion. Results land in `property_owner_contacts` with their source,
+ * an outside directory. Results land in `property_owner_contacts` with their source,
  * source identifier and sync time.
  */
 

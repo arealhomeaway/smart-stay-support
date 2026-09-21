@@ -175,7 +175,7 @@ export function VendorDocumentsPanel({
               maxLength={160}
             />
             <Input
-              placeholder="Link to the file (SharePoint, Drive, Notion…)"
+              placeholder="Link to the file (SharePoint, Drive…)"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               maxLength={600}

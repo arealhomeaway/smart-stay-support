@@ -1,7 +1,7 @@
 /**
  * A small, strict CSV reader.
  *
- * Exports out of Notion and spreadsheets wrap commas and newlines in quotes,
+ * Spreadsheet exports wrap commas and newlines in quotes,
  * so splitting on commas mangles them. This walks the text properly instead.
  */
 

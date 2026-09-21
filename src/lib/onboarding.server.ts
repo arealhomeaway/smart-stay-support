@@ -1141,7 +1141,7 @@ export async function archiveOnboardingTask(
 }
 
 /**
- * Canonical property matching for any external database (Notion, Fillout
+ * Canonical property matching for any external database (spreadsheets, forms
  * replacements, the Property Utility Matrix — all identical). Matching is by
  * Resolve property UUID or OwnerRez Property ID only. Never by name, and a
  * record never creates a property.

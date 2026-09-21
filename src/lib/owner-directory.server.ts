@@ -4,7 +4,7 @@
  * Source of truth for beta: OwnerRez. The connected account was verified to
  * expose both `/v2/owners` (the owner contact records) and an `owner_id` on
  * every `/v2/properties` row naming the DESIGNATED primary owner of that
- * listing — so no Notion import is needed and nothing is inferred from the
+ * listing — so no outside import is needed and nothing is inferred from the
  * Active Owner Program.
  *
  * Strictly read-only against OwnerRez. The normalized result is stored in
