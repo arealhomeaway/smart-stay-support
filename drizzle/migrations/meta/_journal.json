@@ -8,6 +8,13 @@
       "when": 1790001902952,
       "tag": "0000_ticket_priority_manager_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790002822265,
+      "tag": "0001_email_composer_templates",
+      "breakpoints": true
     }
   ]
 }
