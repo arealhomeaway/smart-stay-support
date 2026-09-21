@@ -26,6 +26,7 @@ function row(partial: Partial<LedgerRow>): LedgerRow {
     property_id: partial.property_id ?? "p1",
     property_name: partial.property_name ?? "Willow",
     is_demo: partial.is_demo ?? false,
+    ...partial,
   };
 }
 
