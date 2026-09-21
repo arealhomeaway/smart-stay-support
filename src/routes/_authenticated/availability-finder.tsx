@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 
-type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; pets?: number | undefined; amenities?: string | undefined };
+type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined };
+
+function countParam(value: unknown, max: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(max, Math.trunc(parsed)) : undefined;
+}
 
 const AMENITY_KEYS = AMENITY_SPECS.map((spec) => spec.key);
 function parseAmenities(value: string | undefined): AmenityKey[] {
@@ -25,7 +30,9 @@ export const Route = createFileRoute("/_authenticated/availability-finder")({
     location: typeof search["location"] === "string" ? search["location"] : undefined,
     showUnavailable: search["showUnavailable"] === true || search["showUnavailable"] === "true",
     selected: typeof search["selected"] === "string" ? search["selected"] : undefined,
-    pets: Number.isFinite(Number(search["pets"])) && Number(search["pets"]) > 0 ? Math.min(10, Math.trunc(Number(search["pets"]))) : undefined,
+    dogs: countParam(search["dogs"], 10),
+    cats: countParam(search["cats"], 10),
+    minBedrooms: countParam(search["minBedrooms"], 12),
     amenities: typeof search["amenities"] === "string" ? search["amenities"] : undefined,
   }),
   component: AvailabilityFinderPage,
@@ -45,14 +52,16 @@ function AvailabilityFinderPage() {
   const [chosen, setChosen] = useState<string[]>([]);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [pets, setPets] = useState(String(search.pets ?? 0));
+  const [dogs, setDogs] = useState(String(search.dogs ?? 0));
+  const [cats, setCats] = useState(String(search.cats ?? 0));
+  const [minBedrooms, setMinBedrooms] = useState(String(search.minBedrooms ?? 0));
   const [amenities, setAmenities] = useState<AmenityKey[]>(parseAmenities(search.amenities));
   const [confirmUnlinked, setConfirmUnlinked] = useState<string | null>(null);
   const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
-    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.pets, search.amenities],
-    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, pets: search.pets ?? 0, amenities: searchedAmenities } }),
+    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.dogs, search.cats, search.minBedrooms, search.amenities],
+    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, dogs: search.dogs ?? 0, cats: search.cats ?? 0, minBedrooms: search.minBedrooms ?? 0, amenities: searchedAmenities } }),
     enabled: allowed && inputReady,
     retry: false,
   });
@@ -69,10 +78,15 @@ function AvailabilityFinderPage() {
     if (!location.trim()) { setValidation("Enter a city, ZIP code, address, or general location."); return; }
     if (!validStay(checkIn, checkOut)) { setValidation("Enter valid dates, with check-out after check-in."); return; }
     setValidation(null); setChosen([]);
-    const petCount = Math.max(0, Math.trunc(Number(pets) || 0));
+    const count = (value: string, max: number) => Math.min(max, Math.max(0, Math.trunc(Number(value) || 0)));
+    const dogCount = count(dogs, 10);
+    const catCount = count(cats, 10);
+    const bedroomCount = count(minBedrooms, 12);
     void navigate({ search: {
       checkIn, checkOut, location: location.trim(), showUnavailable: false,
-      ...(petCount > 0 ? { pets: petCount } : {}),
+      ...(dogCount > 0 ? { dogs: dogCount } : {}),
+      ...(catCount > 0 ? { cats: catCount } : {}),
+      ...(bedroomCount > 0 ? { minBedrooms: bedroomCount } : {}),
       ...(amenities.length ? { amenities: amenities.join(",") } : {}),
     } });
   }
@@ -107,7 +121,9 @@ function AvailabilityFinderPage() {
       <label className="space-y-1 text-sm">Check-out<Input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required /></label>
       <label className="space-y-1 text-sm">City, ZIP, address, or location<Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Dallas, TX" required /></label>
       <Button type="submit">Search 20 miles</Button>
-      <label className="space-y-1 text-sm md:col-span-1">Pets travelling<Input type="number" min={0} max={10} value={pets} onChange={(e) => setPets(e.target.value)} /></label>
+      <label className="space-y-1 text-sm">Dogs<Input type="number" min={0} max={10} value={dogs} onChange={(e) => setDogs(e.target.value)} /></label>
+      <label className="space-y-1 text-sm">Cats<Input type="number" min={0} max={10} value={cats} onChange={(e) => setCats(e.target.value)} /></label>
+      <label className="space-y-1 text-sm">Bedrooms (minimum)<Input type="number" min={0} max={12} value={minBedrooms} onChange={(e) => setMinBedrooms(e.target.value)} /></label>
       <fieldset className="space-y-2 text-sm md:col-span-3">
         <legend>Must have</legend>
         <div className="flex flex-wrap gap-2">

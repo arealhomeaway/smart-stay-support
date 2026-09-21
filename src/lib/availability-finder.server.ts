@@ -18,8 +18,12 @@ export type FinderInput = {
   checkIn: string;
   checkOut: string;
   location: string;
-  /** Pets travelling with the guest; 0 means pets are not a requirement. */
-  pets?: number | undefined;
+  /** Dogs travelling with the guest; 0 means dogs are not a requirement. */
+  dogs?: number | undefined;
+  /** Cats travelling with the guest; 0 means cats are not a requirement. */
+  cats?: number | undefined;
+  /** Smallest acceptable bedroom count; 0 means size is not a requirement. */
+  minBedrooms?: number | undefined;
   amenities?: AmenityKey[] | undefined;
 };
 
@@ -102,7 +106,9 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
     results.push(...rows);
   }
   const requirements: MatchRequirements = {
-    pets: input.pets ?? 0,
+    dogs: input.dogs ?? 0,
+    cats: input.cats ?? 0,
+    minBedrooms: input.minBedrooms ?? 0,
     amenities: input.amenities ?? [],
   };
   const split = applyRequirements(results, requirements);
