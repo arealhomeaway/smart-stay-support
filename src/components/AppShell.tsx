@@ -522,6 +522,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </IconAction>
                 {!vendorMode && !ownerMode && <NotificationBell placement="header" />}
                 <ThemeToggle />
+                <DemoButton />
                 <PortalSwitcher />
                 <Tooltip>
                   <TooltipTrigger asChild>
