@@ -206,10 +206,17 @@ export function factsFromOwnerRez(
 }
 
 export type MatchRequirements = {
-  /** Number of pets travelling; 0 or undefined means pets are not a requirement. */
-  pets?: number | undefined;
+  /** Dogs travelling with the guest. */
+  dogs?: number | undefined;
+  /** Cats travelling with the guest. */
+  cats?: number | undefined;
+  /** Smallest acceptable bedroom count. */
+  minBedrooms?: number | undefined;
   amenities?: AmenityKey[] | undefined;
 };
+
+/** The home's own listed size, checked alongside the OwnerRez facts. */
+export type MatchHome = { bedrooms: number | null };
 
 export type MatchOutcome = {
   ok: boolean;
@@ -217,8 +224,17 @@ export type MatchOutcome = {
   reasons: string[];
 };
 
+/** Total animals travelling, across both species. */
+export function totalPets(requirements: MatchRequirements) {
+  return (requirements.dogs ?? 0) + (requirements.cats ?? 0);
+}
+
 export function hasRequirements(requirements: MatchRequirements) {
-  return Boolean((requirements.pets ?? 0) > 0 || (requirements.amenities ?? []).length);
+  return Boolean(
+    totalPets(requirements) > 0 ||
+    (requirements.minBedrooms ?? 0) > 0 ||
+    (requirements.amenities ?? []).length,
+  );
 }
 
 /**
@@ -228,14 +244,33 @@ export function hasRequirements(requirements: MatchRequirements) {
 export function matchesRequirements(
   facts: PropertyFacts,
   requirements: MatchRequirements,
+  home?: MatchHome,
 ): MatchOutcome {
   const reasons: string[] = [];
-  const pets = requirements.pets ?? 0;
+  const dogs = requirements.dogs ?? 0;
+  const cats = requirements.cats ?? 0;
+  const pets = dogs + cats;
   if (pets > 0) {
     if (facts.petsAllowed === null) reasons.push("Pet policy not published by OwnerRez");
     else if (!facts.petsAllowed) reasons.push("Pets are not allowed");
     else if (facts.maxPets !== null && facts.maxPets > 0 && facts.maxPets < pets)
       reasons.push(`Allows up to ${facts.maxPets} pet${facts.maxPets === 1 ? "" : "s"}`);
+    if (dogs > 0 && facts.petsAllowed !== false) {
+      if (facts.dogsAllowed === false) reasons.push("Dogs are not allowed");
+      else if (facts.dogsAllowed === null && facts.petsAllowed === null)
+        reasons.push("Dog policy not published by OwnerRez");
+    }
+    if (cats > 0 && facts.petsAllowed !== false) {
+      if (facts.catsAllowed === false) reasons.push("Cats are not allowed");
+      else if (facts.catsAllowed === null && facts.petsAllowed === null)
+        reasons.push("Cat policy not published by OwnerRez");
+    }
+  }
+  const minBedrooms = requirements.minBedrooms ?? 0;
+  if (minBedrooms > 0) {
+    const bedrooms = home?.bedrooms ?? null;
+    if (bedrooms === null) reasons.push("Bedroom count not on file");
+    else if (bedrooms < minBedrooms) reasons.push(`Has ${bedrooms} bedroom${bedrooms === 1 ? "" : "s"}`);
   }
   for (const key of requirements.amenities ?? []) {
     const value = facts.amenities[key];
