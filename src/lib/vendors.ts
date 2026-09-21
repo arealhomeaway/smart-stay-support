@@ -1,3 +1,5 @@
+import { TRADES } from "@/lib/taxonomy";
+
 /**
  * Vendor company model (browser-safe).
  *
