@@ -138,8 +138,9 @@ export function DemoButton() {
     <Button
       size="sm"
       variant={demoMode ? "default" : "outline"}
-      className="min-h-11 min-w-11 shrink-0 px-0 sm:min-h-9 sm:w-auto sm:px-3"
+      className="min-h-11 min-w-11 shrink-0 px-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-9 sm:w-auto sm:px-3"
       onClick={toggle}
+      aria-pressed={demoMode}
       aria-label={demoMode ? "Leave the demo environment" : "Enter the demo environment"}
       title={label}
     >
@@ -171,10 +172,20 @@ export function DemoSidebarItem() {
         <SidebarMenuButton
           tooltip={label}
           isActive={demoMode}
-          className="h-11 rounded-lg font-medium md:h-10"
+          className="h-11 rounded-lg font-medium focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar md:h-10"
+          aria-pressed={demoMode}
+          aria-label={demoMode ? "Leave the demo environment" : "Enter the demo environment"}
           onClick={() => {
             if (isMobile) setOpenMobile(false);
             toggle();
+          }}
+          onKeyDown={(event) => {
+            // Space and Enter both act, even when rendered as a non-button.
+            if (event.key === " " || event.key === "Enter") {
+              event.preventDefault();
+              if (isMobile) setOpenMobile(false);
+              toggle();
+            }
           }}
         >
           {demoMode ? (
@@ -206,8 +217,9 @@ export function ViewAsBanner() {
         <Button
           size="sm"
           variant="outline"
-          className="min-h-11 w-full shrink-0 sm:min-h-9 sm:w-auto"
+          className="min-h-11 w-full shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-9 sm:w-auto"
           onClick={() => exitDemo()}
+          aria-label="Leave the demo environment"
         >
           Leave demo
         </Button>
