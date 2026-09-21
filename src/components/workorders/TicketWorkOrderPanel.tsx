@@ -52,6 +52,8 @@ import {
   type WorkOrderPhase,
 } from "@/lib/work-orders";
 import { ticketWorkOrdersQueryKey, type WorkOrderRow } from "@/lib/work-order-types";
+import { FieldHint } from "@/components/FieldHint";
+import { TRADES, categoryForTrade, categoryLabel, tradeLabel } from "@/lib/taxonomy";
 
 type TicketContext = {
   id: string;
@@ -87,17 +89,9 @@ export function useTicketWorkOrders(ticketId: string) {
 
 const EMERGENCY_OPTIONS = Object.keys(EMERGENCY_REASON_LABELS) as EmergencyReason[];
 
-const CATEGORIES = [
-  "Plumbing",
-  "Electrical",
-  "HVAC",
-  "Appliance",
-  "Roof",
-  "Structural",
-  "Handyman",
-  "Furniture",
-  "Other",
-];
+// Trades come from the shared catalog so a work order, a ticket and a vendor
+// all read the same way. See src/lib/taxonomy.ts.
+const CATEGORIES = TRADES;
 
 function bucketState(bucket: ReturnType<typeof workOrderBucket>) {
   if (bucket === "closed") return "done" as const;
@@ -182,6 +176,7 @@ export function TicketWorkOrderPanel({
           title: ticket.title,
           scope: scope || ticket.description || null,
           service_category: category || null,
+          category: categoryForTrade(category) ?? "other",
           priority: ticket.priority ?? "p3",
           phase,
           emergency_reason: phase === "mitigation" ? emergency || null : null,
@@ -285,7 +280,10 @@ export function TicketWorkOrderPanel({
                 <StatusBadge tone={bucketTone(bucket)}>{BUCKET_LABELS[bucket]}</StatusBadge>
                 <Chip>{PHASE_LABELS[wo.phase === "mitigation" ? "mitigation" : "permanent"]}</Chip>
                 <Chip>{STAGE_LABELS[derivedStage(wo)]}</Chip>
-                {wo.service_category ? <Chip>{wo.service_category}</Chip> : null}
+                {wo.service_category ? <Chip>{tradeLabel(wo.service_category)}</Chip> : null}
+                {wo.service_category ? (
+                  <Chip>{categoryLabel(categoryForTrade(wo.service_category))}</Chip>
+                ) : null}
                 {wo.created_at ? (
                   <span className="text-[0.6875rem] text-muted-foreground">
                     Opened {usDate(wo.created_at as string)}
@@ -348,19 +346,25 @@ export function TicketWorkOrderPanel({
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Category</Label>
+                <Label className="text-xs">Trade</Label>
                 <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose" />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <FieldHint guide="workOrder.trade" />
+                {category ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Category: {categoryLabel(categoryForTrade(category))}
+                  </p>
+                ) : null}
               </div>
             </div>
 

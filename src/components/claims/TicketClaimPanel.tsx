@@ -39,6 +39,8 @@ import {
   type ClaimType,
 } from "@/lib/claims";
 import type { ClaimRow } from "@/lib/claim-types";
+import { FieldHint } from "@/components/FieldHint";
+import { categoryLabel, normalizeCategory } from "@/lib/taxonomy";
 
 const TYPES: ClaimType[] = [
   "channel_aircover",
@@ -53,6 +55,7 @@ type TicketContext = {
   id: string;
   title: string;
   description?: string | null;
+  category?: string | null;
   property_id?: string | null;
   guest_name?: string | null;
   is_demo?: boolean | null;
@@ -139,6 +142,7 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
           ownerrez_booking_id: ticket.ownerrez_booking_id ?? null,
           stay_arrival: ticket.ownerrez_arrival ?? null,
           stay_departure: ticket.ownerrez_departure ?? null,
+          category: normalizeCategory(ticket.category) ?? "claims",
           assigned_to: userId,
           deadline_on: deadline || null,
           created_by: userId,
@@ -240,6 +244,7 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
                   ))}
                 </SelectContent>
               </Select>
+              <FieldHint guide="claim.type" />
               <p className="text-[11px] text-muted-foreground">
                 Sets the evidence checklist:{" "}
                 {evidenceSlots(type)
@@ -247,6 +252,10 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
                   .map((s) => s.label)
                   .join(", ")}
                 .
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Category: {categoryLabel(normalizeCategory(ticket.category) ?? "claims")} — carried
+                over from the ticket.
               </p>
             </div>
             <div className="space-y-1">
