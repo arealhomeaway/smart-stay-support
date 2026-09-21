@@ -320,21 +320,6 @@ export function DirectorHub({
         </div>
       </details>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setShowTest(!showTest)}
-          title="Test homes are excluded from every count above."
-          className={cn(
-            "rounded-md border px-2.5 py-1 text-xs font-medium",
-            showTest
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {showTest ? "Hide" : "Show"} test projects ({testCount})
-        </button>
-      </div>
     </div>
   );
 }
