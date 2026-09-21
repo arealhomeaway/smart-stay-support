@@ -26,6 +26,18 @@ export const TEMPLATE_ROLE_TO_SEAT: Record<string, SeatCode> = {
   "Onboarding Admin": "project_manager",
   "Utilities Coordinator": "project_manager",
   "Lead Designer": "project_manager",
+  // Master Onboarding sequence roles.
+  "Director of Onboarding": "director_onboarding",
+  "Assigned Project Manager": "project_manager",
+  "Contract Designer": "project_manager",
+  "Compliance Coordinator": "project_manager",
+  "Onboarding Field Support": "project_manager",
+  "Finance / AR-AP": "cfo_owner_liaison",
+  "Director of Operations": "director_ops",
+  "Operations Supervisor": "ops_supervisor",
+  "Property Coordinator": "po_day",
+  // Owner steps are shepherded by the assigned PM; the owner is not a seat.
+  Owner: "project_manager",
 };
 
 /**
@@ -40,6 +52,14 @@ export const STAGE_DEFAULT_SEAT: Record<string, SeatCode> = {
   phase4_purchasing: "project_manager",
   phase5_monitor: "project_manager",
   phase6_handoff: "director_ops",
+  intake_identity: "director_onboarding",
+  documents_assessment: "project_manager",
+  scope_utilities_compliance: "project_manager",
+  design_approvals_procurement: "project_manager",
+  fieldwork_setup_review: "project_manager",
+  listing_final_clean: "project_manager",
+  handoff_acceptance: "director_ops",
+  closeout_stabilization: "project_manager",
 };
 
 export const FINAL_FALLBACK_SEAT: SeatCode = "director_onboarding";
