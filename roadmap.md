@@ -535,3 +535,4 @@ is now doable from Resolve.
 [x] Email composer on owner-facing onboarding steps, with owner/property details flagged when missing
 [x] Read-only preview of the populated homeowner email, with the draft above it fully editable
 [x] Inline validation on recipient, subject, body and unfilled merge fields; Send stays off until clear
+[x] Automated tests for invalid addresses, empty bodies, unresolved merge tags and Send enabled/disabled
