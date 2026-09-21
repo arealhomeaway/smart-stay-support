@@ -105,6 +105,12 @@ function PropertyHubPage() {
     <div className="space-y-6">
       <HubHeader hub={hub} />
 
+      {hub.viewer.staff && (
+        <div className="flex justify-end">
+          <EmailComposer context="property" recordId={propertyId} label="Email the homeowner" />
+        </div>
+      )}
+
       {hub.alerts.length > 0 && (
         <div className="grid gap-2 sm:grid-cols-2">
           {hub.alerts.map((a) => (
