@@ -308,6 +308,7 @@ function MyWork() {
           data.projects,
         )}
         onClose={() => setOpenTaskId(null)}
+        onAdvance={(id) => setOpenTaskId(mine.some((t) => t.id === id) ? id : null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>
           saveDate.mutate({ data: { taskId, expectedUpdatedAt, dueOn, reason } })
