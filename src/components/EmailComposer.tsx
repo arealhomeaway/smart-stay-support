@@ -124,6 +124,8 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
   }, [recipients, recipientKey]);
 
   const to = recipientKey === CUSTOM ? customTo : recipientKey;
+  const recipientName =
+    recipients.find((r) => r.email === to)?.name ?? null;
 
   function chooseTemplate(id: string) {
     setTemplateId(id);
