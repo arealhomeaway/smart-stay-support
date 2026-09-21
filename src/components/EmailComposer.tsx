@@ -150,8 +150,8 @@ function ComposerBody({
   const [recipientKey, setRecipientKey] = useState<string>("");
   const [customTo, setCustomTo] = useState("");
   const [templateId, setTemplateId] = useState<string>(BLANK);
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [subject, setSubject] = useState(initialSubject ?? "");
+  const [body, setBody] = useState(initialBody ?? "");
   const [audience, setAudience] = useState<MessageAudience>("guest");
 
   // Pick the first known contact as soon as the record answers.
