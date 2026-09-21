@@ -174,6 +174,18 @@ export function factsFromOwnerRez(
   else if (petsWelcome) petsAllowed = true;
   else if (petsDenied) petsAllowed = false;
 
+  // Species answers come only from what the listing actually states.
+  const dogsDenied = /no dogs|dogs not allowed|cats only/i.test(joined);
+  const catsDenied = /no cats|cats not allowed|dogs only/i.test(joined);
+  const dogsWelcome = /dogs (?:welcome|allowed|ok)|dog friendly|dogs only/i.test(joined);
+  const catsWelcome = /cats (?:welcome|allowed|ok)|cat friendly|cats only/i.test(joined);
+  const speciesFact = (denied: boolean, welcome: boolean): FactValue => {
+    if (denied) return false;
+    if (welcome) return true;
+    // A blanket "no pets" answers both species; a blanket yes does not.
+    return petsAllowed === false ? false : null;
+  };
+
   const amenities = AMENITY_SPECS.reduce((all, spec) => {
     const hasEvidence = spec.evidence.some((category) => categories.has(category));
     let value: FactValue = null;
