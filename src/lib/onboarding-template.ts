@@ -14,6 +14,13 @@
  * see applyOnboardingTemplate in onboarding-template.server.ts.
  */
 
+import {
+  MASTER_SEQUENCE_RULES,
+  MASTER_STEPS,
+  onboardingRole,
+  type MasterStep,
+} from "./onboarding-master-sequence";
+
 export const TEMPLATE_ROLES = [
   "Onboarding Manager",
   "Project Manager",
@@ -1589,15 +1596,57 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
   },
 ];
 
-export const TEMPLATE_KEY = "arha_full_furnishing_v1";
+/**
+ * The Master Onboarding sequence as template rows: the 26 control steps, in
+ * order, each in its operational stage and owned by its default role. These
+ * are the spine of every onboarding project; the Full Furnishing rows above
+ * are the execution work carried out underneath them.
+ */
+function masterStepDetail(step: MasterStep) {
+  const lines = [`Step ${step.number} of 26 — ${step.who}.`];
+  if (step.gate) {
+    lines.push(
+      "This is an authority gate. It is passed by the named role only — the assigned Project Manager cannot approve their own handoff.",
+    );
+  }
+  if (step.number === 19) lines.push(MASTER_SEQUENCE_RULES[4]);
+  if (step.number === 22 || step.number === 23) {
+    lines.push(MASTER_SEQUENCE_RULES[3], MASTER_SEQUENCE_RULES[5]);
+  }
+  return lines.join("\n\n");
+}
+
+export const MASTER_SEQUENCE_TEMPLATE: TemplateTask[] = MASTER_STEPS.map((step) => ({
+  key: step.key,
+  stage: step.stage,
+  title: `${step.number}. ${step.title}`,
+  role: onboardingRole(step.roles[0]!).title,
+  detail: masterStepDetail(step),
+  blocksHandoff: step.blocksHandoff,
+  ...(step.requiresOwnerApproval ? { requiresOwnerApproval: true } : {}),
+  ...(step.evidenceRequired ? { evidenceRequired: true } : {}),
+  sortOrder: step.number * 10,
+}));
+
+/**
+ * What Resolve applies to a property: the 26-step master sequence first, then
+ * the detailed Full Furnishing plan.
+ */
+export const MASTER_ONBOARDING_TEMPLATE: TemplateTask[] = [
+  ...MASTER_SEQUENCE_TEMPLATE,
+  ...FULL_FURNISHING_TEMPLATE,
+];
+
+export const TEMPLATE_KEY = "arha_master_onboarding_v1";
 
 export function templateCounts() {
   return {
-    tasks: FULL_FURNISHING_TEMPLATE.length,
-    subtasks: FULL_FURNISHING_TEMPLATE.reduce((n, t) => n + (t.subtasks?.length ?? 0), 0),
-    scheduled: FULL_FURNISHING_TEMPLATE.filter((t) => t.anchor).length,
-    ownerApprovals: FULL_FURNISHING_TEMPLATE.filter((t) => t.requiresOwnerApproval).length,
-    evidence: FULL_FURNISHING_TEMPLATE.filter((t) => t.evidenceRequired).length,
-    workOrders: FULL_FURNISHING_TEMPLATE.filter((t) => t.breezewayTemplateId).length,
+    masterSteps: MASTER_SEQUENCE_TEMPLATE.length,
+    tasks: MASTER_ONBOARDING_TEMPLATE.length,
+    subtasks: MASTER_ONBOARDING_TEMPLATE.reduce((n, t) => n + (t.subtasks?.length ?? 0), 0),
+    scheduled: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.anchor).length,
+    ownerApprovals: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.requiresOwnerApproval).length,
+    evidence: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.evidenceRequired).length,
+    workOrders: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.breezewayTemplateId).length,
   };
 }

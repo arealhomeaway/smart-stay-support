@@ -1,4 +1,5 @@
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
+import { gateReviewAuthority } from "@/lib/handoff-gate-authority";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import {
   onboardingWorkspaceKey,
@@ -236,6 +237,25 @@ function PropertyWorkspace() {
   const canEdit = !readOnly && can("handoff_request");
   const canExecuteProject =
     !readOnly && (data.reviewCapabilities.is_admin || projectRow?.project_manager === userId);
+
+  // The four-gate sequence: the PM who submitted the handoff never approves it,
+  // and each review role signs for itself. Mirrors the database rule exactly.
+  const gateAuthority = openHandoff
+    ? !readOnly && canReviewOnboardingGate(data.reviewCapabilities, openHandoff.gate_step)
+      ? gateReviewAuthority({
+          gateStep: openHandoff.gate_step,
+          viewerId: userId,
+          holdsSeat: true,
+          requestedBy: openHandoff.requested_by ?? null,
+          projectManagerId: projectRow?.project_manager ?? null,
+          priorReviews: (data.reviews ?? []).map((r) => ({
+            step: r.step as string,
+            decision: r.decision as string,
+            reviewerId: (r.reviewer_id as string | null) ?? null,
+          })),
+        })
+      : ({ ok: false, reason: "This review gate belongs to another role." } as const)
+    : ({ ok: false, reason: "" } as const);
 
   const project = {
     property: current as unknown as ProjectProperty,
@@ -862,9 +882,8 @@ function PropertyWorkspace() {
               reviews={data.reviews as never}
               people={data.people}
               propertyName={current.name}
-              canReview={
-                !readOnly && canReviewOnboardingGate(data.reviewCapabilities, openHandoff.gate_step)
-              }
+              canReview={gateAuthority.ok}
+              blockedReason={gateAuthority.ok ? null : gateAuthority.reason}
               disabled={readOnly}
               onDecision={(input) =>
                 reviewHandoff.mutate({ data: { handoffId: openHandoff.id, ...input } } as never)

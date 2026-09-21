@@ -72,6 +72,17 @@ export const ONBOARDING_STAGES = [
   { value: "phase4_purchasing", label: "Phase 4 — Purchasing / finalize work orders" },
   { value: "phase5_monitor", label: "Phase 5 — Monitor repairs / setup / staging" },
   { value: "phase6_handoff", label: "Phase 6 — Cost analysis / photos / handoff" },
+  // The Master Onboarding sequence — 26 steps across these 8 stages. Legacy
+  // phase values above stay listed so plans built before the alignment keep
+  // rendering under their own headings.
+  { value: "intake_identity", label: "Stage 1 — Intake & Identity" },
+  { value: "documents_assessment", label: "Stage 2 — Documents & Assessment" },
+  { value: "scope_utilities_compliance", label: "Stage 3 — Scope, Utilities & Compliance" },
+  { value: "design_approvals_procurement", label: "Stage 4 — Design, Approvals & Procurement" },
+  { value: "fieldwork_setup_review", label: "Stage 5 — Fieldwork, Setup & Mid-Project Review" },
+  { value: "listing_final_clean", label: "Stage 6 — Listing Setup & Final Clean" },
+  { value: "handoff_acceptance", label: "Stage 7 — Handoff Readiness & Operational Acceptance" },
+  { value: "closeout_stabilization", label: "Stage 8 — Financial Closeout & Launch Stabilization" },
 ] as const;
 
 export type OnboardingStage = (typeof ONBOARDING_STAGES)[number]["value"];
