@@ -49,6 +49,28 @@ export async function ownerRezGet<T>(path: string, params?: Record<string, strin
   return (await res.json()) as T;
 }
 
+/** Structured amenity payload from /listings/{propertyId}. */
+export type OwnerRezListingDetail = {
+  property_id?: number;
+  amenity_call_outs?: { text?: string | null }[] | null;
+  amenity_categories?: { type?: string | null; amenities?: { text?: string | null }[] | null }[] | null;
+};
+
+/** Structured property record from /properties/{id}; max_pets is the pet source. */
+export type OwnerRezPropertyDetail = {
+  id: number;
+  max_pets?: number | null;
+  active?: boolean;
+};
+
+export async function listingDetail(ownerRezPropertyId: string) {
+  return ownerRezGet<OwnerRezListingDetail>(`/listings/${encodeURIComponent(ownerRezPropertyId)}`);
+}
+
+export async function propertyDetail(ownerRezPropertyId: string) {
+  return ownerRezGet<OwnerRezPropertyDetail>(`/properties/${encodeURIComponent(ownerRezPropertyId)}`);
+}
+
 export type OwnerRezListing = {
   id: number;
   name: string;

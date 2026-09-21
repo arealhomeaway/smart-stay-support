@@ -4,14 +4,24 @@ import { addressLine, geocodeOne } from "./geo.server";
 import { validCoordinates } from "./geo";
 import { ownerRezGet, type OwnerRezBooking } from "./ownerrez.server";
 import {
-  canUseAvailabilityFinder, classifyAvailability, nearbyProperties, validStay, verifiedPublicListingUrl,
+  applyRequirements, canUseAvailabilityFinder, classifyAvailability, nearbyProperties, validStay,
+  verifiedPublicListingUrl,
   type AvailabilityProperty, type AvailabilityResult,
 } from "./availability-finder";
+import { unknownFacts, type AmenityKey, type MatchRequirements } from "./property-facts";
+import { ownerRezFactsFor } from "./property-facts.server";
 import type { AppRole } from "./permissions";
 import { activePublicListing } from "./availability-listing";
 
 type Client = SupabaseClient<Database>;
-export type FinderInput = { checkIn: string; checkOut: string; location: string };
+export type FinderInput = {
+  checkIn: string;
+  checkOut: string;
+  location: string;
+  /** Pets travelling with the guest; 0 means pets are not a requirement. */
+  pets?: number | undefined;
+  amenities?: AmenityKey[] | undefined;
+};
 
 export async function assertFinderAccess(supabase: Client, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -71,17 +81,41 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
   }));
   const nearby = nearbyProperties(properties, center);
   const ids = new Map(linked.map((row) => [row.id, row.ownerrez_property_id!]));
+  // Pet allowance and amenities come straight from OwnerRez, never from typed notes.
+  const facts = await ownerRezFactsFor(
+    nearby.map((property) => ({ id: property.id, ownerRezPropertyId: ids.get(property.id)! })),
+  );
   const results: AvailabilityResult[] = [];
   // Bound concurrent read traffic to OwnerRez while preserving distance order.
   for (let offset = 0; offset < nearby.length; offset += 5) {
     const batch = nearby.slice(offset, offset + 5);
     const rows = await Promise.all(batch.map(async (property) => {
       const bookings = await bookingsForPeriod(ids.get(property.id)!, input.checkIn, input.checkOut);
-      return { ...property, ...classifyAvailability(bookings, input.checkIn, input.checkOut) };
+      const read = facts.get(property.id) ?? { facts: unknownFacts(), unavailableReason: null };
+      return {
+        ...property,
+        ...classifyAvailability(bookings, input.checkIn, input.checkOut),
+        facts: read.facts,
+        factsUnavailable: read.unavailableReason,
+      };
     }));
     results.push(...rows);
   }
-  return { center, results, excludedUnlocated: (data ?? []).length - linked.length };
+  const requirements: MatchRequirements = {
+    pets: input.pets ?? 0,
+    amenities: input.amenities ?? [],
+  };
+  const split = applyRequirements(results, requirements);
+  return {
+    center,
+    results: split.matched,
+    heldBack: split.heldBack.map((entry) => ({
+      id: entry.result.id,
+      name: entry.result.name,
+      reasons: entry.reasons,
+    })),
+    excludedUnlocated: (data ?? []).length - linked.length,
+  };
 }
 
 export async function verifySelectedPublicListings(supabase: Client, propertyIds: string[]) {

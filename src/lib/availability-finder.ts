@@ -1,4 +1,5 @@
 import { can, type AppRole } from "./permissions";
+import { hasRequirements, matchesRequirements, type MatchRequirements, type PropertyFacts } from "./property-facts";
 
 export const AVAILABILITY_RADIUS_MILES = 20;
 export type AvailabilityStatus = "available" | "conditional" | "unavailable";
@@ -24,6 +25,10 @@ export type AvailabilityResult = AvailabilityProperty & {
   status: AvailabilityStatus;
   strConflicts: ReservationConflict[];
   nonMovableConflicts: ReservationConflict[];
+  /** Verified OwnerRez pet and amenity facts for this home. */
+  facts: PropertyFacts;
+  /** Set when OwnerRez details could not be read; facts are unknown then. */
+  factsUnavailable: string | null;
 };
 export type AvailabilityBooking = {
   arrival: string;
@@ -94,6 +99,38 @@ export function nearbyProperties(properties: AvailabilityProperty[], center: { l
 
 export function visibleResults(results: AvailabilityResult[], showUnavailable: boolean) {
   return results.filter((result) => showUnavailable || result.status !== "unavailable");
+}
+
+export type HeldBackResult = { result: AvailabilityResult; reasons: string[] };
+
+/**
+ * Splits results against the requested pet and amenity requirements.
+ * Homes whose OwnerRez answer is unknown are held back, never offered.
+ */
+export function applyRequirements(results: AvailabilityResult[], requirements: MatchRequirements) {
+  if (!hasRequirements(requirements)) return { matched: results, heldBack: [] as HeldBackResult[] };
+  const matched: AvailabilityResult[] = [];
+  const heldBack: HeldBackResult[] = [];
+  for (const result of results) {
+    const outcome = matchesRequirements(result.facts, requirements);
+    if (outcome.ok) matched.push(result);
+    else heldBack.push({ result, reasons: outcome.reasons });
+  }
+  return { matched, heldBack };
+}
+
+/**
+ * A stay the guest can have, provided Operations re-books an existing short
+ * stay elsewhere first. This is the interrupted mid-term case: the dates are
+ * offerable, with a second step attached.
+ */
+export function needsStrRebook(result: AvailabilityResult) {
+  return result.status === "conditional" && result.strConflicts.length > 0;
+}
+
+export function rebookStepSummary(result: AvailabilityResult) {
+  const count = result.strConflicts.length;
+  return `${count} short stay${count === 1 ? "" : "s"} must be re-booked at another home before this stay can start.`;
 }
 
 /** OwnerRez public_url is the source; accept only ARHA's public listing hosts. */

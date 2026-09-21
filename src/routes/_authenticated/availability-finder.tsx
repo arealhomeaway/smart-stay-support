@@ -3,14 +3,21 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type FormEvent } from "react";
 import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availability-finder.functions";
-import { AVAILABILITY_RADIUS_MILES, emailSummary, validStay, verifiedPublicListingUrl, visibleResults } from "@/lib/availability-finder";
+import { AVAILABILITY_RADIUS_MILES, emailSummary, needsStrRebook, rebookStepSummary, validStay, verifiedPublicListingUrl, visibleResults } from "@/lib/availability-finder";
+import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
 import { AvailabilityMap } from "@/components/AvailabilityMap";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 
-type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined };
+type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; pets?: number | undefined; amenities?: string | undefined };
+
+const AMENITY_KEYS = AMENITY_SPECS.map((spec) => spec.key);
+function parseAmenities(value: string | undefined): AmenityKey[] {
+  return (value ?? "").split(",").filter((key): key is AmenityKey => (AMENITY_KEYS as string[]).includes(key));
+}
+
 export const Route = createFileRoute("/_authenticated/availability-finder")({
   validateSearch: (search: Record<string, unknown>): FinderSearch => ({
     checkIn: typeof search["checkIn"] === "string" ? search["checkIn"] : undefined,
@@ -18,6 +25,8 @@ export const Route = createFileRoute("/_authenticated/availability-finder")({
     location: typeof search["location"] === "string" ? search["location"] : undefined,
     showUnavailable: search["showUnavailable"] === true || search["showUnavailable"] === "true",
     selected: typeof search["selected"] === "string" ? search["selected"] : undefined,
+    pets: Number.isFinite(Number(search["pets"])) && Number(search["pets"]) > 0 ? Math.min(10, Math.trunc(Number(search["pets"]))) : undefined,
+    amenities: typeof search["amenities"] === "string" ? search["amenities"] : undefined,
   }),
   component: AvailabilityFinderPage,
 });
@@ -36,10 +45,13 @@ function AvailabilityFinderPage() {
   const [chosen, setChosen] = useState<string[]>([]);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [pets, setPets] = useState(String(search.pets ?? 0));
+  const [amenities, setAmenities] = useState<AmenityKey[]>(parseAmenities(search.amenities));
+  const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
-    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location],
-    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location! } }),
+    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.pets, search.amenities],
+    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, pets: search.pets ?? 0, amenities: searchedAmenities } }),
     enabled: allowed && inputReady,
     retry: false,
   });
@@ -56,7 +68,12 @@ function AvailabilityFinderPage() {
     if (!location.trim()) { setValidation("Enter a city, ZIP code, address, or general location."); return; }
     if (!validStay(checkIn, checkOut)) { setValidation("Enter valid dates, with check-out after check-in."); return; }
     setValidation(null); setChosen([]);
-    void navigate({ search: { checkIn, checkOut, location: location.trim(), showUnavailable: false } });
+    const petCount = Math.max(0, Math.trunc(Number(pets) || 0));
+    void navigate({ search: {
+      checkIn, checkOut, location: location.trim(), showUnavailable: false,
+      ...(petCount > 0 ? { pets: petCount } : {}),
+      ...(amenities.length ? { amenities: amenities.join(",") } : {}),
+    } });
   }
 
   async function downloadPdf() {
@@ -86,13 +103,23 @@ function AvailabilityFinderPage() {
       <label className="space-y-1 text-sm">Check-out<Input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required /></label>
       <label className="space-y-1 text-sm">City, ZIP, address, or location<Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Dallas, TX" required /></label>
       <Button type="submit">Search 20 miles</Button>
+      <label className="space-y-1 text-sm md:col-span-1">Pets travelling<Input type="number" min={0} max={10} value={pets} onChange={(e) => setPets(e.target.value)} /></label>
+      <fieldset className="space-y-2 text-sm md:col-span-3">
+        <legend>Must have</legend>
+        <div className="flex flex-wrap gap-2">
+          {AMENITY_SPECS.map((spec) => {
+            const on = amenities.includes(spec.key);
+            return <button key={spec.key} type="button" aria-pressed={on} onClick={() => setAmenities((current) => on ? current.filter((key) => key !== spec.key) : [...current, spec.key])} className={`rounded-full border px-3 py-1 text-xs ${on ? "border-primary bg-primary text-primary-foreground" : "bg-background"}`}>{spec.label}</button>;
+          })}
+        </div>
+      </fieldset>
       {validation && <p role="alert" className="text-destructive md:col-span-4">{validation}</p>}
     </form>
     {query.isPending && inputReady && <p role="status">Checking OwnerRez reservations and nearby properties…</p>}
     {query.error && <p role="alert" className="rounded border border-destructive p-4 text-destructive">{query.error instanceof Error ? query.error.message : "Search failed."} No availability result was issued.</p>}
     {query.data && <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{results.length} of {query.data.results.length} properties within {AVAILABILITY_RADIUS_MILES} miles · sorted by distance</p>
+        <p className="text-sm text-muted-foreground">{results.length} of {query.data.results.length} properties within {AVAILABILITY_RADIUS_MILES} miles · sorted by distance{query.data.heldBack.length ? ` · ${query.data.heldBack.length} hidden because OwnerRez does not confirm what you asked for` : ""}</p>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(search.showUnavailable)} onChange={(event) => void navigate({ search: (previous) => ({ ...previous, showUnavailable: event.target.checked, selected: undefined }) })} />Show unavailable</label>
       </div>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,1fr)]">
@@ -104,10 +131,12 @@ function AvailabilityFinderPage() {
               <div className="min-w-0 flex-1"><button type="button" className="text-left font-semibold underline-offset-2 hover:underline" onClick={() => onSelect(row.id)}>{row.name}</button>
                 <p className="text-sm text-muted-foreground">{row.address} · {row.distanceMiles.toFixed(1)} miles</p>
                 <p className="text-sm">{row.bedrooms ?? "—"} beds · {row.bathrooms ?? "—"} baths · {row.maxGuests ?? "—"} guests</p>
+                <p className="text-sm text-muted-foreground">{petSummary(row.facts)}{confirmedAmenities(row.facts).length ? ` · ${confirmedAmenities(row.facts).map((key) => AMENITY_LABELS[key]).join(", ")}` : ""}</p>
+                {row.factsUnavailable && <p className="text-xs text-amber-700">{row.factsUnavailable}</p>}
               </div>
             </div>
             <p className={`mt-3 font-semibold ${row.status === "conditional" ? "text-amber-700 dark:text-amber-400" : row.status === "available" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>{row.status === "conditional" ? "Conditional — STR relocation required" : row.status === "available" ? "Available" : "Unavailable"}</p>
-            {row.status === "conditional" && <div className="mt-1 text-sm"><p>Operations must confirm and complete relocation before this property can be offered.</p><ul className="list-inside list-disc">{row.strConflicts.map((conflict, index) => <li key={`${conflict.arrival}-${index}`}>{conflict.arrival} to {conflict.departure}</li>)}</ul></div>}
+            {needsStrRebook(row) && <div className="mt-1 text-sm"><p>This home can still be offered. Second step if the guest chooses it: {rebookStepSummary(row)}</p><ul className="list-inside list-disc">{row.strConflicts.map((conflict, index) => <li key={`${conflict.arrival}-${index}`}>{conflict.arrival} to {conflict.departure}</li>)}</ul></div>}
             {row.status === "unavailable" && <p className="mt-1 text-sm">Non-movable reservation or block overlaps the requested stay.</p>}
             {row.bookingUrl ? <a href={row.bookingUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary underline">View public listing</a> : <p className="mt-2 text-sm text-amber-700">No verified public listing link. PDF export is blocked for this property.</p>}
             {row.status !== "unavailable" && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={chosen.includes(row.id)} disabled={!row.bookingUrl} onChange={(event) => setChosen((current) => event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id))} />Include in property options PDF</label>}
