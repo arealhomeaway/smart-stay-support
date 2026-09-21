@@ -146,6 +146,8 @@ export function unknownFacts(): PropertyFacts {
   return {
     petsAllowed: null,
     maxPets: null,
+    dogsAllowed: null,
+    catsAllowed: null,
     amenities: AMENITY_SPECS.reduce(
       (all, spec) => ({ ...all, [spec.key]: null }),
       {} as Record<AmenityKey, FactValue>,
