@@ -45,8 +45,8 @@ describe("property facts from OwnerRez", () => {
   it("never matches a requirement the source does not confirm", () => {
     const facts = factsFromOwnerRez(2, null);
     expect(matchesRequirements(facts, { amenities: ["hot_tub"] }).ok).toBe(false);
-    expect(matchesRequirements(facts, { pets: 1 }).ok).toBe(true);
-    expect(matchesRequirements(facts, { pets: 3 }).ok).toBe(false);
+    expect(matchesRequirements(facts, { dogs: 1 }).ok).toBe(true);
+    expect(matchesRequirements(facts, { dogs: 2, cats: 1 }).ok).toBe(false);
   });
 
   it("summarises pets in plain words", () => {
