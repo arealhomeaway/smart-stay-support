@@ -14,6 +14,7 @@
  * see applyOnboardingTemplate in onboarding-template.server.ts.
  */
 
+import { masterStageForLegacyTask } from "./onboarding-stage-map";
 import {
   MASTER_SEQUENCE_RULES,
   MASTER_STEPS,
@@ -52,6 +53,8 @@ export type TemplateTask = {
   breezewayTemplateId?: string;
   subtasks?: string[];
   sortOrder: number;
+  /** The phase this task lived under before the 8-stage sequence. */
+  legacyStage?: string;
 };
 
 export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
@@ -1632,9 +1635,22 @@ export const MASTER_SEQUENCE_TEMPLATE: TemplateTask[] = MASTER_STEPS.map((step) 
  * What Resolve applies to a property: the 26-step master sequence first, then
  * the detailed Full Furnishing plan.
  */
+/**
+ * The detailed Full Furnishing work, filed under the eight operational
+ * stages. Nothing about a task changes except the heading it sits under —
+ * title, detail, role, anchor, order, approvals and evidence are untouched,
+ * and `legacyStage` keeps a record of where it used to live.
+ */
+export const STAGED_FULL_FURNISHING_TEMPLATE: TemplateTask[] = FULL_FURNISHING_TEMPLATE.map(
+  (task) => {
+    const stage = masterStageForLegacyTask(task.stage, task.title);
+    return stage ? { ...task, stage, legacyStage: task.stage } : task;
+  },
+);
+
 export const MASTER_ONBOARDING_TEMPLATE: TemplateTask[] = [
   ...MASTER_SEQUENCE_TEMPLATE,
-  ...FULL_FURNISHING_TEMPLATE,
+  ...STAGED_FULL_FURNISHING_TEMPLATE,
 ];
 
 export const TEMPLATE_KEY = "arha_master_onboarding_v1";

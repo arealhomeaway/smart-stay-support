@@ -36,6 +36,13 @@
       "when": 1790013956618,
       "tag": "0004_handoff_gate_separation_of_duties",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790014443322,
+      "tag": "0005_onboarding_task_stage_history",
+      "breakpoints": true
     }
   ]
 }

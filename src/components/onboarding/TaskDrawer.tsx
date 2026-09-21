@@ -18,6 +18,7 @@ import { Chip } from "@/components/ui/page";
 import { Separator } from "@/components/ui/separator";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
 import { GuidedActionCard } from "@/components/GuidedActionCard";
 import {
   nextActionableTask,
@@ -450,6 +451,10 @@ export function TaskDrawer({
             title="Photos & documents"
           />
         </section>
+
+        <Separator />
+
+        <TaskStageTrail taskId={task.id} />
 
         <Separator />
 
