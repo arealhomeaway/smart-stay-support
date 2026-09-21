@@ -47,6 +47,7 @@ function AvailabilityFinderPage() {
   const [exporting, setExporting] = useState(false);
   const [pets, setPets] = useState(String(search.pets ?? 0));
   const [amenities, setAmenities] = useState<AmenityKey[]>(parseAmenities(search.amenities));
+  const [confirmUnlinked, setConfirmUnlinked] = useState<string | null>(null);
   const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
