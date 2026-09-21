@@ -40,6 +40,7 @@ import {
   MERGE_FIELDS,
   applyMergeFields,
   draftProblems,
+  missingOwnerDetails,
   unresolvedFields,
   type ComposerContext,
   type MessageAudience,
@@ -142,7 +143,13 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
     return unresolvedFields(`${picked.subject}\n${picked.body}`, mergeValues);
   }, [templateId, templates, mergeValues]);
 
-  const problems = draftProblems({ to, subject, body });
+  // A homeowner letter with no home or no homeowner name on it must not go out.
+  const detailGaps = useMemo(
+    () => missingOwnerDetails(mergeValues, audience),
+    [mergeValues, audience],
+  );
+
+  const problems = [...draftProblems({ to, subject, body }), ...detailGaps];
 
   const sending = useMutation({
     mutationFn: () =>
