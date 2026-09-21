@@ -1,3 +1,5 @@
+import { describe, expect, it } from "bun:test";
+import { missingOwnerDetails } from "@/lib/email-composer";
 
 describe("owner and property details", () => {
   const full = {
