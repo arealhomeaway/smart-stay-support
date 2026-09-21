@@ -517,3 +517,8 @@ is now doable from Resolve.
 - [x] Read-only audit of ticket intake + open-ticket page (this pass)
 - [x] Implement approved frontline simplification: priority ceilings, deterministic classifier, simplified intake, derived Next Action hero, guest/stay consolidation, panel vocabulary
 - [ ] Silent Operations training video (paused by request until simplification ships)
+
+## Phase 1 items (Sept 21)
+- [x] Dedicated Work Order calendar (month + timeline, conflict visibility, links back)
+- [ ] Complete notification coverage (SLA breach warnings, missed vendor dispatch, claim deadline reminders)
+- [ ] Queue bulk actions (batch reassignment, status updates, priority tagging, permission checks)
