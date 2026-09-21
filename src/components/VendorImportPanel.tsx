@@ -73,9 +73,9 @@ export function VendorImportPanel() {
           <CardDescription>
             One vendor per line: name, role, email, phone, departments, groups — tab or comma
             separated. A CSV export from the old system pastes straight in. The Breezeway people
-            directory export and the Notion Vendor Database export are each recognised on their own
+            directory export and the legacy Vendor Database export are each recognised on their own
             and read by column name — Breezeway brings across departments, groups and export notes;
-            Notion brings across specialty, market, pricing, contact and compliance notes. Nothing
+            the legacy directory brings across specialty, market, pricing, contact and compliance notes. Nothing
             imports as approved.
           </CardDescription>
         </CardHeader>
@@ -162,7 +162,7 @@ export function VendorImportPanel() {
                         r.profile.markets.join(", ") || null,
                         r.profile.pricing,
                         r.profile.paymentType,
-                        r.profile.legacyStatus ? `Notion status: ${r.profile.legacyStatus}` : null,
+                        r.profile.legacyStatus ? `Legacy status: ${r.profile.legacyStatus}` : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
