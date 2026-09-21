@@ -232,7 +232,7 @@ export async function recordOwnerEmailDecision(
     _expected_updated_at: input.expectedUpdatedAt,
     _decision: input.decision,
     _note: note,
-    ...(input.responseId ? { _response_id: input.responseId } : {}),
+    _response_id: (input.responseId ?? null) as unknown as string,
   });
   if (error) throw error;
   if (

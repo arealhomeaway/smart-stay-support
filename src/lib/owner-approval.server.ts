@@ -47,7 +47,7 @@ export async function loadOwnerApprovals(
   _userId: string,
 ): Promise<OwnerApproval[]> {
   const { data, error } = await readCountedRows(
-    supabase.rpc("read_owner_approvals", undefined, { count: "exact" }).order("id"),
+    supabase.rpc("read_owner_approvals", {} as never, { count: "exact" }).order("id"),
   );
   if (error) throw error;
   return (data ?? []).map(parseOwnerApproval);
