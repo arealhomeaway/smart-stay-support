@@ -534,3 +534,4 @@ is now doable from Resolve.
 [x] Full Furnishing tasks mapped into the 8 operational stages, preserving details and ownership
 [x] Email composer on owner-facing onboarding steps, with owner/property details flagged when missing
 [x] Read-only preview of the populated homeowner email, with the draft above it fully editable
+[x] Inline validation on recipient, subject, body and unfilled merge fields; Send stays off until clear

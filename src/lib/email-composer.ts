@@ -86,12 +86,32 @@ export function unresolvedFields(text: string, values: MergeValues) {
 
 export type ComposerDraft = { to: string; subject: string; body: string };
 
+/**
+ * What still needs fixing, said against the box it belongs to, so the person
+ * sees the problem where they can fix it rather than in a list underneath.
+ */
+export function draftFieldProblems(draft: ComposerDraft) {
+  const blanks = [...new Set([...draft.subject.matchAll(FIELD_RE), ...draft.body.matchAll(FIELD_RE)]
+    .map((m) => (m[1] ?? "").toLowerCase()))];
+  const left = (text: string) =>
+    /\{\{\s*[a-z0-9_]+\s*\}\}/i.test(text)
+      ? "Fill in the blanks the template left behind."
+      : null;
+  return {
+    to: !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(draft.to.trim())
+      ? "Choose a contact or type a valid email address."
+      : null,
+    subject:
+      draft.subject.trim().length < 3
+        ? "Give the message a subject line."
+        : left(draft.subject),
+    body: draft.body.trim().length < 10 ? "Write the message." : left(draft.body),
+    unfilled: blanks,
+  };
+}
+
 /** What still needs fixing before this message can go out. */
 export function draftProblems(draft: ComposerDraft) {
-  const problems: string[] = [];
-  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(draft.to.trim()))
-    problems.push("Add a valid email address to send to.");
-  if (draft.subject.trim().length < 3) problems.push("Give the message a subject line.");
-  if (draft.body.trim().length < 10) problems.push("Write the message.");
-  return problems;
+  const f = draftFieldProblems(draft);
+  return [f.to, f.subject, f.body].filter((p): p is string => p !== null);
 }

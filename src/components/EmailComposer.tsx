@@ -39,6 +39,7 @@ import {
   CONTEXT_LABELS,
   MERGE_FIELDS,
   applyMergeFields,
+  draftFieldProblems,
   draftProblems,
   missingOwnerDetails,
   unresolvedFields,
@@ -151,6 +152,7 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
     [mergeValues, audience],
   );
 
+  const fieldProblems = draftFieldProblems({ to, subject, body });
   const problems = [...draftProblems({ to, subject, body }), ...detailGaps];
 
   const sending = useMutation({
@@ -229,6 +231,9 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
                 placeholder="name@example.com"
               />
             ) : null}
+            {fieldProblems.to ? (
+              <p className="text-sm text-destructive">{fieldProblems.to}</p>
+            ) : null}
             {recipients.length === 0 && ctx.isSuccess ? (
               <p className="text-sm text-muted-foreground">
                 This record has no contact on file yet — type an address above.
@@ -265,7 +270,11 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               id="composer-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              aria-invalid={Boolean(fieldProblems.subject)}
             />
+            {fieldProblems.subject ? (
+              <p className="text-sm text-destructive">{fieldProblems.subject}</p>
+            ) : null}
           </div>
 
           <div className="grid gap-2">
@@ -276,7 +285,16 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               rows={12}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write the message. Edit anything the template filled in — every word is yours to change."
+              aria-invalid={Boolean(fieldProblems.body)}
             />
+            {fieldProblems.body ? (
+              <p className="text-sm text-destructive">{fieldProblems.body}</p>
+            ) : null}
+            {fieldProblems.unfilled.length > 0 ? (
+              <p className="text-sm text-amber-700">
+                Still blank: {fieldProblems.unfilled.join(", ").replace(/_/g, " ")}.
+              </p>
+            ) : null}
           </div>
 
           {/* Exactly what leaves the inbox, read-only, before anyone presses Send. */}
