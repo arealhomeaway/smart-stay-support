@@ -89,17 +89,9 @@ export function useTicketWorkOrders(ticketId: string) {
 
 const EMERGENCY_OPTIONS = Object.keys(EMERGENCY_REASON_LABELS) as EmergencyReason[];
 
-const CATEGORIES = [
-  "Plumbing",
-  "Electrical",
-  "HVAC",
-  "Appliance",
-  "Roof",
-  "Structural",
-  "Handyman",
-  "Furniture",
-  "Other",
-];
+// Trades come from the shared catalog so a work order, a ticket and a vendor
+// all read the same way. See src/lib/taxonomy.ts.
+const CATEGORIES = TRADES;
 
 function bucketState(bucket: ReturnType<typeof workOrderBucket>) {
   if (bucket === "closed") return "done" as const;
