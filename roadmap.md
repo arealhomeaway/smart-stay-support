@@ -541,3 +541,6 @@ is now doable from Resolve.
 [ ] Recipient chips with duplicate detection and removal, plus separate To/Cc/Bcc
 [ ] Scheduled sending with timezone-aware date and time, keeping all validation before scheduling
 [ ] Attachment support in the email composer (templates + sent history already shipped)
+
+- [ ] Simple Demo landing screen (/demo): one card per portal the signed-in user can access, no persona or property controls
+- [ ] Remove old demo data, keep only the guide fixtures (Willow Creek Cottage, Lakeside Birch Retreat)
