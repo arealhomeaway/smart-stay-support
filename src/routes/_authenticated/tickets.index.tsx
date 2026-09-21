@@ -99,6 +99,11 @@ function TicketsPage() {
   const setTab = (v: string) => setParam({ tab: v });
   const setPriority = (v: string) => setParam({ priority: v });
 
+  // Tickets picked for a batch change; cleared whenever the batch is applied.
+  const [selected, setSelected] = useState<string[]>([]);
+  const toggle = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   const { demoMode } = useDemo();
   const userId = useCurrentUserId();
   const { data: staff } = useStaffDirectory();
