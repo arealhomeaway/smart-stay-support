@@ -306,10 +306,9 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
                           ? "escalated"
                           : "waiting"
                     }
-                    label={
-                      row.status === "sent" ? "Sent" : row.status === "failed" ? "Failed" : "Not sent"
-                    }
-                  />
+                  >
+                    {row.status === "sent" ? "Sent" : row.status === "failed" ? "Failed" : "Not sent"}
+                  </StatusBadge>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   To {row.recipient} · {usDateTime(row.sent_at ?? row.created_at)}
