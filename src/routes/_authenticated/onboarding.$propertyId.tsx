@@ -1031,6 +1031,7 @@ function PropertyWorkspace() {
         onAddObservation={(taskId, body) =>
           addNote.mutate({ data: { propertyId: current.id, taskId, body, mentions: [] } } as never)
         }
+        onAdvance={setOpenTaskId}
         onRecordException={(taskId, reason) =>
           recordException.mutate({ data: { taskId, reason } } as never)
         }

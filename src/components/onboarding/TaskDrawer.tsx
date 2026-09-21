@@ -18,6 +18,12 @@ import { Chip } from "@/components/ui/page";
 import { Separator } from "@/components/ui/separator";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { GuidedActionCard } from "@/components/GuidedActionCard";
+import {
+  nextActionableTask,
+  onboardingTaskAction,
+  type TaskActionId,
+} from "@/lib/onboarding-task-action";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { stateChip } from "@/lib/semantic";
 import { repairApprovalGuidance } from "@/lib/onboarding-scope";
@@ -99,6 +105,7 @@ export function TaskDrawer({
   onRecordException,
   onReopen,
   onAddObservation,
+  onAdvance,
   release,
   approvals = [],
 }: {
@@ -127,6 +134,8 @@ export function TaskDrawer({
   onRecordException: (taskId: string, reason: string) => void;
   onReopen: (taskId: string, reason: string) => void;
   onAddObservation: (taskId: string, body: string) => void;
+  /** Open the next step in this home's plan, straight after this one is finished. */
+  onAdvance?: (taskId: string) => void;
   /** Authoritative release context; without it nothing may be completed early. */
   release?: ReleaseContext;
   /** Canonical owner approval records already raised for this task. */
@@ -183,6 +192,58 @@ export function TaskDrawer({
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   const awaitingOwner = task.requires_owner_approval && task.owner_approval_status !== "approved";
   const dueChanged = (due || null) !== (task.due_on ?? null);
+
+  // One guided step at a time — the same pattern as the ticket workspace.
+  // Every effect below routes through the callbacks this drawer already uses,
+  // so the release, evidence and approval rules stay the single authority.
+  const t: WorkflowTask = task;
+  const action = onboardingTaskAction(view);
+  const nextTask = nextActionableTask(t, tasks, release);
+
+  const advance = () => {
+    if (nextTask && onAdvance) onAdvance(nextTask.id);
+  };
+
+  const runAction = (id: TaskActionId, values: Record<string, string>) => {
+    const text = (k: string) => (values[k] ?? "").trim();
+    if (id === "clear_blocker") {
+      onAddObservation(t.id, text("update"));
+      onSave(
+        taskPayload(t, {
+          blocker: values["outcome"] === "cleared" ? "" : text("update"),
+        }),
+      );
+      return true;
+    }
+    if (id === "capture_evidence") {
+      onSave(taskPayload(t, { evidenceNote: text("evidence") }));
+      return true;
+    }
+    if (id === "send_for_approval" || id === "resubmit_for_approval") {
+      onSubmitApproval(t.id, text("version"), text("note"));
+      return true;
+    }
+    if (id === "record_owner_answer") {
+      onRecordOwnerDecision(
+        t.id,
+        values["decision"] === "approved",
+        text("note"),
+        text("evidence_url"),
+      );
+      return true;
+    }
+    if (id === "complete_task") {
+      if (text("observation")) onAddObservation(t.id, text("observation"));
+      onSave(taskPayload(t, { status: "complete", blocker: "" }));
+      advance();
+      return true;
+    }
+    if (id === "reopen_or_move_on") {
+      advance();
+      return true;
+    }
+    return false;
+  };
 
   return (
     <TaskWorkspace
@@ -249,6 +310,31 @@ export function TaskDrawer({
       }
     >
       <div className="space-y-5">
+        {action && (
+          <GuidedActionCard
+            action={{
+              ...action,
+              ...(nextTask && (action.id === "complete_task" || action.id === "reopen_or_move_on")
+                ? { then: `Next: ${nextTask.title}` }
+                : {}),
+            }}
+            readOnly={disabled}
+            successMessage={
+              nextTask && action.id === "complete_task"
+                ? `Step recorded — next: ${nextTask.title}`
+                : "Step recorded."
+            }
+            onHandoff={() =>
+              document
+                .getElementById("task-detail-body")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            onComplete={(values) => runAction(action.id, values)}
+          />
+        )}
+
+        <div id="task-detail-body" />
+
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <Field label="Assignee" value={assigneeLabel(task, people)} />
           <Field
