@@ -68,6 +68,11 @@ type Props = {
   recordId: string;
   /** Optional trigger label; defaults to "Write an email". */
   label?: string;
+  /** Pre-written subject, e.g. a property options summary. Still fully editable. */
+  initialSubject?: string;
+  /** Pre-written body. Still fully editable. */
+  initialBody?: string;
+  disabled?: boolean;
 };
 
 type TemplateRow = {
