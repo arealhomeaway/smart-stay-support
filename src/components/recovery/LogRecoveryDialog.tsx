@@ -93,7 +93,7 @@ export function LogRecoveryDialog() {
       const { data, error } = await supabase
         .from("tickets")
         .select(
-          "id,ticket_number,title,description,property_id,guest_name,priority,is_demo,ownerrez_booking_id,ownerrez_channel,ownerrez_confirmation_code,ownerrez_arrival,ownerrez_departure",
+          "id,title,description,property_id,guest_name,priority,is_demo,ownerrez_booking_id,ownerrez_channel,ownerrez_confirmation_code,ownerrez_arrival,ownerrez_departure",
         )
         .in("status", OPEN_STATUSES)
         .order("created_at", { ascending: false })
