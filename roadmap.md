@@ -522,3 +522,4 @@ is now doable from Resolve.
 - [x] Dedicated Work Order calendar (month + timeline, conflict visibility, links back)
 - [x] Complete notification coverage (SLA breach warnings, missed vendor dispatch, claim deadline reminders)
 - [x] Queue bulk actions (batch reassignment, status updates, priority tagging, permission checks)
+- [x] Reliable pet & amenity matching from verified OwnerRez fields; unconfirmed facts hidden from filtered searches; interrupted MTR stays offered with an STR re-book second step
