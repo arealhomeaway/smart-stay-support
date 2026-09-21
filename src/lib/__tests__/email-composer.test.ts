@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { missingOwnerDetails } from "@/lib/email-composer";
+import { draftFieldProblems, missingOwnerDetails } from "@/lib/email-composer";
 
 describe("owner and property details", () => {
   const full = {
@@ -25,5 +25,31 @@ describe("owner and property details", () => {
 
   it("does not ask a vendor message for homeowner details", () => {
     expect(missingOwnerDetails({ property: "Sunset Cottage" }, "vendor")).toEqual([]);
+  });
+});
+
+describe("before Send is allowed", () => {
+  const good = { to: "dana@example.com", subject: "Your home", body: "Hello Dana, all set." };
+
+  it("clears a finished draft", () => {
+    const f = draftFieldProblems(good);
+    expect([f.to, f.subject, f.body]).toEqual([null, null, null]);
+    expect(f.unfilled).toEqual([]);
+  });
+
+  it("names a bad address, an empty subject and an empty message", () => {
+    const f = draftFieldProblems({ to: "dana", subject: "", body: "" });
+    expect(f.to).toContain("valid email");
+    expect(f.subject).toContain("subject");
+    expect(f.body).toContain("Write");
+  });
+
+  it("stops a draft with blanks the template left behind", () => {
+    const f = draftFieldProblems({
+      ...good,
+      body: "Hello {{owner_name}}, your home {{property}} is ready.",
+    });
+    expect(f.body).toContain("blanks");
+    expect(f.unfilled).toEqual(["owner_name", "property"]);
   });
 });
