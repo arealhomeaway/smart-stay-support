@@ -53,27 +53,9 @@ export const VENDOR_CLASS_LABELS: Record<VendorClass, string> = {
   internal_team: "Internal team",
 };
 
-export const SERVICE_CATEGORIES = [
-  "Cleaning",
-  "Assessment",
-  "Maintenance",
-  "Handyman",
-  "HVAC",
-  "Plumbing",
-  "Electrical",
-  "Appliance",
-  "Pest control",
-  "Landscaping",
-  "Pool & spa",
-  "Trash valet",
-  "Locks & access",
-  "Flooring",
-  "Painting",
-  "Roofing",
-  "Restoration",
-  "Photography",
-  "Other",
-] as const;
+// The same trade list Work Orders use, so a vendor's approved trades and the
+// work sent to them are never written two different ways. See src/lib/taxonomy.ts.
+export const SERVICE_CATEGORIES = TRADES.map((t) => t.label);
 
 export const VENDOR_ROLES = ["admin", "dispatcher", "team_member"] as const;
 export type VendorRole = (typeof VENDOR_ROLES)[number];
