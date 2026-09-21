@@ -87,24 +87,48 @@ type TemplateRow = {
 const CUSTOM = "__custom__";
 const BLANK = "__blank__";
 
-export function EmailComposer({ context, recordId, label = "Write an email" }: Props) {
+export function EmailComposer({
+  context,
+  recordId,
+  label = "Write an email",
+  initialSubject,
+  initialBody,
+  disabled,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" disabled={disabled}>
           <Mail className="size-4" aria-hidden /> {label}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] w-[min(760px,95vw)] max-w-[95vw] overflow-y-auto">
-        {open ? <ComposerBody context={context} recordId={recordId} /> : null}
+        {open ? (
+          <ComposerBody
+            context={context}
+            recordId={recordId}
+            {...(initialSubject === undefined ? {} : { initialSubject })}
+            {...(initialBody === undefined ? {} : { initialBody })}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
 }
 
-function ComposerBody({ context, recordId }: { context: ComposerContext; recordId: string }) {
+function ComposerBody({
+  context,
+  recordId,
+  initialSubject,
+  initialBody,
+}: {
+  context: ComposerContext;
+  recordId: string;
+  initialSubject?: string;
+  initialBody?: string;
+}) {
   const queryClient = useQueryClient();
   const loadContext = useServerFn(getComposerContext);
   const loadHistory = useServerFn(getMessageHistory);
