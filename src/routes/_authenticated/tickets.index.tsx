@@ -278,16 +278,26 @@ function TicketsPage() {
       ) : (
         <div className="space-y-2">
           {tickets.map((t) => (
-            <TicketWorkCard
-              key={t.id}
-              t={t}
-              ownerName={
-                currentOwnerId(t) ? displayName(people.get(currentOwnerId(t) ?? "")) : null
-              }
-              viewerId={userId}
-              originSearch={originSearch}
-            />
+            <div key={t.id} className="flex items-center gap-2">
+              <Checkbox
+                className="ml-1 shrink-0"
+                aria-label={`Select ticket ${t.ref}`}
+                checked={selected.includes(t.id)}
+                onCheckedChange={() => toggle(t.id)}
+              />
+              <div className="min-w-0 flex-1">
+                <TicketWorkCard
+                  t={t}
+                  ownerName={
+                    currentOwnerId(t) ? displayName(people.get(currentOwnerId(t) ?? "")) : null
+                  }
+                  viewerId={userId}
+                  originSearch={originSearch}
+                />
+              </div>
+            </div>
           ))}
+          <QueueBulkActions selected={selected} onClear={() => setSelected([])} />
         </div>
       )}
     </div>
