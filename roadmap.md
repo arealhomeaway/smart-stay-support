@@ -540,3 +540,4 @@ is now doable from Resolve.
 [ ] Draft autosave and recovery for the email composer (recipient, subject, body, merge values)
 [ ] Recipient chips with duplicate detection and removal, plus separate To/Cc/Bcc
 [ ] Scheduled sending with timezone-aware date and time, keeping all validation before scheduling
+[ ] Attachment support in the email composer (templates + sent history already shipped)
