@@ -140,7 +140,7 @@ export function RecoveryDrawer({
     onSuccess: () => {
       setNote("");
       refresh();
-      toast.success("Recovery updated");
+      toast.success("Refund or credit updated");
     },
     onError: (e: Error) => toast.error(e.message),
   });
