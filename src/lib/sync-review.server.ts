@@ -55,7 +55,7 @@ export async function listUnplacedEvents(): Promise<ReviewEvent[]> {
         outcome: row.outcome,
         reason: row.reason,
         taskId: row.task_id,
-        homeId: row.home_id,
+        homeId: row.home_id === null ? null : String(row.home_id),
         retryable: row.retryable,
         retryCount: row.retry_count,
         recoveredAt: row.recovered_at,
