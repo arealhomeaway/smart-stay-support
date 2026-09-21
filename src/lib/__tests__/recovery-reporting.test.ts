@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import {
   recoveryTotals,
   reportableRows,
@@ -30,13 +30,13 @@ function row(partial: Partial<LedgerRow>): LedgerRow {
 }
 
 describe("guest recovery reporting", () => {
-  test("demo records are never counted", () => {
+  it("demo records are never counted", () => {
     const rows = [row({ delivered_amount: 100 }), row({ delivered_amount: 500, is_demo: true })];
     expect(reportableRows(rows)).toHaveLength(1);
     expect(recoveryTotals(rows).issued).toBe(100);
   });
 
-  test("totals add proposed, approved and issued separately", () => {
+  it("totals add proposed, approved and issued separately", () => {
     const totals = recoveryTotals([
       row({ proposed_amount: 200, approved_amount: 150, delivered_amount: 150 }),
       row({ proposed_amount: 100, approval_status: "pending", stage: "closed" }),
@@ -51,7 +51,7 @@ describe("guest recovery reporting", () => {
     });
   });
 
-  test("groups by home, newest-money first", () => {
+  it("groups by home, newest-money first", () => {
     const grouped = totalsByProperty([
       row({ property_id: "p1", property_name: "Willow", delivered_amount: 50 }),
       row({ property_id: "p2", property_name: "Birch", delivered_amount: 400 }),
@@ -60,12 +60,12 @@ describe("guest recovery reporting", () => {
     expect(grouped[0]?.totals.issued).toBe(400);
   });
 
-  test("a recovery with no home still reports", () => {
+  it("a recovery with no home still reports", () => {
     const grouped = totalsByProperty([row({ property_id: null, property_name: null })]);
     expect(grouped[0]?.label).toBe("No home on file");
   });
 
-  test("groups by month, newest first, and by ticket category", () => {
+  it("groups by month, newest first, and by ticket category", () => {
     const rows = [
       row({ logged_at: "2026-08-04T00:00:00Z", ticket_category: "cleaning" }),
       row({ logged_at: "2026-09-04T00:00:00Z", ticket_category: "maintenance" }),
