@@ -125,6 +125,13 @@ type SendInput = {
   ticketId?: string | null;
   /** A saved onboarding attempt owns recovery after an uncertain provider response. */
   singleAttempt?: boolean;
+  /** The record this message belongs to, so it shows in that record's history. */
+  entity?: { type: string; id: string } | null;
+  /** The written message, kept with the delivery record. */
+  bodyText?: string | null;
+  /** Who pressed send. */
+  sentBy?: string | null;
+  templateId?: string | null;
 };
 
 const MAX_ATTEMPTS = 3;
@@ -143,6 +150,10 @@ async function logDelivery(entry: {
   status: string;
   attempts: number;
   error: string | null;
+  entity?: { type: string; id: string } | null;
+  bodyText?: string | null;
+  sentBy?: string | null;
+  templateId?: string | null;
 }) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -156,6 +167,11 @@ async function logDelivery(entry: {
       status: entry.status,
       attempts: entry.attempts,
       error_message: entry.error ? entry.error.slice(0, 500) : null,
+      entity_type: entry.entity?.type ?? null,
+      entity_id: entry.entity?.id ?? null,
+      body: entry.bodyText ?? null,
+      sent_by: entry.sentBy ?? null,
+      template_id: entry.templateId ?? null,
       sent_at: entry.status === "sent" ? new Date().toISOString() : null,
     });
   } catch (err) {
@@ -179,6 +195,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       purpose,
       replyTo: input.replyTo ?? null,
       ticketId: input.ticketId ?? null,
+      entity: input.entity ?? null,
+      bodyText: input.bodyText ?? null,
+      sentBy: input.sentBy ?? null,
+      templateId: input.templateId ?? null,
       status: "skipped",
       attempts: 0,
       error,
@@ -195,6 +215,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       purpose,
       replyTo: input.replyTo ?? null,
       ticketId: input.ticketId ?? null,
+      entity: input.entity ?? null,
+      bodyText: input.bodyText ?? null,
+      sentBy: input.sentBy ?? null,
+      templateId: input.templateId ?? null,
       status: "skipped",
       attempts: 0,
       error,
@@ -242,6 +266,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       purpose,
       replyTo: SHARED_MAILBOX,
       ticketId: input.ticketId ?? null,
+      entity: input.entity ?? null,
+      bodyText: input.bodyText ?? null,
+      sentBy: input.sentBy ?? null,
+      templateId: input.templateId ?? null,
       status: "blocked",
       attempts: 0,
       error,
@@ -270,6 +298,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
           purpose,
           replyTo,
           ticketId: input.ticketId ?? null,
+      entity: input.entity ?? null,
+      bodyText: input.bodyText ?? null,
+      sentBy: input.sentBy ?? null,
+      templateId: input.templateId ?? null,
           status: "sent",
           attempts,
           error: null,
