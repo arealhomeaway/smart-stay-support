@@ -59,7 +59,7 @@ describe("availability filtering", () => {
   it("hides homes without a confirmed answer from a filtered search", () => {
     const withPets = result({ id: "a", facts: factsFromOwnerRez(2, listing) });
     const unknown = result({ id: "b", facts: unknownFacts() });
-    const split = applyRequirements([withPets, unknown], { pets: 1, amenities: ["wifi"] });
+    const split = applyRequirements([withPets, unknown], { dogs: 1, amenities: ["wifi"] });
     expect(split.matched.map((row) => row.id)).toEqual(["a"]);
     expect(split.heldBack[0]?.result.id).toBe("b");
   });
