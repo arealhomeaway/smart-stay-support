@@ -219,7 +219,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
       setPolicyFit("unknown");
       qc.invalidateQueries({ queryKey: ["recovery-for-ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Guest refunds & credits opened");
+      toast.success("Refund or credit opened");
     },
     onError: (e: Error) => toast.error(e.message),
   });

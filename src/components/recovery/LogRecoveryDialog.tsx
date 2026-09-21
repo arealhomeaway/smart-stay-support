@@ -230,7 +230,7 @@ export function LogRecoveryDialog() {
       setOpen(false);
       reset();
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Guest refunds & credits logged");
+      toast.success("Refund or credit logged");
     },
     onError: (error: Error) => toast.error(error.message),
   });
