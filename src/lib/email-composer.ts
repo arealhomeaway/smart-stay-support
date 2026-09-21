@@ -110,6 +110,23 @@ export function draftFieldProblems(draft: ComposerDraft) {
   };
 }
 
+/**
+ * The one rule the Send button obeys: every blocker in one place, so the
+ * button, the preview and the messages under each box can never disagree.
+ */
+export function sendGate(
+  draft: ComposerDraft,
+  values: MergeValues,
+  audience: MessageAudience | null,
+) {
+  const fields = draftFieldProblems(draft);
+  const blockers = [
+    ...[fields.to, fields.subject, fields.body].filter((p): p is string => p !== null),
+    ...missingOwnerDetails(values, audience),
+  ];
+  return { fields, blockers, canSend: blockers.length === 0 };
+}
+
 /** What still needs fixing before this message can go out. */
 export function draftProblems(draft: ComposerDraft) {
   const f = draftFieldProblems(draft);
