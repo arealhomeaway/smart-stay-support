@@ -524,3 +524,4 @@ is now doable from Resolve.
 - [x] Queue bulk actions (batch reassignment, status updates, priority tagging, permission checks)
 - [x] Reliable pet & amenity matching from verified OwnerRez fields; unconfirmed facts hidden from filtered searches; interrupted MTR stays offered with an STR re-book second step
 - [x] Operational taxonomy & field guidance (one shared category list across tickets, work orders, claims and vendors; trades roll up to categories; one-line guidance per field)
+[x] Breezeway sync depth & document completion (unplaced updates + drift review, differences held for a person, vendor paperwork completeness, legacy document retirement)
