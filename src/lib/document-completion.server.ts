@@ -65,7 +65,7 @@ export async function vendorDocumentCompletion(): Promise<VendorCompletion[]> {
     const result = completionFor(REQUIRED_VENDOR_DOCS, byOrg.get(org.id) ?? []);
     return {
       orgId: org.id,
-      orgName: org.name,
+      orgName: org.display_name || org.legal_name,
       rows: result.rows,
       missing: result.missing,
       attention: result.attention,
