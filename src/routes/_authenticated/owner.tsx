@@ -51,6 +51,7 @@ import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
 import { useOwnerPreview } from "@/lib/owner-preview";
+import { useDemo } from "@/components/DemoProvider";
 
 export const Route = createFileRoute("/_authenticated/owner")({
   head: () => ({
