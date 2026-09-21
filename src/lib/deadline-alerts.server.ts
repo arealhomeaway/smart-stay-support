@@ -107,7 +107,9 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
       _entity_id: alert.entityId,
       _link_path: alert.linkPath,
       _priority: alert.priority,
-      _actor_id: null,
+      // Nobody performed this — the clock did. The generated signature does
+      // not mark the actor nullable, but the function accepts NULL.
+      _actor_id: null as unknown as string,
       // Urgent items earn an email; the rest stay in the in-app inbox.
       _email: alert.priority === "urgent",
       _is_demo: alert.isDemo,
