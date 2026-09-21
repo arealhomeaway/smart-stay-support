@@ -35,7 +35,7 @@ describe("work order calendar", () => {
     expect(entries.map((e) => e.workOrder.id)).toEqual(["a", "b"]);
     expect(entries.find((e) => e.workOrder.id === "b")?.fromVendorEta).toBe(true);
     expect(entries.find((e) => e.workOrder.id === "b")?.day).toBe(
-      calendarDay("2026-09-12T15:00:00.000Z"),
+      calendarDay("2026-09-12T15:00:00.000Z") ?? "",
     );
   });
 
