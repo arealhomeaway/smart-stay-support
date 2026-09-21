@@ -532,3 +532,4 @@ is now doable from Resolve.
 [x] Stage-based progress views: completion, blockers and overdue across the 8 operational stages
 [x] Audit trail for each task's operational-stage assignment (prior phase, current owner, future remapping)
 [x] Full Furnishing tasks mapped into the 8 operational stages, preserving details and ownership
+[ ] Email composer on owner-facing onboarding steps, with owner/property details flagged when missing
