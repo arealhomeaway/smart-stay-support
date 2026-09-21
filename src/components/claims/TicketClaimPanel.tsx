@@ -140,6 +140,7 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
           ownerrez_booking_id: ticket.ownerrez_booking_id ?? null,
           stay_arrival: ticket.ownerrez_arrival ?? null,
           stay_departure: ticket.ownerrez_departure ?? null,
+          category: normalizeCategory(ticket.category) ?? "claims",
           assigned_to: userId,
           deadline_on: deadline || null,
           created_by: userId,
