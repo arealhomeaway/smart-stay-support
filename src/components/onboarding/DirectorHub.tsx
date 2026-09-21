@@ -144,6 +144,20 @@ export function DirectorHub({
             placeholder="Find a home or project manager"
             className="w-full max-w-xs"
           />
+          <button
+            type="button"
+            onClick={() => setShowTest(!showTest)}
+            title="Test homes are excluded from every count above."
+            className={cn(
+              "rounded-md border px-2.5 py-1 text-xs font-medium",
+              showTest
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {showTest ? "Hide" : "Show"} test projects ({testCount})
+          </button>
+
           {LENSES.filter((l) => CHIP_LENSES.includes(l.key)).map((l) => (
             <button
               key={l.key}
