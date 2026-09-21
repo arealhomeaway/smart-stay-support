@@ -29,6 +29,13 @@
       "when": 1790006042793,
       "tag": "0003_shared_operational_category",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790013956618,
+      "tag": "0004_handoff_gate_separation_of_duties",
+      "breakpoints": true
     }
   ]
 }
