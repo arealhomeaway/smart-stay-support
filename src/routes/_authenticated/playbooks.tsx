@@ -540,6 +540,7 @@ function NewPlaybook({ onSaved }: { onSaved: () => void }) {
             </option>
           ))}
         </select>
+        <FieldHint guide="ticket.category" />
       </div>
       <div className="space-y-2">
         <Label>Summary</Label>
