@@ -244,6 +244,7 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
                   ))}
                 </SelectContent>
               </Select>
+              <FieldHint guide="claim.type" />
               <p className="text-[11px] text-muted-foreground">
                 Sets the evidence checklist:{" "}
                 {evidenceSlots(type)
@@ -251,6 +252,10 @@ export function TicketClaimPanel({ ticket }: { ticket: TicketContext }) {
                   .map((s) => s.label)
                   .join(", ")}
                 .
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Category: {categoryLabel(normalizeCategory(ticket.category) ?? "claims")} — carried
+                over from the ticket.
               </p>
             </div>
             <div className="space-y-1">
