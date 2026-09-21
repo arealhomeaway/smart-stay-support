@@ -47,6 +47,7 @@ function AvailabilityFinderPage() {
   const [exporting, setExporting] = useState(false);
   const [pets, setPets] = useState(String(search.pets ?? 0));
   const [amenities, setAmenities] = useState<AmenityKey[]>(parseAmenities(search.amenities));
+  const [confirmUnlinked, setConfirmUnlinked] = useState<string | null>(null);
   const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
@@ -78,8 +79,11 @@ function AvailabilityFinderPage() {
 
   async function downloadPdf() {
     setExportError(null);
-    if (selectedResults.length === 0 || selectedResults.some((row) => !verifiedPublicListingUrl(row.bookingUrl))) {
-      setExportError("Select one or more eligible properties with verified public listing links."); return;
+    if (selectedResults.length === 0) {
+      setExportError("Select one or more properties to include."); return;
+    }
+    if (selectedResults.some((row) => row.bookingUrl && !verifiedPublicListingUrl(row.bookingUrl))) {
+      setExportError("A selected property has an unverified listing link. Correct it in OwnerRez before export."); return;
     }
     setExporting(true);
     try {
@@ -138,8 +142,19 @@ function AvailabilityFinderPage() {
             <p className={`mt-3 font-semibold ${row.status === "conditional" ? "text-amber-700 dark:text-amber-400" : row.status === "available" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>{row.status === "conditional" ? "Conditional — STR relocation required" : row.status === "available" ? "Available" : "Unavailable"}</p>
             {needsStrRebook(row) && <div className="mt-1 text-sm"><p>This home can still be offered. Second step if the guest chooses it: {rebookStepSummary(row)}</p><ul className="list-inside list-disc">{row.strConflicts.map((conflict, index) => <li key={`${conflict.arrival}-${index}`}>{conflict.arrival} to {conflict.departure}</li>)}</ul></div>}
             {row.status === "unavailable" && <p className="mt-1 text-sm">Non-movable reservation or block overlaps the requested stay.</p>}
-            {row.bookingUrl ? <a href={row.bookingUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary underline">View public listing</a> : <p className="mt-2 text-sm text-amber-700">No verified public listing link. PDF export is blocked for this property.</p>}
-            {row.status !== "unavailable" && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={chosen.includes(row.id)} disabled={!row.bookingUrl} onChange={(event) => setChosen((current) => event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id))} />Include in property options PDF</label>}
+            {row.bookingUrl ? <a href={row.bookingUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm text-primary underline">View public listing</a> : <p className="mt-2 text-sm text-amber-700">No verified public listing link. The PDF page for this home will carry no link.</p>}
+            {row.status !== "unavailable" && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={chosen.includes(row.id)} onChange={(event) => {
+              if (event.target.checked && !row.bookingUrl) { setConfirmUnlinked(row.id); return; }
+              setConfirmUnlinked((current) => current === row.id ? null : current);
+              setChosen((current) => event.target.checked ? [...current, row.id] : current.filter((id) => id !== row.id));
+            }} />Include in property options PDF</label>}
+            {confirmUnlinked === row.id && <div role="alertdialog" aria-label="Add property anyway?" className="mt-2 rounded border border-amber-500 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+              <p>This home has no linked posting. Add property anyway?</p>
+              <div className="mt-2 flex gap-2">
+                <Button type="button" size="sm" onClick={() => { setChosen((current) => current.includes(row.id) ? current : [...current, row.id]); setConfirmUnlinked(null); }}>Yes</Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => { setChosen((current) => current.filter((id) => id !== row.id)); setConfirmUnlinked(null); }}>No</Button>
+              </div>
+            </div>}
           </article>)}
           {results.length === 0 && <p className="rounded border p-6 text-muted-foreground">No matching properties in this view.</p>}
         </div>
