@@ -39,6 +39,8 @@ import {
   type ClaimType,
 } from "@/lib/claims";
 import type { ClaimRow } from "@/lib/claim-types";
+import { FieldHint } from "@/components/FieldHint";
+import { categoryLabel, normalizeCategory } from "@/lib/taxonomy";
 
 const TYPES: ClaimType[] = [
   "channel_aircover",
