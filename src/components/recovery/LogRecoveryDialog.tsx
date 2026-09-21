@@ -52,7 +52,6 @@ import {
 
 type TicketOption = {
   id: string;
-  ticket_number: number | null;
   title: string;
   description: string | null;
   property_id: string | null;
@@ -106,7 +105,7 @@ export function LogRecoveryDialog() {
   const term = search.trim().toLowerCase();
   const options = (tickets.data ?? []).filter((row) => {
     if (!term) return true;
-    return [row.title, row.guest_name, row.ticket_number ? `#${row.ticket_number}` : null]
+    return [row.title, row.guest_name]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term));
   });
@@ -272,7 +271,7 @@ export function LogRecoveryDialog() {
               id="rec-ticket-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ticket number, title or guest"
+              placeholder="Search by ticket title or guest"
             />
             {tickets.isLoading ? (
               <p className="text-xs text-muted-foreground">Loading open tickets…</p>
@@ -290,7 +289,6 @@ export function LogRecoveryDialog() {
                     onClick={() => setTicketId(row.id)}
                     className={`w-full rounded px-2 py-1.5 text-left text-xs ${row.id === ticketId ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
-                    {row.ticket_number ? `#${row.ticket_number} · ` : ""}
                     {row.title}
                     {row.guest_name ? ` — ${row.guest_name}` : ""}
                   </button>
