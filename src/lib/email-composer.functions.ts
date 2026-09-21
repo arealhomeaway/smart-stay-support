@@ -110,6 +110,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       body: string;
       audience: MessageAudience;
       templateId?: string | null;
+      toAdditional?: string[];
       cc?: string[];
       bcc?: string[];
       /** Send later: the exact instant, plus the zone the person picked it in. */
@@ -125,7 +126,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       if ((input?.body ?? "").trim().length < 10) throw new Error("Write the message.");
       if (!AUDIENCES.includes(input?.audience)) throw new Error("Pick who this is for.");
       const valid = (a: string) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(a.trim());
-      for (const a of [...(input.cc ?? []), ...(input.bcc ?? [])]) {
+      for (const a of [...(input.toAdditional ?? []), ...(input.cc ?? []), ...(input.bcc ?? [])]) {
         if (!valid(a)) throw new Error(`${a} is not a valid email address.`);
       }
       if (input.scheduledFor) {
@@ -158,6 +159,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
           context: data.context,
           recordId: data.recordId,
           to: data.to.trim(),
+          toAdditional: data.toAdditional ?? [],
           cc: data.cc ?? [],
           bcc: data.bcc ?? [],
           subject: data.subject.trim(),
@@ -177,6 +179,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
 
     const result = await sendEmail({
       to: data.to.trim(),
+      toAdditional: data.toAdditional ?? [],
       cc: data.cc ?? [],
       bcc: data.bcc ?? [],
       attachments: data.attachments ?? [],

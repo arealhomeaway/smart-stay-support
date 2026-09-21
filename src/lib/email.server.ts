@@ -262,7 +262,12 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
   const message = {
     subject: input.subject,
     body: { contentType: "HTML", content: input.html },
-    toRecipients: [{ emailAddress: { address: to } }],
+    toRecipients: [
+      { emailAddress: { address: to } },
+      ...(input.toAdditional ?? [])
+        .filter(isEmailAddress)
+        .map((address) => ({ emailAddress: { address } })),
+    ],
     ...(input.cc?.filter(isEmailAddress).length
       ? {
           ccRecipients: input.cc

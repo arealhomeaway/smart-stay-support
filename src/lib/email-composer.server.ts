@@ -200,6 +200,7 @@ export type ParkedEmail = {
   context: string;
   recordId: string;
   to: string;
+  toAdditional: string[];
   cc: string[];
   bcc: string[];
   subject: string;
@@ -215,6 +216,7 @@ export async function parkScheduledEmail(email: ParkedEmail, sentBy: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("email_log").insert({
     recipient: email.to,
+    to_additional: email.toAdditional,
     cc: email.cc,
     bcc: email.bcc,
     subject: email.subject.slice(0, 300),
@@ -246,7 +248,7 @@ export async function drainScheduledEmails(now = new Date()) {
 
   const { data: due } = await supabaseAdmin
     .from("email_log")
-    .select("id, recipient, cc, bcc, subject, body, entity_type, entity_id, sent_by, template_id")
+    .select("id, recipient, to_additional, cc, bcc, subject, body, entity_type, entity_id, sent_by, template_id")
     .eq("status", "scheduled")
     .lte("scheduled_for", now.toISOString())
     .limit(25);
@@ -266,6 +268,7 @@ export async function drainScheduledEmails(now = new Date()) {
     const body = String(row["body"] ?? "");
     const result = await sendEmail({
       to: String(row["recipient"] ?? ""),
+      toAdditional: (row["to_additional"] as string[] | null) ?? [],
       cc: (row["cc"] as string[] | null) ?? [],
       bcc: (row["bcc"] as string[] | null) ?? [],
       subject,
