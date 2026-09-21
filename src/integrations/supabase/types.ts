@@ -825,6 +825,7 @@ export type Database = {
           actual_cost: number | null
           approved_amount: number | null
           assigned_to: string | null
+          category: string | null
           claim_type: string
           closed_at: string | null
           cost_snapshot: Json | null
@@ -863,6 +864,7 @@ export type Database = {
           actual_cost?: number | null
           approved_amount?: number | null
           assigned_to?: string | null
+          category?: string | null
           claim_type: string
           closed_at?: string | null
           cost_snapshot?: Json | null
@@ -901,6 +903,7 @@ export type Database = {
           actual_cost?: number | null
           approved_amount?: number | null
           assigned_to?: string | null
+          category?: string | null
           claim_type?: string
           closed_at?: string | null
           cost_snapshot?: Json | null
@@ -7901,6 +7904,7 @@ export type Database = {
           approved_amount: number | null
           assigned_to: string | null
           authority_level: string | null
+          category: string | null
           claim_id: string | null
           closed_at: string | null
           closed_by: string | null
@@ -7976,6 +7980,7 @@ export type Database = {
           approved_amount?: number | null
           assigned_to?: string | null
           authority_level?: string | null
+          category?: string | null
           claim_id?: string | null
           closed_at?: string | null
           closed_by?: string | null
@@ -8051,6 +8056,7 @@ export type Database = {
           approved_amount?: number | null
           assigned_to?: string | null
           authority_level?: string | null
+          category?: string | null
           claim_id?: string | null
           closed_at?: string | null
           closed_by?: string | null
