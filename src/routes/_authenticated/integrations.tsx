@@ -8,7 +8,6 @@ import { StatusBadge } from "@/components/ui/status";
 import { getInboundStatus, listImportedMatters } from "@/lib/inbound.functions";
 import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { EmailDeliveryPanel } from "@/components/EmailDeliveryPanel";
-import { NotionSyncPanel } from "@/components/NotionSyncPanel";
 import { MailboxIntakePanel } from "@/components/MailboxIntakePanel";
 import { FeatureFlagsPanel } from "@/components/FeatureFlagsPanel";
 import { SharePointConnectionPanel } from "@/components/SharePointConnectionPanel";
@@ -102,8 +101,6 @@ function IntegrationsPage() {
       <FeatureFlagsPanel />
 
       <MailboxIntakePanel />
-
-      <NotionSyncPanel />
 
       <EmailDeliveryPanel />
 

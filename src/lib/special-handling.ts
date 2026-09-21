@@ -2,7 +2,7 @@
  * Canonical Special Handling — one source of truth per property.
  *
  * Before this existed, "special handling" was free text scattered across
- * operating notes, access notes and Notion. Coordinators had to remember which
+ * operating notes and access notes. Coordinators had to remember which
  * home had which rule. A rule now has a type, so Resolve can surface the right
  * one at the moment it matters instead of asking someone to tick a generic
  * acknowledgement box.

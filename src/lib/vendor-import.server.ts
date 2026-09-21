@@ -27,7 +27,7 @@ const PERSONAL_DOMAINS = new Set([
   "comcast.net",
 ]);
 
-/** What the Notion vendor database knows about a company, carried through review. */
+/** What the legacy vendor database knows about a company, carried through review. */
 export type LegacyProfile = {
   contactPerson: string | null;
   specialties: string[];
@@ -45,7 +45,7 @@ export type LegacyProfile = {
   claims: string[];
   insuranceExpiresOn: string | null;
   licenseExpiresOn: string | null;
-  notionVendorId: string | null;
+  legacyVendorId: string | null;
 };
 
 export type ParsedRow = {
@@ -95,10 +95,10 @@ export function parseLegacyRows(text: string): ParsedRow[] {
 }
 
 /* ------------------------------------------------------------------ */
-/* Notion vendor database export                                       */
+/* Legacy vendor database export                                       */
 /* ------------------------------------------------------------------ */
 
-/** True when the pasted text is the ARHA Notion "Vendor Database" CSV export. */
+/** True when the pasted text is the ARHA legacy "Vendor Database" CSV export. */
 export function looksLikeVendorDatabaseCsv(text: string) {
   const header = text.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "";
   return /(^|,)"?Company"?,/i.test(header) && /Vendor Status|Specialty|Vendor ID/i.test(header);
@@ -130,9 +130,9 @@ function claim(record: Record<string, string>, column: string, label: string, cl
 }
 
 /**
- * Reads the Notion vendor database export.
+ * Reads the legacy vendor database export.
  *
- * Everything here is what Notion *recorded*, not what ARHA has verified. Yes/No
+ * Everything here is what the old system *recorded*, not what ARHA has verified. Yes/No
  * compliance columns come across as claims on the record so a supervisor can
  * check them — they never tick a screening gate on their own.
  */
@@ -187,7 +187,7 @@ export function parseVendorDatabaseCsv(text: string): ParsedRow[] {
         claims,
         insuranceExpiresOn: toIsoDate(firstValue(record, "Insurance Expiration")),
         licenseExpiresOn: toIsoDate(firstValue(record, "License Expiration")),
-        notionVendorId: firstValue(record, "Vendor ID"),
+        legacyVendorId: firstValue(record, "Vendor ID"),
       },
     });
   }
@@ -270,7 +270,7 @@ export function parseBreezewayCsv(text: string): ParsedRow[] {
         claims,
         insuranceExpiresOn: null,
         licenseExpiresOn: null,
-        notionVendorId: null,
+        legacyVendorId: null,
       },
     });
   }
@@ -370,9 +370,9 @@ export async function createImportBatch(
   input: { sourceSystem: string; label: string; text: string },
 ) {
   await assertSupervisor(db, userId);
-  const notionExport = looksLikeVendorDatabaseCsv(input.text);
-  const breezewayExport = !notionExport && looksLikeBreezewayCsv(input.text);
-  const parsed = notionExport
+  const legacyExport = looksLikeVendorDatabaseCsv(input.text);
+  const breezewayExport = !legacyExport && looksLikeBreezewayCsv(input.text);
+  const parsed = legacyExport
     ? parseVendorDatabaseCsv(input.text)
     : breezewayExport
       ? parseBreezewayCsv(input.text)
@@ -387,7 +387,7 @@ export async function createImportBatch(
   const { data: batch, error: batchError } = await db
     .from("vendor_import_batches")
     .insert({
-      source_system: notionExport ? "notion" : breezewayExport ? "breezeway" : input.sourceSystem,
+      source_system: legacyExport ? "legacy" : breezewayExport ? "breezeway" : input.sourceSystem,
       label: input.label,
       created_by: userId,
     })
@@ -498,7 +498,7 @@ export async function decideImportRow(
       profile?.coverageHours ? `Coverage hours: ${profile.coverageHours}` : null,
       profile?.serviceArea ? `Service area on record: ${profile.serviceArea}` : null,
       profile?.claims.length
-        ? `Recorded in Notion (unverified) — ${profile.claims.join("; ")}.`
+        ? `Recorded in the legacy directory (unverified) — ${profile.claims.join("; ")}.`
         : null,
     ]
       .filter(Boolean)
@@ -544,8 +544,8 @@ export async function decideImportRow(
     await db.from("external_links").insert({
       entity_type: "vendor_org",
       entity_id: data.id,
-      system: profile?.notionVendorId ? "notion" : "breezeway",
-      external_id: profile?.notionVendorId ?? row.display_name,
+      system: profile?.legacyVendorId ? "legacy" : "breezeway",
+      external_id: profile?.legacyVendorId ?? row.display_name,
       last_sync_status: "imported",
     });
   }

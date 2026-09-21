@@ -58,7 +58,7 @@ const UNAVAILABLE = {
  * Owner resolution (2026-08-31): the DESIGNATED primary owner comes from the
  * general directory table `property_owner_contacts`, imported read-only from
  * OwnerRez — the connected account was verified to expose `/v2/owners` and an
- * `owner_id` on every listing naming its designated owner, so no Notion
+ * `owner_id` on every listing naming its designated owner, so no outside
  * import is needed. Active Owner Program enrollment is reported separately as
  * a programme status and is never used as an owner source: a home with no
  * program row is not "ownerless". Only the designated primary owner is shown,

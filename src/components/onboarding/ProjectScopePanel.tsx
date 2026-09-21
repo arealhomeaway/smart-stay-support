@@ -419,14 +419,10 @@ function ScopeDialog({
               Link existing source records for context. Saving a reference does not update the
               source system.
             </p>
-            {(["asana", "notion", "property_folder"] as const).map((key) => (
+            {(["property_folder"] as const).map((key) => (
               <div key={key} className="space-y-1">
                 <Label htmlFor={`project-ref-${key}`}>
-                  {key === "property_folder"
-                    ? "Property folder"
-                    : key === "asana"
-                      ? "Asana project"
-                      : "Notion record"}
+                  {key === "property_folder" ? "Property folder" : key}
                 </Label>
                 <Input
                   id={`project-ref-${key}`}

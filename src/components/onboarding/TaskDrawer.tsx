@@ -1,5 +1,5 @@
 /**
- * Task detail drawer — the operational intelligence Asana does not give us.
+ * Task detail drawer — the operational intelligence a plain task list does not give us.
  *
  * Every field shown already exists on `onboarding_tasks` or the canonical
  * template. The drawer never invents state: it explains what Resolve already

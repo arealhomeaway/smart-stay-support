@@ -5,7 +5,7 @@
  * `onboarding_tasks` rows plus the canonical Full Furnishing template. No new
  * schema, no persisted state, no routing or permission decisions.
  *
- * The point is Asana familiarity with Resolve's automation made legible:
+ * The point is a familiar sectioned plan with Resolve's automation made legible:
  * a task's status, its blocker reason, why it exists and why its due date is
  * what it is are all explained from real fields.
  */

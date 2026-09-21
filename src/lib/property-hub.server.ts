@@ -907,7 +907,7 @@ function defaultLinkLabel(kind: string): string {
     camera_portal: "Camera portal",
     legacy_onedrive: "Legacy OneDrive file",
     hoa: "HOA link",
-    fillout_form: "Fillout form",
+    intake_form: "Intake form",
     builder: "Builder / warranty link",
     reference: "Reference link",
   };

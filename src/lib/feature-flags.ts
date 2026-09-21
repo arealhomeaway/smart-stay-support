@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Feature flags — safe controls for workflows that are unfinished or
  * deliberately paused for the Stage 1 launch (email intake, quarterly
- * scheduling, owner alerts, Breezeway bridge, Notion sync).
+ * scheduling, owner alerts, Breezeway bridge).
  *
  * A flag being OFF means the UI must not offer the action. It is a guard
  * rail, not a security boundary: the underlying jobs stay paused server-side.
@@ -24,7 +24,6 @@ export const FLAG_KEYS = [
   "breezeway_bridge",
   "breezeway_outbound",
 
-  "notion_sync",
   "operations_queue_v2",
   "onboarding_portal_v2",
   "onboarding_sharepoint_docs",

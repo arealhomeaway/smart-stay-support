@@ -50,7 +50,7 @@ export function OwnerDirectoryPanel() {
         </CardTitle>
         <CardDescription>
           The designated primary owner for every home, imported read-only from OwnerRez. Nothing is
-          sent back to OwnerRez or Notion, and ambiguous homes are never resolved by guessing.
+          sent back to OwnerRez, and ambiguous homes are never resolved by guessing.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">

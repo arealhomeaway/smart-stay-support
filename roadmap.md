@@ -387,7 +387,7 @@ mismatches). System-health data only — never employee performance.
 - [x] Onboarding ownership: seat model (`onboarding_tasks.assigned_seat`), new projects open owned
 - [ ] Backfill unassigned tasks on existing projects — AWAITING APPROVAL of ownership rules
 - [x] Fillout removed: mid-project review + handoff now native Resolve
-- [ ] Notion/Asana/Smartsheet reference links still inside ~30 task instruction bodies (content decision needed)
+- [x] Asana/Notion references removed from the app: old sync screen retired, task instructions rewritten as native Resolve actions
 - [x] PID field map v2 review table — docs/pending/property-hub-field-map-v2-review.md (awaiting approval)
 - [x] Active Owner polish: returned-entry copy, report footer "Figures as of"
 - [ ] SharePoint site-level write grant — outstanding with tenant admin
