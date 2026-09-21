@@ -41,6 +41,7 @@ import { EscalationPanel } from "@/components/EscalationPanel";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
 import { TicketPriorityPanel } from "@/components/TicketPriorityPanel";
+import { EmailComposer } from "@/components/EmailComposer";
 
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
@@ -1574,6 +1575,13 @@ function MoreActions({
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-8">
+          <div className="rounded-lg border border-border/60 p-4">
+            <h3 className="font-medium">Email someone about this</h3>
+            <p className="mb-3 mt-1 text-sm text-muted-foreground">
+              Guest, homeowner or vendor — from the shared inbox, with the details filled in.
+            </p>
+            <EmailComposer context="ticket" recordId={String(ticket["id"])} />
+          </div>
           <TicketPriorityPanel
             ticketId={String(ticket["id"])}
             priority={(ticket["priority"] as string | null) ?? null}

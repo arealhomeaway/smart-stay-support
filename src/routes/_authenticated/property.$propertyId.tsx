@@ -5,6 +5,7 @@
  * only what Resolve has shared with them. The server decides both — this file
  * renders what it is given and never widens it.
  */
+import { EmailComposer } from "@/components/EmailComposer";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -104,6 +105,12 @@ function PropertyHubPage() {
   return (
     <div className="space-y-6">
       <HubHeader hub={hub} />
+
+      {hub.viewer.staff && (
+        <div className="flex justify-end">
+          <EmailComposer context="property" recordId={propertyId} label="Email the homeowner" />
+        </div>
+      )}
 
       {hub.alerts.length > 0 && (
         <div className="grid gap-2 sm:grid-cols-2">
