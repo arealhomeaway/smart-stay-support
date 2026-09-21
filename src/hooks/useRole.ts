@@ -56,7 +56,7 @@ export function useRole() {
   // The demo environment exists to be worked. An ordinary role preview is a
   // look, never a change; the demo lens is a look at *demo records*, which the
   // previewer is meant to act on.
-  const demoMode = previewing && demoFlag;
+  const demoMode = canOperateDemo(actualRoles) && demoFlag;
   const roles: AppRole[] = previewing && viewAs ? [viewAs] : actualRoles;
 
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");

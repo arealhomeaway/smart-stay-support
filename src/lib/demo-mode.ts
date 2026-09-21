@@ -22,19 +22,19 @@ export function canOperateDemo(actualRoles: readonly string[]): boolean {
 }
 
 /**
- * Whether the demo lens is actually on. Demo mode is real only once all
- * three hold: the viewer may operate the demo environment, they've flipped
- * the session flag on, and they're previewing a persona (so there's a role
- * surface to render the demo scenarios as). Deliberately independent of
- * whether demo data has ever been seeded — entering the lens and seeding
- * data are separate responsibilities.
+ * Whether the demo lens is actually on: the viewer may operate the demo
+ * environment and has flipped the session flag on. Demo mode deliberately
+ * does NOT require stepping into a persona — a Platform Owner demos the
+ * portals their own permissions already grant them. Also independent of
+ * whether demo data has ever been seeded.
  */
 export function resolveDemoMode(input: {
   canDemo: boolean;
   flag: boolean;
-  hasPreviewIdentity: boolean;
+  /** Legacy input, no longer part of the rule. */
+  hasPreviewIdentity?: boolean;
 }): boolean {
-  return input.canDemo && input.flag && input.hasPreviewIdentity;
+  return input.canDemo && input.flag;
 }
 
 export function readDemoFlag(): boolean {

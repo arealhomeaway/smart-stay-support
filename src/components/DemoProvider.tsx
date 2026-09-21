@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AppRole } from "@/lib/permissions";
 import { useViewAs } from "@/hooks/useViewAs";
 import { useMyRoles } from "@/hooks/useRole";
 import { getDemoStatus, resetDemoEnvironment, seedDemoEnvironment } from "@/lib/demo.functions";
@@ -13,7 +12,6 @@ import {
   resolveDemoMode,
   writeDemoFlag,
   writePreviewSeat,
-  type PreviewSeat,
 } from "@/lib/demo-mode";
 
 /**
@@ -40,7 +38,7 @@ type DemoContextValue = {
   status: DemoStatus | undefined;
   /** Whether the current user may operate the demo environment. */
   canDemo: boolean;
-  enterDemo: (role: AppRole, seat?: PreviewSeat | null) => void;
+  enterDemo: () => void;
   exitDemo: () => void;
   /** Admin-only: (re)seed or wipe the demo records. */
   seed: () => Promise<void>;
@@ -53,7 +51,7 @@ const EVENT = DEMO_FLAG_EVENT;
 const DemoContext = createContext<DemoContextValue | null>(null);
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
-  const { viewAs, setViewAs, clearViewAs } = useViewAs();
+  const { clearViewAs } = useViewAs();
   const queryClient = useQueryClient();
 
   const [flag, setFlag] = useState<boolean>(() => readDemoFlag());
@@ -87,7 +85,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     queryFn: () => getDemoStatus(),
   });
 
-  const demoMode = resolveDemoMode({ canDemo, flag, hasPreviewIdentity: Boolean(viewAs) });
+  const demoMode = resolveDemoMode({ canDemo, flag });
 
   const seedFn = useServerFn(seedDemoEnvironment);
   const resetFn = useServerFn(resetDemoEnvironment);
@@ -95,15 +93,14 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
 
-  const enterDemo = useCallback(
-    (role: AppRole, seat: PreviewSeat | null = null) => {
-      setViewAs(role);
-      writePreviewSeat(seat);
-      writeDemoFlag(true);
-      void queryClient.invalidateQueries({ queryKey: ["demo-status"] });
-    },
-    [setViewAs, queryClient],
-  );
+  // Demo mode is simply on or off. It never impersonates a persona: the
+  // viewer keeps their own permissions and demos the portals those grant.
+  const enterDemo = useCallback(() => {
+    clearViewAs();
+    writePreviewSeat(null);
+    writeDemoFlag(true);
+    void queryClient.invalidateQueries({ queryKey: ["demo-status"] });
+  }, [clearViewAs, queryClient]);
 
   const exitDemo = useCallback(() => {
     writePreviewSeat(null);
