@@ -2,19 +2,13 @@
 // Source of truth: "Property Coordinator Task Ownership, Coverage, and Handoff SOP".
 // Priorities are P1–P3 only. Nothing here is a productivity score.
 
-export const CATEGORIES = [
-  { value: "maintenance", label: "Maintenance" },
-  { value: "safety", label: "Safety devices (smoke / CO / security)" },
-  { value: "cleaning", label: "Cleaning" },
-  { value: "access", label: "Access / lockout" },
-  { value: "guest", label: "Guest experience" },
-  { value: "owner", label: "Owner" },
-  { value: "vendor", label: "Vendor coordination" },
-  { value: "claims", label: "Claims / reimbursement" },
-  { value: "quality", label: "Quality / reviews" },
-  { value: "admin", label: "Administrative" },
-  { value: "other", label: "Other" },
-] as const;
+// One shared category list for Tickets, Work Orders, Claims and Vendors.
+// The catalog itself lives in src/lib/taxonomy.ts.
+export const CATEGORIES = OPERATIONAL_CATEGORIES.map((c) => ({
+  value: c.value,
+  label: c.label,
+  hint: c.hint,
+}));
 
 export const BUCKETS = [
   { value: "active_guest_emergency", label: "Active guest emergency" },
