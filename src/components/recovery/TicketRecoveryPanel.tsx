@@ -278,6 +278,26 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
+        <label className="flex items-start gap-2 rounded-md border px-3 py-2">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={flagged}
+            disabled={readOnly || flag.isPending || (flagged && existing.length > 0)}
+            onChange={(e) => flag.mutate(e.target.checked)}
+          />
+          <span>
+            <span className="font-medium">This ticket resulted in guest recovery</span>
+            <span className="block text-xs text-muted-foreground">
+              {flagged
+                ? existing.length > 0
+                  ? "Recorded on this ticket and linked to the recovery below."
+                  : "Recorded — log what the guest is owed to finish it."
+                : "Tick this and the recovery log opens straight away."}
+            </span>
+          </span>
+        </label>
+
         {existing.map((row) => (
           <div key={row.id} className="rounded-md border px-3 py-2">
             <div className="flex flex-wrap items-center gap-2">
