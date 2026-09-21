@@ -40,6 +40,8 @@ import { FinalReviewPanel } from "@/components/FinalReviewPanel";
 import { EscalationPanel } from "@/components/EscalationPanel";
 import { SpecialHandlingNotice } from "@/components/SpecialHandlingNotice";
 import { MatterOwnershipPanel } from "@/components/MatterOwnershipPanel";
+import { TicketPriorityPanel } from "@/components/TicketPriorityPanel";
+
 import { VendorRatingPanel } from "@/components/VendorRatingPanel";
 import { ReservationContextPanel } from "@/components/ReservationContextPanel";
 import { TicketClaimPanel } from "@/components/claims/TicketClaimPanel";
@@ -1572,8 +1574,18 @@ function MoreActions({
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 px-4 pb-8">
+          <TicketPriorityPanel
+            ticketId={String(ticket["id"])}
+            priority={(ticket["priority"] as string | null) ?? null}
+            suggestedPriority={(ticket["suggested_priority"] as string | null) ?? null}
+            overrideReason={(ticket["priority_override_reason"] as string | null) ?? null}
+            canChange={role.isSupervisor && !role.readOnly}
+            disabled={closed}
+            onChanged={() => void onChanged()}
+          />
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           <MatterOwnershipPanel ticket={ticket as any} closed={closed} onChanged={onChanged} />
+
           {!closed && (
             <div className="rounded-lg border border-border/60 p-4">
               <h3 className="font-medium">Stuck on a decision?</h3>

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790001902952,
+      "tag": "0000_ticket_priority_manager_authority",
+      "breakpoints": true
+    }
+  ]
+}

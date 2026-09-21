@@ -103,7 +103,7 @@ type Mode = "one_touch" | "ticket";
 function NewMatter() {
   const router = useRouter();
   const context = Route.useSearch();
-  const { can, readOnly, isLoading: rolesLoading } = useRole();
+  const { can, readOnly, isSupervisor, isLoading: rolesLoading } = useRole();
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
@@ -882,6 +882,7 @@ function NewMatter() {
                       <Label>Priority</Label>
                       <Select
                         value={form.priority}
+                        disabled={!isSupervisor}
                         onValueChange={(v) => {
                           setPriorityTouched(true);
                           setForm({ ...form, priority: v });
@@ -901,7 +902,9 @@ function NewMatter() {
                       <p className="text-xs text-muted-foreground">
                         Rubric says <span className="font-medium">{mechanical.toUpperCase()}</span>{" "}
                         · {meta.summary}
+                        {!isSupervisor && " Only a supervisor can change it."}
                       </p>
+
                     </div>
 
                     <div className="space-y-2">
