@@ -1,3 +1,5 @@
+import { OPERATIONAL_CATEGORIES } from "@/lib/taxonomy";
+
 // Domain rules for ARHA operational records.
 // Source of truth: "Property Coordinator Task Ownership, Coverage, and Handoff SOP".
 // Priorities are P1–P3 only. Nothing here is a productivity score.
