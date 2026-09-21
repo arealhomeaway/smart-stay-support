@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Mail, Send } from "lucide-react";
+import { Clock, Mail, Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,8 +39,18 @@ import {
   CONTEXT_LABELS,
   MERGE_FIELDS,
   applyMergeFields,
+  EMPTY_RECIPIENTS,
+  RECIPIENT_FIELD_LABELS,
+  SEND_TIME_ZONES,
+  addRecipients,
+  isEmailAddress,
+  removeRecipient,
+  scheduleProblems,
   sendGate,
   unresolvedFields,
+  zonedToInstant,
+  type RecipientField,
+  type RecipientLists,
   type ComposerContext,
   type MessageAudience,
 } from "@/lib/email-composer";
@@ -206,7 +216,6 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
     [to, subject, body, mergeValues, audience],
   );
   const fieldProblems = gate.fields;
-  const problems = gate.blockers;
 
   // Keyboard users get sent to the box that needs them, not left hunting for it.
   const toRef = useRef<HTMLButtonElement>(null);
@@ -237,22 +246,110 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
     else toRef.current?.focus();
   }
 
+  // Extra people on the message, each one a chip you can take off again.
+  const [extra, setExtra] = useState<RecipientLists>(EMPTY_RECIPIENTS);
+  const [chipDraft, setChipDraft] = useState<Record<RecipientField, string>>({
+    to: "",
+    cc: "",
+    bcc: "",
+  });
+  const [chipError, setChipError] = useState<string | null>(null);
+
+  function commitChips(field: RecipientField) {
+    const raw = chipDraft[field];
+    if (!raw.trim()) return;
+    const withPrimary: RecipientLists = {
+      ...extra,
+      to: [...(isEmailAddress(to) ? [to.trim()] : []), ...extra.to],
+    };
+    const result = addRecipients(withPrimary, field, raw);
+    setChipError(result.errors[0] ?? null);
+    if (result.added.length > 0) {
+      setExtra({
+        to: result.lists.to.filter((a) => a.toLowerCase() !== to.trim().toLowerCase()),
+        cc: result.lists.cc,
+        bcc: result.lists.bcc,
+      });
+      setChipDraft((d) => ({ ...d, [field]: "" }));
+    }
+  }
+
+  function dropChip(field: RecipientField, address: string) {
+    setExtra((lists) => removeRecipient(lists, field, address));
+    setChipError(null);
+  }
+
+  // Files ride along with the message; they are read only when Send is pressed.
+  const [files, setFiles] = useState<File[]>([]);
+  const attachmentBytes = files.reduce((n, f) => n + f.size, 0);
+  const attachmentProblem =
+    attachmentBytes > 3_000_000 ? "Attachments must add up to less than 3 MB." : null;
+
+  // Send later, in the time zone the person means.
+  const [scheduled, setScheduled] = useState(false);
+  const [sendDate, setSendDate] = useState("");
+  const [sendTime, setSendTime] = useState("");
+  const [timeZone, setTimeZone] = useState(SEND_TIME_ZONES[0] as string);
+  const scheduleIssues = scheduled
+    ? scheduleProblems({ date: sendDate, time: sendTime, timeZone })
+    : [];
+
+  async function readAttachments() {
+    return Promise.all(
+      files.map(
+        (file) =>
+          new Promise<{ name: string; contentType: string; contentBytes: string }>(
+            (resolve, reject) => {
+              const reader = new FileReader();
+              reader.onerror = () => reject(new Error(`${file.name} could not be read.`));
+              reader.onload = () =>
+                resolve({
+                  name: file.name,
+                  contentType: file.type || "application/octet-stream",
+                  contentBytes: String(reader.result).split(",")[1] ?? "",
+                });
+              reader.readAsDataURL(file);
+            },
+          ),
+      ),
+    );
+  }
+
+  const problems = [
+    ...gate.blockers,
+    ...(attachmentProblem ? [attachmentProblem] : []),
+    ...scheduleIssues,
+  ];
+
   const sending = useMutation({
-    mutationFn: () =>
-      send({
+    mutationFn: async () => {
+      const attachments = await readAttachments();
+      const when = scheduled
+        ? zonedToInstant({ date: sendDate, time: sendTime, timeZone })
+        : null;
+      return send({
         data: {
           context,
           recordId,
           to: to.trim(),
+          cc: extra.cc,
+          bcc: [...extra.to, ...extra.bcc],
           subject,
           body,
           audience,
           templateId: templateId === BLANK ? null : templateId,
+          attachments,
+          scheduledFor: when ? when.toISOString() : null,
+          scheduledTimeZone: when ? timeZone : null,
         },
-      }),
+      });
+    },
     onSuccess: (result) => {
-      if (result.status === "sent") {
-        toast.success("Message sent.");
+      if (result.status === "sent" || result.status === "scheduled") {
+        toast.success(result.status === "scheduled" ? "Message scheduled." : "Message sent.");
+        setFiles([]);
+        setExtra(EMPTY_RECIPIENTS);
+        setScheduled(false);
         setSubject("");
         setBody("");
         setTemplateId(BLANK);
