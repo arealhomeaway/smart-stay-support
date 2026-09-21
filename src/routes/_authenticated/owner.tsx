@@ -128,9 +128,9 @@ function OwnerHub() {
 
   return (
     <OwnerHubBody
-      key={`${user.id}:${home.data.program.id}:${Boolean(ownerPreview)}`}
+      key={`${user.id}:${home.data.program.id}:${previewing}`}
       data={home.data}
-      preview={Boolean(ownerPreview)}
+      preview={previewing}
     />
   );
 }
