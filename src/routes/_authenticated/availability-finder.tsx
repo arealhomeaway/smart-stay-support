@@ -73,6 +73,8 @@ function AvailabilityFinderPage() {
     document.getElementById(`availability-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [navigate]);
   const selectedResults = (query.data?.results ?? []).filter((row) => chosen.includes(row.id));
+  const selectableIds = results.filter((row) => row.status !== "unavailable").map((row) => row.id);
+  const allSelectableChosen = selectableIds.length > 0 && selectableIds.every((id) => chosen.includes(id));
 
   function submit(event: FormEvent) {
     event.preventDefault();
