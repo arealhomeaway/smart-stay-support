@@ -93,6 +93,9 @@ function IntegrationsPage() {
       <BreezewayConnectionPanel />
       <BreezewayWebhookPanel />
       <BreezewayOutboundReviewPanel />
+      <BreezewaySyncReviewPanel />
+
+      <DocumentCompletionPanel />
 
       <FeatureFlagsPanel />
 
