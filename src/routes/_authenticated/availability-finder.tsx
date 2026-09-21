@@ -150,7 +150,13 @@ function AvailabilityFinderPage() {
     {query.data && <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{results.length} of {query.data.results.length} properties within {AVAILABILITY_RADIUS_MILES} miles · sorted by distance{query.data.heldBack.length ? ` · ${query.data.heldBack.length} hidden because OwnerRez does not confirm what you asked for` : ""}</p>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(search.showUnavailable)} onChange={(event) => void navigate({ search: (previous) => ({ ...previous, showUnavailable: event.target.checked, selected: undefined }) })} />Show unavailable</label>
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allSelectableChosen} disabled={selectableIds.length === 0} onChange={(event) => {
+            setConfirmUnlinked(null);
+            setChosen(event.target.checked ? selectableIds : []);
+          }} />Check all matching ({selectableIds.length})</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(search.showUnavailable)} onChange={(event) => void navigate({ search: (previous) => ({ ...previous, showUnavailable: event.target.checked, selected: undefined }) })} />Show unavailable</label>
+        </div>
       </div>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,1fr)]">
         <AvailabilityMap results={results} selectedId={selectedId} onSelect={onSelect} />
