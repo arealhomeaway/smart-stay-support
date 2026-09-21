@@ -16,6 +16,7 @@ import {
   useRecoveryPropertyPhotos,
   useRecoveryRequirements,
 } from "@/components/recovery/RecoveryList";
+import { RecoveryReportingPanel } from "@/components/recovery/RecoveryReportingPanel";
 import { useRole } from "@/hooks/useRole";
 import type { RequirementLike } from "@/lib/claims";
 import {
