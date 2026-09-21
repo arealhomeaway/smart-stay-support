@@ -334,7 +334,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     sortOrder: 270,
   },
   {
-    key: "phase1_inspection_update_project_status_in_asana",
+    key: "phase1_inspection_update_project_status",
     stage: "phase1_inspection",
     title: "Update project status",
     role: "Project Manager",
@@ -408,7 +408,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     sortOrder: 340,
   },
   {
-    key: "phase2_estimates_update_project_status_in_asana",
+    key: "phase2_estimates_update_project_status",
     stage: "phase2_estimates",
     title: "Update project status",
     role: "Project Manager",
@@ -754,7 +754,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     sortOrder: 670,
   },
   {
-    key: "phase3_work_orders_update_project_status_in_asana",
+    key: "phase3_work_orders_update_project_status",
     stage: "phase3_work_orders",
     title: "Update project status",
     role: "Project Manager",
@@ -1128,7 +1128,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     sortOrder: 1030,
   },
   {
-    key: "phase4_purchasing_update_project_status_in_asana",
+    key: "phase4_purchasing_update_project_status",
     stage: "phase4_purchasing",
     title: "Update project status",
     role: "Project Manager",
@@ -1287,7 +1287,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review the Standard Inspection Results",
     role: "Project Manager",
     detail:
-      'Review the results:\n Open the Standard Inspection results on this task in Resolve.\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
+      'Review the results:\n Open the Standard Inspection results on this task in Resolve.\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, use “Adjust responses” on this task in Resolve to revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1200,
@@ -1298,7 +1298,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Add property to Truvi",
     role: "Onboarding Admin",
     detail:
-      "Using this link, set up the property as a listing. Include the internal property name & address. Once completed, add the option, “$25 /per booking” as the program option. \n\nhttps://app.knowyourguest.io/programs?pageNumber=1&pageSize=10&searchString=\n\nhttps://app.asana.com/app/asana/-/get_asset?asset_id=1217421268214995",
+      "Using this link, set up the property as a listing. Include the internal property name & address. Once completed, add the option, “$25 /per booking” as the program option. \n\nhttps://app.knowyourguest.io/programs?pageNumber=1&pageSize=10&searchString=",
     blocksHandoff: true,
     sortOrder: 1210,
   },
@@ -1438,7 +1438,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Upload photos and home marketing content to marketing sites via OwnerRez",
     role: "Project Manager",
     detail:
-      "Instructions: \n1.) Download both the print and online photos from the photographer's website to a zip file.\n\n2.) Save the files to OneDrive.\n\n3.) Upload the online photos to the property profile in OwnerRez in the following order:\n The cover photo should be a high-quality photo of the main living area\n Exterior front of the home\n Entryway decor\n Living area\n Kitchen\n Dining area\n Master bedroom\n Master bathroom\n Guest bedrooms and guest baths\n Bonus rooms/office space/secondary living areas\n Laundry room/mudroom\n Back patio\n Backyard\n Any photos of the neighborhood amenities\n\n4.) Add captions with the room name to all photos. \n\n5.) Update the property profile information in OwnerRez including descriptions, accommodations, guest instructions, etc using the attached Notion tutorial: …",
+      "Instructions: \n1.) Download both the print and online photos from the photographer's website to a zip file.\n\n2.) Save the files to OneDrive.\n\n3.) Upload the online photos to the property profile in OwnerRez in the following order:\n The cover photo should be a high-quality photo of the main living area\n Exterior front of the home\n Entryway decor\n Living area\n Kitchen\n Dining area\n Master bedroom\n Master bathroom\n Guest bedrooms and guest baths\n Bonus rooms/office space/secondary living areas\n Laundry room/mudroom\n Back patio\n Backyard\n Any photos of the neighborhood amenities\n\n4.) Add captions with the room name to all photos. \n\n5.) Update the property profile information in OwnerRez including descriptions, accommodations, guest instructions, etc using the attached tutorial in the Resolve playbook library: …",
     blocksHandoff: true,
     subtasks: ["Review descriptions in OwnerRez before handoff"],
     sortOrder: 1350,
@@ -1466,7 +1466,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review the Final Inspection Results",
     role: "Project Manager",
     detail:
-      'Review the results:\n Open the Final Inspection results on this task in Resolve.\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
+      'Review the results:\n Open the Final Inspection results on this task in Resolve.\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, use “Adjust responses” on this task in Resolve to revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1380,
@@ -1568,7 +1568,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     sortOrder: 1480,
   },
   {
-    key: "phase6_handoff_update_project_status_in_asana",
+    key: "phase6_handoff_update_project_status",
     stage: "phase6_handoff",
     title: "Update project status",
     role: "Project Manager",
