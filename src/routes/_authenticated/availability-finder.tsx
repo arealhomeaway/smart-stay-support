@@ -101,12 +101,21 @@ function AvailabilityFinderPage() {
     }
     setExporting(true);
     try {
-      const file = await downloadOptions({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, propertyIds: selectedResults.map((row) => row.id) } });
+      // The document is never left spinning: if the build takes too long, say so.
+      const file = await Promise.race([
+        downloadOptions({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, propertyIds: selectedResults.map((row) => row.id) } }),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("The PDF took too long to build. Try again, or with fewer properties.")), 60000)),
+      ]);
       const bytes = Uint8Array.from(atob(file.base64), (char) => char.charCodeAt(0));
       const blob = new Blob([bytes], { type: file.mime });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = url; link.download = file.filename; link.click();
+      link.href = url;
+      link.download = file.filename;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) { setExportError(error instanceof Error ? error.message : "Could not generate the PDF."); }
     finally { setExporting(false); }
