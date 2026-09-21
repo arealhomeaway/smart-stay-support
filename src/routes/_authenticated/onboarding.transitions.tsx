@@ -180,7 +180,7 @@ function Transitions() {
       </div>
 
       {shown.length === 0 ? (
-        <EmptyState title="Nothing in transition" description="No record matches this view." />
+        <EmptyState title="Nothing in transition" hint="No record matches this view." />
       ) : (
         <ul className="space-y-3">
           {shown.map((item) => (
