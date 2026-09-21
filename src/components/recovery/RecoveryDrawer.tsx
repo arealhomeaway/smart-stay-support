@@ -1,5 +1,5 @@
 /**
- * Guest Recovery workspace.
+ * Guest refunds & credits workspace.
  *
  * The order on screen is the order of the work: what to do next, what the
  * guest is still owed a word about, the evidence, the decision and who may

@@ -95,7 +95,7 @@ export function finalReviewRequirement(facts: FinalReviewFacts): FinalReviewRequ
     reasons.push("This ticket was escalated for a decision.");
   if ((facts.reopen_count ?? 0) > 0) reasons.push("This ticket has been reopened before.");
   if (facts.hasClaim) reasons.push("A claim was opened from this ticket.");
-  if (facts.hasRecovery) reasons.push("Guest recovery was opened from this ticket.");
+  if (facts.hasRecovery) reasons.push("Guest refunds & credits was opened from this ticket.");
   if ((facts.repairAmount ?? 0) > MAJOR_REPAIR_THRESHOLD)
     reasons.push(`Major repair — above the $${MAJOR_REPAIR_THRESHOLD} owner threshold.`);
   if (facts.ownerSensitive) reasons.push("The homeowner is directly involved.");

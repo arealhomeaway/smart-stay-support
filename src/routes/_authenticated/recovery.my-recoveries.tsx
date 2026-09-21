@@ -33,7 +33,7 @@ function MyRecoveries() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Guest recovery"
+        eyebrow="Guest refunds & credits"
         title="Mine"
         description="Recoveries you own. A handoff you requested stays here until someone accepts it."
       />

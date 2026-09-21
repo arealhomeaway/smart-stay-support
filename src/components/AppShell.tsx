@@ -130,7 +130,7 @@ const frontlineGroup: NavGroup = {
     },
     {
       to: "/recovery",
-      label: "Guest recovery",
+      label: "Guest refunds & credits",
       icon: HeartHandshake,
       tour: "recovery",
       capability: "claims_work",

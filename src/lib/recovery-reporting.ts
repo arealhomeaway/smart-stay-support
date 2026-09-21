@@ -1,5 +1,5 @@
 /**
- * Guest recovery reporting — the money view.
+ * Guest refunds & credits reporting — the money view.
  *
  * Reads rows of public.guest_recovery_ledger, the single reporting surface that
  * joins each recovery to its ticket and home. Everything here is pure so the

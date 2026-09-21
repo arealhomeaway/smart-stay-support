@@ -105,7 +105,7 @@ export const NATURAL_PARENTS = {
   property: { label: "Properties", href: "/properties" },
   lead: { label: "Leads", href: "/leads" },
   claim: { label: "Claims", href: "/claims" },
-  recovery: { label: "Guest recovery", href: "/recovery" },
+  recovery: { label: "Guest refunds & credits", href: "/recovery" },
   routine: { label: "Routine work", href: "/routines" },
   onboarding: { label: "Director hub", href: "/onboarding" },
 } as const;

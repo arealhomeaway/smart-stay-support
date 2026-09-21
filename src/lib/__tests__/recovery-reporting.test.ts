@@ -30,7 +30,7 @@ function row(partial: Partial<LedgerRow>): LedgerRow {
   };
 }
 
-describe("guest recovery reporting", () => {
+describe("guest refund or credit reporting", () => {
   it("demo records are never counted", () => {
     const rows = [row({ delivered_amount: 100 }), row({ delivered_amount: 500, is_demo: true })];
     expect(reportableRows(rows)).toHaveLength(1);

@@ -1,5 +1,5 @@
 /**
- * Shared Guest Recovery reads and row presentation.
+ * Shared Guest refunds & credits reads and row presentation.
  *
  * Every recovery view asks a different question but reads the same rows and
  * shows the same derived facts, so the queries, the row and the workspace

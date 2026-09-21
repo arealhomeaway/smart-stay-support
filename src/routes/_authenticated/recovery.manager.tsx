@@ -1,5 +1,5 @@
 /**
- * Manager oversight for Guest Recovery.
+ * Manager oversight for Guest refunds & credits.
  *
  * Operational oversight, not analytics: each filter is a list of cases a
  * supervisor may need to act on today, plus properties showing a pattern.
@@ -59,7 +59,7 @@ function RecoveryManager() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Guest recovery"
+        eyebrow="Guest refunds & credits"
         title="Manager"
         description="Approvals waiting on you, decisions that need documenting, and guests nobody has updated."
       />
@@ -96,7 +96,7 @@ function RecoveryManager() {
       {repeats.length > 0 ? (
         <SectionCard
           title="Properties with repeat recoveries"
-          description="More than one guest recovery on the same home — usually a property problem, not a guest problem."
+          description="More than one guest refund or credit on the same home — usually a property problem, not a guest problem."
         >
           <ul className="space-y-1 text-sm">
             {repeats.map((r) => (

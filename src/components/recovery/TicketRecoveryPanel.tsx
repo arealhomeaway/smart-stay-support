@@ -1,5 +1,5 @@
 /**
- * Guest Recovery on the ticket where the guest situation is being handled.
+ * Guest refunds & credits on the ticket where the guest situation is being handled.
  *
  * The ticket says what broke. The recovery says what the guest is owed and who
  * has to approve it. Context comes across from the ticket by reference, so the
@@ -219,7 +219,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
       setPolicyFit("unknown");
       qc.invalidateQueries({ queryKey: ["recovery-for-ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Guest recovery opened");
+      toast.success("Guest refunds & credits opened");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -244,8 +244,8 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         kind: "status",
         event_type: next ? "guest_recovery_flagged" : "guest_recovery_unflagged",
         body: next
-          ? "Documented on the ticket: this resulted in guest recovery."
-          : "Guest recovery no longer applies to this ticket.",
+          ? "Documented on the ticket: this resulted in guest refund or credit."
+          : "Guest refunds & credits no longer applies to this ticket.",
         internal: true,
         is_demo: ticket.is_demo ?? false,
       } as never);
@@ -288,7 +288,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
             onChange={(e) => flag.mutate(e.target.checked)}
           />
           <span>
-            <span className="font-medium">This ticket resulted in guest recovery</span>
+            <span className="font-medium">This ticket resulted in guest refund or credit</span>
             <span className="block text-xs text-muted-foreground">
               {flagged
                 ? existing.length > 0
@@ -322,14 +322,14 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               search={{ open: row.id }}
               className="text-xs font-medium underline underline-offset-2"
             >
-              See it in Guest recovery
+              See it in Guest refunds & credits
             </Link>
           </div>
         ))}
 
         {readOnly ? null : !open ? (
           <Button variant="outline" onClick={() => setOpen(true)}>
-            {existing.length ? "Open another recovery" : "Open a guest recovery"}
+            {existing.length ? "Open another recovery" : "Open a guest refund or credit"}
           </Button>
         ) : (
           <div className="space-y-3 rounded-md border p-3">

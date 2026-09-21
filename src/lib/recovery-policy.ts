@@ -2,7 +2,7 @@
  * ARHA Operations Policy Thresholds for Resolve — v1.
  *
  * Every dollar threshold, escalation trigger and communication interval used
- * by Guest Recovery lives here. Routes, components and server code read these
+ * by Guest refunds & credits lives here. Routes, components and server code read these
  * values; none of them restate a number. When leadership changes a threshold,
  * this file changes and history keeps the version it was decided under.
  */

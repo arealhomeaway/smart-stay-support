@@ -1,5 +1,5 @@
 /**
- * Guest recovery reporting — what it cost, by home and by month.
+ * Guest refunds & credits reporting — what it cost, by home and by month.
  *
  * Reads the guest_recovery_ledger reporting view, the same surface the Finance
  * workspace will read when it ships, so Operations and Finance can never be

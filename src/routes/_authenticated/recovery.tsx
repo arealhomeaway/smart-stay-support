@@ -6,29 +6,29 @@ import { useRole } from "@/hooks/useRole";
 export const Route = createFileRoute("/_authenticated/recovery")({
   head: () => ({
     meta: [
-      { title: "Guest recovery — Resolve" },
+      { title: "Guest refunds & credits — Resolve" },
       {
         name: "description",
         content:
           "What each guest is owed after a service failure: impact, evidence, the remedy, whose approval it needs under ARHA policy, and what was actually issued.",
       },
-      { property: "og:title", content: "Guest recovery — Resolve" },
+      { property: "og:title", content: "Guest refunds & credits — Resolve" },
       {
         property: "og:description",
         content:
-          "ARHA's guest service recovery queue, with approval authority derived from policy.",
+          "ARHA's guest refund and credit queue, with approval authority derived from policy.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (
-    <RequireCapability capability="claims_work" title="Guest recovery">
+    <RequireCapability capability="claims_work" title="Guest refunds & credits">
       <RecoveryLayout />
     </RequireCapability>
   ),
   errorComponent: () => (
-    <p className="text-muted-foreground">Guest recovery could not be loaded.</p>
+    <p className="text-muted-foreground">Guest refunds & credits could not be loaded.</p>
   ),
 });
 

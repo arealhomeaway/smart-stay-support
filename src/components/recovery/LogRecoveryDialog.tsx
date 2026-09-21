@@ -1,5 +1,5 @@
 /**
- * "+ Log Guest Recovery" — starting a recovery from the recovery queue itself.
+ * "+ Log Guest refunds & credits" — starting a recovery from the recovery queue itself.
  *
  * A recovery always belongs to the ticket where the guest situation is being
  * handled, so the first thing this asks for is that ticket. Everything the
@@ -230,7 +230,7 @@ export function LogRecoveryDialog() {
       setOpen(false);
       reset();
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Guest recovery logged");
+      toast.success("Guest refunds & credits logged");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -251,11 +251,11 @@ export function LogRecoveryDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>+ Log Guest Recovery</Button>
+        <Button>+ Log Guest refunds & credits</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Log a guest recovery</DialogTitle>
+          <DialogTitle>Log a guest refund or credit</DialogTitle>
           <DialogDescription>
             Start from the ticket where the situation is being handled — the home, guest and stay
             come across from it.

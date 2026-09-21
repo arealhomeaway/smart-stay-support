@@ -837,7 +837,7 @@ export function ownerApprovalRequest(
 export function declineConsequence(wo: WorkOrderLike): string | null {
   if (wo.approval_status !== "declined") return null;
   if (wo.occupied_now) {
-    return "Owner declined the permanent repair — a guest is in the home and the impact is unresolved. Decide the alternative: temporary mitigation, guest recovery, or leadership follow-up.";
+    return "Owner declined the permanent repair — a guest is in the home and the impact is unresolved. Decide the alternative: temporary mitigation, guest refund or credit, or leadership follow-up.";
   }
   if (wo.permanent_repair_needed) {
     return "Owner declined the permanent repair — the home still has an open defect. Record the alternative solution or escalate to leadership.";
@@ -859,7 +859,7 @@ export type WorkOrderEvidenceSlot = {
 
 /**
  * Work Order evidence reuses the shared evidence architecture. Linked Claims
- * and Guest Recovery reference these same items rather than re-uploading.
+ * and Guest refunds & credits reference these same items rather than re-uploading.
  */
 export function workOrderEvidenceSlots(
   phase: WorkOrderPhase,

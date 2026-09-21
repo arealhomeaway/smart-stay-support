@@ -1,5 +1,5 @@
 /**
- * Guest Recovery — what ARHA does FOR the guest after a service failure.
+ * Guest refunds & credits — what ARHA does FOR the guest after a service failure.
  *
  * Deliberately not a Claim. A Claim asks whether ARHA can recover money from a
  * responsible party; a Recovery asks what the guest is owed. One incident can
