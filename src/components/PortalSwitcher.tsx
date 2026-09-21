@@ -172,10 +172,20 @@ export function DemoSidebarItem() {
         <SidebarMenuButton
           tooltip={label}
           isActive={demoMode}
-          className="h-11 rounded-lg font-medium md:h-10"
+          className="h-11 rounded-lg font-medium focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar md:h-10"
+          aria-pressed={demoMode}
+          aria-label={demoMode ? "Leave the demo environment" : "Enter the demo environment"}
           onClick={() => {
             if (isMobile) setOpenMobile(false);
             toggle();
+          }}
+          onKeyDown={(event) => {
+            // Space and Enter both act, even when rendered as a non-button.
+            if (event.key === " " || event.key === "Enter") {
+              event.preventDefault();
+              if (isMobile) setOpenMobile(false);
+              toggle();
+            }
           }}
         >
           {demoMode ? (
