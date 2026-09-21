@@ -27,7 +27,7 @@ import {
 } from "@/components/workorders/WorkOrderList";
 import { WorkOrderDrawer } from "@/components/workorders/WorkOrderDrawer";
 import { useAmbientOrigin } from "@/components/nav/NavContext";
-import { displayName, useStaffDirectory } from "@/hooks/useTeam";
+import { useStaffDirectory } from "@/hooks/useTeam";
 import { useRole } from "@/hooks/useRole";
 import {
   CONFLICT_LABELS,
@@ -250,10 +250,6 @@ function WorkOrderCalendar() {
         onClose={() => setOpenId(null)}
       />
 
-      <p className="text-xs text-muted-foreground">
-        Owner shown where one is assigned:{" "}
-        {people.length ? displayName(people[0]) : "team directory loading"} and colleagues.
-      </p>
     </div>
   );
 }
