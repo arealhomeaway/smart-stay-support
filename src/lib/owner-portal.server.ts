@@ -232,7 +232,7 @@ export async function respondToReview(
     _expected_updated_at: input.expectedUpdatedAt,
     _decision: input.decision,
     _response: input.response,
-    _owner_update_revision: input.ownerUpdateRevision ?? null,
+    _owner_update_revision: (input.ownerUpdateRevision ?? null) as unknown as number,
   });
   if (error) throw error;
   if (!saved) throw new Error("The response could not be recorded.");

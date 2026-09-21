@@ -244,9 +244,10 @@ export function WorkOrderDrawer({
       const result = await supabase.rpc("save_work_order_costs", {
         _work_order_id: workOrder.id,
         _expected_updated_at: fields["cost_version"] ?? workOrder.updated_at,
-        _quote: parseWorkOrderCost(read("quote_amount")),
-        _second_quote: parseWorkOrderCost(read("second_quote_amount")),
-        _final_cost: parseWorkOrderCost(read("final_cost")),
+        // These three costs may legitimately be blank; the database accepts null.
+        _quote: parseWorkOrderCost(read("quote_amount")) as unknown as number,
+        _second_quote: parseWorkOrderCost(read("second_quote_amount")) as unknown as number,
+        _final_cost: parseWorkOrderCost(read("final_cost")) as unknown as number,
         _scope: read("scope"),
         _reason: fields["cost_reason"] ?? "",
       });
@@ -319,7 +320,8 @@ export function WorkOrderDrawer({
         _work_order_id: workOrder.id,
         _expected_updated_at: workOrder.updated_at,
         _outcome: outcome,
-        _approved_amount: approvedAmount,
+        // Declining an amount carries no figure; the database accepts null.
+        _approved_amount: approvedAmount as unknown as number,
         _note: note,
       });
       if (error) throw error;
