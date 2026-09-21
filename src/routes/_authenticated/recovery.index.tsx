@@ -15,6 +15,7 @@ import {
   useRecoveryPropertyPhotos,
   useRecoveryRequirements,
 } from "@/components/recovery/RecoveryList";
+import { LogRecoveryDialog } from "@/components/recovery/LogRecoveryDialog";
 import { useRole } from "@/hooks/useRole";
 import type { RequirementLike } from "@/lib/claims";
 import {
@@ -77,7 +78,8 @@ function RecoveryHome() {
       <PageHeader
         eyebrow="Guest recovery"
         title="Today"
-        description="What each guest is still owed, ordered by who is waiting longest. Open a recovery from the ticket where the situation is being handled."
+        description="What each guest is still owed, ordered by who is waiting longest. A recovery always sits on the ticket where the situation is being handled."
+        actions={<LogRecoveryDialog />}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
