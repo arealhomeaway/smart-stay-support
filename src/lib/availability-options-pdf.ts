@@ -32,7 +32,8 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
     let y = 580;
     if (result.imageUrl) {
       try {
-        const response = await fetch(result.imageUrl);
+        // A slow or unresponsive photo host must not hold the whole document up.
+        const response = await fetch(result.imageUrl, { signal: AbortSignal.timeout(6000) });
         if (response.ok) {
           const bytes = await response.arrayBuffer();
           const type = response.headers.get("content-type") ?? "";
