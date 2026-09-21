@@ -1,5 +1,5 @@
 /**
- * Manager oversight for Guest Recovery.
+ * Manager oversight for Guest refunds & credits.
  *
  * Operational oversight, not analytics: each filter is a list of cases a
  * supervisor may need to act on today, plus properties showing a pattern.
@@ -16,6 +16,7 @@ import {
   useRecoveryPropertyPhotos,
   useRecoveryRequirements,
 } from "@/components/recovery/RecoveryList";
+import { RecoveryReportingPanel } from "@/components/recovery/RecoveryReportingPanel";
 import { useRole } from "@/hooks/useRole";
 import type { RequirementLike } from "@/lib/claims";
 import {
@@ -29,7 +30,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/recovery/manager")({
   component: () => (
-    <RequireCapability capability="claims_oversight" title="Recovery oversight">
+    <RequireCapability capability="claims_oversight" title="Refunds and credits oversight">
       <RecoveryManager />
     </RequireCapability>
   ),
@@ -58,7 +59,7 @@ function RecoveryManager() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Guest recovery"
+        eyebrow="Guest refunds & credits"
         title="Manager"
         description="Approvals waiting on you, decisions that need documenting, and guests nobody has updated."
       />
@@ -90,15 +91,17 @@ function RecoveryManager() {
         />
       )}
 
+      <RecoveryReportingPanel />
+
       {repeats.length > 0 ? (
         <SectionCard
-          title="Properties with repeat recoveries"
-          description="More than one guest recovery on the same home — usually a property problem, not a guest problem."
+          title="Properties with repeat refunds & credits"
+          description="More than one guest refund or credit on the same home — usually a property problem, not a guest problem."
         >
           <ul className="space-y-1 text-sm">
             {repeats.map((r) => (
               <li key={r.property_id}>
-                {propertyNames.data?.get(r.property_id) ?? "Property"} — {r.count} recoveries
+                {propertyNames.data?.get(r.property_id) ?? "Property"} — {r.count} refunds & credits
               </li>
             ))}
           </ul>

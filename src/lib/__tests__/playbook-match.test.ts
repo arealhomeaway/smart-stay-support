@@ -146,7 +146,7 @@ describe("authored content rules", () => {
   it("flags authored text that states a threshold the policy engine owns", () => {
     const drifted = pb({
       id: "drift",
-      title: "Guest recovery",
+      title: "Guest refunds & credits",
       playbook_key: "recovery",
       matcher: { categories: ["guest"] },
       immediate_actions: ["Approve up to $50 yourself."],

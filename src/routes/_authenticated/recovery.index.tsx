@@ -1,5 +1,5 @@
 /**
- * Guest recovery — action first.
+ * Guest refunds & credits — action first.
  *
  * The page answers "which guest is still waiting on us today?". Every section
  * is derived from stage, evidence, amounts and the communication clock, so
@@ -76,9 +76,9 @@ function RecoveryHome() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Guest recovery"
+        eyebrow="Guest refunds & credits"
         title="Today"
-        description="What each guest is still owed, ordered by who is waiting longest. A recovery always sits on the ticket where the situation is being handled."
+        description="What each guest is still owed, ordered by who is waiting longest. A refund or credit always sits on the ticket where the situation is being handled."
         actions={<LogRecoveryDialog />}
       />
 
@@ -97,8 +97,8 @@ function RecoveryHome() {
         <LoadingRows />
       ) : open.length === 0 && (buckets.get("recently_resolved")?.length ?? 0) === 0 ? (
         <EmptyState
-          title="No guest recoveries open"
-          hint="Recoveries start on the ticket where the guest situation is being handled."
+          title="No guest refunds & credits open"
+          hint="Refunds and credits start on the ticket where the guest situation is being handled."
         />
       ) : (
         BUCKET_ORDER.map((bucket) => {

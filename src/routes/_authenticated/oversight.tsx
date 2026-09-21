@@ -404,7 +404,7 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
       count: claimsDeadline.length,
     },
     {
-      title: "Guest Recovery",
+      title: "Guest refunds & credits",
       to: "/recovery",
       lines: [`${recoveriesOpen.length} open`, `${recoveriesAwaiting.length} waiting on approval`],
       count: recoveriesAwaiting.length,

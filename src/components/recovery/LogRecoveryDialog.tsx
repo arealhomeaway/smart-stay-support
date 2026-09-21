@@ -1,5 +1,5 @@
 /**
- * "+ Log Guest Recovery" — starting a recovery from the recovery queue itself.
+ * "+ Log Guest Refund or Credit" — starting one from the refunds & credits queue.
  *
  * A recovery always belongs to the ticket where the guest situation is being
  * handled, so the first thing this asks for is that ticket. Everything the
@@ -52,7 +52,6 @@ import {
 
 type TicketOption = {
   id: string;
-  ticket_number: number | null;
   title: string;
   description: string | null;
   property_id: string | null;
@@ -93,7 +92,7 @@ export function LogRecoveryDialog() {
       const { data, error } = await supabase
         .from("tickets")
         .select(
-          "id,ticket_number,title,description,property_id,guest_name,priority,is_demo,ownerrez_booking_id,ownerrez_channel,ownerrez_confirmation_code,ownerrez_arrival,ownerrez_departure",
+          "id,title,description,property_id,guest_name,priority,is_demo,ownerrez_booking_id,ownerrez_channel,ownerrez_confirmation_code,ownerrez_arrival,ownerrez_departure",
         )
         .in("status", OPEN_STATUSES)
         .order("created_at", { ascending: false })
@@ -106,7 +105,7 @@ export function LogRecoveryDialog() {
   const term = search.trim().toLowerCase();
   const options = (tickets.data ?? []).filter((row) => {
     if (!term) return true;
-    return [row.title, row.guest_name, row.ticket_number ? `#${row.ticket_number}` : null]
+    return [row.title, row.guest_name]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term));
   });
@@ -215,8 +214,8 @@ export function LogRecoveryDialog() {
         author_id: userId,
         event_type: "created",
         body: chosen
-          ? `Recovery logged from the recovery queue — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
-          : "Recovery logged from the recovery queue",
+          ? `Refund or credit logged from the refunds & credits queue — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
+          : "Refund or credit logged from the refunds & credits queue",
         detail: {
           authority: verdict.level,
           reason: verdict.reason,
@@ -231,7 +230,7 @@ export function LogRecoveryDialog() {
       setOpen(false);
       reset();
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Guest recovery logged");
+      toast.success("Refund or credit logged");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -252,11 +251,11 @@ export function LogRecoveryDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>+ Log Guest Recovery</Button>
+        <Button>+ Log Guest Refund or Credit</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Log a guest recovery</DialogTitle>
+          <DialogTitle>Log a guest refund or credit</DialogTitle>
           <DialogDescription>
             Start from the ticket where the situation is being handled — the home, guest and stay
             come across from it.
@@ -272,7 +271,7 @@ export function LogRecoveryDialog() {
               id="rec-ticket-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ticket number, title or guest"
+              placeholder="Search by ticket title or guest"
             />
             {tickets.isLoading ? (
               <p className="text-xs text-muted-foreground">Loading open tickets…</p>
@@ -290,7 +289,6 @@ export function LogRecoveryDialog() {
                     onClick={() => setTicketId(row.id)}
                     className={`w-full rounded px-2 py-1.5 text-left text-xs ${row.id === ticketId ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
-                    {row.ticket_number ? `#${row.ticket_number} · ` : ""}
                     {row.title}
                     {row.guest_name ? ` — ${row.guest_name}` : ""}
                   </button>
@@ -444,7 +442,7 @@ export function LogRecoveryDialog() {
             disabled={!ticket || !impact.trim() || blocked || create.isPending}
             onClick={() => create.mutate()}
           >
-            Log recovery
+            Log refund or credit
           </Button>
         </DialogFooter>
       </DialogContent>

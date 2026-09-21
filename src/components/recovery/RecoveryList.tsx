@@ -1,5 +1,5 @@
 /**
- * Shared Guest Recovery reads and row presentation.
+ * Shared Guest refunds & credits reads and row presentation.
  *
  * Every recovery view asks a different question but reads the same rows and
  * shows the same derived facts, so the queries, the row and the workspace
@@ -132,14 +132,14 @@ export function RecoveryRowCard({
         recovery_id: recovery.id,
         author_id: userId,
         event_type: "assignment",
-        body: "Assigned to self from the recovery queue",
+        body: "Assigned to self from the refunds & credits queue",
         detail: { assigned_to: userId } as never,
         is_demo: recovery.is_demo,
       });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Recovery assigned to you");
+      toast.success("Refund or credit assigned to you");
     },
     onError: (e: Error) => toast.error(e.message),
   });

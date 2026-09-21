@@ -1244,11 +1244,11 @@ export function WorkOrderDrawer({
               >
                 Originating ticket
               </Link>
-              {" — start a guest recovery or a claim from there so the stay context comes with it."}
+              {" — start a guest refund or credit or a claim from there so the stay context comes with it."}
             </p>
           ) : null}
           <p className="text-muted-foreground">
-            {workOrder.recovery_id ? "Linked to a guest recovery." : "No guest recovery linked."}{" "}
+            {workOrder.recovery_id ? "Linked to a guest refund or credit." : "No guest refund or credit linked."}{" "}
             {workOrder.claim_id ? "Linked to a claim." : "No claim linked."} A work order fixes the
             home; a recovery gives the guest something back; a claim recovers the cost from someone
             else. Link one only when it is genuinely running.
@@ -1321,7 +1321,7 @@ function LinkRelated({
         work_order_id: workOrder.id,
         author_id: null,
         event_type: "linked",
-        body: patch.recovery_id ? "Guest recovery linked" : "Claim linked",
+        body: patch.recovery_id ? "Guest refunds & credits linked" : "Claim linked",
         is_demo: workOrder.is_demo,
       });
     },
@@ -1342,7 +1342,7 @@ function LinkRelated({
         <div className="flex items-center gap-2">
           <Select value={recoveryId} onValueChange={setRecoveryId}>
             <SelectTrigger>
-              <SelectValue placeholder="Link a guest recovery" />
+              <SelectValue placeholder="Link a guest refund or credit" />
             </SelectTrigger>
             <SelectContent>
               {recoveryOptions.map((r) => (

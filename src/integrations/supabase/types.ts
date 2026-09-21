@@ -254,6 +254,13 @@ export type Database = {
             foreignKeyName: "approvals_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "approvals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -419,8 +426,22 @@ export type Database = {
             foreignKeyName: "breezeway_outbound_tasks_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "breezeway_outbound_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_outbound_tasks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "breezeway_outbound_tasks_ticket_id_fkey"
@@ -677,6 +698,13 @@ export type Database = {
             foreignKeyName: "breezeway_work_order_photos_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "breezeway_work_order_photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -767,8 +795,22 @@ export type Database = {
             foreignKeyName: "breezeway_work_orders_linked_ticket_id_fkey"
             columns: ["linked_ticket_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "breezeway_work_orders_linked_ticket_id_fkey"
+            columns: ["linked_ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "breezeway_work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "breezeway_work_orders_property_id_fkey"
@@ -943,8 +985,22 @@ export type Database = {
             foreignKeyName: "claims_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "claims_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "claims_ticket_id_fkey"
@@ -1022,8 +1078,22 @@ export type Database = {
             foreignKeyName: "coach_sessions_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "coach_sessions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "coach_sessions_ticket_id_fkey"
@@ -1238,6 +1308,13 @@ export type Database = {
             foreignKeyName: "credential_access_log_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "credential_access_log_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -1287,6 +1364,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "credential_intake_queue_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "credential_intake_queue_property_id_fkey"
             columns: ["property_id"]
@@ -1592,6 +1676,13 @@ export type Database = {
             foreignKeyName: "documents_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -1794,8 +1885,22 @@ export type Database = {
             foreignKeyName: "escalations_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "escalations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escalations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "escalations_ticket_id_fkey"
@@ -1943,6 +2048,13 @@ export type Database = {
             foreignKeyName: "evidence_items_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "evidence_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -2008,6 +2120,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "evidence_requirements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "evidence_requirements_property_id_fkey"
             columns: ["property_id"]
@@ -2172,6 +2291,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "external_databases"
             referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "external_records_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "external_records_property_id_fkey"
@@ -2395,6 +2521,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "onboarding_projects"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "financial_requests_property_id_fkey"
@@ -2765,8 +2898,22 @@ export type Database = {
             foreignKeyName: "guest_recovery_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "guest_recovery_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_recovery_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "guest_recovery_ticket_id_fkey"
@@ -2816,6 +2963,13 @@ export type Database = {
             referencedRelation: "guest_recovery"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "guest_recovery_activity_recovery_id_fkey"
+            columns: ["recovery_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["recovery_id"]
+          },
         ]
       }
       handoff_reviews: {
@@ -2862,6 +3016,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_handoffs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "handoff_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "handoff_reviews_property_id_fkey"
@@ -2943,6 +3104,13 @@ export type Database = {
           to_user?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "handoffs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
           {
             foreignKeyName: "handoffs_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -3147,6 +3315,13 @@ export type Database = {
             foreignKeyName: "lead_properties_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "lead_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -3181,6 +3356,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "leads"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_tickets_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "lead_tickets_ticket_id_fkey"
@@ -3308,6 +3490,13 @@ export type Database = {
             foreignKeyName: "leads_converted_property_id_fkey"
             columns: ["converted_property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "leads_converted_property_id_fkey"
+            columns: ["converted_property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -3429,6 +3618,13 @@ export type Database = {
             foreignKeyName: "onboarding_notes_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "onboarding_notes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -3488,6 +3684,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "onboarding_projects"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_project_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "onboarding_project_events_property_id_fkey"
@@ -3563,6 +3766,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "onboarding_projects_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "onboarding_projects_property_id_fkey"
             columns: ["property_id"]
@@ -3755,6 +3965,13 @@ export type Database = {
             foreignKeyName: "onboarding_tasks_linked_ticket_id_fkey"
             columns: ["linked_ticket_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_linked_ticket_id_fkey"
+            columns: ["linked_ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -3764,6 +3981,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "onboarding_tasks"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "onboarding_tasks_property_id_fkey"
@@ -3937,6 +4161,13 @@ export type Database = {
             foreignKeyName: "owner_approval_publications_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_approval_publications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -4094,6 +4325,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_programs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_contact_alerts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "owner_contact_alerts_ticket_id_fkey"
@@ -4283,6 +4521,13 @@ export type Database = {
             foreignKeyName: "owner_notifications_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "owner_notifications_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -4351,6 +4596,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_programs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_program_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "owner_program_events_property_id_fkey"
@@ -4433,6 +4685,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_programs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_program_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "owner_program_properties_property_id_fkey"
@@ -4612,6 +4871,13 @@ export type Database = {
             foreignKeyName: "owner_programs_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_programs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -4637,6 +4903,13 @@ export type Database = {
           review_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "owner_review_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "owner_review_properties_property_id_fkey"
             columns: ["property_id"]
@@ -4787,6 +5060,13 @@ export type Database = {
             foreignKeyName: "owner_reviews_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -4796,6 +5076,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_task_templates"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_reviews_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "owner_reviews_ticket_id_fkey"
@@ -4983,6 +5270,13 @@ export type Database = {
             foreignKeyName: "owner_time_entries_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "owner_time_entries_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -5021,6 +5315,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "owner_time_entries"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_time_entry_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "owner_time_entry_properties_property_id_fkey"
@@ -5591,6 +5892,13 @@ export type Database = {
             foreignKeyName: "property_assets_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_assets_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -5656,6 +5964,13 @@ export type Database = {
             foreignKeyName: "property_credentials_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_credentials_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -5714,6 +6029,13 @@ export type Database = {
           url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "property_external_links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "property_external_links_property_id_fkey"
             columns: ["property_id"]
@@ -5803,6 +6125,13 @@ export type Database = {
             foreignKeyName: "property_fact_proposals_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_fact_proposals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -5850,6 +6179,13 @@ export type Database = {
           value_source?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "property_field_provenance_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "property_field_provenance_property_id_fkey"
             columns: ["property_id"]
@@ -5976,6 +6312,13 @@ export type Database = {
             foreignKeyName: "property_handoffs_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_handoffs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -6028,6 +6371,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "property_owner_contacts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "property_owner_contacts_property_id_fkey"
             columns: ["property_id"]
@@ -6165,6 +6515,13 @@ export type Database = {
             foreignKeyName: "property_vendor_coverage_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_vendor_coverage_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -6266,6 +6623,13 @@ export type Database = {
             foreignKeyName: "routine_controls_follow_up_ticket_id_fkey"
             columns: ["follow_up_ticket_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "routine_controls_follow_up_ticket_id_fkey"
+            columns: ["follow_up_ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -6273,8 +6637,22 @@ export type Database = {
             foreignKeyName: "routine_controls_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "routine_controls_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routine_controls_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "routine_controls_ticket_id_fkey"
@@ -6347,6 +6725,13 @@ export type Database = {
           vendor_org_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "special_handling_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "special_handling_property_id_fkey"
             columns: ["property_id"]
@@ -6528,6 +6913,13 @@ export type Database = {
             foreignKeyName: "ticket_activity_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "ticket_activity_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -6594,8 +6986,22 @@ export type Database = {
             foreignKeyName: "ticket_owner_updates_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "ticket_owner_updates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_owner_updates_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "ticket_owner_updates_ticket_id_fkey"
@@ -6650,6 +7056,13 @@ export type Database = {
           ticket_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ticket_steps_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
           {
             foreignKeyName: "ticket_steps_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -6734,8 +7147,22 @@ export type Database = {
             foreignKeyName: "ticket_visits_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "ticket_visits_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_visits_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "ticket_visits_ticket_id_fkey"
@@ -6796,6 +7223,9 @@ export type Database = {
           guest_impact: string
           guest_in_residence: boolean
           guest_name: string | null
+          guest_recovery_flagged_at: string | null
+          guest_recovery_flagged_by: string | null
+          guest_recovery_needed: boolean
           handoff_note: string | null
           handoff_status: string
           handoff_type: string | null
@@ -6905,6 +7335,9 @@ export type Database = {
           guest_impact?: string
           guest_in_residence?: boolean
           guest_name?: string | null
+          guest_recovery_flagged_at?: string | null
+          guest_recovery_flagged_by?: string | null
+          guest_recovery_needed?: boolean
           handoff_note?: string | null
           handoff_status?: string
           handoff_type?: string | null
@@ -7014,6 +7447,9 @@ export type Database = {
           guest_impact?: string
           guest_in_residence?: boolean
           guest_name?: string | null
+          guest_recovery_flagged_at?: string | null
+          guest_recovery_flagged_by?: string | null
+          guest_recovery_needed?: boolean
           handoff_note?: string | null
           handoff_status?: string
           handoff_type?: string | null
@@ -7088,6 +7524,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "work_projects"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "tickets_property_id_fkey"
@@ -7197,6 +7640,13 @@ export type Database = {
             foreignKeyName: "utility_accounts_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "utility_accounts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -7252,6 +7702,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "utility_accounts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utility_costs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "utility_costs_property_id_fkey"
@@ -7656,6 +8113,13 @@ export type Database = {
           vendor_user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vendor_job_ratings_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
           {
             foreignKeyName: "vendor_job_ratings_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -8215,8 +8679,22 @@ export type Database = {
             foreignKeyName: "work_orders_follow_up_ticket_id_fkey"
             columns: ["follow_up_ticket_id"]
             isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "work_orders_follow_up_ticket_id_fkey"
+            columns: ["follow_up_ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "work_orders_property_id_fkey"
@@ -8233,11 +8711,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "work_orders_recovery_id_fkey"
+            columns: ["recovery_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["recovery_id"]
+          },
+          {
             foreignKeyName: "work_orders_supervisor_approval_id_fkey"
             columns: ["supervisor_approval_id"]
             isOneToOne: false
             referencedRelation: "approvals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
           },
           {
             foreignKeyName: "work_orders_ticket_id_fkey"
@@ -8308,6 +8800,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_projects_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "work_projects_property_id_fkey"
@@ -8400,6 +8899,50 @@ export type Database = {
       }
     }
     Views: {
+      guest_recovery_ledger: {
+        Row: {
+          approval_status: string | null
+          approved_amount: number | null
+          approved_at: string | null
+          approved_by: string | null
+          assigned_to: string | null
+          authority_level: string | null
+          closed_at: string | null
+          created_by: string | null
+          currency: string | null
+          delivered_amount: number | null
+          delivered_on: string | null
+          escalation_flags: string[] | null
+          guest_name: string | null
+          guest_recovery_needed: boolean | null
+          guest_requested_amount: number | null
+          is_demo: boolean | null
+          issued_on: string | null
+          last_updated_at: string | null
+          logged_at: string | null
+          outcome: string | null
+          policy_version: string | null
+          property_city: string | null
+          property_id: string | null
+          property_name: string | null
+          property_state: string | null
+          proposed_amount: number | null
+          recovery_action: string | null
+          recovery_id: string | null
+          reservation_channel: string | null
+          stage: string | null
+          stay_arrival: string | null
+          stay_departure: string | null
+          ticket_category: string | null
+          ticket_created_at: string | null
+          ticket_id: string | null
+          ticket_priority: string | null
+          ticket_status: string | null
+          ticket_title: string | null
+          within_airbnb_policy: boolean | null
+        }
+        Relationships: []
+      }
       onboarding_stage_captures: {
         Row: {
           new_value: string | null
@@ -8413,6 +8956,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "onboarding_projects"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_project_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "onboarding_project_events_property_id_fkey"

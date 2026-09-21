@@ -1,5 +1,5 @@
 /**
- * Guest Recovery on the ticket where the guest situation is being handled.
+ * Guest refunds & credits on the ticket where the guest situation is being handled.
  *
  * The ticket says what broke. The recovery says what the guest is owed and who
  * has to approve it. Context comes across from the ticket by reference, so the
@@ -7,6 +7,7 @@
  * here comes from the central ARHA policy — nothing is decided in this file.
  */
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +62,7 @@ type TicketContext = {
   ownerrez_confirmation_code?: string | null;
   ownerrez_arrival?: string | null;
   ownerrez_departure?: string | null;
+  guest_recovery_needed?: boolean | null;
 };
 
 type RecoveryRow = {
@@ -183,8 +185,8 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         author_id: userId,
         event_type: "created",
         body: chosen
-          ? `Recovery opened from ticket — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
-          : "Recovery opened from ticket",
+          ? `Refund or credit opened from ticket — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
+          : "Refund or credit opened from ticket",
         detail: {
           authority: verdict.level,
           reason: verdict.reason,
@@ -193,6 +195,18 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         },
         is_demo: ticket.is_demo ?? false,
       } as never);
+
+      // A recovery on a ticket is itself the documentation, so the ticket says so.
+      if (!ticket.guest_recovery_needed) {
+        await supabase
+          .from("tickets")
+          .update({
+            guest_recovery_needed: true,
+            guest_recovery_flagged_at: new Date().toISOString(),
+            guest_recovery_flagged_by: userId,
+          } as never)
+          .eq("id", ticket.id);
+      }
       return recoveryId;
     },
     onSuccess: () => {
@@ -205,7 +219,42 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
       setPolicyFit("unknown");
       qc.invalidateQueries({ queryKey: ["recovery-for-ticket", ticket.id] });
       qc.invalidateQueries({ queryKey: ["guest-recovery"] });
-      toast.success("Guest recovery opened");
+      toast.success("Refund or credit opened");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Documenting it on the ticket is the decision; logging the recovery is the
+  // next step, so saying yes opens the form straight away.
+  const flagged = Boolean(ticket.guest_recovery_needed);
+  const flag = useMutation({
+    mutationFn: async (next: boolean) => {
+      const { error } = await supabase
+        .from("tickets")
+        .update({
+          guest_recovery_needed: next,
+          guest_recovery_flagged_at: next ? new Date().toISOString() : null,
+          guest_recovery_flagged_by: next ? userId : null,
+        } as never)
+        .eq("id", ticket.id);
+      if (error) throw error;
+      await supabase.from("ticket_activity").insert({
+        ticket_id: ticket.id,
+        author_id: userId,
+        kind: "status",
+        event_type: next ? "guest_recovery_flagged" : "guest_recovery_unflagged",
+        body: next
+          ? "Documented on the ticket: this resulted in guest refund or credit."
+          : "Guest refunds & credits no longer applies to this ticket.",
+        internal: true,
+        is_demo: ticket.is_demo ?? false,
+      } as never);
+      return next;
+    },
+    onSuccess: (next) => {
+      qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+      if (next) setOpen(true);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -230,6 +279,26 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
+        <label className="flex items-start gap-2 rounded-md border px-3 py-2">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={flagged}
+            disabled={readOnly || flag.isPending || (flagged && existing.length > 0)}
+            onChange={(e) => flag.mutate(e.target.checked)}
+          />
+          <span>
+            <span className="font-medium">This ticket resulted in guest refund or credit</span>
+            <span className="block text-xs text-muted-foreground">
+              {flagged
+                ? existing.length > 0
+                  ? "Recorded on this ticket and linked to the refund or credit below."
+                  : "Recorded — log what the guest is owed to finish it."
+                : "Tick this and the refund or credit log opens straight away."}
+            </span>
+          </span>
+        </label>
+
         {existing.map((row) => (
           <div key={row.id} className="rounded-md border px-3 py-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -248,12 +317,19 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               Proposed {formatMoney(row.proposed_amount)} · approved{" "}
               {formatMoney(row.approved_amount)} · issued {formatMoney(row.delivered_amount)}
             </p>
+            <Link
+              to="/recovery"
+              search={{ open: row.id }}
+              className="text-xs font-medium underline underline-offset-2"
+            >
+              See it in Guest refunds & credits
+            </Link>
           </div>
         ))}
 
         {readOnly ? null : !open ? (
           <Button variant="outline" onClick={() => setOpen(true)}>
-            {existing.length ? "Open another recovery" : "Open a guest recovery"}
+            {existing.length ? "Open another refund or credit" : "Open a guest refund or credit"}
           </Button>
         ) : (
           <div className="space-y-3 rounded-md border p-3">
@@ -397,7 +473,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
 
             <div className="flex gap-2">
               <Button disabled={create.isPending || blocked} onClick={() => create.mutate()}>
-                Open recovery
+                Open refund or credit
               </Button>
               <Button
                 variant="ghost"

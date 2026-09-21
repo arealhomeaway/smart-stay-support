@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 /**
  * Navigation correction per the confirmed Ops operating model: Claims and
- * Guest recovery are frontline/team workflows — PCs and operations staff
+ * Guest refunds & credits are frontline/team workflows — PCs and operations staff
  * perform this work directly — so they live under "My day", not
  * "Supervision". True supervisor functions (Oversight, Onboarding, Map)
  * stay put.
@@ -17,7 +17,7 @@ import { fileURLToPath } from "url";
  * reverts to the stricter capability that hid the frontline items from
  * the very roles this correction is for.
  */
-describe("AppShell — Claims and Guest recovery moved from Supervision to My day", () => {
+describe("AppShell — Claims and Guest refunds & credits moved from Supervision to My day", () => {
   const here = dirname(fileURLToPath(import.meta.url));
   const src = readFileSync(join(here, "../../components/AppShell.tsx"), "utf8");
 
@@ -26,16 +26,16 @@ describe("AppShell — Claims and Guest recovery moved from Supervision to My da
     /\{\s*label: "Supervision",\s*items: \[[\s\S]*?\],\s*\},/,
   );
 
-  it("frontlineGroup ('My day') contains Claims and Guest recovery", () => {
+  it("frontlineGroup ('My day') contains Claims and Guest refunds & credits", () => {
     expect(frontlineGroupMatch).not.toBeNull();
     const body = frontlineGroupMatch?.[0] ?? "";
     expect(body).toContain('to: "/claims"');
     expect(body).toContain('label: "Claims"');
     expect(body).toContain('to: "/recovery"');
-    expect(body).toContain('label: "Guest recovery"');
+    expect(body).toContain('label: "Guest refunds & credits"');
   });
 
-  it("the Supervision group no longer contains Claims or Guest recovery", () => {
+  it("the Supervision group no longer contains Claims or Guest refunds & credits", () => {
     expect(supervisionGroupMatch).not.toBeNull();
     const body = supervisionGroupMatch?.[0] ?? "";
     expect(body).not.toContain('to: "/claims"');
@@ -57,7 +57,7 @@ describe("AppShell — Claims and Guest recovery moved from Supervision to My da
   });
 
 
-  it("Claims and Guest recovery are gated on claims_work, matching what the pages themselves already require — not the stricter claims_oversight that hid them from frontline roles", () => {
+  it("Claims and Guest refunds & credits are gated on claims_work, matching what the pages themselves already require — not the stricter claims_oversight that hid them from frontline roles", () => {
     const body = frontlineGroupMatch?.[0] ?? "";
     const claimsMatch = body.match(/\{\s*to: "\/claims",[\s\S]*?\},/);
     const recoveryMatch = body.match(/\{\s*to: "\/recovery",[\s\S]*?\},/);

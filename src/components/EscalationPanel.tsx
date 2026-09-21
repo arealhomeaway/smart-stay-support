@@ -46,7 +46,7 @@ import { relativeTime } from "@/lib/tickets";
 export function EscalationPanel({ ticketId }: { ticketId: string }) {
   const { isSupervisor, isPlatformOwner, readOnly } = useRole();
   // Director authority is a seat, not a permission role — the same seat
-  // register that already routes Guest Recovery director-vs-owner approval.
+  // register that already routes Guest refunds & credits director-vs-owner approval.
   // A Platform Owner may always decide, matching the server-side check.
   const seat = useSeat();
   const isDirector = seat.code === "director_ops" || isPlatformOwner;
