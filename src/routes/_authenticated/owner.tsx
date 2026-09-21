@@ -92,18 +92,26 @@ function firstName(name: string | null | undefined) {
 function OwnerHub() {
   const { user } = Route.useRouteContext();
   const { ownerPreview } = useOwnerPreview();
+  const { demoMode } = useDemo();
   const load = useServerFn(ownerHome);
   const loadPreview = useServerFn(ownerHomePreview);
+  // In demo mode the homeowner portal always opens the demo home, so staff can
+  // walk the homeowner experience instead of hitting the "no home linked" wall.
+  const previewing = Boolean(ownerPreview) || demoMode;
 
   const home = useQuery({
     queryKey: [
       "owner-home",
       user.id,
-      ownerPreview ? "preview" : "owner",
-      ownerPreview?.programId ?? null,
+      previewing ? "preview" : "owner",
+      ownerPreview?.programId ?? (demoMode ? "demo" : null),
     ],
     queryFn: () =>
-      ownerPreview ? loadPreview({ data: { programId: ownerPreview.programId } }) : load(),
+      previewing
+        ? loadPreview({
+            data: { programId: ownerPreview?.programId ?? null, demo: !ownerPreview && demoMode },
+          })
+        : load(),
   });
 
   if (home.isLoading) return <LoadingPage tiles={4} />;
