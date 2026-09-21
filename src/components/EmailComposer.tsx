@@ -153,6 +153,35 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
   const fieldProblems = gate.fields;
   const problems = gate.blockers;
 
+  // Keyboard users get sent to the box that needs them, not left hunting for it.
+  const toRef = useRef<HTMLButtonElement>(null);
+  const customToRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const toDescribedBy =
+    [
+      fieldProblems.to ? "composer-to-error" : null,
+      recipients.length === 0 && ctx.isSuccess ? "composer-to-hint" : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+  const bodyDescribedBy =
+    [
+      fieldProblems.body ? "composer-body-error" : null,
+      fieldProblems.unfilled.length > 0 ? "composer-body-blanks" : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+  function focusProblem(problem: string) {
+    if (problem === fieldProblems.subject) subjectRef.current?.focus();
+    else if (problem === fieldProblems.body) bodyRef.current?.focus();
+    else if (problem === fieldProblems.to)
+      (customToRef.current ?? toRef.current)?.focus();
+    else toRef.current?.focus();
+  }
+
   const sending = useMutation({
     mutationFn: () =>
       send({
