@@ -77,6 +77,7 @@ export const getComposerContext = createServerFn({ method: "GET" })
 
     return {
       ...gathered,
+      previousContacts,
       canManageTemplates: Boolean(canManage),
       templates: (templates ?? []).filter((t) =>
         ((t["contexts"] as string[] | null) ?? []).includes(data.context),
