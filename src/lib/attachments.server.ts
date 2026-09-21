@@ -431,7 +431,7 @@ export async function completeUpload(
     _actor_id: viewer.userId,
     _document_id: input.documentId,
     _ok: input.ok,
-    _fulfils_request_id: input.fulfilsRequestId ?? null,
+    _fulfils_request_id: (input.fulfilsRequestId ?? null) as unknown as string,
   });
   if (error) throw error;
   if (typeof data !== "boolean") throw new Error("Resolve could not confirm upload completion.");

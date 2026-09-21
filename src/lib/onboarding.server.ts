@@ -291,10 +291,12 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
       ),
     projects: projects.filter(managedRecord),
     pipeline: workspace.pipeline.filter((id) => managed.has(id)),
-    stageCaptures: workspace.stageCaptures.filter((capture) => managed.has(capture.propertyId)),
+    stageCaptures: workspace.stageCaptures.filter((capture) =>
+      managed.has(capture.propertyId ?? ""),
+    ),
     handoffs: visibleHandoffs,
     independentReadiness: workspace.independentReadiness.filter((row) =>
-      managed.has(row.propertyId),
+      managed.has(row.propertyId ?? ""),
     ),
     notes: workspace.notes.filter(managedRecord),
     reviews: workspace.reviews.filter(
@@ -1239,7 +1241,8 @@ export async function overrideOnboardingTaskDate(
     _task_id: input.taskId,
     _actor_id: userId,
     _expected_updated_at: input.expectedUpdatedAt,
-    _due_on: input.dueOn,
+    // Clearing a date sends null, which the database accepts.
+    _due_on: input.dueOn as unknown as string,
     _reason: input.reason,
   });
   if (result.error) throw result.error;

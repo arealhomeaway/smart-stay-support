@@ -160,8 +160,9 @@ export async function offerToOwner(supabase: Client, userId: string, input: Offe
     _title: input.title.trim(),
     _instructions: input.instructions.trim(),
     _action_type: input.actionType,
-    _available_from: input.availableFrom,
-    _respond_by: input.respondBy,
+    // Both windows are optional; the database accepts null.
+    _available_from: input.availableFrom as unknown as string,
+    _respond_by: input.respondBy as unknown as string,
     _staff_context: input.staffContext.trim(),
     _reviewed: input.reviewed,
   });
