@@ -53,6 +53,7 @@ import { RouteProgress } from "@/components/nav/RouteProgress";
 import { useAmbientOrigin } from "@/components/nav/NavContext";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
