@@ -55,7 +55,7 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
     const { data: ticket, error } = await supabase
       .from("tickets")
       .select(
-        "id, status, acknowledged_at, action_started_at, waiting_on, waiting_reason, next_review_at, guest_in_residence, guest_confirmed, vendor_name, vendor_status, resolved_at, closed_at, current_action_owner",
+        "id, status, acknowledged_at, action_started_at, waiting_on, waiting_reason, next_review_at, guest_in_residence, guest_confirmed, vendor_name, vendor_status, resolved_at, current_action_owner",
       )
       .eq("id", data.ticketId)
       .maybeSingle();
@@ -70,7 +70,6 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
 
     const action = ticketCurrentAction({
       status: ticket.status,
-      closed_at: ticket.closed_at,
       resolved_at: ticket.resolved_at,
       acknowledged_at: ticket.acknowledged_at,
       action_started_at: ticket.action_started_at,
