@@ -8,8 +8,9 @@ function ascii(value: string) {
 
 /** Generates external-only wording. Internal conflict dates never enter this document. */
 export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { checkIn: string; checkOut: string; location: string }) {
-  if (!results.length || results.some((result) => result.status === "unavailable" || !verifiedPublicListingUrl(result.bookingUrl)))
-    throw new Error("Select Available or Conditional properties with verified public listing links.");
+  // A home with no verified public listing may still be included; its page simply carries no link.
+  if (!results.length || results.some((result) => result.status === "unavailable" || (result.bookingUrl && !verifiedPublicListingUrl(result.bookingUrl))))
+    throw new Error("Select Available or Conditional properties.");
   const pdf = await PDFDocument.create();
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -38,9 +39,11 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
           const scale = Math.min(500 / image.width, 290 / image.height);
           const width = image.width * scale, height = image.height * scale;
           page.drawImage(image, { x: 38, y: y - height, width, height });
-          const imageLink = pdf.context.obj({ Type: "Annot", Subtype: "Link", Rect: [38, y - height, 38 + width, y], Border: [0, 0, 0],
-            A: { Type: "Action", S: "URI", URI: PDFString.of(result.bookingUrl!) } });
-          page.node.addAnnot(pdf.context.register(imageLink));
+          if (result.bookingUrl) {
+            const imageLink = pdf.context.obj({ Type: "Annot", Subtype: "Link", Rect: [38, y - height, 38 + width, y], Border: [0, 0, 0],
+              A: { Type: "Action", S: "URI", URI: PDFString.of(result.bookingUrl) } });
+            page.node.addAnnot(pdf.context.register(imageLink));
+          }
           y -= height + 20;
         }
       } catch { /* The PDF stays useful when the image host blocks cross-origin fetches. */ }
