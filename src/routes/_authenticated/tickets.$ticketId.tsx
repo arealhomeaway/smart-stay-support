@@ -1091,6 +1091,27 @@ function TicketDetail() {
             <section aria-label="Current work">
               <h2 className="eyebrow text-muted-foreground">Current work</h2>
 
+              {currentAction && (
+                <div className="mt-2">
+                  <CurrentActionCard
+                    ticketId={ticketId}
+                    action={currentAction}
+                    readOnly={role.readOnly}
+                    onDone={refresh}
+                    onHandoff={(target) => {
+                      if (target === "closure") setCloseOpen(true);
+                      document
+                        .getElementById("current-work-detail")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  />
+                </div>
+              )}
+
+              <div id="current-work-detail" />
+
+
+
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">
                   <h2 className="flex items-center gap-2 text-xl font-semibold">
