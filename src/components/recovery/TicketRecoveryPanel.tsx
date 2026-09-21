@@ -61,6 +61,7 @@ type TicketContext = {
   ownerrez_confirmation_code?: string | null;
   ownerrez_arrival?: string | null;
   ownerrez_departure?: string | null;
+  guest_recovery_needed?: boolean | null;
 };
 
 type RecoveryRow = {
