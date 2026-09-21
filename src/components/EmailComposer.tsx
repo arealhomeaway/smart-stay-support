@@ -201,7 +201,9 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
 
         <TabsContent value="write" className="space-y-4 pt-4">
           <div className="grid gap-2">
-            <Label>To</Label>
+            <Label id="composer-to-label" htmlFor="composer-to">
+              To
+            </Label>
             <Select
               value={recipientKey}
               onValueChange={(value) => {
@@ -210,7 +212,13 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
                 if (match) setAudience(match.audience);
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                id="composer-to"
+                ref={toRef}
+                aria-labelledby="composer-to-label"
+                aria-describedby={toDescribedBy}
+                aria-invalid={Boolean(fieldProblems.to)}
+              >
                 <SelectValue placeholder="Choose who this goes to" />
               </SelectTrigger>
               <SelectContent>
@@ -223,26 +231,43 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               </SelectContent>
             </Select>
             {recipientKey === CUSTOM ? (
-              <Input
-                value={customTo}
-                onChange={(e) => setCustomTo(e.target.value)}
-                placeholder="name@example.com"
-              />
+              <>
+                <Label htmlFor="composer-custom-to" className="sr-only">
+                  Email address
+                </Label>
+                <Input
+                  id="composer-custom-to"
+                  ref={customToRef}
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  placeholder="name@example.com"
+                  aria-describedby={toDescribedBy}
+                  aria-invalid={Boolean(fieldProblems.to)}
+                />
+              </>
             ) : null}
             {fieldProblems.to ? (
-              <p className="text-sm text-destructive">{fieldProblems.to}</p>
+              <p id="composer-to-error" role="alert" className="text-sm text-destructive">
+                {fieldProblems.to}
+              </p>
             ) : null}
             {recipients.length === 0 && ctx.isSuccess ? (
-              <p className="text-sm text-muted-foreground">
+              <p id="composer-to-hint" className="text-sm text-muted-foreground">
                 This record has no contact on file yet — type an address above.
               </p>
             ) : null}
           </div>
 
           <div className="grid gap-2">
-            <Label>Template</Label>
+            <Label id="composer-template-label" htmlFor="composer-template">
+              Template
+            </Label>
             <Select value={templateId} onValueChange={chooseTemplate}>
-              <SelectTrigger>
+              <SelectTrigger
+                id="composer-template"
+                aria-labelledby="composer-template-label"
+                aria-describedby={missing.length > 0 ? "composer-template-note" : undefined}
+              >
                 <SelectValue placeholder="Start from a template" />
               </SelectTrigger>
               <SelectContent>
@@ -255,7 +280,7 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               </SelectContent>
             </Select>
             {missing.length > 0 ? (
-              <p className="text-sm text-amber-700">
+              <p id="composer-template-note" role="status" className="text-sm text-amber-700">
                 This record could not fill in: {missing.join(", ").replace(/_/g, " ")} — please
                 complete those lines yourself.
               </p>
@@ -266,12 +291,16 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             <Label htmlFor="composer-subject">Subject</Label>
             <Input
               id="composer-subject"
+              ref={subjectRef}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               aria-invalid={Boolean(fieldProblems.subject)}
+              aria-describedby={fieldProblems.subject ? "composer-subject-error" : undefined}
             />
             {fieldProblems.subject ? (
-              <p className="text-sm text-destructive">{fieldProblems.subject}</p>
+              <p id="composer-subject-error" role="alert" className="text-sm text-destructive">
+                {fieldProblems.subject}
+              </p>
             ) : null}
           </div>
 
@@ -279,28 +308,37 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             <Label htmlFor="composer-body">Message</Label>
             <Textarea
               id="composer-body"
+              ref={bodyRef}
               value={body}
               rows={12}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write the message. Edit anything the template filled in — every word is yours to change."
               aria-invalid={Boolean(fieldProblems.body)}
+              aria-describedby={bodyDescribedBy}
             />
             {fieldProblems.body ? (
-              <p className="text-sm text-destructive">{fieldProblems.body}</p>
+              <p id="composer-body-error" role="alert" className="text-sm text-destructive">
+                {fieldProblems.body}
+              </p>
             ) : null}
             {fieldProblems.unfilled.length > 0 ? (
-              <p className="text-sm text-amber-700">
+              <p id="composer-body-blanks" className="text-sm text-amber-700">
                 Still blank: {fieldProblems.unfilled.join(", ").replace(/_/g, " ")}.
               </p>
             ) : null}
           </div>
 
           {/* Exactly what leaves the inbox, read-only, before anyone presses Send. */}
-          <section className="rounded-lg border border-border bg-muted/30 p-3">
-            <p className="eyebrow">Preview — exactly as it will arrive</p>
+          <section
+            aria-labelledby="composer-preview-heading"
+            className="rounded-lg border border-border bg-muted/30 p-3"
+          >
+            <p id="composer-preview-heading" className="eyebrow">
+              Preview — exactly as it will arrive
+            </p>
             {problems.length > 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">
-                Finish the message below and the preview appears here.
+                Finish the message above and the preview appears here.
               </p>
             ) : (
               <dl className="mt-2 space-y-2 text-sm">
@@ -323,19 +361,37 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             )}
           </section>
 
-          {problems.length > 0 ? (
-            <ul className="text-sm text-muted-foreground">
-              {problems.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-          ) : null}
-
+          {/* Announced as it changes, and every line jumps to the box it belongs to. */}
+          <div id="composer-problems" role="status" aria-live="polite">
+            {problems.length > 0 ? (
+              <>
+                <p className="text-sm font-medium">
+                  {problems.length === 1
+                    ? "One thing to finish before this can be sent:"
+                    : `${problems.length} things to finish before this can be sent:`}
+                </p>
+                <ul className="mt-1 space-y-1 text-sm text-muted-foreground">
+                  {problems.map((p) => (
+                    <li key={p}>
+                      <button
+                        type="button"
+                        className="text-left underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => focusProblem(p)}
+                      >
+                        {p}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
 
           <div className="flex justify-end">
             <Button
               className="gap-2"
               disabled={problems.length > 0 || sending.isPending}
+              aria-describedby={problems.length > 0 ? "composer-problems" : undefined}
               onClick={() => sending.mutate()}
             >
               <Send className="size-4" aria-hidden />
@@ -343,6 +399,7 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             </Button>
           </div>
         </TabsContent>
+
 
         <TabsContent value="history" className="space-y-3 pt-4">
           {(history.data?.rows.length ?? 0) === 0 ? (
