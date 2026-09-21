@@ -16,7 +16,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { FULL_FURNISHING_TEMPLATE, TEMPLATE_KEY, type TemplateTask } from "./onboarding-template";
+import { MASTER_ONBOARDING_TEMPLATE, TEMPLATE_KEY, type TemplateTask } from "./onboarding-template";
 import { writeAudit } from "./audit.server";
 import { seatForTask, type SeatCode } from "./onboarding-ownership";
 
@@ -143,7 +143,7 @@ export async function previewOnboardingTemplate(
   const toCreate: TemplatePreview["toCreate"] = [];
   const skipped: TemplatePreview["skipped"] = [];
   let subtasksToCreate = 0;
-  for (const t of FULL_FURNISHING_TEMPLATE) {
+  for (const t of MASTER_ONBOARDING_TEMPLATE) {
     const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
     subtasksToCreate += (t.subtasks ?? []).filter(
       (title) => !parentId || !takenSubs.has(subKey(parentId, title)),
@@ -182,7 +182,7 @@ export async function applyOnboardingTemplate(
     input.propertyId,
   );
 
-  const pending = FULL_FURNISHING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
+  const pending = MASTER_ONBOARDING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
   // Ownership: every task opens owned by a SEAT, and by the person holding
   // that seat today. Nothing is created unassigned.
@@ -219,7 +219,7 @@ export async function applyOnboardingTemplate(
       !t.parent_task_id &&
       t.requires_owner_approval &&
       ["pending", "awaiting_owner"].includes(t.owner_approval_status) &&
-      FULL_FURNISHING_TEMPLATE.some(
+      MASTER_ONBOARDING_TEMPLATE.some(
         (template) => taskKey(template.stage, template.title) === taskKey(t.stage, t.title),
       ),
   );
@@ -243,7 +243,7 @@ export async function applyOnboardingTemplate(
   // reuses pending approvals and preserves any decision already recorded.
   const { ensureOwnerApprovalRequest } = await import("./onboarding.server");
   for (const task of approvalTasks) {
-    const template = FULL_FURNISHING_TEMPLATE.find(
+    const template = MASTER_ONBOARDING_TEMPLATE.find(
       (entry) => taskKey(entry.stage, entry.title) === taskKey(task.stage, task.title),
     );
     await ensureOwnerApprovalRequest(supabase, userId, {
@@ -261,7 +261,7 @@ export async function applyOnboardingTemplate(
   // already existed, so a partially applied plan is completed rather than
   // duplicated.
   const subRows: Record<string, unknown>[] = [];
-  for (const t of FULL_FURNISHING_TEMPLATE) {
+  for (const t of MASTER_ONBOARDING_TEMPLATE) {
     if (!t.subtasks?.length) continue;
     const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
     if (!parentId) continue;
@@ -303,13 +303,13 @@ export async function applyOnboardingTemplate(
       template: TEMPLATE_KEY,
       created: rows.length,
       subtasks: subRows.length,
-      skipped: FULL_FURNISHING_TEMPLATE.length - pending.length,
+      skipped: MASTER_ONBOARDING_TEMPLATE.length - pending.length,
     },
   });
 
   return {
     created: rows.length,
     subtasksCreated: subRows.length,
-    skipped: FULL_FURNISHING_TEMPLATE.length - pending.length,
+    skipped: MASTER_ONBOARDING_TEMPLATE.length - pending.length,
   };
 }
