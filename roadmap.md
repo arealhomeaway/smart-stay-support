@@ -526,3 +526,4 @@ is now doable from Resolve.
 - [x] Operational taxonomy & field guidance (one shared category list across tickets, work orders, claims and vendors; trades roll up to categories; one-line guidance per field)
 [x] Breezeway sync depth & document completion (unplaced updates + drift review, differences held for a person, vendor paperwork completeness, legacy document retirement)
 - [x] Transition readiness gates + owner handoff queue (one Transitions queue under Onboarding covering home → Operations and owner → Active Owner, filtered by who is holding it up)
+- [x] Current Action card on the ticket workspace (one step at a time, required inputs, Complete & Advance auto-advances to the next step)

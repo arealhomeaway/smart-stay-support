@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { GuidanceCard } from "@/components/GuidanceCard";
+import { CurrentActionCard } from "@/components/CurrentActionCard";
 import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
@@ -66,6 +67,7 @@ import {
 } from "@/components/ui/sheet";
 import { VisitLogPanel } from "@/components/VisitLogPanel";
 import { ticketNextAction } from "@/lib/ticket-next-action";
+import { ticketCurrentAction } from "@/lib/ticket-current-action";
 import { ensureTicketActionStarted } from "@/lib/ticket-action-start";
 import { classifyTicketText } from "@/lib/ticket-classify";
 import {
@@ -799,6 +801,26 @@ function TicketDetail() {
   }).required;
   const resolveActionLabel = willNeedFinalReview ? "Resolve — send for review" : "Close ticket";
 
+  // The one Current Action: what to do now, what has to be written down, and
+  // what happens the moment it is completed. Derived, never stored.
+  const currentAction = ticketCurrentAction({
+    status: ticket.status,
+    resolved_at: ticket.resolved_at,
+    acknowledged_at: ticket.acknowledged_at,
+    action_started_at: ticket.action_started_at,
+    waiting_on: ticket.waiting_on,
+    waiting_reason: ticket.waiting_reason,
+    next_review_at: ticket.next_review_at,
+    guest_in_residence: ticket.guest_in_residence,
+    guest_confirmed: ticket.guest_confirmed,
+    vendor_name: ticket.vendor_name,
+    vendor_status: ticket.vendor_status,
+    repairActive: repairExists && !repairComplete,
+    repairPossible: repairIsPossible(ticket.category, workType?.name) && !repairExists,
+    requiredOpenSteps: requiredOpen.length,
+    missingClosureEvidence: Boolean(requiredEvidence) && !evidenceSatisfied,
+  });
+
   // One plain-language sentence: what is happening and what comes next. No stat wall.
   const nextStepLine = closed
     ? ticket.status === "resolved"
@@ -1090,6 +1112,27 @@ function TicketDetail() {
           <div className="space-y-5 lg:col-span-2">
             <section aria-label="Current work">
               <h2 className="eyebrow text-muted-foreground">Current work</h2>
+
+              {currentAction && (
+                <div className="mt-2">
+                  <CurrentActionCard
+                    ticketId={ticketId}
+                    action={currentAction}
+                    readOnly={role.readOnly}
+                    onDone={refresh}
+                    onHandoff={(target: string) => {
+                      if (target === "closure") setCloseOpen(true);
+                      document
+                        .getElementById("current-work-detail")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  />
+                </div>
+              )}
+
+              <div id="current-work-detail" />
+
+
 
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">
