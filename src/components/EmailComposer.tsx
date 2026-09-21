@@ -300,9 +300,15 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
                   <p className="font-medium">{row.subject}</p>
                   <StatusBadge
                     tone={
-                      row.status === "sent" ? "good" : row.status === "failed" ? "urgent" : "muted"
+                      row.status === "sent"
+                        ? "resolved"
+                        : row.status === "failed"
+                          ? "escalated"
+                          : "waiting"
                     }
-                    label={row.status === "sent" ? "Sent" : row.status === "failed" ? "Failed" : "Not sent"}
+                    label={
+                      row.status === "sent" ? "Sent" : row.status === "failed" ? "Failed" : "Not sent"
+                    }
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
