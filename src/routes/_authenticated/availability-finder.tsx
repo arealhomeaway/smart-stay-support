@@ -60,8 +60,8 @@ function AvailabilityFinderPage() {
   const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
-    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.pets, search.amenities],
-    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, pets: search.pets ?? 0, amenities: searchedAmenities } }),
+    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.dogs, search.cats, search.minBedrooms, search.amenities],
+    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, dogs: search.dogs ?? 0, cats: search.cats ?? 0, minBedrooms: search.minBedrooms ?? 0, amenities: searchedAmenities } }),
     enabled: allowed && inputReady,
     retry: false,
   });
