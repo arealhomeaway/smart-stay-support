@@ -112,7 +112,7 @@ export function applyRequirements(results: AvailabilityResult[], requirements: M
   const matched: AvailabilityResult[] = [];
   const heldBack: HeldBackResult[] = [];
   for (const result of results) {
-    const outcome = matchesRequirements(result.facts, requirements);
+    const outcome = matchesRequirements(result.facts, requirements, { bedrooms: result.bedrooms });
     if (outcome.ok) matched.push(result);
     else heldBack.push({ result, reasons: outcome.reasons });
   }
