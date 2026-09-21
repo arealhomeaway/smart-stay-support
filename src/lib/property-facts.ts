@@ -288,5 +288,11 @@ export function confirmedAmenities(facts: PropertyFacts): AmenityKey[] {
 export function petSummary(facts: PropertyFacts): string {
   if (facts.petsAllowed === null) return "Pet policy not published";
   if (!facts.petsAllowed) return "No pets";
-  return facts.maxPets && facts.maxPets > 0 ? `Pets welcome (up to ${facts.maxPets})` : "Pets welcome";
+  const limit = facts.maxPets && facts.maxPets > 0 ? ` (up to ${facts.maxPets})` : "";
+  const species: string[] = [];
+  if (facts.dogsAllowed === true) species.push("dogs");
+  if (facts.catsAllowed === true) species.push("cats");
+  if (facts.dogsAllowed === false) species.push("no dogs");
+  if (facts.catsAllowed === false) species.push("no cats");
+  return `Pets welcome${limit}${species.length ? ` — ${species.join(", ")}` : ""}`;
 }
