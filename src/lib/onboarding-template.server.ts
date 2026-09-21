@@ -16,6 +16,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { masterStageForLegacyTask } from "./onboarding-stage-map";
 import { MASTER_ONBOARDING_TEMPLATE, TEMPLATE_KEY, type TemplateTask } from "./onboarding-template";
 import { writeAudit } from "./audit.server";
 import { seatForTask, type SeatCode } from "./onboarding-ownership";
@@ -110,15 +111,26 @@ async function loadContext(supabase: Client, propertyId: string) {
     actual_access: property.data.actual_access_on,
   };
   const rows = existing.data ?? [];
+  /**
+   * A saved task that still sits under its old phase heading is the SAME task
+   * as the one now filed under an operational stage. Both keys point at it, so
+   * re-applying the plan recognises it in place instead of creating a twin.
+   */
+  const keysFor = (row: { stage: string; title: string }) => {
+    const keys = [taskKey(row.stage, row.title)];
+    const moved = masterStageForLegacyTask(row.stage, row.title);
+    if (moved) keys.push(taskKey(moved, row.title));
+    return keys;
+  };
   // Subtasks never block a top-level task from being created, and vice versa.
-  const taken = new Set(
-    rows.filter((t) => !t.parent_task_id).map((t) => taskKey(t.stage, t.title)),
-  );
+  const taken = new Set(rows.filter((t) => !t.parent_task_id).flatMap(keysFor));
   const takenSubs = new Set(
     rows.filter((t) => t.parent_task_id).map((t) => subKey(t.parent_task_id as string, t.title)),
   );
   const parentIdByKey = new Map(
-    rows.filter((t) => !t.parent_task_id).map((t) => [taskKey(t.stage, t.title), t.id] as const),
+    rows
+      .filter((t) => !t.parent_task_id)
+      .flatMap((t) => keysFor(t).map((key) => [key, t.id] as const)),
   );
   return { property: property.data, anchors, taken, takenSubs, parentIdByKey, existing: rows };
 }
@@ -198,6 +210,7 @@ export async function applyOnboardingTemplate(
   const rows = pending.map((t) => ({
     property_id: input.propertyId,
     stage: t.stage,
+    legacy_stage: t.legacyStage ?? null,
     title: t.title,
     detail: detailFor(t),
     status: "open",

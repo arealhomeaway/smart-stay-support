@@ -3554,6 +3554,59 @@ export type Database = {
           },
         ]
       }
+      onboarding_task_stage_history: {
+        Row: {
+          assigned_seat: string | null
+          assigned_to: string | null
+          changed_by: string | null
+          created_at: string
+          from_stage: string | null
+          id: string
+          is_demo: boolean
+          legacy_stage: string | null
+          property_id: string | null
+          reason: string | null
+          task_id: string
+          to_stage: string
+        }
+        Insert: {
+          assigned_seat?: string | null
+          assigned_to?: string | null
+          changed_by?: string | null
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          is_demo?: boolean
+          legacy_stage?: string | null
+          property_id?: string | null
+          reason?: string | null
+          task_id: string
+          to_stage: string
+        }
+        Update: {
+          assigned_seat?: string | null
+          assigned_to?: string | null
+          changed_by?: string | null
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          is_demo?: boolean
+          legacy_stage?: string | null
+          property_id?: string | null
+          reason?: string | null
+          task_id?: string
+          to_stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_task_stage_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_tasks: {
         Row: {
           archived_at: string | null
@@ -3580,6 +3633,7 @@ export type Database = {
           exception_reason: string | null
           id: string
           is_demo: boolean
+          legacy_stage: string | null
           linked_ticket_id: string | null
           owner_approval_status: string
           parent_task_id: string | null
@@ -3618,6 +3672,7 @@ export type Database = {
           exception_reason?: string | null
           id?: string
           is_demo?: boolean
+          legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
           parent_task_id?: string | null
@@ -3656,6 +3711,7 @@ export type Database = {
           exception_reason?: string | null
           id?: string
           is_demo?: boolean
+          legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
           parent_task_id?: string | null

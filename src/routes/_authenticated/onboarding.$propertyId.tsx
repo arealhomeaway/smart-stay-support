@@ -1,5 +1,6 @@
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { gateReviewAuthority } from "@/lib/handoff-gate-authority";
+import { StageProgressPanel } from "@/components/onboarding/StageProgressPanel";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import {
   onboardingWorkspaceKey,
@@ -432,6 +433,21 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------- Overview */}
         <TabsContent value="overview" className="space-y-5">
+          <StageProgressPanel
+            tasks={tasks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              stage: t.stage,
+              status: t.status,
+              blocker: t.blocker ?? null,
+              dueOn: t.due_on ?? null,
+              assignedTo: t.assigned_to ?? null,
+              parentTaskId: t.parent_task_id ?? null,
+              ownerApprovalStatus: t.owner_approval_status ?? null,
+              requiresOwnerApproval: t.requires_owner_approval ?? null,
+            }))}
+            onOpenTask={setOpenTaskId}
+          />
           <div className="surface p-4">
             <PhotoStrip
               entityType="property"
