@@ -5,6 +5,7 @@
  * only what Resolve has shared with them. The server decides both — this file
  * renders what it is given and never widens it.
  */
+import { EmailComposer } from "@/components/EmailComposer";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
