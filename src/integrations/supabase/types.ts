@@ -1599,8 +1599,11 @@ export type Database = {
       }
       email_log: {
         Row: {
+          attachments: Json
           attempts: number
+          bcc: string[]
           body: string | null
+          cc: string[]
           created_at: string
           entity_id: string | null
           entity_type: string | null
@@ -1609,6 +1612,8 @@ export type Database = {
           purpose: string
           recipient: string
           reply_to: string | null
+          scheduled_for: string | null
+          scheduled_time_zone: string | null
           sender: string | null
           sent_at: string | null
           sent_by: string | null
@@ -1616,10 +1621,14 @@ export type Database = {
           subject: string
           template_id: string | null
           ticket_id: string | null
+          to_additional: string[]
         }
         Insert: {
+          attachments?: Json
           attempts?: number
+          bcc?: string[]
           body?: string | null
+          cc?: string[]
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
@@ -1628,6 +1637,8 @@ export type Database = {
           purpose?: string
           recipient: string
           reply_to?: string | null
+          scheduled_for?: string | null
+          scheduled_time_zone?: string | null
           sender?: string | null
           sent_at?: string | null
           sent_by?: string | null
@@ -1635,10 +1646,14 @@ export type Database = {
           subject: string
           template_id?: string | null
           ticket_id?: string | null
+          to_additional?: string[]
         }
         Update: {
+          attachments?: Json
           attempts?: number
+          bcc?: string[]
           body?: string | null
+          cc?: string[]
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
@@ -1647,6 +1662,8 @@ export type Database = {
           purpose?: string
           recipient?: string
           reply_to?: string | null
+          scheduled_for?: string | null
+          scheduled_time_zone?: string | null
           sender?: string | null
           sent_at?: string | null
           sent_by?: string | null
@@ -1654,6 +1671,7 @@ export type Database = {
           subject?: string
           template_id?: string | null
           ticket_id?: string | null
+          to_additional?: string[]
         }
         Relationships: [
           {

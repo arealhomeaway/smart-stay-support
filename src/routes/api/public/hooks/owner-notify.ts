@@ -20,6 +20,7 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
         const { drainStaffNotifications } = await import("@/lib/staff-notify.server");
         const { evaluateAllPrograms } = await import("@/lib/owner-progress-alerts.server");
         const { sweepDeadlineAlerts } = await import("@/lib/deadline-alerts.server");
+        const { drainScheduledEmails } = await import("@/lib/email-composer.server");
 
         try {
           // Pace is evaluated first so anything new is delivered in the same pass.
@@ -30,7 +31,9 @@ export const Route = createFileRoute("/api/public/hooks/owner-notify")({
           const delivery = await drainOwnerAlerts(supabaseAdmin);
           // Staff email fan-out rides the same five-minute pass.
           const staff = await drainStaffNotifications(supabaseAdmin);
-          return Response.json({ ...delivery, progress, deadlines, staff });
+          // Messages someone scheduled for later go out on the same pass.
+          const scheduled = await drainScheduledEmails();
+          return Response.json({ ...delivery, progress, deadlines, staff, scheduled });
         } catch (err) {
           return Response.json(
             { ok: false, error: err instanceof Error ? err.message : "Delivery failed" },

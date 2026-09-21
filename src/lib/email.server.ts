@@ -118,7 +118,12 @@ type SendInput = {
   to: string;
   subject: string;
   html: string;
+  /** Extra people on the To line, beside the main recipient. */
+  toAdditional?: string[];
   cc?: string[];
+  bcc?: string[];
+  /** Files carried with the message, already read into base64 by the caller. */
+  attachments?: { name: string; contentType: string; contentBytes: string }[];
   replyTo?: string;
   /** What this message is for — shows in the delivery log. */
   purpose?: string;
@@ -154,6 +159,10 @@ async function logDelivery(entry: {
   bodyText?: string | null;
   sentBy?: string | null;
   templateId?: string | null;
+  cc?: string[] | null;
+  bcc?: string[] | null;
+  attachments?: { name: string; contentType: string }[] | null;
+  toAdditional?: string[] | null;
 }) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -172,6 +181,13 @@ async function logDelivery(entry: {
       body: entry.bodyText ?? null,
       sent_by: entry.sentBy ?? null,
       template_id: entry.templateId ?? null,
+      to_additional: entry.toAdditional ?? [],
+      cc: entry.cc ?? [],
+      bcc: entry.bcc ?? [],
+      attachments: (entry.attachments ?? []).map((a) => ({
+        name: a.name,
+        contentType: a.contentType,
+      })),
       sent_at: entry.status === "sent" ? new Date().toISOString() : null,
     });
   } catch (err) {
@@ -199,6 +215,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+      toAdditional: input.toAdditional ?? [],
+      cc: input.cc ?? [],
+      bcc: input.bcc ?? [],
+      attachments: input.attachments ?? [],
       status: "skipped",
       attempts: 0,
       error,
@@ -219,6 +239,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+      toAdditional: input.toAdditional ?? [],
+      cc: input.cc ?? [],
+      bcc: input.bcc ?? [],
+      attachments: input.attachments ?? [],
       status: "skipped",
       attempts: 0,
       error,
@@ -238,12 +262,34 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
   const message = {
     subject: input.subject,
     body: { contentType: "HTML", content: input.html },
-    toRecipients: [{ emailAddress: { address: to } }],
+    toRecipients: [
+      { emailAddress: { address: to } },
+      ...(input.toAdditional ?? [])
+        .filter(isEmailAddress)
+        .map((address) => ({ emailAddress: { address } })),
+    ],
     ...(input.cc?.filter(isEmailAddress).length
       ? {
           ccRecipients: input.cc
             .filter(isEmailAddress)
             .map((address) => ({ emailAddress: { address } })),
+        }
+      : {}),
+    ...(input.bcc?.filter(isEmailAddress).length
+      ? {
+          bccRecipients: input.bcc
+            .filter(isEmailAddress)
+            .map((address) => ({ emailAddress: { address } })),
+        }
+      : {}),
+    ...(input.attachments?.length
+      ? {
+          attachments: input.attachments.map((a) => ({
+            "@odata.type": "#microsoft.graph.fileAttachment",
+            name: a.name,
+            contentType: a.contentType,
+            contentBytes: a.contentBytes,
+          })),
         }
       : {}),
     // From and Sender are fixed server-side and are not caller-supplied.
@@ -270,6 +316,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+      toAdditional: input.toAdditional ?? [],
+      cc: input.cc ?? [],
+      bcc: input.bcc ?? [],
+      attachments: input.attachments ?? [],
       status: "blocked",
       attempts: 0,
       error,
@@ -302,6 +352,10 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+          toAdditional: input.toAdditional ?? [],
+          cc: input.cc ?? [],
+          bcc: input.bcc ?? [],
+          attachments: input.attachments ?? [],
           status: "sent",
           attempts,
           error: null,

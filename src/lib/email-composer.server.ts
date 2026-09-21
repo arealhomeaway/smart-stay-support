@@ -187,3 +187,112 @@ export async function gatherComposerContext(
     },
   };
 }
+
+/* ------------------------------------------------------------------ *
+ * Send later.
+ *
+ * A scheduled message is parked in the delivery log with everything it
+ * needs, and a later pass sends it. Nothing is held in a browser tab, so
+ * closing the laptop does not cancel it.
+ * ------------------------------------------------------------------ */
+
+export type ParkedEmail = {
+  context: string;
+  recordId: string;
+  to: string;
+  toAdditional: string[];
+  cc: string[];
+  bcc: string[];
+  subject: string;
+  body: string;
+  audience: string;
+  templateId: string | null;
+  scheduledFor: string;
+  scheduledTimeZone: string | null;
+  attachments: { name: string; contentType: string }[];
+};
+
+export async function parkScheduledEmail(email: ParkedEmail, sentBy: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("email_log").insert({
+    recipient: email.to,
+    to_additional: email.toAdditional,
+    cc: email.cc,
+    bcc: email.bcc,
+    subject: email.subject.slice(0, 300),
+    body: email.body,
+    purpose: `composed_${email.context}`,
+    sender: null,
+    status: "scheduled",
+    attempts: 0,
+    entity_type: email.context,
+    entity_id: email.recordId,
+    ticket_id: email.context === "ticket" ? email.recordId : null,
+    sent_by: sentBy,
+    template_id: email.templateId,
+    scheduled_for: email.scheduledFor,
+    scheduled_time_zone: email.scheduledTimeZone,
+    attachments: email.attachments,
+  } as never);
+  if (error) return { status: "failed" as const, error: error.message };
+  return { status: "scheduled" as const, error: null };
+}
+
+/**
+ * Sends every parked message whose time has come. Safe to run repeatedly —
+ * a row is claimed before it is sent, so a second pass never doubles up.
+ */
+export async function drainScheduledEmails(now = new Date()) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { sendEmail, emailShell } = await import("./email.server");
+
+  const { data: due } = await supabaseAdmin
+    .from("email_log")
+    .select("id, recipient, to_additional, cc, bcc, subject, body, entity_type, entity_id, sent_by, template_id")
+    .eq("status", "scheduled")
+    .lte("scheduled_for", now.toISOString())
+    .limit(25);
+
+  let sent = 0;
+  for (const row of (due ?? []) as unknown as Record<string, unknown>[]) {
+    // Claim it first: only the pass that flips it off "scheduled" may send it.
+    const { data: claimed } = await supabaseAdmin
+      .from("email_log")
+      .update({ status: "sending" } as never)
+      .eq("id", String(row["id"]))
+      .eq("status", "scheduled")
+      .select("id");
+    if (!claimed || claimed.length === 0) continue;
+
+    const subject = String(row["subject"] ?? "");
+    const body = String(row["body"] ?? "");
+    const result = await sendEmail({
+      to: String(row["recipient"] ?? ""),
+      toAdditional: (row["to_additional"] as string[] | null) ?? [],
+      cc: (row["cc"] as string[] | null) ?? [],
+      bcc: (row["bcc"] as string[] | null) ?? [],
+      subject,
+      html: emailShell(subject, body, undefined, "owner" as never),
+      purpose: `composed_${String(row["entity_type"] ?? "record")}`,
+      entity:
+        row["entity_type"] && row["entity_id"]
+          ? { type: String(row["entity_type"]), id: String(row["entity_id"]) }
+          : null,
+      bodyText: body,
+      sentBy: (row["sent_by"] as string | null) ?? null,
+      templateId: (row["template_id"] as string | null) ?? null,
+    });
+
+    // sendEmail writes its own delivery record; this row becomes its receipt.
+    await supabaseAdmin
+      .from("email_log")
+      .update({
+        status: result.status === "sent" ? "sent" : "failed",
+        error_message: result.error ?? null,
+        sent_at: result.status === "sent" ? new Date().toISOString() : null,
+      } as never)
+      .eq("id", String(row["id"]));
+    if (result.status === "sent") sent += 1;
+  }
+  return { considered: (due ?? []).length, sent };
+}

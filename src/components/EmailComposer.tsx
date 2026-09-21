@@ -5,11 +5,11 @@
  * about are offered as recipients, the shared templates fill the words, and
  * everything sent from that record stays visible underneath.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Mail, Send } from "lucide-react";
+import { Clock, Mail, Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,8 +39,18 @@ import {
   CONTEXT_LABELS,
   MERGE_FIELDS,
   applyMergeFields,
+  EMPTY_RECIPIENTS,
+  RECIPIENT_FIELD_LABELS,
+  SEND_TIME_ZONES,
+  addRecipients,
+  isEmailAddress,
+  removeRecipient,
+  scheduleProblems,
   sendGate,
   unresolvedFields,
+  zonedToInstant,
+  type RecipientField,
+  type RecipientLists,
   type ComposerContext,
   type MessageAudience,
 } from "@/lib/email-composer";
@@ -51,6 +61,7 @@ import {
   saveEmailTemplate,
   sendComposedEmail,
 } from "@/lib/email-composer.functions";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/email-draft-store";
 
 type Props = {
   context: ComposerContext;
@@ -122,6 +133,60 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
     }
   }, [recipients, recipientKey]);
 
+  // Anything typed before is offered back rather than silently reinstated,
+  // so nobody sends a half-message they had already abandoned.
+  const [recovered, setRecovered] = useState<ReturnType<typeof loadDraft>>(null);
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    setRecovered(loadDraft(context, recordId));
+  }, [context, recordId]);
+
+  function restoreDraft() {
+    if (!recovered) return;
+    setRecipientKey(recovered.recipientKey);
+    setCustomTo(recovered.customTo);
+    setTemplateId(recovered.templateId || BLANK);
+    setSubject(recovered.subject);
+    setBody(recovered.body);
+    setAudience(recovered.audience as MessageAudience);
+    setRecovered(null);
+  }
+
+  function discardDraft() {
+    clearDraft(context, recordId);
+    setRecovered(null);
+  }
+
+  // Kept on this device as they type, a beat behind so typing stays smooth.
+  useEffect(() => {
+    if (recovered) return;
+    const timer = setTimeout(() => {
+      saveDraft(context, recordId, {
+        recipientKey,
+        customTo,
+        templateId,
+        subject,
+        body,
+        audience,
+        mergeValues,
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [
+    recovered,
+    context,
+    recordId,
+    recipientKey,
+    customTo,
+    templateId,
+    subject,
+    body,
+    audience,
+    mergeValues,
+  ]);
+
   const to = recipientKey === CUSTOM ? customTo : recipientKey;
   const recipientName =
     recipients.find((r) => r.email === to)?.name ?? null;
@@ -151,27 +216,145 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
     [to, subject, body, mergeValues, audience],
   );
   const fieldProblems = gate.fields;
-  const problems = gate.blockers;
+
+  // Keyboard users get sent to the box that needs them, not left hunting for it.
+  const toRef = useRef<HTMLButtonElement>(null);
+  const customToRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const toDescribedBy =
+    [
+      fieldProblems.to ? "composer-to-error" : null,
+      recipients.length === 0 && ctx.isSuccess ? "composer-to-hint" : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+  const bodyDescribedBy =
+    [
+      fieldProblems.body ? "composer-body-error" : null,
+      fieldProblems.unfilled.length > 0 ? "composer-body-blanks" : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+  function focusProblem(problem: string) {
+    if (problem === fieldProblems.subject) subjectRef.current?.focus();
+    else if (problem === fieldProblems.body) bodyRef.current?.focus();
+    else if (problem === fieldProblems.to)
+      (customToRef.current ?? toRef.current)?.focus();
+    else toRef.current?.focus();
+  }
+
+  // Extra people on the message, each one a chip you can take off again.
+  const [extra, setExtra] = useState<RecipientLists>(EMPTY_RECIPIENTS);
+  const [chipDraft, setChipDraft] = useState<Record<RecipientField, string>>({
+    to: "",
+    cc: "",
+    bcc: "",
+  });
+  const [chipError, setChipError] = useState<string | null>(null);
+
+  function commitChips(field: RecipientField) {
+    const raw = chipDraft[field];
+    if (!raw.trim()) return;
+    const withPrimary: RecipientLists = {
+      ...extra,
+      to: [...(isEmailAddress(to) ? [to.trim()] : []), ...extra.to],
+    };
+    const result = addRecipients(withPrimary, field, raw);
+    setChipError(result.errors[0] ?? null);
+    if (result.added.length > 0) {
+      setExtra({
+        to: result.lists.to.filter((a) => a.toLowerCase() !== to.trim().toLowerCase()),
+        cc: result.lists.cc,
+        bcc: result.lists.bcc,
+      });
+      setChipDraft((d) => ({ ...d, [field]: "" }));
+    }
+  }
+
+  function dropChip(field: RecipientField, address: string) {
+    setExtra((lists) => removeRecipient(lists, field, address));
+    setChipError(null);
+  }
+
+  // Files ride along with the message; they are read only when Send is pressed.
+  const [files, setFiles] = useState<File[]>([]);
+  const attachmentBytes = files.reduce((n, f) => n + f.size, 0);
+  const attachmentProblem =
+    attachmentBytes > 3_000_000 ? "Attachments must add up to less than 3 MB." : null;
+
+  // Send later, in the time zone the person means.
+  const [scheduled, setScheduled] = useState(false);
+  const [sendDate, setSendDate] = useState("");
+  const [sendTime, setSendTime] = useState("");
+  const [timeZone, setTimeZone] = useState(SEND_TIME_ZONES[0] as string);
+  const scheduleIssues = scheduled
+    ? scheduleProblems({ date: sendDate, time: sendTime, timeZone })
+    : [];
+
+  async function readAttachments() {
+    return Promise.all(
+      files.map(
+        (file) =>
+          new Promise<{ name: string; contentType: string; contentBytes: string }>(
+            (resolve, reject) => {
+              const reader = new FileReader();
+              reader.onerror = () => reject(new Error(`${file.name} could not be read.`));
+              reader.onload = () =>
+                resolve({
+                  name: file.name,
+                  contentType: file.type || "application/octet-stream",
+                  contentBytes: String(reader.result).split(",")[1] ?? "",
+                });
+              reader.readAsDataURL(file);
+            },
+          ),
+      ),
+    );
+  }
+
+  const problems = [
+    ...gate.blockers,
+    ...(attachmentProblem ? [attachmentProblem] : []),
+    ...scheduleIssues,
+  ];
 
   const sending = useMutation({
-    mutationFn: () =>
-      send({
+    mutationFn: async () => {
+      const attachments = await readAttachments();
+      const when = scheduled
+        ? zonedToInstant({ date: sendDate, time: sendTime, timeZone })
+        : null;
+      return send({
         data: {
           context,
           recordId,
           to: to.trim(),
+          toAdditional: extra.to,
+          cc: extra.cc,
+          bcc: extra.bcc,
           subject,
           body,
           audience,
           templateId: templateId === BLANK ? null : templateId,
+          attachments,
+          scheduledFor: when ? when.toISOString() : null,
+          scheduledTimeZone: when ? timeZone : null,
         },
-      }),
+      });
+    },
     onSuccess: (result) => {
-      if (result.status === "sent") {
-        toast.success("Message sent.");
+      if (result.status === "sent" || result.status === "scheduled") {
+        toast.success(result.status === "scheduled" ? "Message scheduled." : "Message sent.");
+        setFiles([]);
+        setExtra(EMPTY_RECIPIENTS);
+        setScheduled(false);
         setSubject("");
         setBody("");
         setTemplateId(BLANK);
+        clearDraft(context, recordId);
       } else {
         toast.error(result.error ?? "The message did not go out.");
       }
@@ -200,8 +383,30 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
         </TabsList>
 
         <TabsContent value="write" className="space-y-4 pt-4">
+          {recovered ? (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 text-sm"
+            >
+              <p>
+                You have an unsent message saved from{" "}
+                {usDateTime(recovered.savedAt)} — {recovered.subject.trim() || "no subject yet"}.
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={restoreDraft}>
+                  Bring it back
+                </Button>
+                <Button size="sm" variant="ghost" onClick={discardDraft}>
+                  Start fresh
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid gap-2">
-            <Label>To</Label>
+            <Label id="composer-to-label" htmlFor="composer-to">
+              To
+            </Label>
             <Select
               value={recipientKey}
               onValueChange={(value) => {
@@ -210,7 +415,13 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
                 if (match) setAudience(match.audience);
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                id="composer-to"
+                ref={toRef}
+                aria-labelledby="composer-to-label"
+                aria-describedby={toDescribedBy}
+                aria-invalid={Boolean(fieldProblems.to)}
+              >
                 <SelectValue placeholder="Choose who this goes to" />
               </SelectTrigger>
               <SelectContent>
@@ -223,26 +434,43 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               </SelectContent>
             </Select>
             {recipientKey === CUSTOM ? (
-              <Input
-                value={customTo}
-                onChange={(e) => setCustomTo(e.target.value)}
-                placeholder="name@example.com"
-              />
+              <>
+                <Label htmlFor="composer-custom-to" className="sr-only">
+                  Email address
+                </Label>
+                <Input
+                  id="composer-custom-to"
+                  ref={customToRef}
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  placeholder="name@example.com"
+                  aria-describedby={toDescribedBy}
+                  aria-invalid={Boolean(fieldProblems.to)}
+                />
+              </>
             ) : null}
             {fieldProblems.to ? (
-              <p className="text-sm text-destructive">{fieldProblems.to}</p>
+              <p id="composer-to-error" role="alert" className="text-sm text-destructive">
+                {fieldProblems.to}
+              </p>
             ) : null}
             {recipients.length === 0 && ctx.isSuccess ? (
-              <p className="text-sm text-muted-foreground">
+              <p id="composer-to-hint" className="text-sm text-muted-foreground">
                 This record has no contact on file yet — type an address above.
               </p>
             ) : null}
           </div>
 
           <div className="grid gap-2">
-            <Label>Template</Label>
+            <Label id="composer-template-label" htmlFor="composer-template">
+              Template
+            </Label>
             <Select value={templateId} onValueChange={chooseTemplate}>
-              <SelectTrigger>
+              <SelectTrigger
+                id="composer-template"
+                aria-labelledby="composer-template-label"
+                aria-describedby={missing.length > 0 ? "composer-template-note" : undefined}
+              >
                 <SelectValue placeholder="Start from a template" />
               </SelectTrigger>
               <SelectContent>
@@ -255,9 +483,57 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               </SelectContent>
             </Select>
             {missing.length > 0 ? (
-              <p className="text-sm text-amber-700">
+              <p id="composer-template-note" role="status" className="text-sm text-amber-700">
                 This record could not fill in: {missing.join(", ").replace(/_/g, " ")} — please
                 complete those lines yourself.
+              </p>
+            ) : null}
+          </div>
+
+          {/* Anyone else on the message, one chip each, easy to take off. */}
+          <div className="grid gap-2">
+            {(["to", "cc", "bcc"] as RecipientField[]).map((field) => (
+              <div key={field} className="grid gap-1">
+                <Label htmlFor={`composer-chips-${field}`}>
+                  {field === "to" ? "Also to" : RECIPIENT_FIELD_LABELS[field]}
+                </Label>
+                <div className="flex flex-wrap items-center gap-1 rounded-md border p-1">
+                  {extra[field].map((address) => (
+                    <span
+                      key={address}
+                      className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
+                    >
+                      {address}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${address}`}
+                        onClick={() => dropChip(field, address)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    id={`composer-chips-${field}`}
+                    value={chipDraft[field]}
+                    onChange={(e) => setChipDraft((d) => ({ ...d, [field]: e.target.value }))}
+                    onBlur={() => commitChips(field)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === "," || e.key === ";") {
+                        e.preventDefault();
+                        commitChips(field);
+                      }
+                    }}
+                    placeholder="Type an address and press Enter"
+                    className="min-w-[14rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
+                  />
+                </div>
+              </div>
+            ))}
+            {chipError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {chipError}
               </p>
             ) : null}
           </div>
@@ -266,12 +542,16 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             <Label htmlFor="composer-subject">Subject</Label>
             <Input
               id="composer-subject"
+              ref={subjectRef}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               aria-invalid={Boolean(fieldProblems.subject)}
+              aria-describedby={fieldProblems.subject ? "composer-subject-error" : undefined}
             />
             {fieldProblems.subject ? (
-              <p className="text-sm text-destructive">{fieldProblems.subject}</p>
+              <p id="composer-subject-error" role="alert" className="text-sm text-destructive">
+                {fieldProblems.subject}
+              </p>
             ) : null}
           </div>
 
@@ -279,28 +559,107 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             <Label htmlFor="composer-body">Message</Label>
             <Textarea
               id="composer-body"
+              ref={bodyRef}
               value={body}
               rows={12}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write the message. Edit anything the template filled in — every word is yours to change."
               aria-invalid={Boolean(fieldProblems.body)}
+              aria-describedby={bodyDescribedBy}
             />
             {fieldProblems.body ? (
-              <p className="text-sm text-destructive">{fieldProblems.body}</p>
+              <p id="composer-body-error" role="alert" className="text-sm text-destructive">
+                {fieldProblems.body}
+              </p>
             ) : null}
             {fieldProblems.unfilled.length > 0 ? (
-              <p className="text-sm text-amber-700">
+              <p id="composer-body-blanks" className="text-sm text-amber-700">
                 Still blank: {fieldProblems.unfilled.join(", ").replace(/_/g, " ")}.
               </p>
             ) : null}
           </div>
 
+          {/* Files ride along with the message. */}
+          <div className="grid gap-2">
+            <Label htmlFor="composer-files" className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> Attachments
+            </Label>
+            <input
+              id="composer-files"
+              type="file"
+              multiple
+              className="text-sm"
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+            {files.length > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {files.map((f) => f.name).join(", ")} —{" "}
+                {(attachmentBytes / 1_000_000).toFixed(1)} MB in total
+              </p>
+            ) : null}
+            {attachmentProblem ? (
+              <p role="alert" className="text-sm text-destructive">
+                {attachmentProblem}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Send later, in the time zone the person means. */}
+          <div className="grid gap-2 rounded-md border p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={scheduled}
+                onChange={(e) => setScheduled(e.target.checked)}
+              />
+              <Clock className="h-4 w-4" /> Send later
+            </label>
+            {scheduled ? (
+              <div className="grid gap-2 sm:grid-cols-3">
+                <Input
+                  type="date"
+                  aria-label="Send date"
+                  value={sendDate}
+                  onChange={(e) => setSendDate(e.target.value)}
+                />
+                <Input
+                  type="time"
+                  aria-label="Send time"
+                  value={sendTime}
+                  onChange={(e) => setSendTime(e.target.value)}
+                />
+                <select
+                  aria-label="Time zone"
+                  value={timeZone}
+                  onChange={(e) => setTimeZone(e.target.value)}
+                  className="rounded-md border bg-background px-2 text-sm"
+                >
+                  {SEND_TIME_ZONES.map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone.replace("America/", "").replace("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {scheduleIssues.map((issue) => (
+              <p key={issue} role="alert" className="text-sm text-destructive">
+                {issue}
+              </p>
+            ))}
+          </div>
+
           {/* Exactly what leaves the inbox, read-only, before anyone presses Send. */}
-          <section className="rounded-lg border border-border bg-muted/30 p-3">
-            <p className="eyebrow">Preview — exactly as it will arrive</p>
+          <section
+            aria-labelledby="composer-preview-heading"
+            className="rounded-lg border border-border bg-muted/30 p-3"
+          >
+            <p id="composer-preview-heading" className="eyebrow">
+              Preview — exactly as it will arrive
+            </p>
             {problems.length > 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">
-                Finish the message below and the preview appears here.
+                Finish the message above and the preview appears here.
               </p>
             ) : (
               <dl className="mt-2 space-y-2 text-sm">
@@ -323,26 +682,51 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             )}
           </section>
 
-          {problems.length > 0 ? (
-            <ul className="text-sm text-muted-foreground">
-              {problems.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-          ) : null}
-
+          {/* Announced as it changes, and every line jumps to the box it belongs to. */}
+          <div id="composer-problems" role="status" aria-live="polite">
+            {problems.length > 0 ? (
+              <>
+                <p className="text-sm font-medium">
+                  {problems.length === 1
+                    ? "One thing to finish before this can be sent:"
+                    : `${problems.length} things to finish before this can be sent:`}
+                </p>
+                <ul className="mt-1 space-y-1 text-sm text-muted-foreground">
+                  {problems.map((p) => (
+                    <li key={p}>
+                      <button
+                        type="button"
+                        className="text-left underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => focusProblem(p)}
+                      >
+                        {p}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
 
           <div className="flex justify-end">
             <Button
               className="gap-2"
               disabled={problems.length > 0 || sending.isPending}
+              aria-describedby={problems.length > 0 ? "composer-problems" : undefined}
               onClick={() => sending.mutate()}
             >
               <Send className="size-4" aria-hidden />
-              {sending.isPending ? "Sending…" : "Send"}
+              {sending.isPending
+                ? scheduled
+                  ? "Scheduling…"
+                  : "Sending…"
+                : scheduled
+                  ? "Schedule"
+                  : "Send"}
             </Button>
           </div>
         </TabsContent>
+
 
         <TabsContent value="history" className="space-y-3 pt-4">
           {(history.data?.rows.length ?? 0) === 0 ? (
