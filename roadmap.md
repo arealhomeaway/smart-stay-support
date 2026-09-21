@@ -520,5 +520,5 @@ is now doable from Resolve.
 
 ## Phase 1 items (Sept 21)
 - [x] Dedicated Work Order calendar (month + timeline, conflict visibility, links back)
-- [ ] Complete notification coverage (SLA breach warnings, missed vendor dispatch, claim deadline reminders)
+- [x] Complete notification coverage (SLA breach warnings, missed vendor dispatch, claim deadline reminders)
 - [ ] Queue bulk actions (batch reassignment, status updates, priority tagging, permission checks)
