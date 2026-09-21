@@ -90,6 +90,8 @@ function RecoveryManager() {
         />
       )}
 
+      <RecoveryReportingPanel />
+
       {repeats.length > 0 ? (
         <SectionCard
           title="Properties with repeat recoveries"
