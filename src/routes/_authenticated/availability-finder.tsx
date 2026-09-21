@@ -184,9 +184,16 @@ function AvailabilityFinderPage() {
           {results.length === 0 && <p className="rounded border p-6 text-muted-foreground">No matching properties in this view.</p>}
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => void downloadPdf()} disabled={!selectedResults.length || exporting}>{exporting ? "Preparing PDF…" : `Download Property Options PDF (${selectedResults.length})`}</Button>
-        <Button variant="outline" disabled={!selectedResults.length} onClick={() => void navigator.clipboard.writeText(emailSummary(selectedResults, search.checkIn!, search.checkOut!, search.location!))}>Copy Email Summary</Button>
+        <EmailComposer
+          context="property"
+          recordId={selectedResults[0]?.id ?? ""}
+          label={`Email these options (${selectedResults.length})`}
+          disabled={!selectedResults.length}
+          initialSubject={`Property options for ${search.checkIn} to ${search.checkOut}`}
+          initialBody={selectedResults.length ? emailSummary(selectedResults, search.checkIn!, search.checkOut!, search.location!) : ""}
+        />
       </div>
       {exportError && <p role="alert" className="text-destructive">{exportError}</p>}
       <p className="text-xs text-muted-foreground">Public listing links come from OwnerRez. Reservation conflicts remain internal; the PDF uses neutral final-confirmation language.</p>
