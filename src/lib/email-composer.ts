@@ -94,8 +94,9 @@ export function draftFieldProblems(draft: ComposerDraft) {
   const blanks = [...new Set([...draft.subject.matchAll(FIELD_RE), ...draft.body.matchAll(FIELD_RE)]
     .map((m) => (m[1] ?? "").toLowerCase()))];
   const left = (text: string) =>
-    FIELD_RE.test(text) ? "Fill in the blanks the template left behind." : null;
-  FIELD_RE.lastIndex = 0;
+    /\{\{\s*[a-z0-9_]+\s*\}\}/i.test(text)
+      ? "Fill in the blanks the template left behind."
+      : null;
   return {
     to: !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(draft.to.trim())
       ? "Choose a contact or type a valid email address."
