@@ -103,7 +103,7 @@ type Mode = "one_touch" | "ticket";
 function NewMatter() {
   const router = useRouter();
   const context = Route.useSearch();
-  const { can, readOnly, isLoading: rolesLoading } = useRole();
+  const { can, readOnly, isSupervisor, isLoading: rolesLoading } = useRole();
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
