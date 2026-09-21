@@ -51,7 +51,7 @@ const RULES: { stage: MasterStage; match: RegExp }[] = [
   // Design work is design, even when the task talks about its budget.
   {
     stage: "design_approvals_procurement",
-    match: /\b(design|mood board)\b/i,
+    match: /\b(design|mood ?boards?)\b/i,
   },
   // Scope, estimates and budget.
   {
