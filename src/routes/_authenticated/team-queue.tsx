@@ -8,6 +8,8 @@ import { useCurrentUserId, useStaffDirectory, displayName } from "@/hooks/useTea
 import { useHomeTeams, HOME_TEAM_SHORT } from "@/hooks/useHomeTeam";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { QueueBulkActions } from "@/components/QueueBulkActions";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -108,6 +110,9 @@ function TeamQueuePage() {
     queryFn: () => loadMap(),
     enabled: operationsAccess && view === "map",
   });
+
+  // Tickets picked for a batch change from this queue.
+  const [selectedTickets, setSelectedTickets] = useState<string[]>([]);
 
   const flagParam = params["flags"] ?? "";
   const sortParam = params["sort"] ?? "priority";
@@ -839,12 +844,22 @@ function TeamQueuePage() {
             const blocked = isBlocked(t as never);
             const escalated = isEscalated(t as never);
             return (
+              <div key={t.id} className="flex items-center gap-2">
+              <Checkbox
+                className="ml-1 shrink-0"
+                aria-label={`Select ticket ${t.ref}`}
+                checked={selectedTickets.includes(t.id)}
+                onCheckedChange={() =>
+                  setSelectedTickets((prev) =>
+                    prev.includes(t.id) ? prev.filter((x) => x !== t.id) : [...prev, t.id],
+                  )
+                }
+              />
               <Link
-                key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
                 search={originSearch}
-                className="surface-row flex items-start gap-3 py-3 pl-4 pr-4"
+                className="surface-row flex min-w-0 flex-1 items-start gap-3 py-3 pl-4 pr-4"
               >
                 <PropertyPhoto
                   url={(t.properties as { primary_photo_url?: string } | null)?.primary_photo_url}
@@ -898,8 +913,10 @@ function TeamQueuePage() {
                   )}
                 </div>
               </Link>
+              </div>
             );
           })}
+          <QueueBulkActions selected={selectedTickets} onClear={() => setSelectedTickets([])} />
           {standaloneOrders.map((order) => <Link key={order.id} to="/work-orders" search={{ open: order.id, ...originSearch } as never}
             className="surface-row flex items-start gap-3 py-3 pl-4 pr-4">
             <PropertyPhoto name={order.properties.nickname ?? order.properties.name} />
