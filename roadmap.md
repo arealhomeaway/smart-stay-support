@@ -533,4 +533,4 @@ is now doable from Resolve.
 [x] Audit trail for each task's operational-stage assignment (prior phase, current owner, future remapping)
 [x] Full Furnishing tasks mapped into the 8 operational stages, preserving details and ownership
 [x] Email composer on owner-facing onboarding steps, with owner/property details flagged when missing
-[ ] Read-only preview of the populated homeowner email, with the draft above it fully editable
+[x] Read-only preview of the populated homeowner email, with the draft above it fully editable

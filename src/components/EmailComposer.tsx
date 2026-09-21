@@ -275,7 +275,7 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               value={body}
               rows={12}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Write the message. Edit anything the template filled in."
+              placeholder="Write the message. Edit anything the template filled in — every word is yours to change."
             />
           </div>
 
