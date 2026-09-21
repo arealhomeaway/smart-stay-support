@@ -112,6 +112,9 @@ export type PropertyFacts = {
   /** null means OwnerRez does not publish an answer — never treat as "no". */
   petsAllowed: FactValue;
   maxPets: number | null;
+  /** Species-level allowance, published by OwnerRez; null when unstated. */
+  dogsAllowed: FactValue;
+  catsAllowed: FactValue;
   amenities: Record<AmenityKey, FactValue>;
   /** True when the listing published no amenity data at all. */
   amenitiesUnpublished: boolean;
