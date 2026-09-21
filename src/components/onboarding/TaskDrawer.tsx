@@ -196,35 +196,36 @@ export function TaskDrawer({
   // One guided step at a time — the same pattern as the ticket workspace.
   // Every effect below routes through the callbacks this drawer already uses,
   // so the release, evidence and approval rules stay the single authority.
+  const t: WorkflowTask = task;
   const action = onboardingTaskAction(view);
-  const nextTask = nextActionableTask(task, tasks, release);
+  const nextTask = nextActionableTask(t, tasks, release);
 
-  function advance() {
+  const advance = () => {
     if (nextTask && onAdvance) onAdvance(nextTask.id);
-  }
+  };
 
-  function runAction(id: TaskActionId, values: Record<string, string>) {
+  const runAction = (id: TaskActionId, values: Record<string, string>) => {
     const text = (k: string) => (values[k] ?? "").trim();
     if (id === "clear_blocker") {
-      onAddObservation(task.id, text("update"));
+      onAddObservation(t.id, text("update"));
       onSave(
-        taskPayload(task, {
+        taskPayload(t, {
           blocker: values["outcome"] === "cleared" ? "" : text("update"),
         }),
       );
       return true;
     }
     if (id === "capture_evidence") {
-      onSave(taskPayload(task, { evidenceNote: text("evidence") }));
+      onSave(taskPayload(t, { evidenceNote: text("evidence") }));
       return true;
     }
     if (id === "send_for_approval" || id === "resubmit_for_approval") {
-      onSubmitApproval(task.id, text("version"), text("note"));
+      onSubmitApproval(t.id, text("version"), text("note"));
       return true;
     }
     if (id === "record_owner_answer") {
       onRecordOwnerDecision(
-        task.id,
+        t.id,
         values["decision"] === "approved",
         text("note"),
         text("evidence_url"),
@@ -232,8 +233,8 @@ export function TaskDrawer({
       return true;
     }
     if (id === "complete_task") {
-      if (text("observation")) onAddObservation(task.id, text("observation"));
-      onSave(taskPayload(task, { status: "complete", blocker: "" }));
+      if (text("observation")) onAddObservation(t.id, text("observation"));
+      onSave(taskPayload(t, { status: "complete", blocker: "" }));
       advance();
       return true;
     }
@@ -242,7 +243,7 @@ export function TaskDrawer({
       return true;
     }
     return false;
-  }
+  };
 
   return (
     <TaskWorkspace
