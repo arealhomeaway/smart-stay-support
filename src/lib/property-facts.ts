@@ -198,6 +198,8 @@ export function factsFromOwnerRez(
   return {
     petsAllowed,
     maxPets: typeof maxPets === "number" ? maxPets : null,
+    dogsAllowed: speciesFact(dogsDenied, dogsWelcome),
+    catsAllowed: speciesFact(catsDenied, catsWelcome),
     amenities,
     amenitiesUnpublished: texts.length === 0,
   };
