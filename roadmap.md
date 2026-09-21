@@ -544,3 +544,5 @@ is now doable from Resolve.
 
 - [ ] Simple Demo landing screen (/demo): one card per portal the signed-in user can access, no persona or property controls
 - [ ] Remove old demo data, keep only the guide fixtures (Willow Creek Cottage, Lakeside Birch Retreat)
+- [x] Single Demo option in the portal menu; /demo landing with one card per accessible portal
+- [x] Old demo data removed; only Willow and Birch demo homes remain
