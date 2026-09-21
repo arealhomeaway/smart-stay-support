@@ -53,6 +53,7 @@ type TicketContext = {
   id: string;
   title: string;
   description?: string | null;
+  category?: string | null;
   property_id?: string | null;
   guest_name?: string | null;
   is_demo?: boolean | null;
