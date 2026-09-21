@@ -78,8 +78,11 @@ function AvailabilityFinderPage() {
 
   async function downloadPdf() {
     setExportError(null);
-    if (selectedResults.length === 0 || selectedResults.some((row) => !verifiedPublicListingUrl(row.bookingUrl))) {
-      setExportError("Select one or more eligible properties with verified public listing links."); return;
+    if (selectedResults.length === 0) {
+      setExportError("Select one or more properties to include."); return;
+    }
+    if (selectedResults.some((row) => row.bookingUrl && !verifiedPublicListingUrl(row.bookingUrl))) {
+      setExportError("A selected property has an unverified listing link. Correct it in OwnerRez before export."); return;
     }
     setExporting(true);
     try {
