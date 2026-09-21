@@ -84,6 +84,41 @@ function dedupe(list: ComposerRecipient[]) {
   });
 }
 
+export type PreviousContact = { email: string; lastSentAt: string | null };
+
+/**
+ * Addresses this mailbox has written to before, newest first. Offered as a
+ * shortcut only — anything on the record itself is already in the list above,
+ * so those are left out rather than shown twice.
+ */
+export async function loadPreviousContacts(
+  supabase: Client,
+  exclude: string[] = [],
+  limit = 15,
+): Promise<PreviousContact[]> {
+  const { data } = await (supabase as never as Client)
+    .from("email_log")
+    .select("recipient, created_at")
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  const skip = new Set(exclude.map((e) => e.trim().toLowerCase()));
+  const seen = new Set<string>();
+  const out: PreviousContact[] = [];
+  for (const row of (data ?? []) as { recipient?: string | null; created_at?: string | null }[]) {
+    const address = (row.recipient ?? "").trim();
+    if (!valid(address)) continue;
+    const key = address.toLowerCase();
+    if (skip.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ email: address, lastSentAt: row.created_at ?? null });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+
+
 export async function gatherComposerContext(
   supabase: Client,
   context: ComposerContext,

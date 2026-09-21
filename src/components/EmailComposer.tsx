@@ -27,7 +27,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -308,6 +310,29 @@ function ComposerBody({
     setChipError(null);
   }
 
+  // Everything the person can pick from without typing: the contacts on this
+  // record, plus addresses this mailbox has written to before.
+  const previous = ctx.data?.previousContacts ?? [];
+  const knownAddresses = [
+    ...recipients.map((r) => r.email),
+    ...previous.map((p) => p.email),
+  ];
+
+  // Anything typed into a recipient box but not yet turned into a chip still
+  // has to be a real address — half-typed text must not slip out with the send.
+  const pendingChipProblems = (["to", "cc", "bcc"] as RecipientField[]).flatMap((field) =>
+    chipDraft[field]
+      .split(/[,;\s]+/)
+      .map((piece) => piece.trim())
+      .filter(Boolean)
+      .filter((piece) => !isEmailAddress(piece))
+      .map((piece) => `${piece} is not a valid email address.`),
+  );
+  const invalidChipProblems = [...extra.to, ...extra.cc, ...extra.bcc]
+    .filter((address) => !isEmailAddress(address))
+    .map((address) => `${address} is not a valid email address.`);
+  const recipientListProblems = [...new Set([...pendingChipProblems, ...invalidChipProblems])];
+
   // Files ride along with the message; they are read only when Send is pressed.
   const [files, setFiles] = useState<File[]>([]);
   const attachmentBytes = files.reduce((n, f) => n + f.size, 0);
@@ -346,6 +371,7 @@ function ComposerBody({
 
   const problems = [
     ...gate.blockers,
+    ...recipientListProblems,
     ...(attachmentProblem ? [attachmentProblem] : []),
     ...scheduleIssues,
   ];
@@ -454,12 +480,28 @@ function ComposerBody({
                 <SelectValue placeholder="Choose who this goes to" />
               </SelectTrigger>
               <SelectContent>
-                {recipients.map((r) => (
-                  <SelectItem key={r.email} value={r.email}>
-                    {r.label} · {r.email}
-                  </SelectItem>
-                ))}
-                <SelectItem value={CUSTOM}>Someone else…</SelectItem>
+                {recipients.length > 0 ? (
+                  <SelectGroup>
+                    <SelectLabel>Contacts on this record</SelectLabel>
+                    {recipients.map((r) => (
+                      <SelectItem key={r.email} value={r.email}>
+                        {r.label} · {r.email}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ) : null}
+                {previous.length > 0 ? (
+                  <SelectGroup>
+                    <SelectLabel>Previously emailed</SelectLabel>
+                    {previous.map((p) => (
+                      <SelectItem key={p.email} value={p.email}>
+                        {p.email}
+                        {p.lastSentAt ? ` · last ${usDateTime(p.lastSentAt)}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ) : null}
+                <SelectItem value={CUSTOM}>Someone else — type an address…</SelectItem>
               </SelectContent>
             </Select>
             {recipientKey === CUSTOM ? (
@@ -545,6 +587,7 @@ function ComposerBody({
                   ))}
                   <input
                     id={`composer-chips-${field}`}
+                    list="composer-known-addresses"
                     value={chipDraft[field]}
                     onChange={(e) => setChipDraft((d) => ({ ...d, [field]: e.target.value }))}
                     onBlur={() => commitChips(field)}
@@ -554,11 +597,22 @@ function ComposerBody({
                         commitChips(field);
                       }
                     }}
-                    placeholder="Type an address and press Enter"
+                    placeholder="Pick a contact or type an address, then press Enter"
+                    aria-invalid={pendingChipProblems.length > 0}
                     className="min-w-[14rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
                   />
                 </div>
               </div>
+            ))}
+            <datalist id="composer-known-addresses">
+              {[...new Set(knownAddresses)].map((address) => (
+                <option key={address} value={address} />
+              ))}
+            </datalist>
+            {recipientListProblems.map((problem) => (
+              <p key={problem} role="alert" className="text-sm text-destructive">
+                {problem}
+              </p>
             ))}
             {chipError ? (
               <p role="alert" className="text-sm text-destructive">

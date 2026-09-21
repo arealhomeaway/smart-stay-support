@@ -50,13 +50,19 @@ export const getComposerContext = createServerFn({ method: "GET" })
   })
   .handler(async ({ data, context }) => {
     await assertStaff(context as never as Ctx);
-    const { gatherComposerContext } = await import("./email-composer.server");
+    const { gatherComposerContext, loadPreviousContacts } = await import(
+      "./email-composer.server"
+    );
     const name = await senderName(context as never as Ctx);
     const gathered = await gatherComposerContext(
       context.supabase as never,
       data.context,
       data.recordId,
       name,
+    );
+    const previousContacts = await loadPreviousContacts(
+      context.supabase as never,
+      gathered.recipients.map((r) => r.email),
     );
 
     const { data: templates } = await context.supabase
@@ -71,6 +77,7 @@ export const getComposerContext = createServerFn({ method: "GET" })
 
     return {
       ...gathered,
+      previousContacts,
       canManageTemplates: Boolean(canManage),
       templates: (templates ?? []).filter((t) =>
         ((t["contexts"] as string[] | null) ?? []).includes(data.context),

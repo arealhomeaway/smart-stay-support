@@ -549,3 +549,8 @@ is now doable from Resolve.
 
 - [x] Rename "Guest recovery" to "Guest refunds & credits" across all user-facing wording, including the log CTA ("+ Log Guest Refund or Credit").
 - [ ] Finance workspace: build the dashboard on public.guest_recovery_ledger and give Finance a role + read policy.
+
+- [x] Email composer: pick recipient from saved contacts, previous contacts, or typed manually
+- [x] Verify all three recipient paths in the live preview
+- [x] Inline validation on typed addresses; Send stays off until every recipient is valid
+- [x] Add saved/previous contacts straight into the recipient chips (To/Cc/Bcc)
