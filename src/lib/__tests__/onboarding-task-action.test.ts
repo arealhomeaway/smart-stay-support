@@ -28,7 +28,7 @@ function task(patch: Partial<WorkflowTask> = {}): WorkflowTask {
     depends_on: [],
     linked_ticket_id: null,
     ...(patch as object),
-  } as WorkflowTask;
+  } as unknown as WorkflowTask;
 }
 
 const v = (t: WorkflowTask, all: WorkflowTask[] = [t]) => viewTask(t, all);
