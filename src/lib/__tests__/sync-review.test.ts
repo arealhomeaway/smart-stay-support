@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it as test } from "bun:test";
 import {
   classifyEvent,
   detectDrift,
@@ -103,9 +103,7 @@ describe("held conflicts", () => {
   });
 
   test("the key is stable for the same job and field", () => {
-    expect(driftKey({ ...({} as never), taskId: 7, field: "status" } as never)).toBe(
-      "breezeway_task:7:status",
-    );
+    expect(driftKey({ taskId: 7, field: "status" } as never)).toBe("breezeway_task:7:status");
   });
 
   test("source labels read plainly", () => {
