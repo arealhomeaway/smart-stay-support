@@ -48,7 +48,7 @@ export const bulkUpdateTicketsFn = createServerFn({ method: "POST" })
 
     const rows = before ?? [];
     const updated: string[] = [];
-    const skipped: { ref: string | null; why: string }[] = [];
+    const skipped: { ref: string | number | null; why: string }[] = [];
 
     for (const row of rows) {
       // Nothing to do is not a failure — it just does not earn a history line.
