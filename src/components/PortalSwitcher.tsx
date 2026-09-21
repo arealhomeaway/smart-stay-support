@@ -9,6 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { useRole } from "@/hooks/useRole";
 import { useDemo } from "@/components/DemoProvider";
 import { portalsFor, rememberPortal } from "@/lib/portals";
