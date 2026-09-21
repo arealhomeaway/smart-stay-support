@@ -176,6 +176,7 @@ export function TicketWorkOrderPanel({
           title: ticket.title,
           scope: scope || ticket.description || null,
           service_category: category || null,
+          category: categoryForTrade(category) ?? "other",
           priority: ticket.priority ?? "p3",
           phase,
           emergency_reason: phase === "mitigation" ? emergency || null : null,
