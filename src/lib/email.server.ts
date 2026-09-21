@@ -118,6 +118,8 @@ type SendInput = {
   to: string;
   subject: string;
   html: string;
+  /** Extra people on the To line, beside the main recipient. */
+  toAdditional?: string[];
   cc?: string[];
   bcc?: string[];
   /** Files carried with the message, already read into base64 by the caller. */
@@ -160,6 +162,7 @@ async function logDelivery(entry: {
   cc?: string[] | null;
   bcc?: string[] | null;
   attachments?: { name: string; contentType: string }[] | null;
+  toAdditional?: string[] | null;
 }) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -178,6 +181,7 @@ async function logDelivery(entry: {
       body: entry.bodyText ?? null,
       sent_by: entry.sentBy ?? null,
       template_id: entry.templateId ?? null,
+      to_additional: entry.toAdditional ?? [],
       cc: entry.cc ?? [],
       bcc: entry.bcc ?? [],
       attachments: (entry.attachments ?? []).map((a) => ({
@@ -211,6 +215,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+      to_additional: input.toAdditional ?? [],
       cc: input.cc ?? [],
       bcc: input.bcc ?? [],
       attachments: input.attachments ?? [],
@@ -234,6 +239,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+      to_additional: input.toAdditional ?? [],
       cc: input.cc ?? [],
       bcc: input.bcc ?? [],
       attachments: input.attachments ?? [],
@@ -305,6 +311,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+      to_additional: input.toAdditional ?? [],
       cc: input.cc ?? [],
       bcc: input.bcc ?? [],
       attachments: input.attachments ?? [],
@@ -340,6 +347,7 @@ export async function sendEmail(input: SendInput): Promise<SendEmailResult> {
       bodyText: input.bodyText ?? null,
       sentBy: input.sentBy ?? null,
       templateId: input.templateId ?? null,
+          to_additional: input.toAdditional ?? [],
           cc: input.cc ?? [],
           bcc: input.bcc ?? [],
           attachments: input.attachments ?? [],
