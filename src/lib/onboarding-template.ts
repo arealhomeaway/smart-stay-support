@@ -1643,10 +1643,10 @@ export function templateCounts() {
   return {
     masterSteps: MASTER_SEQUENCE_TEMPLATE.length,
     tasks: MASTER_ONBOARDING_TEMPLATE.length,
-    subtasks: FULL_FURNISHING_TEMPLATE.reduce((n, t) => n + (t.subtasks?.length ?? 0), 0),
-    scheduled: FULL_FURNISHING_TEMPLATE.filter((t) => t.anchor).length,
-    ownerApprovals: FULL_FURNISHING_TEMPLATE.filter((t) => t.requiresOwnerApproval).length,
-    evidence: FULL_FURNISHING_TEMPLATE.filter((t) => t.evidenceRequired).length,
-    workOrders: FULL_FURNISHING_TEMPLATE.filter((t) => t.breezewayTemplateId).length,
+    subtasks: MASTER_ONBOARDING_TEMPLATE.reduce((n, t) => n + (t.subtasks?.length ?? 0), 0),
+    scheduled: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.anchor).length,
+    ownerApprovals: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.requiresOwnerApproval).length,
+    evidence: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.evidenceRequired).length,
+    workOrders: MASTER_ONBOARDING_TEMPLATE.filter((t) => t.breezewayTemplateId).length,
   };
 }
