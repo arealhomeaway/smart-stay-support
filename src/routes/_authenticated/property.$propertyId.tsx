@@ -31,6 +31,7 @@ import { getPropertyHubFn } from "@/lib/property-hub.functions";
 import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
 import { PropertyCredentialsPanel } from "@/components/PropertyCredentialsPanel";
 import { SpecialHandlingPanel } from "@/components/SpecialHandlingPanel";
+import { PropertyFactsCard } from "@/components/PropertyFactsCard";
 import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
@@ -135,6 +136,7 @@ function PropertyHubPage() {
       {hub.viewer.staff && (
         <div id="special-handling">
           <SpecialHandlingPanel propertyId={propertyId} canEdit={hub.viewer.supervisor} />
+          <PropertyFactsCard propertyId={propertyId} />
         </div>
       )}
 

@@ -1,9 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { AMENITY_SPECS, type AmenityKey } from "./property-facts";
+
+const amenityKey = z.enum(AMENITY_SPECS.map((spec) => spec.key) as [AmenityKey, ...AmenityKey[]]);
 
 const searchInput = z.object({
   checkIn: z.string().max(10), checkOut: z.string().max(10), location: z.string().max(240),
+  pets: z.number().int().min(0).max(10).optional(),
+  amenities: z.array(amenityKey).max(AMENITY_SPECS.length).optional(),
 });
 
 export const searchAvailability = createServerFn({ method: "POST" })
