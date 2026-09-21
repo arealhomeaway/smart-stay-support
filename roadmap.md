@@ -552,3 +552,4 @@ is now doable from Resolve.
 
 - [ ] Email composer: pick recipient from saved contacts, previous contacts, or typed manually
 - [ ] Verify all three recipient paths in the live preview
+- [ ] Inline validation on typed addresses; Send stays off until every recipient is valid
