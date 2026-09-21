@@ -51,6 +51,7 @@ import {
   saveEmailTemplate,
   sendComposedEmail,
 } from "@/lib/email-composer.functions";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/email-draft-store";
 
 type Props = {
   context: ComposerContext;
@@ -121,6 +122,60 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
       setAudience(recipients[0].audience);
     }
   }, [recipients, recipientKey]);
+
+  // Anything typed before is offered back rather than silently reinstated,
+  // so nobody sends a half-message they had already abandoned.
+  const [recovered, setRecovered] = useState<ReturnType<typeof loadDraft>>(null);
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    setRecovered(loadDraft(context, recordId));
+  }, [context, recordId]);
+
+  function restoreDraft() {
+    if (!recovered) return;
+    setRecipientKey(recovered.recipientKey);
+    setCustomTo(recovered.customTo);
+    setTemplateId(recovered.templateId || BLANK);
+    setSubject(recovered.subject);
+    setBody(recovered.body);
+    setAudience(recovered.audience as MessageAudience);
+    setRecovered(null);
+  }
+
+  function discardDraft() {
+    clearDraft(context, recordId);
+    setRecovered(null);
+  }
+
+  // Kept on this device as they type, a beat behind so typing stays smooth.
+  useEffect(() => {
+    if (recovered) return;
+    const timer = setTimeout(() => {
+      saveDraft(context, recordId, {
+        recipientKey,
+        customTo,
+        templateId,
+        subject,
+        body,
+        audience,
+        mergeValues,
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [
+    recovered,
+    context,
+    recordId,
+    recipientKey,
+    customTo,
+    templateId,
+    subject,
+    body,
+    audience,
+    mergeValues,
+  ]);
 
   const to = recipientKey === CUSTOM ? customTo : recipientKey;
   const recipientName =
@@ -201,6 +256,7 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
         setSubject("");
         setBody("");
         setTemplateId(BLANK);
+        clearDraft(context, recordId);
       } else {
         toast.error(result.error ?? "The message did not go out.");
       }
@@ -229,6 +285,26 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
         </TabsList>
 
         <TabsContent value="write" className="space-y-4 pt-4">
+          {recovered ? (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 text-sm"
+            >
+              <p>
+                You have an unsent message saved from{" "}
+                {usDateTime(recovered.savedAt)} — {recovered.subject.trim() || "no subject yet"}.
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={restoreDraft}>
+                  Bring it back
+                </Button>
+                <Button size="sm" variant="ghost" onClick={discardDraft}>
+                  Start fresh
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid gap-2">
             <Label id="composer-to-label" htmlFor="composer-to">
               To
