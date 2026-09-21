@@ -50,6 +50,13 @@
       "when": 1790016663332,
       "tag": "0006_email_composer_cc_bcc_schedule_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790016882270,
+      "tag": "0007_email_log_additional_to",
+      "breakpoints": true
     }
   ]
 }

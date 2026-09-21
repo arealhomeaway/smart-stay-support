@@ -1621,6 +1621,7 @@ export type Database = {
           subject: string
           template_id: string | null
           ticket_id: string | null
+          to_additional: string[]
         }
         Insert: {
           attachments?: Json
@@ -1645,6 +1646,7 @@ export type Database = {
           subject: string
           template_id?: string | null
           ticket_id?: string | null
+          to_additional?: string[]
         }
         Update: {
           attachments?: Json
@@ -1669,6 +1671,7 @@ export type Database = {
           subject?: string
           template_id?: string | null
           ticket_id?: string | null
+          to_additional?: string[]
         }
         Relationships: [
           {
