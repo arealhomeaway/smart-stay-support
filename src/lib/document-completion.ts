@@ -155,7 +155,11 @@ export function completionFor(
         expiresOn: null,
       };
     }
-    const info = documentState({ ...best, verifyOnly: req.verifyOnly ?? best.verifyOnly }, today);
+    const verifyOnly = req.verifyOnly ?? best.verifyOnly;
+    const info = documentState(
+      verifyOnly === undefined ? best : { ...best, verifyOnly },
+      today,
+    );
     return {
       code: req.code,
       label: req.label,
