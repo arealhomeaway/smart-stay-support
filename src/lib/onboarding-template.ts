@@ -1318,7 +1318,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Complete the Mid Project Review Form",
     role: "Project Manager",
     detail:
-      "Complete the Mid-Project Review directly in Resolve, on this task.\n\nWhat to do:\n1. Appliances must be installed before this task can be completed. Photograph the appliance labels (make, model, serial) on site.\n2. Attach the appliance-label photos and any updated property photos to this task as evidence.\n3. Update the property record in Resolve (Property Hub \u2192 Property details) with anything that has changed \u2014 systems, access, utilities, amenities.\n4. Mark this task complete. Resolve records who reviewed it and when; no separate form is needed.\n\nDo not use the old Fillout form or the Notion results page \u2014 Resolve is now the record.",
+      "Complete the Mid-Project Review directly in Resolve, on this task.\n\nWhat to do:\n1. Appliances must be installed before this task can be completed. Photograph the appliance labels (make, model, serial) on site.\n2. Attach the appliance-label photos and any updated property photos to this task as evidence.\n3. Update the property record in Resolve (Property Hub \u2192 Property details) with anything that has changed \u2014 systems, access, utilities, amenities.\n4. Mark this task complete. Resolve records who reviewed it and when; no separate form is needed.\n\nResolve is the record for this review.",
     blocksHandoff: true,
     sortOrder: 1230,
   },
@@ -1428,7 +1428,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Follow-Up on PriceLabs Connection & Sales Tax Setup",
     role: "Project Manager",
     detail:
-      "Please email Kade & James to confirm the following items have been completed for the property:\n PriceLabs & the base price recorded in Resolve have been successfully connected and synced.\n Sales tax has been set up correctly for the property in all applicable platforms.\n\nTemplate: \nHey team,\n\nJust wanted to check in real quick — [Property Address] will be handed off to operations in the next day or so, and I wanted to make sure we’re all set up before that happens.\n Can someone get PriceLabs and the Notion Base Price connected and synced for this property?\n Kade, could you help get the sales tax set up on all the applicable platforms when you get a chance?\nLet me know if you have any questions, and just shoot me a quick confirmation once everything’s done. Appreciate you all — thanks so much!",
+      "Please email Kade & James to confirm the following items have been completed for the property:\n PriceLabs & the base price recorded in Resolve have been successfully connected and synced.\n Sales tax has been set up correctly for the property in all applicable platforms.\n\nTemplate: \nHey team,\n\nJust wanted to check in real quick — [Property Address] will be handed off to operations in the next day or so, and I wanted to make sure we’re all set up before that happens.\n Can someone get PriceLabs and the base price in Resolve connected and synced for this property?\n Kade, could you help get the sales tax set up on all the applicable platforms when you get a chance?\nLet me know if you have any questions, and just shoot me a quick confirmation once everything’s done. Appreciate you all — thanks so much!",
     blocksHandoff: true,
     sortOrder: 1340,
   },
@@ -1498,7 +1498,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Complete New House Handoff form before Handoff Meeting",
     role: "Project Manager",
     detail:
-      "Raise the handoff in Resolve, not in Smartsheet or Fillout.\n\nWhat to do:\n1. Open the property in Resolve and request handoff from the Onboarding workspace.\n2. The request routes natively: Director of Onboarding review \u2192 Director of Operations review \u2192 Operations acceptance \u2192 live confirmation.\n3. A handoff is not complete until Operations accepts it. Until then the property stays with Onboarding.\n\nThere is no external handoff form. Resolve holds the single handoff record.",
+      "Raise the handoff in Resolve, not in outside spreadsheets or forms.\n\nWhat to do:\n1. Open the property in Resolve and request handoff from the Onboarding workspace.\n2. The request routes natively: Director of Onboarding review \u2192 Director of Operations review \u2192 Operations acceptance \u2192 live confirmation.\n3. A handoff is not complete until Operations accepts it. Until then the property stays with Onboarding.\n\nThere is no external handoff form. Resolve holds the single handoff record.",
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1410,
