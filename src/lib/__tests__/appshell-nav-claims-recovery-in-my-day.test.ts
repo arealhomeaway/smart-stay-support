@@ -42,12 +42,20 @@ describe("AppShell — Claims and Guest recovery moved from Supervision to My da
     expect(body).not.toContain('to: "/recovery"');
   });
 
-  it("Supervision retains the true supervisor functions: Oversight, Onboarding, Map", () => {
+  it("Supervision retains the true supervisor functions: Oversight and Onboarding", () => {
     const body = supervisionGroupMatch?.[0] ?? "";
     expect(body).toContain('to: "/oversight"');
     expect(body).toContain('to: "/onboarding"');
-    expect(body).toContain('to: "/map"');
   });
+
+  // The Work Map is day-to-day routing for the person doing the visits, so it
+  // sits with the frontline work rather than with supervision.
+  it("the Work Map lives in 'My day'", () => {
+    const body = frontlineGroupMatch?.[0] ?? "";
+    expect(body).toContain('to: "/map"');
+    expect(body).toContain('label: "Work Map"');
+  });
+
 
   it("Claims and Guest recovery are gated on claims_work, matching what the pages themselves already require — not the stricter claims_oversight that hid them from frontline roles", () => {
     const body = frontlineGroupMatch?.[0] ?? "";
