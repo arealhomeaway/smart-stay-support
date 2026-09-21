@@ -241,7 +241,7 @@ export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date()):
         body: `The deadline was ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ago and this claim is still open. Escalate it today.`,
         entityType: "claim",
         entityId: claim.id,
-        linkPath: `/claims?open=${claim.id}`,
+        linkPath: "/claims",
         priority: "urgent",
         isDemo: Boolean(claim.is_demo),
       });
@@ -256,7 +256,7 @@ export function claimDeadlineAlerts(claims: ClaimForAlerts[], now = new Date()):
         body: "Finish the evidence and file before the window closes.",
         entityType: "claim",
         entityId: claim.id,
-        linkPath: `/claims?open=${claim.id}`,
+        linkPath: "/claims",
         priority: days === 0 ? "urgent" : "normal",
         isDemo: Boolean(claim.is_demo),
       });
