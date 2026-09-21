@@ -547,4 +547,5 @@ is now doable from Resolve.
 - [x] Single Demo option in the portal menu; /demo landing with one card per accessible portal
 - [x] Old demo data removed; only Willow and Birch demo homes remain
 
-- [ ] Rename "Guest recovery" to "Guest refunds & credits" across all user-facing wording, including the log CTA ("+ Log Guest Refund or Credit").
+- [x] Rename "Guest recovery" to "Guest refunds & credits" across all user-facing wording, including the log CTA ("+ Log Guest Refund or Credit").
+- [ ] Finance workspace: build the dashboard on public.guest_recovery_ledger and give Finance a role + read policy.
