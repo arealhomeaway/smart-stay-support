@@ -98,34 +98,88 @@ export function PortalSwitcher() {
 }
 
 /**
- * One-click Demo button for the sticky top navigation. Takes the viewer
- * straight into the clean demo environment (and straight back out again).
+ * Shared behaviour for every Demo control: one tap in, one tap out.
  */
-export function DemoButton() {
+function useDemoToggle() {
   const router = useRouter();
   const { demoMode, canDemo, enterDemo, exitDemo } = useDemo();
 
+  const toggle = () => {
+    if (demoMode) {
+      exitDemo();
+      void router.navigate({ to: "/hub" });
+    } else {
+      enterDemo();
+      void router.navigate({ to: "/demo" });
+    }
+  };
+
+  return { demoMode, canDemo, toggle };
+}
+
+/**
+ * One-click Demo button for the sticky top navigation. On a phone it is a
+ * full 44px square icon target; the label appears once there is room.
+ */
+export function DemoButton() {
+  const { demoMode, canDemo, toggle } = useDemoToggle();
+
   if (!canDemo) return null;
+
+  const label = demoMode ? "Leave demo" : "Demo";
 
   return (
     <Button
       size="sm"
       variant={demoMode ? "default" : "outline"}
-      className="min-h-11 md:min-h-9"
-      onClick={() => {
-        if (demoMode) {
-          exitDemo();
-          void router.navigate({ to: "/hub" });
-        } else {
-          enterDemo();
-          void router.navigate({ to: "/demo" });
-        }
-      }}
+      className="min-h-11 min-w-11 shrink-0 px-0 sm:min-h-9 sm:w-auto sm:px-3"
+      onClick={toggle}
       aria-label={demoMode ? "Leave the demo environment" : "Enter the demo environment"}
+      title={label}
     >
-      {demoMode ? <EyeOff className="size-4" /> : <FlaskConical className="size-4" />}
-      <span className="hidden sm:inline">{demoMode ? "Leave demo" : "Demo"}</span>
+      {demoMode ? (
+        <EyeOff className="size-5 sm:size-4" aria-hidden="true" />
+      ) : (
+        <FlaskConical className="size-5 sm:size-4" aria-hidden="true" />
+      )}
+      <span className="hidden sm:inline">{label}</span>
     </Button>
+  );
+}
+
+/**
+ * The same control inside the navigation menu, so it is reachable when the
+ * menu is collapsed or opened on a phone. Tapping it closes the menu.
+ */
+export function DemoSidebarItem() {
+  const { demoMode, canDemo, toggle } = useDemoToggle();
+  const { setOpenMobile, isMobile } = useSidebar();
+
+  if (!canDemo) return null;
+
+  const label = demoMode ? "Leave demo" : "Demo";
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          tooltip={label}
+          isActive={demoMode}
+          className="h-11 rounded-lg font-medium md:h-10"
+          onClick={() => {
+            if (isMobile) setOpenMobile(false);
+            toggle();
+          }}
+        >
+          {demoMode ? (
+            <EyeOff aria-hidden="true" />
+          ) : (
+            <FlaskConical aria-hidden="true" />
+          )}
+          <span>{label}</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
   );
 }
 
@@ -138,12 +192,17 @@ export function ViewAsBanner() {
 
   return (
     <div className="border-b border-indigo-200 bg-indigo-50 text-indigo-950">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2 text-sm">
-        <p>
+      <div className="mx-auto grid max-w-7xl gap-2 px-4 py-2 text-sm sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
+        <p className="min-w-0">
           <strong className="mr-1">Demo</strong>— you are working in the demo environment. Real
           homes, homeowners, guests and vendors are untouched, and nothing leaves Resolve.
         </p>
-        <Button size="sm" variant="outline" onClick={() => exitDemo()}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="min-h-11 w-full shrink-0 sm:min-h-9 sm:w-auto"
+          onClick={() => exitDemo()}
+        >
           Leave demo
         </Button>
       </div>
