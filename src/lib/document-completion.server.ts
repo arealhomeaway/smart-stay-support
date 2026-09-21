@@ -36,8 +36,8 @@ export type VendorCompletion = {
 export async function vendorDocumentCompletion(): Promise<VendorCompletion[]> {
   const { data: orgs, error } = await supabaseAdmin
     .from("vendor_orgs")
-    .select("id, name, status")
-    .order("name");
+    .select("id, display_name, legal_name, status")
+    .order("display_name");
   if (error) throw new Error("Could not read the vendor list.");
 
   const { data: docs, error: docError } = await supabaseAdmin
