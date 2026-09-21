@@ -175,7 +175,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review STR Requirements and notify PM of costs",
     role: "Onboarding Admin",
     detail:
-      "Instructions\n Check the provided research results (permit required Y/N and cost breakdown) on the Notion Active Projects Page using the https://www.notion.so/arealhomeaway/1d84658d5f4f80c39ef0d99f6403220f?v=25b4658d5f4f80daa396000c6c33e152&source=copy_link view.\n If a permit is required:\n Notify the Project Manager by posting a comment using the template below.\n Remind them to also add a $100 processing costs to a separate line item to cover our internal costs.\n If a permit is not required:\n Record “No STR permit required”\n Add an Asana comment confirming that no action is needed & tag the Project Manager.\n\nPM Notification — copy/paste template\n\n> STR permit research is complete and a permit is required. \nThe cost is $\nWe need to add the permit cost + $100 processing cost added to make-ready invoice ( $100 will need to be on a separate line item).",
+      "Instructions\n Check the provided research results (permit required Y/N and cost breakdown) on the project record in Resolve.\n If a permit is required:\n Notify the Project Manager by posting a comment using the template below.\n Remind them to also add a $100 processing costs to a separate line item to cover our internal costs.\n If a permit is not required:\n Record “No STR permit required”\n Add a comment on this task in Resolve confirming that no action is needed & tag the Project Manager.\n\nPM Notification — copy/paste template\n\n> STR permit research is complete and a permit is required. \nThe cost is $\nWe need to add the permit cost + $100 processing cost added to make-ready invoice ( $100 will need to be on a separate line item).",
     blocksHandoff: true,
     sortOrder: 120,
   },
@@ -223,7 +223,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Set up internet service and schedule Cox install",
     role: "Utilities Coordinator",
     blocksHandoff: true,
-    subtasks: ["Set up auto-pay", "Add to Notion"],
+    subtasks: ["Set up auto-pay", "Record in Resolve"],
     sortOrder: 170,
   },
   {
@@ -244,7 +244,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Transfer/set up electric service",
     role: "Utilities Coordinator",
     blocksHandoff: true,
-    subtasks: ["Set up auto-pay", "Add to Notion"],
+    subtasks: ["Set up auto-pay", "Record in Resolve"],
     sortOrder: 190,
   },
   {
@@ -255,7 +255,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     detail:
       "Based on project manager feedback, either have this billed to owner or ARHA\n\nTEMPLATE - \nService starts: \n $35 connection fee on first bill\n auto pay and e-billing set up\n need to add the account to our online account\n acct #:",
     blocksHandoff: true,
-    subtasks: ["Set up auto-pay", "Add to Notion"],
+    subtasks: ["Set up auto-pay", "Record in Resolve"],
     sortOrder: 200,
   },
   {
@@ -264,7 +264,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Transfer/set up water/sewer service",
     role: "Utilities Coordinator",
     blocksHandoff: true,
-    subtasks: ["Set up auto-pay", "Add to Notion"],
+    subtasks: ["Set up auto-pay", "Record in Resolve"],
     sortOrder: 210,
   },
   {
@@ -277,7 +277,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
       "Set up Autopay",
       "Add Trash Info to the Important Trash Details Page",
       "Add trash info to Breezeway",
-      "Add to Notion",
+      "Record in Resolve",
     ],
     sortOrder: 220,
   },
@@ -287,7 +287,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Follow-up on STR permit information",
     role: "Project Manager",
     detail:
-      "Instructions:\n\nReview information on STR Permit\n\n If you have not rcvd a response from the Short Term Rental Coordinator yet, please follow-up\n If no STR permit is required, close Asana task request STR Permit\n If so, ensure this is included in repair estimate",
+      "Instructions:\n\nReview information on STR Permit\n\n If you have not rcvd a response from the Short Term Rental Coordinator yet, please follow-up\n If no STR permit is required, close the STR Permit request task in Resolve\n If so, ensure this is included in repair estimate",
     blocksHandoff: true,
     sortOrder: 230,
   },
@@ -297,7 +297,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review the New House Setup Form Results",
     role: "Project Manager",
     detail:
-      "To view results, view this page: https://www.notion.so/arealhomeaway/New-House-Setup-Database-View-2c94658d5f4f8050a49feccaf10348ac?source=copy_link",
+      "To view results, open the New House Setup responses on this task in Resolve.",
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 240,
@@ -349,7 +349,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Enter approved home improvements estimate into Houzz Pro estimate template",
     role: "Project Manager",
     detail:
-      "Instructions:\nCreate a client-ready estimate using Houzz Pro. \nhttps://www.notion.so/arealhomeaway/Houzz-Pro-Creating-a-Home-Improvement-Estimate-and-Sending-to-Owner-in-Houzz-Pro-1c14658d5f4f8011aefbcda457fbe013?pvs=4",
+      "Instructions:\nCreate a client-ready estimate using Houzz Pro. The step-by-step guide is in the Resolve playbook library.",
     blocksHandoff: true,
     sortOrder: 290,
   },
@@ -359,7 +359,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Complete the Repair Estimate Approval Form",
     role: "Project Manager",
     detail:
-      "Instructions:\nComplete the https://www.notion.so/arealhomeaway/22a4658d5f4f80a4891bcdc67dde772e?pvs=106 in Notion and submit it.\n\nIf it is less than 7 days from closing and you do not hear a response on this being approved, send a reminder to the Onboarding Manager.",
+      "Instructions:\nComplete the approval request on this task in Resolve and submit it.\n\nIf it is less than 7 days from closing and you do not hear a response on this being approved, send a reminder to the Onboarding Manager.",
     blocksHandoff: true,
     subtasks: [
       "Send a reminder to the Onboarding Manager if you are waiting for Repair Estimate Approval and it has been more than 24 hours since completing the form",
@@ -591,7 +591,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Schedule carpet cleaning/replacement (if necessary)",
     role: "Project Manager",
     detail:
-      "https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1924658d5f4f80938288000cdcd8e64e&pvs=4\n\nInstructions:\n Carpet cleaning guidelines: \n Do NOT clean the carpet unless a UV light inspection has been done for the presence of pet urine. \n If good condition and clean = do nothing \n If dirty (visible stains/marks) w/ no pet urine = carpet cleaning \n If dirty w/ pet urine = replace carpet \n If worn or damaged = replace\n\n For new carpeting - We use two primary carpet installers for OKC and Tulsa area properties (both companies' contact info is in the Contractors & Vendors Asana project)\n OKC - J-Mar Carpeting - ask for the same carpet used at Lightning Creek (Ronnie is our contact - 405-820-7826)\n Tulsa - C&B Carpeting - ask for the same carpet used at 3000 W. Charlotte in Broken Arrow\n\n We utilize standard carpet product/color unless the home colors are …",
+      "Reference: the Resolve vendor directory.\n\nInstructions:\n Carpet cleaning guidelines: \n Do NOT clean the carpet unless a UV light inspection has been done for the presence of pet urine. \n If good condition and clean = do nothing \n If dirty (visible stains/marks) w/ no pet urine = carpet cleaning \n If dirty w/ pet urine = replace carpet \n If worn or damaged = replace\n\n For new carpeting - We use two primary carpet installers for OKC and Tulsa area properties (both companies' contact info is in the Resolve vendor directory)\n OKC - J-Mar Carpeting - ask for the same carpet used at Lightning Creek (Ronnie is our contact - 405-820-7826)\n Tulsa - C&B Carpeting - ask for the same carpet used at 3000 W. Charlotte in Broken Arrow\n\n We utilize standard carpet product/color unless the home colors are …",
     blocksHandoff: false,
     sortOrder: 520,
   },
@@ -601,7 +601,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Create work order for home repairs (if necessary)",
     role: "Project Manager",
     detail:
-      "https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1924658d5f4f80938288000cdcd8e64e&pvs=4\n\nInstructions:\n Please create and schedule work orders in Breezeway for any approved home repairs.\n\n We do not have templates regarding repairs, because every home requires something different. When creating a work order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create work orders, you may group similar jobs within work orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on work orders with any other tasks. (Furniture assembly tasks are classed …",
+      "Reference: the Resolve vendor directory.\n\nInstructions:\n Please create and schedule work orders in Breezeway for any approved home repairs.\n\n We do not have templates regarding repairs, because every home requires something different. When creating a work order, please keep in mind the following:\n Be specific in your instructions to the contractor.\n Try to use bullet points to make instructions easier to read.\n Attach reference photos w/ or w/o markups whenever you think they will be helpful.\n\n As you create work orders, you may group similar jobs within work orders (like different painting tasks, or different outdoor tasks). One exception is furniture assembly tasks. Please do not group any furniture assembly tasks on work orders with any other tasks. (Furniture assembly tasks are classed …",
     blocksHandoff: false,
     sortOrder: 530,
   },
@@ -930,7 +930,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Purchase essentials for property",
     role: "Project Manager",
     detail:
-      "Instructions:\n Purchase items indicated on the Essentials list in Smartsheet and have them delivered directly to the property. \n Indicate on the purchasing list that each item has been purchased and add the projected delivery date. \n For all vendors, with the exception of Amazon, be sure to log the expense in the New Expenses project in Asana.\n\nWhich Card to Use for Company Purchases\nFollow this guide any time you're making a purchase on behalf of ARHA. Use the correct card based on the vendor, then log every expense — no exceptions.\n\n🛒 Wayfair\n Use Josh's credit card — card number is in the Telegram thread.\n📦 Amazon\n Use Kati's Amazon AMEX ending in 1130.\n🌐 All Other Websites\n Use your personal Ramp card.",
+      "Instructions:\n Purchase items indicated on the Essentials list in Smartsheet and have them delivered directly to the property. \n Indicate on the purchasing list that each item has been purchased and add the projected delivery date. \n For all vendors, with the exception of Amazon, be sure to log the expense on this project in Resolve.\n\nWhich Card to Use for Company Purchases\nFollow this guide any time you're making a purchase on behalf of ARHA. Use the correct card based on the vendor, then log every expense — no exceptions.\n\n🛒 Wayfair\n Use Josh's credit card — card number is in the Telegram thread.\n📦 Amazon\n Use Kati's Amazon AMEX ending in 1130.\n🌐 All Other Websites\n Use your personal Ramp card.",
     blocksHandoff: true,
     sortOrder: 840,
   },
@@ -951,7 +951,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Purchase furnishings and décor for new home",
     role: "Project Manager",
     detail:
-      "Instructions:\n Purchase items indicated on the Furnishings and Decor purchasing lists in Houzz.\n Large furniture deliveries will be directly to the property, as well as assembled by the vendor onsite. Someone will need to be present during the delivery to instruct the delivery personnel where to place each piece of furniture.\n Indicate on the pick list that each item has been purchased and add the projected delivery date. \n For all vendors, with the exception of Amazon, be sure to log the expense in the New Expenses project in Asana.",
+      "Instructions:\n Purchase items indicated on the Furnishings and Decor purchasing lists in Houzz.\n Large furniture deliveries will be directly to the property, as well as assembled by the vendor onsite. Someone will need to be present during the delivery to instruct the delivery personnel where to place each piece of furniture.\n Indicate on the pick list that each item has been purchased and add the projected delivery date. \n For all vendors, with the exception of Amazon, be sure to log the expense on this project in Resolve.",
     blocksHandoff: true,
     subtasks: [
       "Ensure that bedroom rugs (if any) arrive at the house before furniture is delivered/assembled",
@@ -973,7 +973,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Order custom blinds for the home (if necessary)",
     role: "Project Manager",
     detail:
-      "To view submitted responses to the Window Measurements form, click https://www.notion.so/arealhomeaway/1c84658d5f4f8010bdfceb1af858c36e?v=1c84658d5f4f804fbcf5000ca8c41b27&pvs=4.",
+      "To view submitted responses to the Window Measurements form, open the form responses on this task in Resolve.",
     blocksHandoff: false,
     sortOrder: 880,
   },
@@ -1013,7 +1013,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Assign all home improvement, cleaning, staging and landscaping work orders",
     role: "Project Manager",
     detail:
-      "https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1924658d5f4f80938288000cdcd8e64e&pvs=4\n Add assignee names to previously-created work orders\n Verify dates on work orders to ensure work will occur in sequence that makes sense\n Ensure that work orders contain all instructions and supplemental attachments to assist vendor in completing the assigned task(s) successfully.",
+      "Reference: the Resolve vendor directory.\n Add assignee names to previously-created work orders\n Verify dates on work orders to ensure work will occur in sequence that makes sense\n Ensure that work orders contain all instructions and supplemental attachments to assist vendor in completing the assigned task(s) successfully.",
     blocksHandoff: true,
     sortOrder: 920,
   },
@@ -1023,7 +1023,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Schedule professional photo shoot for staged home",
     role: "Project Manager",
     detail:
-      "INSTRUCTIONS:\n\n(IMPORTANT NOTE: Our DFW photographer must be scheduled at least 7-10 days prior to the photo shoot date, so please schedule with her as soon as you have a good idea of when your home will be ready!)\n\nOKLAHOMA CITY AND TULSA \n For Oklahoma homes in the Oklahoma City and Tulsa areas, we use Flow Photography: https://flowphotos.com/\n\n Please see the below Scribe for specific instructions regarding ordering photos. Payment is not due until photos are processed: https://www.notion.so/arealhomeaway/Flow-Photography-Ordering-a-Photo-Shoot-from-Flow-Photography-1c14658d5f4f804f86d8dd5cbf4d6f18?pvs=4\n\nDFW\n For homes in the DFW area, we use Nicole Perdue Shoot 2 Sell. This information is in the Notion Vendor Database. \n\nPlease note: All photo and video shoots must include the Airbnb/VRBO marketing package to secure usage rights.",
+      "INSTRUCTIONS:\n\n(IMPORTANT NOTE: Our DFW photographer must be scheduled at least 7-10 days prior to the photo shoot date, so please schedule with her as soon as you have a good idea of when your home will be ready!)\n\nOKLAHOMA CITY AND TULSA \n For Oklahoma homes in the Oklahoma City and Tulsa areas, we use Flow Photography: https://flowphotos.com/\n\n Please see the below Scribe for specific instructions regarding ordering photos. Payment is not due until photos are processed; the ordering steps are in the Resolve playbook library.\n\nDFW\n For homes in the DFW area, we use Nicole Perdue Shoot 2 Sell. This information is in the Resolve vendor directory. \n\nPlease note: All photo and video shoots must include the Airbnb/VRBO marketing package to secure usage rights.",
     blocksHandoff: true,
     sortOrder: 930,
   },
@@ -1033,7 +1033,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Interior Camera Check",
     role: "Project Manager",
     detail:
-      "Review any notes in thehttps://www.notion.so/arealhomeaway/1944658d5f4f80b28b26ed0ca50f998c?v=1944658d5f4f81bc9f6a000cae460802&source=copy_link to ensure we will not breach a guests privacy during their stay after onboarding with internal cameras. \n\nIf there are any cameras noted, please schedule a handyman to quote removing these. Please retain Onboarding Manager approval as needed.",
+      "Review any notes on the pre-work inspection in Resolve to ensure we will not breach a guests privacy during their stay after onboarding with internal cameras. \n\nIf there are any cameras noted, please schedule a handyman to quote removing these. Please retain Onboarding Manager approval as needed.",
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 940,
@@ -1044,7 +1044,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Schedule lawn maintenance for 2 days before photos",
     role: "Project Manager",
     detail:
-      "https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1924658d5f4f80938288000cdcd8e64e&pvs=4\n\nThere is a current photo of the lawn on the pre work inspection. Open the Pre Work Inspection submission to view. Reference: https://www.notion.so/arealhomeaway/1944658d5f4f80b28b26ed0ca50f998c?v=1944658d5f4f81bc9f6a000cae460802&source=copy_link",
+      "https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1924658d5f4f80938288000cdcd8e64e&pvs=4\n\nThere is a current photo of the lawn on the pre work inspection. Open the Pre Work Inspection submission on this project in Resolve to view.",
     blocksHandoff: true,
     sortOrder: 950,
   },
@@ -1085,7 +1085,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Order supplies/create work orders indicated in Pre-Work Inspection results",
     role: "Project Manager",
     detail:
-      "1.) Check the Pre-Work Inspection Master File: \nhttps://www.notion.so/arealhomeaway/Pre-Work-Inspections-2c94658d5f4f80a0bcddcdb0577015ab?source=copy_link\n\n2.) Order air filters in the size(s) and quantity(ies) indicated on the Master File. Order a 5-year water filter for the fridge, if it is not new\n\n3.) Ship these items to the property for installation by the handyman.\n\n4.) Create work orders to have the air and water filters installed by the handyman.\n\n5.) After confirming information is accurate, please send a message to the Onboarding Manager to inform them that we can add the information to the Properties Information Database.",
+      "1.) Check the Pre-Work Inspection record for this home in Resolve.\n\n2.) Order air filters in the size(s) and quantity(ies) indicated on the Master File. Order a 5-year water filter for the fridge, if it is not new\n\n3.) Ship these items to the property for installation by the handyman.\n\n4.) Create work orders to have the air and water filters installed by the handyman.\n\n5.) After confirming information is accurate, please send a message to the Onboarding Manager to inform them that we can add the information to the Properties Information Database.",
     blocksHandoff: true,
     sortOrder: 990,
   },
@@ -1105,7 +1105,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Schedule & Manage Pest Control",
     role: "Project Manager",
     detail:
-      "Pest control services must be scheduled for this property as part of onboarding. This applies to homes onboarded between April and August:\n Interior spraying is mandatory\n Exterior spraying is required only if recommended by the vendor\n Use the standard pest control vendor unless otherwise discussed. Be sure to add pest control to both the Make Ready Estimate and the final expense tracking.\nPlease reference the https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1fe4658d5f4f80bb8ac8000c1d17aa0d&source=copy_link to confirm if we have a preferred vendor in the area. Schedule service to be completed during the first week of onboarding. The staging team may or may not need to be present, depending on vendor needs.\nBe sure to:\n Add this cost plus internal labor time to the Make Ready Estimate\n Include it in the House Cost Review Sheet\nAdd this cost + …",
+      "Pest control services must be scheduled for this property as part of onboarding. This applies to homes onboarded between April and August:\n Interior spraying is mandatory\n Exterior spraying is required only if recommended by the vendor\n Use the standard pest control vendor unless otherwise discussed. Be sure to add pest control to both the Make Ready Estimate and the final expense tracking.\nPlease reference the Resolve vendor directory to confirm if we have a preferred vendor in the area. Schedule service to be completed during the first week of onboarding. The staging team may or may not need to be present, depending on vendor needs.\nBe sure to:\n Add this cost plus internal labor time to the Make Ready Estimate\n Include it in the House Cost Review Sheet\nAdd this cost + …",
     blocksHandoff: true,
     sortOrder: 1010,
   },
@@ -1276,7 +1276,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Set up the Trash Valet Service",
     role: "Project Manager",
     detail:
-      "1. Find Trash Valet Vendor \n Go to the https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1924658d5f4f80938288000cdcd8e64e&pvs=4.\n Locate and copy the Trash Valet vendor name and contact email for the market in which the home is located.\n 2. Send Email to Vendor \nUse this email template:\nSubject: Trash Valet Setup – [Full Property Address]\nBody:\nHi, [Vendor Name],\n\nWe have a new property that we need to set up trash valet for. The address is [Full Property Address].\n\nCan you please confirm the monthly price and the days you will be going to the property? The trash day is [linked here].\n\nThank you,\n[Your Name]\n\n3. Update Breezeway Profile Tags \n Go to the property profile in Breezeway.\n Under Profile Details → Tags:\n Add: Trash Valet – [Vendor Name]\n Remove: New House - Currently Inactive",
+      "1. Find Trash Valet Vendor \n Open the Resolve vendor directory.\n Locate and copy the Trash Valet vendor name and contact email for the market in which the home is located.\n 2. Send Email to Vendor \nUse this email template:\nSubject: Trash Valet Setup – [Full Property Address]\nBody:\nHi, [Vendor Name],\n\nWe have a new property that we need to set up trash valet for. The address is [Full Property Address].\n\nCan you please confirm the monthly price and the days you will be going to the property? The trash day is [linked here].\n\nThank you,\n[Your Name]\n\n3. Update Breezeway Profile Tags \n Go to the property profile in Breezeway.\n Under Profile Details → Tags:\n Add: Trash Valet – [Vendor Name]\n Remove: New House - Currently Inactive",
     blocksHandoff: true,
     breezewayTemplateId: "135933",
     sortOrder: 1190,
@@ -1287,7 +1287,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review the Standard Inspection Results",
     role: "Project Manager",
     detail:
-      'Review the results:\n Access the inspection results using the link below:\n https://www.notion.so/arealhomeaway/Standard-Inspections-Database-View-2c94658d5f4f802fae51e3c815f0457a?source=copy_link\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
+      'Review the results:\n Access the inspection results using the link below:\n the Standard Inspection results on this task in Resolve\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1200,
@@ -1308,7 +1308,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Assign a Default Cleaner",
     role: "Project Manager",
     detail:
-      "🔍 How to Assign a Cleaning Vendor in Notion & Breezeway Step 1: Find the Head Cleaner in Notion \n Go to the https://www.notion.so/1444658d5f4f8037a308d64f266786e2?pvs=21.\n Click on the “By Market” tab.\n Locate the appropriate market and find the “Head Cleaner” listed.\n This is the cleaner you will assign in Breezeway.\n \n Step 2: Assign the Cleaner in Breezeway \n Open Breezeway and click on the property you’re working with.\n In the left-hand menu, click the “Profile” tab.\n At the top, select the “Details” tab.\n Scroll to the “Property Tags” section and select the appropriate cleaning tag based on the market:\n OKC Metro Cleanings\n Tulsa Cleanings\n DFW Cleanings\n Indy Cleanings\n Still on the same property, click the “Template Modifiers” tab on the left menu.\n Under the automatically opened “People” tab, go to the “Department Defaults” section.\n Click the ➕ plus sign and …",
+      "🔍 How to Assign a Cleaning Vendor Step 1: Find the Head Cleaner \n Open the Resolve vendor directory and filter by market.\n Locate the appropriate market and find the “Head Cleaner” listed.\n This is the cleaner you will assign in Breezeway.\n \n Step 2: Assign the Cleaner in Breezeway \n Open Breezeway and click on the property you’re working with.\n In the left-hand menu, click the “Profile” tab.\n At the top, select the “Details” tab.\n Scroll to the “Property Tags” section and select the appropriate cleaning tag based on the market:\n OKC Metro Cleanings\n Tulsa Cleanings\n DFW Cleanings\n Indy Cleanings\n Still on the same property, click the “Template Modifiers” tab on the left menu.\n Under the automatically opened “People” tab, go to the “Department Defaults” section.\n Click the ➕ plus sign and …",
     blocksHandoff: true,
     sortOrder: 1220,
   },
@@ -1417,7 +1417,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Confirm completion of photo shoot, purchase photos and download to OneDrive",
     role: "Project Manager",
     detail:
-      "Instructions:\n\n Check photography website to confirm completion of photos.\n Review photos and purchase them. https://www.notion.so/arealhomeaway/Flow-Photography-Purchasing-Photos-from-Flow-Photography-1c34658d5f4f80fc9770f817ce92df97?pvs=4 \n Download from the website to the property's OneDrive folder",
+      "Instructions:\n\n Check photography website to confirm completion of photos.\n Review photos and purchase them; the purchasing steps are in the Resolve playbook library. \n Download from the website to the property's OneDrive folder",
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1330,
@@ -1428,7 +1428,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Follow-Up on PriceLabs Connection & Sales Tax Setup",
     role: "Project Manager",
     detail:
-      "Please email Kade & James to confirm the following items have been completed for the property:\n PriceLabs & the Notion Base Price have been successfully connected and synced.\n Sales tax has been set up correctly for the property in all applicable platforms.\n\nTemplate: \nHey team,\n\nJust wanted to check in real quick — [Property Address] will be handed off to operations in the next day or so, and I wanted to make sure we’re all set up before that happens.\n Can someone get PriceLabs and the Notion Base Price connected and synced for this property?\n Kade, could you help get the sales tax set up on all the applicable platforms when you get a chance?\nLet me know if you have any questions, and just shoot me a quick confirmation once everything’s done. Appreciate you all — thanks so much!",
+      "Please email Kade & James to confirm the following items have been completed for the property:\n PriceLabs & the base price recorded in Resolve have been successfully connected and synced.\n Sales tax has been set up correctly for the property in all applicable platforms.\n\nTemplate: \nHey team,\n\nJust wanted to check in real quick — [Property Address] will be handed off to operations in the next day or so, and I wanted to make sure we’re all set up before that happens.\n Can someone get PriceLabs and the Notion Base Price connected and synced for this property?\n Kade, could you help get the sales tax set up on all the applicable platforms when you get a chance?\nLet me know if you have any questions, and just shoot me a quick confirmation once everything’s done. Appreciate you all — thanks so much!",
     blocksHandoff: true,
     sortOrder: 1340,
   },
@@ -1457,7 +1457,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Set up Breezeway/Yale Integration",
     role: "Project Manager",
     blocksHandoff: true,
-    subtasks: ["Update the Notion Properties Information Database"],
+    subtasks: ["Update the Property Hub (PID) in Resolve"],
     sortOrder: 1370,
   },
   {
@@ -1466,7 +1466,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Review the Final Inspection Results",
     role: "Project Manager",
     detail:
-      'Review the results:\n Access the inspection results using the link below:\n https://www.notion.so/arealhomeaway/Final-Inspections-Database-View-2c94658d5f4f80aca9f9c13c38a314c0?source=copy_link\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
+      'Review the results:\n Access the inspection results using the link below:\n the Final Inspection results on this task in Resolve\n Evaluate and follow up:\n Read through all information provided. If any items raise concerns, follow up accordingly.\n Make adjustments if needed:\n If any information needs to be corrected or updated, click the "Adjust Responses" button at the top of the Notion page. This will direct you to the form where you can revise any necessary details.\n Store finalized results:\n The onboarding manager will add these items to the PID once they have heard that you have reviewed these results.',
     blocksHandoff: true,
     evidenceRequired: true,
     sortOrder: 1380,
@@ -1583,7 +1583,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Final Review - Property Costs",
     role: "Onboarding Manager",
     detail:
-      "Complete Entry: https://www.notion.so/arealhomeaway/1834658d5f4f80228830d754dfa2584e?v=18c4658d5f4f80d5bfda000c6c4a7c2f&pvs=4",
+      "Complete the entry on this task in Resolve.",
     blocksHandoff: false, // financial closeout — tracked after operational handoff,
     sortOrder: 1500,
   },
