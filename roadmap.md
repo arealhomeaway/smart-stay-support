@@ -529,5 +529,6 @@ is now doable from Resolve.
 - [x] Current Action card on the ticket workspace (one step at a time, required inputs, Complete & Advance auto-advances to the next step)
 [x] Four-gate handoff sequence: block PM self-approval; Kati -> Micah -> Operations acceptance -> James Live, in order
 [x] Master Onboarding Template aligned to the 26-step sequence, 8 operational stages and default role owners
-[ ] Stage-based progress views: completion, blockers and overdue across the 8 operational stages
-[ ] Audit trail for each task's operational-stage assignment (prior phase, current owner, future remapping)
+[x] Stage-based progress views: completion, blockers and overdue across the 8 operational stages
+[x] Audit trail for each task's operational-stage assignment (prior phase, current owner, future remapping)
+[x] Full Furnishing tasks mapped into the 8 operational stages, preserving details and ownership
