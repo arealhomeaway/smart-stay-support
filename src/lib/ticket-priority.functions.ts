@@ -28,8 +28,7 @@ export const setTicketPriorityFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: SetTicketPriorityInput) => {
     const priority = String(input?.priority ?? "").toLowerCase();
-    if (!PRIORITIES.includes(priority as TicketPriority))
-      throw new Error("Choose P1, P2 or P3.");
+    if (!PRIORITIES.includes(priority as TicketPriority)) throw new Error("Choose P1, P2 or P3.");
     const reason = String(input?.reason ?? "").trim();
     if (reason.length < 5)
       throw new Error("Write why this priority is different from the calculated one.");

@@ -55,7 +55,9 @@ export function TicketPriorityPanel({
     }
     setSaving(true);
     try {
-      await setPriority({ data: { ticketId, priority: next as "p1" | "p2" | "p3", reason: reason.trim() } });
+      await setPriority({
+        data: { ticketId, priority: next as "p1" | "p2" | "p3", reason: reason.trim() },
+      });
       toast.success("Priority changed and recorded.");
       setOpen(false);
       setReason("");
