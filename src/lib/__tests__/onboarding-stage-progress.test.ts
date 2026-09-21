@@ -24,7 +24,7 @@ describe("stage mapping", () => {
   });
 
   it("keeps the task itself untouched", () => {
-    const t = STAGED_FULL_FURNISHING_TEMPLATE[0];
+    const t = STAGED_FULL_FURNISHING_TEMPLATE[0]!;
     expect(t.title.length).toBeGreaterThan(0);
     expect(t.legacyStage).toBeTruthy();
   });
