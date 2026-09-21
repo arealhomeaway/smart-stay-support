@@ -5,7 +5,7 @@
  * about are offered as recipients, the shared templates fill the words, and
  * everything sent from that record stays visible underneath.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
