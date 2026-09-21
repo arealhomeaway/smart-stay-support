@@ -97,6 +97,38 @@ export function PortalSwitcher() {
   );
 }
 
+/**
+ * One-click Demo button for the sticky top navigation. Takes the viewer
+ * straight into the clean demo environment (and straight back out again).
+ */
+export function DemoButton() {
+  const router = useRouter();
+  const { demoMode, canDemo, enterDemo, exitDemo } = useDemo();
+
+  if (!canDemo) return null;
+
+  return (
+    <Button
+      size="sm"
+      variant={demoMode ? "default" : "outline"}
+      className="min-h-11 md:min-h-9"
+      onClick={() => {
+        if (demoMode) {
+          exitDemo();
+          void router.navigate({ to: "/hub" });
+        } else {
+          enterDemo();
+          void router.navigate({ to: "/demo" });
+        }
+      }}
+      aria-label={demoMode ? "Leave the demo environment" : "Enter the demo environment"}
+    >
+      {demoMode ? <EyeOff className="size-4" /> : <FlaskConical className="size-4" />}
+      <span className="hidden sm:inline">{demoMode ? "Leave demo" : "Demo"}</span>
+    </Button>
+  );
+}
+
 /** Persistent reminder that the screen is a demo and cannot change live work. */
 export function ViewAsBanner() {
   const { demoMode } = useDemo();
