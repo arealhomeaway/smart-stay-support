@@ -15,6 +15,7 @@ import {
   useRecoveryPropertyPhotos,
   useRecoveryRequirements,
 } from "@/components/recovery/RecoveryList";
+import { LogRecoveryDialog } from "@/components/recovery/LogRecoveryDialog";
 import { useRole } from "@/hooks/useRole";
 import type { RequirementLike } from "@/lib/claims";
 import {
