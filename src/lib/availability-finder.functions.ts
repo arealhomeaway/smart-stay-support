@@ -30,11 +30,16 @@ export const downloadAvailabilityOptions = createServerFn({ method: "POST" })
     const fresh = await findAvailableProperties(context.supabase, data);
     const byId = new Map(fresh.results.map((row) => [row.id, row]));
     const selected = data.propertyIds.map((id) => byId.get(id));
-    if (selected.some((row) => !row || row.status === "unavailable" || !row.bookingUrl))
+    if (selected.some((row) => !row || row.status === "unavailable"))
       throw new Error("A selected property is no longer eligible for a client-facing package.");
-    const links = await verifySelectedPublicListings(context.supabase, data.propertyIds);
-    if (links.some((link) => !link.active || byId.get(link.id)?.bookingUrl !== link.url))
-      throw new Error("A selected property has no active verified public listing link. Correct it in OwnerRez before export.");
+    // Homes with a listing link must still have a live, verified one; homes without a link
+    // are included deliberately and their page simply carries no link.
+    const linkedIds = data.propertyIds.filter((id) => Boolean(byId.get(id)?.bookingUrl));
+    if (linkedIds.length) {
+      const links = await verifySelectedPublicListings(context.supabase, linkedIds);
+      if (links.some((link) => !link.active || byId.get(link.id)?.bookingUrl !== link.url))
+        throw new Error("A selected property has no active verified public listing link. Correct it in OwnerRez before export.");
+    }
     const bytes = await propertyOptionsPdf(selected as NonNullable<(typeof selected)[number]>[], data);
     return { filename: "ARHA-Property-Options.pdf", mime: "application/pdf", base64: Buffer.from(bytes).toString("base64") };
   });

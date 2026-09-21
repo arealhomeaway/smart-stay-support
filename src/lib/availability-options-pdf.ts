@@ -65,6 +65,8 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
       page.node.addAnnot(pdf.context.register(annotation));
       y -= 25;
       page.drawText(ascii(result.bookingUrl).slice(0, 95), { x: 38, y, size: 8, font: regular, color: teal });
+    } else {
+      page.drawText("Photos and full details available on request.", { x: 38, y, size: 11, font: regular, color: navy });
     }
     page.drawText(`Option ${index + 1} of ${results.length}  |  Every home. Every guest. Every time.`, {
       x: 38, y: 34, size: 9, font: regular, color: navy,
