@@ -18,13 +18,17 @@ export const ownerHomePreview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
-      .object({ programId: z.string().uuid().nullable().default(null) })
-      .default({ programId: null })
+      .object({
+        programId: z.string().uuid().nullable().default(null),
+        /** Demo mode: pick the demo homeowner program instead of the newest one. */
+        demo: z.boolean().default(false),
+      })
+      .default({ programId: null, demo: false })
       .parse(data ?? {}),
   )
   .handler(async ({ context, data }) => {
     const { loadOwnerHomePreview } = await import("./owner-portal.server");
-    return loadOwnerHomePreview(context.supabase, context.userId, data.programId);
+    return loadOwnerHomePreview(context.supabase, context.userId, data.programId, data.demo);
   });
 
 export const markOwnerAlertsRead = createServerFn({ method: "POST" })
