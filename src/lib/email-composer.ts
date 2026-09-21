@@ -132,3 +132,155 @@ export function draftProblems(draft: ComposerDraft) {
   const f = draftFieldProblems(draft);
   return [f.to, f.subject, f.body].filter((p): p is string => p !== null);
 }
+
+/* ------------------------------------------------------------------ *
+ * Recipients: To, Cc and Bcc as removable chips.
+ * ------------------------------------------------------------------ */
+
+export type RecipientField = "to" | "cc" | "bcc";
+export type RecipientLists = Record<RecipientField, string[]>;
+
+export const EMPTY_RECIPIENTS: RecipientLists = { to: [], cc: [], bcc: [] };
+
+export const RECIPIENT_FIELD_LABELS: Record<RecipientField, string> = {
+  to: "To",
+  cc: "Cc",
+  bcc: "Bcc",
+};
+
+export function isEmailAddress(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim());
+}
+
+/** One person, one line — the same address twice is always a mistake. */
+export function findRecipient(lists: RecipientLists, address: string): RecipientField | null {
+  const needle = address.trim().toLowerCase();
+  for (const field of ["to", "cc", "bcc"] as RecipientField[]) {
+    if (lists[field].some((a) => a.toLowerCase() === needle)) return field;
+  }
+  return null;
+}
+
+/**
+ * Adds one or several pasted addresses. A bad address or one already on the
+ * message is reported back rather than quietly dropped.
+ */
+export function addRecipients(
+  lists: RecipientLists,
+  field: RecipientField,
+  raw: string,
+): { lists: RecipientLists; added: string[]; errors: string[] } {
+  const pieces = raw
+    .split(/[,;\s]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const next: RecipientLists = { to: [...lists.to], cc: [...lists.cc], bcc: [...lists.bcc] };
+  const added: string[] = [];
+  const errors: string[] = [];
+  for (const piece of pieces) {
+    if (!isEmailAddress(piece)) {
+      errors.push(`${piece} is not a valid email address.`);
+      continue;
+    }
+    const existing = findRecipient(next, piece);
+    if (existing) {
+      errors.push(`${piece} is already on this message under ${RECIPIENT_FIELD_LABELS[existing]}.`);
+      continue;
+    }
+    next[field].push(piece.trim());
+    added.push(piece.trim());
+  }
+  return { lists: next, added, errors };
+}
+
+export function removeRecipient(
+  lists: RecipientLists,
+  field: RecipientField,
+  address: string,
+): RecipientLists {
+  const needle = address.trim().toLowerCase();
+  return {
+    ...lists,
+    [field]: lists[field].filter((a) => a.toLowerCase() !== needle),
+  };
+}
+
+/** What stops the message going out, said in terms of the recipient boxes. */
+export function recipientProblems(lists: RecipientLists): string[] {
+  const problems: string[] = [];
+  if (lists.to.length === 0) problems.push("Add at least one recipient in To.");
+  const bad = [...lists.to, ...lists.cc, ...lists.bcc].filter((a) => !isEmailAddress(a));
+  for (const a of bad) problems.push(`${a} is not a valid email address.`);
+  return problems;
+}
+
+/* ------------------------------------------------------------------ *
+ * Scheduled sending — the time the person picked, in the place they mean.
+ * ------------------------------------------------------------------ */
+
+export type ScheduleDraft = { date: string; time: string; timeZone: string };
+
+/** Common working time zones, ARHA's own first. */
+export const SEND_TIME_ZONES = [
+  "America/Chicago",
+  "America/New_York",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Phoenix",
+  "UTC",
+];
+
+/** The offset a zone is at for a given instant, in minutes. */
+function zoneOffsetMinutes(timeZone: string, at: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(at);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
+  const asUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour") % 24,
+    get("minute"),
+    get("second"),
+  );
+  return (asUtc - at.getTime()) / 60000;
+}
+
+/**
+ * Turns "September 22, 9:00 AM, America/Chicago" into the exact instant,
+ * so a message scheduled for 9 a.m. Central arrives at 9 a.m. Central
+ * whatever the sender's own clock says.
+ */
+export function zonedToInstant(draft: ScheduleDraft): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date) || !/^\d{2}:\d{2}$/.test(draft.time)) return null;
+  const [y, m, d] = draft.date.split("-").map(Number) as [number, number, number];
+  const [hh, mm] = draft.time.split(":").map(Number) as [number, number];
+  const naive = Date.UTC(y, m - 1, d, hh, mm);
+  let guess = new Date(naive);
+  for (let i = 0; i < 2; i += 1) {
+    const offset = zoneOffsetMinutes(draft.timeZone, guess);
+    guess = new Date(naive - offset * 60000);
+  }
+  return Number.isNaN(guess.getTime()) ? null : guess;
+}
+
+/** Scheduling problems, in the same voice as every other composer check. */
+export function scheduleProblems(draft: ScheduleDraft, now = new Date()): string[] {
+  const problems: string[] = [];
+  if (!draft.date) problems.push("Pick the date this should go out.");
+  if (!draft.time) problems.push("Pick the time this should go out.");
+  if (!draft.timeZone) problems.push("Pick the time zone this time is in.");
+  if (problems.length > 0) return problems;
+  const instant = zonedToInstant(draft);
+  if (!instant) return ["That date and time could not be read."];
+  if (instant.getTime() <= now.getTime()) problems.push("Pick a time in the future.");
+  return problems;
+}
