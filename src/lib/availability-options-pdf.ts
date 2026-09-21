@@ -16,7 +16,8 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const navy = rgb(0.09, 0.18, 0.27);
   const teal = rgb(0.02, 0.43, 0.43);
-  const brandLogo = await pdf.embedPng(ARHA_WHITE_LOGO_BASE64);
+  // A logo that will not embed must never cost the coordinator their document.
+  const brandLogo = await pdf.embedPng(ARHA_WHITE_LOGO_BASE64).catch(() => null);
   for (const [index, result] of results.entries()) {
     const page = pdf.addPage([612, 792]);
     page.drawRectangle({ x: 0, y: 742, width: 612, height: 50, color: navy });
@@ -31,7 +32,8 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
     let y = 580;
     if (result.imageUrl) {
       try {
-        const response = await fetch(result.imageUrl);
+        // A slow or unresponsive photo host must not hold the whole document up.
+        const response = await fetch(result.imageUrl, { signal: AbortSignal.timeout(6000) });
         if (response.ok) {
           const bytes = await response.arrayBuffer();
           const type = response.headers.get("content-type") ?? "";

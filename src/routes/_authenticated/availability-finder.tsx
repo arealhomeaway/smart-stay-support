@@ -6,6 +6,7 @@ import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availabil
 import { AVAILABILITY_RADIUS_MILES, emailSummary, needsStrRebook, rebookStepSummary, validStay, verifiedPublicListingUrl, visibleResults } from "@/lib/availability-finder";
 import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
 import { AvailabilityMap } from "@/components/AvailabilityMap";
+import { EmailComposer } from "@/components/EmailComposer";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,8 @@ function AvailabilityFinderPage() {
     document.getElementById(`availability-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [navigate]);
   const selectedResults = (query.data?.results ?? []).filter((row) => chosen.includes(row.id));
+  const selectableIds = results.filter((row) => row.status !== "unavailable").map((row) => row.id);
+  const allSelectableChosen = selectableIds.length > 0 && selectableIds.every((id) => chosen.includes(id));
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -101,12 +104,21 @@ function AvailabilityFinderPage() {
     }
     setExporting(true);
     try {
-      const file = await downloadOptions({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, propertyIds: selectedResults.map((row) => row.id) } });
+      // The document is never left spinning: if the build takes too long, say so.
+      const file = await Promise.race([
+        downloadOptions({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, propertyIds: selectedResults.map((row) => row.id) } }),
+        new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("The PDF took too long to build. Try again, or with fewer properties.")), 60000)),
+      ]);
       const bytes = Uint8Array.from(atob(file.base64), (char) => char.charCodeAt(0));
       const blob = new Blob([bytes], { type: file.mime });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = url; link.download = file.filename; link.click();
+      link.href = url;
+      link.download = file.filename;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) { setExportError(error instanceof Error ? error.message : "Could not generate the PDF."); }
     finally { setExporting(false); }
@@ -140,7 +152,13 @@ function AvailabilityFinderPage() {
     {query.data && <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">{results.length} of {query.data.results.length} properties within {AVAILABILITY_RADIUS_MILES} miles · sorted by distance{query.data.heldBack.length ? ` · ${query.data.heldBack.length} hidden because OwnerRez does not confirm what you asked for` : ""}</p>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(search.showUnavailable)} onChange={(event) => void navigate({ search: (previous) => ({ ...previous, showUnavailable: event.target.checked, selected: undefined }) })} />Show unavailable</label>
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allSelectableChosen} disabled={selectableIds.length === 0} onChange={(event) => {
+            setConfirmUnlinked(null);
+            setChosen(event.target.checked ? selectableIds : []);
+          }} />Check all matching ({selectableIds.length})</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(search.showUnavailable)} onChange={(event) => void navigate({ search: (previous) => ({ ...previous, showUnavailable: event.target.checked, selected: undefined }) })} />Show unavailable</label>
+        </div>
       </div>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,1fr)]">
         <AvailabilityMap results={results} selectedId={selectedId} onSelect={onSelect} />
@@ -175,9 +193,16 @@ function AvailabilityFinderPage() {
           {results.length === 0 && <p className="rounded border p-6 text-muted-foreground">No matching properties in this view.</p>}
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => void downloadPdf()} disabled={!selectedResults.length || exporting}>{exporting ? "Preparing PDF…" : `Download Property Options PDF (${selectedResults.length})`}</Button>
-        <Button variant="outline" disabled={!selectedResults.length} onClick={() => void navigator.clipboard.writeText(emailSummary(selectedResults, search.checkIn!, search.checkOut!, search.location!))}>Copy Email Summary</Button>
+        <EmailComposer
+          context="property"
+          recordId={selectedResults[0]?.id ?? ""}
+          label={`Email these options (${selectedResults.length})`}
+          disabled={!selectedResults.length}
+          initialSubject={`Property options for ${search.checkIn} to ${search.checkOut}`}
+          initialBody={selectedResults.length ? emailSummary(selectedResults, search.checkIn!, search.checkOut!, search.location!) : ""}
+        />
       </div>
       {exportError && <p role="alert" className="text-destructive">{exportError}</p>}
       <p className="text-xs text-muted-foreground">Public listing links come from OwnerRez. Reservation conflicts remain internal; the PDF uses neutral final-confirmation language.</p>
