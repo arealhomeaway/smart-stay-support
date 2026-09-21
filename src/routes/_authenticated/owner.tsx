@@ -51,6 +51,7 @@ import { OwnerBadges } from "@/components/OwnerBadges";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
 import { useOwnerPreview } from "@/lib/owner-preview";
+import { useDemo } from "@/components/DemoProvider";
 
 export const Route = createFileRoute("/_authenticated/owner")({
   head: () => ({
@@ -92,18 +93,26 @@ function firstName(name: string | null | undefined) {
 function OwnerHub() {
   const { user } = Route.useRouteContext();
   const { ownerPreview } = useOwnerPreview();
+  const { demoMode } = useDemo();
   const load = useServerFn(ownerHome);
   const loadPreview = useServerFn(ownerHomePreview);
+  // In demo mode the homeowner portal always opens the demo home, so staff can
+  // walk the homeowner experience instead of hitting the "no home linked" wall.
+  const previewing = Boolean(ownerPreview) || demoMode;
 
   const home = useQuery({
     queryKey: [
       "owner-home",
       user.id,
-      ownerPreview ? "preview" : "owner",
-      ownerPreview?.programId ?? null,
+      previewing ? "preview" : "owner",
+      ownerPreview?.programId ?? (demoMode ? "demo" : null),
     ],
     queryFn: () =>
-      ownerPreview ? loadPreview({ data: { programId: ownerPreview.programId } }) : load(),
+      previewing
+        ? loadPreview({
+            data: { programId: ownerPreview?.programId ?? null, demo: !ownerPreview && demoMode },
+          })
+        : load(),
   });
 
   if (home.isLoading) return <LoadingPage tiles={4} />;
@@ -119,9 +128,9 @@ function OwnerHub() {
 
   return (
     <OwnerHubBody
-      key={`${user.id}:${home.data.program.id}:${Boolean(ownerPreview)}`}
+      key={`${user.id}:${home.data.program.id}:${previewing}`}
       data={home.data}
-      preview={Boolean(ownerPreview)}
+      preview={previewing}
     />
   );
 }

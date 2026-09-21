@@ -67,14 +67,16 @@ export async function loadOwnerHomePreview(
   supabase: Client,
   userId: string,
   programId?: string | null,
+  demoOnly = false,
 ) {
   const { assertAdmin } = await import("./access.server");
   await assertAdmin(supabase, userId);
   let id = programId ?? null;
   if (!id) {
-    const program = await supabase
-      .from("owner_programs")
-      .select("id")
+    let query = supabase.from("owner_programs").select("id");
+    // Demo mode walks the demo homeowner home, never a real owner's program.
+    if (demoOnly) query = query.eq("is_demo", true);
+    const program = await query
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
