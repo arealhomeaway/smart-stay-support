@@ -211,6 +211,41 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Documenting it on the ticket is the decision; logging the recovery is the
+  // next step, so saying yes opens the form straight away.
+  const flagged = Boolean(ticket.guest_recovery_needed);
+  const flag = useMutation({
+    mutationFn: async (next: boolean) => {
+      const { error } = await supabase
+        .from("tickets")
+        .update({
+          guest_recovery_needed: next,
+          guest_recovery_flagged_at: next ? new Date().toISOString() : null,
+          guest_recovery_flagged_by: next ? userId : null,
+        } as never)
+        .eq("id", ticket.id);
+      if (error) throw error;
+      await supabase.from("ticket_activity").insert({
+        ticket_id: ticket.id,
+        author_id: userId,
+        kind: "status",
+        event_type: next ? "guest_recovery_flagged" : "guest_recovery_unflagged",
+        body: next
+          ? "Documented on the ticket: this resulted in guest recovery."
+          : "Guest recovery no longer applies to this ticket.",
+        internal: true,
+        is_demo: ticket.is_demo ?? false,
+      } as never);
+      return next;
+    },
+    onSuccess: (next) => {
+      qc.invalidateQueries({ queryKey: ["ticket", ticket.id] });
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+      if (next) setOpen(true);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (!can("claims_work")) return null;
 
   const existing = recoveries.data ?? [];
