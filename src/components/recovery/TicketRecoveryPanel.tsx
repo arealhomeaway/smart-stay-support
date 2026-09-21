@@ -7,6 +7,7 @@
  * here comes from the central ARHA policy — nothing is decided in this file.
  */
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
