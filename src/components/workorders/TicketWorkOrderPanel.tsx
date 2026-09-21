@@ -280,7 +280,10 @@ export function TicketWorkOrderPanel({
                 <StatusBadge tone={bucketTone(bucket)}>{BUCKET_LABELS[bucket]}</StatusBadge>
                 <Chip>{PHASE_LABELS[wo.phase === "mitigation" ? "mitigation" : "permanent"]}</Chip>
                 <Chip>{STAGE_LABELS[derivedStage(wo)]}</Chip>
-                {wo.service_category ? <Chip>{wo.service_category}</Chip> : null}
+                {wo.service_category ? <Chip>{tradeLabel(wo.service_category)}</Chip> : null}
+                {wo.service_category ? (
+                  <Chip>{categoryLabel(categoryForTrade(wo.service_category))}</Chip>
+                ) : null}
                 {wo.created_at ? (
                   <span className="text-[0.6875rem] text-muted-foreground">
                     Opened {usDate(wo.created_at as string)}
