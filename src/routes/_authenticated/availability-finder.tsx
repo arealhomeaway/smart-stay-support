@@ -6,6 +6,7 @@ import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availabil
 import { AVAILABILITY_RADIUS_MILES, emailSummary, needsStrRebook, rebookStepSummary, validStay, verifiedPublicListingUrl, visibleResults } from "@/lib/availability-finder";
 import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
 import { AvailabilityMap } from "@/components/AvailabilityMap";
+import { EmailComposer } from "@/components/EmailComposer";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
