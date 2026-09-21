@@ -15,6 +15,8 @@ import { SharePointConnectionPanel } from "@/components/SharePointConnectionPane
 import { BreezewayConnectionPanel } from "@/components/BreezewayConnectionPanel";
 import { BreezewayWebhookPanel } from "@/components/BreezewayWebhookPanel";
 import { BreezewayOutboundReviewPanel } from "@/components/BreezewayOutboundReviewPanel";
+import { BreezewaySyncReviewPanel } from "@/components/BreezewaySyncReviewPanel";
+import { DocumentCompletionPanel } from "@/components/DocumentCompletionPanel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   component: () => (
