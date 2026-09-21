@@ -78,7 +78,7 @@ function RecoveryHome() {
       <PageHeader
         eyebrow="Guest refunds & credits"
         title="Today"
-        description="What each guest is still owed, ordered by who is waiting longest. A recovery always sits on the ticket where the situation is being handled."
+        description="What each guest is still owed, ordered by who is waiting longest. A refund or credit always sits on the ticket where the situation is being handled."
         actions={<LogRecoveryDialog />}
       />
 
@@ -98,7 +98,7 @@ function RecoveryHome() {
       ) : open.length === 0 && (buckets.get("recently_resolved")?.length ?? 0) === 0 ? (
         <EmptyState
           title="No guest refunds & credits open"
-          hint="Recoveries start on the ticket where the guest situation is being handled."
+          hint="Refunds and credits start on the ticket where the guest situation is being handled."
         />
       ) : (
         BUCKET_ORDER.map((bucket) => {

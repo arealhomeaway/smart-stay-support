@@ -40,8 +40,8 @@ export function RecoveryReportingPanel() {
 
   return (
     <SectionCard
-      title="What recovery has cost"
-      description="Every recovery with the ticket and home it came from. Test records are excluded. This is the same record the Finance workspace will read."
+      title="What refunds & credits have cost"
+      description="Every refund or credit with the ticket and home it came from. Test records are excluded. This is the same record the Finance workspace will read."
     >
       {ledger.isLoading ? (
         <LoadingRows />
@@ -50,7 +50,7 @@ export function RecoveryReportingPanel() {
       ) : (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile label="Recoveries logged" value={totals.count} />
+            <StatTile label="Refunds & credits logged" value={totals.count} />
             <StatTile label="Proposed" value={formatMoney(totals.proposed)} />
             <StatTile label="Approved" value={formatMoney(totals.approved)} />
             <StatTile label="Issued to guests" value={formatMoney(totals.issued)} />

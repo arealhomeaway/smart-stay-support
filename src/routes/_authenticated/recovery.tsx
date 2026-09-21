@@ -36,7 +36,7 @@ function RecoveryLayout() {
   const { isSupervisor } = useRole();
   return (
     <div className="space-y-5">
-      <nav className="flex flex-wrap items-center gap-1" aria-label="Recovery views">
+      <nav className="flex flex-wrap items-center gap-1" aria-label="Refund and credit views">
         <SubLink to="/recovery">Today</SubLink>
         <SubLink to="/recovery/my-recoveries">Mine</SubLink>
         {isSupervisor ? <SubLink to="/recovery/manager">Manager</SubLink> : null}

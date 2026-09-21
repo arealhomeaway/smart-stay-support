@@ -1,5 +1,5 @@
 /**
- * "+ Log Guest refunds & credits" — starting a recovery from the recovery queue itself.
+ * "+ Log Guest Refund or Credit" — starting one from the refunds & credits queue.
  *
  * A recovery always belongs to the ticket where the guest situation is being
  * handled, so the first thing this asks for is that ticket. Everything the
@@ -214,8 +214,8 @@ export function LogRecoveryDialog() {
         author_id: userId,
         event_type: "created",
         body: chosen
-          ? `Recovery logged from the recovery queue — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
-          : "Recovery logged from the recovery queue",
+          ? `Refund or credit logged from the refunds & credits queue — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
+          : "Refund or credit logged from the refunds & credits queue",
         detail: {
           authority: verdict.level,
           reason: verdict.reason,
@@ -251,7 +251,7 @@ export function LogRecoveryDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>+ Log Guest refunds & credits</Button>
+        <Button>+ Log Guest Refund or Credit</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
@@ -442,7 +442,7 @@ export function LogRecoveryDialog() {
             disabled={!ticket || !impact.trim() || blocked || create.isPending}
             onClick={() => create.mutate()}
           >
-            Log recovery
+            Log refund or credit
           </Button>
         </DialogFooter>
       </DialogContent>

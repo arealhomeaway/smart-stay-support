@@ -35,7 +35,7 @@ function MyRecoveries() {
       <PageHeader
         eyebrow="Guest refunds & credits"
         title="Mine"
-        description="Recoveries you own. A handoff you requested stays here until someone accepts it."
+        description="Refunds and credits you own. A handoff you requested stays here until someone accepts it."
       />
       {recoveries.isLoading ? (
         <LoadingRows />

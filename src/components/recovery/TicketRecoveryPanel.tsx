@@ -185,8 +185,8 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         author_id: userId,
         event_type: "created",
         body: chosen
-          ? `Recovery opened from ticket — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
-          : "Recovery opened from ticket",
+          ? `Refund or credit opened from ticket — proposed remedy: ${RECOVERY_ACTION_LABELS[chosen]}`
+          : "Refund or credit opened from ticket",
         detail: {
           authority: verdict.level,
           reason: verdict.reason,
@@ -292,9 +292,9 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
             <span className="block text-xs text-muted-foreground">
               {flagged
                 ? existing.length > 0
-                  ? "Recorded on this ticket and linked to the recovery below."
+                  ? "Recorded on this ticket and linked to the refund or credit below."
                   : "Recorded — log what the guest is owed to finish it."
-                : "Tick this and the recovery log opens straight away."}
+                : "Tick this and the refund or credit log opens straight away."}
             </span>
           </span>
         </label>
@@ -329,7 +329,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
 
         {readOnly ? null : !open ? (
           <Button variant="outline" onClick={() => setOpen(true)}>
-            {existing.length ? "Open another recovery" : "Open a guest refund or credit"}
+            {existing.length ? "Open another refund or credit" : "Open a guest refund or credit"}
           </Button>
         ) : (
           <div className="space-y-3 rounded-md border p-3">
@@ -473,7 +473,7 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
 
             <div className="flex gap-2">
               <Button disabled={create.isPending || blocked} onClick={() => create.mutate()}>
-                Open recovery
+                Open refund or credit
               </Button>
               <Button
                 variant="ghost"
