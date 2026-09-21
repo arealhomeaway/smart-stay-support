@@ -52,7 +52,9 @@ function AvailabilityFinderPage() {
   const [chosen, setChosen] = useState<string[]>([]);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [pets, setPets] = useState(String(search.pets ?? 0));
+  const [dogs, setDogs] = useState(String(search.dogs ?? 0));
+  const [cats, setCats] = useState(String(search.cats ?? 0));
+  const [minBedrooms, setMinBedrooms] = useState(String(search.minBedrooms ?? 0));
   const [amenities, setAmenities] = useState<AmenityKey[]>(parseAmenities(search.amenities));
   const [confirmUnlinked, setConfirmUnlinked] = useState<string | null>(null);
   const searchedAmenities = parseAmenities(search.amenities);
