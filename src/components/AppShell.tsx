@@ -520,6 +520,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   <CircleHelp className="size-4" aria-hidden="true" />
                 </IconAction>
+                {!vendorMode && !ownerMode && <NotificationBell placement="header" />}
+                <ThemeToggle />
                 <PortalSwitcher />
                 <Tooltip>
                   <TooltipTrigger asChild>
