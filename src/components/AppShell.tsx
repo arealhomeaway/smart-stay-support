@@ -54,7 +54,12 @@ import { useAmbientOrigin } from "@/components/nav/NavContext";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { DemoButton, PortalSwitcher, ViewAsBanner } from "@/components/PortalSwitcher";
+import {
+  DemoButton,
+  DemoSidebarItem,
+  PortalSwitcher,
+  ViewAsBanner,
+} from "@/components/PortalSwitcher";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
@@ -479,6 +484,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </SidebarContent>
         <SidebarFooter>
+          <DemoSidebarItem />
           <p className="px-2 pb-1 text-[0.65rem] leading-relaxed text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
             Every home. Every guest. Every time.
           </p>
