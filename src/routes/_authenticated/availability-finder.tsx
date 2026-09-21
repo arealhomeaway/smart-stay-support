@@ -78,10 +78,15 @@ function AvailabilityFinderPage() {
     if (!location.trim()) { setValidation("Enter a city, ZIP code, address, or general location."); return; }
     if (!validStay(checkIn, checkOut)) { setValidation("Enter valid dates, with check-out after check-in."); return; }
     setValidation(null); setChosen([]);
-    const petCount = Math.max(0, Math.trunc(Number(pets) || 0));
+    const count = (value: string, max: number) => Math.min(max, Math.max(0, Math.trunc(Number(value) || 0)));
+    const dogCount = count(dogs, 10);
+    const catCount = count(cats, 10);
+    const bedroomCount = count(minBedrooms, 12);
     void navigate({ search: {
       checkIn, checkOut, location: location.trim(), showUnavailable: false,
-      ...(petCount > 0 ? { pets: petCount } : {}),
+      ...(dogCount > 0 ? { dogs: dogCount } : {}),
+      ...(catCount > 0 ? { cats: catCount } : {}),
+      ...(bedroomCount > 0 ? { minBedrooms: bedroomCount } : {}),
       ...(amenities.length ? { amenities: amenities.join(",") } : {}),
     } });
   }
