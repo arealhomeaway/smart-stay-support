@@ -882,6 +882,7 @@ function NewMatter() {
                       <Label>Priority</Label>
                       <Select
                         value={form.priority}
+                        disabled={!isSupervisor}
                         onValueChange={(v) => {
                           setPriorityTouched(true);
                           setForm({ ...form, priority: v });
@@ -901,7 +902,9 @@ function NewMatter() {
                       <p className="text-xs text-muted-foreground">
                         Rubric says <span className="font-medium">{mechanical.toUpperCase()}</span>{" "}
                         · {meta.summary}
+                        {!isSupervisor && " Only a supervisor can change it."}
                       </p>
+
                     </div>
 
                     <div className="space-y-2">
