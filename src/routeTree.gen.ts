@@ -21,6 +21,7 @@ import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
@@ -137,6 +138,11 @@ const AuthenticatedCommandCenterRoute =
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDemoRoute = AuthenticatedDemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
@@ -464,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/demo': typeof AuthenticatedDemoRoute
   '/hub': typeof AuthenticatedHubRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
@@ -532,6 +539,7 @@ export interface FileRoutesByTo {
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/demo': typeof AuthenticatedDemoRoute
   '/hub': typeof AuthenticatedHubRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
@@ -599,6 +607,7 @@ export interface FileRoutesById {
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/demo': typeof AuthenticatedDemoRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/join': typeof AuthenticatedJoinRoute
@@ -670,6 +679,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/command-center'
     | '/dashboard'
+    | '/demo'
     | '/hub'
     | '/integrations'
     | '/join'
@@ -738,6 +748,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/command-center'
     | '/dashboard'
+    | '/demo'
     | '/hub'
     | '/integrations'
     | '/join'
@@ -804,6 +815,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach'
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
+    | '/_authenticated/demo'
     | '/_authenticated/hub'
     | '/_authenticated/integrations'
     | '/_authenticated/join'
@@ -963,6 +975,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/demo': {
+      id: '/_authenticated/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof AuthenticatedDemoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hub': {
@@ -1463,6 +1482,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
@@ -1501,6 +1521,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDemoRoute: AuthenticatedDemoRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
