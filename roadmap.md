@@ -546,3 +546,5 @@ is now doable from Resolve.
 - [ ] Remove old demo data, keep only the guide fixtures (Willow Creek Cottage, Lakeside Birch Retreat)
 - [x] Single Demo option in the portal menu; /demo landing with one card per accessible portal
 - [x] Old demo data removed; only Willow and Birch demo homes remain
+
+- [ ] Rename "Guest recovery" to "Guest refunds & credits" across all user-facing wording, including the log CTA ("+ Log Guest Refund or Credit").
