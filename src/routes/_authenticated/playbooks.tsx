@@ -32,6 +32,7 @@ import { RequireCapability } from "@/components/RequireCapability";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
 import { CATEGORIES, labelFor } from "@/lib/tickets";
+import { FieldHint } from "@/components/FieldHint";
 import {
   SOURCE_LABELS,
   STATUS_LABELS,
