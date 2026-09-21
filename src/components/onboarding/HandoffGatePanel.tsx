@@ -51,6 +51,7 @@ export function HandoffGatePanel({
   people,
   propertyName,
   canReview,
+  blockedReason,
   disabled,
   onDecision,
 }: {
@@ -59,6 +60,8 @@ export function HandoffGatePanel({
   people: Person[];
   propertyName: string;
   canReview: boolean;
+  /** Why this person cannot decide this gate, when they cannot. */
+  blockedReason?: string | null;
   disabled: boolean;
   onDecision: (input: {
     expectedStep: string;
@@ -149,6 +152,14 @@ export function HandoffGatePanel({
                 onReturn={(corrections) => onDecision({ expectedStep: step, decision: "returned", corrections })}
               />
             </div>
+          )}
+
+        {(handoff.status === "requested" || handoff.status === "accepted_pending_live") &&
+          !canReview &&
+          blockedReason && (
+            <p className="rounded-md border border-amber-200 bg-amber-50/60 p-3 text-xs text-muted-foreground">
+              {blockedReason}
+            </p>
           )}
 
         {history.length > 0 && (
