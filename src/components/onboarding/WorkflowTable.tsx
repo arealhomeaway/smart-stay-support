@@ -1,5 +1,5 @@
 /**
- * Asana-style sectioned workflow list for one onboarding property.
+ * Sectioned workflow list for one onboarding property.
  *
  * Presentation only: sections, statuses and markers are all derived from the
  * task rows by `src/lib/onboarding-workflow.ts`. Nothing here writes data;

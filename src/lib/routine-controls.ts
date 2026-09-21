@@ -11,7 +11,7 @@
  * The four controls are fixed:
  *   Cleaning Review   — Property Operations reviews a completed departure clean
  *   Guest Review      — Guest Experience reads and responds to guest feedback
- *   Checkout          — a short guided post-stay pass, replacing the Fillout form
+ *   Checkout          — a short guided post-stay pass, replacing the old intake form
  *   Guest Touch Base  — a proactive mid-stay contact
  *
  * No thresholds, SLAs or authority live here. Those belong to the policy

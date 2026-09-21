@@ -75,7 +75,7 @@ export type TemplatePreview = {
 
 /**
  * Identity of a template row on a property. Title alone is NOT unique: the
- * ARHA plan legitimately repeats "Update project status in Asana" once per
+ * ARHA plan legitimately repeats "Update project status" once per
  * phase and the weekly owner update twice, and subtasks such as "Record in Resolve"
  * repeat under different parents. Identity is therefore stage + title for
  * top-level tasks, and stage + parent + title for subtasks.

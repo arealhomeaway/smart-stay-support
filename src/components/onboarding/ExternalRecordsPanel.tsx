@@ -40,8 +40,8 @@ export type ExternalRecord = {
 type Property = { id: string; name: string; ownerrez_property_id?: string | null };
 
 /**
- * One standard framework for every external database — Notion databases, the
- * Property Utility Matrix and Fillout-replacement forms are all handled here
+ * One standard framework for every external database — legacy databases, the
+ * Property Utility Matrix and Resolve intake forms are all handled here
  * with the same rules: canonical property matching only (Resolve UUID or
  * OwnerRez Property ID, never a name), a human review queue for anything
  * unmatched, and archive instead of delete.
@@ -82,9 +82,8 @@ export function ExternalRecordsPanel({
         <CardHeader>
           <CardTitle className="text-base">Source databases</CardTitle>
           <CardDescription>
-            Notion stays the editable source of truth during the transition. Synchronisation is
-            read-only configuration and stays disabled until the connection and exact database IDs
-            are verified — Resolve never writes to Notion.
+            Synchronisation is read-only configuration and stays disabled until the connection and
+            exact database IDs are verified — Resolve never writes back to a source system.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
