@@ -839,12 +839,22 @@ function TeamQueuePage() {
             const blocked = isBlocked(t as never);
             const escalated = isEscalated(t as never);
             return (
+              <div key={t.id} className="flex items-center gap-2">
+              <Checkbox
+                className="ml-1 shrink-0"
+                aria-label={`Select ticket ${t.ref}`}
+                checked={selectedTickets.includes(t.id)}
+                onCheckedChange={() =>
+                  setSelectedTickets((prev) =>
+                    prev.includes(t.id) ? prev.filter((x) => x !== t.id) : [...prev, t.id],
+                  )
+                }
+              />
               <Link
-                key={t.id}
                 to="/tickets/$ticketId"
                 params={{ ticketId: t.id }}
                 search={originSearch}
-                className="surface-row flex items-start gap-3 py-3 pl-4 pr-4"
+                className="surface-row flex min-w-0 flex-1 items-start gap-3 py-3 pl-4 pr-4"
               >
                 <PropertyPhoto
                   url={(t.properties as { primary_photo_url?: string } | null)?.primary_photo_url}
