@@ -490,6 +490,54 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
             ) : null}
           </div>
 
+          {/* Anyone else on the message, one chip each, easy to take off. */}
+          <div className="grid gap-2">
+            {(["to", "cc", "bcc"] as RecipientField[]).map((field) => (
+              <div key={field} className="grid gap-1">
+                <Label htmlFor={`composer-chips-${field}`}>
+                  {field === "to" ? "Also to" : RECIPIENT_FIELD_LABELS[field]}
+                </Label>
+                <div className="flex flex-wrap items-center gap-1 rounded-md border p-1">
+                  {extra[field].map((address) => (
+                    <span
+                      key={address}
+                      className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
+                    >
+                      {address}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${address}`}
+                        onClick={() => dropChip(field, address)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    id={`composer-chips-${field}`}
+                    value={chipDraft[field]}
+                    onChange={(e) => setChipDraft((d) => ({ ...d, [field]: e.target.value }))}
+                    onBlur={() => commitChips(field)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === "," || e.key === ";") {
+                        e.preventDefault();
+                        commitChips(field);
+                      }
+                    }}
+                    placeholder="Type an address and press Enter"
+                    className="min-w-[14rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
+                  />
+                </div>
+              </div>
+            ))}
+            {chipError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {chipError}
+              </p>
+            ) : null}
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="composer-subject">Subject</Label>
             <Input
@@ -529,6 +577,76 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
                 Still blank: {fieldProblems.unfilled.join(", ").replace(/_/g, " ")}.
               </p>
             ) : null}
+          </div>
+
+          {/* Files ride along with the message. */}
+          <div className="grid gap-2">
+            <Label htmlFor="composer-files" className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> Attachments
+            </Label>
+            <input
+              id="composer-files"
+              type="file"
+              multiple
+              className="text-sm"
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+            {files.length > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {files.map((f) => f.name).join(", ")} —{" "}
+                {(attachmentBytes / 1_000_000).toFixed(1)} MB in total
+              </p>
+            ) : null}
+            {attachmentProblem ? (
+              <p role="alert" className="text-sm text-destructive">
+                {attachmentProblem}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Send later, in the time zone the person means. */}
+          <div className="grid gap-2 rounded-md border p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={scheduled}
+                onChange={(e) => setScheduled(e.target.checked)}
+              />
+              <Clock className="h-4 w-4" /> Send later
+            </label>
+            {scheduled ? (
+              <div className="grid gap-2 sm:grid-cols-3">
+                <Input
+                  type="date"
+                  aria-label="Send date"
+                  value={sendDate}
+                  onChange={(e) => setSendDate(e.target.value)}
+                />
+                <Input
+                  type="time"
+                  aria-label="Send time"
+                  value={sendTime}
+                  onChange={(e) => setSendTime(e.target.value)}
+                />
+                <select
+                  aria-label="Time zone"
+                  value={timeZone}
+                  onChange={(e) => setTimeZone(e.target.value)}
+                  className="rounded-md border bg-background px-2 text-sm"
+                >
+                  {SEND_TIME_ZONES.map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone.replace("America/", "").replace("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {scheduleIssues.map((issue) => (
+              <p key={issue} role="alert" className="text-sm text-destructive">
+                {issue}
+              </p>
+            ))}
           </div>
 
           {/* Exactly what leaves the inbox, read-only, before anyone presses Send. */}
