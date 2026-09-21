@@ -291,7 +291,9 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
       ),
     projects: projects.filter(managedRecord),
     pipeline: workspace.pipeline.filter((id) => managed.has(id)),
-    stageCaptures: workspace.stageCaptures.filter((capture) => managed.has(capture.propertyId)),
+    stageCaptures: workspace.stageCaptures.filter((capture) =>
+      managed.has(capture.propertyId ?? ""),
+    ),
     handoffs: visibleHandoffs,
     independentReadiness: workspace.independentReadiness.filter((row) =>
       managed.has(row.propertyId ?? ""),
