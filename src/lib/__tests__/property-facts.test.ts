@@ -49,6 +49,28 @@ describe("property facts from OwnerRez", () => {
     expect(matchesRequirements(facts, { dogs: 2, cats: 1 }).ok).toBe(false);
   });
 
+  it("reads dogs and cats separately when the listing says so", () => {
+    const dogsOnly = factsFromOwnerRez(2, {
+      amenity_categories: [{ type: "HouseRules", amenities: [{ text: "Dogs only" }] }],
+    });
+    expect(dogsOnly.dogsAllowed).toBe(true);
+    expect(dogsOnly.catsAllowed).toBe(false);
+    expect(matchesRequirements(dogsOnly, { dogs: 1 }).ok).toBe(true);
+    expect(matchesRequirements(dogsOnly, { cats: 1 }).ok).toBe(false);
+    const noPets = factsFromOwnerRez(0, null);
+    expect(noPets.dogsAllowed).toBe(false);
+    expect(noPets.catsAllowed).toBe(false);
+  });
+
+  it("holds back homes smaller than the bedrooms asked for", () => {
+    const facts = factsFromOwnerRez(2, listing);
+    expect(matchesRequirements(facts, { minBedrooms: 3 }, { bedrooms: 2 }).ok).toBe(false);
+    expect(matchesRequirements(facts, { minBedrooms: 2 }, { bedrooms: 3 }).ok).toBe(true);
+    expect(matchesRequirements(facts, { minBedrooms: 2 }, { bedrooms: null }).reasons[0]).toContain(
+      "not on file",
+    );
+  });
+
   it("summarises pets in plain words", () => {
     expect(petSummary(factsFromOwnerRez(0, listing)).toLowerCase()).toContain("no pets");
     expect(petSummary(unknownFacts()).toLowerCase()).toContain("not published");
