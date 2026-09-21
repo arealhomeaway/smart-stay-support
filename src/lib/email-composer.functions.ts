@@ -10,7 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ComposerContext, MessageAudience } from "./email-composer";
 
-const CONTEXTS = ["ticket", "work_order", "property"];
+const CONTEXTS = ["ticket", "work_order", "property", "onboarding_task"];
 const AUDIENCES = ["guest", "owner", "vendor", "staff"];
 
 type Ctx = { supabase: { rpc: (name: string, args: unknown) => Promise<{ data: unknown }> } & Record<string, unknown>; userId: string };

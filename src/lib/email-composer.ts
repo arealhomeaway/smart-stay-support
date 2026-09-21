@@ -6,13 +6,14 @@
  * answer stays visible as a blank so nobody sends a half-finished sentence.
  */
 
-export type ComposerContext = "ticket" | "work_order" | "property";
+export type ComposerContext = "ticket" | "work_order" | "property" | "onboarding_task";
 export type MessageAudience = "guest" | "owner" | "vendor" | "staff";
 
 export const CONTEXT_LABELS: Record<ComposerContext, string> = {
   ticket: "Ticket",
   work_order: "Work Order",
   property: "Property",
+  onboarding_task: "Onboarding step",
 };
 
 export const AUDIENCE_LABELS: Record<MessageAudience, string> = {
@@ -33,8 +34,32 @@ export const MERGE_FIELDS: { key: string; describes: string }[] = [
   { key: "ticket_title", describes: "What the ticket is about" },
   { key: "work_order_title", describes: "Work Order title" },
   { key: "scheduled_for", describes: "Scheduled date and time" },
+  { key: "task_title", describes: "Onboarding step" },
+  { key: "task_due", describes: "Date the step is due" },
   { key: "sender_name", describes: "Your name" },
 ];
+
+/**
+ * Details a homeowner message needs before it goes out. A blank homeowner or
+ * home in the message is how the wrong person gets the wrong letter, so it is
+ * stopped here rather than explained afterwards.
+ */
+export function missingOwnerDetails(
+  values: MergeValues,
+  audience: MessageAudience | null,
+): string[] {
+  const gaps: string[] = [];
+  const blank = (key: string) => {
+    const v = values[key];
+    return v == null || String(v).trim() === "";
+  };
+  if (blank("property")) gaps.push("This record has no home on it.");
+  if (audience === "owner") {
+    if (blank("owner_name")) gaps.push("No homeowner name is on file for this home.");
+    if (blank("property_address")) gaps.push("No address is on file for this home.");
+  }
+  return gaps;
+}
 
 export type MergeValues = Record<string, string | null | undefined>;
 

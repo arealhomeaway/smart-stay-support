@@ -104,6 +104,28 @@ export async function gatherComposerContext(
     };
   }
 
+  if (context === "onboarding_task") {
+    const { data } = await (supabase as never as Client)
+      .from("onboarding_tasks")
+      .select("title, detail, property_id, due_on, stage")
+      .eq("id", recordId)
+      .maybeSingle();
+    const task = (data ?? {}) as { [k: string]: string | null };
+    const property = await propertyBits(supabase, task["property_id"] ?? null);
+    return {
+      heading: task["title"] ?? "Onboarding step",
+      recipients: dedupe(property.recipients),
+      mergeValues: {
+        property: property.name,
+        property_address: property.address,
+        owner_name: property.ownerName,
+        task_title: task["title"],
+        task_due: task["due_on"] ? new Date(`${task["due_on"]}T00:00:00`).toLocaleDateString("en-US") : null,
+        sender_name: senderName,
+      },
+    };
+  }
+
   if (context === "work_order") {
     const { data } = await (supabase as never as Client)
       .from("work_orders")

@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
+import { EmailComposer } from "@/components/EmailComposer";
 import { GuidedActionCard } from "@/components/GuidedActionCard";
 import {
   nextActionableTask,
@@ -568,9 +569,17 @@ export function TaskDrawer({
             )}
 
             <section className="space-y-2">
-              <p className="eyebrow">
-                {openApproval ? "Resend this request" : "Send to the homeowner"}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="eyebrow">
+                  {openApproval ? "Resend this request" : "Send to the homeowner"}
+                </p>
+                {/* Write to the homeowner with the home and their name already filled in. */}
+                <EmailComposer
+                  context="onboarding_task"
+                  recordId={task.id}
+                  label="Write to the homeowner"
+                />
+              </div>
               <Input
                 value={approvalVersion}
                 onChange={(e) => setApprovalVersion(e.target.value)}
