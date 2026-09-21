@@ -84,7 +84,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Verify the property mailing address at US Postal Service website",
     role: "Project Manager",
     detail:
-      'Instructions:\n1.) Perform a zip code lookup by address at the US Postal Service website. https://tools.usps.com/zip-code-lookup.htm?byaddress\n\n2.) Enter the full property address and click "Find." The site will return the official mailing address.\n\n3.) Please add the official USPS mailing address to the first tab of the project (under the "Overview Menu" at the top) in the Project Description box.\n\nhttps://app.asana.com/app/asana/-/get_asset?asset_id=1217419301672136',
+      'Instructions:\n1.) Perform a zip code lookup by address at the US Postal Service website. https://tools.usps.com/zip-code-lookup.htm?byaddress\n\n2.) Enter the full property address and click "Find." The site will return the official mailing address.\n\n3.) Record the official USPS mailing address on the project overview in Resolve.',
     blocksHandoff: true,
     sortOrder: 40,
   },
@@ -1044,7 +1044,7 @@ export const FULL_FURNISHING_TEMPLATE: TemplateTask[] = [
     title: "Schedule lawn maintenance for 2 days before photos",
     role: "Project Manager",
     detail:
-      "https://www.notion.so/arealhomeaway/1444658d5f4f8037a308d64f266786e2?v=1924658d5f4f80938288000cdcd8e64e&pvs=4\n\nThere is a current photo of the lawn on the pre work inspection. Open the Pre Work Inspection submission on this project in Resolve to view.",
+      "Reference: the Resolve vendor directory.\n\nThere is a current photo of the lawn on the pre work inspection. Open the Pre Work Inspection submission on this project in Resolve to view.",
     blocksHandoff: true,
     sortOrder: 950,
   },
