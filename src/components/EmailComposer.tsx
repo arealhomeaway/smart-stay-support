@@ -124,6 +124,8 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
   }, [recipients, recipientKey]);
 
   const to = recipientKey === CUSTOM ? customTo : recipientKey;
+  const recipientName =
+    recipients.find((r) => r.email === to)?.name ?? null;
 
   function chooseTemplate(id: string) {
     setTemplateId(id);
@@ -273,9 +275,37 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               value={body}
               rows={12}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Write the message. Edit anything the template filled in."
+              placeholder="Write the message. Edit anything the template filled in — every word is yours to change."
             />
           </div>
+
+          {/* Exactly what leaves the inbox, read-only, before anyone presses Send. */}
+          <section className="rounded-lg border border-border bg-muted/30 p-3">
+            <p className="eyebrow">Preview — exactly as it will arrive</p>
+            {problems.length > 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Finish the message below and the preview appears here.
+              </p>
+            ) : (
+              <dl className="mt-2 space-y-2 text-sm">
+                <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 text-muted-foreground">To</dt>
+                  <dd className="break-all">
+                    {recipientName ? `${recipientName} · ` : ""}
+                    {to.trim()}
+                  </dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 text-muted-foreground">Subject</dt>
+                  <dd className="font-medium">{subject.trim()}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 text-muted-foreground">Message</dt>
+                  <dd className="whitespace-pre-wrap">{body.trim()}</dd>
+                </div>
+              </dl>
+            )}
+          </section>
 
           {problems.length > 0 ? (
             <ul className="text-sm text-muted-foreground">
@@ -284,6 +314,7 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
               ))}
             </ul>
           ) : null}
+
 
           <div className="flex justify-end">
             <Button
