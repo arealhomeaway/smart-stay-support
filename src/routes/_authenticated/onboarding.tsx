@@ -49,6 +49,7 @@ function OnboardingLayout() {
           </SubLink>
         )}
         <SubLink to="/onboarding/my-work">My work</SubLink>
+        <SubLink to="/onboarding/transitions">Transitions</SubLink>
       </nav>
       <Outlet />
     </div>
