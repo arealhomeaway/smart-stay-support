@@ -85,12 +85,25 @@ export async function detectAllDrift(): Promise<DriftItem[]> {
   if (ticketIds.length > 0) {
     const { data: rows, error: ticketError } = await supabaseAdmin
       .from("tickets")
-      .select("id, status, scheduled_for")
+      .select("id, status")
       .in("id", ticketIds);
     if (ticketError) throw new Error("Could not read the linked tickets.");
     for (const row of rows ?? []) {
-      const scheduled = row.scheduled_for ? String(row.scheduled_for).slice(0, 10) : null;
-      tickets.set(row.id, { status: row.status, scheduled });
+      tickets.set(row.id, { status: row.status, scheduled: null });
+    }
+    // The visit date lives on the Resolve work order, not the ticket.
+    const { data: wos } = await supabaseAdmin
+      .from("work_orders")
+      .select("ticket_id, scheduled_for")
+      .in("ticket_id", ticketIds)
+      .not("scheduled_for", "is", null);
+    for (const wo of wos ?? []) {
+      const key = wo.ticket_id;
+      if (!key) continue;
+      const held = tickets.get(key);
+      if (held && !held.scheduled) {
+        held.scheduled = String(wo.scheduled_for).slice(0, 10);
+      }
     }
   }
 
