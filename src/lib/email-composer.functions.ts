@@ -110,6 +110,12 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       body: string;
       audience: MessageAudience;
       templateId?: string | null;
+      cc?: string[];
+      bcc?: string[];
+      /** Send later: the exact instant, plus the zone the person picked it in. */
+      scheduledFor?: string | null;
+      scheduledTimeZone?: string | null;
+      attachments?: { name: string; contentType: string; contentBytes: string }[];
     }) => {
       if (!CONTEXTS.includes(input?.context)) throw new Error("Unknown record type.");
       if (!input?.recordId) throw new Error("Pick a record.");
@@ -118,6 +124,17 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
       if ((input?.subject ?? "").trim().length < 3) throw new Error("Give the message a subject.");
       if ((input?.body ?? "").trim().length < 10) throw new Error("Write the message.");
       if (!AUDIENCES.includes(input?.audience)) throw new Error("Pick who this is for.");
+      const valid = (a: string) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(a.trim());
+      for (const a of [...(input.cc ?? []), ...(input.bcc ?? [])]) {
+        if (!valid(a)) throw new Error(`${a} is not a valid email address.`);
+      }
+      if (input.scheduledFor) {
+        const when = new Date(input.scheduledFor);
+        if (Number.isNaN(when.getTime())) throw new Error("That send time could not be read.");
+        if (when.getTime() <= Date.now()) throw new Error("Pick a send time in the future.");
+      }
+      const bytes = (input.attachments ?? []).reduce((n, a) => n + a.contentBytes.length, 0);
+      if (bytes > 4_000_000) throw new Error("Attachments are too large — keep them under 3 MB.");
       return input;
     },
   )
@@ -131,8 +148,38 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
 
     const { sendEmail, emailShell } = await import("./email.server");
     const audience = data.audience === "guest" ? "owner" : data.audience;
+
+    // Send later: the message is parked with everything it needs and goes out
+    // on its own; nothing leaves the mailbox now.
+    if (data.scheduledFor) {
+      const { parkScheduledEmail } = await import("./email-composer.server");
+      return await parkScheduledEmail(
+        {
+          context: data.context,
+          recordId: data.recordId,
+          to: data.to.trim(),
+          cc: data.cc ?? [],
+          bcc: data.bcc ?? [],
+          subject: data.subject.trim(),
+          body: data.body.trim(),
+          audience,
+          templateId: data.templateId ?? null,
+          scheduledFor: data.scheduledFor,
+          scheduledTimeZone: data.scheduledTimeZone ?? null,
+          attachments: (data.attachments ?? []).map((a) => ({
+            name: a.name,
+            contentType: a.contentType,
+          })),
+        },
+        context.userId,
+      );
+    }
+
     const result = await sendEmail({
       to: data.to.trim(),
+      cc: data.cc ?? [],
+      bcc: data.bcc ?? [],
+      attachments: data.attachments ?? [],
       subject: data.subject.trim(),
       html: emailShell(data.subject.trim(), data.body.trim(), undefined, audience as never),
       purpose: `composed_${data.context}`,
