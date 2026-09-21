@@ -342,19 +342,25 @@ export function TicketWorkOrderPanel({
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Category</Label>
+                <Label className="text-xs">Trade</Label>
                 <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose" />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <FieldHint guide="workOrder.trade" />
+                {category ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Category: {categoryLabel(categoryForTrade(category))}
+                  </p>
+                ) : null}
               </div>
             </div>
 
