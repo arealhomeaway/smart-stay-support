@@ -252,12 +252,12 @@ export async function drainScheduledEmails(now = new Date()) {
     .limit(25);
 
   let sent = 0;
-  for (const row of (due ?? []) as Record<string, never>[]) {
+  for (const row of (due ?? []) as unknown as Record<string, unknown>[]) {
     // Claim it first: only the pass that flips it off "scheduled" may send it.
     const { data: claimed } = await supabaseAdmin
       .from("email_log")
       .update({ status: "sending" } as never)
-      .eq("id", row["id"] as string)
+      .eq("id", String(row["id"]))
       .eq("status", "scheduled")
       .select("id");
     if (!claimed || claimed.length === 0) continue;
@@ -266,8 +266,8 @@ export async function drainScheduledEmails(now = new Date()) {
     const body = String(row["body"] ?? "");
     const result = await sendEmail({
       to: String(row["recipient"] ?? ""),
-      cc: (row["cc"] as unknown as string[]) ?? [],
-      bcc: (row["bcc"] as unknown as string[]) ?? [],
+      cc: (row["cc"] as string[] | null) ?? [],
+      bcc: (row["bcc"] as string[] | null) ?? [],
       subject,
       html: emailShell(subject, body, undefined, "owner" as never),
       purpose: `composed_${String(row["entity_type"] ?? "record")}`,
@@ -276,8 +276,8 @@ export async function drainScheduledEmails(now = new Date()) {
           ? { type: String(row["entity_type"]), id: String(row["entity_id"]) }
           : null,
       bodyText: body,
-      sentBy: (row["sent_by"] as unknown as string) ?? null,
-      templateId: (row["template_id"] as unknown as string) ?? null,
+      sentBy: (row["sent_by"] as string | null) ?? null,
+      templateId: (row["template_id"] as string | null) ?? null,
     });
 
     // sendEmail writes its own delivery record; this row becomes its receipt.
@@ -288,7 +288,7 @@ export async function drainScheduledEmails(now = new Date()) {
         error_message: result.error ?? null,
         sent_at: result.status === "sent" ? new Date().toISOString() : null,
       } as never)
-      .eq("id", row["id"] as string);
+      .eq("id", String(row["id"]));
     if (result.status === "sent") sent += 1;
   }
   return { considered: (due ?? []).length, sent };
