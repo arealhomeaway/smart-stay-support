@@ -106,7 +106,9 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
     results.push(...rows);
   }
   const requirements: MatchRequirements = {
-    pets: input.pets ?? 0,
+    dogs: input.dogs ?? 0,
+    cats: input.cats ?? 0,
+    minBedrooms: input.minBedrooms ?? 0,
     amenities: input.amenities ?? [],
   };
   const split = applyRequirements(results, requirements);
