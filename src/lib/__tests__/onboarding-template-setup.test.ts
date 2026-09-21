@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { FULL_FURNISHING_TEMPLATE, templateCounts } from "../onboarding-template";
+import { MASTER_ONBOARDING_TEMPLATE, templateCounts } from "../onboarding-template";
 import { applyOnboardingTemplate, previewOnboardingTemplate } from "../onboarding-template.server";
 import { ensureOwnerApprovalRequest } from "../onboarding.server";
 import type { AuditEntry } from "../audit.server";
@@ -30,7 +30,7 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
     actual_access_on: "2026-09-17",
   };
   const tasks: Task[] = partiallySaved
-    ? FULL_FURNISHING_TEMPLATE.map((task, index) => ({
+    ? MASTER_ONBOARDING_TEMPLATE.map((task, index) => ({
         id: `saved-${index}`,
         property_id: property.id,
         title: task.title,
@@ -167,10 +167,10 @@ describe("onboarding template setup", () => {
     expect(f.audit).toHaveLength(1);
   });
 
-  it("repairs the saved 150-task plan without replacing tasks, repeating approvals or changing recorded decisions", async () => {
+  it("repairs a saved plan without replacing tasks, repeating approvals or changing recorded decisions", async () => {
     const f = fixture(true);
     const counts = templateCounts();
-    expect(f.tasks).toHaveLength(150);
+    expect(f.tasks).toHaveLength(counts.tasks);
     const savedIds = f.tasks.map((task) => task.id);
     const approvalTasks = f.tasks.filter((task) => task.requires_owner_approval);
     const originalTaskId = approvalTasks[0]!.id;
@@ -192,7 +192,7 @@ describe("onboarding template setup", () => {
       { propertyId: "qa-home" },
       f.saveAudit,
     );
-    expect(result).toEqual({ created: 0, subtasksCreated: counts.subtasks, skipped: 150 });
+    expect(result).toEqual({ created: 0, subtasksCreated: counts.subtasks, skipped: counts.tasks });
     expect(f.tasks.filter((task) => !task.parent_task_id).map((task) => task.id)).toEqual(savedIds);
     expect(f.approvals.get(originalTaskId)).toBe("original-pending-approval");
     expect(f.approvals.size).toBe(counts.ownerApprovals);
@@ -207,7 +207,7 @@ describe("onboarding template setup", () => {
       { propertyId: "qa-home" },
       f.saveAudit,
     );
-    expect(retried).toEqual({ created: 0, subtasksCreated: 0, skipped: 150 });
+    expect(retried).toEqual({ created: 0, subtasksCreated: 0, skipped: counts.tasks });
     expect([...f.approvals]).toEqual(savedApprovals);
     expect(f.tasks).toHaveLength(counts.tasks + counts.subtasks);
     const complete = await previewOnboardingTemplate(f.db as never, "staff", {
