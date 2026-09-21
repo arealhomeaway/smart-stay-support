@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import type { MergeValues } from "@/lib/email-composer";
 import { draftFieldProblems, missingOwnerDetails, sendGate } from "@/lib/email-composer";
 
 describe("owner and property details", () => {
@@ -65,7 +66,7 @@ describe("the Send button", () => {
     subject: "Your home is ready",
     body: "Hello Dana, the work is finished.",
   };
-  const gate = (over: Partial<typeof draft> = {}, values = owner) =>
+  const gate = (over: Partial<typeof draft> = {}, values: MergeValues = owner) =>
     sendGate({ ...draft, ...over }, values, "owner");
 
   it("is on when the message and the home details are complete", () => {

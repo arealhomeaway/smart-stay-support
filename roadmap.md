@@ -536,3 +536,7 @@ is now doable from Resolve.
 [x] Read-only preview of the populated homeowner email, with the draft above it fully editable
 [x] Inline validation on recipient, subject, body and unfilled merge fields; Send stays off until clear
 [x] Automated tests for invalid addresses, empty bodies, unresolved merge tags and Send enabled/disabled
+[ ] Accessible error announcements, input associations and focus handling in the email composer
+[ ] Draft autosave and recovery for the email composer (recipient, subject, body, merge values)
+[ ] Recipient chips with duplicate detection and removal, plus separate To/Cc/Bcc
+[ ] Scheduled sending with timezone-aware date and time, keeping all validation before scheduling
