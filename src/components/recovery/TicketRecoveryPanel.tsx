@@ -194,6 +194,18 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
         },
         is_demo: ticket.is_demo ?? false,
       } as never);
+
+      // A recovery on a ticket is itself the documentation, so the ticket says so.
+      if (!ticket.guest_recovery_needed) {
+        await supabase
+          .from("tickets")
+          .update({
+            guest_recovery_needed: true,
+            guest_recovery_flagged_at: new Date().toISOString(),
+            guest_recovery_flagged_by: userId,
+          } as never)
+          .eq("id", ticket.id);
+      }
       return recoveryId;
     },
     onSuccess: () => {
