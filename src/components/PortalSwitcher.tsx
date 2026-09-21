@@ -138,8 +138,9 @@ export function DemoButton() {
     <Button
       size="sm"
       variant={demoMode ? "default" : "outline"}
-      className="min-h-11 min-w-11 shrink-0 px-0 sm:min-h-9 sm:w-auto sm:px-3"
+      className="min-h-11 min-w-11 shrink-0 px-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-9 sm:w-auto sm:px-3"
       onClick={toggle}
+      aria-pressed={demoMode}
       aria-label={demoMode ? "Leave the demo environment" : "Enter the demo environment"}
       title={label}
     >
