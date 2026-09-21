@@ -64,6 +64,7 @@ import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
 import { Route as AuthenticatedWorkOrdersIndexRouteImport } from './routes/_authenticated/work-orders.index'
+import { Route as AuthenticatedWorkOrdersCalendarRouteImport } from './routes/_authenticated/work-orders.calendar'
 import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_authenticated/work-orders.manager'
 import { Route as AuthenticatedWorkOrdersMyWorkOrdersRouteImport } from './routes/_authenticated/work-orders.my-work-orders'
 import { Route as ApiPublicBzProbeRouteImport } from './routes/api/public/bz-probe'
@@ -375,6 +376,12 @@ const AuthenticatedWorkOrdersIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedWorkOrdersRoute,
   } as any)
+const AuthenticatedWorkOrdersCalendarRoute =
+  AuthenticatedWorkOrdersCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedWorkOrdersRoute,
+  } as any)
 const AuthenticatedWorkOrdersManagerRoute =
   AuthenticatedWorkOrdersManagerRouteImport.update({
     id: '/manager',
@@ -486,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
@@ -548,6 +556,7 @@ export interface FileRoutesByTo {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
@@ -617,6 +626,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/_authenticated/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/_authenticated/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
@@ -686,6 +696,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
     | '/api/public/bz-probe'
@@ -748,6 +759,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
     | '/api/public/bz-probe'
@@ -816,6 +828,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/new'
     | '/_authenticated/vendor/$ticketId'
     | '/_authenticated/vendor/scorecard'
+    | '/_authenticated/work-orders/calendar'
     | '/_authenticated/work-orders/manager'
     | '/_authenticated/work-orders/my-work-orders'
     | '/api/public/bz-probe'
@@ -1240,6 +1253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkOrdersIndexRouteImport
       parentRoute: typeof AuthenticatedWorkOrdersRoute
     }
+    '/_authenticated/work-orders/calendar': {
+      id: '/_authenticated/work-orders/calendar'
+      path: '/calendar'
+      fullPath: '/work-orders/calendar'
+      preLoaderRoute: typeof AuthenticatedWorkOrdersCalendarRouteImport
+      parentRoute: typeof AuthenticatedWorkOrdersRoute
+    }
     '/_authenticated/work-orders/manager': {
       id: '/_authenticated/work-orders/manager'
       path: '/manager'
@@ -1392,6 +1412,7 @@ const AuthenticatedRecoveryRouteWithChildren =
   )
 
 interface AuthenticatedWorkOrdersRouteChildren {
+  AuthenticatedWorkOrdersCalendarRoute: typeof AuthenticatedWorkOrdersCalendarRoute
   AuthenticatedWorkOrdersManagerRoute: typeof AuthenticatedWorkOrdersManagerRoute
   AuthenticatedWorkOrdersMyWorkOrdersRoute: typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
   AuthenticatedWorkOrdersIndexRoute: typeof AuthenticatedWorkOrdersIndexRoute
@@ -1399,6 +1420,7 @@ interface AuthenticatedWorkOrdersRouteChildren {
 
 const AuthenticatedWorkOrdersRouteChildren: AuthenticatedWorkOrdersRouteChildren =
   {
+    AuthenticatedWorkOrdersCalendarRoute: AuthenticatedWorkOrdersCalendarRoute,
     AuthenticatedWorkOrdersManagerRoute: AuthenticatedWorkOrdersManagerRoute,
     AuthenticatedWorkOrdersMyWorkOrdersRoute:
       AuthenticatedWorkOrdersMyWorkOrdersRoute,
