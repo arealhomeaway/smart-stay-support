@@ -316,6 +316,13 @@ export function TicketRecoveryPanel({ ticket }: { ticket: TicketContext }) {
               Proposed {formatMoney(row.proposed_amount)} · approved{" "}
               {formatMoney(row.approved_amount)} · issued {formatMoney(row.delivered_amount)}
             </p>
+            <Link
+              to="/recovery"
+              search={{ open: row.id }}
+              className="text-xs font-medium underline underline-offset-2"
+            >
+              See it in Guest recovery
+            </Link>
           </div>
         ))}
 
