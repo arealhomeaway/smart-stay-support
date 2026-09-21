@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { applyRequirements, needsStrRebook, rebookStepSummary, type AvailabilityResult } from "@/lib/availability-finder";
 import { confirmedAmenities, factsFromOwnerRez, matchesRequirements, petSummary, unknownFacts } from "@/lib/property-facts";
 
