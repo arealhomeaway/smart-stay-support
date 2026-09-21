@@ -53,11 +53,12 @@ export const Route = createFileRoute("/_authenticated/onboarding/transitions")({
   }),
   validateSearch: (raw: Record<string, unknown>): Search => {
     const out: Search = {};
-    if (typeof raw["kind"] === "string" && raw["kind"]) out.kind = raw["kind"] as Search["kind"];
+    if (typeof raw["kind"] === "string" && raw["kind"])
+      out.kind = raw["kind"] as TransitionKind | "all";
     if (typeof raw["holder"] === "string" && raw["holder"])
-      out.holder = raw["holder"] as Search["holder"];
+      out.holder = raw["holder"] as Holder | "all";
     if (typeof raw["state"] === "string" && raw["state"])
-      out.state = raw["state"] as Search["state"];
+      out.state = raw["state"] as "all" | "ready" | "blocked";
     if (typeof raw["find"] === "string" && raw["find"]) out.find = raw["find"];
     if (raw["showTest"] === true || raw["showTest"] === "true") out.showTest = true;
     return out;
