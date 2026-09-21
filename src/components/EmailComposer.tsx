@@ -39,9 +39,7 @@ import {
   CONTEXT_LABELS,
   MERGE_FIELDS,
   applyMergeFields,
-  draftFieldProblems,
-  draftProblems,
-  missingOwnerDetails,
+  sendGate,
   unresolvedFields,
   type ComposerContext,
   type MessageAudience,
@@ -146,14 +144,14 @@ function ComposerBody({ context, recordId }: { context: ComposerContext; recordI
     return unresolvedFields(`${picked.subject}\n${picked.body}`, mergeValues);
   }, [templateId, templates, mergeValues]);
 
+  // One rule for the button, the preview and the messages under each box.
   // A homeowner letter with no home or no homeowner name on it must not go out.
-  const detailGaps = useMemo(
-    () => missingOwnerDetails(mergeValues, audience),
-    [mergeValues, audience],
+  const gate = useMemo(
+    () => sendGate({ to, subject, body }, mergeValues, audience),
+    [to, subject, body, mergeValues, audience],
   );
-
-  const fieldProblems = draftFieldProblems({ to, subject, body });
-  const problems = [...draftProblems({ to, subject, body }), ...detailGaps];
+  const fieldProblems = gate.fields;
+  const problems = gate.blockers;
 
   const sending = useMutation({
     mutationFn: () =>
