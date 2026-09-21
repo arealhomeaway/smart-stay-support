@@ -121,7 +121,9 @@ function AvailabilityFinderPage() {
       <label className="space-y-1 text-sm">Check-out<Input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required /></label>
       <label className="space-y-1 text-sm">City, ZIP, address, or location<Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Dallas, TX" required /></label>
       <Button type="submit">Search 20 miles</Button>
-      <label className="space-y-1 text-sm md:col-span-1">Pets travelling<Input type="number" min={0} max={10} value={pets} onChange={(e) => setPets(e.target.value)} /></label>
+      <label className="space-y-1 text-sm">Dogs<Input type="number" min={0} max={10} value={dogs} onChange={(e) => setDogs(e.target.value)} /></label>
+      <label className="space-y-1 text-sm">Cats<Input type="number" min={0} max={10} value={cats} onChange={(e) => setCats(e.target.value)} /></label>
+      <label className="space-y-1 text-sm">Bedrooms (minimum)<Input type="number" min={0} max={12} value={minBedrooms} onChange={(e) => setMinBedrooms(e.target.value)} /></label>
       <fieldset className="space-y-2 text-sm md:col-span-3">
         <legend>Must have</legend>
         <div className="flex flex-wrap gap-2">
