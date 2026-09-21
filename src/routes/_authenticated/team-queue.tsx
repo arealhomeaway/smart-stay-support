@@ -908,8 +908,10 @@ function TeamQueuePage() {
                   )}
                 </div>
               </Link>
+              </div>
             );
           })}
+          <QueueBulkActions selected={selectedTickets} onClear={() => setSelectedTickets([])} />
           {standaloneOrders.map((order) => <Link key={order.id} to="/work-orders" search={{ open: order.id, ...originSearch } as never}
             className="surface-row flex items-start gap-3 py-3 pl-4 pr-4">
             <PropertyPhoto name={order.properties.nickname ?? order.properties.name} />
