@@ -147,6 +147,16 @@ function PropertyHubPage() {
         </div>
       )}
 
+      {hub.viewer.staff && (
+        <div id="active-owner">
+          <ActiveOwnerPanel
+            propertyId={propertyId}
+            propertyName={hub.property.name}
+            canManage={hub.viewer.supervisor}
+          />
+        </div>
+      )}
+
       <Tabs defaultValue="overview">
         <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
