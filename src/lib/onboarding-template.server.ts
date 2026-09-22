@@ -18,6 +18,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { masterStageForLegacyTask } from "./onboarding-stage-map";
 import { MASTER_ONBOARDING_TEMPLATE, TEMPLATE_KEY, type TemplateTask } from "./onboarding-template";
+import { offsetFromAccess, setupWindowDays } from "./onboarding-schedule";
+
 import { writeAudit } from "./audit.server";
 import { seatForTask, type SeatCode } from "./onboarding-ownership";
 
