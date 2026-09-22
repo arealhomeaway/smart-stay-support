@@ -152,7 +152,12 @@ export async function searchOwnerRezCandidates(
 export async function importOwnerRezProperty(
   supabase: Client,
   userId: string,
-  input: { listingId: string; linkToPropertyId?: string | null; isDemo?: boolean },
+  input: {
+    listingId: string;
+    linkToPropertyId?: string | null;
+    isDemo?: boolean;
+    milestones?: PropertyMilestones;
+  },
 ): Promise<IntakeResult> {
   const { listListings } = await import("./ownerrez.server");
   const listing = (await listListings()).find((l) => String(l.id) === input.listingId);
@@ -193,11 +198,33 @@ export async function importOwnerRezProperty(
       lifecycle_status: "not_onboarded",
       is_demo: input.isDemo ?? false,
       created_by: userId,
+      ...milestoneColumns(input.milestones),
     })
     .select(PROPERTY_COLUMNS)
     .single();
   if (error) throw error;
   return { status: "created", property: toMatch(data) };
+}
+
+/**
+ * The dates the onboarding plan schedules itself from. Collected when the home
+ * is created so the plan lands with real deadlines instead of a blank column
+ * somebody has to fill in task by task later.
+ */
+export type PropertyMilestones = {
+  plannedClosingOn?: string | null;
+  actualClosingOn?: string | null;
+  accessOn?: string | null;
+};
+
+function milestoneColumns(m: PropertyMilestones | undefined) {
+  if (!m) return {};
+  const clean = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
+  return {
+    planned_closing_on: clean(m.plannedClosingOn),
+    actual_closing_on: clean(m.actualClosingOn),
+    actual_access_on: clean(m.accessOn),
+  };
 }
 
 export type ManualPropertyInput = {
@@ -213,6 +240,7 @@ export type ManualPropertyInput = {
   ownerEmail?: string | null;
   ownerRezPropertyId?: string | null;
   isDemo?: boolean;
+  milestones?: PropertyMilestones;
 };
 
 /**
@@ -264,6 +292,7 @@ export async function createPropertyManually(
       lifecycle_status: "not_onboarded",
       is_demo: input.isDemo ?? false,
       created_by: userId,
+      ...milestoneColumns(input.milestones),
     })
     .select(PROPERTY_COLUMNS)
     .single();
