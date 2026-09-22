@@ -1,6 +1,5 @@
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { gateReviewAuthority } from "@/lib/handoff-gate-authority";
-import { StageProgressPanel } from "@/components/onboarding/StageProgressPanel";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import {
   onboardingWorkspaceKey,
@@ -18,7 +17,6 @@ import {
   LoadingPage,
   PageHeader,
   ProgressRing,
-  StageRail,
 } from "@/components/ui/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
@@ -90,7 +88,6 @@ import {
 } from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { WorkstreamBoard } from "@/components/onboarding/WorkstreamBoard";
-import { GoLiveBanner } from "@/components/onboarding/GoLiveBanner";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
