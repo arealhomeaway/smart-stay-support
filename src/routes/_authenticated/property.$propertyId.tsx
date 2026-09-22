@@ -141,6 +141,8 @@ function PropertyHubPage() {
         </div>
       )}
 
+      {hub.viewer.staff && <HomeownerCard propertyId={propertyId} canManage={hub.viewer.staff} />}
+
       {hub.viewer.staff && (
         <div id="special-handling">
           <SpecialHandlingPanel propertyId={propertyId} canEdit={hub.viewer.supervisor} />
