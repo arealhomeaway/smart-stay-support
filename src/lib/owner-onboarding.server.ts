@@ -186,6 +186,36 @@ async function sharedFiles(admin: Client, taskIds: string[], demoAllowed: boolea
   return byTask;
 }
 
+/**
+ * Participation opportunities staff already offered for these onboarding
+ * tasks. Read-only: nothing is created here, so a homeowner can only log
+ * time where ARHA opened an opportunity.
+ */
+async function participationByTask(admin: Client, programId: string, taskIds: string[]) {
+  const map = new Map<string, OwnerParticipationAnchor>();
+  if (taskIds.length === 0) return map;
+  const { data, error } = await admin
+    .from("owner_reviews")
+    .select("id, title, phase, ticket_id, property_id, status, archived_at, onboarding_task_id")
+    .eq("program_id", programId)
+    .in("onboarding_task_id", taskIds)
+    .is("archived_at", null);
+  if (error) throw error;
+  for (const row of data ?? []) {
+    const taskId = row.onboarding_task_id as string | null;
+    if (!taskId) continue;
+    if (!["awaiting_owner", "answered", "returned"].includes((row.status as string) ?? "")) continue;
+    map.set(taskId, {
+      reviewId: row.id as string,
+      phase: (row.phase as string) ?? "onboarding",
+      ticketId: (row.ticket_id as string | null) ?? null,
+      propertyIds: row.property_id ? [row.property_id as string] : [],
+      title: (row.title as string) ?? "Onboarding participation",
+    });
+  }
+  return map;
+}
+
 /** Maps each approval id to the onboarding task it belongs to. */
 async function taskIdsFor(admin: Client, approvalIds: string[]) {
   if (approvalIds.length === 0) return new Map<string, string>();
