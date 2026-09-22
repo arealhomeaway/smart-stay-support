@@ -38,6 +38,8 @@ export type LogTimeAnchor = {
   description?: string | null;
 };
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 export function LogTimeDialog({
   open,
   onOpenChange,
@@ -45,18 +47,27 @@ export function LogTimeDialog({
   anchor,
   defaultActivity = "",
   onDone,
+  phase = "ongoing",
+  properties = [],
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
   programId: string;
+  /** Null records an activity the homeowner did on their own initiative. */
   anchor: LogTimeAnchor | null;
   defaultActivity?: string;
   onDone: () => void;
+  /** Used only when there is no anchor. */
+  phase?: "onboarding" | "ongoing";
+  /** Homes the owner may attribute a self-recorded activity to. */
+  properties?: { id: string; name: string }[];
 }) {
   const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState(defaultActivity);
   const [confirmed, setConfirmed] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [entryDate, setEntryDate] = useState(today);
+  const [homes, setHomes] = useState<string[]>([]);
   const log = useServerFn(logOwnerParticipation);
   const beginEvidence = useServerFn(beginParticipationEvidenceFn);
 
@@ -65,6 +76,8 @@ export function LogTimeDialog({
     setActivity(defaultActivity);
     setConfirmed(false);
     setFile(null);
+    setEntryDate(today());
+    setHomes([]);
   };
 
   const pickFile = (chosen: File | null) => {
@@ -79,8 +92,8 @@ export function LogTimeDialog({
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!anchor) throw new Error("Open the opportunity before logging participation.");
-      if (anchor.phase !== "onboarding" && anchor.phase !== "ongoing") {
+      const entryPhase = anchor ? anchor.phase : phase;
+      if (entryPhase !== "onboarding" && entryPhase !== "ongoing") {
         throw new Error("This opportunity needs a valid participation phase.");
       }
       let attachmentPath: string | null = null;
@@ -104,15 +117,15 @@ export function LogTimeDialog({
       return log({
         data: {
           programId,
-          phase: anchor.phase,
-          entryDate: new Date().toISOString().slice(0, 10),
+          phase: entryPhase,
+          entryDate: anchor ? today() : entryDate,
           minutes: parseOwnerMinutes(minutes),
           activity: activity.trim(),
           attachmentPath,
-          reviewId: anchor.id,
-          ticketId: anchor.ticketId,
-          ownerUpdateRevision: anchor.ownerUpdateRevision,
-          propertyIds: anchor.propertyIds,
+          reviewId: anchor ? anchor.id : null,
+          ticketId: anchor ? anchor.ticketId : null,
+          ownerUpdateRevision: anchor ? anchor.ownerUpdateRevision : null,
+          propertyIds: anchor ? anchor.propertyIds : homes,
           confirmed: true,
         },
       });
@@ -144,6 +157,46 @@ export function LogTimeDialog({
             <p className="max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
               {anchor.description}
             </p>
+          )}
+          {!anchor && (
+            <>
+              <div className="space-y-1">
+                <Label htmlFor="log-date">Date</Label>
+                <Input
+                  id="log-date"
+                  type="date"
+                  max={today()}
+                  value={entryDate}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                />
+              </div>
+              {properties.length > 1 && (
+                <div className="space-y-1">
+                  <Label>Which homes did this involve?</Label>
+                  <div className="space-y-1">
+                    {properties.map((home) => (
+                      <label key={home.id} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={homes.includes(home.id)}
+                          onCheckedChange={(v) =>
+                            setHomes((current) =>
+                              v === true
+                                ? [...current, home.id]
+                                : current.filter((id) => id !== home.id),
+                            )
+                          }
+                        />
+                        <span>{home.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    If one activity covered several homes, select them all and enter the total time
+                    once.
+                  </p>
+                </div>
+              )}
+            </>
           )}
           <div className="space-y-1">
             <Label htmlFor="log-activity">What did you do?</Label>

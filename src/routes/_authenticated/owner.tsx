@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Award,
+  Bell,
   Clock,
   FolderOpen,
   Home as HomeIcon,
@@ -180,6 +181,28 @@ function OwnerHubBody({
     (r) => r.auto_ticket && !ownerReviewPresentation(r).attention,
   );
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
+  const unreadAlerts = alerts.filter((a) => !a.read_at).length;
+  const attentionCount = openReviews.length + unreadAlerts;
+
+  /**
+   * Homeowners think per home, so the attention list is grouped by the home it
+   * belongs to. Items covering the whole program keep their own group.
+   */
+  const attentionGroups = useMemo(() => {
+    const groups: { key: string; name: string; reviews: Review[] }[] = [];
+    const push = (key: string, name: string, review: Review) => {
+      const found = groups.find((g) => g.key === key);
+      if (found) found.reviews.push(review);
+      else groups.push({ key, name, reviews: [review] });
+    };
+    for (const review of openReviews) {
+      const ids = properties.filter((p) => review.propertyIds.includes(p.propertyId));
+      if (ids.length === 1 && ids[0]) push(ids[0].propertyId, ids[0].name, review);
+      else if (ids.length > 1) push("multi", ids.map((p) => p.name).join(" · "), review);
+      else push("program", "All your homes", review);
+    }
+    return groups;
+  }, [openReviews, properties]);
 
   // The Welcome Packet's six milestones, positioned from signals ARHA already
   // tracks on each enrolled home.
@@ -220,19 +243,21 @@ function OwnerHubBody({
     );
   const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
 
-  // "Log hours" from the hero uses the first participation opportunity staff
-  // have opened; without one there is nothing to attach the time to.
+  // "Log hours" records whatever the homeowner did on their own initiative:
+  // a meeting, a phone call, research or an errand for their home.
   const [heroLogOpen, setHeroLogOpen] = useState(false);
-  const heroReview = openReviews[0] ?? availableReviews[0] ?? null;
-  const heroAnchor = heroReview
-    ? {
-        id: heroReview.id,
-        phase: heroReview.phase,
-        ticketId: heroReview.ticket_id,
-        propertyIds: heroReview.propertyIds,
-        ownerUpdateRevision: null,
-      }
-    : null;
+  const [heroLogActivity, setHeroLogActivity] = useState("");
+  const heroLogAnchor = null;
+  const ownerPhase: "onboarding" | "ongoing" =
+    program.status === "ready_for_onboarding" ||
+    program.status === "draft" ||
+    openReviews.some((r) => r.phase === "onboarding")
+      ? "onboarding"
+      : "ongoing";
+  const openManualLog = (activity: string) => {
+    setHeroLogActivity(activity);
+    setHeroLogOpen(true);
+  };
   const scrollToSection = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -271,11 +296,25 @@ function OwnerHubBody({
         description="Here is where things stand across your homes, and anything that needs your attention."
         actions={
           <>
-            {heroAnchor ? (
-              <Button onClick={() => setHeroLogOpen(true)}>
+            {preview ? null : (
+              <Button onClick={() => openManualLog("")}>
                 <Clock className="size-4" aria-hidden="true" /> Log hours
               </Button>
-            ) : null}
+            )}
+            <Button
+              variant={attentionCount > 0 ? "default" : "outline"}
+              aria-label={`${attentionCount} items need your attention`}
+              onClick={() => scrollToSection("owner-decisions")}
+            >
+              <Bell className="size-4" aria-hidden="true" />
+              {attentionCount > 0 ? (
+                <span className="numeric ml-1 rounded-full bg-background/20 px-2 py-0.5 text-xs">
+                  {attentionCount}
+                </span>
+              ) : (
+                "All caught up"
+              )}
+            </Button>
             <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
               Pending decisions
               {openReviews.length > 0 ? (
@@ -291,16 +330,18 @@ function OwnerHubBody({
         }
       />
 
-      {heroAnchor ? (
-        <LogTimeDialog
-          open={heroLogOpen}
-          onOpenChange={setHeroLogOpen}
-          programId={program.id}
-          anchor={heroAnchor}
-          defaultActivity=""
-          onDone={invalidate}
-        />
-      ) : null}
+      <LogTimeDialog
+        open={heroLogOpen}
+        onOpenChange={setHeroLogOpen}
+        programId={program.id}
+        // Without an open opportunity the homeowner records the activity
+        // themselves: a meeting, a call, research or an errand.
+        anchor={heroLogAnchor}
+        defaultActivity={heroLogActivity}
+        phase={ownerPhase}
+        properties={properties.map((p) => ({ id: p.id, name: p.name }))}
+        onDone={invalidate}
+      />
 
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
@@ -324,16 +365,13 @@ function OwnerHubBody({
         </div>
         <div className="flex flex-wrap gap-2">
           {properties.map((p) => (
-            <div
+            <OwnerPropertyCard
               key={p.id}
-              className="flex min-w-56 flex-1 items-center gap-3 rounded-xl border border-border bg-card px-3 py-3"
-            >
-              <PropertyPhoto url={p.photoUrl} name={p.name} rounded="rounded-lg" />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{p.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{p.address || "—"}</p>
-              </div>
-            </div>
+              property={p}
+              attention={
+                openReviews.filter((r) => r.propertyIds.includes(p.propertyId)).length
+              }
+            />
           ))}
         </div>
       </div>
@@ -356,16 +394,26 @@ function OwnerHubBody({
         {openReviews.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing is waiting on you right now.</p>
         ) : (
-          <div className="space-y-3">
-            {openReviews.map((r) => (
-              <ReviewRow
-                key={r.id}
-                review={r}
-                properties={properties}
-                programId={program.id}
-                onDone={invalidate}
-                readOnly={preview}
-              />
+          <div className="space-y-5">
+            {attentionGroups.map((group) => (
+              <div key={group.key} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold">{group.name}</h3>
+                  <span className="numeric rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {group.reviews.length}
+                  </span>
+                </div>
+                {group.reviews.map((r) => (
+                  <ReviewRow
+                    key={r.id}
+                    review={r}
+                    properties={properties}
+                    programId={program.id}
+                    onDone={invalidate}
+                    readOnly={preview}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         )}
@@ -376,14 +424,9 @@ function OwnerHubBody({
 
       <WaysToParticipate
         // A home is still being set up when its open work is onboarding work.
-        phase={
-          program.status === "ready_for_onboarding" ||
-          program.status === "draft" ||
-          openReviews.some((r) => r.phase === "onboarding")
-            ? "onboarding"
-            : "ongoing"
-        }
+        phase={ownerPhase}
         openReviews={openReviews.length}
+        {...(preview ? {} : { onLogHours: openManualLog })}
       />
 
       <OwnerApprovalPanel readOnly={preview} />
@@ -556,6 +599,114 @@ function OwnerHubBody({
 function reviewTone(status: string): StatusTone {
   if (status === "returned") return "waiting";
   return "review";
+}
+
+type OwnerHome = {
+  id: string;
+  propertyId: string;
+  name: string;
+  address: string;
+  photoUrl: string | null;
+  closingDate: string | null;
+  closingConfirmed: boolean;
+  addedOn: string;
+  inclusionStatus: string;
+  onboardingStatus: string;
+  launchStatus: string;
+  lastOwnerActivityAt: string | null;
+  requiredTasks: number;
+  completedTasks: number;
+  outstandingDecisions: number;
+  overdueDecisions: number;
+};
+
+/**
+ * A homeowner's own home, opened read-only. Same details staff see in the
+ * Property Hub, minus anything operational they cannot act on.
+ */
+function OwnerPropertyCard({
+  property,
+  attention,
+}: {
+  property: OwnerHome;
+  attention: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const rows: { label: string; value: string }[] = [
+    { label: "Address", value: property.address || "—" },
+    {
+      label: "Closing date",
+      value: property.closingDate
+        ? `${usCalendarDate(property.closingDate)}${property.closingConfirmed ? " (confirmed)" : " (not confirmed yet)"}`
+        : "Not set",
+    },
+    { label: "Added to your program", value: usCalendarDate(property.addedOn) },
+    { label: "Enrollment", value: titleCase(property.inclusionStatus) },
+    { label: "Onboarding", value: titleCase(property.onboardingStatus) },
+    { label: "Listing", value: titleCase(property.launchStatus) },
+    {
+      label: "Setup work",
+      value: `${property.completedTasks} of ${property.requiredTasks} of your items done`,
+    },
+    {
+      label: "Waiting on you",
+      value: property.outstandingDecisions
+        ? `${property.outstandingDecisions} item${property.outstandingDecisions === 1 ? "" : "s"}${property.overdueDecisions ? ` · ${property.overdueDecisions} past due` : ""}`
+        : "Nothing right now",
+    },
+    {
+      label: "Your last activity",
+      value: property.lastOwnerActivityAt ? usDate(property.lastOwnerActivityAt) : "None recorded",
+    },
+  ];
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex min-w-56 flex-1 items-center gap-3 rounded-xl border border-border bg-card px-3 py-3 text-left transition-colors hover:border-primary/60 hover:bg-accent/40"
+      >
+        <PropertyPhoto url={property.photoUrl} name={property.name} rounded="rounded-lg" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{property.name}</p>
+          <p className="truncate text-xs text-muted-foreground">{property.address || "—"}</p>
+          {attention > 0 ? (
+            <span className="numeric mt-1 inline-block rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+              {attention} waiting on you
+            </span>
+          ) : null}
+        </div>
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{property.name}</DialogTitle>
+            <DialogDescription>Your home's details, view only.</DialogDescription>
+          </DialogHeader>
+          <dl className="space-y-2">
+            {rows.map((row) => (
+              <div key={row.label} className="flex flex-wrap justify-between gap-3 border-b border-border/60 pb-2 text-sm last:border-0">
+                <dt className="text-muted-foreground">{row.label}</dt>
+                <dd className="text-right font-medium">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function titleCase(value: string) {
+  const text = (value ?? "").replace(/_/g, " ").trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "—";
 }
 
 function ReviewRow({

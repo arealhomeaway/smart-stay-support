@@ -671,3 +671,10 @@ Batch B (work surface)
 - [ ] Filter all onboarding tasks, including an Active Owner task filter for dispatch
 - [ ] Only directors (supervisors) can create onboarding tasks; PMs cannot
 - [x] Link Victor as Active Owner on 3915 W 104th St S and 9211 Fitzgerald Dr; dispatch work from onboarding visible in his owner portal
+
+- [ ] Owner manual hour logging (any activity, not only meetings)
+- [ ] Restore/verify owner participation suggestion ideas (e.g. research nearby restaurants, things to do)
+- [ ] Owner cannot open account settings from the portal — investigate and fix
+- [ ] Send-to-homeowner from onboarding: evidence/attachments, instructions and link not reaching the owner portal
+- [ ] Owner "Needs your attention": group/label items per property; add a notification badge on the Active Owner view
+- [ ] Owner page: home cards open a read-only property detail view (mirrors Property Hub details)

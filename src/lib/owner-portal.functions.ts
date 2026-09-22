@@ -73,8 +73,9 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
         output: z.string().trim().max(1000).default(""),
         comments: z.string().trim().max(1000).default(""),
         attachmentPath: z.string().trim().max(400).nullable().default(null),
-        // Mandatory: context-free time entries are not allowed.
-        reviewId: z.string().uuid(),
+        // Optional: a homeowner may also record participation they did on
+        // their own initiative, with no staff-created item to attach it to.
+        reviewId: z.string().uuid().nullable().default(null),
         ticketId: z.string().uuid().nullable().default(null),
         ownerUpdateRevision: z.number().int().positive().nullable().default(null),
         propertyIds: z.array(z.string().uuid()).max(25).default([]),

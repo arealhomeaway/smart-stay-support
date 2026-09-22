@@ -420,14 +420,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     g.items.map((i) => ({ to: i.to, label: i.label, group: g.label })),
   );
 
-  // Vendors and homeowners are outside partners: keep them on their own surface.
+  // Vendors and homeowners are outside partners: keep them on their own
+  // surface. Their own account settings belong to them, so that page is
+  // always reachable.
+  const personalPage = pathname.startsWith("/account");
   useEffect(() => {
+    if (personalPage) return;
     if (vendorMode && !pathname.startsWith("/vendor")) {
       void router.navigate({ to: "/vendor", replace: true });
     } else if (ownerMode && !pathname.startsWith("/owner")) {
       void router.navigate({ to: "/owner", replace: true });
     }
-  }, [vendorMode, ownerMode, pathname, router]);
+  }, [vendorMode, ownerMode, pathname, personalPage, router]);
 
   async function signOut() {
     await supabase.auth.signOut();

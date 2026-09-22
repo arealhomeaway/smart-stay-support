@@ -62,7 +62,9 @@ export function SendToHomeownerDialog({
       toast.success(
         result.channel === "email"
           ? "Sent — the homeowner received a Resolve email."
-          : "Sent — it is now in the homeowner's Onboarding actions.",
+          : result.published
+            ? "Sent — your instructions are in the homeowner's portal and they can respond."
+            : "Sent — it is in the homeowner's portal, but your instructions still need publishing.",
       );
       setOpen(false);
       setNote("");
@@ -106,6 +108,9 @@ export function SendToHomeownerDialog({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Write it the way you would say it — what you would like them to look at, and what you need back."
             />
+            <p className="text-xs text-muted-foreground">
+              This is what the homeowner reads in their portal, so write at least a sentence or two.
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -162,7 +167,7 @@ export function SendToHomeownerDialog({
               Cancel
             </Button>
             <Button
-              disabled={disabled || note.trim().length < 5 || mutation.isPending}
+              disabled={disabled || note.trim().length < 20 || mutation.isPending}
               onClick={() =>
                 mutation.mutate({
                   taskId,
