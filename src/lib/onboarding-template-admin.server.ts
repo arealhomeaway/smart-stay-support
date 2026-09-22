@@ -24,7 +24,7 @@ import type { TemplateTask } from "./onboarding-template";
 type Client = SupabaseClient<Database>;
 
 const TASK_COLUMNS =
-  "id, template_id, stage, title, role, detail, sort_order, blocks_handoff, requires_owner_approval, owner_approval_when_active_owner, evidence_required, schedule_anchor, offset_days, breezeway_template_id, subtasks";
+  "id, template_id, stage, title, role, detail, sort_order, blocks_handoff, requires_owner_approval, owner_approval_when_active_owner, evidence_required, schedule_anchor, offset_days, breezeway_template_id, subtasks, tags";
 
 async function assertOnboardingStaff(supabase: Client, userId: string) {
   const { data, error } = await supabase.rpc("is_onboarding_staff", { _user_id: userId });
@@ -308,6 +308,16 @@ export async function setDefaultOnboardingTemplate(
   return { ok: true as const };
 }
 
+/** Lower-case, trimmed, de-duplicated. "active_owner" is the reserved one. */
+export function normaliseTags(tags: string[] | undefined) {
+  const out: string[] = [];
+  for (const raw of tags ?? []) {
+    const tag = raw.trim().toLowerCase().replace(/\s+/g, "_").slice(0, 40);
+    if (tag && !out.includes(tag)) out.push(tag);
+  }
+  return out.slice(0, 10);
+}
+
 export type TemplateStepInput = {
   templateId: string;
   stepId?: string | undefined;
@@ -324,6 +334,7 @@ export type TemplateStepInput = {
   offsetDays?: number | null | undefined;
   breezewayTemplateId?: string | null | undefined;
   subtasks?: string[] | undefined;
+  tags?: string[] | undefined;
 };
 
 export async function saveTemplateStep(
@@ -364,6 +375,7 @@ export async function saveTemplateStep(
     offset_days: input.scheduleAnchor ? (input.offsetDays ?? 0) : null,
     breezeway_template_id: input.breezewayTemplateId?.trim() || null,
     subtasks: (input.subtasks ?? []).map((s) => s.trim()).filter(Boolean),
+    tags: normaliseTags(input.tags),
     ...(sortOrder === null ? {} : { sort_order: sortOrder }),
   };
 

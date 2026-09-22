@@ -89,6 +89,7 @@ export const saveTemplateStepFn = createServerFn({ method: "POST" })
         offsetDays: z.number().int().min(-90).max(365).nullable().default(null),
         breezewayTemplateId: z.string().trim().max(60).optional(),
         subtasks: z.array(z.string().trim().max(200)).max(50).default([]),
+        tags: z.array(z.string().trim().max(40)).max(10).default([]),
       })
       .parse(data),
   )
