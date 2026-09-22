@@ -226,6 +226,7 @@ export function reportCsv(report: OwnerReport) {
     "counts_toward_reported_hours",
     "within_program_period",
     "note",
+    "evidence_file",
     "record_type",
     "record_id",
     "response_recorded_at",
