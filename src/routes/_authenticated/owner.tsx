@@ -301,6 +301,7 @@ function OwnerHubBody({
         audience="owner"
       />
 
+      <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
         title="Needs your attention"
         description="A short question or decision from your ARHA team."
@@ -322,6 +323,7 @@ function OwnerHubBody({
           </div>
         )}
       </SectionCard>
+      </div>
 
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
@@ -438,7 +440,9 @@ function OwnerHubBody({
         </div>
       </SectionCard>
 
-      <OwnerFilesPanel />
+      <div id="owner-documents" className="scroll-mt-24">
+        <OwnerFilesPanel />
+      </div>
 
       <SectionCard title="Your recorded review responses">
         <div className="space-y-2">
