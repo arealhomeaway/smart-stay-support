@@ -913,7 +913,13 @@ function PropertyWorkspace() {
           />
         </TabsContent>
 
+        {/* ------------------------------------------------- Work orders */}
+        <TabsContent value="workorders" className="space-y-4">
+          <OnboardingWorkOrdersPanel propertyId={current.id} />
+        </TabsContent>
+
         {/* --------------------------------------------- Vendor coverage */}
+
         <TabsContent value="vendors" className="space-y-4">
           <VendorCoveragePanel propertyId={current.id} />
         </TabsContent>
