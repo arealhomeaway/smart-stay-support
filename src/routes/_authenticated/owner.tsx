@@ -175,6 +175,22 @@ function OwnerHubBody({
   );
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
+  // "Log hours" from the hero uses the first participation opportunity staff
+  // have opened; without one there is nothing to attach the time to.
+  const [heroLogOpen, setHeroLogOpen] = useState(false);
+  const heroReview = openReviews[0] ?? availableReviews[0] ?? null;
+  const heroAnchor = heroReview
+    ? {
+        id: heroReview.id,
+        phase: heroReview.phase,
+        ticketId: heroReview.ticket_id,
+        propertyIds: heroReview.propertyIds,
+        ownerUpdateRevision: null,
+      }
+    : null;
+  const scrollToSection = (id: string) =>
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   const percent = snapshot.percentOfTarget;
   const targetReached =
     snapshot.state === "target_reached" || snapshot.state === "program_completed";
