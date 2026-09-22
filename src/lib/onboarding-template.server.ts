@@ -268,6 +268,7 @@ export async function applyOnboardingTemplate(
       requires_owner_approval: needsOwnerApproval(t),
       owner_approval_status: needsOwnerApproval(t) ? "pending" : "not_required",
       evidence_required: Boolean(t.evidenceRequired),
+      tags: t.tags ?? [],
       due_on: dueFor(t, anchors, schedule),
       due_on_source: scheduled ? "access_schedule" : t.anchor ? "template_anchor" : null,
       schedule_anchor: scheduled ? "actual_access" : (t.anchor ?? null),
