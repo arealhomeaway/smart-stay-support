@@ -10,6 +10,7 @@ import { AvailabilityMap } from "@/components/AvailabilityMap";
 import { EmailComposer } from "@/components/EmailComposer";
 import { InquirySourceForm } from "@/components/InquirySourceForm";
 import { useInquirySources } from "@/routes/_authenticated/inquiry-sources";
+import { searchSources } from "@/lib/inquiry-sources";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
