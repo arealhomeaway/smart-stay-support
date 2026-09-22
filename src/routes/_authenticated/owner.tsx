@@ -389,7 +389,18 @@ function OwnerHubBody({
         anchor={heroLogAnchor}
         defaultActivity={heroLogActivity}
         phase={ownerPhase}
-        properties={properties.map((p) => ({ id: p.id, name: p.name }))}
+        // Only homes still enrolled and past their confirmed closing may carry
+        // participation time, and the entry records the Property, not the
+        // enrollment row.
+        properties={properties
+          .filter(
+            (p) =>
+              p.inclusionStatus === "included" &&
+              p.closingConfirmed &&
+              !!p.closingDate &&
+              p.closingDate <= new Date().toISOString().slice(0, 10),
+          )
+          .map((p) => ({ id: p.propertyId, name: p.name }))}
         onDone={invalidate}
       />
 
