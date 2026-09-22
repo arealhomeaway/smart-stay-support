@@ -264,3 +264,71 @@ export async function setTaskSchedule(
   if (error) throw error;
   return { ok: true as const };
 }
+
+/**
+ * Re-pace a whole project from the access (possession) date.
+ *
+ * Every open step that is not manually dated is given the access anchor and
+ * the offset the plan states for it — the named Asana steps keep their stated
+ * day, the rest are spread across the setup window in plan order. Dates are
+ * NOT written here: this only records what each step follows, so the existing
+ * preview-and-confirm recalculation stays the only thing that moves a date.
+ */
+export async function repaceProjectFromAccess(
+  supabase: Client,
+  userId: string,
+  input: { propertyId: string },
+  audit: typeof writeAudit = writeAudit,
+) {
+  await assertOnboardingStaff(supabase, userId);
+  await assertOnboardingPropertyManagement(supabase, userId, input.propertyId);
+
+  const property = await supabase
+    .from("properties")
+    .select("actual_access_on")
+    .eq("id", input.propertyId)
+    .single();
+  if (property.error) throw property.error;
+  if (!property.data.actual_access_on) {
+    throw new Error("Record the access (possession) date first — the plan paces itself from it.");
+  }
+
+  const tasks = await supabase
+    .from("onboarding_tasks")
+    .select("id, title, status, due_on_overridden, sort_order")
+    .eq("property_id", input.propertyId)
+    .is("archived_at", null)
+    .is("parent_task_id", null)
+    .order("sort_order");
+  if (tasks.error) throw tasks.error;
+
+  const { offsetFromAccess, setupWindowDays } = await import("./onboarding-schedule");
+  const { activeOwnerFor } = await import("./active-owner.server");
+  const windowDays = setupWindowDays(Boolean(await activeOwnerFor(supabase, input.propertyId)));
+
+  const list = tasks.data ?? [];
+  const total = list.length;
+  let updated = 0;
+  for (let position = 0; position < total; position += 1) {
+    const t = list[position]!;
+    if (t.status === "complete" || t.due_on_overridden) continue;
+    const { error } = await supabase
+      .from("onboarding_tasks")
+      .update({
+        schedule_anchor: "actual_access",
+        schedule_offset_days: offsetFromAccess({ title: t.title, position, total, windowDays }),
+      })
+      .eq("id", t.id);
+    if (error) throw error;
+    updated += 1;
+  }
+
+  await audit({
+    actorId: userId,
+    action: "onboarding_plan_repaced",
+    entityType: "property",
+    entityId: input.propertyId,
+    after: { updated, windowDays },
+  });
+  return { ok: true as const, updated };
+}

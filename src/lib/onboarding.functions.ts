@@ -265,9 +265,24 @@ export const setTaskScheduleFn = createServerFn({ method: "POST" })
     return setTaskSchedule(context.supabase, context.userId, data);
   });
 
-export const previewOnboardingTemplateFn = createServerFn({ method: "POST" })
+export const repaceProjectFromAccessFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { repaceProjectFromAccess } = await import("./onboarding-schedule.server");
+    return repaceProjectFromAccess(context.supabase, context.userId, data);
+  });
+
+export const previewOnboardingTemplateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        templateId: z.string().uuid().nullable().default(null),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     const { previewOnboardingTemplate } = await import("./onboarding-template.server");
     return previewOnboardingTemplate(context.supabase, context.userId, data);
@@ -275,7 +290,14 @@ export const previewOnboardingTemplateFn = createServerFn({ method: "POST" })
 
 export const applyOnboardingTemplateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        templateId: z.string().uuid().nullable().default(null),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     const { applyOnboardingTemplate } = await import("./onboarding-template.server");
     return applyOnboardingTemplate(context.supabase, context.userId, data);
@@ -387,6 +409,7 @@ export const startOnboardingProjectFn = createServerFn({ method: "POST" })
         branch: z.string().trim().max(80).nullable().default(null),
         projectManager: z.string().uuid().nullable().default(null),
         director: z.string().uuid().nullable().default(null),
+        utilityManager: z.string().uuid().nullable().default(null),
         plannedClosingOn: z.string().date().nullable().default(null),
         possessionOn: z.string().date().nullable().default(null),
         targetHandoffOn: z.string().date().nullable().default(null),
@@ -413,6 +436,7 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
         branch: z.string().trim().max(80).nullable().optional(),
         projectManager: z.string().uuid().nullable().optional(),
         director: z.string().uuid().nullable().optional(),
+        utilityManager: z.string().uuid().nullable().optional(),
         plannedClosingOn: z.string().date().nullable().optional(),
         possessionOn: z.string().date().nullable().optional(),
         targetHandoffOn: z.string().date().nullable().optional(),

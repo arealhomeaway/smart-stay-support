@@ -125,6 +125,8 @@ export type StartProjectInput = {
   branch: string | null;
   projectManager: string | null;
   director: string | null;
+  /** Who runs the utilities for this home; the homeowner sees this name. */
+  utilityManager?: string | null | undefined;
   plannedClosingOn: string | null;
   possessionOn: string | null;
   targetHandoffOn: string | null;
@@ -186,6 +188,9 @@ export async function startOnboardingProject(
 
   const modules = input.modules;
   const assignments = await resolveNewProjectAssignments(supabase, userId, input);
+  if (input.utilityManager) {
+    await assertEligibleProjectAssignees(supabase, [input.utilityManager]);
+  }
 
   const { data, error } = await supabase
     .from("onboarding_projects")
@@ -195,6 +200,7 @@ export async function startOnboardingProject(
       branch: input.branch,
       project_manager: assignments.projectManager,
       director: assignments.director,
+      utility_manager: input.utilityManager ?? null,
       planned_closing_on: input.plannedClosingOn,
       possession_on: input.possessionOn,
       target_handoff_on: input.targetHandoffOn,
@@ -270,6 +276,7 @@ export async function updateProject(
     branch?: string | null | undefined;
     projectManager?: string | null | undefined;
     director?: string | null | undefined;
+    utilityManager?: string | null | undefined;
     plannedClosingOn?: string | null | undefined;
     possessionOn?: string | null | undefined;
     targetHandoffOn?: string | null | undefined;
@@ -307,6 +314,15 @@ export async function updateProject(
   } else {
     assertProjectLead(current.data, userId, access.supervisor);
   }
+  // The utility manager is a staff seat like the others, so the same
+  // eligibility rule applies whoever sets it.
+  if (
+    input.utilityManager !== undefined &&
+    input.utilityManager !== current.data.utility_manager &&
+    input.utilityManager
+  ) {
+    await assertEligibleProjectAssignees(supabase, [input.utilityManager]);
+  }
 
   // A scope change after initialization must always carry a reason: History
   // has to explain why this home stopped being asked for that work.
@@ -323,6 +339,7 @@ export async function updateProject(
   if (input.branch !== undefined) patch.branch = input.branch;
   if (input.projectManager !== undefined) patch.project_manager = input.projectManager;
   if (input.director !== undefined) patch.director = input.director;
+  if (input.utilityManager !== undefined) patch.utility_manager = input.utilityManager;
   if (input.plannedClosingOn !== undefined) patch.planned_closing_on = input.plannedClosingOn;
   if (input.possessionOn !== undefined) patch.possession_on = input.possessionOn;
   if (input.targetHandoffOn !== undefined) patch.target_handoff_on = input.targetHandoffOn;

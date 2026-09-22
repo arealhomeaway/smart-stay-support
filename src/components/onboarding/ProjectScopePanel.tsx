@@ -140,6 +140,10 @@ export function ProjectScopePanel({
           <dl className="grid gap-3 sm:grid-cols-3">
             <Fact label="Project manager" value={personName(people, project.project_manager)} />
             <Fact label="Director" value={personName(people, project.director)} />
+            <Fact
+              label="Utility manager"
+              value={personName(people, project.utility_manager) || "Not set"}
+            />
             <Fact label="Branch" value={project.branch ?? "—"} />
             <Fact label="Closing" value={project.planned_closing_on ?? "—"} />
             <Fact label="Possession" value={project.possession_on ?? "—"} />
@@ -187,6 +191,7 @@ export function ProjectScopePanel({
                 branch: project.branch ?? "",
                 projectManager: project.project_manager,
                 director: project.director,
+                utilityManager: project.utility_manager ?? null,
                 plannedClosingOn: project.planned_closing_on ?? "",
                 possessionOn: project.possession_on ?? "",
                 targetHandoffOn: project.target_handoff_on ?? "",
@@ -206,6 +211,7 @@ export function ProjectScopePanel({
                 branch: "",
                 projectManager: data?.assignments.projectManagerId ?? null,
                 director: data?.assignments.directorId ?? null,
+                utilityManager: null,
                 plannedClosingOn: hints?.planned_closing_on ?? "",
                 possessionOn: "",
                 targetHandoffOn: "",
@@ -222,6 +228,7 @@ export function ProjectScopePanel({
                 branch: v.branch || null,
                 projectManager: v.projectManager,
                 director: v.director,
+                utilityManager: v.utilityManager,
                 plannedClosingOn: v.plannedClosingOn || null,
                 possessionOn: v.possessionOn || null,
                 targetHandoffOn: v.targetHandoffOn || null,
@@ -241,6 +248,7 @@ export function ProjectScopePanel({
                 branch: v.branch || null,
                 projectManager: v.projectManager,
                 director: v.director,
+                utilityManager: v.utilityManager,
                 plannedClosingOn: v.plannedClosingOn || null,
                 possessionOn: v.possessionOn || null,
                 targetHandoffOn: v.targetHandoffOn || null,
@@ -266,6 +274,7 @@ type ScopeValues = {
   branch: string;
   projectManager: string | null;
   director: string | null;
+  utilityManager: string | null;
   plannedClosingOn: string;
   possessionOn: string;
   targetHandoffOn: string;
@@ -464,6 +473,13 @@ function ScopeDialog({
               people={people}
               value={v.projectManager}
               onChange={(id) => setV((p) => ({ ...p, projectManager: id }))}
+            />
+            <PersonField
+              label="Utility manager"
+              disabled={false}
+              people={people}
+              value={v.utilityManager}
+              onChange={(id) => setV((p) => ({ ...p, utilityManager: id }))}
             />
             <PersonField
               label="Director"

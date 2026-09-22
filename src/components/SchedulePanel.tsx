@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import {
   applyScheduleFn,
   previewScheduleFn,
+  repaceProjectFromAccessFn,
   saveScheduleAnchorsFn,
 } from "@/lib/onboarding.functions";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ export function SchedulePanel({
   const saveAnchors = useServerFn(saveScheduleAnchorsFn);
   const runPreview = useServerFn(previewScheduleFn);
   const apply = useServerFn(applyScheduleFn);
+  const repace = useServerFn(repaceProjectFromAccessFn);
 
   const [planned, setPlanned] = useState(plannedClosingOn ?? "");
   const [closing, setClosing] = useState(actualClosingOn ?? "");
@@ -86,6 +88,16 @@ export function SchedulePanel({
       setPreview(null);
       void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
       onChange();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Re-pace the whole plan from the access date, then show what would move.
+  const repaceAll = useMutation({
+    mutationFn: () => repace({ data: { propertyId } }),
+    onSuccess: (r) => {
+      toast.success(`${r.updated} steps re-paced from the access date. Review the dates below.`);
+      load.mutate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -150,6 +162,15 @@ export function SchedulePanel({
             onClick={() => load.mutate()}
           >
             Preview date changes
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!canEdit || repaceAll.isPending || !access}
+            onClick={() => repaceAll.mutate()}
+            title={access ? undefined : "Record the access date first"}
+          >
+            {repaceAll.isPending ? "Re-pacing…" : "Re-pace plan from access date"}
           </Button>
         </div>
 

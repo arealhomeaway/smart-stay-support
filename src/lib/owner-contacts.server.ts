@@ -92,7 +92,7 @@ export async function loadOwnerContacts(
   const projects = reachable.length
     ? await admin
         .from("onboarding_projects")
-        .select("property_id, project_manager, director")
+        .select("property_id, project_manager, director, utility_manager")
         .in(
           "property_id",
           reachable.map((l) => l.property_id as string),
@@ -108,6 +108,7 @@ export async function loadOwnerContacts(
 
   const names = await displayNames(admin, [
     project?.project_manager as string | null,
+    project?.utility_manager as string | null,
     (project?.director as string | null) ?? directorSeat,
     coordinatorSeat,
   ]);
@@ -115,7 +116,7 @@ export async function loadOwnerContacts(
   const directorId = (project?.director as string | null) ?? directorSeat;
   return contactsFor(phase, {
     projectManager: names.get(String(project?.project_manager ?? "")) ?? null,
-    utilityManager: null,
+    utilityManager: names.get(String(project?.utility_manager ?? "")) ?? null,
     propertyCoordinator: coordinatorSeat ? (names.get(coordinatorSeat) ?? null) : null,
     directorOfOnboarding: directorId ? (names.get(directorId) ?? null) : null,
   });

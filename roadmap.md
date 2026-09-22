@@ -688,3 +688,5 @@ Batch B (work surface)
 - [ ] Decision needed: activate Victor's program now (starts the 90-day clock) so he can log hours
 - [x] Hero buttons readable (white-on-white) and actually navigate
 - [x] Owner overview greeting shows first name, not initials
+
+- [x] Active Owner contacts: utility manager captured on the project (editable in Edit scope, shown to the homeowner); Kati set as PM on both of Victor's homes

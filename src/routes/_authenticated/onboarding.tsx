@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 });
 
 function OnboardingLayout() {
-  const { userId } = useRole();
+  const { userId, can } = useRole();
   const load = useServerFn(getOnboardingWorkspace);
   const { data } = useQuery({
     queryKey: onboardingWorkspaceKey(userId),
@@ -51,6 +51,9 @@ function OnboardingLayout() {
         <SubLink to="/onboarding/my-work">My work</SubLink>
         <SubLink to="/onboarding/utilities">Utilities &amp; Accounts</SubLink>
         <SubLink to="/onboarding/transitions">Transitions</SubLink>
+        {can("onboarding_templates") && (
+          <SubLink to="/onboarding/templates">Templates</SubLink>
+        )}
       </nav>
       <Outlet />
     </div>
