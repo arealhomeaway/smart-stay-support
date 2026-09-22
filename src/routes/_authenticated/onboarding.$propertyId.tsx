@@ -93,6 +93,7 @@ import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
 import { usDate, usDateTime } from "@/lib/dates";
+import { assignablePeople } from "@/lib/assignable-people";
 import {
   LIFECYCLE,
   ONBOARDING_STAGES,
@@ -1159,7 +1160,7 @@ function TaskCalendar({
           <SelectContent>
             <SelectItem value="all">Every assignee</SelectItem>
             <SelectItem value="unassigned">Unassigned</SelectItem>
-            {people.map((p) => (
+            {assignablePeople(people).map((p) => (
               <SelectItem key={p.id} value={p.id}>
                 {p.full_name || p.email || "Teammate"}
               </SelectItem>
@@ -1295,7 +1296,7 @@ function NewTaskDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {people.map((p) => (
+                  {assignablePeople(people).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.full_name || p.email || "Teammate"}
                     </SelectItem>

@@ -212,6 +212,24 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
       "Could not verify financial and field readiness. Refresh before reviewing handoff.",
     );
   const independentReadiness = independentResult.data as unknown as IndependentReadiness[];
+  // Permission roles ride along so assignment pickers can show only the people
+  // who can actually work onboarding.
+  const roleRows = await readCountedRows(
+    supabase
+      .from("user_roles")
+      .select("user_id, role", { count: "exact" })
+      .order("user_id")
+      .order("id"),
+  );
+  if (roleRows.error) throw roleRows.error;
+  const rolesByUser = new Map<string, string[]>();
+  for (const row of roleRows.data ?? []) {
+    rolesByUser.set(row.user_id, [...(rolesByUser.get(row.user_id) ?? []), row.role as string]);
+  }
+  const peopleWithRoles = (people.data ?? []).map((person) => ({
+    ...person,
+    roles: rolesByUser.get(person.id) ?? [],
+  }));
   const workspace = {
     workspaceMode,
     reviewCapabilities,
@@ -225,7 +243,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     activeOwnerProperties: [...participation.values()],
     approvalMismatches,
     handoffs: handoffs.data ?? [],
-    people: people.data ?? [],
+    people: peopleWithRoles,
     notes: notes.data ?? [],
     reviews: reviews.data ?? [],
     externalDatabases: extDbs.data ?? [],
