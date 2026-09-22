@@ -416,6 +416,24 @@ function PropertyWorkspace() {
         onOpenTask={setOpenTaskId}
       />
 
+      <OnboardingDashboard
+        propertyId={current.id}
+        plannedClosingOn={current.planned_closing_on ?? null}
+        actualClosingOn={current.actual_closing_on ?? null}
+        actualAccessOn={current.actual_access_on ?? null}
+        targetHandoffOn={projectRow?.target_handoff_on ?? null}
+        handoffSource={
+          (projectRow?.target_handoff_source as "auto" | "manual" | undefined) ?? "auto"
+        }
+        activeOwner={activeOwner}
+        canEdit={canEdit}
+        done={roll.done}
+        total={roll.total}
+        notes={notes as never}
+        people={data.people}
+        taskTitle={(taskId) => tasks.find((t) => t.id === taskId)?.title ?? null}
+      />
+
       <CurrentWork
         stage={stage}
         chain={chain}
@@ -442,9 +460,10 @@ function PropertyWorkspace() {
           <TabsTrigger value="findings">Findings</TabsTrigger>
           <TabsTrigger value="vendors">Vendor coverage</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
-          <TabsTrigger value="handoff">Handoff</TabsTrigger>
+          <TabsTrigger value="handoff">Ready for Operations</TabsTrigger>
           <TabsTrigger value="activity">History</TabsTrigger>
         </TabsList>
+
 
         {/* ------------------------------------------------------- Overview */}
         <TabsContent value="overview" className="space-y-5">
