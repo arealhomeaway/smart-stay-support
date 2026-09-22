@@ -21,6 +21,7 @@ import {
   importOwnerRezPropertyFn,
   searchOwnerRezPropertiesFn,
 } from "@/lib/property-intake.functions";
+import { startOwnerProgram } from "@/lib/owner-program.functions";
 import type { IntakeMatch, OwnerRezCandidate } from "@/lib/property-intake";
 
 /**
