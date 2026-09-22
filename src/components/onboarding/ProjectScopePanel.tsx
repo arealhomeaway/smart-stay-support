@@ -476,6 +476,7 @@ function ScopeDialog({
             />
             <PersonField
               label="Utility manager"
+              disabled={false}
               people={people}
               value={v.utilityManager}
               onChange={(id) => setV((p) => ({ ...p, utilityManager: id }))}
