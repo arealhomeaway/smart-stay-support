@@ -674,3 +674,4 @@ Batch B (work surface)
 
 - [ ] Owner manual hour logging (any activity, not only meetings)
 - [ ] Restore/verify owner participation suggestion ideas (e.g. research nearby restaurants, things to do)
+- [ ] Owner cannot open account settings from the portal — investigate and fix
