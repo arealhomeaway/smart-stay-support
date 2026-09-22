@@ -389,7 +389,7 @@ function MilestoneFields({
           onChange={set("plannedClosingOn")}
         />
         <DateField
-          label="Closing (if it已 happened)"
+          label="Closing (if it has happened)"
           value={value.actualClosingOn}
           onChange={set("actualClosingOn")}
         />
@@ -502,6 +502,7 @@ function ManualForm({
           onChange={set("ownerRezPropertyId")}
         />
       </div>
+      <MilestoneFields value={milestones} onChange={setMilestones} />
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={isDemo} onCheckedChange={(v) => setIsDemo(v === true)} />
         Mark as a QA / test home (kept out of production reporting)
