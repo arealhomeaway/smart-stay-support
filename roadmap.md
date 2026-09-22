@@ -694,3 +694,4 @@ Batch B (work surface)
 - [x] Scope editor on a home: onboarding plan picker (adds missing steps, never duplicates); ARHA plan editable in place, no duplicate needed
 
 - [ ] Template steps: tags, an "Active Owner" tag shown in its own colour, and a "Send to Active Owner" action on tagged steps so the homeowner gets it as a task
+- [ ] Templates: apply a chosen plan to homes already in onboarding (Victor's two), with "new steps only" vs "new and existing" update modes; template picker in the scope panel chosen per property
