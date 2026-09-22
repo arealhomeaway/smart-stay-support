@@ -513,36 +513,12 @@ export function releaseState(
       canComplete: false,
     };
 
-  if (!ctx.released.has(task.stage))
-    return {
-      state: "future",
-      reason: ctx.reasons.get(task.stage) ?? "This phase has not been released yet.",
-      canComplete: false,
-    };
+  // Sequencing never blocks a project manager. Phases, milestone anchors and
+  // prerequisites still describe the intended order of the plan (dates, the
+  // template and reporting all read them), but any step can be worked and
+  // finished the day the home is created. Only record-quality gates below —
+  // required evidence and a recorded homeowner decision — hold a step back.
 
-  // Milestone-anchored work waits for the milestone itself.
-  if (task.schedule_anchor === "actual_closing") {
-    if (!ctx.closingReached)
-      return {
-        state: "future",
-        reason: `Released after closing${ctx.closingOn ? ` (${ctx.closingOn})` : ""}.`,
-        canComplete: false,
-      };
-  }
-  if (task.schedule_anchor === "actual_access" && !ctx.accessReached)
-    return {
-      state: "future",
-      reason: `Released after possession${ctx.accessOn ? ` (${ctx.accessOn})` : ""}.`,
-      canComplete: false,
-    };
-
-  const waitingOn = (task.depends_on ?? [])
-    .filter((id) => !ctx.excludedTaskIds?.includes(id))
-    .map((id) => all.find((t) => t.id === id))
-    .filter((t) => !t || (t.status !== "complete" && t.status !== "carryover"))
-    .map((t) => t?.title ?? "a prerequisite that is not available");
-  if (waitingOn.length > 0)
-    return { state: "waiting", reason: `Waiting on ${waitingOn.join(", ")}.`, canComplete: false };
 
   if (task.owner_approval_status === "changes_requested")
     return {
