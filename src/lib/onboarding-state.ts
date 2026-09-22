@@ -513,11 +513,20 @@ export function releaseState(
       canComplete: false,
     };
 
+  // A plan that Operations has already accepted is closed for editing.
+  if (ctx.locked)
+    return {
+      state: "future",
+      reason: "The onboarding plan is locked — this home is with Operations.",
+      canComplete: false,
+    };
+
   // Sequencing never blocks a project manager. Phases, milestone anchors and
   // prerequisites still describe the intended order of the plan (dates, the
   // template and reporting all read them), but any step can be worked and
   // finished the day the home is created. Only record-quality gates below —
   // required evidence and a recorded homeowner decision — hold a step back.
+
 
 
   if (task.owner_approval_status === "changes_requested")
