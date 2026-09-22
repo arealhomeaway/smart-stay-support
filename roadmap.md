@@ -592,3 +592,4 @@ is now doable from Resolve.
 - [ ] Verify access (Emily): leadership sees only permitted oversight data; homeowners cannot reach other homeowners' or properties' details
 - [ ] Automated positive/negative authorization tests for platform owner, director and homeowner on every oversight and directory endpoint
 - [ ] Audit logging for directory views and oversight access (acting role, target record, timestamp)
+- [ ] Run the full authorization suite across oversight + directory endpoints and report any failing role or cross-homeowner case
