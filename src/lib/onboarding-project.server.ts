@@ -400,8 +400,20 @@ export async function updateProject(
       actor: userId,
       isDemo: data.is_demo,
     });
+    // Enrollment is only touched when Active Owner is genuinely switched on.
+    // A home that already carries the module — including one whose enrollment
+    // was deliberately set aside — must never be re-enrolled by an unrelated
+    // save, and an enrollment that cannot proceed must never discard the scope
+    // and dates that were already recorded above.
+    const wasActiveOwner = (current.data.modules ?? []).includes("active_owner");
     const nowActiveOwner = (data.modules ?? []).includes("active_owner");
-    if (nowActiveOwner) await ensureActiveOwnerEnrollment(supabase, userId, data.property_id);
+    if (nowActiveOwner && !wasActiveOwner) {
+      try {
+        await ensureActiveOwnerEnrollment(supabase, userId, data.property_id);
+      } catch (e) {
+        enrollmentWarning = e instanceof Error ? e.message : "Enrollment could not be updated.";
+      }
+    }
   } else {
     await recordProjectEvent(supabase, {
       projectId: data.id,
