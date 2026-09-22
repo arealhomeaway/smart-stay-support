@@ -39,6 +39,27 @@ import {
   setApprovedBudgetFn,
 } from "@/lib/onboarding-budget.functions";
 
+type ApprovedInput = {
+  propertyId: string;
+  amount: number | null;
+  basis: string | null;
+  reason: string;
+};
+
+type LineInput = {
+  propertyId: string;
+  lineId: string | null;
+  category: "staging" | "furniture" | "contractor" | "supplies" | "other";
+  label: string;
+  vendor: string | null;
+  estimatedAmount: number;
+  committedAmount: number | null;
+  actualAmount: number | null;
+  status: "planned" | "committed" | "invoiced" | "paid" | "cancelled";
+  note: string | null;
+  reason: string;
+};
+
 const EMPTY_LINE = {
   lineId: null as string | null,
   category: "staging",
