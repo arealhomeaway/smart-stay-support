@@ -108,6 +108,9 @@ export function SendToHomeownerDialog({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Write it the way you would say it — what you would like them to look at, and what you need back."
             />
+            <p className="text-xs text-muted-foreground">
+              This is what the homeowner reads in their portal, so write at least a sentence or two.
+            </p>
           </div>
 
           <div className="space-y-1.5">
