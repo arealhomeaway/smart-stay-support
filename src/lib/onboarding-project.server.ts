@@ -311,11 +311,17 @@ export async function updateProject(
       input.projectManager === undefined ? current.data.project_manager : input.projectManager,
       input.director === undefined ? current.data.director : input.director,
     ]);
-  }
-  if (input.utilityManager) {
-    await assertEligibleProjectAssignees(supabase, [input.utilityManager]);
   } else {
     assertProjectLead(current.data, userId, access.supervisor);
+  }
+  // The utility manager is a staff seat like the others, so the same
+  // eligibility rule applies whoever sets it.
+  if (
+    input.utilityManager !== undefined &&
+    input.utilityManager !== current.data.utility_manager &&
+    input.utilityManager
+  ) {
+    await assertEligibleProjectAssignees(supabase, [input.utilityManager]);
   }
 
   // A scope change after initialization must always carry a reason: History
