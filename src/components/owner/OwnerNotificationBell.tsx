@@ -13,7 +13,6 @@ type Alert = {
   id: string;
   title: string;
   body: string;
-  action_path: string | null;
   read_at: string | null;
   created_at: string;
 };
@@ -36,7 +35,7 @@ export function OwnerNotificationBell() {
     refetchInterval: 120_000,
   });
 
-  const alerts: Alert[] = home.data && home.data.linked ? (home.data.alerts as Alert[]) : [];
+  const alerts: Alert[] = home.data && home.data.linked ? home.data.alerts : [];
   const unread = alerts.filter((a) => !a.read_at);
 
   const mark = useMutation({
