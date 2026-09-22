@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Award,
+  Bell,
   Clock,
   FolderOpen,
   Home as HomeIcon,
@@ -180,6 +181,28 @@ function OwnerHubBody({
     (r) => r.auto_ticket && !ownerReviewPresentation(r).attention,
   );
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
+  const unreadAlerts = alerts.filter((a) => !a.read_at).length;
+  const attentionCount = openReviews.length + unreadAlerts;
+
+  /**
+   * Homeowners think per home, so the attention list is grouped by the home it
+   * belongs to. Items covering the whole program keep their own group.
+   */
+  const attentionGroups = useMemo(() => {
+    const groups: { key: string; name: string; reviews: Review[] }[] = [];
+    const push = (key: string, name: string, review: Review) => {
+      const found = groups.find((g) => g.key === key);
+      if (found) found.reviews.push(review);
+      else groups.push({ key, name, reviews: [review] });
+    };
+    for (const review of openReviews) {
+      const ids = properties.filter((p) => review.propertyIds.includes(p.propertyId));
+      if (ids.length === 1 && ids[0]) push(ids[0].propertyId, ids[0].name, review);
+      else if (ids.length > 1) push("multi", ids.map((p) => p.name).join(" · "), review);
+      else push("program", "All your homes", review);
+    }
+    return groups;
+  }, [openReviews, properties]);
 
   // The Welcome Packet's six milestones, positioned from signals ARHA already
   // tracks on each enrolled home.
@@ -278,6 +301,20 @@ function OwnerHubBody({
                 <Clock className="size-4" aria-hidden="true" /> Log hours
               </Button>
             )}
+            <Button
+              variant={attentionCount > 0 ? "default" : "outline"}
+              aria-label={`${attentionCount} items need your attention`}
+              onClick={() => scrollToSection("owner-decisions")}
+            >
+              <Bell className="size-4" aria-hidden="true" />
+              {attentionCount > 0 ? (
+                <span className="numeric ml-1 rounded-full bg-background/20 px-2 py-0.5 text-xs">
+                  {attentionCount}
+                </span>
+              ) : (
+                "All caught up"
+              )}
+            </Button>
             <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
               Pending decisions
               {openReviews.length > 0 ? (
@@ -328,16 +365,13 @@ function OwnerHubBody({
         </div>
         <div className="flex flex-wrap gap-2">
           {properties.map((p) => (
-            <div
+            <OwnerPropertyCard
               key={p.id}
-              className="flex min-w-56 flex-1 items-center gap-3 rounded-xl border border-border bg-card px-3 py-3"
-            >
-              <PropertyPhoto url={p.photoUrl} name={p.name} rounded="rounded-lg" />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{p.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{p.address || "—"}</p>
-              </div>
-            </div>
+              property={p}
+              attention={
+                openReviews.filter((r) => r.propertyIds.includes(p.propertyId)).length
+              }
+            />
           ))}
         </div>
       </div>
@@ -360,16 +394,26 @@ function OwnerHubBody({
         {openReviews.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing is waiting on you right now.</p>
         ) : (
-          <div className="space-y-3">
-            {openReviews.map((r) => (
-              <ReviewRow
-                key={r.id}
-                review={r}
-                properties={properties}
-                programId={program.id}
-                onDone={invalidate}
-                readOnly={preview}
-              />
+          <div className="space-y-5">
+            {attentionGroups.map((group) => (
+              <div key={group.key} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold">{group.name}</h3>
+                  <span className="numeric rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {group.reviews.length}
+                  </span>
+                </div>
+                {group.reviews.map((r) => (
+                  <ReviewRow
+                    key={r.id}
+                    review={r}
+                    properties={properties}
+                    programId={program.id}
+                    onDone={invalidate}
+                    readOnly={preview}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         )}
