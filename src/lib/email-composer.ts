@@ -302,3 +302,49 @@ export function scheduleProblems(draft: ScheduleDraft, now = new Date()): string
   if (instant.getTime() <= now.getTime()) problems.push("Pick a time in the future.");
   return problems;
 }
+
+/* ------------------------------------------------------------------ *
+ * Type-or-pick recipient boxes — what the dropdown offers as you type.
+ * ------------------------------------------------------------------ */
+
+export type RecipientSuggestion = {
+  email: string;
+  /** Person or role name when we know one. */
+  name?: string | null;
+  /** Where the address came from, shown as the group heading. */
+  group: "record" | "previous";
+  /** When this mailbox last wrote to the address, for "Previously emailed". */
+  lastSentAt?: string | null;
+};
+
+/**
+ * Orders the dropdown for what has been typed so far: addresses that start
+ * with the typed text first, then ones that merely contain it, with contacts
+ * on this record ahead of addresses we have simply written to before.
+ * Anything already on the message is left out, so nobody can be added twice.
+ */
+export function rankRecipientSuggestions(
+  query: string,
+  options: RecipientSuggestion[],
+  alreadyOnMessage: string[] = [],
+  limit = 8,
+): RecipientSuggestion[] {
+  const used = new Set(alreadyOnMessage.map((a) => a.trim().toLowerCase()));
+  const needle = query.trim().toLowerCase();
+  const seen = new Set<string>();
+  const scored: { item: RecipientSuggestion; score: number; order: number }[] = [];
+  options.forEach((item, order) => {
+    const email = item.email.trim().toLowerCase();
+    if (!email || used.has(email) || seen.has(email)) return;
+    seen.add(email);
+    const haystack = `${item.name ?? ""} ${item.email}`.toLowerCase();
+    let score: number;
+    if (!needle) score = 0;
+    else if (email.startsWith(needle) || (item.name ?? "").toLowerCase().startsWith(needle)) score = 0;
+    else if (haystack.includes(needle)) score = 1;
+    else return;
+    scored.push({ item, score: score + (item.group === "record" ? 0 : 0.5), order });
+  });
+  scored.sort((a, b) => a.score - b.score || a.order - b.order);
+  return scored.slice(0, limit).map((s) => s.item);
+}
