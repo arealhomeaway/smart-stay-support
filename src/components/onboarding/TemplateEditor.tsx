@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ONBOARDING_STAGES, stageLabel } from "@/lib/onboarding";
 import {
+  arrangeTemplateStepsFn,
   deleteTemplateStepFn,
   readOnboardingTemplateFn,
   reorderTemplateStepFn,
@@ -104,6 +105,8 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
   const saveStep = useServerFn(saveTemplateStepFn);
   const removeStep = useServerFn(deleteTemplateStepFn);
   const reorder = useServerFn(reorderTemplateStepFn);
+  const arrangeSteps = useServerFn(arrangeTemplateStepsFn);
+  const [dragging, setDragging] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const key = ["onboarding-template", templateId];
@@ -161,15 +164,56 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const arrange = useMutation({
+    mutationFn: (order: { stepId: string; stage: string }[]) =>
+      arrangeSteps({ data: { templateId, order } }),
+    onSuccess: () => {
+      toast.success("Plan order saved.");
+      refresh();
+    },
+    onError: (e: Error) => {
+      toast.error(e.message);
+      refresh();
+    },
+  });
+
+  // Stages always read in the order a home actually moves through them, not in
+  // whatever order steps happen to have been added.
   const grouped = useMemo(() => {
-    const out = new Map<string, Step[]>();
-    for (const s of data?.steps ?? []) {
-      const list = out.get(s.stage) ?? [];
-      list.push(s);
-      out.set(s.stage, list);
+    const steps = [...(data?.steps ?? [])];
+    const byStage = new Map<string, Step[]>(ONBOARDING_STAGES.map((s) => [s.value, []]));
+    for (const step of steps) {
+      const list = byStage.get(step.stage);
+      if (list) list.push(step);
+      else byStage.set(step.stage, [step]);
     }
-    return [...out.entries()];
+    return [...byStage.entries()];
   }, [data]);
+
+  /** The whole plan as the screen currently shows it, stage by stage. */
+  const flatOrder = () =>
+    grouped.flatMap(([stage, steps]) => steps.map((s) => ({ stepId: s.id, stage })));
+
+  /** Save the plan with one step lifted out and dropped at a new spot. */
+  const dropStep = (stepId: string, stage: string, beforeStepId: string | null) => {
+    const order = flatOrder().filter((e) => e.stepId !== stepId);
+    const moved = { stepId, stage };
+    if (beforeStepId) {
+      const at = order.findIndex((e) => e.stepId === beforeStepId);
+      order.splice(at < 0 ? order.length : at, 0, moved);
+    } else {
+      // Dropped on the stage itself: put it at the end of that stage.
+      let at = order.length;
+      for (let i = order.length - 1; i >= 0; i -= 1) {
+        if (order[i]!.stage === stage) {
+          at = i + 1;
+          break;
+        }
+      }
+      order.splice(at, 0, moved);
+    }
+    arrange.mutate(order);
+  };
 
   if (isLoading) return <p className="text-muted-foreground text-sm">Loading the template…</p>;
   if (!data) return <p className="text-muted-foreground text-sm">That template was not found.</p>;
@@ -181,7 +225,8 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
           <CardTitle className="text-base">{data.name}</CardTitle>
           <CardDescription>
             {data.steps.length} step{data.steps.length === 1 ? "" : "s"}. Every home this plan is
-            applied to gets these steps, in this order, with these deadlines.
+            applied to gets these steps, in this order, with these deadlines. Drag a step by its
+            handle to reorder it, or drop it on another stage to move it there.
           </CardDescription>
         </div>
         <Button size="sm" onClick={() => setDraft(emptyDraft())}>
@@ -197,12 +242,51 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
         ) : null}
 
         {grouped.map(([stage, steps]) => (
-          <div key={stage} className="space-y-2">
-            <h3 className="text-sm font-medium">{stageLabel(stage)}</h3>
-            <ul className="divide-y rounded-md border">
+          <div
+            key={stage}
+            className="space-y-2"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragging) dropStep(dragging, stage, null);
+              setDragging(null);
+            }}
+          >
+            <h3 className="text-sm font-medium">
+              {stageLabel(stage)}{" "}
+              <span className="text-muted-foreground font-normal">
+                · {steps.length} step{steps.length === 1 ? "" : "s"}
+              </span>
+            </h3>
+            {steps.length === 0 ? (
+              <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+                No steps in this stage. Drop one here to move it.
+              </p>
+            ) : null}
+            <ul className="divide-y rounded-md border empty:hidden">
               {steps.map((s) => (
-                <li key={s.id} className="flex items-start justify-between gap-3 p-3">
-                  <div className="min-w-0 space-y-1">
+                <li
+                  key={s.id}
+                  draggable
+                  onDragStart={() => setDragging(s.id)}
+                  onDragEnd={() => setDragging(null)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (dragging && dragging !== s.id) dropStep(dragging, stage, s.id);
+                    setDragging(null);
+                  }}
+                  className={`flex items-start justify-between gap-3 p-3 ${
+                    dragging === s.id ? "opacity-50" : ""
+                  }`}
+                >
+                  <div className="flex min-w-0 items-start gap-2">
+                    <GripVertical
+                      aria-label="Drag to reorder"
+                      className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0 cursor-grab"
+                    />
+                    <div className="min-w-0 space-y-1">
                     <p className="text-sm font-medium">{s.title}</p>
                     <div className="flex flex-wrap gap-1.5 text-xs">
                       {s.role ? <Badge variant="outline">{s.role}</Badge> : null}
@@ -230,6 +314,7 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
                       {s.subtasks?.length ? (
                         <Badge variant="outline">{s.subtasks.length} subtasks</Badge>
                       ) : null}
+                      </div>
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
