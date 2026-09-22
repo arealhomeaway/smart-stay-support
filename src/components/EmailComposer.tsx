@@ -50,17 +50,21 @@ import {
   scheduleProblems,
   sendGate,
   unresolvedFields,
+  withSignature,
   zonedToInstant,
   type RecipientField,
   type RecipientLists,
+  type RecipientSuggestion,
   type ComposerContext,
   type MessageAudience,
 } from "@/lib/email-composer";
+import { RecipientCombobox } from "@/components/RecipientCombobox";
 import {
   getComposerContext,
   getMessageHistory,
   retireEmailTemplate,
   saveEmailTemplate,
+  saveMySignature,
   sendComposedEmail,
 } from "@/lib/email-composer.functions";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/email-draft-store";
@@ -155,6 +159,28 @@ function ComposerBody({
   const [subject, setSubject] = useState(initialSubject ?? "");
   const [body, setBody] = useState(initialBody ?? "");
   const [audience, setAudience] = useState<MessageAudience>("guest");
+  const [signature, setSignature] = useState("");
+
+  // The writer's own sign-off, loaded once and then theirs to edit. It goes on
+  // the foot of the draft automatically, and never twice.
+  const signatureLoaded = useRef(false);
+  useEffect(() => {
+    const saved = ctx.data?.signature;
+    if (signatureLoaded.current || saved === undefined) return;
+    signatureLoaded.current = true;
+    setSignature(saved ?? "");
+    if (saved) setBody((current) => withSignature(current, saved));
+  }, [ctx.data?.signature]);
+
+  const persistSignature = useServerFn(saveMySignature);
+  const saveSignature = useMutation({
+    mutationFn: (value: string) => persistSignature({ data: { signature: value } }),
+    onSuccess: () => {
+      toast.success("Signature saved.");
+      void queryClient.invalidateQueries({ queryKey: ["composer-context"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   // Pick the first known contact as soon as the record answers.
   useEffect(() => {
@@ -228,7 +254,7 @@ function ComposerBody({
     const picked = templates.find((t) => t.id === id);
     if (!picked) return;
     setSubject(applyMergeFields(picked.subject, mergeValues));
-    setBody(applyMergeFields(picked.body, mergeValues));
+    setBody(withSignature(applyMergeFields(picked.body, mergeValues), signature));
     setAudience(picked.audience as MessageAudience);
     const match = recipients.find((r) => r.audience === picked.audience);
     if (match) setRecipientKey(match.email);
@@ -310,12 +336,33 @@ function ComposerBody({
     setChipError(null);
   }
 
+  /** Someone clicked an address in the dropdown instead of typing it out. */
+  function pickChip(field: RecipientField, email: string) {
+    const withPrimary: RecipientLists = {
+      ...extra,
+      to: [...(isEmailAddress(to) ? [to.trim()] : []), ...extra.to],
+    };
+    const result = addRecipients(withPrimary, field, email);
+    setChipError(result.errors[0] ?? null);
+    if (result.added.length > 0) {
+      setExtra({
+        to: result.lists.to.filter((a) => a.toLowerCase() !== to.trim().toLowerCase()),
+        cc: result.lists.cc,
+        bcc: result.lists.bcc,
+      });
+    }
+  }
+
   // Everything the person can pick from without typing: the contacts on this
   // record, plus addresses this mailbox has written to before.
   const previous = ctx.data?.previousContacts ?? [];
-  const knownAddresses = [
-    ...recipients.map((r) => r.email),
-    ...previous.map((p) => p.email),
+  const suggestionList: RecipientSuggestion[] = [
+    ...recipients.map((r) => ({ email: r.email, name: r.label, group: "record" as const })),
+    ...previous.map((p) => ({
+      email: p.email,
+      group: "previous" as const,
+      lastSentAt: p.lastSentAt,
+    })),
   ];
 
   // Anything typed into a recipient box but not yet turned into a chip still
@@ -564,51 +611,26 @@ function ComposerBody({
           {/* Anyone else on the message, one chip each, easy to take off. */}
           <div className="grid gap-2">
             {(["to", "cc", "bcc"] as RecipientField[]).map((field) => (
-              <div key={field} className="grid gap-1">
-                <Label htmlFor={`composer-chips-${field}`}>
-                  {field === "to" ? "Also to" : RECIPIENT_FIELD_LABELS[field]}
-                </Label>
-                <div className="flex flex-wrap items-center gap-1 rounded-md border p-1">
-                  {extra[field].map((address) => (
-                    <span
-                      key={address}
-                      className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
-                    >
-                      {address}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${address}`}
-                        onClick={() => dropChip(field, address)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    id={`composer-chips-${field}`}
-                    list="composer-known-addresses"
-                    value={chipDraft[field]}
-                    onChange={(e) => setChipDraft((d) => ({ ...d, [field]: e.target.value }))}
-                    onBlur={() => commitChips(field)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "," || e.key === ";") {
-                        e.preventDefault();
-                        commitChips(field);
-                      }
-                    }}
-                    placeholder="Pick a contact or type an address, then press Enter"
-                    aria-invalid={pendingChipProblems.length > 0}
-                    className="min-w-[14rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
-                  />
-                </div>
-              </div>
+              <RecipientCombobox
+                key={field}
+                id={`composer-chips-${field}`}
+                label={field === "to" ? "Also to" : RECIPIENT_FIELD_LABELS[field]}
+                chips={extra[field]}
+                draft={chipDraft[field]}
+                onDraftChange={(value) => setChipDraft((d) => ({ ...d, [field]: value }))}
+                onCommit={() => commitChips(field)}
+                onPick={(email) => pickChip(field, email)}
+                onRemove={(address) => dropChip(field, address)}
+                suggestions={suggestionList}
+                alreadyOnMessage={[
+                  ...(isEmailAddress(to) ? [to.trim()] : []),
+                  ...extra.to,
+                  ...extra.cc,
+                  ...extra.bcc,
+                ]}
+                invalid={pendingChipProblems.length > 0}
+              />
             ))}
-            <datalist id="composer-known-addresses">
-              {[...new Set(knownAddresses)].map((address) => (
-                <option key={address} value={address} />
-              ))}
-            </datalist>
             {recipientListProblems.map((problem) => (
               <p key={problem} role="alert" className="text-sm text-destructive">
                 {problem}
@@ -660,6 +682,42 @@ function ComposerBody({
                 Still blank: {fieldProblems.unfilled.join(", ").replace(/_/g, " ")}.
               </p>
             ) : null}
+          </div>
+
+          {/* Each person signs their own messages. */}
+          <div className="grid gap-2">
+            <Label htmlFor="composer-signature">Your signature</Label>
+            <Textarea
+              id="composer-signature"
+              value={signature}
+              rows={4}
+              onChange={(e) => setSignature(e.target.value)}
+              placeholder={`${ctx.data?.senderName ?? "Your name"}\nA Real Home Away\n(555) 555-5555`}
+              aria-describedby="composer-signature-hint"
+            />
+            <p id="composer-signature-hint" className="text-sm text-muted-foreground">
+              Added to the foot of this message. Save it once and it is waiting on every email you write.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setBody((current) => withSignature(current, signature))}
+                disabled={!signature.trim()}
+              >
+                Add to this message
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => saveSignature.mutate(signature)}
+                disabled={saveSignature.isPending}
+              >
+                {saveSignature.isPending ? "Saving…" : "Save as my signature"}
+              </Button>
+            </div>
           </div>
 
           {/* Files ride along with the message. */}

@@ -25,20 +25,43 @@ async function assertSupervisor(context: Ctx) {
   if (!data) throw new Error("Only supervisors can change the shared templates.");
 }
 
-async function senderName(context: Ctx) {
+type ProfileBits = { full_name: string | null; email_signature: string | null };
+
+async function senderProfile(context: Ctx): Promise<ProfileBits> {
   const { data } = await (context.supabase as never as {
     from: (t: string) => {
       select: (c: string) => {
-        eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: { full_name: string | null } | null }> };
+        eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileBits | null }> };
       };
     };
   })
     .from("profiles")
-    .select("full_name")
+    .select("full_name, email_signature")
     .eq("id", context.userId)
     .maybeSingle();
-  return data?.full_name ?? null;
+  return { full_name: data?.full_name ?? null, email_signature: data?.email_signature ?? null };
 }
+
+/**
+ * Saves the writer's own sign-off on their profile. Each person keeps their
+ * own; nobody can write anyone else's, because the row is their own row.
+ */
+export const saveMySignature = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { signature: string }) => {
+    const signature = (input?.signature ?? "").trim();
+    if (signature.length > 600) throw new Error("Keep the signature under 600 characters.");
+    return { signature };
+  })
+  .handler(async ({ data, context }) => {
+    await assertStaff(context as never as Ctx);
+    const { error } = await context.supabase
+      .from("profiles")
+      .update({ email_signature: data.signature || null })
+      .eq("id", context.userId);
+    if (error) throw new Error(error.message);
+    return { signature: data.signature || null };
+  });
 
 /** Recipients, merge values and the shared templates for one record. */
 export const getComposerContext = createServerFn({ method: "GET" })
@@ -53,7 +76,8 @@ export const getComposerContext = createServerFn({ method: "GET" })
     const { gatherComposerContext, loadPreviousContacts } = await import(
       "./email-composer.server"
     );
-    const name = await senderName(context as never as Ctx);
+    const profile = await senderProfile(context as never as Ctx);
+    const name = profile.full_name;
     const gathered = await gatherComposerContext(
       context.supabase as never,
       data.context,
@@ -78,6 +102,8 @@ export const getComposerContext = createServerFn({ method: "GET" })
     return {
       ...gathered,
       previousContacts,
+      signature: profile.email_signature,
+      senderName: profile.full_name,
       canManageTemplates: Boolean(canManage),
       templates: (templates ?? []).filter((t) =>
         ((t["contexts"] as string[] | null) ?? []).includes(data.context),
@@ -151,7 +177,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
 
     // The record must be readable by this person before anything leaves.
     const { gatherComposerContext } = await import("./email-composer.server");
-    const name = await senderName(context as never as Ctx);
+    const name = (await senderProfile(context as never as Ctx)).full_name;
     await gatherComposerContext(context.supabase as never, data.context, data.recordId, name);
 
     const { sendEmail, emailShell } = await import("./email.server");

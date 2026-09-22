@@ -80,6 +80,7 @@ import {
   type ProjectProperty,
 } from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
+import { WorkstreamBoard } from "@/components/onboarding/WorkstreamBoard";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
@@ -686,8 +687,8 @@ function PropertyWorkspace() {
         <TabsContent value="workflow" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              Standard ARHA onboarding workflow. Sections, release conditions and dates are managed
-              by Resolve — open a task to see why.
+              Four tracks move at the same time. Start with anything under Ready now — open a step
+              to see the detail and why it is where it is.
             </p>
             <NewTaskDialog
               propertyId={current.id}
@@ -697,6 +698,7 @@ function PropertyWorkspace() {
               onSave={(values) => saveTask.mutate({ data: values } as never)}
             />
           </div>
+          <WorkstreamBoard tasks={tasks} release={release} onOpenTask={setOpenTaskId} />
           <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
           {life.locked && (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">

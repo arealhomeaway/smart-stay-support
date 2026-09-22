@@ -5606,6 +5606,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          email_signature: string | null
           full_name: string | null
           id: string
           oncall_eligible: boolean
@@ -5615,6 +5616,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          email_signature?: string | null
           full_name?: string | null
           id: string
           oncall_eligible?: boolean
@@ -5624,6 +5626,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          email_signature?: string | null
           full_name?: string | null
           id?: string
           oncall_eligible?: boolean

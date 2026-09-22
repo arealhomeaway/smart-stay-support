@@ -2,6 +2,7 @@ import { can, type AppRole } from "./permissions";
 import { hasRequirements, matchesRequirements, type MatchRequirements, type PropertyFacts } from "./property-facts";
 import { clientQuoteLine, PRICE_ESTIMATE_NOTE, type StayQuote } from "./pricing";
 import { clientSourceQuoteLine, type SourceQuote } from "./inquiry-sources";
+import { usCalendarDate } from "./dates";
 
 export const AVAILABILITY_RADIUS_MILES = 20;
 export type AvailabilityStatus = "available" | "conditional" | "unavailable";
@@ -167,13 +168,21 @@ export function clientPriceLine(result: AvailabilityResult) {
   return result.quote ? clientQuoteLine(result.quote) : null;
 }
 
+/** The warm opening on a property options email, in the words a guest reads first. */
+export function availabilityGreeting(checkIn: string, checkOut: string, location: string) {
+  const where = location.trim();
+  return `Hello,\n\nThanks so much for reaching out about properties near ${where}. Here are the options we have for ${usCalendarDate(checkIn)} to ${usCalendarDate(checkOut)}:`;
+}
+
 export function emailSummary(results: AvailabilityResult[], checkIn: string, checkOut: string, location: string) {
-  const body = `Property options for ${checkIn} to ${checkOut} near ${location.trim()}:\n\n${results.map((r) => {
+  const body = `${availabilityGreeting(checkIn, checkOut, location)}\n\n${results.map((r) => {
     const price = clientPriceLine(r);
     return `${r.name} — ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}${price ? `\n${price}` : ""}\n${externalAvailabilityText(r)}`;
   }).join("\n\n")}`;
   const note = results.some((r) => r.sourceQuote)
     ? "Estimates cover nightly rates and the fees listed for this booking source. Taxes are added at booking."
     : PRICE_ESTIMATE_NOTE;
-  return results.some((r) => r.quote || r.sourceQuote) ? `${body}\n\n${note}` : body;
+  const closing = "Let us know which home you like best and we will hold it for you. We are happy to answer any questions.";
+  const priced = results.some((r) => r.quote || r.sourceQuote);
+  return `${body}\n\n${priced ? `${note}\n\n` : ""}${closing}`;
 }

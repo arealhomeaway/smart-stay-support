@@ -15,7 +15,9 @@ describe("stay pricing", () => {
     ], 179);
     expect(quote).toEqual({ currency: "USD", nights: 3, basePrice: 179, total: 540, averageNightly: 180, source: "pricelabs" });
     expect(clientQuoteLine(quote!)).toBe("Estimated total for these dates: $540");
-    expect(internalQuoteLine(quote!)).toContain("base rate $179/night");
+    // The standing base rate is an internal number and never shown on a card.
+    expect(internalQuoteLine(quote!)).toBe("Estimated stay total $540 · $180 average per night");
+    expect(internalQuoteLine(quote!)).not.toContain("base rate");
   });
 
   it("covers missing nights with the standing base price", () => {
