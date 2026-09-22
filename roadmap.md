@@ -639,3 +639,14 @@ Batch B (work surface)
 - [ ] Work activity opens as a centred pop-up, easier to navigate; Send to homeowner moved to the bottom
 - [ ] Track work orders pushed to Breezeway vs non-Breezeway vendor work orders (inside onboarding)
 - [ ] Task drawers specific to the task type; simple upload everywhere; no Breezeway export on document tasks
+
+## Kati walkthrough — progress
+- [x] A. Every onboarding step workable (no dependency locking)
+- [x] B. Editable Closing / Access / Target handoff on the home dashboard, auto handoff (+3w standard, +4w Active Owner) with manual override; saving re-dates the plan
+- [x] Status bar + Notes button on the dashboard; gate chain and readiness checklist removed (acceptance kept)
+- [ ] C. Asana-mirrored day offsets (needs the Asana breakdown or connector)
+- [ ] D. PM dropdown = Iveth + Sofia (needs their work email addresses)
+- [ ] E. One-click enrollment with OwnerRez owner import
+- [ ] F. Scope dialog reorganised (appliances / furnishing / pool location / smart lock), editable later
+- [ ] G. Work surface: assignee avatars, pop-up work window, task-specific content, remove "This home's work"
+- [ ] H. Breezeway vs. Resolve vendor work orders on onboarding homes
