@@ -63,11 +63,18 @@ function AvailabilityFinderPage() {
   const [minBedrooms, setMinBedrooms] = useState(String(search.minBedrooms ?? 0));
   const [amenities, setAmenities] = useState<AmenityKey[]>(parseAmenities(search.amenities));
   const [confirmUnlinked, setConfirmUnlinked] = useState<string | null>(null);
+  const sources = useInquirySources();
+  const sourceList = sources.data ?? [];
+  const [sourceName, setSourceName] = useState(() => sourceList.find((entry) => entry.id === search.inquirySourceId)?.name ?? "");
+  const [addingSource, setAddingSource] = useState(false);
+  // The typed name is matched against the list; anything unmatched simply prices without a source.
+  const typedSource = sourceList.find((entry) => entry.name.toLowerCase() === sourceName.trim().toLowerCase()) ?? null;
+  const searchedSource = sourceList.find((entry) => entry.id === search.inquirySourceId) ?? null;
   const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
-    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.dogs, search.cats, search.minBedrooms, search.amenities],
-    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, dogs: search.dogs ?? 0, cats: search.cats ?? 0, minBedrooms: search.minBedrooms ?? 0, amenities: searchedAmenities } }),
+    queryKey: ["availability-finder", search.checkIn, search.checkOut, search.location, search.dogs, search.cats, search.minBedrooms, search.amenities, search.inquirySourceId],
+    queryFn: () => find({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, dogs: search.dogs ?? 0, cats: search.cats ?? 0, minBedrooms: search.minBedrooms ?? 0, amenities: searchedAmenities, ...(search.inquirySourceId ? { inquirySourceId: search.inquirySourceId } : {}) } }),
     enabled: allowed && inputReady,
     retry: false,
   });
