@@ -139,10 +139,10 @@ export function viewTask(
   release?: ReleaseContext,
 ): TaskView {
   const template = templateFor(task.title);
-  const waitingIds = dependencyBlocked(task, all);
-  const waitingOn = waitingIds
-    .map((id) => all.find((t) => t.id === id)?.title)
-    .filter((t): t is string => Boolean(t));
+  // Sequencing is advisory only: prerequisites never hold a step back and are
+  // not surfaced on the card.
+  const waitingOn: string[] = [];
+
 
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   const awaitingOwner =
