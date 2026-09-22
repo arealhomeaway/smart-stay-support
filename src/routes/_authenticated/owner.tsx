@@ -9,8 +9,10 @@ import {
   FolderOpen,
   Home as HomeIcon,
   MessageSquare,
+  Paperclip,
   ShieldCheck,
 } from "lucide-react";
+import { participationEvidenceUrlFn } from "@/lib/owner-evidence.functions";
 import { EmptyState, LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
