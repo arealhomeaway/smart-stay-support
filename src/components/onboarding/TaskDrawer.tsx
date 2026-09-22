@@ -695,22 +695,23 @@ export function TaskDrawer({
         )}
 
         <Separator />
-
-        <Separator />
         <section className="space-y-2">
           <p className="eyebrow">Active Owner</p>
           <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
         </section>
 
-        <section className="space-y-2">
-          <p className="eyebrow">Breezeway</p>
-          <BreezewayTaskPanel
-            sourceType="onboarding_task"
-            sourceId={task.id}
-            defaultTitle={task.title}
-            defaultDescription={task.detail ?? null}
-          />
-        </section>
+        {/* Only steps that dispatch field work can send a job to Breezeway. */}
+        {dispatchable && (
+          <section className="space-y-2">
+            <p className="eyebrow">Send this job to Breezeway</p>
+            <BreezewayTaskPanel
+              sourceType="onboarding_task"
+              sourceId={task.id}
+              defaultTitle={task.title}
+              defaultDescription={task.detail ?? null}
+            />
+          </section>
+        )}
 
         {canRecordException && !task.exception_reason && (
           <>
@@ -741,7 +742,27 @@ export function TaskDrawer({
             {guidedCard}
           </>
         )}
+
+        {/* Last of all: sending something to the homeowner. */}
+        <Separator />
+        <section className="space-y-2">
+          <p className="eyebrow">Send to the homeowner</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <SendToHomeownerDialog
+              taskId={task.id}
+              taskTitle={task.title}
+              disabled={disabled || task.owner_approval_status === "approved"}
+              alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
+            />
+            {task.owner_approval_status === "awaiting_owner" && (
+              <span className="text-xs text-muted-foreground">
+                Waiting on the homeowner since the last send.
+              </span>
+            )}
+          </div>
+        </section>
       </div>
+
     </TaskWorkspace>
   );
 }
