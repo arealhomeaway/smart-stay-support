@@ -676,3 +676,4 @@ Batch B (work surface)
 - [ ] Restore/verify owner participation suggestion ideas (e.g. research nearby restaurants, things to do)
 - [ ] Owner cannot open account settings from the portal — investigate and fix
 - [ ] Send-to-homeowner from onboarding: evidence/attachments, instructions and link not reaching the owner portal
+- [ ] Owner "Needs your attention": group/label items per property; add a notification badge on the Active Owner view
