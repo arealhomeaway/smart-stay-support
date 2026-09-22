@@ -222,6 +222,14 @@ function OwnerHubBody({
         </div>
       </div>
 
+      <MilestonePacing
+        day={snapshot.day}
+        reportedHours={snapshot.reportedHours}
+        benchmark={snapshot.benchmark}
+        goalMet={targetReached}
+        audience="owner"
+      />
+
       <SectionCard
         title="Needs your attention"
         description="A short question or decision from your ARHA team."

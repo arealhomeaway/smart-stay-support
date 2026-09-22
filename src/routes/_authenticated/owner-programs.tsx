@@ -445,6 +445,13 @@ function ProgramCard({
       }
     >
       <div className="space-y-2">
+        <MilestonePacing
+          day={row.day}
+          reportedHours={row.reportedHours}
+          benchmark={row.benchmark}
+          goalMet={row.goalMet}
+          audience="staff"
+        />
         <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
           <span>
             <span className="text-xl font-semibold">{row.reportedHours}</span>
