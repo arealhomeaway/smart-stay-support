@@ -49,6 +49,9 @@ import { OperationsContextPanel } from "@/components/onboarding/OperationsContex
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
+import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
+import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
+import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import {
