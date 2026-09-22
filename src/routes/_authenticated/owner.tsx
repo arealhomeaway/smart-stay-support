@@ -113,6 +113,27 @@ function OwnerHub() {
 
   if (home.isLoading) return <LoadingPage tiles={4} />;
   if (!home.data || !home.data.linked) {
+    // Staff land here by clicking around; tell them where their own view is
+    // rather than leaving them on a homeowner's empty screen.
+    if (isStaffViewer) {
+      return (
+        <EmptyState
+          title="You are looking at the homeowner portal."
+          hint="This screen only fills in for a homeowner whose account is linked to a home. The program-wide view for staff is Active Owner program oversight."
+          icon={<HomeIcon className="size-8" />}
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button asChild>
+                <Link to="/owner-oversight">Open program oversight</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/owner-programs">Program admin</Link>
+              </Button>
+            </div>
+          }
+        />
+      );
+    }
     return (
       <EmptyState
         title="No home is linked to your account yet."
