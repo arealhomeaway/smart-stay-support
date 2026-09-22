@@ -49,7 +49,7 @@ export async function loadPropertyCoverage(db: Client, userId: string, propertyI
   if (assigned.error) throw assigned.error;
   if (territory.error) throw territory.error;
 
-  const live = <T extends { effective_to: string | null }>(rows: T[]) =>
+  const live = <T extends { effective_to: string | null }>(rows: readonly T[]) =>
     rows.filter((r) => !r.effective_to || r.effective_to >= today);
 
   const assignedRows = live(assigned.data ?? []);
