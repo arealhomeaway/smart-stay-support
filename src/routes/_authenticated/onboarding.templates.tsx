@@ -27,6 +27,7 @@ import { TemplateEditor } from "@/components/onboarding/TemplateEditor";
 import { useRole } from "@/hooks/useRole";
 import {
   createOnboardingTemplateFn,
+  ensureBuiltInTemplateFn,
   listOnboardingTemplatesFn,
   setDefaultOnboardingTemplateFn,
   updateOnboardingTemplateFn,
@@ -64,6 +65,7 @@ function TemplatesPage() {
   const create = useServerFn(createOnboardingTemplateFn);
   const update = useServerFn(updateOnboardingTemplateFn);
   const setDefault = useServerFn(setDefaultOnboardingTemplateFn);
+  const ensureBuiltIn = useServerFn(ensureBuiltInTemplateFn);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
@@ -89,6 +91,18 @@ function TemplatesPage() {
       setDescription("");
       setSelected(r.id);
       refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // The built-in plan is editable in place: the first edit saves the shipped
+  // plan as a real template under the same name, so there is no copy to keep
+  // in step with it.
+  const editBuiltIn = useMutation({
+    mutationFn: () => ensureBuiltIn(),
+    onSuccess: (r) => {
+      setSelected(r.id);
+      if (r.created) refresh();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -124,7 +138,7 @@ function TemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Onboarding templates"
-        description="The plan a new home is set up from. Duplicate the built-in plan to make it yours, then change steps, owners and deadlines."
+        description="The plan a new home is set up from. Edit the ARHA plan directly, or build another one alongside it."
         actions={
           <Button onClick={() => setNewOpen(true)}>
             <CopyPlus className="mr-1 h-4 w-4" /> New template
@@ -162,17 +176,14 @@ function TemplatesPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                {t.builtIn ? (
+                {t.builtIn && !t.id ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      setName("ARHA Full Furnishing (copy)");
-                      setDescription("Editable copy of the built-in ARHA plan.");
-                      setNewOpen(true);
-                    }}
+                    disabled={editBuiltIn.isPending}
+                    onClick={() => editBuiltIn.mutate()}
                   >
-                    Duplicate and edit
+                    {editBuiltIn.isPending ? "Opening…" : "Edit steps"}
                   </Button>
                 ) : (
                   <>
@@ -190,6 +201,8 @@ function TemplatesPage() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      // The plan every new home falls back to must stay available.
+                      disabled={t.builtIn}
                       onClick={() =>
                         doArchive.mutate({ templateId: t.id as string, isArchived: !t.isArchived })
                       }

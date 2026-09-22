@@ -410,6 +410,7 @@ export const startOnboardingProjectFn = createServerFn({ method: "POST" })
         projectManager: z.string().uuid().nullable().default(null),
         director: z.string().uuid().nullable().default(null),
         utilityManager: z.string().uuid().nullable().default(null),
+        templateId: z.string().uuid().nullable().default(null),
         plannedClosingOn: z.string().date().nullable().default(null),
         possessionOn: z.string().date().nullable().default(null),
         targetHandoffOn: z.string().date().nullable().default(null),

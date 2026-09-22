@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { writeAudit } from "./audit.server";
 import {
+  BUILT_IN_TEMPLATE_KEY,
   builtInAsRows,
   builtInSummary,
   templateKeyFrom,
@@ -49,6 +50,57 @@ export type TemplateDetail = {
   steps: TemplateStep[];
 };
 
+/**
+ * Make the built-in ARHA plan an ordinary, editable template.
+ *
+ * The plan ships in code so a brand-new workspace has something to work with.
+ * The first time the director edits it, that code plan is written into the
+ * database once, keeps its own key, and from then on IS the built-in plan —
+ * no duplicate, no copy to keep in step.
+ */
+export async function ensureBuiltInTemplate(
+  supabase: Client,
+  userId: string,
+  audit: typeof writeAudit = writeAudit,
+): Promise<{ id: string; created: boolean }> {
+  await assertSupervisor(supabase, userId);
+
+  const existing = await supabase
+    .from("onboarding_templates")
+    .select("id")
+    .eq("key", BUILT_IN_TEMPLATE_KEY)
+    .maybeSingle();
+  if (existing.error) throw existing.error;
+  if (existing.data) return { id: existing.data.id, created: false };
+
+  const summary = builtInSummary();
+  const created = await supabase
+    .from("onboarding_templates")
+    .insert({
+      key: BUILT_IN_TEMPLATE_KEY,
+      name: summary.name,
+      description: summary.description,
+      created_by: userId,
+    })
+    .select("id")
+    .single();
+  if (created.error) throw created.error;
+
+  const rows = builtInAsRows(created.data.id);
+  const inserted = await supabase.from("onboarding_template_tasks").insert(rows);
+  if (inserted.error) throw inserted.error;
+
+  await audit({
+    actorId: userId,
+    action: "onboarding_template_created",
+    entityType: "onboarding_template",
+    entityId: created.data.id,
+    entityLabel: summary.name,
+    after: { key: BUILT_IN_TEMPLATE_KEY, steps: rows.length, builtIn: true },
+  });
+  return { id: created.data.id, created: true };
+}
+
 export async function listOnboardingTemplates(
   supabase: Client,
   userId: string,
@@ -76,20 +128,21 @@ export async function listOnboardingTemplates(
     }
   }
 
-  return [
-    builtInSummary(),
-    ...(templates.data ?? []).map((t) => ({
-      id: t.id,
-      key: t.key,
-      name: t.name,
-      description: t.description,
-      isDefault: t.is_default,
-      isArchived: t.is_archived,
-      builtIn: false,
-      taskCount: counts.get(t.id)?.tasks ?? 0,
-      subtaskCount: counts.get(t.id)?.subtasks ?? 0,
-    })),
-  ];
+  const saved = (templates.data ?? []).map((t) => ({
+    id: t.id as string | null,
+    key: t.key,
+    name: t.name,
+    description: t.description,
+    isDefault: t.is_default,
+    isArchived: t.is_archived,
+    // Once the built-in plan has been written to the database it is still the
+    // built-in plan — just an editable one.
+    builtIn: t.key === BUILT_IN_TEMPLATE_KEY,
+    taskCount: counts.get(t.id)?.tasks ?? 0,
+    subtaskCount: counts.get(t.id)?.subtasks ?? 0,
+  }));
+  const materialised = saved.some((t) => t.key === BUILT_IN_TEMPLATE_KEY);
+  return materialised ? saved : [builtInSummary(), ...saved];
 }
 
 export async function readOnboardingTemplate(
@@ -420,6 +473,18 @@ export async function resolveTemplateTasks(
       .maybeSingle();
     if (found.error) throw found.error;
     row = found.data;
+    if (!row) {
+      // Nothing marked default: the built-in plan applies, and if it has been
+      // edited the edited version is the one that counts.
+      const builtIn = await supabase
+        .from("onboarding_templates")
+        .select("id, key")
+        .eq("key", BUILT_IN_TEMPLATE_KEY)
+        .eq("is_archived", false)
+        .maybeSingle();
+      if (builtIn.error) throw builtIn.error;
+      row = builtIn.data;
+    }
   }
   if (!row) return null;
 
