@@ -60,6 +60,8 @@ export function parseWorkspaceSearch(search: {
       "property",
       "budget",
       "findings",
+      "workorders",
+
       "vendors",
       "financial",
       "handoff",
