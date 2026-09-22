@@ -135,6 +135,8 @@ export type StartProjectInput = {
   poolLocation?: "none" | "neighborhood" | "property";
   notes: string | null;
   externalRefs: Record<string, string>;
+  /** Which onboarding plan this home is set up from; null uses the default. */
+  templateId?: string | null | undefined;
 
 };
 
@@ -181,7 +183,10 @@ export async function startOnboardingProject(
         await ensureActiveOwnerEnrollment(supabase, userId, input.propertyId);
       }
       const { applyOnboardingTemplate } = await import("./onboarding-template.server");
-      await applyOnboardingTemplate(supabase, userId, { propertyId: input.propertyId });
+      await applyOnboardingTemplate(supabase, userId, {
+        propertyId: input.propertyId,
+        templateId: input.templateId ?? null,
+      });
     }
     return existing.data;
   }
@@ -243,6 +248,7 @@ export async function startOnboardingProject(
   const { applyOnboardingTemplate } = await import("./onboarding-template.server");
   const applied = await applyOnboardingTemplate(supabase, userId, {
     propertyId: input.propertyId,
+    templateId: input.templateId ?? null,
   });
   const plannedTasks = applied.created;
 
