@@ -251,6 +251,7 @@ export function reportCsv(report: OwnerReport) {
       e.counts && e.inPeriod ? "yes" : "no",
       e.inPeriod ? "yes" : "no",
       e.reason,
+      e.evidence,
       "time_entry",
       e.id,
       "",
