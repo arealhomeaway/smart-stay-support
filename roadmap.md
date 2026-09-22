@@ -679,3 +679,12 @@ Batch B (work surface)
 - [x] Owner "Needs your attention": group/label items per property; add a notification badge on the Active Owner view
 - [x] Every published onboarding task creates an unread Active Owner bell notification
 - [ ] Owner page: home cards open a read-only property detail view (mirrors Property Hub details)
+
+## Active Owner portal refinement (Sept 22)
+- [x] Explain (not error) when hours cannot be logged before program activation
+- [x] Full task workspace: instructions, clickable links, shared documents, decision + reply + log time
+- [x] Remove the redundant hero bell (top-bar bell is authoritative)
+- [x] "Ways to participate": evidence upload + working the item directly, real links, more detail
+- [ ] Decision needed: activate Victor's program now (starts the 90-day clock) so he can log hours
+- [x] Hero buttons readable (white-on-white) and actually navigate
+- [x] Owner overview greeting shows first name, not initials

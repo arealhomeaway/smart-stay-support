@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Award,
-  Bell,
   Clock,
   FolderOpen,
   Home as HomeIcon,
@@ -43,6 +42,9 @@ import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner
 import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
+import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
+import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
+import type { OwnerOnboardingAction } from "@/lib/owner-onboarding.server";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
 import { OwnerBadges } from "@/components/OwnerBadges";
@@ -93,9 +95,24 @@ type Review = {
   propertyIds: string[];
 };
 
-function firstName(name: string | null | undefined) {
-  const first = (name ?? "").trim().split(/\s+/)[0];
-  return first || "there";
+/** Company suffixes: an entity name is never used to greet a person. */
+const ENTITY_WORDS = /\b(llc|l\.l\.c|inc|incorporated|corp|co|company|ltd|limited|trust|holdings|properties|partners|group|enterprises|solutions|rentals|realty|investments|lp|llp)\b/i;
+
+/**
+ * The homeowner's own first name. The owner record is often an entity
+ * ("VP Housing Solutions LLC"), whose first word reads as initials, so the
+ * signed-in person's own name wins whenever we have it.
+ */
+function firstName(...candidates: (string | null | undefined)[]) {
+  for (const candidate of candidates) {
+    const name = (candidate ?? "").trim();
+    if (!name || ENTITY_WORDS.test(name)) continue;
+    const first = name.split(/\s+/)[0] ?? "";
+    // Two-letter all-caps reads as initials, not a name.
+    if (first.length < 2 || /^[A-Z]+$/.test(first)) continue;
+    return first;
+  }
+  return "there";
 }
 
 function OwnerHub() {
@@ -172,6 +189,11 @@ function OwnerHubBody({
   data: Extract<Awaited<ReturnType<typeof loadHome>>, { linked: true }>;
   preview: boolean;
 }) {
+  const { user } = Route.useRouteContext();
+  const signedInName =
+    typeof user.user_metadata?.["full_name"] === "string"
+      ? (user.user_metadata["full_name"] as string)
+      : null;
   const qc = useQueryClient();
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["owner-home"] });
@@ -197,8 +219,6 @@ function OwnerHubBody({
     .filter((r) => r.auto_ticket && !ownerReviewPresentation(r).attention)
     .filter(inScope);
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
-  const unreadAlerts = alerts.filter((a) => !a.read_at).length;
-  const attentionCount = openReviews.length + unreadAlerts;
 
   /**
    * Homeowners think per home, so the attention list is grouped by the home it
@@ -259,6 +279,34 @@ function OwnerHubBody({
     );
   const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
 
+  // Participation time only counts once the program itself has started, so the
+  // portal says so plainly instead of letting the homeowner hit a refusal.
+  const canLogHours =
+    !preview &&
+    ["active", "target_reached"].includes(program.status) &&
+    Boolean(program.startedOn);
+  const logHoursBlockedReason = canLogHours
+    ? null
+    : program.completedAt
+      ? "Your 90 days have closed, so no further hours can be added."
+      : "Your Active Owner program has not started yet. Hours can be logged as soon as your ARHA team activates it — usually at closing.";
+
+  // The onboarding task behind an attention item carries the instructions,
+  // links and shared files the homeowner needs to actually work it.
+  const loadOnboarding = useServerFn(ownerOnboardingActions);
+  const onboardingQuery = useQuery({
+    queryKey: ["owner-onboarding", preview ? program.id : null, preview],
+    queryFn: () => loadOnboarding({ data: { programId: preview ? program.id : null, preview } }),
+  });
+  const actionByReview = useMemo(() => {
+    const map = new Map<string, OwnerOnboardingAction>();
+    const all = [...(onboardingQuery.data?.pending ?? []), ...(onboardingQuery.data?.decided ?? [])];
+    for (const action of all) {
+      if (action.participation?.reviewId) map.set(action.participation.reviewId, action);
+    }
+    return map;
+  }, [onboardingQuery.data]);
+
   // "Log hours" records whatever the homeowner did on their own initiative:
   // a meeting, a phone call, research or an errand for their home.
   const [heroLogOpen, setHeroLogOpen] = useState(false);
@@ -308,29 +356,15 @@ function OwnerHubBody({
       <PageHero
         image={heroPhoto}
         eyebrow="Active Owner"
-        title={`Welcome back, ${firstName(program.ownerName)}`}
+        title={`Welcome back, ${firstName(signedInName, program.ownerName)}`}
         description="Here is where things stand across your homes, and anything that needs your attention."
         actions={
           <>
-            {preview ? null : (
+            {preview || !canLogHours ? null : (
               <Button onClick={() => openManualLog("")}>
                 <Clock className="size-4" aria-hidden="true" /> Log hours
               </Button>
             )}
-            <Button
-              variant={attentionCount > 0 ? "default" : "outline"}
-              aria-label={`${attentionCount} items need your attention`}
-              onClick={() => scrollToSection("owner-decisions")}
-            >
-              <Bell className="size-4" aria-hidden="true" />
-              {attentionCount > 0 ? (
-                <span className="numeric ml-1 rounded-full bg-background/20 px-2 py-0.5 text-xs">
-                  {attentionCount}
-                </span>
-              ) : (
-                "All caught up"
-              )}
-            </Button>
             <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
               Pending decisions
               {openReviews.length > 0 ? (
@@ -358,6 +392,13 @@ function OwnerHubBody({
         properties={properties.map((p) => ({ id: p.id, name: p.name }))}
         onDone={invalidate}
       />
+
+      {!preview && logHoursBlockedReason ? (
+        <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm" role="status">
+          <p className="font-medium">Logging hours is not open yet</p>
+          <p className="mt-1 text-muted-foreground">{logHoursBlockedReason}</p>
+        </div>
+      ) : null}
 
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
@@ -456,6 +497,9 @@ function OwnerHubBody({
                     programId={program.id}
                     onDone={invalidate}
                     readOnly={preview}
+                    action={actionByReview.get(r.id) ?? null}
+                    canLogHours={canLogHours}
+                    logHoursBlockedReason={logHoursBlockedReason}
                   />
                 ))}
               </div>
@@ -472,6 +516,9 @@ function OwnerHubBody({
         // A home is still being set up when its open work is onboarding work.
         phase={ownerPhase}
         openReviews={openReviews.length}
+        pendingOnboardingActions={onboardingQuery.data?.pending.length ?? 0}
+        blockedReason={preview ? "Preview only — hours are recorded by the homeowner." : logHoursBlockedReason}
+        onGoToWaiting={() => scrollToSection("owner-decisions")}
         {...(preview ? {} : { onLogHours: openManualLog })}
       />
 
@@ -495,6 +542,9 @@ function OwnerHubBody({
                 programId={program.id}
                 onDone={invalidate}
                 readOnly={preview}
+                action={actionByReview.get(r.id) ?? null}
+                canLogHours={canLogHours}
+                logHoursBlockedReason={logHoursBlockedReason}
               />
             ))}
           </div>
@@ -759,21 +809,35 @@ function titleCase(value: string) {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : "—";
 }
 
+/**
+ * One item waiting on the homeowner. The row stays short; opening it gives the
+ * homeowner everything the team sent and every action they can take on it.
+ */
 function ReviewRow({
   review,
   properties,
   programId,
   onDone,
   readOnly,
+  action = null,
+  canLogHours = true,
+  logHoursBlockedReason = null,
 }: {
   review: Review;
   properties: { propertyId: string; name: string }[];
   programId: string;
   onDone: () => void;
   readOnly: boolean;
+  /** The onboarding task behind this item, when there is one. */
+  action?: OwnerOnboardingAction | null;
+  canLogHours?: boolean;
+  logHoursBlockedReason?: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const [response, setResponse] = useState("");
+  const [logOpen, setLogOpen] = useState(false);
+  const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
+    null,
+  );
   const presentation = ownerReviewPresentation(review);
   const canRespond =
     !readOnly &&
@@ -789,20 +853,19 @@ function ReviewRow({
   const answer = useServerFn(answerOwnerReview);
 
   const respond = useMutation({
-    mutationFn: (decision: string) =>
+    mutationFn: (response: string) =>
       answer({
         data: {
           reviewId: responseContext?.id ?? review.id,
           expectedUpdatedAt: responseContext?.expectedUpdatedAt ?? "",
           ownerUpdateRevision: responseContext?.ownerUpdateRevision ?? null,
-          decision,
-          response: response.trim(),
+          decision: "acknowledged",
+          response,
         },
       }),
     onSuccess: () => {
       toast.success("Thanks — your response was recorded.");
       setOpen(false);
-      setResponse("");
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -812,6 +875,8 @@ function ReviewRow({
     .filter((p) => review.propertyIds.includes(p.propertyId))
     .map((p) => p.name)
     .join(", ");
+  const fileCount = action?.files.length ?? 0;
+  const timeLoggable = canLogHours && !readOnly && review.status !== "closed";
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border/70 px-4 py-3">
@@ -821,66 +886,60 @@ function ReviewRow({
           <StatusBadge tone={reviewTone(review.status)}>{presentation.label}</StatusBadge>
         </div>
         {review.business_question ? (
-          <p className="mt-1 text-sm text-muted-foreground">{review.business_question}</p>
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+            {review.business_question}
+          </p>
         ) : null}
         <p className="mt-1 text-xs text-muted-foreground">
           {names ? `${names} · ` : ""}
-          {review.respond_by
-            ? `Please respond by ${usCalendarDate(review.respond_by)}`
-            : "No due date"}
+          {taskDeadlineLabel(review.respond_by)}
+          {fileCount > 0
+            ? ` · ${fileCount} file${fileCount === 1 ? "" : "s"} attached`
+            : ""}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <LogTimeButton
-          review={review}
-          programId={programId}
-          onDone={onDone}
-          readOnly={readOnly || review.status === "closed"}
-        />
-        <Button size="sm" variant="outline" onClick={() => setResponseOpen(true)}>
-          <MessageSquare className="size-4" />{" "}
-          {review.auto_ticket || !canRespond ? "Review details" : "Respond"}
+        <Button size="sm" onClick={() => setResponseOpen(true)}>
+          <MessageSquare className="size-4" /> Open and work this
         </Button>
       </div>
 
-      <Dialog open={open} onOpenChange={setResponseOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{responseContext?.title ?? review.title}</DialogTitle>
-            <DialogDescription>
-              {responseContext?.description ?? "Share your decision or note below."}
-            </DialogDescription>
-          </DialogHeader>
-          {review.auto_ticket ? (
-            <p className="text-sm text-muted-foreground">
-              {ownerTicketResponseGuidance(responseContext?.requestCategory)}
-            </p>
-          ) : null}
-          {review.owner_response ? (
-            <p className="text-sm whitespace-pre-wrap">
-              Your recorded response: {review.owner_response}
-            </p>
-          ) : null}
-          {canRespond ? (
-            <Textarea
-              rows={4}
-              placeholder="Your response"
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-            />
-          ) : null}
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            {canRespond ? (
-              <Button disabled={respond.isPending} onClick={() => respond.mutate("acknowledged")}>
-                Send response
-              </Button>
-            ) : null}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <OwnerTaskDialog
+        open={open}
+        onOpenChange={setResponseOpen}
+        details={{
+          title: responseContext?.title ?? review.title,
+          statusLabel: presentation.label,
+          source: review.auto_ticket ? "Property work" : "Onboarding",
+          homes: names,
+          respondBy: review.respond_by,
+          question: review.business_question ?? responseContext?.description ?? null,
+          recommendation: review.recommendation,
+          guidance: review.auto_ticket
+            ? ownerTicketResponseGuidance(responseContext?.requestCategory)
+            : null,
+          priorResponse: review.owner_response ?? null,
+        }}
+        action={action}
+        canRespond={canRespond}
+        responding={respond.isPending}
+        onRespond={(value) => respond.mutate(value)}
+        canLogTime={timeLoggable}
+        logTimeBlockedReason={logHoursBlockedReason}
+        onLogTime={() => {
+          setReviewed(captureReviewedOpportunity(review));
+          setLogOpen(true);
+        }}
+        onDecided={onDone}
+      />
+
+      <LogTimeDialog
+        open={logOpen}
+        onOpenChange={setLogOpen}
+        programId={programId}
+        anchor={reviewed}
+        onDone={onDone}
+      />
     </div>
   );
 }
@@ -908,46 +967,6 @@ function EvidenceLink({ entryId }: { entryId: string }) {
     >
       <Paperclip className="size-4" /> View attachment
     </Button>
-  );
-}
-
-function LogTimeButton({
-  review,
-  programId,
-  onDone,
-  readOnly,
-}: {
-  review: Review;
-  programId: string;
-  onDone: () => void;
-  readOnly: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
-    null,
-  );
-
-  return (
-    <>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={readOnly}
-        onClick={() => {
-          setReviewed(captureReviewedOpportunity(review));
-          setOpen(true);
-        }}
-      >
-        <Clock className="size-4" /> Log time
-      </Button>
-      <LogTimeDialog
-        open={open}
-        onOpenChange={setOpen}
-        programId={programId}
-        anchor={reviewed}
-        onDone={onDone}
-      />
-    </>
   );
 }
 
