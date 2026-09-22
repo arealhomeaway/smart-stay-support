@@ -382,6 +382,7 @@ function ScopeDialog({
   onOpenChange,
   propertyName,
   people,
+  templates,
   initial,
   editing,
   busy,
@@ -392,6 +393,7 @@ function ScopeDialog({
   onOpenChange: (v: boolean) => void;
   propertyName: string;
   people: Person[];
+  templates: { id: string; name: string }[];
   initial: ScopeValues;
   editing: boolean;
   busy: boolean;
