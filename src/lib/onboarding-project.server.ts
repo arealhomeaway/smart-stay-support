@@ -387,6 +387,7 @@ export async function updateProject(
     if (synced.error) throw synced.error;
   }
 
+  let enrollmentWarning: string | null = null;
   const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
   if (scopeChanged) {
     await recordProjectEvent(supabase, {
@@ -425,7 +426,7 @@ export async function updateProject(
       isDemo: data.is_demo,
     });
   }
-  return data;
+  return { ...data, enrollmentWarning };
 }
 
 function assertProjectLead(project: ProjectRow, userId: string, supervisor: boolean) {
