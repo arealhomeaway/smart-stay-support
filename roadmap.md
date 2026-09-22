@@ -565,7 +565,7 @@ is now doable from Resolve.
 - [x] Availability Finder cards: show only stay total and average nightly (base rate is internal)
 - [x] Property options email: hospitable greeting naming the search location and dates
 - [x] Per-user email signature, saved on the profile and added to the foot of drafts
-- [ ] To/Cc/Bcc as type-or-pick comboboxes: typing filters saved + previously emailed addresses to the top, Enter/Tab makes a chip from a typed address, existing validation preserved
+- [x] To/Cc/Bcc as type-or-pick comboboxes: typing filters saved + previously emailed addresses to the top, Enter/Tab makes a chip from a typed address, existing validation preserved
 - [ ] Onboarding Hub: group tasks into 3-4 parallel workstream tracks (Access & Utilities, Furnishing & Staging, Media & Listing, Ops & Readiness)
 - [ ] Onboarding Hub: "Ready Now" queue of every unblocked task across active tracks
 - [ ] Onboarding Hub: warm elevated look, subtle progress meters, slide-over task drawers
