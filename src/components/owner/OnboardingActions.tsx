@@ -168,6 +168,15 @@ export function OnboardingActions({
   const load = useServerFn(ownerOnboardingActions);
   const decide = useServerFn(decideOwnerApproval);
   const [busy, setBusy] = useState<string | null>(null);
+  // After a decision, the homeowner may record the time they actually spent
+  // reviewing it — only where staff already opened a participation
+  // opportunity for the task. No amount is ever suggested.
+  const [logPrompt, setLogPrompt] = useState<{
+    anchor: LogTimeAnchor;
+    activity: string;
+    title: string;
+  } | null>(null);
+  const [logOpen, setLogOpen] = useState(false);
 
   const q = useQuery({
     queryKey: ["owner-onboarding", programId, readOnly],
