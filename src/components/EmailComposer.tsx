@@ -148,6 +148,14 @@ function ComposerBody({
     queryKey: ["composer-history", context, recordId],
     queryFn: () => loadHistory({ data: { context, recordId } }),
   });
+  const mailboxStatus = useServerFn(getMailboxStatus);
+  const mailbox = useQuery({
+    queryKey: ["composer-mailbox-status"],
+    queryFn: () => mailboxStatus(),
+    staleTime: 60_000,
+  });
+
+
 
   const recipients = ctx.data?.recipients ?? [];
   const templates = (ctx.data?.templates ?? []) as TemplateRow[];
