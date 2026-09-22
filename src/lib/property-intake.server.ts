@@ -156,7 +156,7 @@ export async function importOwnerRezProperty(
     listingId: string;
     linkToPropertyId?: string | null;
     isDemo?: boolean;
-    milestones?: PropertyMilestones;
+    milestones?: PropertyMilestones | undefined;
   },
 ): Promise<IntakeResult> {
   const { listListings } = await import("./ownerrez.server");
@@ -240,7 +240,7 @@ export type ManualPropertyInput = {
   ownerEmail?: string | null;
   ownerRezPropertyId?: string | null;
   isDemo?: boolean;
-  milestones?: PropertyMilestones;
+  milestones?: PropertyMilestones | undefined;
 };
 
 /**
