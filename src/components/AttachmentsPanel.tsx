@@ -85,6 +85,8 @@ export function AttachmentsPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ name: string; pct: number } | null>(null);
   const [retry, setRetry] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+
   const uploadAttempt = useRef<{
     file: File;
     key: string;
