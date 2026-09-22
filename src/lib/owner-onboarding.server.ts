@@ -373,6 +373,7 @@ export async function loadOwnerOnboardingPreview(
   return {
     inOnboarding: homes.length > 0 || actions.length > 0,
     preview: true,
+    programId,
     ...splitDecided(actions),
     homes,
   };
