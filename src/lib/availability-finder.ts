@@ -1,5 +1,6 @@
 import { can, type AppRole } from "./permissions";
 import { hasRequirements, matchesRequirements, type MatchRequirements, type PropertyFacts } from "./property-facts";
+import { clientQuoteLine, PRICE_ESTIMATE_NOTE, type StayQuote } from "./pricing";
 
 export const AVAILABILITY_RADIUS_MILES = 20;
 export type AvailabilityStatus = "available" | "conditional" | "unavailable";
@@ -29,6 +30,10 @@ export type AvailabilityResult = AvailabilityProperty & {
   facts: PropertyFacts;
   /** Set when OwnerRez details could not be read; facts are unknown then. */
   factsUnavailable: string | null;
+  /** PriceLabs estimate for the requested stay; null when no price is known. */
+  quote: StayQuote | null;
+  /** Set when no price could be produced, in plain words. */
+  quoteUnavailable: string | null;
 };
 export type AvailabilityBooking = {
   arrival: string;
