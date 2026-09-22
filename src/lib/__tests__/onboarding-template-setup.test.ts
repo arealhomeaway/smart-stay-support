@@ -251,3 +251,18 @@ describe("onboarding template setup", () => {
     expect(f.approvals.get(task.id)).toBe("original-pending-approval");
   });
 });
+
+  it("refreshes steps already on the home when asked for new and existing", async () => {
+    const f = fixture(true);
+    const open = f.tasks.find((t) => !t.parent_task_id)!;
+    open.detail = "stale wording";
+    const result = await applyOnboardingTemplate(
+      f.db as never,
+      "staff",
+      { propertyId: "qa-home", mode: "new_and_existing" },
+      f.saveAudit,
+    );
+    expect(result.created).toBe(0);
+    expect(result.refreshed).toBeGreaterThan(0);
+    expect(open.detail).not.toBe("stale wording");
+  });
