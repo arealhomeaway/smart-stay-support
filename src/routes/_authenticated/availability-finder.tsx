@@ -65,11 +65,14 @@ function AvailabilityFinderPage() {
   const [confirmUnlinked, setConfirmUnlinked] = useState<string | null>(null);
   const sources = useInquirySources();
   const sourceList = sources.data ?? [];
-  const [sourceName, setSourceName] = useState(() => sourceList.find((entry) => entry.id === search.inquirySourceId)?.name ?? "");
   const [addingSource, setAddingSource] = useState(false);
+  const [sourceEdit, setSourceEdit] = useState<string | null>(null);
+  const searchedSource = sourceList.find((entry) => entry.id === search.inquirySourceId) ?? null;
+  // Until the coordinator types, the box shows whatever source the current search used.
+  const sourceName = sourceEdit ?? searchedSource?.name ?? "";
+  const setSourceName = (next: string) => setSourceEdit(next);
   // The typed name is matched against the list; anything unmatched simply prices without a source.
   const typedSource = sourceList.find((entry) => entry.name.toLowerCase() === sourceName.trim().toLowerCase()) ?? null;
-  const searchedSource = sourceList.find((entry) => entry.id === search.inquirySourceId) ?? null;
   const searchedAmenities = parseAmenities(search.amenities);
   const inputReady = Boolean(search.location?.trim() && search.checkIn && search.checkOut && validStay(search.checkIn, search.checkOut));
   const query = useQuery({
