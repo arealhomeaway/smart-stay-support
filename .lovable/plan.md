@@ -24,9 +24,26 @@ Add a closeout card in the homeowner hub that appears as Day 90 approaches and a
 
 ## 4. Your ARHA contacts
 
-The packet names the people. The portal names nobody.
+The packet names the people. The portal names nobody. The card makes the working relationship explicit rather than implying Kati and Emily handle day-to-day traffic:
 
-Add a contacts card showing the homeowner's onboarding contact (Kati Hand) and Active Owner contact (Emily Jimenez) during the program, switching to James Miller after closeout — with role, email and direct line, matching the packet exactly.
+- **During onboarding** — the homeowner's day-to-day contacts are their project manager and utility manager, shown by name from the home's actual assignments. Kati Hand (Director of Onboarding) and Emily Jimenez (COO) are listed as the escalation contacts.
+- **After handoff and listing** — the day-to-day contacts become their property coordinator and the Director of Onboarding for continued management of the home. Emily remains the escalation contact through the program period.
+- **After Day-90 closeout** — James Miller, Jr. (CFO) becomes the primary contact for invoicing, billing and ongoing owner concerns.
+
+Each person shows role, email and direct line; the packet's people are exact, the PM / utility manager / coordinator come from the home's assignments and fall back to the escalation contact when a seat is unfilled.
+
+
+## 5. End-to-end test on a sample Active Owner home
+
+Once the four pieces are in, I run the whole journey against a sample Active Owner property rather than spot-checking screens. For each of the six phases — Initial Onboarding, Design Alignment, Setup Progress, Owner Handoff, First Confirmed Booking, Day-90 Review — I confirm:
+
+- the trigger that moves the home into that phase actually fires and the journey strip advances,
+- a request of each type that belongs to that phase can be raised, reaches the homeowner's queue, and is labeled with the right category,
+- the deadline shows in Central Time, goes overdue on time, and the overdue state is visible to both the homeowner and the supervisor,
+- the notification reaches the assigned staff member and the homeowner check-in reminder fires in its milestone window,
+- the decision the homeowner makes writes through to the task and cannot be overwritten.
+
+I report the result phase by phase, naming anything that did not fire. Email delivery is still blocked until the ARHA mailbox reconnects, so mail steps are verified as far as the queued, correctly addressed message and flagged as unsent.
 
 ## What I am not changing
 
