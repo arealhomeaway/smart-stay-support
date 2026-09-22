@@ -555,3 +555,9 @@ is now doable from Resolve.
 - [x] Inline validation on typed addresses; Send stays off until every recipient is valid
 - [x] Add saved/previous contacts straight into the recipient chips (To/Cc/Bcc)
 - [ ] Availability Finder pricing: add partner fees and special pricing to the estimated quote (rules pending from Emily)
+
+- [x] Inquiry Sources database imported from the Notion export (18 sources, blanks preserved)
+- [x] Editable Inquiry Sources table with add/edit
+- [x] Searchable Inquiry Source dropdown in Availability Finder, with "Add inquiry source"
+- [x] Source-based quotes on cards, in the PDF and in the email
+- [x] Corporate Housing Extra applied per month, prorated on a 30-day month

@@ -125,8 +125,14 @@ export function buildSourceQuote(
       amount: source.petFeePerPet * petCount,
     });
   }
-  if (money(source.corporateHousingExtra) && source.corporateHousingExtra > 0)
-    flags.push(`Corporate Housing Extra ${formatMoney(source.corporateHousingExtra, quote.currency)} is recorded without a stated basis (per night or per stay), so it is not in this estimate.`);
+  // Corporate Housing Extra is a monthly charge, prorated over a 30-day month.
+  if (money(source.corporateHousingExtra) && source.corporateHousingExtra > 0) {
+    const months = quote.nights / 30;
+    lines.push({
+      label: `Corporate housing extra (${formatMoney(source.corporateHousingExtra, quote.currency)}/month, ${quote.nights} nights)`,
+      amount: Math.round(source.corporateHousingExtra * months),
+    });
+  }
 
   const total = Math.round(lines.reduce((sum, line) => sum + line.amount, 0));
   const referral = referralCostFor(source, accommodation, quote.nights);
