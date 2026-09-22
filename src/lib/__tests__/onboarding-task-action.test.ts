@@ -74,7 +74,7 @@ describe("the one guided action on an onboarding task", () => {
     ).toBe("resubmit_for_approval");
   });
 
-  it("points at the dependency instead of offering a form when the step is not released", () => {
+  it("offers the step's own action even when a prerequisite is open", () => {
     const first = task({ id: "aaaaaaa1-1111-4111-8111-111111111111", title: "Closing confirmed" });
     const second = task({
       id: "aaaaaaa2-2222-4222-8222-222222222222",
@@ -83,31 +83,31 @@ describe("the one guided action on an onboarding task", () => {
       sort_order: 2,
     });
     const a = onboardingTaskAction(viewTask(second, [first, second]));
-    expect(a?.id).toBe("wait_for_dependency");
-    expect(a?.handoff?.target).toBe("dependency");
-    expect(a?.because).toContain("Closing confirmed");
+    expect(a?.id).not.toBe("wait_for_dependency");
   });
+
 
   it("a finished step points at the next one, and a carryover has no action", () => {
     expect(onboardingTaskAction(v(task({ status: "complete" })))?.id).toBe("reopen_or_move_on");
     expect(onboardingTaskAction(v(task({ status: "carryover" })))).toBeNull();
   });
 
-  it("advances to the next workable step in plan order", () => {
+  it("advances to the very next step in plan order", () => {
     const a = task({ id: "bbbbbbb1-1111-4111-8111-111111111111", sort_order: 1 });
-    const blocked = task({
+    const next = task({
       id: "bbbbbbb2-2222-4222-8222-222222222222",
-      title: "Blocked step",
+      title: "Next step",
       sort_order: 2,
       depends_on: ["bbbbbbb9-9999-4999-8999-999999999999"],
     });
-    const workable = task({
+    const later = task({
       id: "bbbbbbb3-3333-4333-8333-333333333333",
-      title: "Next real step",
+      title: "Later step",
       sort_order: 3,
     });
-    const all = [a, blocked, workable];
-    expect(nextActionableTask(a, all)?.id).toBe(workable.id);
+    const all = [a, next, later];
+    expect(nextActionableTask(a, all)?.id).toBe(next.id);
+
     expect(nextActionableTask(a, [a])).toBeNull();
   });
 

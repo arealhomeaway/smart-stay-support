@@ -139,10 +139,10 @@ export function viewTask(
   release?: ReleaseContext,
 ): TaskView {
   const template = templateFor(task.title);
-  const waitingIds = dependencyBlocked(task, all);
-  const waitingOn = waitingIds
-    .map((id) => all.find((t) => t.id === id)?.title)
-    .filter((t): t is string => Boolean(t));
+  // Sequencing is advisory only: prerequisites never hold a step back and are
+  // not surfaced on the card.
+  const waitingOn: string[] = [];
+
 
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   const awaitingOwner =
@@ -161,13 +161,8 @@ export function viewTask(
   } else if ((task.blocker ?? "").trim()) {
     status = "blocked";
     reason = `Blocked — ${task.blocker!.trim()}`;
-  } else if (waitingIds.length > 0) {
-    status = "not_ready";
-    reason =
-      waitingOn.length > 0
-        ? `Waiting on ${waitingOn.join(", ")}`
-        : "Blocked — Dependency Incomplete";
   } else if (awaitingOwner && task.owner_approval_status === "awaiting_owner") {
+
     status = "needs_review";
     reason = "Blocked — Waiting on Owner";
   } else if (awaitingOwner && task.owner_approval_status === "changes_requested") {
@@ -195,16 +190,8 @@ export function viewTask(
       }.`,
     });
   }
-  if ((task.depends_on ?? []).length > 0) {
-    markers.push({
-      key: "dependency",
-      label: "Dependency",
-      explain:
-        waitingOn.length > 0
-          ? `Released after ${waitingOn.join(", ")} completes.`
-          : "Released — every prerequisite task is complete.",
-    });
-  }
+  // Prerequisites are advisory only — no "waiting on" marker is shown.
+
   if (task.requires_owner_approval) {
     markers.push({
       key: "owner",
@@ -246,9 +233,10 @@ export function viewTask(
     status = RELEASE_TO_STATUS[verdict.state] ?? "ready";
     reason = verdict.reason ?? reason;
     canComplete = verdict.canComplete;
-  } else if (status === "needs_review" || status === "blocked" || status === "not_ready") {
+  } else if (status !== "ready" && status !== "in_progress" && status !== "complete") {
     canComplete = false;
   }
+
 
   // Overdue describes work someone can actually do today. A task that is
   // still waiting on a prerequisite, an internal blocker or a homeowner

@@ -45,6 +45,8 @@ import { SchedulePanel } from "@/components/SchedulePanel";
 import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
+import { OnboardingDashboard } from "@/components/onboarding/OnboardingDashboard";
+
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
@@ -416,6 +418,24 @@ function PropertyWorkspace() {
         onOpenTask={setOpenTaskId}
       />
 
+      <OnboardingDashboard
+        propertyId={current.id}
+        plannedClosingOn={current.planned_closing_on ?? null}
+        actualClosingOn={current.actual_closing_on ?? null}
+        actualAccessOn={current.actual_access_on ?? null}
+        targetHandoffOn={projectRow?.target_handoff_on ?? null}
+        handoffSource={
+          (projectRow?.target_handoff_source as "auto" | "manual" | undefined) ?? "auto"
+        }
+        activeOwner={Boolean(activeOwner)}
+        canEdit={canEdit}
+        done={roll.done}
+        total={roll.total}
+        notes={notes as never}
+        people={data.people}
+        taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
+      />
+
       <CurrentWork
         stage={stage}
         chain={chain}
@@ -442,9 +462,10 @@ function PropertyWorkspace() {
           <TabsTrigger value="findings">Findings</TabsTrigger>
           <TabsTrigger value="vendors">Vendor coverage</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
-          <TabsTrigger value="handoff">Handoff</TabsTrigger>
+          <TabsTrigger value="handoff">Ready for Operations</TabsTrigger>
           <TabsTrigger value="activity">History</TabsTrigger>
         </TabsList>
+
 
         {/* ------------------------------------------------------- Overview */}
         <TabsContent value="overview" className="space-y-5">
@@ -906,26 +927,10 @@ function PropertyWorkspace() {
 
         {/* -------------------------------------------------------- Handoff */}
         <TabsContent value="handoff" className="space-y-5">
-          <section className="surface p-4">
-            <p className="eyebrow">Handoff chain</p>
-            <div className="mt-2 grid gap-1.5 sm:grid-cols-6">
-              {chain.map((g) => (
-                <div
-                  key={g.key}
-                  title={g.blurb}
-                  className={
-                    g.state === "done"
-                      ? "rounded-md border border-state-done/40 bg-state-done/10 px-2.5 py-1.5 text-xs"
-                      : g.state === "current"
-                        ? "rounded-md border border-primary bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary"
-                        : "rounded-md border border-border bg-card/40 px-2.5 py-1.5 text-xs text-muted-foreground"
-                  }
-                >
-                  {g.label}
-                </div>
-              ))}
-            </div>
-          </section>
+          {/* Gate chain and the gate-by-gate checklist were removed: a home is
+              either ready for Operations or it is not, and the blockers below
+              say why. Acceptance is still recorded by name and date. */}
+
           {/* Handoff gate */}
           {openHandoff && (
             <HandoffGatePanel
@@ -943,27 +948,11 @@ function PropertyWorkspace() {
           )}
 
           <section className="surface p-4">
-            <p className="font-medium">Readiness checklist</p>
+            <p className="font-medium">Ready for Operations</p>
             <p className="text-sm text-muted-foreground">
-              Blocking items must pass, or an authorised exception must be recorded, before handoff.
+              Anything still in the way is listed here. Acceptance is recorded by name and date.
             </p>
-            <div className="mt-3 space-y-2">
-              {readiness.checks.map((c) => (
-                <div key={c.key} className="flex items-start gap-3 rounded-md border p-3 text-sm">
-                  {c.passed ? (
-                    <CheckCircle2 className="mt-0.5 size-4 text-state-done" />
-                  ) : c.blocking ? (
-                    <XCircle className="mt-0.5 size-4 text-state-blocked" />
-                  ) : (
-                    <CircleAlert className="mt-0.5 size-4 text-state-waiting" />
-                  )}
-                  <div>
-                    <p className="font-medium">{c.label}</p>
-                    <p className="text-xs text-muted-foreground">{c.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+
             {readiness.reasons.length > 0 && (
               <div className="mt-3 rounded-md border border-state-blocked/40 bg-state-blocked/5 p-3">
                 <p className="text-sm font-medium">

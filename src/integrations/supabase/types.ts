@@ -4102,6 +4102,7 @@ export type Database = {
           started_by: string | null
           status: string
           target_handoff_on: string | null
+          target_handoff_source: string
           updated_at: string
         }
         Insert: {
@@ -4123,6 +4124,7 @@ export type Database = {
           started_by?: string | null
           status?: string
           target_handoff_on?: string | null
+          target_handoff_source?: string
           updated_at?: string
         }
         Update: {
@@ -4144,6 +4146,7 @@ export type Database = {
           started_by?: string | null
           status?: string
           target_handoff_on?: string | null
+          target_handoff_source?: string
           updated_at?: string
         }
         Relationships: [

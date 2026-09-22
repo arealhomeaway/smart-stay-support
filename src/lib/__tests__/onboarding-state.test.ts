@@ -75,9 +75,9 @@ describe("release integrity", () => {
       handoff: null,
     });
   }
-  it("does not treat a past planned closing as confirmed closing", () => {
+  it("lets milestone-anchored work be done before the milestone lands", () => {
     const t = task({ schedule_anchor: "actual_closing" });
-    expect(releaseState(t, [t], context(t)).canComplete).toBe(false);
+    expect(releaseState(t, [t], context(t)).canComplete).toBe(true);
   });
   it("allows pre-close work scheduled relative to planned closing", () => {
     const t = task({
@@ -87,10 +87,11 @@ describe("release integrity", () => {
     });
     expect(releaseState(t, [t], context(t)).canComplete).toBe(true);
   });
-  it("keeps missing prerequisites blocking", () => {
+  it("treats prerequisites as advice, never as a block", () => {
     const t = task({ depends_on: ["missing"] });
-    expect(releaseState(t, [t], context(t)).state).toBe("waiting");
+    expect(releaseState(t, [t], context(t)).state).toBe("ready");
   });
+
   it("requires evidence again for reopened work", () => {
     const t = task({ completed_at: "2026-01-10T00:00:00Z", evidence_required: true });
     expect(releaseState(t, [t], context(t)).canComplete).toBe(false);
@@ -131,8 +132,8 @@ describe("one authoritative lifecycle", () => {
   });
 });
 
-describe("release is phase and date aware", () => {
-  it("does not release later phases before access is confirmed", () => {
+describe("every phase is workable", () => {
+  it("releases later phases even before access is confirmed", () => {
     const ctx = buildReleaseContext({
       property: property({ actual_access_on: null, access_notes: null }),
       project: PROJECT,
@@ -140,11 +141,10 @@ describe("release is phase and date aware", () => {
       handoff: null,
     });
     const v = releaseState(task({ stage: "phase4_purchasing" }), [], ctx);
-    expect(v.canComplete).toBe(false);
-    expect(v.reason).toContain("Access");
+    expect(v.canComplete).toBe(true);
   });
 
-  it("keeps a later phase Future until the phase before it is finished", () => {
+  it("does not hold a later phase behind an unfinished earlier phase", () => {
     const tasks = [task({ id: "a" }), task({ id: "b", stage: "phase4_purchasing" })];
     const ctx = buildReleaseContext({
       property: property(),
@@ -154,10 +154,11 @@ describe("release is phase and date aware", () => {
     });
     expect(releaseState(tasks[0]!, tasks, ctx).state).toBe("ready");
     const later = releaseState(tasks[1]!, tasks, ctx);
-    expect(later.state).toBe("future");
-    expect(later.canComplete).toBe(false);
+    expect(later.state).toBe("ready");
+    expect(later.canComplete).toBe(true);
   });
 });
+
 
 describe("an accepted plan is locked", () => {
   it("refuses completion once the home is with Operations", () => {
