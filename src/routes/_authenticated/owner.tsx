@@ -314,25 +314,11 @@ function OwnerHubBody({
         description="Here is where things stand across your homes, and anything that needs your attention."
         actions={
           <>
-            {preview ? null : (
+            {preview || !canLogHours ? null : (
               <Button onClick={() => openManualLog("")}>
                 <Clock className="size-4" aria-hidden="true" /> Log hours
               </Button>
             )}
-            <Button
-              variant={attentionCount > 0 ? "default" : "outline"}
-              aria-label={`${attentionCount} items need your attention`}
-              onClick={() => scrollToSection("owner-decisions")}
-            >
-              <Bell className="size-4" aria-hidden="true" />
-              {attentionCount > 0 ? (
-                <span className="numeric ml-1 rounded-full bg-background/20 px-2 py-0.5 text-xs">
-                  {attentionCount}
-                </span>
-              ) : (
-                "All caught up"
-              )}
-            </Button>
             <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
               Pending decisions
               {openReviews.length > 0 ? (
