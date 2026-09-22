@@ -662,6 +662,42 @@ function ComposerBody({
             ) : null}
           </div>
 
+          {/* Each person signs their own messages. */}
+          <div className="grid gap-2">
+            <Label htmlFor="composer-signature">Your signature</Label>
+            <Textarea
+              id="composer-signature"
+              value={signature}
+              rows={4}
+              onChange={(e) => setSignature(e.target.value)}
+              placeholder={`${ctx.data?.senderName ?? "Your name"}\nA Real Home Away\n(555) 555-5555`}
+              aria-describedby="composer-signature-hint"
+            />
+            <p id="composer-signature-hint" className="text-sm text-muted-foreground">
+              Added to the foot of this message. Save it once and it is waiting on every email you write.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setBody((current) => withSignature(current, signature))}
+                disabled={!signature.trim()}
+              >
+                Add to this message
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => saveSignature.mutate(signature)}
+                disabled={saveSignature.isPending}
+              >
+                {saveSignature.isPending ? "Saving…" : "Save as my signature"}
+              </Button>
+            </div>
+          </div>
+
           {/* Files ride along with the message. */}
           <div className="grid gap-2">
             <Label htmlFor="composer-files" className="flex items-center gap-2">
