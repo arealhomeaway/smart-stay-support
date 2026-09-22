@@ -588,51 +588,26 @@ function ComposerBody({
           {/* Anyone else on the message, one chip each, easy to take off. */}
           <div className="grid gap-2">
             {(["to", "cc", "bcc"] as RecipientField[]).map((field) => (
-              <div key={field} className="grid gap-1">
-                <Label htmlFor={`composer-chips-${field}`}>
-                  {field === "to" ? "Also to" : RECIPIENT_FIELD_LABELS[field]}
-                </Label>
-                <div className="flex flex-wrap items-center gap-1 rounded-md border p-1">
-                  {extra[field].map((address) => (
-                    <span
-                      key={address}
-                      className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs"
-                    >
-                      {address}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${address}`}
-                        onClick={() => dropChip(field, address)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    id={`composer-chips-${field}`}
-                    list="composer-known-addresses"
-                    value={chipDraft[field]}
-                    onChange={(e) => setChipDraft((d) => ({ ...d, [field]: e.target.value }))}
-                    onBlur={() => commitChips(field)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "," || e.key === ";") {
-                        e.preventDefault();
-                        commitChips(field);
-                      }
-                    }}
-                    placeholder="Pick a contact or type an address, then press Enter"
-                    aria-invalid={pendingChipProblems.length > 0}
-                    className="min-w-[14rem] flex-1 bg-transparent px-1 py-0.5 text-sm outline-none"
-                  />
-                </div>
-              </div>
+              <RecipientCombobox
+                key={field}
+                id={`composer-chips-${field}`}
+                label={field === "to" ? "Also to" : RECIPIENT_FIELD_LABELS[field]}
+                chips={extra[field]}
+                draft={chipDraft[field]}
+                onDraftChange={(value) => setChipDraft((d) => ({ ...d, [field]: value }))}
+                onCommit={() => commitChips(field)}
+                onPick={(email) => pickChip(field, email)}
+                onRemove={(address) => dropChip(field, address)}
+                suggestions={suggestionList}
+                alreadyOnMessage={[
+                  ...(isEmailAddress(to) ? [to.trim()] : []),
+                  ...extra.to,
+                  ...extra.cc,
+                  ...extra.bcc,
+                ]}
+                invalid={pendingChipProblems.length > 0}
+              />
             ))}
-            <datalist id="composer-known-addresses">
-              {[...new Set(knownAddresses)].map((address) => (
-                <option key={address} value={address} />
-              ))}
-            </datalist>
             {recipientListProblems.map((problem) => (
               <p key={problem} role="alert" className="text-sm text-destructive">
                 {problem}
