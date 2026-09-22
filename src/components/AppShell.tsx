@@ -218,6 +218,20 @@ const navGroups: NavGroup[] = [
         capability: "owner_programs",
       },
       {
+        to: "/owner-oversight",
+        label: "Program oversight",
+        icon: KeyRound,
+        tour: "owner-oversight",
+        capability: "owner_oversight",
+      },
+      {
+        to: "/homeowners",
+        label: "Homeowners",
+        icon: Users,
+        tour: "homeowners",
+        capability: "homeowner_directory",
+      },
+      {
         to: "/vendors",
         label: "Vendor Hub",
         icon: Handshake,
