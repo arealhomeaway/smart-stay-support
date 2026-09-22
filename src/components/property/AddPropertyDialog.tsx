@@ -123,6 +123,7 @@ function Outcome({
         Onboarding has not been started. Open the home and choose <strong>Start onboarding</strong>{" "}
         when you are ready.
       </p>
+      {result.status !== "duplicate" && <EnrollActiveOwner propertyId={p.id} name={p.name} />}
       <div className="flex flex-wrap gap-2">
         <Button asChild onClick={onClose}>
           <Link to="/property/$propertyId" params={{ propertyId: p.id }}>
