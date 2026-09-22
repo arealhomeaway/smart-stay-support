@@ -64,7 +64,13 @@ export function LifecycleSwitcher({
       setReason("");
       void qc.invalidateQueries();
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: unknown) => {
+      const message =
+        typeof error === "object" && error && "message" in error
+          ? String((error as { message?: unknown }).message)
+          : "";
+      toast.error(message || "That move did not go through. Please try again.");
+    },
   });
 
   return (
