@@ -525,42 +525,6 @@ function LogTimeButton({
   const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
     null,
   );
-  const [minutes, setMinutes] = useState("");
-  const [activity, setActivity] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
-  const log = useServerFn(logOwnerParticipation);
-
-  const save = useMutation({
-    mutationFn: () => {
-      if (!reviewed) throw new Error("Open the opportunity before logging participation.");
-      if (reviewed.phase !== "onboarding" && reviewed.phase !== "ongoing") {
-        throw new Error("This opportunity needs a valid participation phase.");
-      }
-      return log({
-        data: {
-          programId,
-          phase: reviewed.phase,
-          entryDate: new Date().toISOString().slice(0, 10),
-          minutes: parseOwnerMinutes(minutes),
-          activity: activity.trim(),
-          reviewId: reviewed.id,
-          ticketId: reviewed.ticketId,
-          ownerUpdateRevision: reviewed.ownerUpdateRevision,
-          propertyIds: reviewed.propertyIds,
-          confirmed: true,
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Time logged.");
-      setOpen(false);
-      setActivity("");
-      setMinutes("");
-      setConfirmed(false);
-      onDone();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   return (
     <>
@@ -575,56 +539,13 @@ function LogTimeButton({
       >
         <Clock className="size-4" /> Log time
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Log your time</DialogTitle>
-            <DialogDescription>{MANUAL_ENTRY_NOTICE}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            {reviewed?.description && (
-              <p className="max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
-                {reviewed.description}
-              </p>
-            )}
-            <div className="space-y-1">
-              <Label htmlFor="log-activity">What did you do?</Label>
-              <Textarea
-                id="log-activity"
-                rows={3}
-                value={activity}
-                onChange={(e) => setActivity(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="log-minutes">Minutes spent</Label>
-              <Input
-                id="log-minutes"
-                type="number"
-                min={1}
-                max={1440}
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-              />
-            </div>
-            <label className="flex items-start gap-2 text-sm">
-              <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} />
-              <span>{MANUAL_ENTRY_CONFIRMATION}</span>
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={save.isPending || activity.trim().length < 3 || !confirmed}
-              onClick={() => save.mutate()}
-            >
-              Save entry
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LogTimeDialog
+        open={open}
+        onOpenChange={setOpen}
+        programId={programId}
+        anchor={reviewed}
+        onDone={onDone}
+      />
     </>
   );
 }
