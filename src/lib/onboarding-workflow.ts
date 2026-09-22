@@ -161,13 +161,8 @@ export function viewTask(
   } else if ((task.blocker ?? "").trim()) {
     status = "blocked";
     reason = `Blocked — ${task.blocker!.trim()}`;
-  } else if (waitingIds.length > 0) {
-    status = "not_ready";
-    reason =
-      waitingOn.length > 0
-        ? `Waiting on ${waitingOn.join(", ")}`
-        : "Blocked — Dependency Incomplete";
   } else if (awaitingOwner && task.owner_approval_status === "awaiting_owner") {
+
     status = "needs_review";
     reason = "Blocked — Waiting on Owner";
   } else if (awaitingOwner && task.owner_approval_status === "changes_requested") {
