@@ -368,6 +368,26 @@ export async function updateProject(
   if (error) throw error;
   if (!data) throw new Error("The project changed. Refresh before saving your changes.");
 
+  // One date, one meaning. The scope panel writes the project's dates, but the
+  // home itself carries the closing and access dates that pace every task and
+  // that the rest of Resolve reads, so an explicit edit here updates both.
+  const propertyPatch: Database["public"]["Tables"]["properties"]["Update"] = {};
+  if (input.plannedClosingOn !== undefined) {
+    propertyPatch.planned_closing_on = input.plannedClosingOn;
+  }
+  if (input.possessionOn !== undefined) propertyPatch.actual_access_on = input.possessionOn;
+  // The project manager is the one accountable name; the property's legacy
+  // owner field follows it instead of drifting behind a reassignment.
+  if (input.projectManager !== undefined) propertyPatch.onboarding_owner = input.projectManager;
+  if (Object.keys(propertyPatch).length > 0) {
+    const synced = await supabase
+      .from("properties")
+      .update(propertyPatch)
+      .eq("id", data.property_id);
+    if (synced.error) throw synced.error;
+  }
+
+  let enrollmentWarning: string | null = null;
   const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
   if (scopeChanged) {
     await recordProjectEvent(supabase, {
@@ -381,8 +401,20 @@ export async function updateProject(
       actor: userId,
       isDemo: data.is_demo,
     });
+    // Enrollment is only touched when Active Owner is genuinely switched on.
+    // A home that already carries the module — including one whose enrollment
+    // was deliberately set aside — must never be re-enrolled by an unrelated
+    // save, and an enrollment that cannot proceed must never discard the scope
+    // and dates that were already recorded above.
+    const wasActiveOwner = (current.data.modules ?? []).includes("active_owner");
     const nowActiveOwner = (data.modules ?? []).includes("active_owner");
-    if (nowActiveOwner) await ensureActiveOwnerEnrollment(supabase, userId, data.property_id);
+    if (nowActiveOwner && !wasActiveOwner) {
+      try {
+        await ensureActiveOwnerEnrollment(supabase, userId, data.property_id);
+      } catch (e) {
+        enrollmentWarning = e instanceof Error ? e.message : "Enrollment could not be updated.";
+      }
+    }
   } else {
     await recordProjectEvent(supabase, {
       projectId: data.id,
@@ -394,7 +426,7 @@ export async function updateProject(
       isDemo: data.is_demo,
     });
   }
-  return data;
+  return { ...data, enrollmentWarning };
 }
 
 function assertProjectLead(project: ProjectRow, userId: string, supervisor: boolean) {

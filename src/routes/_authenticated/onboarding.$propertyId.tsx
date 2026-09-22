@@ -244,7 +244,11 @@ function PropertyWorkspace() {
   const mismatches = (data.approvalMismatches ?? []).filter((m) => m.propertyId === current.id);
   const activeOwner = (data.activeOwnerProperties ?? []).find((l) => l.propertyId === current.id);
   const docsEnabled = enabled("onboarding_sharepoint_docs");
-  const pm = data.people.find((p) => p.id === current.onboarding_owner);
+  // The project record is the authority on who runs this home. The property's
+  // legacy onboarding_owner is only a fallback for a home with no project yet,
+  // otherwise a reassignment in the scope panel would never show up here.
+  const pmId = projectRow?.project_manager ?? current.onboarding_owner;
+  const pm = data.people.find((p) => p.id === pmId);
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
   const canEdit = !readOnly && can("handoff_request");
   const canExecuteProject =

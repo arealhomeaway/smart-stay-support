@@ -102,8 +102,11 @@ export function ProjectScopePanel({
   });
   const update = useMutation({
     mutationFn: useServerFn(updateOnboardingProjectFn),
-    onSuccess: () => {
-      toast.success("Scope updated.");
+    onSuccess: (r: { enrollmentWarning?: string | null }) => {
+      // The scope and dates are saved by this point. An enrollment that could
+      // not follow is reported, never treated as a failed save.
+      if (r?.enrollmentWarning) toast.warning(`Scope saved. ${r.enrollmentWarning}`);
+      else toast.success("Scope updated.");
       setOpen(false);
       refresh();
     },
