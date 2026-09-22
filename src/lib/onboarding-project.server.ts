@@ -368,6 +368,25 @@ export async function updateProject(
   if (error) throw error;
   if (!data) throw new Error("The project changed. Refresh before saving your changes.");
 
+  // One date, one meaning. The scope panel writes the project's dates, but the
+  // home itself carries the closing and access dates that pace every task and
+  // that the rest of Resolve reads, so an explicit edit here updates both.
+  const propertyPatch: Database["public"]["Tables"]["properties"]["Update"] = {};
+  if (input.plannedClosingOn !== undefined) {
+    propertyPatch.planned_closing_on = input.plannedClosingOn;
+  }
+  if (input.possessionOn !== undefined) propertyPatch.actual_access_on = input.possessionOn;
+  // The project manager is the one accountable name; the property's legacy
+  // owner field follows it instead of drifting behind a reassignment.
+  if (input.projectManager !== undefined) propertyPatch.onboarding_owner = input.projectManager;
+  if (Object.keys(propertyPatch).length > 0) {
+    const synced = await supabase
+      .from("properties")
+      .update(propertyPatch)
+      .eq("id", data.property_id);
+    if (synced.error) throw synced.error;
+  }
+
   const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
   if (scopeChanged) {
     await recordProjectEvent(supabase, {
