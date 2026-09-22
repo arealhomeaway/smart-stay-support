@@ -55,9 +55,9 @@ export const Route = createFileRoute("/_authenticated/owner-oversight")({
 });
 
 const TONE: Record<string, StatusTone> = {
-  good: "positive",
-  warn: "critical",
-  muted: "neutral",
+  good: "resolved",
+  warn: "escalated",
+  muted: "closed",
 };
 
 function OwnerOversightPage() {
@@ -193,11 +193,11 @@ function OwnerOversightPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge tone={TONE[row.health.tone] ?? "neutral"}>
+                      <StatusBadge tone={TONE[row.health.tone] ?? "closed"}>
                         {row.health.label}
                       </StatusBadge>
                       {row.reviewDueSoon && (
-                        <StatusBadge tone="attention">
+                        <StatusBadge tone="waiting">
                           <CalendarClock className="mr-1 inline size-3" />
                           {row.openCheckpoint
                             ? `Day ${row.openCheckpoint.day} check-in`

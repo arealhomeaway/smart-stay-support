@@ -82,6 +82,12 @@ export type Capability =
   | "integrations"
   | "audit_history"
   | "owner_programs"
+  // Program-wide Active Owner oversight: leadership only, because it reads
+  // every enrolled homeowner's participation at once.
+  | "owner_oversight"
+  // The homeowner directory holds personal contact details, so it stays with
+  // the people who need the whole picture.
+  | "homeowner_directory"
   | "vendor_admin"
   | "view_as";
 
@@ -115,6 +121,8 @@ const SUPERVISOR_CAPS: Capability[] = [
   "claims_oversight",
   "onboarding_workspace",
   "owner_programs",
+  "owner_oversight",
+  "homeowner_directory",
   "vendor_admin",
   "audit_history",
   "user_management",
