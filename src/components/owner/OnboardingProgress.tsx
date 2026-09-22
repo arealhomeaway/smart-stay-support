@@ -60,7 +60,8 @@ export function OnboardingProgress({ homes }: { homes: OwnerOnboardingHome[] }) 
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </SectionCard>
   );
