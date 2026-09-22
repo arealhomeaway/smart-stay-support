@@ -240,6 +240,28 @@ export function OnboardingActions({
         title="Onboarding actions"
         description="Choices your setup team needs from you before the work can move forward."
       >
+        {logPrompt && data.programId && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">
+                Log the time you spent on “{logPrompt.title}”?
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add it to your participation record now. Enter the time you actually spent — we
+                never fill that in for you.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button size="sm" onClick={() => setLogOpen(true)}>
+                <Clock className="mr-1 size-4" aria-hidden="true" /> Log my time
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setLogPrompt(null)}>
+                Not now
+              </Button>
+            </div>
+          </div>
+        )}
+
         {data.pending.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nothing from your setup team is waiting on you right now.
