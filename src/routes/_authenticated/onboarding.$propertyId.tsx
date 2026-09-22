@@ -873,6 +873,25 @@ function PropertyWorkspace() {
           </details>
         </TabsContent>
 
+        {/* ------------------------------------------- Budget & expenses */}
+        <TabsContent value="budget" className="space-y-4">
+          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
+        </TabsContent>
+
+        {/* --------------------------------------------------- Findings */}
+        <TabsContent value="findings" className="space-y-4">
+          <AssessmentFindingsPanel
+            propertyId={current.id}
+            canEdit={canEdit}
+            onOpenTask={setOpenTaskId}
+          />
+        </TabsContent>
+
+        {/* --------------------------------------------- Vendor coverage */}
+        <TabsContent value="vendors" className="space-y-4">
+          <VendorCoveragePanel propertyId={current.id} />
+        </TabsContent>
+
         {/* ------------------------------------------------------ Financial */}
         <TabsContent value="financial" className="space-y-4">
           <FinancialPanel
