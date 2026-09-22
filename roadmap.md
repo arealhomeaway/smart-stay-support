@@ -687,3 +687,4 @@ Batch B (work surface)
 - [ ] "Ways to participate": evidence upload + working the item directly, real links, more detail
 - [ ] Decision needed: activate Victor's program now (starts the 90-day clock) so he can log hours
 - [ ] Hero buttons readable (white-on-white) and actually navigate
+- [ ] Owner overview greeting shows first name, not initials
