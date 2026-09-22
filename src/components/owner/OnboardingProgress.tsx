@@ -23,7 +23,9 @@ export function OnboardingProgress({ homes }: { homes: OwnerOnboardingHome[] }) 
       description="Where each part of the setup stands today. We update this as the work is completed."
     >
       <div className="space-y-6">
-        {homes.map((home) => (
+        {homes.map((home) => {
+          const golive = ownerGoLive(home.targetGoLive, today);
+          return (
           <div key={home.propertyId} className="space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-semibold">{home.name}</p>
@@ -31,6 +33,14 @@ export function OnboardingProgress({ homes }: { homes: OwnerOnboardingHome[] }) 
                 {home.percent}% complete · {home.done} of {home.total} steps done
               </p>
             </div>
+            {golive && (
+              <Badge variant="secondary" className="gap-1.5">
+                <CalendarClock className="size-3.5" aria-hidden="true" />
+                <span className="numeric">
+                  Target launch: {usCalendarDate(golive.target)} · {golive.label}
+                </span>
+              </Badge>
+            )}
             <Progress value={home.percent} aria-label={`${home.name} overall progress`} />
             <div className="grid gap-3 sm:grid-cols-2">
               {home.tracks.map((track) => (
