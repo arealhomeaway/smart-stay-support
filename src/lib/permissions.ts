@@ -73,6 +73,9 @@ export type Capability =
   | "guest_contact"
   | "properties"
   | "onboarding_workspace"
+  // Authoring the onboarding plan itself: the onboarding director and platform
+  // owners only. PMs work projects; they do not rewrite the plan.
+  | "onboarding_templates"
   | "handoff_request"
   | "handoff_review"
   | "records_archive"
@@ -120,6 +123,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "handoff_review",
   "claims_oversight",
   "onboarding_workspace",
+  "onboarding_templates",
   "owner_programs",
   "owner_oversight",
   "homeowner_directory",
