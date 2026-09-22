@@ -9,8 +9,8 @@ describe("ways to participate prompts", () => {
     const onboarding = buildParticipationPrompts({ phase: "onboarding" });
     const ongoing = buildParticipationPrompts({ phase: "ongoing" });
     for (const set of [onboarding, ongoing]) {
-      expect(set.length).toBeGreaterThanOrEqual(3);
-      expect(set.length).toBeLessThanOrEqual(4);
+      expect(set.length >= 3).toBe(true);
+      expect(set.length <= 4).toBe(true);
     }
     expect(onboarding.map((p) => p.id)).not.toEqual(ongoing.map((p) => p.id));
   });
@@ -39,8 +39,8 @@ describe("ways to participate prompts", () => {
     ]
       .join(" ")
       .toLowerCase();
-    expect(text).not.toMatch(/\d/);
-    expect(text).not.toMatch(/hour|hrs|minute/);
-    expect(text).not.toMatch(/irs|tax deduction|write-off/);
+    expect(/\d/.test(text)).toBe(false);
+    expect(/hour|hrs|minute/.test(text)).toBe(false);
+    expect(/irs|tax deduction|write-off/.test(text)).toBe(false);
   });
 });
