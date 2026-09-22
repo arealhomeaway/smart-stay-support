@@ -74,7 +74,7 @@ export function BudgetPanel({ propertyId, canEdit }: { propertyId: string; canEd
   const invalidate = () => qc.invalidateQueries({ queryKey: ["onboarding-budget", propertyId] });
 
   const lineMutation = useMutation({
-    mutationFn: (input: Parameters<typeof saveBudgetLineFn>[0]["data"]) => saveLine({ data: input }),
+    mutationFn: (input: LineInput) => saveLine({ data: input }),
     onSuccess: () => {
       toast.success("Budget line saved.");
       setLineOpen(false);
@@ -85,8 +85,7 @@ export function BudgetPanel({ propertyId, canEdit }: { propertyId: string; canEd
   });
 
   const budgetMutation = useMutation({
-    mutationFn: (input: Parameters<typeof setApprovedBudgetFn>[0]["data"]) =>
-      setApproved({ data: input }),
+    mutationFn: (input: ApprovedInput) => setApproved({ data: input }),
     onSuccess: () => {
       toast.success("Approved budget updated.");
       setBudgetOpen(false);
