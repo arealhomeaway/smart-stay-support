@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -19,6 +19,7 @@ import { Celebrate } from "@/components/ui/feedback";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { MilestonePacing } from "@/components/owner/MilestonePacing";
+import { useRole } from "@/hooks/useRole";
 import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
