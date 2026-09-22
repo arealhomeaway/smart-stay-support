@@ -247,8 +247,11 @@ function OwnerHubBody({
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
       <WaysToParticipate
+        // A home is still being set up when its open work is onboarding work.
         phase={
-          program.status === "ready_for_onboarding" || program.status === "draft"
+          program.status === "ready_for_onboarding" ||
+          program.status === "draft" ||
+          openReviews.some((r) => r.phase === "onboarding")
             ? "onboarding"
             : "ongoing"
         }
