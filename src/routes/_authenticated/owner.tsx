@@ -45,6 +45,7 @@ import {
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
+import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
 import { OwnerBadges } from "@/components/OwnerBadges";
@@ -248,6 +249,8 @@ function OwnerHubBody({
           </div>
         )}
       </SectionCard>
+
+      <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
       <OwnerApprovalPanel readOnly={preview} />
 

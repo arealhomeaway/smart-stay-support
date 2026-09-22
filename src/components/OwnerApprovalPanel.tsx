@@ -94,7 +94,8 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
   if (q.isLoading) return <Skeleton className="h-40 w-full" />;
   if (q.error) return <p role="alert">{q.error.message}</p>;
 
-  const all = q.data?.approvals ?? [];
+  // Onboarding items have their own section, with the shared design files.
+  const all = (q.data?.approvals ?? []).filter((a) => a.entity_type !== "onboarding_task");
   const pending = all.filter((a) => a.status === "pending");
   const decided = all.filter((a) => a.status !== "pending");
 
