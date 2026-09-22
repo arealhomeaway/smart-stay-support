@@ -161,9 +161,19 @@ export function externalAvailabilityText(result: AvailabilityResult) {
   return result.status === "conditional" ? "Availability requires final confirmation." : "Please confirm availability before booking.";
 }
 
+/** The client-facing price line: the source quote when one was chosen, otherwise nightly rates only. */
+export function clientPriceLine(result: AvailabilityResult) {
+  if (result.sourceQuote) return clientSourceQuoteLine(result.sourceQuote);
+  return result.quote ? clientQuoteLine(result.quote) : null;
+}
+
 export function emailSummary(results: AvailabilityResult[], checkIn: string, checkOut: string, location: string) {
-  const body = `Property options for ${checkIn} to ${checkOut} near ${location.trim()}:\n\n${results.map((r) =>
-    `${r.name} — ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}${r.quote ? `\n${clientQuoteLine(r.quote)}` : ""}\n${externalAvailabilityText(r)}`,
-  ).join("\n\n")}`;
-  return results.some((r) => r.quote) ? `${body}\n\n${PRICE_ESTIMATE_NOTE}` : body;
+  const body = `Property options for ${checkIn} to ${checkOut} near ${location.trim()}:\n\n${results.map((r) => {
+    const price = clientPriceLine(r);
+    return `${r.name} — ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}${price ? `\n${price}` : ""}\n${externalAvailabilityText(r)}`;
+  }).join("\n\n")}`;
+  const note = results.some((r) => r.sourceQuote)
+    ? "Estimates cover nightly rates and the fees listed for this booking source. Taxes are added at booking."
+    : PRICE_ESTIMATE_NOTE;
+  return results.some((r) => r.quote || r.sourceQuote) ? `${body}\n\n${note}` : body;
 }

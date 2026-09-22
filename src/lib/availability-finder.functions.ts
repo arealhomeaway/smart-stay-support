@@ -11,6 +11,7 @@ const searchInput = z.object({
   cats: z.number().int().min(0).max(10).optional(),
   minBedrooms: z.number().int().min(0).max(12).optional(),
   amenities: z.array(amenityKey).max(AMENITY_SPECS.length).optional(),
+  inquirySourceId: z.string().uuid().optional(),
 });
 
 export const searchAvailability = createServerFn({ method: "POST" })
