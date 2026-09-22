@@ -81,6 +81,10 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
           "functional_roles",
           "owner_program_properties",
           "approvals",
+          // No team-authored template is marked default in this fixture, so the
+          // built-in plan is the one that applies.
+          "onboarding_templates",
+          "onboarding_template_tasks",
         ].includes(table)
       )
         throw new Error(`Unexpected owner contact or other access: ${table}`);
@@ -122,7 +126,9 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
         single: async () => query.maybeSingle(),
         maybeSingle: async () => ({
           data:
-            table === "properties"
+            table === "onboarding_templates" || table === "onboarding_template_tasks"
+              ? null
+              : table === "properties"
               ? property
               : { id: "approval", title: "QA decision", detail: "", status: "pending" },
           error: null,
