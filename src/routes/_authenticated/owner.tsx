@@ -773,21 +773,35 @@ function titleCase(value: string) {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : "—";
 }
 
+/**
+ * One item waiting on the homeowner. The row stays short; opening it gives the
+ * homeowner everything the team sent and every action they can take on it.
+ */
 function ReviewRow({
   review,
   properties,
   programId,
   onDone,
   readOnly,
+  action = null,
+  canLogHours = true,
+  logHoursBlockedReason = null,
 }: {
   review: Review;
   properties: { propertyId: string; name: string }[];
   programId: string;
   onDone: () => void;
   readOnly: boolean;
+  /** The onboarding task behind this item, when there is one. */
+  action?: OwnerOnboardingAction | null;
+  canLogHours?: boolean;
+  logHoursBlockedReason?: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const [response, setResponse] = useState("");
+  const [logOpen, setLogOpen] = useState(false);
+  const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
+    null,
+  );
   const presentation = ownerReviewPresentation(review);
   const canRespond =
     !readOnly &&
@@ -803,20 +817,19 @@ function ReviewRow({
   const answer = useServerFn(answerOwnerReview);
 
   const respond = useMutation({
-    mutationFn: (decision: string) =>
+    mutationFn: (response: string) =>
       answer({
         data: {
           reviewId: responseContext?.id ?? review.id,
           expectedUpdatedAt: responseContext?.expectedUpdatedAt ?? "",
           ownerUpdateRevision: responseContext?.ownerUpdateRevision ?? null,
-          decision,
-          response: response.trim(),
+          decision: "acknowledged",
+          response,
         },
       }),
     onSuccess: () => {
       toast.success("Thanks — your response was recorded.");
       setOpen(false);
-      setResponse("");
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -826,6 +839,8 @@ function ReviewRow({
     .filter((p) => review.propertyIds.includes(p.propertyId))
     .map((p) => p.name)
     .join(", ");
+  const fileCount = action?.files.length ?? 0;
+  const timeLoggable = canLogHours && !readOnly && review.status !== "closed";
 
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border/70 px-4 py-3">
@@ -835,66 +850,60 @@ function ReviewRow({
           <StatusBadge tone={reviewTone(review.status)}>{presentation.label}</StatusBadge>
         </div>
         {review.business_question ? (
-          <p className="mt-1 text-sm text-muted-foreground">{review.business_question}</p>
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+            {review.business_question}
+          </p>
         ) : null}
         <p className="mt-1 text-xs text-muted-foreground">
           {names ? `${names} · ` : ""}
-          {review.respond_by
-            ? `Please respond by ${usCalendarDate(review.respond_by)}`
-            : "No due date"}
+          {taskDeadlineLabel(review.respond_by)}
+          {fileCount > 0
+            ? ` · ${fileCount} file${fileCount === 1 ? "" : "s"} attached`
+            : ""}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        <LogTimeButton
-          review={review}
-          programId={programId}
-          onDone={onDone}
-          readOnly={readOnly || review.status === "closed"}
-        />
-        <Button size="sm" variant="outline" onClick={() => setResponseOpen(true)}>
-          <MessageSquare className="size-4" />{" "}
-          {review.auto_ticket || !canRespond ? "Review details" : "Respond"}
+        <Button size="sm" onClick={() => setResponseOpen(true)}>
+          <MessageSquare className="size-4" /> Open and work this
         </Button>
       </div>
 
-      <Dialog open={open} onOpenChange={setResponseOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{responseContext?.title ?? review.title}</DialogTitle>
-            <DialogDescription>
-              {responseContext?.description ?? "Share your decision or note below."}
-            </DialogDescription>
-          </DialogHeader>
-          {review.auto_ticket ? (
-            <p className="text-sm text-muted-foreground">
-              {ownerTicketResponseGuidance(responseContext?.requestCategory)}
-            </p>
-          ) : null}
-          {review.owner_response ? (
-            <p className="text-sm whitespace-pre-wrap">
-              Your recorded response: {review.owner_response}
-            </p>
-          ) : null}
-          {canRespond ? (
-            <Textarea
-              rows={4}
-              placeholder="Your response"
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-            />
-          ) : null}
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            {canRespond ? (
-              <Button disabled={respond.isPending} onClick={() => respond.mutate("acknowledged")}>
-                Send response
-              </Button>
-            ) : null}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <OwnerTaskDialog
+        open={open}
+        onOpenChange={setResponseOpen}
+        details={{
+          title: responseContext?.title ?? review.title,
+          statusLabel: presentation.label,
+          source: review.auto_ticket ? "Property work" : "Onboarding",
+          homes: names,
+          respondBy: review.respond_by,
+          question: review.business_question ?? responseContext?.description ?? null,
+          recommendation: review.recommendation,
+          guidance: review.auto_ticket
+            ? ownerTicketResponseGuidance(responseContext?.requestCategory)
+            : null,
+          priorResponse: review.owner_response ?? null,
+        }}
+        action={action}
+        canRespond={canRespond}
+        responding={respond.isPending}
+        onRespond={(value) => respond.mutate(value)}
+        canLogTime={timeLoggable}
+        logTimeBlockedReason={logHoursBlockedReason}
+        onLogTime={() => {
+          setReviewed(captureReviewedOpportunity(review));
+          setLogOpen(true);
+        }}
+        onDecided={onDone}
+      />
+
+      <LogTimeDialog
+        open={logOpen}
+        onOpenChange={setLogOpen}
+        programId={programId}
+        anchor={reviewed}
+        onDone={onDone}
+      />
     </div>
   );
 }
