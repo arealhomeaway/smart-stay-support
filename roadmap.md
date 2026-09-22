@@ -561,3 +561,8 @@ is now doable from Resolve.
 - [x] Searchable Inquiry Source dropdown in Availability Finder, with "Add inquiry source"
 - [x] Source-based quotes on cards, in the PDF and in the email
 - [x] Corporate Housing Extra applied per month, prorated on a 30-day month
+
+- [x] Availability Finder cards: show only stay total and average nightly (base rate is internal)
+- [x] Property options email: hospitable greeting naming the search location and dates
+- [x] Per-user email signature, saved on the profile and added to the foot of drafts
+- [ ] To/Cc/Bcc as type-or-pick comboboxes: typing filters saved + previously emailed addresses to the top, Enter/Tab makes a chip from a typed address, existing validation preserved
