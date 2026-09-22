@@ -101,6 +101,7 @@ const frontlineGroup: NavGroup = {
     { to: "/team-queue", label: "Team Queue", icon: Users, tour: "team-queue" },
     { to: "/map", label: "Work Map", icon: MapPinned, tour: "map", capability: "work_orders_internal" },
     { to: "/availability-finder", label: "Availability Finder", icon: MapPinned, tour: "availability-finder", capability: "work_orders_internal" },
+    { to: "/inquiry-sources", label: "Inquiry Sources", icon: MapPinned, tour: "inquiry-sources", capability: "work_orders_internal" },
     {
       to: "/work-orders",
       label: "Work orders",

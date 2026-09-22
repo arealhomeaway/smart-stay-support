@@ -12,6 +12,8 @@ import { unknownFacts, type AmenityKey, type MatchRequirements } from "./propert
 import { ownerRezFactsFor } from "./property-facts.server";
 import type { AppRole } from "./permissions";
 import { activePublicListing } from "./availability-listing";
+import { buildSourceQuote } from "./inquiry-sources";
+import { INQUIRY_SOURCE_COLUMNS, mapInquirySource } from "./inquiry-sources.data";
 
 type Client = SupabaseClient<Database>;
 export type FinderInput = {
@@ -25,7 +27,16 @@ export type FinderInput = {
   /** Smallest acceptable bedroom count; 0 means size is not a requirement. */
   minBedrooms?: number | undefined;
   amenities?: AmenityKey[] | undefined;
+  /** Inquiry source whose fee settings the quote is built from. */
+  inquirySourceId?: string | undefined;
 };
+
+/** Reads one inquiry source; a missing or inactive source simply yields no source quote. */
+export async function loadInquirySource(supabase: Client, id: string) {
+  const { data, error } = await supabase.from("inquiry_sources").select(INQUIRY_SOURCE_COLUMNS).eq("id", id).maybeSingle();
+  if (error || !data) return null;
+  return mapInquirySource(data as Record<string, unknown>);
+}
 
 export async function assertFinderAccess(supabase: Client, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -98,6 +109,9 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
     console.error("PriceLabs quotes unavailable:", error);
     return new Map<string, { quote: null; unavailableReason: string }>();
   });
+  // The chosen inquiry source carries the fee settings this quote is built from.
+  const source = input.inquirySourceId ? await loadInquirySource(supabase, input.inquirySourceId) : null;
+  const pets = (input.dogs ?? 0) + (input.cats ?? 0);
   const results: AvailabilityResult[] = [];
   // Bound concurrent read traffic to OwnerRez while preserving distance order.
   for (let offset = 0; offset < nearby.length; offset += 5) {
@@ -105,12 +119,14 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
     const rows = await Promise.all(batch.map(async (property) => {
       const bookings = await bookingsForPeriod(ids.get(property.id)!, input.checkIn, input.checkOut);
       const read = facts.get(property.id) ?? { facts: unknownFacts(), unavailableReason: null };
+      const quote = quotes.get(property.id)?.quote ?? null;
       return {
         ...property,
         ...classifyAvailability(bookings, input.checkIn, input.checkOut),
         facts: read.facts,
         factsUnavailable: read.unavailableReason,
-        quote: quotes.get(property.id)?.quote ?? null,
+        quote,
+        sourceQuote: buildSourceQuote(quote, source, pets),
         quoteUnavailable: quotes.get(property.id)?.unavailableReason
           ?? (quotes.has(property.id) ? null : "PriceLabs could not be reached, so no price estimate is shown."),
       };
