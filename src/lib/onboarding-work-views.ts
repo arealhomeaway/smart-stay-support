@@ -54,9 +54,17 @@ export function parseWorkspaceSearch(search: {
   const candidate =
     typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "overview";
   return {
-    tab: ["overview", "workflow", "property", "financial", "handoff", "activity"].includes(
-      candidate,
-    )
+    tab: [
+      "overview",
+      "workflow",
+      "property",
+      "budget",
+      "findings",
+      "vendors",
+      "financial",
+      "handoff",
+      "activity",
+    ].includes(candidate)
       ? candidate
       : "overview",
     workFilter:
