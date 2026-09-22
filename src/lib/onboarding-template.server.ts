@@ -307,7 +307,7 @@ export async function applyOnboardingTemplate(
       .from("onboarding_tasks")
       .insert(rows)
       .select(
-        "id, title, stage, parent_task_id, detail, due_on, requires_owner_approval, owner_approval_status",
+        "id, title, stage, parent_task_id, detail, due_on, due_on_overridden, status, completed_at, requires_owner_approval, owner_approval_status",
       );
     if (inserted.error) throw inserted.error;
     for (const r of inserted.data ?? []) {
@@ -360,7 +360,11 @@ export async function applyOnboardingTemplate(
           : (template.offsetDays ?? null);
       }
 
-      const write = await supabase.from("onboarding_tasks").update(patch).eq("id", row.id);
+      const write = await supabase
+        .from("onboarding_tasks")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update(patch as any)
+        .eq("id", row.id);
       if (write.error) throw write.error;
       refreshed += 1;
     }
