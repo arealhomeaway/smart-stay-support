@@ -1,5 +1,6 @@
 import { PDFDocument, PDFString, StandardFonts, rgb } from "pdf-lib";
 import { externalAvailabilityText, verifiedPublicListingUrl, type AvailabilityResult } from "./availability-finder";
+import { clientQuoteLine, PRICE_ESTIMATE_NOTE } from "./pricing";
 import { ARHA_WHITE_LOGO_BASE64 } from "./arha-brand-logo";
 
 function ascii(value: string) {
@@ -54,6 +55,13 @@ export async function propertyOptionsPdf(results: AvailabilityResult[], stay: { 
       x: 38, y, size: 11, font: regular,
     });
     y -= 24;
+    if (result.quote) {
+      // Client-facing price is one figure, always with the fees note beneath it.
+      page.drawText(ascii(clientQuoteLine(result.quote)), { x: 38, y, size: 13, font: bold, color: navy });
+      y -= 16;
+      page.drawText(ascii(PRICE_ESTIMATE_NOTE), { x: 38, y, size: 9, font: regular, color: navy });
+      y -= 22;
+    }
     page.drawText(externalAvailabilityText(result), { x: 38, y, size: 11, font: bold, color: teal });
     y -= 30;
     if (result.bookingUrl) {
