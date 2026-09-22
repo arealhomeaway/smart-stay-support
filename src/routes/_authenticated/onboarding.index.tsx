@@ -106,6 +106,23 @@ function Hub() {
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 
+  // A person's own name, so the hub greets them the way Operations Home does.
+  const { data: me } = useQuery({
+    queryKey: ["my-name", userId],
+    enabled: Boolean(userId),
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+
   const reviewHandoff = useMutation({
     mutationFn: useServerFn(reviewHandoffFn),
     onSuccess: () => {
