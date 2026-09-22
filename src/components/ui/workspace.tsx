@@ -125,6 +125,12 @@ export function TaskWorkspace({
   children,
   /** "wide" is the default working panel; "full" is for dense records. */
   width = "wide",
+  /**
+   * "side" slides in from the right; "center" is a centred pop-up, which reads
+   * better for step-by-step work because the content is in front of you rather
+   * than in a column at the edge of the screen.
+   */
+  placement = "side",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -134,7 +140,47 @@ export function TaskWorkspace({
   footer?: React.ReactNode;
   children: React.ReactNode;
   width?: "wide" | "full";
+  placement?: "side" | "center";
 }) {
+  const body = (
+    <>
+      <div className="flex shrink-0 items-start gap-3 border-b px-5 py-4 pr-12">
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-base font-semibold">{title}</div>
+          {subtitle ? <div className="mt-0.5 text-sm text-muted-foreground">{subtitle}</div> : null}
+          {headerExtra ? <div className="mt-2">{headerExtra}</div> : null}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+      {footer ? (
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t bg-muted/30 px-5 py-3">
+          {footer}
+        </div>
+      ) : null}
+    </>
+  );
+
+  if (placement === "center") {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className={cn(
+            "flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0",
+            width === "full"
+              ? "sm:max-w-[min(96vw,72rem)]"
+              : "sm:max-w-[min(94vw,56rem)] lg:max-w-[min(90vw,60rem)]",
+          )}
+        >
+          <DialogTitle className="sr-only">
+            {typeof title === "string" ? title : "Task"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">Work on this step.</DialogDescription>
+          {body}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -147,25 +193,12 @@ export function TaskWorkspace({
             : "sm:max-w-[min(100vw,56rem)] lg:max-w-[min(90vw,62rem)]",
         )}
       >
-        <div className="flex shrink-0 items-start gap-3 border-b px-5 py-4 pr-12">
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-semibold">{title}</div>
-            {subtitle ? (
-              <div className="mt-0.5 text-sm text-muted-foreground">{subtitle}</div>
-            ) : null}
-            {headerExtra ? <div className="mt-2">{headerExtra}</div> : null}
-          </div>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
-        {footer ? (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t bg-muted/30 px-5 py-3">
-            {footer}
-          </div>
-        ) : null}
+        {body}
       </SheetContent>
     </Sheet>
   );
 }
+
 
 /** A plain close button for surfaces that render their own chrome. */
 export function WorkspaceCloseButton({ onClick }: { onClick: () => void }) {
