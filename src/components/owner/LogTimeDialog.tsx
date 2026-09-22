@@ -117,15 +117,15 @@ export function LogTimeDialog({
       return log({
         data: {
           programId,
-          phase: anchor.phase,
-          entryDate: new Date().toISOString().slice(0, 10),
+          phase: entryPhase,
+          entryDate: anchor ? today() : entryDate,
           minutes: parseOwnerMinutes(minutes),
           activity: activity.trim(),
           attachmentPath,
-          reviewId: anchor.id,
-          ticketId: anchor.ticketId,
-          ownerUpdateRevision: anchor.ownerUpdateRevision,
-          propertyIds: anchor.propertyIds,
+          reviewId: anchor ? anchor.id : null,
+          ticketId: anchor ? anchor.ticketId : null,
+          ownerUpdateRevision: anchor ? anchor.ownerUpdateRevision : null,
+          propertyIds: anchor ? anchor.propertyIds : homes,
           confirmed: true,
         },
       });
