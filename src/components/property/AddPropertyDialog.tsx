@@ -647,6 +647,8 @@ function ManualForm({
         <Text label="Market" value={form.market} onChange={set("market")} />
         <Text label="Owner name" value={form.ownerName} onChange={set("ownerName")} />
         <Text label="Owner email" value={form.ownerEmail} onChange={set("ownerEmail")} />
+        <Text label="Owner phone" value={form.ownerPhone} onChange={set("ownerPhone")} />
+
         <Text
           label="OwnerRez property ID (optional)"
           value={form.ownerRezPropertyId}
