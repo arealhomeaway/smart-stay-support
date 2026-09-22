@@ -427,7 +427,7 @@ function PropertyWorkspace() {
         handoffSource={
           (projectRow?.target_handoff_source as "auto" | "manual" | undefined) ?? "auto"
         }
-        activeOwner={activeOwner}
+        activeOwner={Boolean(activeOwner)}
         canEdit={canEdit}
         done={roll.done}
         total={roll.total}
