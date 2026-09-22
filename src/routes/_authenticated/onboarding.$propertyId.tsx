@@ -54,6 +54,8 @@ import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
 import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
 import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
+import { OnboardingWorkOrdersPanel } from "@/components/onboarding/OnboardingWorkOrdersPanel";
+
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import {
@@ -460,7 +462,9 @@ function PropertyWorkspace() {
           <TabsTrigger value="property">Property</TabsTrigger>
           <TabsTrigger value="budget">Budget &amp; expenses</TabsTrigger>
           <TabsTrigger value="findings">Findings</TabsTrigger>
+          <TabsTrigger value="workorders">Work orders</TabsTrigger>
           <TabsTrigger value="vendors">Vendor coverage</TabsTrigger>
+
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="handoff">Ready for Operations</TabsTrigger>
           <TabsTrigger value="activity">History</TabsTrigger>
@@ -911,7 +915,13 @@ function PropertyWorkspace() {
           />
         </TabsContent>
 
+        {/* ------------------------------------------------- Work orders */}
+        <TabsContent value="workorders" className="space-y-4">
+          <OnboardingWorkOrdersPanel propertyId={current.id} />
+        </TabsContent>
+
         {/* --------------------------------------------- Vendor coverage */}
+
         <TabsContent value="vendors" className="space-y-4">
           <VendorCoveragePanel propertyId={current.id} />
         </TabsContent>

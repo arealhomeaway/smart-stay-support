@@ -30,6 +30,8 @@ import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
 import { trackForTask } from "@/lib/onboarding-workstreams";
+import { showsBreezeway, taskKind, uploadHint, uploadTitle } from "@/lib/onboarding-task-kind";
+
 import { stateChip } from "@/lib/semantic";
 import { repairApprovalGuidance } from "@/lib/onboarding-scope";
 import type { ReleaseContext } from "@/lib/onboarding-state";
@@ -200,6 +202,10 @@ export function TaskDrawer({
   // Design and listing work is looked at, not read — those drawers get the gallery.
   const track = trackForTask({ title: task.title, stage: task.stage });
   const visualTrack = track === "furnishing_staging" || track === "media_listing";
+  // The kind of work this step is — decides which tools its pop-up shows.
+  const kind = taskKind({ title: task.title, detail: task.detail });
+  const dispatchable = showsBreezeway({ title: task.title, detail: task.detail });
+
 
   // One guided step at a time — the same pattern as the ticket workspace.
   // Every effect below routes through the callbacks this drawer already uses,
@@ -279,8 +285,10 @@ export function TaskDrawer({
   return (
     <TaskWorkspace
       open
+      placement="center"
       onOpenChange={(v) => !v && onClose()}
       title={task.title}
+
       headerExtra={
         <>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -341,21 +349,8 @@ export function TaskDrawer({
       }
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <SendToHomeownerDialog
-            taskId={task.id}
-            taskTitle={task.title}
-            disabled={disabled || task.owner_approval_status === "approved"}
-            alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
-          />
-          {task.owner_approval_status === "awaiting_owner" && (
-            <span className="text-xs text-muted-foreground">
-              Waiting on the homeowner since the last send.
-            </span>
-          )}
-        </div>
-
         {visualTrack && <TaskGallery taskId={task.id} />}
+
 
         {/*
          * Finishing comes last. Anything that unblocks the step stays at the
@@ -476,24 +471,17 @@ export function TaskDrawer({
             Save evidence
           </Button>
           {/*
-           * A step that must be proved keeps its uploader here, where the proof
-           * is judged. Everywhere else, files belong to the message that sends
-           * them — the drawer stays readable instead of carrying an uploader
-           * nobody opened.
+           * Every step can take files — a document step is the whole point of
+           * some of them — and the wording follows the kind of work the step is.
            */}
-          {task.evidence_required ? (
-            <AttachmentsPanel
-              entityType="onboarding_task"
-              entityId={task.id}
-              title="Photos & documents"
-            />
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Photos and documents are added in <strong>Send to homeowner</strong> at the top of
-              this step, where you choose what to share.
-            </p>
-          )}
+          <AttachmentsPanel
+            entityType="onboarding_task"
+            entityId={task.id}
+            title={uploadTitle(kind)}
+            description={uploadHint(kind)}
+          />
         </section>
+
 
         <Separator />
 
@@ -709,22 +697,23 @@ export function TaskDrawer({
         )}
 
         <Separator />
-
-        <Separator />
         <section className="space-y-2">
           <p className="eyebrow">Active Owner</p>
           <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
         </section>
 
-        <section className="space-y-2">
-          <p className="eyebrow">Breezeway</p>
-          <BreezewayTaskPanel
-            sourceType="onboarding_task"
-            sourceId={task.id}
-            defaultTitle={task.title}
-            defaultDescription={task.detail ?? null}
-          />
-        </section>
+        {/* Only steps that dispatch field work can send a job to Breezeway. */}
+        {dispatchable && (
+          <section className="space-y-2">
+            <p className="eyebrow">Send this job to Breezeway</p>
+            <BreezewayTaskPanel
+              sourceType="onboarding_task"
+              sourceId={task.id}
+              defaultTitle={task.title}
+              defaultDescription={task.detail ?? null}
+            />
+          </section>
+        )}
 
         {canRecordException && !task.exception_reason && (
           <>
@@ -755,7 +744,27 @@ export function TaskDrawer({
             {guidedCard}
           </>
         )}
+
+        {/* Last of all: sending something to the homeowner. */}
+        <Separator />
+        <section className="space-y-2">
+          <p className="eyebrow">Send to the homeowner</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <SendToHomeownerDialog
+              taskId={task.id}
+              taskTitle={task.title}
+              disabled={disabled || task.owner_approval_status === "approved"}
+              alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
+            />
+            {task.owner_approval_status === "awaiting_owner" && (
+              <span className="text-xs text-muted-foreground">
+                Waiting on the homeowner since the last send.
+              </span>
+            )}
+          </div>
+        </section>
       </div>
+
     </TaskWorkspace>
   );
 }

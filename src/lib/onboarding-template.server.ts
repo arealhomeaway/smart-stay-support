@@ -18,6 +18,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { masterStageForLegacyTask } from "./onboarding-stage-map";
 import { MASTER_ONBOARDING_TEMPLATE, TEMPLATE_KEY, type TemplateTask } from "./onboarding-template";
+import { offsetFromAccess, setupWindowDays } from "./onboarding-schedule";
+
 import { writeAudit } from "./audit.server";
 import { seatForTask, type SeatCode } from "./onboarding-ownership";
 
@@ -135,11 +137,29 @@ async function loadContext(supabase: Client, propertyId: string) {
   return { property: property.data, anchors, taken, takenSubs, parentIdByKey, existing: rows };
 }
 
-function dueFor(t: TemplateTask, anchors: TemplatePreview["anchors"]) {
+/**
+ * Access (possession) is the anchor the whole plan dates itself from. When the
+ * property has an access date every step gets a deadline: the Asana steps keep
+ * their stated day, the rest are paced across the setup window. Without an
+ * access date the older per-task anchors still apply, and anything else stays
+ * blank rather than being invented.
+ */
+function dueFor(
+  t: TemplateTask,
+  anchors: TemplatePreview["anchors"],
+  schedule?: { position: number; total: number; windowDays: number },
+) {
+  if (anchors.actual_access && schedule) {
+    return shift(
+      anchors.actual_access,
+      offsetFromAccess({ title: t.title, ...schedule }),
+    );
+  }
   if (!t.anchor || t.offsetDays == null) return null;
   const base = anchors[t.anchor];
   return base ? shift(base, t.offsetDays) : null;
 }
+
 
 export async function previewOnboardingTemplate(
   supabase: Client,
@@ -152,26 +172,31 @@ export async function previewOnboardingTemplate(
     input.propertyId,
   );
 
+  const { activeOwnerFor } = await import("./active-owner.server");
+  const windowDays = setupWindowDays(Boolean(await activeOwnerFor(supabase, input.propertyId)));
+  const total = MASTER_ONBOARDING_TEMPLATE.length;
+
   const toCreate: TemplatePreview["toCreate"] = [];
   const skipped: TemplatePreview["skipped"] = [];
   let subtasksToCreate = 0;
-  for (const t of MASTER_ONBOARDING_TEMPLATE) {
+  MASTER_ONBOARDING_TEMPLATE.forEach((t, position) => {
     const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
     subtasksToCreate += (t.subtasks ?? []).filter(
       (title) => !parentId || !takenSubs.has(subKey(parentId, title)),
     ).length;
     if (taken.has(taskKey(t.stage, t.title))) {
       skipped.push({ title: t.title, reason: "Already on this property" });
-      continue;
+      return;
     }
     toCreate.push({
       key: t.key,
       stage: t.stage,
       title: t.title,
-      dueOn: dueFor(t, anchors),
+      dueOn: dueFor(t, anchors, { position, total, windowDays }),
       subtasks: t.subtasks?.length ?? 0,
     });
-  }
+  });
+
   return {
     propertyId: input.propertyId,
     templateKey: TEMPLATE_KEY,
@@ -194,6 +219,10 @@ export async function applyOnboardingTemplate(
     input.propertyId,
   );
 
+  const positionOf = new Map(
+    MASTER_ONBOARDING_TEMPLATE.map((t, position) => [taskKey(t.stage, t.title), position] as const),
+  );
+  const total = MASTER_ONBOARDING_TEMPLATE.length;
   const pending = MASTER_ONBOARDING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
   // Ownership: every task opens owned by a SEAT, and by the person holding
@@ -206,27 +235,39 @@ export async function applyOnboardingTemplate(
   const participation = await activeOwnerFor(supabase, input.propertyId);
   const needsOwnerApproval = (t: TemplateTask) =>
     Boolean(t.requiresOwnerApproval || (t.ownerApprovalWhenActiveOwner && participation));
+  const windowDays = setupWindowDays(Boolean(participation));
 
-  const rows = pending.map((t) => ({
-    property_id: input.propertyId,
-    stage: t.stage,
-    legacy_stage: t.legacyStage ?? null,
-    title: t.title,
-    detail: detailFor(t),
-    status: "open",
-    blocks_handoff: t.blocksHandoff,
-    requires_owner_approval: needsOwnerApproval(t),
-    owner_approval_status: needsOwnerApproval(t) ? "pending" : "not_required",
-    evidence_required: Boolean(t.evidenceRequired),
-    due_on: dueFor(t, anchors),
-    due_on_source: t.anchor ? "template_anchor" : null,
-    schedule_anchor: t.anchor ?? null,
-    schedule_offset_days: t.offsetDays ?? null,
-    sort_order: t.sortOrder,
-    created_by: userId,
-    is_demo: property.is_demo,
-    ...seatFields(t.role, t.stage, seatHolders),
-  }));
+  const rows = pending.map((t) => {
+    const schedule = {
+      position: positionOf.get(taskKey(t.stage, t.title)) ?? 0,
+      total,
+      windowDays,
+    };
+    const scheduled = Boolean(anchors.actual_access);
+    return {
+      property_id: input.propertyId,
+      stage: t.stage,
+      legacy_stage: t.legacyStage ?? null,
+      title: t.title,
+      detail: detailFor(t),
+      status: "open",
+      blocks_handoff: t.blocksHandoff,
+      requires_owner_approval: needsOwnerApproval(t),
+      owner_approval_status: needsOwnerApproval(t) ? "pending" : "not_required",
+      evidence_required: Boolean(t.evidenceRequired),
+      due_on: dueFor(t, anchors, schedule),
+      due_on_source: scheduled ? "access_schedule" : t.anchor ? "template_anchor" : null,
+      schedule_anchor: scheduled ? "actual_access" : (t.anchor ?? null),
+      schedule_offset_days: scheduled
+        ? offsetFromAccess({ title: t.title, ...schedule })
+        : (t.offsetDays ?? null),
+      sort_order: t.sortOrder,
+      created_by: userId,
+      is_demo: property.is_demo,
+      ...seatFields(t.role, t.stage, seatHolders),
+    };
+  });
+
   const approvalTasks = existing.filter(
     (t) =>
       !t.parent_task_id &&

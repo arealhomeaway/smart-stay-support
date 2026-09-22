@@ -85,6 +85,8 @@ export function AttachmentsPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ name: string; pct: number } | null>(null);
   const [retry, setRetry] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+
   const uploadAttempt = useRef<{
     file: File;
     key: string;
@@ -210,9 +212,26 @@ export function AttachmentsPanel({
   });
 
   const data = files.data;
+  const canDrop = Boolean(data?.canUpload) && !readOnly;
 
   return (
-    <Card>
+    <Card
+      onDragOver={(e) => {
+        if (!canDrop) return;
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        if (!canDrop) return;
+        e.preventDefault();
+        setDragging(false);
+        const f = e.dataTransfer.files?.[0];
+        if (f) upload.mutate(f);
+      }}
+      className={dragging ? "border-primary ring-2 ring-primary/30" : undefined}
+    >
+
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -263,6 +282,20 @@ export function AttachmentsPanel({
         />
       </CardHeader>
       <CardContent className="space-y-3">
+        {canDrop ? (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className={`w-full rounded-lg border-2 border-dashed px-4 py-6 text-center text-sm transition-colors ${
+              dragging
+                ? "border-primary bg-primary/5 text-foreground"
+                : "border-border text-muted-foreground hover:border-primary/60"
+            }`}
+          >
+            Drag a photo or document here, or click to choose one.
+          </button>
+        ) : null}
+
         {progress ? (
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Uploading {progress.name}…</p>
