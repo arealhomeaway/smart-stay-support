@@ -84,7 +84,7 @@ export function SendToHomeownerDialog({
           Send to homeowner
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Send &ldquo;{taskTitle}&rdquo; to the homeowner</DialogTitle>
         </DialogHeader>
