@@ -691,4 +691,4 @@ Batch B (work surface)
 
 - [x] Active Owner contacts: utility manager captured on the project (editable in Edit scope, shown to the homeowner); Kati set as PM on both of Victor's homes
 
-- [ ] Scope editor on a home: choose which onboarding plan (template) applies — no picker today
+- [x] Scope editor on a home: onboarding plan picker (adds missing steps, never duplicates); ARHA plan editable in place, no duplicate needed
