@@ -113,6 +113,7 @@ export function TaskDrawer({
   onReopen,
   onAddObservation,
   onAdvance,
+  onVoid,
   release,
   approvals = [],
 }: {
@@ -143,6 +144,8 @@ export function TaskDrawer({
   onAddObservation: (taskId: string, body: string) => void;
   /** Open the next step in this home's plan, straight after this one is finished. */
   onAdvance?: (taskId: string) => void;
+  /** Mark a step not needed for this home (supervisors only). */
+  onVoid?: (taskId: string, reason: string) => void;
   /** Authoritative release context; without it nothing may be completed early. */
   release?: ReleaseContext;
   /** Canonical owner approval records already raised for this task. */
@@ -166,6 +169,8 @@ export function TaskDrawer({
   const [exception, setException] = useState("");
   const [observation, setObservation] = useState("");
   const [reopenReason, setReopenReason] = useState("");
+  const [voidOpen, setVoidOpen] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
 
   useEffect(() => {
     setEvidence(task?.evidence_note ?? "");
@@ -178,6 +183,8 @@ export function TaskDrawer({
     setException("");
     setObservation("");
     setReopenReason("");
+    setVoidOpen(false);
+    setVoidReason("");
   }, [task?.id, task?.evidence_note, task?.due_on]);
 
   if (!task) return null;
@@ -303,6 +310,40 @@ export function TaskDrawer({
             </span>
           </div>
           {view.reason && <p className="mt-1 text-xs text-muted-foreground">{view.reason}</p>}
+          {onVoid && canManageTask && task.status !== "complete" && (
+            <div className="mt-2">
+              {voidOpen ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    className="h-8 w-64"
+                    value={voidReason}
+                    onChange={(e) => setVoidReason(e.target.value)}
+                    placeholder="Why is this step not needed?"
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={disabled || voidReason.trim().length < 3}
+                    onClick={() => onVoid(task.id, voidReason.trim())}
+                  >
+                    Void step
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setVoidOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={disabled}
+                  onClick={() => setVoidOpen(true)}
+                >
+                  Void — not needed for this home
+                </Button>
+              )}
+            </div>
+          )}
         </>
       }
       footer={

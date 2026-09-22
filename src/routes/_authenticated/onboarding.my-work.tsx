@@ -23,7 +23,14 @@ import { useRole } from "@/hooks/useRole";
 import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { buildReleaseContext } from "@/lib/onboarding-state";
-import { groupMyWork, myWorkSelection, validateMyWorkSearch } from "@/lib/onboarding-work-views";
+import {
+  groupMyWork,
+  myWorkSelection,
+  matchesWorkFilter,
+  validateMyWorkSearch,
+  WORK_FILTER_LABELS,
+  type WorkFilter,
+} from "@/lib/onboarding-work-views";
 import { isTestRecord } from "@/lib/test-data";
 import { assignablePeople } from "@/lib/assignable-people";
 import {
@@ -66,8 +73,8 @@ function MyWork() {
   const { userId, readOnly, can } = useRole();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const setWho = (who: string) => {
-    void navigate({ search: { who }, replace: true });
+  const setFilter = (patch: Record<string, string>) => {
+    void navigate({ search: { ...search, ...patch }, replace: true });
   };
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
@@ -189,6 +196,23 @@ function MyWork() {
   });
   const t0 = today();
 
+  // Active Owner homes are the ones whose live project carries the module.
+  const activeOwnerHomes = new Set(
+    (data.projects ?? [])
+      .filter((p) => p.status !== "cancelled" && (p.modules ?? []).includes("active_owner"))
+      .map((p) => p.property_id),
+  );
+  const filtered = views
+    .filter((v) =>
+      search.program === "all"
+        ? true
+        : search.program === "active_owner"
+          ? activeOwnerHomes.has(v.task.property_id)
+          : !activeOwnerHomes.has(v.task.property_id),
+    )
+    .filter((v) => (search.home === "all" ? true : v.task.property_id === search.home))
+    .filter((v) => matchesWorkFilter(v, search.state as WorkFilter));
+
   const openTask = mine.find((t) => t.id === openTaskId) ?? null;
   const assignedDrawerContext = data.assignedWorkContexts.find(
     (context) => context.propertyId === openTask?.property_id,
@@ -242,34 +266,73 @@ function MyWork() {
         eyebrow="Onboarding"
         title="My work"
         description="Onboarding tasks assigned to you across every home, in the order they need attention."
-        actions={
-          selection.canBrowseTeam ? (
-            <Select value={who} onValueChange={setWho}>
-              <SelectTrigger className="w-60">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="me">Assigned to me</SelectItem>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {assignablePeople(data.people).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.full_name || p.email || "Teammate"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : undefined
-        }
       />
 
-      {views.length === 0 && (
+      <div className="flex flex-wrap gap-2">
+        {selection.canBrowseTeam && (
+          <Select value={who} onValueChange={(v) => setFilter({ who: v })}>
+            <SelectTrigger className="w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="me">Assigned to me</SelectItem>
+              <SelectItem value="all">Every assignee</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {assignablePeople(data.people).map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name || p.email || "Teammate"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <Select value={search.program} onValueChange={(v) => setFilter({ program: v })}>
+          <SelectTrigger className="w-52">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Every program</SelectItem>
+            <SelectItem value="active_owner">Active Owner only</SelectItem>
+            <SelectItem value="standard">Standard only</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={search.home} onValueChange={(v) => setFilter({ home: v })}>
+          <SelectTrigger className="w-64">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Every home</SelectItem>
+            {data.properties
+              .filter((p) => !isTestRecord(p))
+              .map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <Select value={search.state} onValueChange={(v) => setFilter({ state: v })}>
+          <SelectTrigger className="w-52">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(WORK_FILTER_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filtered.length === 0 && (
         <EmptyState
           title="Nothing open"
           hint="No open onboarding task matches this view right now."
         />
       )}
 
-      {groupMyWork(views, t0)
+      {groupMyWork(filtered, t0)
         .filter((g) => g.items.length > 0)
         .map((g) => (
           <details key={g.key} open={g.key !== "future"} className="surface overflow-hidden">

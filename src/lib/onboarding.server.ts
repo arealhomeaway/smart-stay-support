@@ -37,7 +37,7 @@ import {
 type Client = SupabaseClient<Database>;
 
 const PROPERTY_FIELDS =
-  "id, name, nickname, address_line1, city, state, postal_code, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, planned_closing_on, actual_closing_on, actual_access_on, handoff_accepted_at, quarterly_review_due_on, active, is_demo";
+  "id, name, nickname, address_line1, city, state, postal_code, latitude, longitude, access_notes, wifi_notes, lifecycle_status, onboarding_stage, onboarding_owner, onboarding_started_at, planned_closing_on, actual_closing_on, actual_access_on, handoff_accepted_at, quarterly_review_due_on, active, is_demo, primary_photo_url, primary_photo_thumb_url, primary_photo_source";
 
 async function assertCap(
   supabase: Client,
@@ -371,6 +371,9 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // Adding work to a plan is a director decision; project managers work the
+  // plan they are given and may still edit existing steps.
+  if (!input.id) await assertCap(supabase, userId, "is_supervisor");
   if (!input.id && input.status === "complete") {
     throw new Error("Create the step first, then complete it after its readiness checks.");
   }

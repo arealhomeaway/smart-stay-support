@@ -1,6 +1,5 @@
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { gateReviewAuthority } from "@/lib/handoff-gate-authority";
-import { StageProgressPanel } from "@/components/onboarding/StageProgressPanel";
 import { overrideOnboardingTaskDateFn } from "@/lib/onboarding.functions";
 import {
   onboardingWorkspaceKey,
@@ -18,7 +17,6 @@ import {
   LoadingPage,
   PageHeader,
   ProgressRing,
-  StageRail,
 } from "@/components/ui/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
@@ -46,6 +44,7 @@ import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OnboardingDashboard } from "@/components/onboarding/OnboardingDashboard";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
 
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
@@ -89,7 +88,6 @@ import {
 } from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { WorkstreamBoard } from "@/components/onboarding/WorkstreamBoard";
-import { GoLiveBanner } from "@/components/onboarding/GoLiveBanner";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
@@ -119,6 +117,7 @@ import {
   recordTaskExceptionFn,
   reopenOnboardingTaskFn,
   requestHandoffFn,
+  archiveOnboardingTaskFn,
   reviewHandoffFn,
   saveOnboardingTaskFn,
   setPropertyLifecycleFn,
@@ -196,6 +195,7 @@ function PropertyWorkspace() {
     useServerFn(recordOwnerTaskDecisionFn),
     "Homeowner's answer recorded.",
   );
+  const voidTask = mut(useServerFn(archiveOnboardingTaskFn), "Step voided.");
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
 
   const current = data?.properties.find((p) => p.id === propertyId) ?? null;
@@ -387,11 +387,23 @@ function PropertyWorkspace() {
     <div className="space-y-5">
       <BackControl origin={origin} />
 
-      <PageHeader
-        eyebrow="Onboarding"
-        title={current.name}
-        description={`${life.label} · ${roll.done}/${roll.total} applicable steps complete`}
-      />
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="h-24 w-36 shrink-0 overflow-hidden rounded-lg bg-sunken">
+          <PropertyPhoto
+            url={current.primary_photo_url ?? null}
+            name={current.nickname ?? current.name}
+            rounded="rounded-none"
+            className="size-full object-cover"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <PageHeader
+            eyebrow="Onboarding"
+            title={current.name}
+            description={`${life.label} · ${roll.done}/${roll.total} applicable steps complete`}
+          />
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
@@ -417,22 +429,16 @@ function PropertyWorkspace() {
         </p>
       )}
 
-      <GoLiveBanner
-        target={target}
-        blockers={blockers}
-        accepted={Boolean(current.handoff_accepted_at)}
-        onOpenTask={setOpenTaskId}
+      <ProjectScopePanel
+        propertyId={current.id}
+        propertyName={current.name}
+        people={data.people}
+        canEdit={canEdit}
+        hints={{ planned_closing_on: current.planned_closing_on ?? null }}
       />
 
       <OnboardingDashboard
         propertyId={current.id}
-        plannedClosingOn={current.planned_closing_on ?? null}
-        actualClosingOn={current.actual_closing_on ?? null}
-        actualAccessOn={current.actual_access_on ?? null}
-        targetHandoffOn={projectRow?.target_handoff_on ?? null}
-        handoffSource={
-          (projectRow?.target_handoff_source as "auto" | "manual" | undefined) ?? "auto"
-        }
         activeOwner={Boolean(activeOwner)}
         canEdit={canEdit}
         done={roll.done}
@@ -441,6 +447,7 @@ function PropertyWorkspace() {
         people={data.people}
         taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
       />
+
 
       <CurrentWork
         stage={stage}
@@ -477,102 +484,7 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------- Overview */}
         <TabsContent value="overview" className="space-y-5">
-          <StageProgressPanel
-            tasks={tasks.map((t) => ({
-              id: t.id,
-              title: t.title,
-              stage: t.stage,
-              status: t.status,
-              blocker: t.blocker ?? null,
-              dueOn: t.due_on ?? null,
-              assignedTo: t.assigned_to ?? null,
-              parentTaskId: t.parent_task_id ?? null,
-              ownerApprovalStatus: t.owner_approval_status ?? null,
-              requiresOwnerApproval: t.requires_owner_approval ?? null,
-            }))}
-            onOpenTask={setOpenTaskId}
-          />
-          <div className="surface p-4">
-            <PhotoStrip
-              entityType="property"
-              entityId={current.id}
-              title="Recent visual evidence"
-              emptyHint="No photos on file yet for this home."
-            />
-          </div>
 
-          {(() => {
-            const release2 = release;
-            const nextThree = tasks
-              .map((t) => viewTask(t, tasks, release2))
-              .filter(
-                (v) =>
-                  v.canComplete &&
-                  v.status !== "future" &&
-                  v.status !== "complete" &&
-                  v.status !== "carryover",
-              )
-              .sort((a, b) => (a.task.due_on ?? "9999").localeCompare(b.task.due_on ?? "9999"))
-              .slice(0, 3);
-            if (nextThree.length === 0) return null;
-            return (
-              <section className="surface p-4">
-                <p className="eyebrow">Next 3 actions</p>
-                <div className="mt-2 space-y-1.5">
-                  {nextThree.map((v) => (
-                    <button
-                      key={v.task.id}
-                      type="button"
-                      onClick={() => setOpenTaskId(v.task.id)}
-                      className="flex w-full flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-muted/50"
-                    >
-                      <span className="min-w-0 flex-1 truncate font-medium">{v.task.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {assigneeLabel(v.task, data.people)}
-                      </span>
-                      {v.task.due_on && (
-                        <span className="numeric text-xs text-muted-foreground">
-                          {usDate(v.task.due_on)}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            );
-          })()}
-
-          <ProjectScopePanel
-            propertyId={current.id}
-            propertyName={current.name}
-            people={data.people}
-            canEdit={canEdit}
-            hints={{ planned_closing_on: current.planned_closing_on ?? null }}
-          />
-
-          <div className="surface p-4">
-            <StageRail
-              tone="onboarding"
-              stages={ONBOARDING_STAGES.map((s) => {
-                const inStage = tasks.filter((t) => t.stage === s.value);
-                return {
-                  key: s.value,
-                  label: s.label,
-                  ...(inStage.length > 0
-                    ? {
-                        hint: `${inStage.filter((t) => t.status === "complete").length}/${inStage.length} done`,
-                      }
-                    : {}),
-                };
-              })}
-              currentIndex={Math.max(
-                0,
-                ONBOARDING_STAGES.findIndex(
-                  (s) => s.value === (current.onboarding_stage ?? "post_contract"),
-                ),
-              )}
-            />
-          </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary label="Overall progress">
@@ -737,7 +649,8 @@ function PropertyWorkspace() {
               propertyId={current.id}
               people={data.people}
               tasks={tasks}
-              disabled={!canEdit}
+              // Only directors add work to a plan; project managers work the plan.
+              disabled={!canEdit || !can("handoff_review")}
               onSave={(values) => saveTask.mutate({ data: values } as never)}
             />
           </div>
@@ -1071,6 +984,15 @@ function PropertyWorkspace() {
         </TabsContent>
       </Tabs>
 
+      <div className="surface p-4">
+        <PhotoStrip
+          entityType="property"
+          entityId={current.id}
+          title="Visual evidence"
+          emptyHint="No photos on file yet for this home."
+        />
+      </div>
+
       <TaskDrawer
         task={openTask}
         tasks={tasks}
@@ -1086,6 +1008,10 @@ function PropertyWorkspace() {
           openTask?.property_id,
           data.projects,
         )}
+        onVoid={(taskId: string, reason: string) => {
+          voidTask.mutate({ data: { taskId, reason } } as never);
+          setOpenTaskId(null);
+        }}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>
