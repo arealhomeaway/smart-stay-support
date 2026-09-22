@@ -244,6 +244,11 @@ function OwnerHubBody({
 
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
+      <WaysToParticipate
+        phase={program.phase === "onboarding" ? "onboarding" : "ongoing"}
+        openReviews={openReviews.length}
+      />
+
       <OwnerApprovalPanel readOnly={preview} />
 
       <SectionCard
