@@ -662,3 +662,8 @@ Batch B (work surface)
 - [ ] Standard <-> Active Owner toggle on /onboarding/$propertyId (enrol, retime handoff to +4w, participation tracking; back to Standard keeps progress)
 - [ ] Homeowner card on the property workspace/dashboard: name, email, phone, prominent "Add Owner" when empty
 - [ ] Search an existing homeowner or create/edit one inline (name, email, phone, co-owner) and link to the property
+
+## Onboarding walkthrough (2026-09-22)
+- [x] Fix "column onboarding_projects.archived_at does not exist" when saving scope dates
+- [ ] Homeowner card with add/edit owner + co-owner on property and onboarding pages
+- [ ] Program type toggle (Standard / Active Owner) on the onboarding dashboard
