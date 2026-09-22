@@ -512,6 +512,9 @@ function OwnerHubBody({
                 programId={program.id}
                 onDone={invalidate}
                 readOnly={preview}
+                action={actionByReview.get(r.id) ?? null}
+                canLogHours={canLogHours}
+                logHoursBlockedReason={logHoursBlockedReason}
               />
             ))}
           </div>
