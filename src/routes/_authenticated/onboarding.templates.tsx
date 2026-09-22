@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateEditor } from "@/components/onboarding/TemplateEditor";
-import { usePermissions } from "@/lib/use-permissions";
+import { useRole } from "@/hooks/useRole";
 import {
   createOnboardingTemplateFn,
   listOnboardingTemplatesFn,
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/templates")({
 });
 
 function TemplatesPage() {
-  const { can } = usePermissions();
+  const { can } = useRole();
   const qc = useQueryClient();
   const list = useServerFn(listOnboardingTemplatesFn);
   const create = useServerFn(createOnboardingTemplateFn);
