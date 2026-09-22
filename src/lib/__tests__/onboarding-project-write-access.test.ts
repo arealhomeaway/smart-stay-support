@@ -124,3 +124,68 @@ it("permits PM, director and supervisor updates with project history", async () 
     expect(f.writes()).toBe(2);
   }
 });
+
+/**
+ * A home that already carries Active Owner must be able to record its dates.
+ * Re-running enrollment on every save made a date edit fail outright for a
+ * home whose enrollment had deliberately been set aside.
+ */
+it("saves dates on an Active Owner home without touching enrollment", async () => {
+  const project = {
+    id: "project",
+    property_id: "home",
+    project_manager: "lead",
+    director: "director",
+    status: "active",
+    updated_at: "2026-09-15T00:00:00Z",
+    modules: ["active_owner"],
+    furnishing_scope: "full_furnishing",
+    is_demo: false,
+  };
+  const rpcCalls: string[] = [];
+  const updates: { table: string; patch: Record<string, unknown> }[] = [];
+  const db = {
+    rpc: async (name: string) => {
+      rpcCalls.push(name);
+      if (name === "create_owner_program") throw new Error("enrollment must not be attempted");
+      return { data: true, error: null };
+    },
+    from: (table: string) => {
+      let patch: Record<string, unknown> = {};
+      const query = {
+        select: () => query,
+        eq: () => query,
+        neq: () => query,
+        single: async () => ({
+          data: table === "properties" ? { id: "home", name: "Home" } : project,
+          error: null,
+        }),
+        maybeSingle: async () => ({ data: { ...project, ...patch }, error: null }),
+        update: (value: Record<string, unknown>) => {
+          patch = value;
+          updates.push({ table, patch: value });
+          return query;
+        },
+        insert: async () => ({ data: null, error: null }),
+        then: (resolve: (v: unknown) => unknown) => resolve({ data: null, error: null }),
+      };
+      return query;
+    },
+  };
+
+  const result = await updateProject(db as never, "lead", {
+    projectId: "project",
+    modules: ["active_owner"],
+    possessionOn: "2026-09-22",
+    plannedClosingOn: "2026-09-24",
+    reason: "Recording the confirmed dates.",
+  });
+
+  expect(result.possession_on).toBe("2026-09-22");
+  expect(result.enrollmentWarning).toBe(null);
+  expect(rpcCalls).not.toContain("create_owner_program");
+  // The home itself carries the dates the rest of Resolve paces work from.
+  const home = updates.find((u) => u.table === "properties");
+  expect(home?.patch["actual_access_on"]).toBe("2026-09-22");
+  expect(home?.patch["planned_closing_on"]).toBe("2026-09-24");
+});
