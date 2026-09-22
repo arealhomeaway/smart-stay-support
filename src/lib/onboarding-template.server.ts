@@ -172,26 +172,31 @@ export async function previewOnboardingTemplate(
     input.propertyId,
   );
 
+  const { activeOwnerFor } = await import("./active-owner.server");
+  const windowDays = setupWindowDays(Boolean(await activeOwnerFor(supabase, input.propertyId)));
+  const total = MASTER_ONBOARDING_TEMPLATE.length;
+
   const toCreate: TemplatePreview["toCreate"] = [];
   const skipped: TemplatePreview["skipped"] = [];
   let subtasksToCreate = 0;
-  for (const t of MASTER_ONBOARDING_TEMPLATE) {
+  MASTER_ONBOARDING_TEMPLATE.forEach((t, position) => {
     const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
     subtasksToCreate += (t.subtasks ?? []).filter(
       (title) => !parentId || !takenSubs.has(subKey(parentId, title)),
     ).length;
     if (taken.has(taskKey(t.stage, t.title))) {
       skipped.push({ title: t.title, reason: "Already on this property" });
-      continue;
+      return;
     }
     toCreate.push({
       key: t.key,
       stage: t.stage,
       title: t.title,
-      dueOn: dueFor(t, anchors),
+      dueOn: dueFor(t, anchors, { position, total, windowDays }),
       subtasks: t.subtasks?.length ?? 0,
     });
-  }
+  });
+
   return {
     propertyId: input.propertyId,
     templateKey: TEMPLATE_KEY,
