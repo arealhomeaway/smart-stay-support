@@ -948,27 +948,11 @@ function PropertyWorkspace() {
           )}
 
           <section className="surface p-4">
-            <p className="font-medium">Readiness checklist</p>
+            <p className="font-medium">Ready for Operations</p>
             <p className="text-sm text-muted-foreground">
-              Blocking items must pass, or an authorised exception must be recorded, before handoff.
+              Anything still in the way is listed here. Acceptance is recorded by name and date.
             </p>
-            <div className="mt-3 space-y-2">
-              {readiness.checks.map((c) => (
-                <div key={c.key} className="flex items-start gap-3 rounded-md border p-3 text-sm">
-                  {c.passed ? (
-                    <CheckCircle2 className="mt-0.5 size-4 text-state-done" />
-                  ) : c.blocking ? (
-                    <XCircle className="mt-0.5 size-4 text-state-blocked" />
-                  ) : (
-                    <CircleAlert className="mt-0.5 size-4 text-state-waiting" />
-                  )}
-                  <div>
-                    <p className="font-medium">{c.label}</p>
-                    <p className="text-xs text-muted-foreground">{c.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+
             {readiness.reasons.length > 0 && (
               <div className="mt-3 rounded-md border border-state-blocked/40 bg-state-blocked/5 p-3">
                 <p className="text-sm font-medium">
