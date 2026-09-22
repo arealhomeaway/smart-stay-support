@@ -4262,6 +4262,7 @@ export type Database = {
           sort_order: number
           stage: string
           status: string
+          tags: string[]
           title: string
           updated_at: string
         }
@@ -4301,6 +4302,7 @@ export type Database = {
           sort_order?: number
           stage?: string
           status?: string
+          tags?: string[]
           title: string
           updated_at?: string
         }
@@ -4340,6 +4342,7 @@ export type Database = {
           sort_order?: number
           stage?: string
           status?: string
+          tags?: string[]
           title?: string
           updated_at?: string
         }
@@ -4404,6 +4407,7 @@ export type Database = {
           sort_order: number
           stage: string
           subtasks: string[]
+          tags: string[]
           template_id: string
           title: string
           updated_at: string
@@ -4423,6 +4427,7 @@ export type Database = {
           sort_order?: number
           stage: string
           subtasks?: string[]
+          tags?: string[]
           template_id: string
           title: string
           updated_at?: string
@@ -4442,6 +4447,7 @@ export type Database = {
           sort_order?: number
           stage?: string
           subtasks?: string[]
+          tags?: string[]
           template_id?: string
           title?: string
           updated_at?: string
