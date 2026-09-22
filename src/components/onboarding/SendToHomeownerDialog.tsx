@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { sendTaskToOwnerFn } from "@/lib/onboarding.functions";
 
