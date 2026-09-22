@@ -54,9 +54,11 @@ import {
   zonedToInstant,
   type RecipientField,
   type RecipientLists,
+  type RecipientSuggestion,
   type ComposerContext,
   type MessageAudience,
 } from "@/lib/email-composer";
+import { RecipientCombobox } from "@/components/RecipientCombobox";
 import {
   getComposerContext,
   getMessageHistory,
