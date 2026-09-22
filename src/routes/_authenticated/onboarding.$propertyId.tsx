@@ -359,6 +359,8 @@ function PropertyWorkspace() {
           </dl>
         </section>
 
+        <HomeownerCard propertyId={current.id} canManage={canEdit} />
+
         <ProjectScopePanel
           propertyId={current.id}
           propertyName={current.name}
