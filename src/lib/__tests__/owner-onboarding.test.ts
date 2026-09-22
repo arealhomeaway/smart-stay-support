@@ -8,7 +8,7 @@ describe("owner onboarding projection", () => {
     const progress = ownerTrackProgress([
       task("Set up electric account", "scope_utilities_compliance", "complete"),
       task("Set up internet", "scope_utilities_compliance", "ready"),
-      task("Mood board approval", "design_approvals_procurement", "complete"),
+      task("Send mood boards to owner", "design_approvals_procurement", "complete"),
       task("Listing photos", "listing_final_clean", "in_progress"),
       task("Handoff acceptance", "handoff_acceptance", "carryover"),
     ]);
