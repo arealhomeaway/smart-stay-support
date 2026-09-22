@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, SectionCard, LoadingPage } from "@/components/ui/page";
 import { PersonAvatar } from "@/components/PersonAvatar";
+import { PasswordCard } from "@/components/account/PasswordCard";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccount, saveMyProfile, saveMyNotificationPreferences } from "@/lib/account.functions";
 import {
@@ -142,6 +143,7 @@ function AccountPage() {
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -336,6 +338,10 @@ function AccountPage() {
               </Button>
             </div>
           </SectionCard>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <PasswordCard email={account.data?.email ?? null} />
         </TabsContent>
       </Tabs>
     </div>
