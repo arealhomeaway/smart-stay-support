@@ -16,6 +16,7 @@ import {
   KeyRound,
   Plus,
   Route as RouteIcon,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -73,6 +74,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDemo } from "@/components/DemoProvider";
 import { useViewAs } from "@/hooks/useViewAs";
 import { setOwnerPreview } from "@/lib/owner-preview";
+import { beginActAs } from "@/lib/act-as";
+import { useRole } from "@/hooks/useRole";
 import {
   Select,
   SelectContent,
