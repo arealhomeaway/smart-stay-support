@@ -582,3 +582,9 @@ is now doable from Resolve.
 - [x] Checkpoint strip in the homeowner portal (/owner) and supervisor list (/owner-programs)
 - [x] Milestone check-in alerts for homeowners + staff touchpoint alerts at each window
 - [ ] Bug (Emily): demo onboarding projects (Willow, Birch) missing from the Onboarding Director hub with show-test on — every lens reads 0
+
+## Active Owner oversight + Homeowners Directory (Emily, 2026-09-22)
+- [ ] Program oversight dashboard for directors/supervisors/admin (all enrolled owners, pacing, reviews due, last contact, summary strip, filters, demo included)
+- [ ] Homeowners Directory page (searchable, capability-gated, enrollment + login status)
+- [ ] /owner explainer for staff accounts linking to /owner-programs
+- [ ] Empty Active Owner hub for supervisors (only demo program exists / demo gating) — confirm and fix
