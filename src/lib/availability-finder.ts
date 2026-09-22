@@ -159,7 +159,8 @@ export function externalAvailabilityText(result: AvailabilityResult) {
 }
 
 export function emailSummary(results: AvailabilityResult[], checkIn: string, checkOut: string, location: string) {
-  return `Property options for ${checkIn} to ${checkOut} near ${location.trim()}:\n\n${results.map((r) =>
-    `${r.name} — ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}\n${externalAvailabilityText(r)}`,
+  const body = `Property options for ${checkIn} to ${checkOut} near ${location.trim()}:\n\n${results.map((r) =>
+    `${r.name} — ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}${r.quote ? `\n${clientQuoteLine(r.quote)}` : ""}\n${externalAvailabilityText(r)}`,
   ).join("\n\n")}`;
+  return results.some((r) => r.quote) ? `${body}\n\n${PRICE_ESTIMATE_NOTE}` : body;
 }
