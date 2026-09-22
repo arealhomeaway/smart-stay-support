@@ -376,3 +376,80 @@ function Hub() {
     </div>
   );
 }
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+/** One compact, colourful figure that focuses the hub below. */
+function HubTile({
+  value,
+  label,
+  tone,
+  onClick,
+}: {
+  value: number;
+  label: string;
+  tone: "critical" | "progress" | "attention" | "review";
+  onClick: () => void;
+}) {
+  const plate = {
+    critical: "border-coral/25 bg-coral/8 text-coral",
+    progress: "border-sky/25 bg-sky/8 text-sky",
+    attention: "border-amber/30 bg-amber/10 text-amber",
+    review: "border-lavender/25 bg-lavender/8 text-lavender",
+  }[tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-xl border px-4 py-3.5 text-left transition-colors hover:brightness-[0.98]",
+        plate,
+        value === 0 && "opacity-60",
+      )}
+    >
+      <p className="numeric text-3xl font-semibold leading-none">{value}</p>
+      <p className="mt-1.5 text-sm font-medium text-foreground">{label}</p>
+    </button>
+  );
+}
+
+/** One home waiting on this person's decision. */
+function DecisionRow({
+  project: p,
+  originToken,
+}: {
+  project: ProjectSummary;
+  originToken?: string | undefined;
+}) {
+  const stage = lifecycleStageMeta(p.stage);
+  return (
+    <Link
+      to="/onboarding/$propertyId"
+      params={{ propertyId: p.property.id }}
+      search={(originToken ? { from: originToken } : undefined) as never}
+      className="surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1 py-3 pl-4 pr-3"
+    >
+      <PropertyPhoto
+        url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
+        name={p.property.name}
+        className="size-11"
+      />
+      <span className="min-w-0 flex-1 basis-full sm:basis-auto">
+        <span className="block truncate text-base font-semibold">{p.property.name}</span>
+        <span className="block truncate text-sm text-muted-foreground">
+          {stage.label} · {p.next.headline}
+        </span>
+      </span>
+      <span className="numeric text-sm text-muted-foreground">
+        {p.target ? `Handoff ${usDate(p.target)}` : "No target date"}
+      </span>
+      <ProgressRing value={p.progress} size={36} tone="onboarding" />
+      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
+  );
+}
