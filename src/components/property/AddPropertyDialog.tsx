@@ -299,8 +299,9 @@ function OwnerRezImport({
           externalRefs: {},
         },
       });
-      return result;
+      return { ...result, startedOnboarding: true, activeOwner };
     },
+
     onSuccess: (r) => onDone(r),
     onError: (e: Error) => toast.error(e.message),
   });
