@@ -158,6 +158,46 @@ export function LogTimeDialog({
               {anchor.description}
             </p>
           )}
+          {!anchor && (
+            <>
+              <div className="space-y-1">
+                <Label htmlFor="log-date">Date</Label>
+                <Input
+                  id="log-date"
+                  type="date"
+                  max={today()}
+                  value={entryDate}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                />
+              </div>
+              {properties.length > 1 && (
+                <div className="space-y-1">
+                  <Label>Which homes did this involve?</Label>
+                  <div className="space-y-1">
+                    {properties.map((home) => (
+                      <label key={home.id} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={homes.includes(home.id)}
+                          onCheckedChange={(v) =>
+                            setHomes((current) =>
+                              v === true
+                                ? [...current, home.id]
+                                : current.filter((id) => id !== home.id),
+                            )
+                          }
+                        />
+                        <span>{home.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    If one activity covered several homes, select them all and enter the total time
+                    once.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
           <div className="space-y-1">
             <Label htmlFor="log-activity">What did you do?</Label>
             <Textarea
