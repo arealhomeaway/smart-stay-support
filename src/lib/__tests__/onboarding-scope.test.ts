@@ -105,8 +105,9 @@ describe("split and summary", () => {
 
   it("summarises scope in plain language", () => {
     expect(scopeSummary({ furnishing: "no_furnishing", modules: ["pool"] })).toBe(
-      "No furnishings / existing home · Pool / hot tub",
+      "Existing home (no furnishing) · Pool / hot tub",
     );
+
   });
 });
 
