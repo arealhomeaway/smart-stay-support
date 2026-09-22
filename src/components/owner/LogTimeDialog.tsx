@@ -38,6 +38,8 @@ export type LogTimeAnchor = {
   description?: string | null;
 };
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 export function LogTimeDialog({
   open,
   onOpenChange,
@@ -45,18 +47,27 @@ export function LogTimeDialog({
   anchor,
   defaultActivity = "",
   onDone,
+  phase = "ongoing",
+  properties = [],
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
   programId: string;
+  /** Null records an activity the homeowner did on their own initiative. */
   anchor: LogTimeAnchor | null;
   defaultActivity?: string;
   onDone: () => void;
+  /** Used only when there is no anchor. */
+  phase?: "onboarding" | "ongoing";
+  /** Homes the owner may attribute a self-recorded activity to. */
+  properties?: { id: string; name: string }[];
 }) {
   const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState(defaultActivity);
   const [confirmed, setConfirmed] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [entryDate, setEntryDate] = useState(today);
+  const [homes, setHomes] = useState<string[]>([]);
   const log = useServerFn(logOwnerParticipation);
   const beginEvidence = useServerFn(beginParticipationEvidenceFn);
 
@@ -65,6 +76,8 @@ export function LogTimeDialog({
     setActivity(defaultActivity);
     setConfirmed(false);
     setFile(null);
+    setEntryDate(today());
+    setHomes([]);
   };
 
   const pickFile = (chosen: File | null) => {
