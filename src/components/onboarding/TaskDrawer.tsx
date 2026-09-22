@@ -285,8 +285,10 @@ export function TaskDrawer({
   return (
     <TaskWorkspace
       open
+      placement="center"
       onOpenChange={(v) => !v && onClose()}
       title={task.title}
+
       headerExtra={
         <>
           <div className="flex flex-wrap items-center gap-1.5">
