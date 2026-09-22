@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { writeAudit } from "./audit.server";
 import {
+  BUILT_IN_TEMPLATE_KEY,
   builtInAsRows,
   builtInSummary,
   templateKeyFrom,
