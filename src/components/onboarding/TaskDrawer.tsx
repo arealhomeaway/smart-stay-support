@@ -226,6 +226,8 @@ export function TaskDrawer({
   };
 
   const finishesStep = action?.id === "complete_task" || action?.id === "reopen_or_move_on";
+  // A step the plan tagged Active Owner is the homeowner's own work.
+  const activeOwnerStep = ((task.tags ?? []) as string[]).includes("active_owner");
 
   const runAction = (id: TaskActionId, values: Record<string, string>) => {
     const text = (k: string) => (values[k] ?? "").trim();
