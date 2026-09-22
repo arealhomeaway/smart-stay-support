@@ -2,6 +2,7 @@ import { can, type AppRole } from "./permissions";
 import { hasRequirements, matchesRequirements, type MatchRequirements, type PropertyFacts } from "./property-facts";
 import { clientQuoteLine, PRICE_ESTIMATE_NOTE, type StayQuote } from "./pricing";
 import { clientSourceQuoteLine, type SourceQuote } from "./inquiry-sources";
+import { usCalendarDate } from "./dates";
 
 export const AVAILABILITY_RADIUS_MILES = 20;
 export type AvailabilityStatus = "available" | "conditional" | "unavailable";
