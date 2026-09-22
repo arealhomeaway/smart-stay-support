@@ -485,6 +485,21 @@ function ComposerBody({
         </TabsList>
 
         <TabsContent value="write" className="space-y-4 pt-4">
+          {mailbox.data && !mailbox.data.connected ? (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"
+            >
+              <p>
+                The shared inbox ({mailbox.data.mailbox}) is not connected, so this message will be
+                saved but not delivered. Reconnect it on the Integrations page, then send again.
+              </p>
+              <Button size="sm" variant="outline" asChild>
+                <a href="/integrations">Open Integrations</a>
+              </Button>
+            </div>
+          ) : null}
+
           {recovered ? (
             <div
               role="status"
