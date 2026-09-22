@@ -25,6 +25,27 @@ export const searchOwnerRezPropertiesFn = createServerFn({ method: "POST" })
     return searchOwnerRezCandidates(context.supabase, data.query);
   });
 
+/** The owner OwnerRez has on file for a listing, so the modal can show it. */
+export const ownerRezOwnerPreviewFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ listingId: z.string().trim().min(1).max(60) }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { assertPropertyStaff, ownerRezOwner } = await import("./property-intake.server");
+    await assertPropertyStaff(context.supabase, context.userId);
+    return ownerRezOwner(data.listingId);
+  });
+
+const ownerDetails = z
+  .object({
+    name: z.string().trim().max(160).nullable().default(null),
+    email: z.string().trim().max(200).nullable().default(null),
+    phone: z.string().trim().max(40).nullable().default(null),
+  })
+  .partial()
+  .optional();
+
 /** Creates one canonical property from a listing (or links it). Never starts onboarding. */
 export const importOwnerRezPropertyFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -35,6 +56,7 @@ export const importOwnerRezPropertyFn = createServerFn({ method: "POST" })
         linkToPropertyId: z.string().uuid().nullable().default(null),
         isDemo: z.boolean().default(false),
         milestones,
+        owner: ownerDetails,
       })
       .parse(data),
   )
@@ -44,6 +66,7 @@ export const importOwnerRezPropertyFn = createServerFn({ method: "POST" })
     await assertPropertyStaff(context.supabase, context.userId);
     return importOwnerRezProperty(context.supabase, context.userId, data);
   });
+
 
 /** Minimum-information manual creation of the canonical property. */
 export const createPropertyManuallyFn = createServerFn({ method: "POST" })
@@ -61,6 +84,8 @@ export const createPropertyManuallyFn = createServerFn({ method: "POST" })
         ownerRecordId: z.string().uuid().nullable().default(null),
         ownerName: z.string().trim().max(160).nullable().default(null),
         ownerEmail: z.string().trim().max(200).nullable().default(null),
+        ownerPhone: z.string().trim().max(40).nullable().default(null),
+
         ownerRezPropertyId: z.string().trim().max(60).nullable().default(null),
         isDemo: z.boolean().default(false),
         milestones,
