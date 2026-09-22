@@ -208,7 +208,38 @@ function OwnerHubBody({
         eyebrow="Active Owner"
         title={`Welcome back, ${firstName(program.ownerName)}`}
         description="Here is where things stand across your homes, and anything that needs your attention."
+        actions={
+          <>
+            {heroAnchor ? (
+              <Button onClick={() => setHeroLogOpen(true)}>
+                <Clock className="size-4" aria-hidden="true" /> Log hours
+              </Button>
+            ) : null}
+            <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
+              Pending decisions
+              {openReviews.length > 0 ? (
+                <span className="numeric ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                  {openReviews.length}
+                </span>
+              ) : null}
+            </Button>
+            <Button variant="outline" onClick={() => scrollToSection("owner-documents")}>
+              Shared documents
+            </Button>
+          </>
+        }
       />
+
+      {heroAnchor ? (
+        <LogTimeDialog
+          open={heroLogOpen}
+          onOpenChange={setHeroLogOpen}
+          programId={program.id}
+          anchor={heroAnchor}
+          defaultActivity=""
+          onDone={invalidate}
+        />
+      ) : null}
 
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
