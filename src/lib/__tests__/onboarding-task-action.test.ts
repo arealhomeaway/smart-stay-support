@@ -74,7 +74,7 @@ describe("the one guided action on an onboarding task", () => {
     ).toBe("resubmit_for_approval");
   });
 
-  it("points at the dependency instead of offering a form when the step is not released", () => {
+  it("offers the step's own action even when a prerequisite is open", () => {
     const first = task({ id: "aaaaaaa1-1111-4111-8111-111111111111", title: "Closing confirmed" });
     const second = task({
       id: "aaaaaaa2-2222-4222-8222-222222222222",
@@ -83,10 +83,9 @@ describe("the one guided action on an onboarding task", () => {
       sort_order: 2,
     });
     const a = onboardingTaskAction(viewTask(second, [first, second]));
-    expect(a?.id).toBe("wait_for_dependency");
-    expect(a?.handoff?.target).toBe("dependency");
-    expect(a?.because).toContain("Closing confirmed");
+    expect(a?.id).not.toBe("wait_for_dependency");
   });
+
 
   it("a finished step points at the next one, and a carryover has no action", () => {
     expect(onboardingTaskAction(v(task({ status: "complete" })))?.id).toBe("reopen_or_move_on");
