@@ -45,7 +45,7 @@ describe("alertsForRow", () => {
   it("flags a homeowner well behind the program pace", () => {
     const alerts = alertsForRow(oversightRow(base), DEFAULT_ALERT_CONFIG, now);
     const behind = alerts.find((a) => a.kind === "behind_pace");
-    expect(behind).toBeDefined();
+    expect(Boolean(behind)).toBe(true);
     expect(behind?.severity).toBe("urgent");
   });
 
