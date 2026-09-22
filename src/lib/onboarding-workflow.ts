@@ -45,6 +45,8 @@ export type WorkflowTask = {
   status: string;
   sort_order: number;
   completed_at: string | null;
+  /** Plan tags carried onto the home; "active_owner" marks homeowner work. */
+  tags?: string[] | null;
   /** Present on rows loaded from the database; used for accepted-plan locking. */
   created_at?: string | null;
   updated_at?: string | null;
