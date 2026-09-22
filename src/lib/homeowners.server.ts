@@ -4,21 +4,6 @@ import type { HomeownerEnrollment, HomeownerRow } from "./homeowners";
 
 type Client = SupabaseClient<Database>;
 
-/**
- * Only leadership may read the homeowner directory: it lists personal contact
- * details for every owner in the portfolio at once.
- */
-export async function assertDirectoryAccess(supabase: Client, userId: string) {
-  const [admin, manager] = await Promise.all([
-    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
-    supabase.rpc("has_role", { _user_id: userId, _role: "manager" }),
-  ]);
-  if (admin.error || manager.error) throw new Error("Could not verify your access level.");
-  if (!admin.data && !manager.data) {
-    throw new Error("The homeowner directory is limited to directors and the platform owner.");
-  }
-}
-
 function daysBetween(from: Date, to: Date) {
   return Math.round((to.getTime() - from.getTime()) / 86_400_000);
 }
