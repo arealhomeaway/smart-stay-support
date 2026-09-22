@@ -460,7 +460,9 @@ function PropertyWorkspace() {
           <TabsTrigger value="property">Property</TabsTrigger>
           <TabsTrigger value="budget">Budget &amp; expenses</TabsTrigger>
           <TabsTrigger value="findings">Findings</TabsTrigger>
+          <TabsTrigger value="workorders">Work orders</TabsTrigger>
           <TabsTrigger value="vendors">Vendor coverage</TabsTrigger>
+
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="handoff">Ready for Operations</TabsTrigger>
           <TabsTrigger value="activity">History</TabsTrigger>
