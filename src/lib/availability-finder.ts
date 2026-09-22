@@ -1,6 +1,7 @@
 import { can, type AppRole } from "./permissions";
 import { hasRequirements, matchesRequirements, type MatchRequirements, type PropertyFacts } from "./property-facts";
 import { clientQuoteLine, PRICE_ESTIMATE_NOTE, type StayQuote } from "./pricing";
+import { clientSourceQuoteLine, type SourceQuote } from "./inquiry-sources";
 
 export const AVAILABILITY_RADIUS_MILES = 20;
 export type AvailabilityStatus = "available" | "conditional" | "unavailable";
@@ -32,6 +33,8 @@ export type AvailabilityResult = AvailabilityProperty & {
   factsUnavailable: string | null;
   /** PriceLabs estimate for the requested stay; null when no price is known. */
   quote: StayQuote | null;
+  /** The same stay priced through the chosen inquiry source's fee settings. */
+  sourceQuote: SourceQuote | null;
   /** Set when no price could be produced, in plain words. */
   quoteUnavailable: string | null;
 };
