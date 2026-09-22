@@ -771,18 +771,50 @@ export async function sendTaskToOwner(
     );
   }
 
+  // The note staff wrote here IS the owner-facing explanation, so publish it
+  // with the request instead of leaving the homeowner an empty card with no
+  // instructions and nothing to act on.
+  let published = false;
+  if (channel === "portal") {
+    const { loadOwnerApprovalPublicationContext, publishOwnerApproval } = await import(
+      "./owner-approval.server"
+    );
+    const context = await loadOwnerApprovalPublicationContext(supabase, approvalId);
+    if (
+      context.canPublish &&
+      context.programId &&
+      context.ownerId &&
+      context.recipientId &&
+      input.note.trim().length >= 20
+    ) {
+      await publishOwnerApproval(supabase, {
+        approvalId,
+        expectedUpdatedAt: context.expectedUpdatedAt,
+        expectedRevision: context.expectedRevision,
+        expectedOwnerId: context.ownerId,
+        expectedProgramId: context.programId,
+        expectedRecipientId: context.recipientId,
+        title: task.data.title.slice(0, 180),
+        detail: input.note.trim(),
+        reviewed: true,
+      });
+      published = true;
+    }
+  }
+
   await writeAudit({
     actorId: userId,
     action: "owner_task_sent",
     entityType: "onboarding_task",
     entityId: task.data.id,
     entityLabel: task.data.title,
-    after: { approvalId, channel, sharedFiles: input.documentIds.length },
+    after: { approvalId, channel, published, sharedFiles: input.documentIds.length },
   });
   return {
     ok: true as const,
     approvalId,
     channel,
+    published,
     sharedFiles: input.documentIds.length,
   };
 }
