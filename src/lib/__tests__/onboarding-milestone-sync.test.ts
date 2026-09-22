@@ -6,11 +6,11 @@
 import { describe, expect, it, mock } from "bun:test";
 
 mock.module("@/lib/audit.server", () => ({ writeAudit: async () => {} }));
-mock.module("./audit.server", () => ({ writeAudit: async () => {} }));
-mock.module("./onboarding-task-access.server", () => ({
+mock.module("../audit.server", () => ({ writeAudit: async () => {} }));
+mock.module("../onboarding-task-access.server", () => ({
   assertOnboardingPropertyManagement: async () => {},
 }));
-mock.module("./onboarding-schedule.server", () => ({
+mock.module("../onboarding-schedule.server", () => ({
   previewScheduleRecalc: async () => ({ rows: [] }),
   applyScheduleRecalc: async () => ({ applied: 0 }),
 }));
