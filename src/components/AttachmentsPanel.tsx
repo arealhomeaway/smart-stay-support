@@ -210,9 +210,26 @@ export function AttachmentsPanel({
   });
 
   const data = files.data;
+  const canDrop = Boolean(data?.canUpload) && !readOnly;
 
   return (
-    <Card>
+    <Card
+      onDragOver={(e) => {
+        if (!canDrop) return;
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        if (!canDrop) return;
+        e.preventDefault();
+        setDragging(false);
+        const f = e.dataTransfer.files?.[0];
+        if (f) upload.mutate(f);
+      }}
+      className={dragging ? "border-primary ring-2 ring-primary/30" : undefined}
+    >
+
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
