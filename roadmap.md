@@ -617,3 +617,4 @@ is now doable from Resolve.
 - [x] Profile photos on assignees, activity updates and team lists
 - [ ] Move 3915 Maple Manor (3915 W 104th St S) back to onboarding lifecycle and initialize its onboarding workflow/tasks
 - [ ] Active Owner enrollment toggle/control on the Property Hub page (supervisor-gated)
+- [ ] Enrolling a home into onboarding must offer the Active Owner choice at import (1399 Foxtail Ln came in as a standard property)
