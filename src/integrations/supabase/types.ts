@@ -4105,6 +4105,7 @@ export type Database = {
           target_handoff_on: string | null
           target_handoff_source: string
           updated_at: string
+          utility_manager: string | null
         }
         Insert: {
           branch?: string | null
@@ -4128,6 +4129,7 @@ export type Database = {
           target_handoff_on?: string | null
           target_handoff_source?: string
           updated_at?: string
+          utility_manager?: string | null
         }
         Update: {
           branch?: string | null
@@ -4151,6 +4153,7 @@ export type Database = {
           target_handoff_on?: string | null
           target_handoff_source?: string
           updated_at?: string
+          utility_manager?: string | null
         }
         Relationships: [
           {
