@@ -46,6 +46,7 @@ import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OnboardingDashboard } from "@/components/onboarding/OnboardingDashboard";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
 
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";

@@ -668,3 +668,4 @@ Batch B (work surface)
 - [x] Homeowner card with add/edit owner + co-owner on property and onboarding pages
 - [x] Program type toggle (Standard / Active Owner) on the onboarding dashboard
 - [ ] Void (mark not needed) button at the top of the task pop-up window
+- [ ] Filter all onboarding tasks, including an Active Owner task filter for dispatch
