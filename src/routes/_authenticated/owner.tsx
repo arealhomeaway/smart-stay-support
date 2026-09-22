@@ -259,6 +259,34 @@ function OwnerHubBody({
     );
   const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
 
+  // Participation time only counts once the program itself has started, so the
+  // portal says so plainly instead of letting the homeowner hit a refusal.
+  const canLogHours =
+    !preview &&
+    ["active", "target_reached"].includes(program.status) &&
+    Boolean(program.startedOn);
+  const logHoursBlockedReason = canLogHours
+    ? null
+    : program.completedAt
+      ? "Your 90 days have closed, so no further hours can be added."
+      : "Your Active Owner program has not started yet. Hours can be logged as soon as your ARHA team activates it — usually at closing.";
+
+  // The onboarding task behind an attention item carries the instructions,
+  // links and shared files the homeowner needs to actually work it.
+  const loadOnboarding = useServerFn(ownerOnboardingActions);
+  const onboardingQuery = useQuery({
+    queryKey: ["owner-onboarding", preview ? program.id : null, preview],
+    queryFn: () => loadOnboarding({ data: { programId: preview ? program.id : null, preview } }),
+  });
+  const actionByReview = useMemo(() => {
+    const map = new Map<string, OwnerOnboardingAction>();
+    const all = [...(onboardingQuery.data?.pending ?? []), ...(onboardingQuery.data?.decided ?? [])];
+    for (const action of all) {
+      if (action.participation?.reviewId) map.set(action.participation.reviewId, action);
+    }
+    return map;
+  }, [onboardingQuery.data]);
+
   // "Log hours" records whatever the homeowner did on their own initiative:
   // a meeting, a phone call, research or an errand for their home.
   const [heroLogOpen, setHeroLogOpen] = useState(false);
