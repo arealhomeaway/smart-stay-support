@@ -5,7 +5,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { LoadingPage, PageHeader } from "@/components/ui/page";
+import { ArrowRight, ClipboardList, Inbox, Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
+import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { usDate } from "@/lib/dates";
+import { awaitingMyReview } from "@/lib/onboarding-hub";
+import { lifecycleStageMeta, withinDays, type ProjectSummary } from "@/lib/onboarding-lifecycle";
+import { cn } from "@/lib/utils";
+import heroImage from "@/assets/hero-arha-property.jpg";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
@@ -98,6 +106,23 @@ function Hub() {
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
 
+  // A person's own name, so the hub greets them the way Operations Home does.
+  const { data: me } = useQuery({
+    queryKey: ["my-name", userId],
+    enabled: Boolean(userId),
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const firstName = (me?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+
   const reviewHandoff = useMutation({
     mutationFn: useServerFn(reviewHandoffFn),
     onSuccess: () => {
@@ -171,14 +196,104 @@ function Hub() {
       applyTestDataFilter(data.properties, showTest, (p) => p).some((p) => p.id === h.property_id),
   );
 
+  // The hub's own figures follow the same test/QA opt-in the rows do.
+  const scoped = applyTestDataFilter(projects, showTest, (p) => p.property);
+  const viewer = { userId, reviewCapabilities: data.reviewCapabilities };
+  const activeProjects = scoped.filter((p) => p.stage !== "live");
+  const myDecisions = activeProjects.filter((p) => awaitingMyReview(p, viewer));
+  const atRisk = activeProjects.filter(
+    (p) => p.risk.level === "at_risk" || p.risk.level === "blocked",
+  );
+  const inReview = activeProjects.filter((p) => p.inReview || p.stageReviewCount > 0);
+  const soon = activeProjects.filter((p) => withinDays(p.target, 14));
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Onboarding"
-        title={data.workspaceMode === "portfolio" ? "Director hub" : "Project hub"}
-        description="What needs attention today, what is at risk and why, which homes are waiting on a review gate, and which handoffs land this week."
-        actions={<AddPropertyDialog disabled={readOnly} />}
+    <div className="space-y-8">
+      <PageHero
+        image={heroImage}
+        eyebrow={new Date().toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })}
+        title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
+        description="From keys to kickoff."
+        actions={
+          <>
+            <Link
+              to="/onboarding/my-work"
+              search={{ who: "me" } as never}
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+            >
+              <ClipboardList className="size-4" /> My work
+            </Link>
+            <button
+              type="button"
+              onClick={() => setParam({ lens: "review" })}
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+            >
+              <Inbox className="size-4" /> Onboarding queue
+            </button>
+            <AddPropertyDialog
+              disabled={readOnly}
+              trigger={
+                <button
+                  type="button"
+                  disabled={readOnly}
+                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
+                >
+                  <Plus className="size-4" /> Enroll property
+                </button>
+              }
+            />
+          </>
+        }
       />
+
+      <SectionCard
+        tone={myDecisions.length > 0 ? "critical" : "default"}
+        title="Needs my decision"
+        description="Gate reviews and stage captures that are yours to decide right now."
+        bodyClassName="space-y-1.5"
+      >
+        {myDecisions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            You are clear. Nothing is waiting on a decision from you.
+          </p>
+        ) : (
+          myDecisions.map((p) => (
+            <DecisionRow key={p.property.id} project={p} originToken={originToken} />
+          ))
+        )}
+      </SectionCard>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <HubTile
+          value={myDecisions.length}
+          label="Awaiting my review"
+          tone="critical"
+          onClick={() => setParam({ lens: "mine" })}
+        />
+        <HubTile
+          value={atRisk.length}
+          label="At risk or blocked"
+          tone="attention"
+          onClick={() => setParam({ lens: "at_risk" })}
+        />
+        <HubTile
+          value={inReview.length}
+          label="In review"
+          tone="review"
+          onClick={() => setParam({ lens: "review" })}
+        />
+        <HubTile
+          value={soon.length}
+          label="Handoffs in 14 days"
+          tone="progress"
+          onClick={() => setParam({ lens: "handoffs" })}
+        />
+      </div>
+
 
       <Tabs defaultValue="hub" className="space-y-5">
         <TabsList>
@@ -259,5 +374,82 @@ function Hub() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+/** One compact, colourful figure that focuses the hub below. */
+function HubTile({
+  value,
+  label,
+  tone,
+  onClick,
+}: {
+  value: number;
+  label: string;
+  tone: "critical" | "progress" | "attention" | "review";
+  onClick: () => void;
+}) {
+  const plate = {
+    critical: "border-coral/25 bg-coral/8 text-coral",
+    progress: "border-sky/25 bg-sky/8 text-sky",
+    attention: "border-amber/30 bg-amber/10 text-amber",
+    review: "border-lavender/25 bg-lavender/8 text-lavender",
+  }[tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-xl border px-4 py-3.5 text-left transition-colors hover:brightness-[0.98]",
+        plate,
+        value === 0 && "opacity-60",
+      )}
+    >
+      <p className="numeric text-3xl font-semibold leading-none">{value}</p>
+      <p className="mt-1.5 text-sm font-medium text-foreground">{label}</p>
+    </button>
+  );
+}
+
+/** One home waiting on this person's decision. */
+function DecisionRow({
+  project: p,
+  originToken,
+}: {
+  project: ProjectSummary;
+  originToken?: string | undefined;
+}) {
+  const stage = lifecycleStageMeta(p.stage);
+  return (
+    <Link
+      to="/onboarding/$propertyId"
+      params={{ propertyId: p.property.id }}
+      search={(originToken ? { from: originToken } : undefined) as never}
+      className="surface-row relative flex flex-wrap items-center gap-x-3 gap-y-1 py-3 pl-4 pr-3"
+    >
+      <PropertyPhoto
+        url={(p.property as { primary_photo_url?: string | null }).primary_photo_url ?? null}
+        name={p.property.name}
+        className="size-11"
+      />
+      <span className="min-w-0 flex-1 basis-full sm:basis-auto">
+        <span className="block truncate text-base font-semibold">{p.property.name}</span>
+        <span className="block truncate text-sm text-muted-foreground">
+          {stage.label} · {p.next.headline}
+        </span>
+      </span>
+      <span className="numeric text-sm text-muted-foreground">
+        {p.target ? `Handoff ${usDate(p.target)}` : "No target date"}
+      </span>
+      <ProgressRing value={p.progress} size={36} tone="onboarding" />
+      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
