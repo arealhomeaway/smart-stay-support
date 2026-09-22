@@ -78,9 +78,9 @@ describe("ready now", () => {
     task({ id: "d", title: "Verify the required documents", status: "complete", sort_order: 4 }),
   ];
 
-  it("lists only work that is genuinely unblocked, soonest first", () => {
+  it("lists every open step, soonest first", () => {
     const queue = readyNowQueue(buildWorkstreams(tasks));
-    expect(queue.map((q) => q.view.task.id)).toEqual(["c", "a"]);
+    expect(queue.map((q) => q.view.task.id)).toEqual(["c", "a", "b"]);
   });
 
   it("names the track next to each ready step", () => {
@@ -88,11 +88,12 @@ describe("ready now", () => {
     expect(queue[0]?.trackLabel).toBe("Media & Listing");
   });
 
-  it("keeps a step waiting while its prerequisite is open", () => {
+  it("keeps a step with an open prerequisite workable", () => {
     const furnishing = buildWorkstreams(tasks).find((g) => g.key === "furnishing_staging");
-    expect(furnishing?.ready).toHaveLength(0);
-    expect(furnishing?.waiting.map((v) => v.task.id)).toEqual(["b"]);
+    expect(furnishing?.ready.map((v) => v.task.id)).toEqual(["b"]);
+    expect(furnishing?.waiting).toHaveLength(0);
   });
+
 
   it("counts finished work into the progress meters", () => {
     const groups = buildWorkstreams(tasks);
