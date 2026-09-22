@@ -927,26 +927,10 @@ function PropertyWorkspace() {
 
         {/* -------------------------------------------------------- Handoff */}
         <TabsContent value="handoff" className="space-y-5">
-          <section className="surface p-4">
-            <p className="eyebrow">Handoff chain</p>
-            <div className="mt-2 grid gap-1.5 sm:grid-cols-6">
-              {chain.map((g) => (
-                <div
-                  key={g.key}
-                  title={g.blurb}
-                  className={
-                    g.state === "done"
-                      ? "rounded-md border border-state-done/40 bg-state-done/10 px-2.5 py-1.5 text-xs"
-                      : g.state === "current"
-                        ? "rounded-md border border-primary bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary"
-                        : "rounded-md border border-border bg-card/40 px-2.5 py-1.5 text-xs text-muted-foreground"
-                  }
-                >
-                  {g.label}
-                </div>
-              ))}
-            </div>
-          </section>
+          {/* Gate chain and the gate-by-gate checklist were removed: a home is
+              either ready for Operations or it is not, and the blockers below
+              say why. Acceptance is still recorded by name and date. */}
+
           {/* Handoff gate */}
           {openHandoff && (
             <HandoffGatePanel
