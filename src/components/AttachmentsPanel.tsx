@@ -324,6 +324,9 @@ export function AttachmentsPanel({
                     {usDate(f.uploaded_at)}
                   </span>
                 )}
+                {f.visibility === "owner_shared" && f.owner_recipient_id ? (
+                  <Badge variant="outline">Shared with the homeowner</Badge>
+                ) : null}
                 {f.can_share ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <label className="flex items-center gap-2">

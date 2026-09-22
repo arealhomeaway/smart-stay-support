@@ -56,7 +56,7 @@ it("loads only the checked projection, removes unexpected fields and verifies ev
     },
   };
   const result = await loadOwnerApprovals(client as never, "signed-in-account");
-  expect(result).toEqual([approval]);
+  expect(result).toEqual([{ ...approval, entity_type: null }]);
   expect(calls).toEqual([["read_owner_approvals", {}, { count: "exact" }]]);
 });
 it("requires a matching canonical ID and meaningful reviewed context for actionable requests", () => {

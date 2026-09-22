@@ -99,6 +99,13 @@
       "when": 1790038135229,
       "tag": "0013_add_profile_email_signature",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790082023764,
+      "tag": "0014_owner_approval_entity_type_projection",
+      "breakpoints": true
     }
   ]
 }

@@ -569,3 +569,10 @@ is now doable from Resolve.
 - [x] Onboarding Hub: group tasks into 3-4 parallel workstream tracks (Access & Utilities, Furnishing & Staging, Media & Listing, Ops & Readiness)
 - [x] Onboarding Hub: "Ready Now" queue of every unblocked task across active tracks
 - [x] Onboarding Hub: warm elevated look, subtle progress meters, slide-over task drawers
+
+- [x] Homeowner portal: Onboarding actions section (shared files, approve / request changes)
+- [x] Homeowner portal: onboarding track progress per home
+- [x] Demo continuity: Willow Creek mood board review waiting on Riley Adler
+- [ ] Batch 1 — Ways to Participate This Week: 3-4 stage-aware suggestions in /owner with compliance relevance and estimated time
+- [ ] Batch 1 — One-click "Log participation time for this review?" prompt after a homeowner approves an onboarding action
+- [ ] Batch 1 — Optional photo/receipt evidence when logging participation hours, shown in history and the 90-day report
