@@ -30,18 +30,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  answerOwnerReview,
-  logOwnerParticipation,
-  ownerHome,
-  ownerHomePreview,
-} from "@/lib/owner-portal.functions";
-import {
-  MANUAL_ENTRY_CONFIRMATION,
-  MANUAL_ENTRY_NOTICE,
-  parseOwnerMinutes,
-  OWNER_GOAL_LABEL,
-} from "@/lib/owner-participation";
+import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
+import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
+import { LogTimeDialog } from "@/components/owner/LogTimeDialog";
+import { WaysToParticipate } from "@/components/owner/WaysToParticipate";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
