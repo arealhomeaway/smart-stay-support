@@ -58,6 +58,11 @@ import { useOwnerPreview } from "@/lib/owner-preview";
 import { useDemo } from "@/components/DemoProvider";
 
 export const Route = createFileRoute("/_authenticated/owner")({
+  // Homeowners with more than one home switch between them here, so the chosen
+  // home lives in the URL and stays shareable and bookmarkable.
+  validateSearch: (search: Record<string, unknown>) => ({
+    home: typeof search["home"] === "string" ? (search["home"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Your home — Resolve" },
@@ -176,10 +181,22 @@ function OwnerHubBody({
 
   const { program, properties, reviews, badges, alerts, tickets, snapshot } = data;
 
-  const openReviews = (reviews as Review[]).filter((r) => ownerReviewPresentation(r).attention);
-  const availableReviews = (reviews as Review[]).filter(
-    (r) => r.auto_ticket && !ownerReviewPresentation(r).attention,
-  );
+  const { home: homeParam } = Route.useSearch();
+  const selectedHomeId =
+    homeParam && properties.some((p) => p.propertyId === homeParam) ? homeParam : null;
+  const scopedProperties = selectedHomeId
+    ? properties.filter((p) => p.propertyId === selectedHomeId)
+    : properties;
+  // A home-specific view keeps program-wide items: they still affect this home.
+  const inScope = (review: Review) =>
+    !selectedHomeId || review.propertyIds.length === 0 || review.propertyIds.includes(selectedHomeId);
+
+  const openReviews = (reviews as Review[])
+    .filter((r) => ownerReviewPresentation(r).attention)
+    .filter(inScope);
+  const availableReviews = (reviews as Review[])
+    .filter((r) => r.auto_ticket && !ownerReviewPresentation(r).attention)
+    .filter(inScope);
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
   const unreadAlerts = alerts.filter((a) => !a.read_at).length;
   const attentionCount = openReviews.length + unreadAlerts;
@@ -363,8 +380,34 @@ function OwnerHubBody({
             </p>
           </div>
         </div>
+        <div id="owner-homes" className="scroll-mt-24 space-y-2">
+          {properties.length > 1 ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                asChild
+                size="sm"
+                variant={selectedHomeId ? "outline" : "default"}
+              >
+                <Link to="/owner" search={{ home: undefined }}>
+                  All homes
+                </Link>
+              </Button>
+              {properties.map((p) => (
+                <Button
+                  key={`switch-${p.id}`}
+                  asChild
+                  size="sm"
+                  variant={selectedHomeId === p.propertyId ? "default" : "outline"}
+                >
+                  <Link to="/owner" search={{ home: p.propertyId }}>
+                    {p.name}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          ) : null}
         <div className="flex flex-wrap gap-2">
-          {properties.map((p) => (
+          {scopedProperties.map((p) => (
             <OwnerPropertyCard
               key={p.id}
               property={p}
@@ -373,6 +416,7 @@ function OwnerHubBody({
               }
             />
           ))}
+        </div>
         </div>
       </div>
 
@@ -384,7 +428,9 @@ function OwnerHubBody({
         audience="owner"
       />
 
-      <JourneyStrip current={stage} />
+      <div id="owner-journey" className="scroll-mt-24">
+        <JourneyStrip current={stage} />
+      </div>
 
       <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
@@ -422,6 +468,7 @@ function OwnerHubBody({
 
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
+      <div id="owner-participate" className="scroll-mt-24" />
       <WaysToParticipate
         // A home is still being set up when its open work is onboarding work.
         phase={ownerPhase}
@@ -474,8 +521,11 @@ function OwnerHubBody({
         />
       )}
 
-      <ArhaContacts contacts={contacts} />
+      <div id="owner-contacts" className="scroll-mt-24">
+        <ArhaContacts contacts={contacts} />
+      </div>
 
+      <div id="owner-hours" className="scroll-mt-24" />
       <SectionCard
         title="Your logged participation"
         description="Everything you have recorded, with any photos or receipts you attached."
@@ -589,6 +639,7 @@ function OwnerHubBody({
         </div>
       </SectionCard>
 
+      <div id="owner-activity" className="scroll-mt-24" />
       <SectionCard title="Recent activity" description="What's happened lately across your homes.">
         <ActivityList events={events} emptyLabel="Nothing has happened yet." />
       </SectionCard>
