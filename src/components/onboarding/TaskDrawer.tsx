@@ -255,6 +255,27 @@ export function TaskDrawer({
     return false;
   };
 
+  const guidedCard = action ? (
+    <GuidedActionCard
+      action={{
+        ...action,
+        ...(nextTask && finishesStep ? { then: `Next: ${nextTask.title}` } : {}),
+      }}
+      readOnly={disabled}
+      successMessage={
+        nextTask && action.id === "complete_task"
+          ? `Step recorded — next: ${nextTask.title}`
+          : "Step recorded."
+      }
+      onHandoff={() =>
+        document
+          .getElementById("task-detail-body")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+      onComplete={(values) => runAction(action.id, values)}
+    />
+  ) : null;
+
   return (
     <TaskWorkspace
       open
