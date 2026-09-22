@@ -241,7 +241,10 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
           </p>
         ) : null}
 
-        {grouped.map(([stage, steps]) => (
+        {grouped
+          // An empty stage is noise until there is something to drop into it.
+          .filter(([, steps]) => steps.length > 0 || dragging)
+          .map(([stage, steps]) => (
           <div
             key={stage}
             className="space-y-2"
@@ -355,7 +358,7 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
               ))}
             </ul>
           </div>
-        ))}
+          ))}
       </CardContent>
 
       <Dialog open={Boolean(draft)} onOpenChange={(o) => !o && setDraft(null)}>
