@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, SectionCard, LoadingPage } from "@/components/ui/page";
 import { PersonAvatar } from "@/components/PersonAvatar";
+import { PasswordCard } from "@/components/account/PasswordCard";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccount, saveMyProfile, saveMyNotificationPreferences } from "@/lib/account.functions";
 import {
