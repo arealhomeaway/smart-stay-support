@@ -387,11 +387,23 @@ function PropertyWorkspace() {
     <div className="space-y-5">
       <BackControl origin={origin} />
 
-      <PageHeader
-        eyebrow="Onboarding"
-        title={current.name}
-        description={`${life.label} · ${roll.done}/${roll.total} applicable steps complete`}
-      />
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="h-24 w-36 shrink-0 overflow-hidden rounded-lg bg-sunken">
+          <PropertyPhoto
+            url={current.primary_photo_url ?? null}
+            name={current.nickname ?? current.name}
+            rounded="rounded-none"
+            className="size-full object-cover"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <PageHeader
+            eyebrow="Onboarding"
+            title={current.name}
+            description={`${life.label} · ${roll.done}/${roll.total} applicable steps complete`}
+          />
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
@@ -417,22 +429,16 @@ function PropertyWorkspace() {
         </p>
       )}
 
-      <GoLiveBanner
-        target={target}
-        blockers={blockers}
-        accepted={Boolean(current.handoff_accepted_at)}
-        onOpenTask={setOpenTaskId}
+      <ProjectScopePanel
+        propertyId={current.id}
+        propertyName={current.name}
+        people={data.people}
+        canEdit={canEdit}
+        hints={{ planned_closing_on: current.planned_closing_on ?? null }}
       />
 
       <OnboardingDashboard
         propertyId={current.id}
-        plannedClosingOn={current.planned_closing_on ?? null}
-        actualClosingOn={current.actual_closing_on ?? null}
-        actualAccessOn={current.actual_access_on ?? null}
-        targetHandoffOn={projectRow?.target_handoff_on ?? null}
-        handoffSource={
-          (projectRow?.target_handoff_source as "auto" | "manual" | undefined) ?? "auto"
-        }
         activeOwner={Boolean(activeOwner)}
         canEdit={canEdit}
         done={roll.done}
@@ -441,6 +447,7 @@ function PropertyWorkspace() {
         people={data.people}
         taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
       />
+
 
       <CurrentWork
         stage={stage}
