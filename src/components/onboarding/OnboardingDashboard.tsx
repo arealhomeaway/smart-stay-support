@@ -115,7 +115,7 @@ export function OnboardingDashboard({
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <CalendarDays className="size-4 text-muted-foreground" />
-          <p className="eyebrow">Key dates</p>
+          <p className="eyebrow">This home</p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <ProgramTypeControl
@@ -131,54 +131,6 @@ export function OnboardingDashboard({
       </div>
 
       <HomeownerCard propertyId={propertyId} canManage={canEdit} />
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <DateField
-          label="Expected closing"
-          value={planned}
-          onChange={setPlanned}
-          disabled={!canEdit}
-        />
-        <DateField label="Closing" value={closing} onChange={setClosing} disabled={!canEdit} />
-        <DateField
-          label="Access (possession)"
-          value={access}
-          onChange={setAccess}
-          disabled={!canEdit}
-          hint="Every task deadline is calculated from this date."
-        />
-        <DateField
-          label="Target handoff"
-          value={handoff}
-          onChange={(v) => {
-            setHandoff(v);
-            setHandoffTouched(true);
-          }}
-          disabled={!canEdit}
-          hint={handoffExplainer(activeOwner, handoffTouched ? "manual" : handoffSource)}
-          placeholderDate={autoHandoff}
-        />
-      </div>
-
-      {canEdit && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" disabled={!dirty || mutation.isPending} onClick={() => mutation.mutate()}>
-            {mutation.isPending ? "Saving…" : "Save dates"}
-          </Button>
-          {handoffSource === "manual" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setHandoff("");
-                setHandoffTouched(true);
-              }}
-            >
-              Go back to the automatic handoff date
-            </Button>
-          )}
-        </div>
-      )}
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-sm">
