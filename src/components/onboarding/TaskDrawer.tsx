@@ -735,6 +735,13 @@ export function TaskDrawer({
             </section>
           </>
         )}
+
+        {action && finishesStep && (
+          <>
+            <Separator />
+            {guidedCard}
+          </>
+        )}
       </div>
     </TaskWorkspace>
   );
