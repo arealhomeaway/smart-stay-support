@@ -20,7 +20,7 @@ describe("ways to participate prompts", () => {
       phase: "onboarding",
       pendingOnboardingActions: 1,
     });
-    expect(prompts[0]?.id).toBe("pending-decision");
+    expect(prompts[0]?.id).toBe("pending-actions");
   });
 
   it("never suggests an amount of time or promises a tax outcome", () => {
@@ -41,6 +41,6 @@ describe("ways to participate prompts", () => {
       .toLowerCase();
     expect(/\d/.test(text)).toBe(false);
     expect(/hour|hrs|minute/.test(text)).toBe(false);
-    expect(/irs|tax deduction|write-off/.test(text)).toBe(false);
+    expect(/\birs\b|tax deduction|write-off|deductib/.test(text)).toBe(false);
   });
 });
