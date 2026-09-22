@@ -13,7 +13,7 @@
 
 import { authorityLadder } from "./maintenance-policy";
 
-export type FurnishingScope = "full_furnishing" | "no_furnishing";
+export type FurnishingScope = "full_furnishing" | "owner_furnished" | "no_furnishing";
 
 export const FURNISHING_SCOPES: { value: FurnishingScope; label: string; blurb: string }[] = [
   {
@@ -22,12 +22,82 @@ export const FURNISHING_SCOPES: { value: FurnishingScope; label: string; blurb: 
     blurb: "Design, mood board, floor plan, budget, orders, delivery, assembly and staging apply.",
   },
   {
+    value: "owner_furnished",
+    label: "Owner furnished",
+    blurb:
+      "The owner is furnishing the home. Design and purchasing are skipped; staging, inventory and readiness still apply.",
+  },
+  {
     value: "no_furnishing",
-    label: "No furnishings / existing home",
+    label: "Existing home (no furnishing)",
     blurb:
       "Skip design and purchasing. Access, condition, repairs, utilities, safety and listing readiness still apply.",
   },
 ];
+
+/* ------------------------------------------------- appliances and pool */
+
+export type ApplianceScope = "new" | "existing" | "both";
+
+export const APPLIANCE_SCOPES: { value: ApplianceScope; label: string; blurb: string }[] = [
+  { value: "new", label: "New", blurb: "Purchase, delivery, install and warranty capture." },
+  {
+    value: "existing",
+    label: "Existing",
+    blurb: "Document and assess the appliances already in the home.",
+  },
+  { value: "both", label: "Both", blurb: "Some appliances stay, some are being bought." },
+];
+
+export type PoolLocation = "none" | "neighborhood" | "property";
+
+export const POOL_LOCATIONS: { value: PoolLocation; label: string; blurb: string }[] = [
+  { value: "none", label: "None", blurb: "No pool or hot tub for guests at this home." },
+  {
+    value: "neighborhood",
+    label: "Neighborhood pool / hot tub",
+    blurb: "A shared amenity. Guest rules and access apply; ARHA does not service it.",
+  },
+  {
+    value: "property",
+    label: "At the property",
+    blurb: "Service vendor, safety, chemicals and equipment records apply.",
+  },
+];
+
+/** The appliance answer, read from the modules a project already carries. */
+export function applianceScope(modules: string[]): ApplianceScope {
+  const isNew = modules.includes("new_appliances");
+  const existing = modules.includes("existing_appliances");
+  if (isNew && existing) return "both";
+  if (isNew) return "new";
+  return "existing";
+}
+
+/** Turn the appliance answer back into modules, leaving other modules alone. */
+export function applyApplianceScope(modules: string[], choice: ApplianceScope): string[] {
+  const rest = modules.filter((m) => m !== "new_appliances" && m !== "existing_appliances");
+  if (choice === "new") return [...rest, "new_appliances"];
+  if (choice === "existing") return [...rest, "existing_appliances"];
+  return [...rest, "new_appliances", "existing_appliances"];
+}
+
+/** Pool answer for a project row, tolerant of rows saved before the question existed. */
+export function poolLocation(project: {
+  pool_location?: string | null;
+  modules?: string[] | null;
+}): PoolLocation {
+  const stored = project.pool_location as PoolLocation | null | undefined;
+  if (stored && stored !== "none") return stored;
+  return (project.modules ?? []).includes("pool") ? "property" : "none";
+}
+
+/** Only a pool at the home puts pool service work in scope. */
+export function applyPoolLocation(modules: string[], choice: PoolLocation): string[] {
+  const rest = modules.filter((m) => m !== "pool");
+  return choice === "property" ? [...rest, "pool"] : rest;
+}
+
 
 export type ModuleKey =
   | "pool"
@@ -172,6 +242,10 @@ const REQUIRES: { module: ModuleKey; match: RegExp }[] = [
 const FURNISHING_ONLY =
   /\bdesign|mood board|floor plan|furnish|furniture|staging|stage the|d[eé]cor|assembl/i;
 
+/** Buying and designing — skipped when the owner furnishes, staging is not. */
+const FURNISHING_PURCHASING =
+  /\bdesign|mood board|floor plan|furniture (order|budget|purchase|selection)|purchase furniture|assembl/i;
+
 /**
  * Does this piece of work apply to a project with this scope?
  *
@@ -188,6 +262,10 @@ export function outOfScopeReason(title: string, scope: ProjectScope): string | n
   if (scope.furnishing === "no_furnishing" && FURNISHING_ONLY.test(text)) {
     return "This home is set up without ARHA furnishing.";
   }
+  if (scope.furnishing === "owner_furnished" && FURNISHING_PURCHASING.test(text)) {
+    return "The owner is furnishing this home, so ARHA design and purchasing do not apply.";
+  }
+
   for (const rule of REQUIRES) {
     if (rule.match.test(text) && !scope.modules.includes(rule.module)) {
       return `${moduleLabel(rule.module)} is not part of this project's scope.`;

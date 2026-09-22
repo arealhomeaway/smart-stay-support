@@ -35,14 +35,22 @@ import {
 } from "@/components/ui/select";
 import { stateChip } from "@/lib/semantic";
 import {
+  APPLIANCE_SCOPES,
   FURNISHING_SCOPES,
+  POOL_LOCATIONS,
   SCOPE_MODULES,
+  applianceScope,
+  applyApplianceScope,
+  applyPoolLocation,
   moduleLabel,
+  poolLocation,
   scopeSummary,
   suggestedModules,
   type FurnishingScope,
   type ModuleKey,
+  type PoolLocation,
 } from "@/lib/onboarding-scope";
+
 import {
   getPropertyProject,
   startOnboardingProjectFn,
@@ -174,6 +182,8 @@ export function ProjectScopePanel({
             ? {
                 furnishing: project.furnishing_scope as FurnishingScope,
                 modules: (project.modules ?? []) as ModuleKey[],
+                pool: poolLocation(project),
+
                 branch: project.branch ?? "",
                 projectManager: project.project_manager,
                 director: project.director,
@@ -189,6 +199,10 @@ export function ProjectScopePanel({
                   pool_spa: hints?.pool_spa ?? null,
                   hoa: hints?.hoa ?? null,
                 }),
+                pool: poolLocation({
+                  modules: suggestedModules({ pool_spa: hints?.pool_spa ?? null, hoa: null }),
+                }),
+
                 branch: "",
                 projectManager: data?.assignments.projectManagerId ?? null,
                 director: data?.assignments.directorId ?? null,
@@ -213,6 +227,8 @@ export function ProjectScopePanel({
                 targetHandoffOn: v.targetHandoffOn || null,
                 furnishingScope: v.furnishing,
                 modules: v.modules,
+                poolLocation: v.pool,
+
                 notes: v.notes || null,
                 externalRefs: v.externalRefs,
                 reason: reason.trim(),
@@ -230,6 +246,8 @@ export function ProjectScopePanel({
                 targetHandoffOn: v.targetHandoffOn || null,
                 furnishingScope: v.furnishing,
                 modules: v.modules,
+                poolLocation: v.pool,
+
                 notes: v.notes || null,
                 externalRefs: v.externalRefs,
               },
@@ -244,6 +262,7 @@ export function ProjectScopePanel({
 type ScopeValues = {
   furnishing: FurnishingScope;
   modules: ModuleKey[];
+  pool: PoolLocation;
   branch: string;
   projectManager: string | null;
   director: string | null;
@@ -253,6 +272,72 @@ type ScopeValues = {
   notes: string;
   externalRefs: Record<string, string>;
 };
+
+/** Modules that the grouped questions above already answer. */
+const GROUPED_MODULES = new Set<ModuleKey>([
+  "new_appliances",
+  "existing_appliances",
+  "pool",
+  "smart_lock",
+  "cameras",
+]);
+
+/** One question, answered by picking a single card. */
+function ChoiceCards<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: readonly { value: T; label: string; blurb: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label className="eyebrow">{label}</Label>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={value === o.value}
+            onClick={() => onChange(o.value)}
+            className={`rounded-lg border p-3 text-left text-sm ${
+              value === o.value ? "border-primary bg-muted" : "border-border"
+            }`}
+          >
+            <span className="font-medium">{o.label}</span>
+            <span className="mt-1 block text-xs text-muted-foreground">{o.blurb}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ModuleToggle({
+  moduleKey,
+  checked,
+  onToggle,
+}: {
+  moduleKey: ModuleKey;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  const m = SCOPE_MODULES.find((x) => x.key === moduleKey);
+  return (
+    <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-2.5">
+      <Checkbox checked={checked} onCheckedChange={onToggle} className="mt-0.5" />
+      <span className="min-w-0">
+        <span className="block text-sm font-medium">{m?.label ?? moduleKey}</span>
+        <span className="block text-xs text-muted-foreground">{m?.blurb}</span>
+      </span>
+    </label>
+  );
+}
+
 
 function ScopeDialog({
   open,
@@ -314,46 +399,63 @@ function ScopeDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          <ChoiceCards
+            label="Furnishing"
+            options={FURNISHING_SCOPES}
+            value={v.furnishing}
+            onChange={(furnishing) => setV((p) => ({ ...p, furnishing }))}
+          />
+
+          <ChoiceCards
+            label="Appliances"
+            options={APPLIANCE_SCOPES}
+            value={applianceScope(v.modules)}
+            onChange={(choice) =>
+              setV((p) => ({ ...p, modules: applyApplianceScope(p.modules, choice) as ModuleKey[] }))
+            }
+          />
+
+          <ChoiceCards
+            label="Pool / hot tub"
+            options={POOL_LOCATIONS}
+            value={v.pool}
+            onChange={(pool) =>
+              setV((p) => ({
+                ...p,
+                pool,
+                modules: applyPoolLocation(p.modules, pool) as ModuleKey[],
+              }))
+            }
+          />
+
           <div className="space-y-2">
-            <Label className="eyebrow">Furnishing</Label>
+            <Label className="eyebrow">Security</Label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {FURNISHING_SCOPES.map((f) => (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => setV((p) => ({ ...p, furnishing: f.value }))}
-                  className={`rounded-lg border p-3 text-left text-sm ${
-                    v.furnishing === f.value ? "border-primary bg-muted" : "border-border"
-                  }`}
-                >
-                  <span className="font-medium">{f.label}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{f.blurb}</span>
-                </button>
+              {(["smart_lock", "cameras"] as const).map((key) => (
+                <ModuleToggle
+                  key={key}
+                  moduleKey={key}
+                  checked={v.modules.includes(key)}
+                  onToggle={() => toggle(key)}
+                />
               ))}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="eyebrow">What applies to this home</Label>
+            <Label className="eyebrow">Anything else that applies</Label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {SCOPE_MODULES.map((m) => (
-                <label
+              {SCOPE_MODULES.filter((m) => !GROUPED_MODULES.has(m.key)).map((m) => (
+                <ModuleToggle
                   key={m.key}
-                  className="flex cursor-pointer items-start gap-2 rounded-lg border border-border p-2.5"
-                >
-                  <Checkbox
-                    checked={v.modules.includes(m.key)}
-                    onCheckedChange={() => toggle(m.key)}
-                    className="mt-0.5"
-                  />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium">{m.label}</span>
-                    <span className="block text-xs text-muted-foreground">{m.blurb}</span>
-                  </span>
-                </label>
+                  moduleKey={m.key}
+                  checked={v.modules.includes(m.key)}
+                  onToggle={() => toggle(m.key)}
+                />
               ))}
             </div>
           </div>
+
 
           <div className="grid gap-3 sm:grid-cols-2">
             <PersonField

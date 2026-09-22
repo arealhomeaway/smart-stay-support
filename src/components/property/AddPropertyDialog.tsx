@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
@@ -19,10 +19,19 @@ import {
 import {
   createPropertyManuallyFn,
   importOwnerRezPropertyFn,
+  ownerRezOwnerPreviewFn,
   searchOwnerRezPropertiesFn,
 } from "@/lib/property-intake.functions";
+import { startOnboardingProjectFn } from "@/lib/onboarding.functions";
+import { suggestedModules, type ModuleKey } from "@/lib/onboarding-scope";
 import { startOwnerProgram } from "@/lib/owner-program.functions";
 import type { IntakeMatch, OwnerRezCandidate } from "@/lib/property-intake";
+
+/** What a home starts with before anyone answers the scope questions. */
+function defaultModules(): ModuleKey[] {
+  return suggestedModules({ pool_spa: null, hoa: null });
+}
+
 
 /**
  * The two supported ways a home enters Resolve. Both create the same canonical
@@ -38,7 +47,7 @@ export function AddPropertyDialog({
   onCreated?: (propertyId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [done, setDone] = useState<{ status: string; property: IntakeMatch } | null>(null);
+  const [done, setDone] = useState<Outcome | null>(null);
   const qc = useQueryClient();
 
   const refresh = async () => {
@@ -47,11 +56,12 @@ export function AddPropertyDialog({
     await qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
   };
 
-  function finish(result: { status: string; property: IntakeMatch }) {
+  function finish(result: Outcome) {
     setDone(result);
     void refresh();
     if (result.status !== "duplicate") onCreated?.(result.property.id);
   }
+
 
   return (
     <Dialog
@@ -73,7 +83,7 @@ export function AddPropertyDialog({
         </DialogHeader>
 
         {done ? (
-          <Outcome result={done} onClose={() => setOpen(false)} onAgain={() => setDone(null)} />
+          <OutcomePanel result={done} onClose={() => setOpen(false)} onAgain={() => setDone(null)} />
         ) : (
           <Tabs defaultValue="ownerrez" className="space-y-4">
             <TabsList>
@@ -93,12 +103,20 @@ export function AddPropertyDialog({
   );
 }
 
-function Outcome({
+type Outcome = {
+  status: string;
+  property: IntakeMatch;
+  /** True when the onboarding project and its plan were created here. */
+  startedOnboarding?: boolean;
+  activeOwner?: boolean;
+};
+
+function OutcomePanel({
   result,
   onClose,
   onAgain,
 }: {
-  result: { status: string; property: IntakeMatch };
+  result: Outcome;
   onClose: () => void;
   onAgain: () => void;
 }) {
@@ -108,7 +126,9 @@ function Outcome({
       ? "Already in Resolve"
       : result.status === "linked"
         ? "Linked to the existing home"
-        : "Property created";
+        : result.startedOnboarding
+          ? "Home added and onboarding started"
+          : "Property created";
   return (
     <div className="space-y-4">
       <div className="surface space-y-1 p-4">
@@ -120,20 +140,31 @@ function Outcome({
           {p.ownerRezId ? ` · OwnerRez ${p.ownerRezId}` : " · no OwnerRez link"}
         </p>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Onboarding has not been started. Open the home and choose <strong>Start onboarding</strong>{" "}
-        when you are ready.
-      </p>
-      {result.status !== "duplicate" && <EnrollActiveOwner propertyId={p.id} name={p.name} />}
+      {result.startedOnboarding ? (
+        <p className="text-sm text-muted-foreground">
+          The onboarding plan is ready.
+          {result.activeOwner
+            ? " The Active Owner program is a draft until somebody activates it."
+            : ""}
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Onboarding has not been started. Open the home and choose{" "}
+          <strong>Start onboarding</strong> when you are ready.
+        </p>
+      )}
+      {result.status !== "duplicate" && !result.startedOnboarding && (
+        <EnrollActiveOwner propertyId={p.id} name={p.name} />
+      )}
       <div className="flex flex-wrap gap-2">
         <Button asChild onClick={onClose}>
-          <Link to="/property/$propertyId" params={{ propertyId: p.id }}>
-            Open property
+          <Link to="/onboarding/$propertyId" params={{ propertyId: p.id }}>
+            {result.startedOnboarding ? "Open onboarding" : "Start onboarding"}
           </Link>
         </Button>
         <Button asChild variant="outline" onClick={onClose}>
-          <Link to="/onboarding/$propertyId" params={{ propertyId: p.id }}>
-            Start onboarding
+          <Link to="/property/$propertyId" params={{ propertyId: p.id }}>
+            Open property
           </Link>
         </Button>
         <Button variant="ghost" onClick={onAgain}>
@@ -143,6 +174,7 @@ function Outcome({
     </div>
   );
 }
+
 
 /**
  * Every home arrives standard. Participation is a deliberate choice, so it is
@@ -195,9 +227,14 @@ function OwnerRezImport({
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<OwnerRezCandidate | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const [activeOwner, setActiveOwner] = useState(false);
+  const [owner, setOwner] = useState({ name: "", email: "", phone: "" });
   const [milestones, setMilestones] = useState<Milestones>(emptyMilestones);
   const search = useServerFn(searchOwnerRezPropertiesFn);
   const runImport = useServerFn(importOwnerRezPropertyFn);
+  const loadOwner = useServerFn(ownerRezOwnerPreviewFn);
+  const enrollOwner = useServerFn(startOwnerProgram);
+  const startProject = useServerFn(startOnboardingProjectFn);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ownerrez-candidates"],
@@ -206,9 +243,65 @@ function OwnerRezImport({
     retry: false,
   });
 
-  const doImport = useMutation({
-    mutationFn: (input: { listingId: string; linkToPropertyId: string | null }) =>
-      runImport({ data: { ...input, isDemo, milestones: milestonePayload(milestones) } }),
+  // The owner OwnerRez has on file, pre-filled so nobody retypes it. Blank
+  // fields stay editable — this is the moment the owner record is created.
+  const ownerFromOwnerRez = useQuery({
+    queryKey: ["ownerrez-owner", selected?.listingId],
+    enabled: Boolean(selected && !selected.existing),
+    queryFn: () => loadOwner({ data: { listingId: selected!.listingId } }),
+    retry: false,
+  });
+
+  useEffect(() => {
+    const found = ownerFromOwnerRez.data;
+    if (found) {
+      setOwner({ name: found.name ?? "", email: found.email ?? "", phone: found.phone ?? "" });
+    }
+  }, [ownerFromOwnerRez.data]);
+
+  const enroll = useMutation({
+    mutationFn: async (input: { listingId: string; linkToPropertyId: string | null }) => {
+      const result = await runImport({
+        data: {
+          ...input,
+          isDemo,
+          milestones: milestonePayload(milestones),
+          owner: {
+            name: owner.name || null,
+            email: owner.email || null,
+            phone: owner.phone || null,
+          },
+        },
+      });
+      if (result.status === "duplicate" || input.linkToPropertyId) return result;
+      const propertyId = result.property.id;
+      if (activeOwner) {
+        await enrollOwner({
+          data: { propertyId, ownerName: owner.name || "", ownerEmail: owner.email || "" },
+        });
+      }
+      // One click: the project and its task plan exist before the modal closes.
+      await startProject({
+        data: {
+          propertyId,
+          branch: null,
+          projectManager: null,
+          director: null,
+          plannedClosingOn: milestones.plannedClosingOn || null,
+          possessionOn: milestones.accessOn || null,
+          targetHandoffOn: null,
+          furnishingScope: "full_furnishing",
+          modules: activeOwner
+            ? [...defaultModules(), "active_owner" as const]
+            : defaultModules(),
+          poolLocation: "none",
+          notes: null,
+          externalRefs: {},
+        },
+      });
+      return { ...result, startedOnboarding: true, activeOwner };
+    },
+
     onSuccess: (r) => onDone(r),
     onError: (e: Error) => toast.error(e.message),
   });
@@ -242,12 +335,14 @@ function OwnerRezImport({
           ← Back to search
         </button>
         <div className="surface space-y-2 p-4">
-          <p className="eyebrow">Import preview</p>
-          <Row label="Property name" value={selected.name} />
-          <Row label="Address" value={selected.address} />
+          <p className="eyebrow">{selected.name}</p>
           <Row
-            label="City / state / ZIP"
-            value={[selected.city, selected.state, selected.postalCode].filter(Boolean).join(", ")}
+            label="Address"
+            value={
+              [selected.address, selected.city, selected.state, selected.postalCode]
+                .filter(Boolean)
+                .join(", ") || null
+            }
           />
           <Row label="OwnerRez property ID" value={selected.listingId} />
         </div>
@@ -277,9 +372,9 @@ function OwnerRezImport({
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={doImport.isPending}
+                  disabled={enroll.isPending}
                   onClick={() =>
-                    doImport.mutate({
+                    enroll.mutate({
                       listingId: selected.listingId,
                       linkToPropertyId: selected.likely!.id,
                     })
@@ -289,21 +384,68 @@ function OwnerRezImport({
                 </Button>
               </div>
             )}
+
+            <div className="surface space-y-3 p-4">
+              <div>
+                <p className="text-sm font-medium">Homeowner</p>
+                <p className="text-xs text-muted-foreground">
+                  {ownerFromOwnerRez.isFetching
+                    ? "Checking OwnerRez for the owner on file…"
+                    : ownerFromOwnerRez.data
+                      ? "Brought in from OwnerRez. Correct anything that is wrong."
+                      : "OwnerRez has no owner on file for this home. Add them here so the Active Owner switch has somebody to enrol."}
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Text
+                  label="Name"
+                  value={owner.name}
+                  onChange={(v) => setOwner((p) => ({ ...p, name: v }))}
+                />
+                <Text
+                  label="Email"
+                  value={owner.email}
+                  onChange={(v) => setOwner((p) => ({ ...p, email: v }))}
+                />
+                <Text
+                  label="Phone"
+                  value={owner.phone}
+                  onChange={(v) => setOwner((p) => ({ ...p, phone: v }))}
+                />
+              </div>
+            </div>
+
             <MilestoneFields value={milestones} onChange={setMilestones} />
+
+            <label className="surface flex cursor-pointer items-start gap-2 p-4 text-sm">
+              <Checkbox
+                checked={activeOwner}
+                onCheckedChange={(v) => setActiveOwner(v === true)}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="block font-medium">This is an Active Owner home</span>
+                <span className="block text-xs text-muted-foreground">
+                  Creates a draft participation program. The 90-day clock only starts when it is
+                  activated.
+                </span>
+              </span>
+            </label>
+
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={isDemo} onCheckedChange={(v) => setIsDemo(v === true)} />
               Mark as a QA / test home (kept out of production reporting)
             </label>
+
             <Button
-              disabled={doImport.isPending}
-              onClick={() =>
-                doImport.mutate({ listingId: selected.listingId, linkToPropertyId: null })
-              }
+              disabled={enroll.isPending}
+              onClick={() => enroll.mutate({ listingId: selected.listingId, linkToPropertyId: null })}
             >
-              {doImport.isPending ? "Importing…" : "Create property in Resolve"}
+              {enroll.isPending ? "Setting the home up…" : "Start onboarding"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Importing does not start onboarding and does not change anything in OwnerRez.
+              This creates the home, its owner record and the full onboarding plan. Nothing is
+              written back to OwnerRez.
             </p>
           </>
         )}
@@ -326,27 +468,32 @@ function OwnerRezImport({
           </li>
         )}
         {items.map((c) => (
-          <li key={c.listingId} className="flex items-center justify-between gap-3 p-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{c.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {[c.address, c.city, c.state].filter(Boolean).join(", ") ||
-                  `OwnerRez ${c.listingId}`}
-              </p>
-            </div>
-            {c.existing ? (
-              <span className="shrink-0 text-xs text-muted-foreground">Already in Resolve</span>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => setSelected(c)}>
-                Review
-              </Button>
-            )}
+          <li key={c.listingId}>
+            {/* Choosing a home starts enrollment — no extra review step. */}
+            <button
+              type="button"
+              disabled={Boolean(c.existing)}
+              onClick={() => setSelected(c)}
+              className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium">{c.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {[c.address, c.city, c.state].filter(Boolean).join(", ") ||
+                    `OwnerRez ${c.listingId}`}
+                </span>
+              </span>
+              {c.existing && (
+                <span className="shrink-0 text-xs text-muted-foreground">Already in Resolve</span>
+              )}
+            </button>
           </li>
         ))}
       </ul>
     </div>
   );
 }
+
 
 const emptyMilestones = { plannedClosingOn: "", actualClosingOn: "", accessOn: "" };
 type Milestones = typeof emptyMilestones;
@@ -435,6 +582,8 @@ const emptyManual = {
   market: "",
   ownerName: "",
   ownerEmail: "",
+  ownerPhone: "",
+
   ownerRezPropertyId: "",
 };
 
@@ -462,6 +611,8 @@ function ManualForm({
           ownerRecordId: null,
           ownerName: form.ownerName || null,
           ownerEmail: form.ownerEmail || null,
+          ownerPhone: form.ownerPhone || null,
+
           ownerRezPropertyId: form.ownerRezPropertyId || null,
           isDemo,
           milestones: milestonePayload(milestones),
@@ -496,6 +647,8 @@ function ManualForm({
         <Text label="Market" value={form.market} onChange={set("market")} />
         <Text label="Owner name" value={form.ownerName} onChange={set("ownerName")} />
         <Text label="Owner email" value={form.ownerEmail} onChange={set("ownerEmail")} />
+        <Text label="Owner phone" value={form.ownerPhone} onChange={set("ownerPhone")} />
+
         <Text
           label="OwnerRez property ID (optional)"
           value={form.ownerRezPropertyId}

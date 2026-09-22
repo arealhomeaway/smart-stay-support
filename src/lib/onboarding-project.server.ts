@@ -130,8 +130,10 @@ export type StartProjectInput = {
   targetHandoffOn: string | null;
   furnishingScope: FurnishingScope;
   modules: ModuleKey[];
+  poolLocation?: "none" | "neighborhood" | "property";
   notes: string | null;
   externalRefs: Record<string, string>;
+
 };
 
 /**
@@ -198,7 +200,9 @@ export async function startOnboardingProject(
       target_handoff_on: input.targetHandoffOn,
       furnishing_scope: input.furnishingScope,
       modules,
+      pool_location: input.poolLocation ?? "none",
       external_refs: input.externalRefs,
+
       notes: input.notes,
       started_by: userId,
       is_demo: property.data.is_demo ?? false,
@@ -271,6 +275,8 @@ export async function updateProject(
     targetHandoffOn?: string | null | undefined;
     furnishingScope?: FurnishingScope | undefined;
     modules?: ModuleKey[] | undefined;
+    poolLocation?: "none" | "neighborhood" | "property" | undefined;
+
     notes?: string | null | undefined;
     externalRefs?: Record<string, string> | undefined;
     reason?: string | null | undefined;
@@ -322,6 +328,8 @@ export async function updateProject(
   if (input.targetHandoffOn !== undefined) patch.target_handoff_on = input.targetHandoffOn;
   if (input.furnishingScope !== undefined) patch.furnishing_scope = input.furnishingScope;
   if (input.modules !== undefined) patch.modules = input.modules;
+  if (input.poolLocation !== undefined) patch.pool_location = input.poolLocation;
+
   if (input.notes !== undefined) patch.notes = input.notes;
   if (input.externalRefs !== undefined) patch.external_refs = input.externalRefs;
 
@@ -374,9 +382,15 @@ function assertProjectLead(project: ProjectRow, userId: string, supervisor: bool
 
 function describeScope(row: ProjectRow) {
   const furnishing =
-    row.furnishing_scope === "no_furnishing" ? "No furnishings" : "Full furnishing";
-  return [furnishing, ...(row.modules ?? [])].join(", ");
+    row.furnishing_scope === "no_furnishing"
+      ? "Existing home (no furnishing)"
+      : row.furnishing_scope === "owner_furnished"
+        ? "Owner furnished"
+        : "Full furnishing";
+  const pool = row.pool_location && row.pool_location !== "none" ? [`pool: ${row.pool_location}`] : [];
+  return [furnishing, ...pool, ...(row.modules ?? [])].join(", ");
 }
+
 
 /**
  * Active Owner is enrolled per PROPERTY, never as a global owner flag.

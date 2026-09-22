@@ -157,6 +157,8 @@ export async function importOwnerRezProperty(
     linkToPropertyId?: string | null;
     isDemo?: boolean;
     milestones?: PropertyMilestones | undefined;
+    /** Typed in the enrollment modal when OwnerRez has no owner on file. */
+    owner?: OwnerDetails | undefined;
   },
 ): Promise<IntakeResult> {
   const { listListings } = await import("./ownerrez.server");
@@ -166,6 +168,7 @@ export async function importOwnerRezProperty(
   const rows = await loadResolveProperties(supabase);
   const dupe = rows.find((r) => String(r.ownerrez_property_id ?? "") === input.listingId);
   if (dupe) return { status: "duplicate", property: toMatch(dupe) };
+
 
   const now = new Date().toISOString();
 
@@ -183,6 +186,14 @@ export async function importOwnerRezProperty(
     return { status: "linked", property: { ...toMatch(target), ownerRezId: input.listingId } };
   }
 
+  // Enrollment needs an owner record to exist, otherwise the Active Owner
+  // switch has nobody to enrol. Prefer OwnerRez's owner; fall back to what
+  // the person typed in the modal.
+  const ownerRecordId = await resolveOwnerRecord(supabase, {
+    fromOwnerRez: await ownerRezOwner(input.listingId),
+    typed: input.owner,
+  });
+
   const { data, error } = await supabase
     .from("properties")
     .insert({
@@ -194,6 +205,7 @@ export async function importOwnerRezProperty(
       postal_code: listing.address?.postal_code ?? listing.address?.zip ?? null,
       ownerrez_property_id: input.listingId,
       ownerrez_synced_at: now,
+      owner_record_id: ownerRecordId,
       // A property existing is not onboarding, acceptance or Live.
       lifecycle_status: "not_onboarded",
       is_demo: input.isDemo ?? false,
@@ -205,6 +217,106 @@ export async function importOwnerRezProperty(
   if (error) throw error;
   return { status: "created", property: toMatch(data) };
 }
+
+/* ------------------------------------------------------------------- owners */
+
+/** Owner details typed into the enrollment modal. */
+export type OwnerDetails = {
+  name?: string | null | undefined;
+  email?: string | null | undefined;
+  phone?: string | null | undefined;
+};
+
+/**
+ * The owner OwnerRez has on file for a listing, if any. Read-only, and never
+ * fatal: a home can be created while OwnerRez is unreachable.
+ */
+export async function ownerRezOwner(
+  listingId: string,
+): Promise<(OwnerDetails & { sourceId: string }) | null> {
+  try {
+    const { propertyDetail, ownerRezGet } = await import("./ownerrez.server");
+    const detail = (await propertyDetail(listingId)) as { owner_id?: number | string | null };
+    const ownerId = detail?.owner_id;
+    if (!ownerId) return null;
+    const owner = await ownerRezGet<{
+      first_name?: string;
+      last_name?: string;
+      email_address?: string;
+      email?: string;
+      phone?: string;
+      home_phone?: string;
+      cell_phone?: string;
+    }>(`/owners/${encodeURIComponent(String(ownerId))}`);
+    const name = [owner.first_name, owner.last_name].filter(Boolean).join(" ").trim();
+    return {
+      sourceId: String(ownerId),
+      name: name || null,
+      email: owner.email_address ?? owner.email ?? null,
+      phone: owner.cell_phone ?? owner.phone ?? owner.home_phone ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One owner record per real owner: an OwnerRez owner is matched on its source
+ * ID so re-importing a second home does not create a second owner.
+ */
+export async function resolveOwnerRecord(
+  supabase: Client,
+  input: {
+    fromOwnerRez?: (OwnerDetails & { sourceId: string }) | null;
+    typed?: OwnerDetails | undefined;
+  },
+): Promise<string | null> {
+  const clean = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
+  const or = input.fromOwnerRez ?? null;
+  const typed = input.typed ?? {};
+
+  if (or) {
+    const sourceOwnerId = `ownerrez:${or.sourceId}`;
+    const existing = await supabase
+      .from("property_owners")
+      .select("id")
+      .eq("source_owner_id", sourceOwnerId)
+      .maybeSingle();
+    if (existing.error) throw existing.error;
+    if (existing.data) return existing.data.id;
+    const { data, error } = await supabase
+      .from("property_owners")
+      .insert({
+        source: "ownerrez",
+        source_owner_id: sourceOwnerId,
+        name: clean(typed.name) ?? clean(or.name),
+        email: clean(typed.email) ?? clean(or.email),
+        phone: clean(typed.phone) ?? clean(or.phone),
+        active: true,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
+
+  if (!clean(typed.name) && !clean(typed.email)) return null;
+  const { data, error } = await supabase
+    .from("property_owners")
+    .insert({
+      source: "manual",
+      source_owner_id: `manual:${crypto.randomUUID()}`,
+      name: clean(typed.name),
+      email: clean(typed.email),
+      phone: clean(typed.phone),
+      active: true,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
 
 /**
  * The dates the onboarding plan schedules itself from. Collected when the home
@@ -238,6 +350,8 @@ export type ManualPropertyInput = {
   ownerRecordId?: string | null;
   ownerName?: string | null;
   ownerEmail?: string | null;
+  ownerPhone?: string | null;
+
   ownerRezPropertyId?: string | null;
   isDemo?: boolean;
   milestones?: PropertyMilestones | undefined;
@@ -260,20 +374,13 @@ export async function createPropertyManually(
   }
 
   let ownerRecordId = input.ownerRecordId ?? null;
-  if (!ownerRecordId && input.ownerName?.trim()) {
-    const { data: owner, error: ownerError } = await supabase
-      .from("property_owners")
-      .insert({
-        name: input.ownerName.trim(),
-        email: input.ownerEmail?.trim() || null,
-        source: "manual",
-        source_owner_id: `manual:${crypto.randomUUID()}`,
-      })
-      .select("id")
-      .single();
-    if (ownerError) throw ownerError;
-    ownerRecordId = owner.id;
+  if (!ownerRecordId) {
+    ownerRecordId = await resolveOwnerRecord(supabase, {
+      fromOwnerRez: orId ? await ownerRezOwner(orId) : null,
+      typed: { name: input.ownerName, email: input.ownerEmail, phone: input.ownerPhone },
+    });
   }
+
 
   const { data, error } = await supabase
     .from("properties")

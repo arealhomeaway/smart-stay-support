@@ -390,8 +390,10 @@ export const startOnboardingProjectFn = createServerFn({ method: "POST" })
         plannedClosingOn: z.string().date().nullable().default(null),
         possessionOn: z.string().date().nullable().default(null),
         targetHandoffOn: z.string().date().nullable().default(null),
-        furnishingScope: z.enum(["full_furnishing", "no_furnishing"]),
+        furnishingScope: z.enum(["full_furnishing", "owner_furnished", "no_furnishing"]),
         modules: z.array(moduleEnum).max(20).default([]),
+        poolLocation: z.enum(["none", "neighborhood", "property"]).default("none"),
+
         notes: z.string().trim().max(2000).nullable().default(null),
         externalRefs: z.record(z.string(), z.string().trim().max(300)).default({}),
       })
@@ -414,8 +416,12 @@ export const updateOnboardingProjectFn = createServerFn({ method: "POST" })
         plannedClosingOn: z.string().date().nullable().optional(),
         possessionOn: z.string().date().nullable().optional(),
         targetHandoffOn: z.string().date().nullable().optional(),
-        furnishingScope: z.enum(["full_furnishing", "no_furnishing"]).optional(),
+        furnishingScope: z
+          .enum(["full_furnishing", "owner_furnished", "no_furnishing"])
+          .optional(),
         modules: z.array(moduleEnum).max(20).optional(),
+        poolLocation: z.enum(["none", "neighborhood", "property"]).optional(),
+
         notes: z.string().trim().max(2000).nullable().optional(),
         externalRefs: z.record(z.string(), z.string().trim().max(300)).optional(),
         reason: z.string().trim().max(500).nullable().optional(),

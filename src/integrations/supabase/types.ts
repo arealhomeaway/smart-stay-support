@@ -4095,6 +4095,7 @@ export type Database = {
           modules: string[]
           notes: string | null
           planned_closing_on: string | null
+          pool_location: string
           possession_on: string | null
           project_manager: string | null
           property_id: string
@@ -4117,6 +4118,7 @@ export type Database = {
           modules?: string[]
           notes?: string | null
           planned_closing_on?: string | null
+          pool_location?: string
           possession_on?: string | null
           project_manager?: string | null
           property_id: string
@@ -4139,6 +4141,7 @@ export type Database = {
           modules?: string[]
           notes?: string | null
           planned_closing_on?: string | null
+          pool_location?: string
           possession_on?: string | null
           project_manager?: string | null
           property_id?: string
