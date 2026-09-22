@@ -406,6 +406,9 @@ function ProgramCard({
   const percent = Math.min(100, Math.round((row.reportedHours / OWNER_GOAL_HOURS) * 100));
   const router = useRouter();
   const { setViewAs } = useViewAs();
+  const { isSupervisor } = useRole();
+  const [acting, setActing] = useState(false);
+
 
   /** Open this program's hub exactly as its homeowner sees it — read-only. */
   function previewAsHomeowner() {
