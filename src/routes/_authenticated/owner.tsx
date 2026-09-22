@@ -199,8 +199,6 @@ function OwnerHubBody({
     .filter((r) => r.auto_ticket && !ownerReviewPresentation(r).attention)
     .filter(inScope);
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
-  const unreadAlerts = alerts.filter((a) => !a.read_at).length;
-  const attentionCount = openReviews.length + unreadAlerts;
 
   /**
    * Homeowners think per home, so the attention list is grouped by the home it
