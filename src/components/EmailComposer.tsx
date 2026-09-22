@@ -334,12 +334,33 @@ function ComposerBody({
     setChipError(null);
   }
 
+  /** Someone clicked an address in the dropdown instead of typing it out. */
+  function pickChip(field: RecipientField, email: string) {
+    const withPrimary: RecipientLists = {
+      ...extra,
+      to: [...(isEmailAddress(to) ? [to.trim()] : []), ...extra.to],
+    };
+    const result = addRecipients(withPrimary, field, email);
+    setChipError(result.errors[0] ?? null);
+    if (result.added.length > 0) {
+      setExtra({
+        to: result.lists.to.filter((a) => a.toLowerCase() !== to.trim().toLowerCase()),
+        cc: result.lists.cc,
+        bcc: result.lists.bcc,
+      });
+    }
+  }
+
   // Everything the person can pick from without typing: the contacts on this
   // record, plus addresses this mailbox has written to before.
   const previous = ctx.data?.previousContacts ?? [];
-  const knownAddresses = [
-    ...recipients.map((r) => r.email),
-    ...previous.map((p) => p.email),
+  const suggestionList: RecipientSuggestion[] = [
+    ...recipients.map((r) => ({ email: r.email, name: r.label, group: "record" as const })),
+    ...previous.map((p) => ({
+      email: p.email,
+      group: "previous" as const,
+      lastSentAt: p.lastSentAt,
+    })),
   ];
 
   // Anything typed into a recipient box but not yet turned into a chip still
