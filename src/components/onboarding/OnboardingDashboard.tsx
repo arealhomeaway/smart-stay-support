@@ -198,7 +198,7 @@ export function OnboardingDashboard({
               .map((note) => (
                 <div key={note.id} className="rounded-md border p-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <PersonAvatar personId={note.author_id} name={nameOf(note.author_id)} size="sm" />
+                    <PersonAvatar name={nameOf(note.author_id)} size="sm" />
                     <span className="font-medium">{nameOf(note.author_id)}</span>
                     <span className="text-xs text-muted-foreground">
                       {usDateTime(note.created_at)}
