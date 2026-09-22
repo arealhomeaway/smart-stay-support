@@ -3120,6 +3120,84 @@ export type Database = {
           },
         ]
       }
+      inquiry_sources: {
+        Row: {
+          active: boolean
+          application_fee: number | null
+          booking_documents: string | null
+          cleaning_fee: number | null
+          corporate_housing_extra: number | null
+          created_at: string
+          created_by: string | null
+          discount_percent: number | null
+          id: string
+          name: string
+          payment_details: string | null
+          pet_deposit_notes: string | null
+          pet_fee_notes: string | null
+          pet_fee_per_pet: number
+          pricing_flags: string | null
+          referral_fee: number | null
+          referral_percent: number | null
+          referral_rule: string | null
+          security_deposit: number | null
+          source_type: string | null
+          updated_at: string
+          updated_by: string | null
+          utilities_included: boolean | null
+        }
+        Insert: {
+          active?: boolean
+          application_fee?: number | null
+          booking_documents?: string | null
+          cleaning_fee?: number | null
+          corporate_housing_extra?: number | null
+          created_at?: string
+          created_by?: string | null
+          discount_percent?: number | null
+          id?: string
+          name: string
+          payment_details?: string | null
+          pet_deposit_notes?: string | null
+          pet_fee_notes?: string | null
+          pet_fee_per_pet?: number
+          pricing_flags?: string | null
+          referral_fee?: number | null
+          referral_percent?: number | null
+          referral_rule?: string | null
+          security_deposit?: number | null
+          source_type?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          utilities_included?: boolean | null
+        }
+        Update: {
+          active?: boolean
+          application_fee?: number | null
+          booking_documents?: string | null
+          cleaning_fee?: number | null
+          corporate_housing_extra?: number | null
+          created_at?: string
+          created_by?: string | null
+          discount_percent?: number | null
+          id?: string
+          name?: string
+          payment_details?: string | null
+          pet_deposit_notes?: string | null
+          pet_fee_notes?: string | null
+          pet_fee_per_pet?: number
+          pricing_flags?: string | null
+          referral_fee?: number | null
+          referral_percent?: number | null
+          referral_rule?: string | null
+          security_deposit?: number | null
+          source_type?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          utilities_included?: boolean | null
+        }
+        Relationships: []
+      }
       integration_events: {
         Row: {
           attempts: number
