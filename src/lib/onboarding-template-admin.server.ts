@@ -188,16 +188,21 @@ export async function updateOnboardingTemplate(
   audit: typeof writeAudit = writeAudit,
 ) {
   await assertSupervisor(supabase, userId);
-  const patch: Record<string, unknown> = {};
+  const patch: {
+    name?: string;
+    description?: string | null;
+    is_archived?: boolean;
+    is_default?: boolean;
+  } = {};
   if (input.name !== undefined) {
     const name = input.name.trim();
     if (name.length < 3) throw new Error("Give the template a name of at least three characters.");
-    patch["name"] = name;
+    patch.name = name;
   }
-  if (input.description !== undefined) patch["description"] = input.description?.trim() || null;
+  if (input.description !== undefined) patch.description = input.description?.trim() || null;
   if (input.isArchived !== undefined) {
-    patch["is_archived"] = input.isArchived;
-    if (input.isArchived) patch["is_default"] = false;
+    patch.is_archived = input.isArchived;
+    if (input.isArchived) patch.is_default = false;
   }
   if (!Object.keys(patch).length) return { ok: true as const };
 
