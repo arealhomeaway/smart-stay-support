@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, FlaskConical, Search, Users } from "lucide-react";
+import { CalendarClock, Download, FlaskConical, Search, Users } from "lucide-react";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
 import { CapabilityGate } from "@/components/CapabilityGate";
+import { OversightAlertsPanel } from "@/components/owner/OversightAlertsPanel";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +23,23 @@ import { usDate } from "@/lib/dates";
 import { OWNER_GOAL_HOURS, PROGRAM_TOTAL_DAYS } from "@/lib/owner-participation";
 import {
   enrolledRows,
+  oversightFiltersActive,
   oversightSummary,
   viewOversight,
+  type CheckpointFilter,
+  type ContactFilter,
   type OversightInput,
   type OversightSort,
+  type OwnerItemsFilter,
   type PaceFilter,
 } from "@/lib/owner-oversight";
+import {
+  downloadExport,
+  oversightCsv,
+  oversightPdf,
+  oversightPropertiesCsv,
+} from "@/lib/oversight-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/owner-oversight")({
   head: () => ({
@@ -67,7 +79,11 @@ function OwnerOversightPage() {
   const viewingDemo = demoMode || showDemo;
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<PaceFilter>("all");
+  const [checkpoint, setCheckpoint] = useState<CheckpointFilter>("all");
+  const [ownerItems, setOwnerItems] = useState<OwnerItemsFilter>("all");
+  const [contact, setContact] = useState<ContactFilter>("all");
   const [sort, setSort] = useState<OversightSort>("pace");
+  const [exporting, setExporting] = useState(false);
 
   const programs = useQuery({
     queryKey: ["owner-oversight", viewingDemo],
@@ -79,10 +95,45 @@ function OwnerOversightPage() {
     [programs.data],
   );
   const summary = useMemo(() => oversightSummary(rows), [rows]);
+  const filters = { search, filter, checkpoint, ownerItems, contact, sort };
   const visible = useMemo(
-    () => viewOversight(rows, { search, filter, sort }),
-    [rows, search, filter, sort],
+    () => viewOversight(rows, filters),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, search, filter, checkpoint, ownerItems, contact, sort],
   );
+  const filtersActive = oversightFiltersActive(filters);
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filterLabel = filtersActive ? "Filtered view" : "All enrolled";
+
+  const exportFile = async (kind: "owners_csv" | "properties_csv" | "pdf") => {
+    setExporting(true);
+    try {
+      if (kind === "owners_csv") {
+        downloadExport(
+          `active-owner-oversight-${stamp}.csv`,
+          "text/csv;charset=utf-8",
+          oversightCsv(visible),
+        );
+      } else if (kind === "properties_csv") {
+        downloadExport(
+          `active-owner-enrolled-homes-${stamp}.csv`,
+          "text/csv;charset=utf-8",
+          oversightPropertiesCsv(visible),
+        );
+      } else {
+        downloadExport(
+          `active-owner-oversight-${stamp}.pdf`,
+          "application/pdf",
+          await oversightPdf(visible, { filterLabel }),
+        );
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not build that download");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (programs.isLoading) return <LoadingPage tiles={4} />;
 
@@ -93,9 +144,14 @@ function OwnerOversightPage() {
         title="Program oversight"
         description="Every enrolled homeowner on one screen: hours they have reported against the program's own pace, the checkpoints coming due, and what is still waiting on them."
         actions={
-          <Button asChild variant="outline">
-            <Link to="/owner-programs">Open program admin</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link to="/oversight-access-log">Access log</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/owner-programs">Open program admin</Link>
+            </Button>
+          </div>
         }
       />
 
@@ -116,22 +172,50 @@ function OwnerOversightPage() {
         />
       </div>
 
+      <OversightAlertsPanel rows={rows} />
+
       <SectionCard
         title="Enrolled homes"
         description="Click any homeowner to open their program record."
         actions={
-          <button
-            type="button"
-            onClick={() => setShowDemo(!showDemo)}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={exporting}
+              onClick={() => void exportFile("owners_csv")}
+            >
+              <Download className="mr-1 size-3.5" /> Homeowners (CSV)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={exporting}
+              onClick={() => void exportFile("properties_csv")}
+            >
+              <Download className="mr-1 size-3.5" /> Homes (CSV)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={exporting}
+              onClick={() => void exportFile("pdf")}
+            >
+              <Download className="mr-1 size-3.5" /> PDF
+            </Button>
+            <button
+              type="button"
+              onClick={() => setShowDemo(!showDemo)}
             className={
               showDemo
                 ? "inline-flex items-center gap-1 rounded-md border border-primary bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
                 : "inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
             }
           >
-            <FlaskConical className="size-3.5" />
-            {showDemo ? "Hide" : "Show"} demo programs
-          </button>
+              <FlaskConical className="size-3.5" />
+              {showDemo ? "Hide" : "Show"} demo programs
+            </button>
+          </div>
         }
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -169,6 +253,61 @@ function OwnerOversightPage() {
               <SelectItem value="name">Sort: name</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={checkpoint} onValueChange={(v) => setCheckpoint(v as CheckpointFilter)}>
+            <SelectTrigger className="w-52" aria-label="Checkpoint window">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any checkpoint</SelectItem>
+              <SelectItem value="open">Check-in open now</SelectItem>
+              <SelectItem value="next_7">Checkpoint within 7 days</SelectItem>
+              <SelectItem value="next_30">Checkpoint within 30 days</SelectItem>
+              <SelectItem value="day_30">Day 30 checkpoint</SelectItem>
+              <SelectItem value="day_60">Day 60 checkpoint</SelectItem>
+              <SelectItem value="day_90">Day 90 checkpoint</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={ownerItems} onValueChange={(v) => setOwnerItems(v as OwnerItemsFilter)}>
+            <SelectTrigger className="w-52" aria-label="Open owner items">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any owner items</SelectItem>
+              <SelectItem value="waiting">Waiting on the owner</SelectItem>
+              <SelectItem value="clear">Nothing outstanding</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={contact} onValueChange={(v) => setContact(v as ContactFilter)}>
+            <SelectTrigger className="w-52" aria-label="Last contact">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any last contact</SelectItem>
+              <SelectItem value="within_7">Contacted in the last 7 days</SelectItem>
+              <SelectItem value="within_30">Contacted in the last 30 days</SelectItem>
+              <SelectItem value="over_14">No contact in 14+ days</SelectItem>
+              <SelectItem value="over_30">No contact in 30+ days</SelectItem>
+              <SelectItem value="never">Never contacted</SelectItem>
+            </SelectContent>
+          </Select>
+          {filtersActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setFilter("all");
+                setCheckpoint("all");
+                setOwnerItems("all");
+                setContact("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+          <span className="ml-auto text-xs text-muted-foreground">
+            Showing {visible.length} of {rows.length}
+          </span>
         </div>
 
         {visible.length === 0 ? (

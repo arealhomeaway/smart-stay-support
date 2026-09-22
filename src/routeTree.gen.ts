@@ -32,6 +32,7 @@ import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/ma
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedOpsAnalyticsRouteImport } from './routes/_authenticated/ops-analytics'
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
+import { Route as AuthenticatedOversightAccessLogRouteImport } from './routes/_authenticated/oversight-access-log'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner-analytics'
 import { Route as AuthenticatedOwnerOversightRouteImport } from './routes/_authenticated/owner-oversight'
@@ -202,6 +203,12 @@ const AuthenticatedOversightRoute = AuthenticatedOversightRouteImport.update({
   path: '/oversight',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOversightAccessLogRoute =
+  AuthenticatedOversightAccessLogRouteImport.update({
+    id: '/oversight-access-log',
+    path: '/oversight-access-log',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOwnerRoute = AuthenticatedOwnerRouteImport.update({
   id: '/owner',
   path: '/owner',
@@ -508,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
+  '/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
@@ -579,6 +587,7 @@ export interface FileRoutesByTo {
   '/map': typeof AuthenticatedMapRoute
   '/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/oversight': typeof AuthenticatedOversightRoute
+  '/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
@@ -653,6 +662,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRouteWithChildren
   '/_authenticated/ops-analytics': typeof AuthenticatedOpsAnalyticsRoute
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
+  '/_authenticated/oversight-access-log': typeof AuthenticatedOversightAccessLogRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
   '/_authenticated/owner-oversight': typeof AuthenticatedOwnerOversightRoute
@@ -729,6 +739,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/ops-analytics'
     | '/oversight'
+    | '/oversight-access-log'
     | '/owner'
     | '/owner-analytics'
     | '/owner-oversight'
@@ -800,6 +811,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/ops-analytics'
     | '/oversight'
+    | '/oversight-access-log'
     | '/owner'
     | '/owner-analytics'
     | '/owner-oversight'
@@ -873,6 +885,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/ops-analytics'
     | '/_authenticated/oversight'
+    | '/_authenticated/oversight-access-log'
     | '/_authenticated/owner'
     | '/_authenticated/owner-analytics'
     | '/_authenticated/owner-oversight'
@@ -1103,6 +1116,13 @@ declare module '@tanstack/react-router' {
       path: '/oversight'
       fullPath: '/oversight'
       preLoaderRoute: typeof AuthenticatedOversightRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/oversight-access-log': {
+      id: '/_authenticated/oversight-access-log'
+      path: '/oversight-access-log'
+      fullPath: '/oversight-access-log'
+      preLoaderRoute: typeof AuthenticatedOversightAccessLogRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner': {
@@ -1575,6 +1595,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRouteWithChildren
   AuthenticatedOpsAnalyticsRoute: typeof AuthenticatedOpsAnalyticsRoute
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
+  AuthenticatedOversightAccessLogRoute: typeof AuthenticatedOversightAccessLogRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
   AuthenticatedOwnerOversightRoute: typeof AuthenticatedOwnerOversightRoute
@@ -1617,6 +1638,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRouteWithChildren,
   AuthenticatedOpsAnalyticsRoute: AuthenticatedOpsAnalyticsRoute,
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
+  AuthenticatedOversightAccessLogRoute: AuthenticatedOversightAccessLogRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
   AuthenticatedOwnerOversightRoute: AuthenticatedOwnerOversightRoute,

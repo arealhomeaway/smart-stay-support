@@ -55,6 +55,13 @@ export type OversightRow = OversightInput & {
 export type PaceFilter = "all" | "on_pace" | "behind" | "review_due" | "waiting_on_owner";
 export type OversightSort = "pace" | "review" | "days_left" | "hours" | "name";
 
+/** Which 30/60/90 checkpoint window a homeowner sits in right now. */
+export type CheckpointFilter = "all" | "open" | "next_7" | "next_30" | "day_30" | "day_60" | "day_90";
+/** Whether anything is still sitting with the homeowner. */
+export type OwnerItemsFilter = "all" | "waiting" | "clear";
+/** How long since anyone last spoke with the homeowner. */
+export type ContactFilter = "all" | "within_7" | "within_30" | "over_14" | "over_30" | "never";
+
 const ACTIVE_STATUSES = new Set(["active", "target_reached"]);
 
 function latest(a: string | null, b: string | null): string | null {
@@ -173,15 +180,96 @@ export function sortOversight(rows: OversightRow[], sort: OversightSort): Oversi
   return copy;
 }
 
-/** One call for the page: filter, search and sort together. */
+/** Days since the last contact, or null when nobody has spoken with them yet. */
+export function daysSinceContact(row: OversightRow, now: Date = new Date()): number | null {
+  if (!row.lastContactAt) return null;
+  const then = new Date(row.lastContactAt).getTime();
+  if (Number.isNaN(then)) return null;
+  return Math.max(0, Math.floor((now.getTime() - then) / 86_400_000));
+}
+
+export function matchesCheckpointFilter(row: OversightRow, filter: CheckpointFilter): boolean {
+  switch (filter) {
+    case "open":
+      return Boolean(row.openCheckpoint);
+    case "next_7":
+      return row.reviewDueSoon;
+    case "next_30":
+      return Boolean(row.openCheckpoint) || row.nextCheckpoint.daysAway <= 30;
+    case "day_30":
+    case "day_60":
+    case "day_90": {
+      const day = Number(filter.slice(4));
+      return (row.openCheckpoint ?? row.nextCheckpoint).day === day;
+    }
+    default:
+      return true;
+  }
+}
+
+export function matchesOwnerItemsFilter(row: OversightRow, filter: OwnerItemsFilter): boolean {
+  if (filter === "waiting") return row.openTasks > 0;
+  if (filter === "clear") return row.openTasks === 0;
+  return true;
+}
+
+export function matchesContactFilter(
+  row: OversightRow,
+  filter: ContactFilter,
+  now: Date = new Date(),
+): boolean {
+  if (filter === "all") return true;
+  const days = daysSinceContact(row, now);
+  if (filter === "never") return days === null;
+  // Never contacted is always "overdue", never "recent".
+  if (days === null) return filter === "over_14" || filter === "over_30";
+  switch (filter) {
+    case "within_7":
+      return days <= 7;
+    case "within_30":
+      return days <= 30;
+    case "over_14":
+      return days > 14;
+    case "over_30":
+      return days > 30;
+    default:
+      return true;
+  }
+}
+
+export type OversightView = {
+  search?: string;
+  filter?: PaceFilter;
+  checkpoint?: CheckpointFilter;
+  ownerItems?: OwnerItemsFilter;
+  contact?: ContactFilter;
+  sort?: OversightSort;
+};
+
+/** One call for the page: every filter, the search box and the sort together. */
 export function viewOversight(
   rows: OversightRow[],
-  opts: { search?: string; filter?: PaceFilter; sort?: OversightSort } = {},
+  opts: OversightView = {},
+  now: Date = new Date(),
 ): OversightRow[] {
   return sortOversight(
     rows
       .filter((r) => matchesPaceFilter(r, opts.filter ?? "all"))
+      .filter((r) => matchesCheckpointFilter(r, opts.checkpoint ?? "all"))
+      .filter((r) => matchesOwnerItemsFilter(r, opts.ownerItems ?? "all"))
+      .filter((r) => matchesContactFilter(r, opts.contact ?? "all", now))
       .filter((r) => matchesOversightSearch(r, opts.search ?? "")),
     opts.sort ?? "pace",
+  );
+}
+
+/** True when any filter is narrowing the list — drives the "Clear filters" affordance. */
+export function oversightFiltersActive(opts: OversightView): boolean {
+  return Boolean(
+    (opts.search ?? "").trim() ||
+      (opts.filter && opts.filter !== "all") ||
+      (opts.checkpoint && opts.checkpoint !== "all") ||
+      (opts.ownerItems && opts.ownerItems !== "all") ||
+      (opts.contact && opts.contact !== "all"),
   );
 }
