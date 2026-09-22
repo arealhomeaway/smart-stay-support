@@ -984,6 +984,15 @@ function PropertyWorkspace() {
         </TabsContent>
       </Tabs>
 
+      <div className="surface p-4">
+        <PhotoStrip
+          entityType="property"
+          entityId={current.id}
+          title="Visual evidence"
+          emptyHint="No photos on file yet for this home."
+        />
+      </div>
+
       <TaskDrawer
         task={openTask}
         tasks={tasks}
