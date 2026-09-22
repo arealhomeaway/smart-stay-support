@@ -50,6 +50,7 @@ import {
   scheduleProblems,
   sendGate,
   unresolvedFields,
+  withSignature,
   zonedToInstant,
   type RecipientField,
   type RecipientLists,
@@ -61,6 +62,7 @@ import {
   getMessageHistory,
   retireEmailTemplate,
   saveEmailTemplate,
+  saveMySignature,
   sendComposedEmail,
 } from "@/lib/email-composer.functions";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/email-draft-store";
@@ -155,6 +157,28 @@ function ComposerBody({
   const [subject, setSubject] = useState(initialSubject ?? "");
   const [body, setBody] = useState(initialBody ?? "");
   const [audience, setAudience] = useState<MessageAudience>("guest");
+  const [signature, setSignature] = useState("");
+
+  // The writer's own sign-off, loaded once and then theirs to edit. It goes on
+  // the foot of the draft automatically, and never twice.
+  const signatureLoaded = useRef(false);
+  useEffect(() => {
+    const saved = ctx.data?.signature;
+    if (signatureLoaded.current || saved === undefined) return;
+    signatureLoaded.current = true;
+    setSignature(saved ?? "");
+    if (saved) setBody((current) => withSignature(current, saved));
+  }, [ctx.data?.signature]);
+
+  const persistSignature = useServerFn(saveMySignature);
+  const saveSignature = useMutation({
+    mutationFn: (value: string) => persistSignature({ data: { signature: value } }),
+    onSuccess: () => {
+      toast.success("Signature saved.");
+      void queryClient.invalidateQueries({ queryKey: ["composer-context"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   // Pick the first known contact as soon as the record answers.
   useEffect(() => {
