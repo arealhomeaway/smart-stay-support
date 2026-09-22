@@ -35,13 +35,17 @@ export async function saveOnboardingMilestones(supabase: Client, userId: string,
     .single();
   if (before.error) throw before.error;
 
-  const project = await supabase
+  // onboarding_projects has no archived_at column; a cancelled project is the
+  // retired one, and the newest live project owns the handoff date.
+  const projects = await supabase
     .from("onboarding_projects")
     .select("id, modules, target_handoff_on, target_handoff_source")
     .eq("property_id", input.propertyId)
-    .is("archived_at", null)
-    .maybeSingle();
-  if (project.error) throw project.error;
+    .neq("status", "cancelled")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (projects.error) throw projects.error;
+  const project = { data: projects.data?.[0] ?? null };
 
   const property = await supabase
     .from("properties")
