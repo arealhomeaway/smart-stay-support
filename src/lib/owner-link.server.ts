@@ -91,8 +91,127 @@ export type LinkOwnerInput = {
     phone?: string | null;
     city?: string | null;
     state?: string | null;
+    coOwnerName?: string | null;
+    coOwnerEmail?: string | null;
+    coOwnerPhone?: string | null;
   } | null;
 };
+
+export type OwnerCard = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  source: string;
+  coOwnerName: string | null;
+  coOwnerEmail: string | null;
+  coOwnerPhone: string | null;
+  propertyCount: number;
+};
+
+/** The homeowner shown on a property — one read used by every surface. */
+export async function readPropertyOwner(
+  viewer: Viewer,
+  propertyId: string,
+): Promise<{ owner: OwnerCard | null; canManage: boolean }> {
+  if (!isStaff(viewer)) throw new Error(DENY);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const property = await supabaseAdmin
+    .from("properties")
+    .select("id, owner_record_id")
+    .eq("id", propertyId)
+    .maybeSingle();
+  if (property.error) throw property.error;
+  const ownerId = property.data?.owner_record_id ?? null;
+  if (!ownerId) return { owner: null, canManage: true };
+
+  const rec = await supabaseAdmin
+    .from("property_owners")
+    .select(
+      "id, name, email, phone, city, state, source, co_owner_name, co_owner_email, co_owner_phone",
+    )
+    .eq("id", ownerId)
+    .maybeSingle();
+  if (rec.error) throw rec.error;
+  if (!rec.data) return { owner: null, canManage: true };
+
+  const { count } = await supabaseAdmin
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_record_id", ownerId)
+    .is("archived_at", null);
+
+  return {
+    owner: {
+      id: rec.data.id,
+      name: rec.data.name,
+      email: rec.data.email,
+      phone: rec.data.phone,
+      city: rec.data.city,
+      state: rec.data.state,
+      source: rec.data.source,
+      coOwnerName: rec.data.co_owner_name,
+      coOwnerEmail: rec.data.co_owner_email,
+      coOwnerPhone: rec.data.co_owner_phone,
+      propertyCount: count ?? 1,
+    },
+    canManage: true,
+  };
+}
+
+/** Edit the canonical owner record in place (staff only, audited). */
+export async function updateOwnerRecord(
+  viewer: Viewer,
+  input: {
+    ownerId: string;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    coOwnerName?: string | null;
+    coOwnerEmail?: string | null;
+    coOwnerPhone?: string | null;
+  },
+) {
+  if (!isStaff(viewer)) throw new Error(DENY);
+  if (!input.name.trim()) throw new Error("The homeowner needs a name.");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const before = await supabaseAdmin
+    .from("property_owners")
+    .select("id, name, email, phone, co_owner_name, co_owner_email, co_owner_phone")
+    .eq("id", input.ownerId)
+    .maybeSingle();
+  if (before.error) throw before.error;
+  if (!before.data) throw new Error("That homeowner record could not be found.");
+
+  const patch = {
+    name: input.name.trim(),
+    email: input.email?.trim() || null,
+    phone: input.phone?.trim() || null,
+    co_owner_name: input.coOwnerName?.trim() || null,
+    co_owner_email: input.coOwnerEmail?.trim() || null,
+    co_owner_phone: input.coOwnerPhone?.trim() || null,
+  };
+  const upd = await supabaseAdmin
+    .from("property_owners")
+    .update(patch)
+    .eq("id", input.ownerId);
+  if (upd.error) throw upd.error;
+
+  await writeAudit({
+    actorId: viewer.userId,
+    action: "property_owner_updated",
+    entityType: "property_owner",
+    entityId: input.ownerId,
+    entityLabel: patch.name,
+    before: before.data,
+    after: patch,
+  });
+
+  return { ok: true as const, ownerId: input.ownerId };
+}
 
 /**
  * Binds a home to exactly one canonical owner record, reusing an existing
