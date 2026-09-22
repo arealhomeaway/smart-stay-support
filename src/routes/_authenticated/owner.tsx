@@ -351,7 +351,12 @@ function OwnerHubBody({
       <PageHero
         image={heroPhoto}
         eyebrow="Active Owner"
-        title={`Welcome back, ${firstName(program.ownerName)}`}
+        title={`Welcome back, ${firstName(
+          typeof user.user_metadata?.["full_name"] === "string"
+            ? (user.user_metadata["full_name"] as string)
+            : null,
+          program.ownerName,
+        )}`}
         description="Here is where things stand across your homes, and anything that needs your attention."
         actions={
           <>
