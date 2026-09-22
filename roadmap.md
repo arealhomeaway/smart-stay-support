@@ -686,3 +686,4 @@ Batch B (work surface)
 - [x] Remove the redundant hero bell (top-bar bell is authoritative)
 - [ ] "Ways to participate": evidence upload + working the item directly, real links, more detail
 - [ ] Decision needed: activate Victor's program now (starts the 90-day clock) so he can log hours
+- [ ] Hero buttons readable (white-on-white) and actually navigate
