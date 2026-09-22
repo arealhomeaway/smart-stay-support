@@ -402,7 +402,7 @@ export function BudgetPanel({ propertyId, canEdit }: { propertyId: string; canEd
           {lines.length === 0 ? (
             <EmptyState
               title="No budget lines yet"
-              description="Add staging, furniture and contractor costs as they are quoted."
+              hint="Add staging, furniture and contractor costs as they are quoted."
             />
           ) : (
             lines.map((row) => (
