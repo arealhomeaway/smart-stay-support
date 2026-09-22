@@ -245,7 +245,11 @@ function OwnerHubBody({
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
       <WaysToParticipate
-        phase={program.phase === "onboarding" ? "onboarding" : "ongoing"}
+        phase={
+          program.status === "ready_for_onboarding" || program.status === "draft"
+            ? "onboarding"
+            : "ongoing"
+        }
         openReviews={openReviews.length}
       />
 
