@@ -96,7 +96,9 @@ it("lets trusted leadership assign eligible staff and rejects owner or malformed
     projectManager: other,
   });
   expect(result.project_manager).toBe(other);
-  expect(f.mutations.length).toBe(2);
+  // The project write, the property's owner field following it, and the event.
+  expect(f.mutations.length).toBe(3);
+  expect(f.mutations.some((m) => JSON.stringify(m).includes("onboarding_owner"))).toBe(true);
   for (const id of [owner, "A name or email"]) {
     const denied = fixture(true);
     await expectDenied(
