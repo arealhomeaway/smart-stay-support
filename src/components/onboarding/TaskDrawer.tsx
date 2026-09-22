@@ -789,13 +789,22 @@ export function TaskDrawer({
         {/* Last of all: sending something to the homeowner. */}
         <Separator />
         <section className="space-y-2">
-          <p className="eyebrow">Send to the homeowner</p>
+          <p className="eyebrow">
+            {activeOwnerStep ? "Send to the Active Owner" : "Send to the homeowner"}
+          </p>
+          {activeOwnerStep ? (
+            <p className="text-muted-foreground text-xs">
+              This step is tagged Active Owner — the homeowner does it. Sending puts it in their
+              portal as a task, with your instructions and any files you pick.
+            </p>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2">
             <SendToHomeownerDialog
               taskId={task.id}
               taskTitle={task.title}
               disabled={disabled || task.owner_approval_status === "approved"}
               alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
+              {...(activeOwnerStep ? { label: "Send to Active Owner" } : {})}
             />
             {task.owner_approval_status === "awaiting_owner" && (
               <span className="text-xs text-muted-foreground">
