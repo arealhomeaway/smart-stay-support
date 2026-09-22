@@ -253,6 +253,23 @@ export async function syncCoverageAlerts(supabase: Client, agg: ProgramAggregate
     });
   }
 
+  // Day 30 / 60 / 90 touchpoint for the assigned staff, once per checkpoint.
+  const s = agg.snapshot;
+  const checkpoint = milestoneWindow(s.day);
+  if (checkpoint && !agg.goalMet) {
+    const view = milestoneCheckpoints({ day: s.day, reportedHours: s.reportedHours }).find(
+      (c) => c.day === checkpoint,
+    );
+    const onPace = view?.state === "met";
+    rows.push({
+      title: `Day ${checkpoint} checkpoint for ${agg.program.ownerName ?? "this homeowner"}`,
+      body: onPace
+        ? `Day ${checkpoint} of 90 with ${s.reportedHours} hours entered — on pace. A short check-in call keeps it steady.`
+        : `Day ${checkpoint} of 90 with ${s.reportedHours} hours entered, about ${view?.shortfallHours ?? 0} behind the ${view?.expectedHours ?? 0}-hour pace point. Worth a personal touchpoint this week.`,
+      reason: `milestone_touchpoint_${checkpoint}`,
+    });
+  }
+
   const fresh = rows.filter((r) => !existing.has(r.title));
   if (fresh.length === 0) return;
 
