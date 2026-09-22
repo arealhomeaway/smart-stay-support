@@ -32,10 +32,6 @@ The packet names the people. The portal names nobody. The card makes the working
 
 Each person shows role, email and direct line; the packet's people are exact, the PM / utility manager / coordinator come from the home's assignments and fall back to the escalation contact when a seat is unfilled.
 
-## What I am not changing
-
-- The eight request categories, their wording, and the "what good completion looks like" behavior — already correct.
-- Anything that would state a number of hours to a homeowner or imply a tax result. The packet is careful here and so is the portal.
 
 ## 5. End-to-end test on a sample Active Owner home
 
