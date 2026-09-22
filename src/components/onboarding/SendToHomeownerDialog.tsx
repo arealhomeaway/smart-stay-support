@@ -117,6 +117,12 @@ export function SendToHomeownerDialog({
             />
           </div>
 
+          {/* Photos belong where they are sent from, not on the step's front page. */}
+          <div className="space-y-1.5">
+            <p className="eyebrow">Add a photo or document</p>
+            <AttachmentsPanel entityType="onboarding_task" entityId={taskId} title="" />
+          </div>
+
           <div className="space-y-1.5">
             <p className="eyebrow">Files to share with them</p>
             {shareable.length === 0 ? (
