@@ -19,10 +19,13 @@ export function WaysToParticipate({
   phase,
   pendingOnboardingActions = 0,
   openReviews = 0,
+  onLogHours,
 }: {
   phase: string | null | undefined;
   pendingOnboardingActions?: number;
   openReviews?: number;
+  /** Starts a self-recorded entry for this suggestion. */
+  onLogHours?: (activity: string) => void;
 }) {
   const prompts = buildParticipationPrompts({ phase, pendingOnboardingActions, openReviews });
   if (prompts.length === 0) return null;
@@ -43,6 +46,16 @@ export function WaysToParticipate({
             <p className="text-sm font-semibold">{p.title}</p>
             <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
             <p className="mt-2 text-xs text-muted-foreground">{p.relevance}</p>
+            {onLogHours && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3"
+                onClick={() => onLogHours(p.title)}
+              >
+                Log hours for this
+              </Button>
+            )}
             {LINKED_PROMPTS.has(p.id) && (
               <Button
                 size="sm"
