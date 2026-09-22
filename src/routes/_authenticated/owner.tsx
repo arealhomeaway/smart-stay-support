@@ -539,6 +539,32 @@ function ReviewRow({
   );
 }
 
+/** Opens the photo or receipt a homeowner attached to a logged entry. */
+function EvidenceLink({ entryId }: { entryId: string }) {
+  const getUrl = useServerFn(participationEvidenceUrlFn);
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const { url } = await getUrl({ data: { entryId, download: false } });
+          window.open(url, "_blank", "noopener");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Could not open the file");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Paperclip className="size-4" /> View attachment
+    </Button>
+  );
+}
+
 function LogTimeButton({
   review,
   programId,
