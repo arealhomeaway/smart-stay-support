@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { CalendarDays, NotebookPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -17,12 +16,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { DialogFooter } from "@/components/ui/dialog";
-import {
-  saveOnboardingMilestonesFn,
-  setOnboardingProgramTypeFn,
-} from "@/lib/onboarding.functions";
-import { autoHandoffDate, handoffExplainer, type HandoffDateSource } from "@/lib/onboarding-dates";
-import { usDate, usDateTime } from "@/lib/dates";
+import { setOnboardingProgramTypeFn } from "@/lib/onboarding.functions";
+import type { HandoffDateSource } from "@/lib/onboarding-dates";
+import { usDateTime } from "@/lib/dates";
 import { PersonAvatar } from "@/components/PersonAvatar";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
 
@@ -145,38 +141,6 @@ export function OnboardingDashboard({
         </DialogContent>
       </Dialog>
     </section>
-  );
-}
-
-function DateField({
-  label,
-  value,
-  onChange,
-  disabled,
-  hint,
-  placeholderDate,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  hint?: string;
-  placeholderDate?: string | null;
-}) {
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input
-        type="date"
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      {!value && placeholderDate && (
-        <p className="text-xs text-muted-foreground">Suggested: {usDate(placeholderDate)}</p>
-      )}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-    </div>
   );
 }
 
