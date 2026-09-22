@@ -59,6 +59,7 @@ import {
   type MessageAudience,
 } from "@/lib/email-composer";
 import { RecipientCombobox } from "@/components/RecipientCombobox";
+import { getMailboxStatus } from "@/lib/mailbox.functions";
 import {
   getComposerContext,
   getMessageHistory,
