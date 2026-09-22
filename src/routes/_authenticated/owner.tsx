@@ -220,23 +220,21 @@ function OwnerHubBody({
     );
   const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
 
-  // "Log hours" from the hero uses the first participation opportunity staff
-  // have opened; without one there is nothing to attach the time to.
+  // "Log hours" records whatever the homeowner did on their own initiative:
+  // a meeting, a phone call, research or an errand for their home.
   const [heroLogOpen, setHeroLogOpen] = useState(false);
-  const heroReview = openReviews[0] ?? availableReviews[0] ?? null;
-  const heroAnchor = heroReview
-    ? {
-        id: heroReview.id,
-        phase: heroReview.phase,
-        ticketId: heroReview.ticket_id,
-        propertyIds: heroReview.propertyIds,
-        ownerUpdateRevision: null,
-      }
-    : null;
-  // Anything the homeowner starts themselves is recorded with no anchor.
   const [heroLogActivity, setHeroLogActivity] = useState("");
-  const [heroManual, setHeroManual] = useState(true);
-  const heroLogAnchor = heroManual ? null : heroAnchor;
+  const heroLogAnchor = null;
+  const ownerPhase: "onboarding" | "ongoing" =
+    program.status === "ready_for_onboarding" ||
+    program.status === "draft" ||
+    openReviews.some((r) => r.phase === "onboarding")
+      ? "onboarding"
+      : "ongoing";
+  const openManualLog = (activity: string) => {
+    setHeroLogActivity(activity);
+    setHeroLogOpen(true);
+  };
   const scrollToSection = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -380,14 +378,9 @@ function OwnerHubBody({
 
       <WaysToParticipate
         // A home is still being set up when its open work is onboarding work.
-        phase={
-          program.status === "ready_for_onboarding" ||
-          program.status === "draft" ||
-          openReviews.some((r) => r.phase === "onboarding")
-            ? "onboarding"
-            : "ongoing"
-        }
+        phase={ownerPhase}
         openReviews={openReviews.length}
+        onLogHours={preview ? undefined : openManualLog}
       />
 
       <OwnerApprovalPanel readOnly={preview} />
