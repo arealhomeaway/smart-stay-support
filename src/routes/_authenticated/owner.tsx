@@ -95,9 +95,24 @@ type Review = {
   propertyIds: string[];
 };
 
-function firstName(name: string | null | undefined) {
-  const first = (name ?? "").trim().split(/\s+/)[0];
-  return first || "there";
+/** Company suffixes: an entity name is never used to greet a person. */
+const ENTITY_WORDS = /\b(llc|l\.l\.c|inc|incorporated|corp|co|company|ltd|limited|trust|holdings|properties|partners|group|enterprises|solutions|rentals|realty|investments|lp|llp)\b/i;
+
+/**
+ * The homeowner's own first name. The owner record is often an entity
+ * ("VP Housing Solutions LLC"), whose first word reads as initials, so the
+ * signed-in person's own name wins whenever we have it.
+ */
+function firstName(...candidates: (string | null | undefined)[]) {
+  for (const candidate of candidates) {
+    const name = (candidate ?? "").trim();
+    if (!name || ENTITY_WORDS.test(name)) continue;
+    const first = name.split(/\s+/)[0] ?? "";
+    // Two-letter all-caps reads as initials, not a name.
+    if (first.length < 2 || /^[A-Z]+$/.test(first)) continue;
+    return first;
+  }
+  return "there";
 }
 
 function OwnerHub() {
