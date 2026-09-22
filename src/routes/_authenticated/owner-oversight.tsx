@@ -144,9 +144,14 @@ function OwnerOversightPage() {
         title="Program oversight"
         description="Every enrolled homeowner on one screen: hours they have reported against the program's own pace, the checkpoints coming due, and what is still waiting on them."
         actions={
-          <Button asChild variant="outline">
-            <Link to="/owner-programs">Open program admin</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link to="/oversight-access-log">Access log</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/owner-programs">Open program admin</Link>
+            </Button>
+          </div>
         }
       />
 
