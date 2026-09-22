@@ -5,6 +5,7 @@
  * logs whatever time they actually spend. No tax claims are made here.
  */
 import { Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/page";
 import {
   buildParticipationPrompts,
@@ -39,6 +40,20 @@ export function WaysToParticipate({
             <p className="text-sm font-semibold">{p.title}</p>
             <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
             <p className="mt-2 text-xs text-muted-foreground">{p.relevance}</p>
+            {LINKED_PROMPTS.has(p.id) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="mt-2 px-0"
+                onClick={() =>
+                  document
+                    .getElementById("owner-decisions")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+              >
+                Go to what is waiting on you
+              </Button>
+            )}
           </div>
         ))}
       </div>
