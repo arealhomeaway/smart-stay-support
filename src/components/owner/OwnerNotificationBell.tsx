@@ -32,7 +32,9 @@ export function OwnerNotificationBell() {
     queryKey: ["owner-home-nav"],
     queryFn: () => load(),
     staleTime: 60_000,
-    refetchInterval: 120_000,
+    // Keep the bell current while an owner is already in the portal and staff
+    // dispatches a new onboarding task from another session.
+    refetchInterval: 15_000,
   });
 
   const alerts: Alert[] = home.data && home.data.linked ? home.data.alerts : [];

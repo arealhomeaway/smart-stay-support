@@ -675,6 +675,7 @@ Batch B (work surface)
 - [ ] Owner manual hour logging (any activity, not only meetings)
 - [ ] Restore/verify owner participation suggestion ideas (e.g. research nearby restaurants, things to do)
 - [ ] Owner cannot open account settings from the portal — investigate and fix
-- [ ] Send-to-homeowner from onboarding: evidence/attachments, instructions and link not reaching the owner portal
-- [ ] Owner "Needs your attention": group/label items per property; add a notification badge on the Active Owner view
+- [x] Send-to-homeowner from onboarding: evidence/attachments, instructions and link reach the owner portal
+- [x] Owner "Needs your attention": group/label items per property; add a notification badge on the Active Owner view
+- [x] Every published onboarding task creates an unread Active Owner bell notification
 - [ ] Owner page: home cards open a read-only property detail view (mirrors Property Hub details)
