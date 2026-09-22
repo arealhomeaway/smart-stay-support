@@ -24,7 +24,7 @@ import type { TemplateTask } from "./onboarding-template";
 type Client = SupabaseClient<Database>;
 
 const TASK_COLUMNS =
-  "id, template_id, stage, title, role, detail, sort_order, blocks_handoff, requires_owner_approval, owner_approval_when_active_owner, evidence_required, schedule_anchor, offset_days, breezeway_template_id, subtasks";
+  "id, template_id, stage, title, role, detail, sort_order, blocks_handoff, requires_owner_approval, owner_approval_when_active_owner, evidence_required, schedule_anchor, offset_days, breezeway_template_id, subtasks, tags";
 
 async function assertOnboardingStaff(supabase: Client, userId: string) {
   const { data, error } = await supabase.rpc("is_onboarding_staff", { _user_id: userId });
@@ -275,6 +275,48 @@ export async function updateOnboardingTemplate(
   return { ok: true as const };
 }
 
+/**
+ * Removing a plan outright. The built-in ARHA plan stays — every home falls
+ * back to it — and its steps go with it, so nothing is left orphaned.
+ */
+export async function deleteOnboardingTemplate(
+  supabase: Client,
+  userId: string,
+  input: { templateId: string },
+  audit: typeof writeAudit = writeAudit,
+) {
+  await assertSupervisor(supabase, userId);
+  const found = await supabase
+    .from("onboarding_templates")
+    .select("id, key, name")
+    .eq("id", input.templateId)
+    .maybeSingle();
+  if (found.error) throw found.error;
+  if (!found.data) throw new Error("That plan no longer exists.");
+  if (found.data.key === BUILT_IN_TEMPLATE_KEY)
+    throw new Error("The ARHA plan is the fallback for every home and cannot be deleted.");
+
+  const steps = await supabase
+    .from("onboarding_template_tasks")
+    .delete()
+    .eq("template_id", input.templateId);
+  if (steps.error) throw steps.error;
+  const { error } = await supabase
+    .from("onboarding_templates")
+    .delete()
+    .eq("id", input.templateId);
+  if (error) throw error;
+
+  await audit({
+    actorId: userId,
+    action: "onboarding_template_deleted",
+    entityType: "onboarding_template",
+    entityId: input.templateId,
+    entityLabel: found.data.name,
+  });
+  return { ok: true as const };
+}
+
 export async function setDefaultOnboardingTemplate(
   supabase: Client,
   userId: string,
@@ -308,6 +350,16 @@ export async function setDefaultOnboardingTemplate(
   return { ok: true as const };
 }
 
+/** Lower-case, trimmed, de-duplicated. "active_owner" is the reserved one. */
+export function normaliseTags(tags: string[] | undefined) {
+  const out: string[] = [];
+  for (const raw of tags ?? []) {
+    const tag = raw.trim().toLowerCase().replace(/\s+/g, "_").slice(0, 40);
+    if (tag && !out.includes(tag)) out.push(tag);
+  }
+  return out.slice(0, 10);
+}
+
 export type TemplateStepInput = {
   templateId: string;
   stepId?: string | undefined;
@@ -324,6 +376,7 @@ export type TemplateStepInput = {
   offsetDays?: number | null | undefined;
   breezewayTemplateId?: string | null | undefined;
   subtasks?: string[] | undefined;
+  tags?: string[] | undefined;
 };
 
 export async function saveTemplateStep(
@@ -364,6 +417,7 @@ export async function saveTemplateStep(
     offset_days: input.scheduleAnchor ? (input.offsetDays ?? 0) : null,
     breezeway_template_id: input.breezewayTemplateId?.trim() || null,
     subtasks: (input.subtasks ?? []).map((s) => s.trim()).filter(Boolean),
+    tags: normaliseTags(input.tags),
     ...(sortOrder === null ? {} : { sort_order: sortOrder }),
   };
 
@@ -411,6 +465,50 @@ export async function deleteTemplateStep(
     after: { step: input.stepId },
   });
   return { ok: true as const };
+}
+
+/**
+ * Save a whole new arrangement: which stage each step sits in and the order
+ * within it. The caller sends the complete list, so a step dragged into
+ * another stage and the renumbering that follows are one save; only rows that
+ * actually moved are written.
+ */
+export async function arrangeTemplateSteps(
+  supabase: Client,
+  userId: string,
+  input: { templateId: string; order: { stepId: string; stage: string }[] },
+) {
+  await assertSupervisor(supabase, userId);
+  const rows = await supabase
+    .from("onboarding_template_tasks")
+    .select("id, stage, sort_order")
+    .eq("template_id", input.templateId);
+  if (rows.error) throw rows.error;
+
+  const current = new Map((rows.data ?? []).map((r) => [r.id, r]));
+  if (input.order.length !== current.size) {
+    throw new Error("The plan changed while you were arranging it. Refresh and try again.");
+  }
+  for (const entry of input.order) {
+    if (!current.has(entry.stepId)) {
+      throw new Error("The plan changed while you were arranging it. Refresh and try again.");
+    }
+  }
+
+  let moved = 0;
+  for (const [index, entry] of input.order.entries()) {
+    const row = current.get(entry.stepId)!;
+    const sortOrder = (index + 1) * 10;
+    if (row.stage === entry.stage && row.sort_order === sortOrder) continue;
+    const write = await supabase
+      .from("onboarding_template_tasks")
+      .update({ stage: entry.stage, sort_order: sortOrder })
+      .eq("id", entry.stepId)
+      .eq("template_id", input.templateId);
+    if (write.error) throw write.error;
+    moved += 1;
+  }
+  return { ok: true as const, moved };
 }
 
 /** Move one step up or down in the plan order. */

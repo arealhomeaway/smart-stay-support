@@ -692,3 +692,9 @@ Batch B (work surface)
 - [x] Active Owner contacts: utility manager captured on the project (editable in Edit scope, shown to the homeowner); Kati set as PM on both of Victor's homes
 
 - [x] Scope editor on a home: onboarding plan picker (adds missing steps, never duplicates); ARHA plan editable in place, no duplicate needed
+
+- [ ] Template steps: tags, an "Active Owner" tag shown in its own colour, and a "Send to Active Owner" action on tagged steps so the homeowner gets it as a task
+- [ ] Templates: apply a chosen plan to homes already in onboarding (Victor's two), with "new steps only" vs "new and existing" update modes; template picker in the scope panel chosen per property
+- [ ] Import all Asana project templates into Resolve templates (editable copies) from the uploaded asana_project_templates.json
+- [x] Templates page: close the expanded "Edit steps" list; allow the director to delete a template outright (not just archive)
+- [x] Property dates (closing, possession/access, handoff) must read the same on every page and section — one source of truth

@@ -32,11 +32,14 @@ export function SendToHomeownerDialog({
   taskTitle,
   disabled,
   alreadyWaiting,
+  label,
 }: {
   taskId: string;
   taskTitle: string;
   disabled: boolean;
   alreadyWaiting: boolean;
+  /** An Active Owner step says so on the button; everything else reads plainly. */
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -83,7 +86,7 @@ export function SendToHomeownerDialog({
       <DialogTrigger asChild>
         <Button size="sm" disabled={disabled} className="gap-1.5">
           <Send className="size-4" aria-hidden />
-          Send to homeowner
+          {label ?? "Send to homeowner"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">

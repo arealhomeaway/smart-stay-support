@@ -295,6 +295,7 @@ export const applyOnboardingTemplateFn = createServerFn({ method: "POST" })
       .object({
         propertyId: z.string().uuid(),
         templateId: z.string().uuid().nullable().default(null),
+        mode: z.enum(["new", "new_and_existing"]).default("new"),
       })
       .parse(data),
   )

@@ -89,6 +89,7 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
       )
         throw new Error(`Unexpected owner contact or other access: ${table}`);
       let inserted: Task[] | null = null;
+      let patched: Record<string, unknown> | null = null;
       const matches: ((row: Task) => boolean)[] = [];
       const result = () => ({
         data:
@@ -148,7 +149,19 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
           tasks.push(...inserted);
           return query;
         },
-        then: (resolve: (value: unknown) => unknown) => Promise.resolve(result()).then(resolve),
+        update: (patch: Record<string, unknown>) => {
+          if (table !== "onboarding_tasks") throw new Error("Unexpected non-task write");
+          patched = patch;
+          return query;
+        },
+        then: (resolve: (value: unknown) => unknown) => {
+          if (patched) {
+            for (const task of tasks.filter((t) => matches.every((m) => m(t))))
+              Object.assign(task, patched);
+            return Promise.resolve({ data: null, error: null }).then(resolve);
+          }
+          return Promise.resolve(result()).then(resolve);
+        },
       };
       return query;
     },
@@ -166,7 +179,12 @@ describe("onboarding template setup", () => {
       f.saveAudit,
     );
     const counts = templateCounts();
-    expect(result).toEqual({ created: counts.tasks, subtasksCreated: counts.subtasks, skipped: 0 });
+    expect(result).toEqual({
+      created: counts.tasks,
+      refreshed: 0,
+      subtasksCreated: counts.subtasks,
+      skipped: 0,
+    });
     expect(f.approvals.size).toBe(counts.ownerApprovals);
     expect(f.tasks.every((task) => task.is_demo && task.property_id === "qa-home")).toBe(true);
     expect(f.reads.includes("approvals")).toBe(false);
@@ -198,7 +216,12 @@ describe("onboarding template setup", () => {
       { propertyId: "qa-home" },
       f.saveAudit,
     );
-    expect(result).toEqual({ created: 0, subtasksCreated: counts.subtasks, skipped: counts.tasks });
+    expect(result).toEqual({
+      created: 0,
+      refreshed: 0,
+      subtasksCreated: counts.subtasks,
+      skipped: counts.tasks,
+    });
     expect(f.tasks.filter((task) => !task.parent_task_id).map((task) => task.id)).toEqual(savedIds);
     expect(f.approvals.get(originalTaskId)).toBe("original-pending-approval");
     expect(f.approvals.size).toBe(counts.ownerApprovals);
@@ -213,7 +236,7 @@ describe("onboarding template setup", () => {
       { propertyId: "qa-home" },
       f.saveAudit,
     );
-    expect(retried).toEqual({ created: 0, subtasksCreated: 0, skipped: counts.tasks });
+    expect(retried).toEqual({ created: 0, refreshed: 0, subtasksCreated: 0, skipped: counts.tasks });
     expect([...f.approvals]).toEqual(savedApprovals);
     expect(f.tasks).toHaveLength(counts.tasks + counts.subtasks);
     const complete = await previewOnboardingTemplate(f.db as never, "staff", {
@@ -239,5 +262,20 @@ describe("onboarding template setup", () => {
     );
     expect(message).toContain("Only a current real property can route an owner decision");
     expect(f.approvals.get(task.id)).toBe("original-pending-approval");
+  });
+
+  it("refreshes steps already on the home when asked for new and existing", async () => {
+    const f = fixture(true);
+    const open = f.tasks.find((t) => !t.parent_task_id)!;
+    open.detail = "stale wording";
+    const result = await applyOnboardingTemplate(
+      f.db as never,
+      "staff",
+      { propertyId: "qa-home", mode: "new_and_existing" },
+      f.saveAudit,
+    );
+    expect(result.created).toBe(0);
+    expect(result.refreshed).toBeGreaterThan(0);
+    expect(open.detail).not.toBe("stale wording");
   });
 });

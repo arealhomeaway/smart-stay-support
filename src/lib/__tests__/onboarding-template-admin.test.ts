@@ -8,6 +8,7 @@ import {
   type TemplateTaskRow,
 } from "../onboarding-template-catalog";
 import {
+  arrangeTemplateSteps,
   createOnboardingTemplate,
   ensureBuiltInTemplate,
   saveTemplateStep,
@@ -182,5 +183,66 @@ describe("the built-in plan is edited in place, never duplicated", () => {
     await expect(ensureBuiltInTemplate(gatedDb(false), "pm", async () => {})).rejects.toThrow(
       "Only the onboarding director can change templates.",
     );
+  });
+});
+
+describe("arranging the plan", () => {
+  function arrangeDb(rows: { id: string; stage: string; sort_order: number }[]) {
+    const writes: { id: string; patch: Record<string, unknown> }[] = [];
+    const client = {
+      rpc: async () => ({ data: true, error: null }),
+      from: () => {
+        let patch: Record<string, unknown> | null = null;
+        let id = "";
+        const query = {
+          select: () => query,
+          eq: (k: string, v: unknown) => {
+            if (patch && k === "id") id = v as string;
+            return query;
+          },
+          update: (value: Record<string, unknown>) => {
+            patch = value;
+            return query;
+          },
+          then: (resolve: (v: unknown) => unknown) => {
+            if (patch) writes.push({ id, patch });
+            return resolve({ data: patch ? null : rows, error: null });
+          },
+        };
+        return query;
+      },
+    } as never;
+    return { client, writes };
+  }
+
+  it("moves a step into another stage and renumbers only what moved", async () => {
+    const rows = [
+      { id: "a", stage: "setup", sort_order: 10 },
+      { id: "b", stage: "setup", sort_order: 20 },
+      { id: "c", stage: "final_prep", sort_order: 30 },
+    ];
+    const { client, writes } = arrangeDb(rows);
+    const result = await arrangeTemplateSteps(client, "director", {
+      templateId: "t",
+      order: [
+        { stepId: "a", stage: "setup" },
+        { stepId: "c", stage: "setup" },
+        { stepId: "b", stage: "final_prep" },
+      ],
+    });
+    expect(result.moved).toBe(2);
+    expect(writes.map((w) => w.id)).toEqual(["c", "b"]);
+    expect(writes[0]!.patch).toEqual({ stage: "setup", sort_order: 20 });
+    expect(writes[1]!.patch).toEqual({ stage: "final_prep", sort_order: 30 });
+  });
+
+  it("refuses an arrangement that does not match the plan", async () => {
+    const { client } = arrangeDb([{ id: "a", stage: "setup", sort_order: 10 }]);
+    await expect(
+      arrangeTemplateSteps(client, "director", {
+        templateId: "t",
+        order: [{ stepId: "ghost", stage: "setup" }],
+      }),
+    ).rejects.toThrow("Refresh and try again.");
   });
 });

@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CopyPlus, LayoutTemplate, Star } from "lucide-react";
+import { CopyPlus, LayoutTemplate, Star, Trash2, X } from "lucide-react";
 import { PageHeader } from "@/components/ui/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { TemplateEditor } from "@/components/onboarding/TemplateEditor";
 import { useRole } from "@/hooks/useRole";
 import {
   createOnboardingTemplateFn,
+  deleteOnboardingTemplateFn,
   ensureBuiltInTemplateFn,
   listOnboardingTemplatesFn,
   setDefaultOnboardingTemplateFn,
@@ -66,6 +67,7 @@ function TemplatesPage() {
   const update = useServerFn(updateOnboardingTemplateFn);
   const setDefault = useServerFn(setDefaultOnboardingTemplateFn);
   const ensureBuiltIn = useServerFn(ensureBuiltInTemplateFn);
+  const remove = useServerFn(deleteOnboardingTemplateFn);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
@@ -126,6 +128,16 @@ function TemplatesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const doDelete = useMutation({
+    mutationFn: (templateId: string) => remove({ data: { templateId } }),
+    onSuccess: (_r, templateId) => {
+      toast.success("Plan deleted.");
+      setSelected((current) => (current === templateId ? null : current));
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (!allowed) {
     return (
       <p className="text-muted-foreground">
@@ -181,14 +193,18 @@ function TemplatesPage() {
                     size="sm"
                     variant="outline"
                     disabled={editBuiltIn.isPending}
-                    onClick={() => editBuiltIn.mutate()}
+                    onClick={() => (selected ? setSelected(null) : editBuiltIn.mutate())}
                   >
-                    {editBuiltIn.isPending ? "Opening…" : "Edit steps"}
+                    {editBuiltIn.isPending ? "Opening…" : selected ? "Close steps" : "Edit steps"}
                   </Button>
                 ) : (
                   <>
-                    <Button size="sm" variant="outline" onClick={() => setSelected(t.id)}>
-                      Edit steps
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelected(selected === t.id ? null : t.id)}
+                    >
+                      {selected === t.id ? "Close steps" : "Edit steps"}
                     </Button>
                     <Button
                       size="sm"
@@ -209,6 +225,23 @@ function TemplatesPage() {
                     >
                       {t.isArchived ? "Restore" : "Archive"}
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      // The plan every new home falls back to must stay available.
+                      disabled={t.builtIn || doDelete.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Delete "${t.name}"? Its steps go with it. Homes already set up from it keep their work.`,
+                          )
+                        )
+                          doDelete.mutate(t.id as string);
+                      }}
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" /> Delete
+                    </Button>
                   </>
                 )}
               </div>
@@ -222,7 +255,16 @@ function TemplatesPage() {
         </CardContent>
       </Card>
 
-      {selected ? <TemplateEditor templateId={selected} /> : null}
+      {selected ? (
+        <div className="space-y-2">
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={() => setSelected(null)}>
+              <X className="mr-1 h-4 w-4" /> Close steps
+            </Button>
+          </div>
+          <TemplateEditor templateId={selected} />
+        </div>
+      ) : null}
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent>

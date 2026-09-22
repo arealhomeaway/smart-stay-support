@@ -60,6 +60,16 @@ export const updateOnboardingTemplateFn = createServerFn({ method: "POST" })
     return updateOnboardingTemplate(context.supabase, context.userId, data);
   });
 
+export const deleteOnboardingTemplateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ templateId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { deleteOnboardingTemplate } = await import("./onboarding-template-admin.server");
+    return deleteOnboardingTemplate(context.supabase, context.userId, data);
+  });
+
 export const setDefaultOnboardingTemplateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -89,6 +99,7 @@ export const saveTemplateStepFn = createServerFn({ method: "POST" })
         offsetDays: z.number().int().min(-90).max(365).nullable().default(null),
         breezewayTemplateId: z.string().trim().max(60).optional(),
         subtasks: z.array(z.string().trim().max(200)).max(50).default([]),
+        tags: z.array(z.string().trim().max(40)).max(10).default([]),
       })
       .parse(data),
   )
@@ -105,6 +116,24 @@ export const deleteTemplateStepFn = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { deleteTemplateStep } = await import("./onboarding-template-admin.server");
     return deleteTemplateStep(context.supabase, context.userId, data);
+  });
+
+export const arrangeTemplateStepsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        templateId: z.string().uuid(),
+        order: z
+          .array(z.object({ stepId: z.string().uuid(), stage: z.string().min(1) }))
+          .min(1)
+          .max(1000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { arrangeTemplateSteps } = await import("./onboarding-template-admin.server");
+    return arrangeTemplateSteps(context.supabase, context.userId, data);
   });
 
 export const reorderTemplateStepFn = createServerFn({ method: "POST" })

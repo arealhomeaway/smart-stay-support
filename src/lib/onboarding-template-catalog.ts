@@ -27,6 +27,7 @@ export type TemplateTaskRow = {
   offset_days: number | null;
   breezeway_template_id: string | null;
   subtasks: string[] | null;
+  tags?: string[] | null;
 };
 
 export type TemplateRow = {
@@ -79,6 +80,8 @@ export function toTemplateTask(row: TemplateTaskRow): TemplateTask {
   if (row.breezeway_template_id) task.breezewayTemplateId = row.breezeway_template_id;
   const subs = (row.subtasks ?? []).map((s) => s.trim()).filter(Boolean);
   if (subs.length) task.subtasks = subs;
+  const tags = (row.tags ?? []).map((t) => t.trim()).filter(Boolean);
+  if (tags.length) task.tags = tags;
   return task;
 }
 
@@ -122,6 +125,7 @@ export function builtInAsRows(templateId: string) {
     offset_days: t.offsetDays ?? null,
     breezeway_template_id: t.breezewayTemplateId ?? null,
     subtasks: t.subtasks ?? [],
+    tags: t.tags ?? [],
   }));
 }
 

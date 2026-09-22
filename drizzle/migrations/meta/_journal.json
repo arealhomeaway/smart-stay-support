@@ -176,6 +176,13 @@
       "when": 1790118494939,
       "tag": "0024_onboarding_project_utility_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790120045861,
+      "tag": "0025_onboarding_step_tags",
+      "breakpoints": true
     }
   ]
 }

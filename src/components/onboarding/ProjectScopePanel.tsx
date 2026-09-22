@@ -123,8 +123,12 @@ export function ProjectScopePanel({
   });
   const applyPlan = useMutation({
     mutationFn: useServerFn(applyOnboardingTemplateFn),
-    onSuccess: (r: { created: number }) => {
-      if (r.created > 0) toast.success(`${r.created} step${r.created === 1 ? "" : "s"} added.`);
+    onSuccess: (r: { created: number; refreshed: number }) => {
+      const parts: string[] = [];
+      if (r.created > 0) parts.push(`${r.created} step${r.created === 1 ? "" : "s"} added`);
+      if (r.refreshed > 0) parts.push(`${r.refreshed} updated from the plan`);
+      if (parts.length) toast.success(`${parts.join(", ")}.`);
+      else toast.success("This home already matches the plan.");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -218,6 +222,7 @@ export function ProjectScopePanel({
                 director: project.director,
                 utilityManager: project.utility_manager ?? null,
                 templateId: null,
+                templateMode: "new" as const,
                 plannedClosingOn: project.planned_closing_on ?? "",
                 possessionOn: project.possession_on ?? "",
                 targetHandoffOn: project.target_handoff_on ?? "",
@@ -239,6 +244,7 @@ export function ProjectScopePanel({
                 director: data?.assignments.directorId ?? null,
                 utilityManager: null,
                 templateId: null,
+                templateMode: "new" as const,
                 plannedClosingOn: hints?.planned_closing_on ?? "",
                 possessionOn: "",
                 targetHandoffOn: "",
@@ -269,7 +275,9 @@ export function ProjectScopePanel({
               },
             });
             if (v.templateId) {
-              applyPlan.mutate({ data: { propertyId, templateId: v.templateId } });
+              applyPlan.mutate({
+                data: { propertyId, templateId: v.templateId, mode: v.templateMode },
+              });
             }
           } else {
             start.mutate({
@@ -307,6 +315,7 @@ type ScopeValues = {
   director: string | null;
   utilityManager: string | null;
   templateId: string | null;
+  templateMode: "new" | "new_and_existing";
   plannedClosingOn: string;
   possessionOn: string;
   targetHandoffOn: string;
@@ -522,9 +531,25 @@ function ScopeDialog({
                 ))}
               </SelectContent>
             </Select>
+            {editing && v.templateId ? (
+              <Select
+                value={v.templateMode}
+                onValueChange={(m) =>
+                  setV((p) => ({ ...p, templateMode: m as ScopeValues["templateMode"] }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New steps only</SelectItem>
+                  <SelectItem value="new_and_existing">New and existing steps</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : null}
             <p className="text-muted-foreground text-xs">
               {editing
-                ? "Choosing a plan adds any of its steps this home is missing. Work already here is never duplicated or removed."
+                ? "Choosing a plan adds any of its steps this home is missing. \u201cNew and existing\u201d also refreshes the steps already here — wording, tags, rules and dates — leaving finished work and dates you set by hand alone."
                 : "The plan this home's steps are created from."}
             </p>
           </div>
