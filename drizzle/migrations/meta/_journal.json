@@ -148,6 +148,13 @@
       "when": 1790110890233,
       "tag": "0020_owner_co_owner_contact",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790113331512,
+      "tag": "0021_owner_manual_time_entries",
+      "breakpoints": true
     }
   ]
 }
