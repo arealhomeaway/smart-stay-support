@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/dialog";
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
-import type { ProgramPropertyRow } from "@/lib/owner-participation.server";
 import { LogTimeDialog } from "@/components/owner/LogTimeDialog";
 import { WaysToParticipate } from "@/components/owner/WaysToParticipate";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
@@ -602,6 +601,25 @@ function reviewTone(status: string): StatusTone {
   return "review";
 }
 
+type OwnerHome = {
+  id: string;
+  propertyId: string;
+  name: string;
+  address: string;
+  photoUrl: string | null;
+  closingDate: string | null;
+  closingConfirmed: boolean;
+  addedOn: string;
+  inclusionStatus: string;
+  onboardingStatus: string;
+  launchStatus: string;
+  lastOwnerActivityAt: string | null;
+  requiredTasks: number;
+  completedTasks: number;
+  outstandingDecisions: number;
+  overdueDecisions: number;
+};
+
 /**
  * A homeowner's own home, opened read-only. Same details staff see in the
  * Property Hub, minus anything operational they cannot act on.
@@ -610,7 +628,7 @@ function OwnerPropertyCard({
   property,
   attention,
 }: {
-  property: ProgramPropertyRow;
+  property: OwnerHome;
   attention: number;
 }) {
   const [open, setOpen] = useState(false);
