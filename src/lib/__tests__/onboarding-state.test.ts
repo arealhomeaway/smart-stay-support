@@ -75,9 +75,9 @@ describe("release integrity", () => {
       handoff: null,
     });
   }
-  it("does not treat a past planned closing as confirmed closing", () => {
+  it("lets milestone-anchored work be done before the milestone lands", () => {
     const t = task({ schedule_anchor: "actual_closing" });
-    expect(releaseState(t, [t], context(t)).canComplete).toBe(false);
+    expect(releaseState(t, [t], context(t)).canComplete).toBe(true);
   });
   it("allows pre-close work scheduled relative to planned closing", () => {
     const t = task({
@@ -87,10 +87,11 @@ describe("release integrity", () => {
     });
     expect(releaseState(t, [t], context(t)).canComplete).toBe(true);
   });
-  it("keeps missing prerequisites blocking", () => {
+  it("treats prerequisites as advice, never as a block", () => {
     const t = task({ depends_on: ["missing"] });
-    expect(releaseState(t, [t], context(t)).state).toBe("waiting");
+    expect(releaseState(t, [t], context(t)).state).toBe("ready");
   });
+
   it("requires evidence again for reopened work", () => {
     const t = task({ completed_at: "2026-01-10T00:00:00Z", evidence_required: true });
     expect(releaseState(t, [t], context(t)).canComplete).toBe(false);
