@@ -252,7 +252,7 @@ function ComposerBody({
     const picked = templates.find((t) => t.id === id);
     if (!picked) return;
     setSubject(applyMergeFields(picked.subject, mergeValues));
-    setBody(applyMergeFields(picked.body, mergeValues));
+    setBody(withSignature(applyMergeFields(picked.body, mergeValues), signature));
     setAudience(picked.audience as MessageAudience);
     const match = recipients.find((r) => r.audience === picked.audience);
     if (match) setRecipientKey(match.email);
