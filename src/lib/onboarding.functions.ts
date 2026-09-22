@@ -277,6 +277,23 @@ export const submitOwnerApprovalFn = createServerFn({ method: "POST" })
     return submitOwnerApproval(context.supabase, context.userId, data);
   });
 
+export const sendTaskToOwnerFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        note: z.string().trim().min(5).max(2000),
+        version: z.string().trim().max(120).default(""),
+        documentIds: z.array(z.string().uuid()).max(25).default([]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { sendTaskToOwner } = await import("./onboarding.server");
+    return sendTaskToOwner(context.supabase, context.userId, data);
+  });
+
 export const recordOwnerTaskDecisionFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
