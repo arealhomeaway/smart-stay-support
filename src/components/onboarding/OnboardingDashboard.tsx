@@ -111,17 +111,20 @@ export function OnboardingDashboard({
           <CalendarDays className="size-4 text-muted-foreground" />
           <p className="eyebrow">Key dates</p>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="ml-auto"
-          onClick={() => setOpenNotes(true)}
-        >
-          <NotebookPen className="mr-1.5 size-4" />
-          Notes ({notes.length})
-        </Button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <ProgramTypeControl
+            propertyId={propertyId}
+            activeOwner={activeOwner}
+            canEdit={canEdit}
+          />
+          <Button type="button" size="sm" variant="outline" onClick={() => setOpenNotes(true)}>
+            <NotebookPen className="mr-1.5 size-4" />
+            Notes ({notes.length})
+          </Button>
+        </div>
       </div>
+
+      <HomeownerCard propertyId={propertyId} canManage={canEdit} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <DateField
