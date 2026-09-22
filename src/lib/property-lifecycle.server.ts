@@ -116,7 +116,16 @@ export async function switchPropertyLifecycle(
       .from("properties")
       .update({ lifecycle_status: "active_operations" })
       .eq("id", input.propertyId);
-    if (moved.error) throw moved.error;
+    if (moved.error) {
+      // The database keeps the handoff review chain as the only way out of
+      // onboarding, so say that plainly instead of leaking the raw guard text.
+      if (current === "onboarding") {
+        throw new Error(
+          "A home leaves onboarding through the handoff review, not this switch. Send it for handoff from the onboarding hub.",
+        );
+      }
+      throw new Error(moved.error.message);
+    }
   }
 
   await writeAudit({
