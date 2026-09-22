@@ -37,6 +37,18 @@ Each person shows role, email and direct line; the packet's people are exact, th
 - The eight request categories, their wording, and the "what good completion looks like" behavior — already correct.
 - Anything that would state a number of hours to a homeowner or imply a tax result. The packet is careful here and so is the portal.
 
+## 5. End-to-end test on a sample Active Owner home
+
+Once the four pieces are in, I run the whole journey against a sample Active Owner property rather than spot-checking screens. For each of the six phases — Initial Onboarding, Design Alignment, Setup Progress, Owner Handoff, First Confirmed Booking, Day-90 Review — I confirm:
+
+- the trigger that moves the home into that phase actually fires and the journey strip advances,
+- a request of each type that belongs to that phase can be raised, reaches the homeowner's queue, and is labeled with the right category,
+- the deadline shows in Central Time, goes overdue on time, and the overdue state is visible to both the homeowner and the supervisor,
+- the notification reaches the assigned staff member and the homeowner check-in reminder fires in its milestone window,
+- the decision the homeowner makes writes through to the task and cannot be overwritten.
+
+I report the result phase by phase, naming anything that did not fire. Email delivery is still blocked until the ARHA mailbox reconnects, so mail steps are verified as far as the queued, correctly addressed message and flagged as unsent.
+
 ## Technical notes
 
 - New `src/lib/owner-journey.ts` (pure): the six packet milestones, plus a function deriving current stage from the existing program/onboarding/booking signals. Unit tested.
