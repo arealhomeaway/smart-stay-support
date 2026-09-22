@@ -5,7 +5,20 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const homeownerDirectory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { assertDirectoryAccess, loadHomeowners } = await import("./homeowners.server");
-    await assertDirectoryAccess(context.supabase, context.userId);
-    return loadHomeowners(context.supabase);
+    const { requireLeadership, recordOversightAccess } = await import("./oversight-access.server");
+    const { loadHomeowners } = await import("./homeowners.server");
+    const role = await requireLeadership(
+      context.supabase,
+      context.userId,
+      "The homeowner directory",
+    );
+    const result = await loadHomeowners(context.supabase);
+    await recordOversightAccess({
+      actorId: context.userId,
+      role,
+      action: "homeowner_directory_viewed",
+      entityType: "homeowner_directory",
+      recordCount: result.rows.length,
+    });
+    return result;
   });
