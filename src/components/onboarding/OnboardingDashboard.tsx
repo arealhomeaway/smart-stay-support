@@ -17,7 +17,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { DialogFooter } from "@/components/ui/dialog";
 import { setOnboardingProgramTypeFn } from "@/lib/onboarding.functions";
-import type { HandoffDateSource } from "@/lib/onboarding-dates";
 import { usDateTime } from "@/lib/dates";
 import { PersonAvatar } from "@/components/PersonAvatar";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
@@ -37,11 +36,6 @@ type Person = { id: string; full_name: string | null; email: string | null };
  */
 export function OnboardingDashboard({
   propertyId,
-  plannedClosingOn,
-  actualClosingOn,
-  actualAccessOn,
-  targetHandoffOn,
-  handoffSource,
   activeOwner,
   canEdit,
   done,
@@ -51,11 +45,6 @@ export function OnboardingDashboard({
   taskTitle,
 }: {
   propertyId: string;
-  plannedClosingOn: string | null;
-  actualClosingOn: string | null;
-  actualAccessOn: string | null;
-  targetHandoffOn: string | null;
-  handoffSource: HandoffDateSource;
   activeOwner: boolean;
   canEdit: boolean;
   done: number;
