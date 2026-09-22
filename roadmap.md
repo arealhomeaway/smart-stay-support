@@ -554,3 +554,4 @@ is now doable from Resolve.
 - [x] Verify all three recipient paths in the live preview
 - [x] Inline validation on typed addresses; Send stays off until every recipient is valid
 - [x] Add saved/previous contacts straight into the recipient chips (To/Cc/Bcc)
+- [ ] Availability Finder pricing: add partner fees and special pricing to the estimated quote (rules pending from Emily)
