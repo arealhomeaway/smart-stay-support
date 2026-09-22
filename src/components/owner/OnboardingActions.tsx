@@ -311,6 +311,21 @@ export function OnboardingActions({
       </SectionCard>
 
       <OnboardingProgress homes={data.homes} />
+
+      {logPrompt && data.programId && (
+        <LogTimeDialog
+          open={logOpen}
+          onOpenChange={setLogOpen}
+          programId={data.programId}
+          anchor={logPrompt.anchor}
+          defaultActivity={logPrompt.activity}
+          onDone={() => {
+            setLogPrompt(null);
+            void qc.invalidateQueries({ queryKey: ["owner-home"] });
+            void qc.invalidateQueries({ queryKey: ["owner-report"] });
+          }}
+        />
+      )}
     </div>
   );
 }
