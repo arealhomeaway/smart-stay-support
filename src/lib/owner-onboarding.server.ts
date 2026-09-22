@@ -63,6 +63,8 @@ export type OwnerOnboardingAction = {
 export type OwnerOnboardingHome = {
   propertyId: string;
   name: string;
+  /** Target handoff date (YYYY-MM-DD) when one has been set. */
+  targetGoLive: string | null;
   tracks: OwnerTrackProgress[];
   done: number;
   total: number;
@@ -116,7 +118,7 @@ async function onboardingProgress(admin: Client, propertyIds: string[]) {
   if (propertyIds.length === 0) return [];
   const projects = await admin
     .from("onboarding_projects")
-    .select("property_id, status")
+    .select("property_id, status, target_handoff_on")
     .in("property_id", propertyIds);
   if (projects.error) throw projects.error;
   const active = [
@@ -146,9 +148,11 @@ async function onboardingProgress(admin: Client, propertyIds: string[]) {
     if (rows.length === 0) continue;
     const property = (props.data ?? []).find((p) => p.id === id);
     const progress = ownerTrackProgress(rows);
+    const project = (projects.data ?? []).find((p) => p.property_id === id);
     homes.push({
       propertyId: id,
       name: property?.nickname || property?.name || "Your home",
+      targetGoLive: (project?.target_handoff_on as string | null) ?? null,
       ...progress,
     });
   }

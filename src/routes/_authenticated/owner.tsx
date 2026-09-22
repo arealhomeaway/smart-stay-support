@@ -175,6 +175,22 @@ function OwnerHubBody({
   );
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
+  // "Log hours" from the hero uses the first participation opportunity staff
+  // have opened; without one there is nothing to attach the time to.
+  const [heroLogOpen, setHeroLogOpen] = useState(false);
+  const heroReview = openReviews[0] ?? availableReviews[0] ?? null;
+  const heroAnchor = heroReview
+    ? {
+        id: heroReview.id,
+        phase: heroReview.phase,
+        ticketId: heroReview.ticket_id,
+        propertyIds: heroReview.propertyIds,
+        ownerUpdateRevision: null,
+      }
+    : null;
+  const scrollToSection = (id: string) =>
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   const percent = snapshot.percentOfTarget;
   const targetReached =
     snapshot.state === "target_reached" || snapshot.state === "program_completed";
@@ -208,7 +224,38 @@ function OwnerHubBody({
         eyebrow="Active Owner"
         title={`Welcome back, ${firstName(program.ownerName)}`}
         description="Here is where things stand across your homes, and anything that needs your attention."
+        actions={
+          <>
+            {heroAnchor ? (
+              <Button onClick={() => setHeroLogOpen(true)}>
+                <Clock className="size-4" aria-hidden="true" /> Log hours
+              </Button>
+            ) : null}
+            <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
+              Pending decisions
+              {openReviews.length > 0 ? (
+                <span className="numeric ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                  {openReviews.length}
+                </span>
+              ) : null}
+            </Button>
+            <Button variant="outline" onClick={() => scrollToSection("owner-documents")}>
+              Shared documents
+            </Button>
+          </>
+        }
       />
+
+      {heroAnchor ? (
+        <LogTimeDialog
+          open={heroLogOpen}
+          onOpenChange={setHeroLogOpen}
+          programId={program.id}
+          anchor={heroAnchor}
+          defaultActivity=""
+          onDone={invalidate}
+        />
+      ) : null}
 
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
@@ -254,6 +301,7 @@ function OwnerHubBody({
         audience="owner"
       />
 
+      <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
         title="Needs your attention"
         description="A short question or decision from your ARHA team."
@@ -275,6 +323,7 @@ function OwnerHubBody({
           </div>
         )}
       </SectionCard>
+      </div>
 
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
@@ -391,7 +440,9 @@ function OwnerHubBody({
         </div>
       </SectionCard>
 
-      <OwnerFilesPanel />
+      <div id="owner-documents" className="scroll-mt-24">
+        <OwnerFilesPanel />
+      </div>
 
       <SectionCard title="Your recorded review responses">
         <div className="space-y-2">
