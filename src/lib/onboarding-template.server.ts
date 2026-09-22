@@ -219,6 +219,10 @@ export async function applyOnboardingTemplate(
     input.propertyId,
   );
 
+  const positionOf = new Map(
+    MASTER_ONBOARDING_TEMPLATE.map((t, position) => [taskKey(t.stage, t.title), position] as const),
+  );
+  const total = MASTER_ONBOARDING_TEMPLATE.length;
   const pending = MASTER_ONBOARDING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
   // Ownership: every task opens owned by a SEAT, and by the person holding
@@ -231,27 +235,39 @@ export async function applyOnboardingTemplate(
   const participation = await activeOwnerFor(supabase, input.propertyId);
   const needsOwnerApproval = (t: TemplateTask) =>
     Boolean(t.requiresOwnerApproval || (t.ownerApprovalWhenActiveOwner && participation));
+  const windowDays = setupWindowDays(Boolean(participation));
 
-  const rows = pending.map((t) => ({
-    property_id: input.propertyId,
-    stage: t.stage,
-    legacy_stage: t.legacyStage ?? null,
-    title: t.title,
-    detail: detailFor(t),
-    status: "open",
-    blocks_handoff: t.blocksHandoff,
-    requires_owner_approval: needsOwnerApproval(t),
-    owner_approval_status: needsOwnerApproval(t) ? "pending" : "not_required",
-    evidence_required: Boolean(t.evidenceRequired),
-    due_on: dueFor(t, anchors),
-    due_on_source: t.anchor ? "template_anchor" : null,
-    schedule_anchor: t.anchor ?? null,
-    schedule_offset_days: t.offsetDays ?? null,
-    sort_order: t.sortOrder,
-    created_by: userId,
-    is_demo: property.is_demo,
-    ...seatFields(t.role, t.stage, seatHolders),
-  }));
+  const rows = pending.map((t) => {
+    const schedule = {
+      position: positionOf.get(taskKey(t.stage, t.title)) ?? 0,
+      total,
+      windowDays,
+    };
+    const scheduled = Boolean(anchors.actual_access);
+    return {
+      property_id: input.propertyId,
+      stage: t.stage,
+      legacy_stage: t.legacyStage ?? null,
+      title: t.title,
+      detail: detailFor(t),
+      status: "open",
+      blocks_handoff: t.blocksHandoff,
+      requires_owner_approval: needsOwnerApproval(t),
+      owner_approval_status: needsOwnerApproval(t) ? "pending" : "not_required",
+      evidence_required: Boolean(t.evidenceRequired),
+      due_on: dueFor(t, anchors, schedule),
+      due_on_source: scheduled ? "access_schedule" : t.anchor ? "template_anchor" : null,
+      schedule_anchor: scheduled ? "actual_access" : (t.anchor ?? null),
+      schedule_offset_days: scheduled
+        ? offsetFromAccess({ title: t.title, ...schedule })
+        : (t.offsetDays ?? null),
+      sort_order: t.sortOrder,
+      created_by: userId,
+      is_demo: property.is_demo,
+      ...seatFields(t.role, t.stage, seatHolders),
+    };
+  });
+
   const approvalTasks = existing.filter(
     (t) =>
       !t.parent_task_id &&
