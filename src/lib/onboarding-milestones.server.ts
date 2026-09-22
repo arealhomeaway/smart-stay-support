@@ -39,7 +39,7 @@ export async function saveOnboardingMilestones(supabase: Client, userId: string,
   // retired one, and the newest live project owns the handoff date.
   const projects = await supabase
     .from("onboarding_projects")
-    .select("id, modules, target_handoff_on, target_handoff_source")
+    .select("id, modules, target_handoff_on, target_handoff_source, planned_closing_on, possession_on")
     .eq("property_id", input.propertyId)
     .neq("status", "cancelled")
     .order("created_at", { ascending: false })
@@ -69,11 +69,16 @@ export async function saveOnboardingMilestones(supabase: Client, userId: string,
       currentSource: (project.data.target_handoff_source as HandoffDateSource) ?? "auto",
       typed: input.targetHandoffOn,
     });
+    // One date, one meaning. The home carries the dates the rest of Resolve
+    // reads, and the project keeps its own copy for the scope card — an edit
+    // here writes BOTH, so no page shows an older version of the same date.
     const { error } = await supabase
       .from("onboarding_projects")
       .update({
         target_handoff_on: handoff.targetHandoffOn,
         target_handoff_source: handoff.source,
+        planned_closing_on: input.actualClosingOn ?? input.plannedClosingOn,
+        possession_on: input.actualAccessOn,
       })
       .eq("id", project.data.id);
     if (error) throw error;
