@@ -45,6 +45,8 @@ export type ReportEntry = {
   /** Onboarding, Operations, Program — or "Legacy" for pre-opportunity records. */
   source: string;
   opportunity: string;
+  /** Receipt or photo the homeowner attached when logging this entry. */
+  evidence: string;
 };
 
 export type ReportAction = {
