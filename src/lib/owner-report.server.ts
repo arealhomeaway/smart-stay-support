@@ -118,6 +118,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       action: opp ? actionLabel(opp.owner_action_type) : (e.activity_category ?? "Participation"),
       source: opp ? sourceLabel(opp.source_type) : "Legacy record",
       opportunity: opp ? opp.title : "",
+      evidence: e.attachment_path ? e.attachment_path.split("/").pop()! : "",
     };
   });
 
