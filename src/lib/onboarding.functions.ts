@@ -205,6 +205,26 @@ export const saveScheduleAnchorsFn = createServerFn({ method: "POST" })
     return saveScheduleAnchors(context.supabase, context.userId, data);
   });
 
+/** Dashboard date row: closing, access and target handoff in one save. */
+export const saveOnboardingMilestonesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        plannedClosingOn: z.string().date().nullable().default(null),
+        actualClosingOn: z.string().date().nullable().default(null),
+        actualAccessOn: z.string().date().nullable().default(null),
+        targetHandoffOn: z.string().date().nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { saveOnboardingMilestones } = await import("./onboarding-milestones.server");
+    return saveOnboardingMilestones(context.supabase, context.userId, data);
+  });
+
+
 export const previewScheduleFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
