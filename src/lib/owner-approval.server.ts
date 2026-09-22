@@ -9,6 +9,8 @@ const ownerApprovalSchema = z.object({
   id: z.string(),
   updated_at: z.string(),
   kind: z.string(),
+  /** The operational record behind the request — onboarding items get their own section. */
+  entity_type: z.string().nullable().default(null),
   title: z.string(),
   detail: nullableText,
   amount: z.number().nullable(),
