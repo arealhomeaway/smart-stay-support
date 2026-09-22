@@ -258,7 +258,9 @@ export async function loadOwnerOnboarding(
     admin,
     approvals.map((a) => a.id),
   );
-  const files = await sharedFiles(admin, [...new Set(taskByApproval.values())], false);
+  const taskIds = [...new Set(taskByApproval.values())];
+  const files = await sharedFiles(admin, taskIds, false);
+  const participation = await participationByTask(admin, programId, taskIds);
 
   const actions: OwnerOnboardingAction[] = approvals.map((a) => ({
     approvalId: a.id,
