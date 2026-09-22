@@ -251,7 +251,8 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              if (dragging) dropStep(dragging, stage, null);
+              const held = e.dataTransfer.getData("text/plain") || dragging;
+              if (held) dropStep(held, stage, null);
               setDragging(null);
             }}
           >
@@ -271,13 +272,20 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
                 <li
                   key={s.id}
                   draggable
-                  onDragStart={() => setDragging(s.id)}
+                  onDragStart={(e) => {
+                    // The id travels with the drag as well as in state, so a
+                    // drop never depends on a render having happened first.
+                    e.dataTransfer.setData("text/plain", s.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    setDragging(s.id);
+                  }}
                   onDragEnd={() => setDragging(null)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (dragging && dragging !== s.id) dropStep(dragging, stage, s.id);
+                    const held = e.dataTransfer.getData("text/plain") || dragging;
+                    if (held && held !== s.id) dropStep(held, stage, s.id);
                     setDragging(null);
                   }}
                   className={`flex items-start justify-between gap-3 p-3 ${
