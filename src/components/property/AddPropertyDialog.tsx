@@ -582,6 +582,8 @@ const emptyManual = {
   market: "",
   ownerName: "",
   ownerEmail: "",
+  ownerPhone: "",
+
   ownerRezPropertyId: "",
 };
 
