@@ -182,5 +182,7 @@ export function emailSummary(results: AvailabilityResult[], checkIn: string, che
   const note = results.some((r) => r.sourceQuote)
     ? "Estimates cover nightly rates and the fees listed for this booking source. Taxes are added at booking."
     : PRICE_ESTIMATE_NOTE;
-  return results.some((r) => r.quote || r.sourceQuote) ? `${body}\n\n${note}` : body;
+  const closing = "Let us know which home you like best and we will hold it for you. We are happy to answer any questions.";
+  const priced = results.some((r) => r.quote || r.sourceQuote);
+  return `${body}\n\n${priced ? `${note}\n\n` : ""}${closing}`;
 }
