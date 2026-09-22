@@ -117,6 +117,7 @@ import {
   recordTaskExceptionFn,
   reopenOnboardingTaskFn,
   requestHandoffFn,
+  archiveOnboardingTaskFn,
   reviewHandoffFn,
   saveOnboardingTaskFn,
   setPropertyLifecycleFn,
@@ -194,6 +195,7 @@ function PropertyWorkspace() {
     useServerFn(recordOwnerTaskDecisionFn),
     "Homeowner's answer recorded.",
   );
+  const voidTask = mut(useServerFn(archiveOnboardingTaskFn), "Step voided.");
   const confirmRequirement = mut(useServerFn(confirmApprovalRequirementFn), "Requirement updated.");
 
   const current = data?.properties.find((p) => p.id === propertyId) ?? null;
@@ -1005,6 +1007,10 @@ function PropertyWorkspace() {
           openTask?.property_id,
           data.projects,
         )}
+        onVoid={(taskId: string, reason: string) => {
+          voidTask.mutate({ data: { taskId, reason } } as never);
+          setOpenTaskId(null);
+        }}
         onClose={() => setOpenTaskId(null)}
         onSave={(input: SaveTaskInput) => saveTask.mutate({ data: input } as never)}
         onSaveDate={(taskId, expectedUpdatedAt, dueOn, reason) =>
