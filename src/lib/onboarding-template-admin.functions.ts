@@ -20,6 +20,13 @@ export const readOnboardingTemplateFn = createServerFn({ method: "POST" })
     return readOnboardingTemplate(context.supabase, context.userId, data);
   });
 
+export const ensureBuiltInTemplateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { ensureBuiltInTemplate } = await import("./onboarding-template-admin.server");
+    return ensureBuiltInTemplate(context.supabase, context.userId);
+  });
+
 export const createOnboardingTemplateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
