@@ -18,6 +18,15 @@ import { ownerTrackProgress, type OwnerTaskRow, type OwnerTrackProgress } from "
 
 type Client = SupabaseClient<Database>;
 
+/** An existing participation opportunity the homeowner may log time against. */
+export type OwnerParticipationAnchor = {
+  reviewId: string;
+  phase: string;
+  ticketId: string | null;
+  propertyIds: string[];
+  title: string;
+};
+
 export type OwnerOnboardingFile = {
   id: string;
   title: string;
@@ -43,6 +52,12 @@ export type OwnerOnboardingAction = {
   decidedAt: string | null;
   createdAt: string;
   files: OwnerOnboardingFile[];
+  /**
+   * The existing participation opportunity for this onboarding task, when
+   * staff offered one. Its presence is what lets the homeowner log the time
+   * they spent right after deciding. Never created here.
+   */
+  participation: OwnerParticipationAnchor | null;
 };
 
 export type OwnerOnboardingHome = {
@@ -57,6 +72,8 @@ export type OwnerOnboardingHome = {
 export type OwnerOnboardingView = {
   inOnboarding: boolean;
   preview: boolean;
+  /** The homeowner's own program, so time can be logged from here. */
+  programId: string | null;
   pending: OwnerOnboardingAction[];
   decided: OwnerOnboardingAction[];
   homes: OwnerOnboardingHome[];
@@ -65,6 +82,7 @@ export type OwnerOnboardingView = {
 const EMPTY: OwnerOnboardingView = {
   inOnboarding: false,
   preview: false,
+  programId: null,
   pending: [],
   decided: [],
   homes: [],
@@ -171,6 +189,36 @@ async function sharedFiles(admin: Client, taskIds: string[], demoAllowed: boolea
   return byTask;
 }
 
+/**
+ * Participation opportunities staff already offered for these onboarding
+ * tasks. Read-only: nothing is created here, so a homeowner can only log
+ * time where ARHA opened an opportunity.
+ */
+async function participationByTask(admin: Client, programId: string, taskIds: string[]) {
+  const map = new Map<string, OwnerParticipationAnchor>();
+  if (taskIds.length === 0) return map;
+  const { data, error } = await admin
+    .from("owner_reviews")
+    .select("id, title, phase, ticket_id, property_id, status, archived_at, onboarding_task_id")
+    .eq("program_id", programId)
+    .in("onboarding_task_id", taskIds)
+    .is("archived_at", null);
+  if (error) throw error;
+  for (const row of data ?? []) {
+    const taskId = row.onboarding_task_id as string | null;
+    if (!taskId) continue;
+    if (!["awaiting_owner", "answered", "returned"].includes((row.status as string) ?? "")) continue;
+    map.set(taskId, {
+      reviewId: row.id as string,
+      phase: (row.phase as string) ?? "onboarding",
+      ticketId: (row.ticket_id as string | null) ?? null,
+      propertyIds: row.property_id ? [row.property_id as string] : [],
+      title: (row.title as string) ?? "Onboarding participation",
+    });
+  }
+  return map;
+}
+
 /** Maps each approval id to the onboarding task it belongs to. */
 async function taskIdsFor(admin: Client, approvalIds: string[]) {
   if (approvalIds.length === 0) return new Map<string, string>();
@@ -213,7 +261,9 @@ export async function loadOwnerOnboarding(
     admin,
     approvals.map((a) => a.id),
   );
-  const files = await sharedFiles(admin, [...new Set(taskByApproval.values())], false);
+  const taskIds = [...new Set(taskByApproval.values())];
+  const files = await sharedFiles(admin, taskIds, false);
+  const participation = await participationByTask(admin, programId, taskIds);
 
   const actions: OwnerOnboardingAction[] = approvals.map((a) => ({
     approvalId: a.id,
@@ -231,11 +281,13 @@ export async function loadOwnerOnboarding(
     decidedAt: a.decided_at,
     createdAt: a.created_at,
     files: files.get(taskByApproval.get(a.id) ?? "") ?? [],
+    participation: participation.get(taskByApproval.get(a.id) ?? "") ?? null,
   }));
 
   return {
     inOnboarding: homes.length > 0 || actions.length > 0,
     preview: false,
+    programId,
     ...splitDecided(actions),
     homes,
   };
@@ -313,12 +365,15 @@ export async function loadOwnerOnboardingPreview(
       decidedAt: (r.decided_at as string | null) ?? null,
       createdAt: (r.created_at as string) ?? new Date().toISOString(),
       files: files.get(r.entity_id as string) ?? [],
+      // Staff previews never log an owner's time.
+      participation: null,
     };
   });
 
   return {
     inOnboarding: homes.length > 0 || actions.length > 0,
     preview: true,
+    programId,
     ...splitDecided(actions),
     homes,
   };

@@ -18,7 +18,15 @@ export const ownerOnboardingActions = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const m = await import("./owner-onboarding.server");
     if (data.preview) {
-      if (!data.programId) return { inOnboarding: false, preview: true, pending: [], decided: [], homes: [] };
+      if (!data.programId)
+        return {
+          inOnboarding: false,
+          preview: true,
+          programId: null,
+          pending: [],
+          decided: [],
+          homes: [],
+        };
       return m.loadOwnerOnboardingPreview(context.supabase, context.userId, data.programId);
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -45,6 +45,8 @@ export type ReportEntry = {
   /** Onboarding, Operations, Program — or "Legacy" for pre-opportunity records. */
   source: string;
   opportunity: string;
+  /** Receipt or photo the homeowner attached when logging this entry. */
+  evidence: string;
 };
 
 export type ReportAction = {
@@ -116,6 +118,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       action: opp ? actionLabel(opp.owner_action_type) : (e.activity_category ?? "Participation"),
       source: opp ? sourceLabel(opp.source_type) : "Legacy record",
       opportunity: opp ? opp.title : "",
+      evidence: e.attachment_path ? e.attachment_path.split("/").pop()! : "",
     };
   });
 
@@ -223,6 +226,7 @@ export function reportCsv(report: OwnerReport) {
     "counts_toward_reported_hours",
     "within_program_period",
     "note",
+    "evidence_file",
     "record_type",
     "record_id",
     "response_recorded_at",
@@ -247,6 +251,7 @@ export function reportCsv(report: OwnerReport) {
       e.counts && e.inPeriod ? "yes" : "no",
       e.inPeriod ? "yes" : "no",
       e.reason,
+      e.evidence,
       "time_entry",
       e.id,
       "",
@@ -274,6 +279,7 @@ export function reportCsv(report: OwnerReport) {
       "no",
       receipt.inPeriod ? "yes" : "no",
       "Response history only; no participation hours added.",
+      "",
       "review_response",
       receipt.id,
       receipt.createdAt,

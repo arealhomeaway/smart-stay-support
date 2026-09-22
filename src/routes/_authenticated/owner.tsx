@@ -9,8 +9,10 @@ import {
   FolderOpen,
   Home as HomeIcon,
   MessageSquare,
+  Paperclip,
   ShieldCheck,
 } from "lucide-react";
+import { participationEvidenceUrlFn } from "@/lib/owner-evidence.functions";
 import { EmptyState, LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
@@ -30,18 +32,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  answerOwnerReview,
-  logOwnerParticipation,
-  ownerHome,
-  ownerHomePreview,
-} from "@/lib/owner-portal.functions";
-import {
-  MANUAL_ENTRY_CONFIRMATION,
-  MANUAL_ENTRY_NOTICE,
-  parseOwnerMinutes,
-  OWNER_GOAL_LABEL,
-} from "@/lib/owner-participation";
+import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
+import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
+import { LogTimeDialog } from "@/components/owner/LogTimeDialog";
+import { WaysToParticipate } from "@/components/owner/WaysToParticipate";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
@@ -252,6 +246,18 @@ function OwnerHubBody({
 
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
+      <WaysToParticipate
+        // A home is still being set up when its open work is onboarding work.
+        phase={
+          program.status === "ready_for_onboarding" ||
+          program.status === "draft" ||
+          openReviews.some((r) => r.phase === "onboarding")
+            ? "onboarding"
+            : "ongoing"
+        }
+        openReviews={openReviews.length}
+      />
+
       <OwnerApprovalPanel readOnly={preview} />
 
       <SectionCard
@@ -288,6 +294,34 @@ function OwnerHubBody({
         )}
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
       </div>
+
+      <SectionCard
+        title="Your logged participation"
+        description="Everything you have recorded, with any photos or receipts you attached."
+      >
+        {data.entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            You have not logged any participation time yet.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {data.entries.slice(0, 25).map((entry) => (
+              <div
+                key={entry.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">{entry.activity}</p>
+                  <p className="numeric text-xs text-muted-foreground">
+                    {usCalendarDate(entry.entry_date)} · {entry.minutes} minutes
+                  </p>
+                </div>
+                {entry.attachment_path && <EvidenceLink entryId={entry.id} />}
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
 
       <SectionCard title="Reviewed updates in your participation history">
         <div className="space-y-2">
@@ -510,6 +544,32 @@ function ReviewRow({
   );
 }
 
+/** Opens the photo or receipt a homeowner attached to a logged entry. */
+function EvidenceLink({ entryId }: { entryId: string }) {
+  const getUrl = useServerFn(participationEvidenceUrlFn);
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const { url } = await getUrl({ data: { entryId, download: false } });
+          window.open(url, "_blank", "noopener");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Could not open the file");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Paperclip className="size-4" /> View attachment
+    </Button>
+  );
+}
+
 function LogTimeButton({
   review,
   programId,
@@ -525,42 +585,6 @@ function LogTimeButton({
   const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
     null,
   );
-  const [minutes, setMinutes] = useState("");
-  const [activity, setActivity] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
-  const log = useServerFn(logOwnerParticipation);
-
-  const save = useMutation({
-    mutationFn: () => {
-      if (!reviewed) throw new Error("Open the opportunity before logging participation.");
-      if (reviewed.phase !== "onboarding" && reviewed.phase !== "ongoing") {
-        throw new Error("This opportunity needs a valid participation phase.");
-      }
-      return log({
-        data: {
-          programId,
-          phase: reviewed.phase,
-          entryDate: new Date().toISOString().slice(0, 10),
-          minutes: parseOwnerMinutes(minutes),
-          activity: activity.trim(),
-          reviewId: reviewed.id,
-          ticketId: reviewed.ticketId,
-          ownerUpdateRevision: reviewed.ownerUpdateRevision,
-          propertyIds: reviewed.propertyIds,
-          confirmed: true,
-        },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Time logged.");
-      setOpen(false);
-      setActivity("");
-      setMinutes("");
-      setConfirmed(false);
-      onDone();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   return (
     <>
@@ -575,56 +599,13 @@ function LogTimeButton({
       >
         <Clock className="size-4" /> Log time
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Log your time</DialogTitle>
-            <DialogDescription>{MANUAL_ENTRY_NOTICE}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            {reviewed?.description && (
-              <p className="max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
-                {reviewed.description}
-              </p>
-            )}
-            <div className="space-y-1">
-              <Label htmlFor="log-activity">What did you do?</Label>
-              <Textarea
-                id="log-activity"
-                rows={3}
-                value={activity}
-                onChange={(e) => setActivity(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="log-minutes">Minutes spent</Label>
-              <Input
-                id="log-minutes"
-                type="number"
-                min={1}
-                max={1440}
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-              />
-            </div>
-            <label className="flex items-start gap-2 text-sm">
-              <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} />
-              <span>{MANUAL_ENTRY_CONFIRMATION}</span>
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={save.isPending || activity.trim().length < 3 || !confirmed}
-              onClick={() => save.mutate()}
-            >
-              Save entry
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LogTimeDialog
+        open={open}
+        onOpenChange={setOpen}
+        programId={programId}
+        anchor={reviewed}
+        onDone={onDone}
+      />
     </>
   );
 }

@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Download, FileText, ImageIcon, RotateCcw } from "lucide-react";
+import { CheckCircle2, Clock, Download, FileText, ImageIcon, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { SectionCard } from "@/components/ui/page";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { decideOwnerApproval } from "@/lib/owner-portal.functions";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
 import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
+import { LogTimeDialog, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 
 function SharedFile({ file, disabled }: { file: OwnerOnboardingFile; disabled: boolean }) {
   const getUrl = useServerFn(attachmentUrlFn);
@@ -167,6 +168,15 @@ export function OnboardingActions({
   const load = useServerFn(ownerOnboardingActions);
   const decide = useServerFn(decideOwnerApproval);
   const [busy, setBusy] = useState<string | null>(null);
+  // After a decision, the homeowner may record the time they actually spent
+  // reviewing it — only where staff already opened a participation
+  // opportunity for the task. No amount is ever suggested.
+  const [logPrompt, setLogPrompt] = useState<{
+    anchor: LogTimeAnchor;
+    activity: string;
+    title: string;
+  } | null>(null);
+  const [logOpen, setLogOpen] = useState(false);
 
   const q = useQuery({
     queryKey: ["owner-onboarding", programId, readOnly],
@@ -196,6 +206,20 @@ export function OnboardingActions({
           ? "Approved — thank you. Your project manager has been notified."
           : "Sent back to your project manager with your note.",
       );
+      const p = v.action.participation;
+      if (p) {
+        setLogPrompt({
+          anchor: {
+            id: p.reviewId,
+            phase: p.phase,
+            ticketId: p.ticketId,
+            propertyIds: p.propertyIds,
+            ownerUpdateRevision: null,
+          },
+          activity: `Reviewed and responded to "${v.action.title}".`,
+          title: v.action.title,
+        });
+      }
       void qc.invalidateQueries({ queryKey: ["owner-onboarding"] });
       void qc.invalidateQueries({ queryKey: ["owner-approvals"] });
       void qc.invalidateQueries({ queryKey: ["owner-home"] });
@@ -216,6 +240,28 @@ export function OnboardingActions({
         title="Onboarding actions"
         description="Choices your setup team needs from you before the work can move forward."
       >
+        {logPrompt && data.programId && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">
+                Log the time you spent on “{logPrompt.title}”?
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add it to your participation record now. Enter the time you actually spent — we
+                never fill that in for you.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button size="sm" onClick={() => setLogOpen(true)}>
+                <Clock className="mr-1 size-4" aria-hidden="true" /> Log my time
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setLogPrompt(null)}>
+                Not now
+              </Button>
+            </div>
+          </div>
+        )}
+
         {data.pending.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nothing from your setup team is waiting on you right now.
@@ -265,6 +311,21 @@ export function OnboardingActions({
       </SectionCard>
 
       <OnboardingProgress homes={data.homes} />
+
+      {logPrompt && data.programId && (
+        <LogTimeDialog
+          open={logOpen}
+          onOpenChange={setLogOpen}
+          programId={data.programId}
+          anchor={logPrompt.anchor}
+          defaultActivity={logPrompt.activity}
+          onDone={() => {
+            setLogPrompt(null);
+            void qc.invalidateQueries({ queryKey: ["owner-home"] });
+            void qc.invalidateQueries({ queryKey: ["owner-report"] });
+          }}
+        />
+      )}
     </div>
   );
 }
