@@ -334,28 +334,12 @@ export function TaskDrawer({
 
         {visualTrack && <TaskGallery taskId={task.id} />}
 
-        {action && (
-          <GuidedActionCard
-            action={{
-              ...action,
-              ...(nextTask && (action.id === "complete_task" || action.id === "reopen_or_move_on")
-                ? { then: `Next: ${nextTask.title}` }
-                : {}),
-            }}
-            readOnly={disabled}
-            successMessage={
-              nextTask && action.id === "complete_task"
-                ? `Step recorded — next: ${nextTask.title}`
-                : "Step recorded."
-            }
-            onHandoff={() =>
-              document
-                .getElementById("task-detail-body")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-            onComplete={(values) => runAction(action.id, values)}
-          />
-        )}
+        {/*
+         * Finishing comes last. Anything that unblocks the step stays at the
+         * top where it is read first; the card that closes the step sits at the
+         * bottom, after the instructions, so the drawer reads in work order.
+         */}
+        {action && !finishesStep && guidedCard}
 
         <div id="task-detail-body" />
 
