@@ -195,6 +195,7 @@ function OwnerRezImport({
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<OwnerRezCandidate | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const [milestones, setMilestones] = useState<Milestones>(emptyMilestones);
   const search = useServerFn(searchOwnerRezPropertiesFn);
   const runImport = useServerFn(importOwnerRezPropertyFn);
 
@@ -207,7 +208,7 @@ function OwnerRezImport({
 
   const doImport = useMutation({
     mutationFn: (input: { listingId: string; linkToPropertyId: string | null }) =>
-      runImport({ data: { ...input, isDemo } }),
+      runImport({ data: { ...input, isDemo, milestones: milestonePayload(milestones) } }),
     onSuccess: (r) => onDone(r),
     onError: (e: Error) => toast.error(e.message),
   });
@@ -288,6 +289,7 @@ function OwnerRezImport({
                 </Button>
               </div>
             )}
+            <MilestoneFields value={milestones} onChange={setMilestones} />
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={isDemo} onCheckedChange={(v) => setIsDemo(v === true)} />
               Mark as a QA / test home (kept out of production reporting)
@@ -346,6 +348,74 @@ function OwnerRezImport({
   );
 }
 
+const emptyMilestones = { plannedClosingOn: "", actualClosingOn: "", accessOn: "" };
+type Milestones = typeof emptyMilestones;
+
+/** Sent as nulls when blank — a date nobody knows yet is never invented. */
+function milestonePayload(m: Milestones) {
+  return {
+    plannedClosingOn: m.plannedClosingOn || null,
+    actualClosingOn: m.actualClosingOn || null,
+    accessOn: m.accessOn || null,
+  };
+}
+
+/**
+ * The three dates the onboarding plan schedules itself from. Captured at
+ * import so the plan arrives with real deadlines rather than empty due dates
+ * somebody has to chase later. All optional, and editable on the home after.
+ */
+function MilestoneFields({
+  value,
+  onChange,
+}: {
+  value: Milestones;
+  onChange: (next: Milestones) => void;
+}) {
+  const set = (k: keyof Milestones) => (v: string) => onChange({ ...value, [k]: v });
+  return (
+    <div className="surface space-y-3 p-4">
+      <div>
+        <p className="text-sm font-medium">Key dates (optional)</p>
+        <p className="text-xs text-muted-foreground">
+          Deadlines for onboarding work are calculated from these. You can add or change them later
+          on the home.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <DateField
+          label="Expected closing"
+          value={value.plannedClosingOn}
+          onChange={set("plannedClosingOn")}
+        />
+        <DateField
+          label="Closing (if it has happened)"
+          value={value.actualClosingOn}
+          onChange={set("actualClosingOn")}
+        />
+        <DateField label="Access / keys" value={value.accessOn} onChange={set("accessOn")} />
+      </div>
+    </div>
+  );
+}
+
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Input type="date" value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
 function Row({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex justify-between gap-4 text-sm">
@@ -374,6 +444,7 @@ function ManualForm({
   onDone: (r: { status: string; property: IntakeMatch }) => void;
 }) {
   const [form, setForm] = useState(emptyManual);
+  const [milestones, setMilestones] = useState<Milestones>(emptyMilestones);
   const [isDemo, setIsDemo] = useState(false);
   const create = useServerFn(createPropertyManuallyFn);
 
@@ -393,6 +464,7 @@ function ManualForm({
           ownerEmail: form.ownerEmail || null,
           ownerRezPropertyId: form.ownerRezPropertyId || null,
           isDemo,
+          milestones: milestonePayload(milestones),
         },
       }),
     onSuccess: (r) => onDone(r),
@@ -430,6 +502,7 @@ function ManualForm({
           onChange={set("ownerRezPropertyId")}
         />
       </div>
+      <MilestoneFields value={milestones} onChange={setMilestones} />
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={isDemo} onCheckedChange={(v) => setIsDemo(v === true)} />
         Mark as a QA / test home (kept out of production reporting)

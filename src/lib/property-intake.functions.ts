@@ -2,6 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/** Optional scheduling anchors: the onboarding plan dates itself from these. */
+const milestones = z
+  .object({
+    plannedClosingOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+    actualClosingOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+    accessOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  })
+  .partial()
+  .optional();
+
 /** OwnerRez listings annotated with what Resolve already has. Read-only. */
 export const searchOwnerRezPropertiesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -24,6 +34,7 @@ export const importOwnerRezPropertyFn = createServerFn({ method: "POST" })
         listingId: z.string().trim().min(1).max(60),
         linkToPropertyId: z.string().uuid().nullable().default(null),
         isDemo: z.boolean().default(false),
+        milestones,
       })
       .parse(data),
   )
@@ -52,6 +63,7 @@ export const createPropertyManuallyFn = createServerFn({ method: "POST" })
         ownerEmail: z.string().trim().max(200).nullable().default(null),
         ownerRezPropertyId: z.string().trim().max(60).nullable().default(null),
         isDemo: z.boolean().default(false),
+        milestones,
       })
       .parse(data),
   )

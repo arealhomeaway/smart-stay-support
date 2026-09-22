@@ -212,6 +212,8 @@ export function TaskDrawer({
     if (nextTask && onAdvance) onAdvance(nextTask.id);
   };
 
+  const finishesStep = action?.id === "complete_task" || action?.id === "reopen_or_move_on";
+
   const runAction = (id: TaskActionId, values: Record<string, string>) => {
     const text = (k: string) => (values[k] ?? "").trim();
     if (id === "clear_blocker") {
@@ -252,6 +254,27 @@ export function TaskDrawer({
     }
     return false;
   };
+
+  const guidedCard = action ? (
+    <GuidedActionCard
+      action={{
+        ...action,
+        ...(nextTask && finishesStep ? { then: `Next: ${nextTask.title}` } : {}),
+      }}
+      readOnly={disabled}
+      successMessage={
+        nextTask && action.id === "complete_task"
+          ? `Step recorded — next: ${nextTask.title}`
+          : "Step recorded."
+      }
+      onHandoff={() =>
+        document
+          .getElementById("task-detail-body")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+      onComplete={(values) => runAction(action.id, values)}
+    />
+  ) : null;
 
   return (
     <TaskWorkspace
@@ -334,28 +357,12 @@ export function TaskDrawer({
 
         {visualTrack && <TaskGallery taskId={task.id} />}
 
-        {action && (
-          <GuidedActionCard
-            action={{
-              ...action,
-              ...(nextTask && (action.id === "complete_task" || action.id === "reopen_or_move_on")
-                ? { then: `Next: ${nextTask.title}` }
-                : {}),
-            }}
-            readOnly={disabled}
-            successMessage={
-              nextTask && action.id === "complete_task"
-                ? `Step recorded — next: ${nextTask.title}`
-                : "Step recorded."
-            }
-            onHandoff={() =>
-              document
-                .getElementById("task-detail-body")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-            onComplete={(values) => runAction(action.id, values)}
-          />
-        )}
+        {/*
+         * Finishing comes last. Anything that unblocks the step stays at the
+         * top where it is read first; the card that closes the step sits at the
+         * bottom, after the instructions, so the drawer reads in work order.
+         */}
+        {action && !finishesStep && guidedCard}
 
         <div id="task-detail-body" />
 
@@ -468,11 +475,24 @@ export function TaskDrawer({
           >
             Save evidence
           </Button>
-          <AttachmentsPanel
-            entityType="onboarding_task"
-            entityId={task.id}
-            title="Photos & documents"
-          />
+          {/*
+           * A step that must be proved keeps its uploader here, where the proof
+           * is judged. Everywhere else, files belong to the message that sends
+           * them — the drawer stays readable instead of carrying an uploader
+           * nobody opened.
+           */}
+          {task.evidence_required ? (
+            <AttachmentsPanel
+              entityType="onboarding_task"
+              entityId={task.id}
+              title="Photos & documents"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Photos and documents are added in <strong>Send to homeowner</strong> at the top of
+              this step, where you choose what to share.
+            </p>
+          )}
         </section>
 
         <Separator />
@@ -726,6 +746,13 @@ export function TaskDrawer({
                 Record exception
               </Button>
             </section>
+          </>
+        )}
+
+        {action && finishesStep && (
+          <>
+            <Separator />
+            {guidedCard}
           </>
         )}
       </div>

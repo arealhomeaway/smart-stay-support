@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { listAttachmentsFn } from "@/lib/attachments.functions";
 import { sendTaskToOwnerFn } from "@/lib/onboarding.functions";
 
@@ -83,7 +84,7 @@ export function SendToHomeownerDialog({
           Send to homeowner
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Send &ldquo;{taskTitle}&rdquo; to the homeowner</DialogTitle>
         </DialogHeader>
@@ -115,6 +116,12 @@ export function SendToHomeownerDialog({
               onChange={(e) => setVersion(e.target.value)}
               placeholder="e.g. Mood boards v2"
             />
+          </div>
+
+          {/* Photos belong where they are sent from, not on the step's front page. */}
+          <div className="space-y-1.5">
+            <p className="eyebrow">Add a photo or document</p>
+            <AttachmentsPanel entityType="onboarding_task" entityId={taskId} title="" />
           </div>
 
           <div className="space-y-1.5">
