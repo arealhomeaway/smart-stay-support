@@ -13,7 +13,7 @@ import {
 } from "@/lib/owner-participation-prompts";
 
 /** Suggestions that point straight at something already waiting on the owner. */
-const LINKED_PROMPTS = new Set(["pending-actions", "mood-board", "access"]);
+const LINKED_PROMPTS = new Set(["pending-actions", "mood-board", "access", "work-review"]);
 
 export function WaysToParticipate({
   phase,
