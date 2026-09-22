@@ -697,3 +697,4 @@ Batch B (work surface)
 - [ ] Templates: apply a chosen plan to homes already in onboarding (Victor's two), with "new steps only" vs "new and existing" update modes; template picker in the scope panel chosen per property
 - [ ] Import all Asana project templates into Resolve templates (editable copies) from the uploaded asana_project_templates.json
 - [ ] Templates page: close the expanded "Edit steps" list; allow the director to delete a template outright (not just archive)
+- [ ] Property dates (closing, possession/access, handoff) must read the same on every page and section — one source of truth
