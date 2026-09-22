@@ -41,7 +41,7 @@ describe("template catalog shaping", () => {
     ]);
     expect(tasks.map((t) => t.title)).toEqual(["First", "Second"]);
     expect(tasks[0]!.evidenceRequired).toBe(true);
-    expect(tasks[1]!.evidenceRequired).toBeUndefined();
+    expect(tasks[1]!.evidenceRequired).toBe(undefined as never);
   });
 
   it("only keeps a deadline when both an anchor and an offset are recorded", () => {
@@ -51,7 +51,7 @@ describe("template catalog shaping", () => {
     const [withoutOffset] = toTemplateTasks([row({ schedule_anchor: "actual_access" })]);
     expect(withAnchor!.anchor).toBe("actual_access");
     expect(withAnchor!.offsetDays).toBe(5);
-    expect(withoutOffset!.anchor).toBeUndefined();
+    expect(withoutOffset!.anchor).toBe(undefined as never);
   });
 
   it("drops blank subtasks", () => {
