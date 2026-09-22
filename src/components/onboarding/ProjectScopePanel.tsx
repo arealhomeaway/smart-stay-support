@@ -52,10 +52,12 @@ import {
 } from "@/lib/onboarding-scope";
 
 import {
+  applyOnboardingTemplateFn,
   getPropertyProject,
   startOnboardingProjectFn,
   updateOnboardingProjectFn,
 } from "@/lib/onboarding.functions";
+import { listOnboardingTemplatesFn } from "@/lib/onboarding-template-admin.functions";
 
 type Person = { id: string; full_name: string | null; email: string | null };
 
@@ -103,6 +105,23 @@ export function ProjectScopePanel({
     onSuccess: () => {
       toast.success("Scope updated.");
       setOpen(false);
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Which plan this home is set up from. On an existing project, choosing a
+  // plan adds any of its steps the home is missing; a step already here is
+  // never duplicated.
+  const listTemplates = useServerFn(listOnboardingTemplatesFn);
+  const { data: templates } = useQuery({
+    queryKey: ["onboarding-templates"],
+    queryFn: () => listTemplates(),
+  });
+  const applyPlan = useMutation({
+    mutationFn: useServerFn(applyOnboardingTemplateFn),
+    onSuccess: (r: { created: number }) => {
+      if (r.created > 0) toast.success(`${r.created} step${r.created === 1 ? "" : "s"} added.`);
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -179,7 +198,10 @@ export function ProjectScopePanel({
         onOpenChange={setOpen}
         propertyName={propertyName}
         people={people}
-        busy={start.isPending || update.isPending}
+        templates={(templates ?? [])
+          .filter((t) => t.id && !t.isArchived)
+          .map((t) => ({ id: t.id as string, name: t.name }))}
+        busy={start.isPending || update.isPending || applyPlan.isPending}
         canAssign={data?.assignments.canAssign ?? false}
         initial={
           project
@@ -192,6 +214,7 @@ export function ProjectScopePanel({
                 projectManager: project.project_manager,
                 director: project.director,
                 utilityManager: project.utility_manager ?? null,
+                templateId: null,
                 plannedClosingOn: project.planned_closing_on ?? "",
                 possessionOn: project.possession_on ?? "",
                 targetHandoffOn: project.target_handoff_on ?? "",
@@ -212,6 +235,7 @@ export function ProjectScopePanel({
                 projectManager: data?.assignments.projectManagerId ?? null,
                 director: data?.assignments.directorId ?? null,
                 utilityManager: null,
+                templateId: null,
                 plannedClosingOn: hints?.planned_closing_on ?? "",
                 possessionOn: "",
                 targetHandoffOn: "",
@@ -241,6 +265,9 @@ export function ProjectScopePanel({
                 reason: reason.trim(),
               },
             });
+            if (v.templateId) {
+              applyPlan.mutate({ data: { propertyId, templateId: v.templateId } });
+            }
           } else {
             start.mutate({
               data: {
@@ -258,6 +285,7 @@ export function ProjectScopePanel({
 
                 notes: v.notes || null,
                 externalRefs: v.externalRefs,
+                templateId: v.templateId,
               },
             });
           }
@@ -275,6 +303,7 @@ type ScopeValues = {
   projectManager: string | null;
   director: string | null;
   utilityManager: string | null;
+  templateId: string | null;
   plannedClosingOn: string;
   possessionOn: string;
   targetHandoffOn: string;
@@ -465,6 +494,35 @@ function ScopeDialog({
             </div>
           </div>
 
+
+          <div className="space-y-2">
+            <Label className="eyebrow">Onboarding plan</Label>
+            <Select
+              value={v.templateId ?? "default"}
+              onValueChange={(id) =>
+                setV((p) => ({ ...p, templateId: id === "default" ? null : id }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Default plan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  {editing ? "Leave the plan as it is" : "Default plan"}
+                </SelectItem>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-muted-foreground text-xs">
+              {editing
+                ? "Choosing a plan adds any of its steps this home is missing. Work already here is never duplicated or removed."
+                : "The plan this home's steps are created from."}
+            </p>
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <PersonField
