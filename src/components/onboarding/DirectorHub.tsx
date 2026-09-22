@@ -99,10 +99,10 @@ export function DirectorHub({
     () => applyTestDataFilter(allProjects, showTest, (p) => p.property),
     [allProjects, showTest],
   );
-  const productionProjects = useMemo(
-    () => applyTestDataFilter(allProjects, false, (p) => p.property),
-    [allProjects],
-  );
+  // Counts, forecast and portfolio follow the same opt-in the rows do: with
+  // test projects shown they are included, otherwise production only.
+  const productionProjects = projects;
+
   const setLens = onLensChange;
   const setFind = onFindChange;
   const setOwner = onOwnerChange;
