@@ -689,4 +689,4 @@ Batch B (work surface)
 - [x] Hero buttons readable (white-on-white) and actually navigate
 - [x] Owner overview greeting shows first name, not initials
 
-- [ ] Active Owner contacts: capture utility manager at enrollment, set Kati as PM, make both editable later
+- [x] Active Owner contacts: utility manager captured on the project (editable in Edit scope, shown to the homeowner); Kati set as PM on both of Victor's homes
