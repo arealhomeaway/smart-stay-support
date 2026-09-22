@@ -2,7 +2,7 @@
  * Apply the ARHA Full Furnishing onboarding template to a property.
  * Preview first, then apply. Duplicates are skipped, never re-created.
  */
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { applyOnboardingTemplateFn, previewOnboardingTemplateFn } from "@/lib/onboarding.functions";
 import { templateCounts } from "@/lib/onboarding-template";
 import { stageLabel } from "@/lib/onboarding";
+import { listOnboardingTemplatesFn } from "@/lib/onboarding-template-admin.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Preview = Awaited<ReturnType<typeof previewOnboardingTemplateFn>>;
 
@@ -30,16 +38,24 @@ export function TemplatePanel({
   const previewFn = useServerFn(previewOnboardingTemplateFn);
   const applyFn = useServerFn(applyOnboardingTemplateFn);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [templateId, setTemplateId] = useState<string>("default");
   const counts = templateCounts();
+  const listTemplates = useServerFn(listOnboardingTemplatesFn);
+  // Which plan to apply. "default" follows whatever the director marked.
+  const { data: templates } = useQuery({
+    queryKey: ["onboarding-templates"],
+    queryFn: () => listTemplates(),
+  });
+  const chosen = templateId === "default" ? null : templateId;
 
   const doPreview = useMutation({
-    mutationFn: () => previewFn({ data: { propertyId } }),
+    mutationFn: () => previewFn({ data: { propertyId, templateId: chosen } }),
     onSuccess: (p) => setPreview(p),
     onError: (e: Error) => toast.error(e.message),
   });
 
   const doApply = useMutation({
-    mutationFn: () => applyFn({ data: { propertyId } }),
+    mutationFn: () => applyFn({ data: { propertyId, templateId: chosen } }),
     onSuccess: (r) => {
       toast.success(
         `Added ${r.created} task${r.created === 1 ? "" : "s"} and ${r.subtasksCreated} subtasks. ${r.skipped} already existed.`,
@@ -65,7 +81,28 @@ export function TemplatePanel({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={templateId}
+            onValueChange={(v) => {
+              setTemplateId(v);
+              setPreview(null);
+            }}
+          >
+            <SelectTrigger className="h-8 w-64 text-sm">
+              <SelectValue placeholder="Plan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default plan</SelectItem>
+              {(templates ?? [])
+                .filter((t) => t.id && !t.isArchived)
+                .map((t) => (
+                  <SelectItem key={t.key} value={t.id as string}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
           <Button
             variant="outline"
             size="sm"
