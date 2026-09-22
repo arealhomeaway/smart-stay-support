@@ -649,7 +649,8 @@ function PropertyWorkspace() {
               propertyId={current.id}
               people={data.people}
               tasks={tasks}
-              disabled={!canEdit}
+              // Only directors add work to a plan; project managers work the plan.
+              disabled={!canEdit || !can("handoff_review")}
               onSave={(values) => saveTask.mutate({ data: values } as never)}
             />
           </div>
