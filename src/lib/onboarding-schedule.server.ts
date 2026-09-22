@@ -1,12 +1,9 @@
 /**
  * Controlled onboarding date recalculation (server-only).
  *
- * Deliberately rule-free: ARHA has no documented milestone offset table in the
- * sources available to the app, so nothing is applied automatically and no
- * universal schedule is assumed. A task moves only when a person has recorded
- * an anchor ("planned closing", "actual closing", "actual access") and an
- * offset in days on that task. Everything is preview-first: proposed dates are
- * shown next to current dates and only the rows the user confirms are written.
+ * Access is the canonical anchor for the onboarding plan. Saving it paces and
+ * dates every unfinished, non-manually-dated step automatically. The preview
+ * tools remain available for reviewing a schedule before a separate change.
  *
  * Never touches completed tasks, manually overridden dates, or external
  * systems (no Breezeway, OwnerRez, SharePoint or calendar writes).
@@ -89,14 +86,30 @@ export async function saveScheduleAnchors(
     })
     .eq("id", input.propertyId);
   if (error) throw error;
+
+  // Keep the active project and the property aligned. Other onboarding pages
+  // read project dates, while work scheduling reads the property dates.
+  const projectUpdate = await supabase
+    .from("onboarding_projects")
+    .update({
+      planned_closing_on: input.plannedClosingOn,
+      possession_on: input.actualAccessOn,
+    })
+    .eq("property_id", input.propertyId)
+    .neq("status", "cancelled");
+  if (projectUpdate.error) throw projectUpdate.error;
+
+  const schedule = input.actualAccessOn
+    ? await autopopulateProjectDeadlines(supabase, userId, input.propertyId)
+    : { paced: 0, dated: 0 };
   await writeAudit({
     actorId: userId,
     action: "onboarding_anchors_saved",
     entityType: "property",
     entityId: input.propertyId,
-    after: input,
+    after: { ...input, schedule },
   });
-  return { ok: true as const };
+  return { ok: true as const, ...schedule };
 }
 
 /** Compute — but do not apply — the effect of the current anchor dates. */
@@ -331,4 +344,23 @@ export async function repaceProjectFromAccess(
     after: { updated, windowDays },
   });
   return { ok: true as const, updated };
+}
+
+/**
+ * Apply the canonical access-date schedule immediately. Completed work and
+ * dates a person set manually are preserved by the two underlying operations.
+ */
+export async function autopopulateProjectDeadlines(
+  supabase: Client,
+  userId: string,
+  propertyId: string,
+) {
+  const paced = await repaceProjectFromAccess(supabase, userId, { propertyId });
+  const preview = await previewScheduleRecalc(supabase, userId, { propertyId });
+  const applied = await applyScheduleRecalc(
+    supabase,
+    userId,
+    { propertyId, taskIds: preview.rows.filter((row) => row.changed).map((row) => row.taskId) },
+  );
+  return { paced: paced.updated, dated: applied.applied };
 }
