@@ -475,11 +475,24 @@ export function TaskDrawer({
           >
             Save evidence
           </Button>
-          <AttachmentsPanel
-            entityType="onboarding_task"
-            entityId={task.id}
-            title="Photos & documents"
-          />
+          {/*
+           * A step that must be proved keeps its uploader here, where the proof
+           * is judged. Everywhere else, files belong to the message that sends
+           * them — the drawer stays readable instead of carrying an uploader
+           * nobody opened.
+           */}
+          {task.evidence_required ? (
+            <AttachmentsPanel
+              entityType="onboarding_task"
+              entityId={task.id}
+              title="Photos & documents"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Photos and documents are added in <strong>Send to homeowner</strong> at the top of
+              this step, where you choose what to share.
+            </p>
+          )}
         </section>
 
         <Separator />
