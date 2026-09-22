@@ -265,6 +265,14 @@ export const setTaskScheduleFn = createServerFn({ method: "POST" })
     return setTaskSchedule(context.supabase, context.userId, data);
   });
 
+export const repaceProjectFromAccessFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { repaceProjectFromAccess } = await import("./onboarding-schedule.server");
+    return repaceProjectFromAccess(context.supabase, context.userId, data);
+  });
+
 export const previewOnboardingTemplateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
