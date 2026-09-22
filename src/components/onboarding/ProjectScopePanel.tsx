@@ -504,11 +504,12 @@ function PersonField({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Unassigned</SelectItem>
-          {people.map((p) => (
+          {assignablePeople(people).map((p) => (
             <SelectItem key={p.id} value={p.id}>
               {p.full_name ?? p.email ?? "Team member"}
             </SelectItem>
           ))}
+
         </SelectContent>
       </Select>
     </Field>
