@@ -45,6 +45,8 @@ import { SchedulePanel } from "@/components/SchedulePanel";
 import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
+import { OnboardingDashboard } from "@/components/onboarding/OnboardingDashboard";
+
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
@@ -431,7 +433,7 @@ function PropertyWorkspace() {
         total={roll.total}
         notes={notes as never}
         people={data.people}
-        taskTitle={(taskId) => tasks.find((t) => t.id === taskId)?.title ?? null}
+        taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
       />
 
       <CurrentWork
