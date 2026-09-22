@@ -56,6 +56,7 @@ import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/_authenticated/onboarding.$propertyId'
 import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
 import { Route as AuthenticatedOnboardingTransitionsRouteImport } from './routes/_authenticated/onboarding.transitions'
+import { Route as AuthenticatedOnboardingUtilitiesRouteImport } from './routes/_authenticated/onboarding.utilities'
 import { Route as AuthenticatedPropertyPropertyIdRouteImport } from './routes/_authenticated/property.$propertyId'
 import { Route as AuthenticatedRecoveryIndexRouteImport } from './routes/_authenticated/recovery.index'
 import { Route as AuthenticatedRecoveryManagerRouteImport } from './routes/_authenticated/recovery.manager'
@@ -331,6 +332,12 @@ const AuthenticatedOnboardingTransitionsRoute =
     path: '/transitions',
     getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
+const AuthenticatedOnboardingUtilitiesRoute =
+  AuthenticatedOnboardingUtilitiesRouteImport.update({
+    id: '/utilities',
+    path: '/utilities',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
 const AuthenticatedPropertyPropertyIdRoute =
   AuthenticatedPropertyPropertyIdRouteImport.update({
     id: '/property/$propertyId',
@@ -509,6 +516,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
+  '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -575,6 +583,7 @@ export interface FileRoutesByTo {
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
+  '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -648,6 +657,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
   '/_authenticated/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
+  '/_authenticated/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
   '/_authenticated/recovery/manager': typeof AuthenticatedRecoveryManagerRoute
   '/_authenticated/recovery/my-recoveries': typeof AuthenticatedRecoveryMyRecoveriesRoute
@@ -721,6 +731,7 @@ export interface FileRouteTypes {
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/onboarding/transitions'
+    | '/onboarding/utilities'
     | '/property/$propertyId'
     | '/recovery/manager'
     | '/recovery/my-recoveries'
@@ -787,6 +798,7 @@ export interface FileRouteTypes {
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
     | '/onboarding/transitions'
+    | '/onboarding/utilities'
     | '/property/$propertyId'
     | '/recovery/manager'
     | '/recovery/my-recoveries'
@@ -859,6 +871,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/$propertyId'
     | '/_authenticated/onboarding/my-work'
     | '/_authenticated/onboarding/transitions'
+    | '/_authenticated/onboarding/utilities'
     | '/_authenticated/property/$propertyId'
     | '/_authenticated/recovery/manager'
     | '/_authenticated/recovery/my-recoveries'
@@ -1235,6 +1248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingTransitionsRouteImport
       parentRoute: typeof AuthenticatedOnboardingRoute
     }
+    '/_authenticated/onboarding/utilities': {
+      id: '/_authenticated/onboarding/utilities'
+      path: '/utilities'
+      fullPath: '/onboarding/utilities'
+      preLoaderRoute: typeof AuthenticatedOnboardingUtilitiesRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
     '/_authenticated/property/$propertyId': {
       id: '/_authenticated/property/$propertyId'
       path: '/property/$propertyId'
@@ -1437,6 +1457,7 @@ interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingPropertyIdRoute: typeof AuthenticatedOnboardingPropertyIdRoute
   AuthenticatedOnboardingMyWorkRoute: typeof AuthenticatedOnboardingMyWorkRoute
   AuthenticatedOnboardingTransitionsRoute: typeof AuthenticatedOnboardingTransitionsRoute
+  AuthenticatedOnboardingUtilitiesRoute: typeof AuthenticatedOnboardingUtilitiesRoute
   AuthenticatedOnboardingIndexRoute: typeof AuthenticatedOnboardingIndexRoute
 }
 
@@ -1447,6 +1468,8 @@ const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren
     AuthenticatedOnboardingMyWorkRoute: AuthenticatedOnboardingMyWorkRoute,
     AuthenticatedOnboardingTransitionsRoute:
       AuthenticatedOnboardingTransitionsRoute,
+    AuthenticatedOnboardingUtilitiesRoute:
+      AuthenticatedOnboardingUtilitiesRoute,
     AuthenticatedOnboardingIndexRoute: AuthenticatedOnboardingIndexRoute,
   }
 
