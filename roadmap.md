@@ -589,3 +589,4 @@ is now doable from Resolve.
 - [ ] /owner explainer for staff accounts linking to /owner-programs
 - [ ] Empty Active Owner hub for supervisors (only demo program exists / demo gating) — confirm and fix
 - [ ] Role-based access controls (Emily): platform owner + director see oversight data; homeowner personal data limited to those who need it (DB-enforced)
+- [ ] Verify access (Emily): leadership sees only permitted oversight data; homeowners cannot reach other homeowners' or properties' details
