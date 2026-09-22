@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usDateTime } from "@/lib/dates";
+import { assignablePeople } from "@/lib/assignable-people";
 
 export type NoteRow = {
   id: string;
@@ -66,7 +67,7 @@ export function OnboardingNotes({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No mention</SelectItem>
-              {people.map((p) => (
+              {assignablePeople(people).map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   @{p.full_name || p.email || "Teammate"}
                 </SelectItem>

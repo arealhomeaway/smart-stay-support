@@ -25,6 +25,7 @@ import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { buildReleaseContext } from "@/lib/onboarding-state";
 import { groupMyWork, myWorkSelection, validateMyWorkSearch } from "@/lib/onboarding-work-views";
 import { isTestRecord } from "@/lib/test-data";
+import { assignablePeople } from "@/lib/assignable-people";
 import {
   getOnboardingWorkspace,
   addOnboardingNoteFn,
@@ -250,7 +251,7 @@ function MyWork() {
               <SelectContent>
                 <SelectItem value="me">Assigned to me</SelectItem>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {data.people.map((p) => (
+                {assignablePeople(data.people).map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.full_name || p.email || "Teammate"}
                   </SelectItem>
