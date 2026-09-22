@@ -273,9 +273,11 @@ function OwnerHubBody({
         description="Here is where things stand across your homes, and anything that needs your attention."
         actions={
           <>
-            <Button onClick={() => setHeroLogOpen(true)}>
-              <Clock className="size-4" aria-hidden="true" /> Log hours
-            </Button>
+            {preview ? null : (
+              <Button onClick={() => openManualLog("")}>
+                <Clock className="size-4" aria-hidden="true" /> Log hours
+              </Button>
+            )}
             <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
               Pending decisions
               {openReviews.length > 0 ? (
