@@ -84,6 +84,24 @@ export function unresolvedFields(text: string, values: MergeValues) {
   return [...missing];
 }
 
+export const SIGNATURE_SEPARATOR = "--";
+
+/**
+ * Puts the writer's own sign-off at the foot of a message.
+ *
+ * The signature is added once: re-picking a template or re-opening the draft
+ * never stacks a second copy, and a message that already ends with it is left
+ * exactly as the person wrote it.
+ */
+export function withSignature(body: string, signature: string | null | undefined) {
+  const sign = (signature ?? "").trim();
+  if (!sign) return body;
+  const text = body.replace(/\s+$/, "");
+  if (text.includes(sign)) return body;
+  const block = `${SIGNATURE_SEPARATOR}\n${sign}`;
+  return text ? `${text}\n\n${block}` : block;
+}
+
 export type ComposerDraft = { to: string; subject: string; body: string };
 
 /**
