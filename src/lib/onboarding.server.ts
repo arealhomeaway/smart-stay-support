@@ -679,6 +679,95 @@ export async function submitOwnerApproval(
 }
 
 /**
+ * One-step "Send to Homeowner" from a task drawer.
+ *
+ * Nothing new is invented: the note becomes the detail of the SAME canonical
+ * approval record every other path uses, the chosen files are marked shared
+ * through the existing visibility rule, and a step that was not marked as
+ * needing a homeowner decision is marked so first (project lead only). The
+ * homeowner then sees it in their Onboarding actions queue, or by
+ * Resolve-generated email when they are not enrolled.
+ */
+export async function sendTaskToOwner(
+  supabase: Client,
+  userId: string,
+  input: { taskId: string; note: string; version: string; documentIds: string[] },
+) {
+  await assertCap(supabase, userId, "is_onboarding_staff");
+  const task = await supabase
+    .from("onboarding_tasks")
+    .select(
+      "id, property_id, assigned_to, title, detail, due_on, is_demo, requires_owner_approval, owner_approval_status",
+    )
+    .eq("id", input.taskId)
+    .maybeSingle();
+  if (task.error) throw task.error;
+  if (!task.data) throw new Error("That task is not available.");
+  const access = await onboardingTaskAccess(
+    supabase,
+    userId,
+    task.data.property_id,
+    task.data.assigned_to,
+  );
+  if (task.data.owner_approval_status === "approved") {
+    throw new Error("The homeowner already approved this step.");
+  }
+
+  if (!task.data.requires_owner_approval) {
+    if (!access.canManage) {
+      throw new Error(
+        "Only the project lead can send a step that is not already marked for a homeowner decision.",
+      );
+    }
+    const { error } = await supabase
+      .from("onboarding_tasks")
+      .update({ requires_owner_approval: true, owner_approval_status: "pending" })
+      .eq("id", task.data.id);
+    if (error) throw error;
+  }
+
+  // Share the selected files through the one visibility rule.
+  if (input.documentIds.length > 0) {
+    const { loadViewer, setVisibility } = await import("./attachments.server");
+    const viewer = await loadViewer(supabase, userId);
+    for (const documentId of input.documentIds) {
+      await setVisibility(viewer, documentId, "owner_shared");
+    }
+  }
+
+  const { approvalId, channel } = await ensureOwnerApprovalRequest(supabase, userId, {
+    taskId: task.data.id,
+    propertyId: task.data.property_id,
+    title: task.data.title,
+    detail: input.note,
+    dueOn: task.data.due_on,
+    isDemo: task.data.is_demo ?? false,
+    version: input.version || null,
+  });
+  if (!approvalId || channel === "none") {
+    throw new Error(
+      "This home has no enrolled homeowner and no homeowner email on file, so nothing could be sent. Add an owner contact email on the Property tab first.",
+    );
+  }
+
+  await writeAudit({
+    actorId: userId,
+    action: "owner_task_sent",
+    entityType: "onboarding_task",
+    entityId: task.data.id,
+    entityLabel: task.data.title,
+    after: { approvalId, channel, sharedFiles: input.documentIds.length },
+  });
+  return {
+    ok: true as const,
+    approvalId,
+    channel,
+    sharedFiles: input.documentIds.length,
+  };
+}
+
+
+/**
  * Staff confirm the homeowner's final answer on a task approval.
  *
  * A standard owner replies by email, so a member of staff records what they
