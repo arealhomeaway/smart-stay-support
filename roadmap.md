@@ -669,3 +669,4 @@ Batch B (work surface)
 - [x] Program type toggle (Standard / Active Owner) on the onboarding dashboard
 - [ ] Void (mark not needed) button at the top of the task pop-up window
 - [ ] Filter all onboarding tasks, including an Active Owner task filter for dispatch
+- [ ] Only directors (supervisors) can create onboarding tasks; PMs cannot
