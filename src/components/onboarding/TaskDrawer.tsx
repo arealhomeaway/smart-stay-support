@@ -212,6 +212,8 @@ export function TaskDrawer({
     if (nextTask && onAdvance) onAdvance(nextTask.id);
   };
 
+  const finishesStep = action?.id === "complete_task" || action?.id === "reopen_or_move_on";
+
   const runAction = (id: TaskActionId, values: Record<string, string>) => {
     const text = (k: string) => (values[k] ?? "").trim();
     if (id === "clear_blocker") {
