@@ -670,3 +670,4 @@ Batch B (work surface)
 - [ ] Void (mark not needed) button at the top of the task pop-up window
 - [ ] Filter all onboarding tasks, including an Active Owner task filter for dispatch
 - [ ] Only directors (supervisors) can create onboarding tasks; PMs cannot
+- [ ] Link Victor as Active Owner on 3915 W 104th St S and 9211 Fitzgerald Dr; dispatch work from onboarding visible in his owner portal
