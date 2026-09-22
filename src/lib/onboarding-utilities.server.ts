@@ -69,6 +69,10 @@ export async function loadUtilitiesBoard(supabase: SupabaseClient<Database>) {
     credentials: (credentials.data ?? []) as BoardCredential[],
     meters: (assets.data ?? []) as BoardMeter[],
     documents: (documents.data ?? []) as BoardDocument[],
-    testIds: rows.filter((p) => isTestRecord(p.name) || isTestRecord(p.nickname)).map((p) => p.id),
+    testIds: rows
+      .filter(
+        (p) => isTestRecord(p) || isTestRecord({ name: p.nickname, is_demo: p.is_demo }),
+      )
+      .map((p) => p.id),
   });
 }
