@@ -52,6 +52,8 @@ export type TemplateTask = {
   /** Breezeway "New House Setup" template that fulfils this work order. */
   breezewayTemplateId?: string;
   subtasks?: string[];
+  /** Free-form step tags. "active_owner" marks work the homeowner does. */
+  tags?: string[];
   sortOrder: number;
   /** The phase this task lived under before the 8-stage sequence. */
   legacyStage?: string;
