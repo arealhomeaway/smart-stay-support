@@ -8,7 +8,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { usDateTime } from "@/lib/format";
+import { usDateTime } from "@/lib/dates";
 import {
   rankRecipientSuggestions,
   type RecipientSuggestion,
