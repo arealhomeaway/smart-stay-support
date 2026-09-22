@@ -27,7 +27,7 @@ import {
   type PropertyUtilities,
   type UtilityCard,
 } from "@/lib/onboarding-utilities";
-import { formatDate } from "@/lib/dates";
+import { usCalendarDate } from "@/lib/dates";
 
 type Search = {
   status?: UtilityStatus | "all" | "outstanding";
@@ -277,7 +277,7 @@ function UtilityCardView({ card }: { card: UtilityCard }) {
         <Line label="Account #" value={card.accountNumber} />
         <Line
           label="Transfer date"
-          value={card.transferDate ? formatDate(card.transferDate) : null}
+          value={card.transferDate ? usCalendarDate(card.transferDate) : null}
         />
       </dl>
 
