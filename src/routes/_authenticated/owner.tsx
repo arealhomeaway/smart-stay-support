@@ -233,6 +233,10 @@ function OwnerHubBody({
         ownerUpdateRevision: null,
       }
     : null;
+  // Anything the homeowner starts themselves is recorded with no anchor.
+  const [heroLogActivity, setHeroLogActivity] = useState("");
+  const [heroManual, setHeroManual] = useState(true);
+  const heroLogAnchor = heroManual ? null : heroAnchor;
   const scrollToSection = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -271,11 +275,9 @@ function OwnerHubBody({
         description="Here is where things stand across your homes, and anything that needs your attention."
         actions={
           <>
-            {heroAnchor ? (
-              <Button onClick={() => setHeroLogOpen(true)}>
-                <Clock className="size-4" aria-hidden="true" /> Log hours
-              </Button>
-            ) : null}
+            <Button onClick={() => setHeroLogOpen(true)}>
+              <Clock className="size-4" aria-hidden="true" /> Log hours
+            </Button>
             <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
               Pending decisions
               {openReviews.length > 0 ? (
@@ -291,16 +293,18 @@ function OwnerHubBody({
         }
       />
 
-      {heroAnchor ? (
-        <LogTimeDialog
-          open={heroLogOpen}
-          onOpenChange={setHeroLogOpen}
-          programId={program.id}
-          anchor={heroAnchor}
-          defaultActivity=""
-          onDone={invalidate}
-        />
-      ) : null}
+      <LogTimeDialog
+        open={heroLogOpen}
+        onOpenChange={setHeroLogOpen}
+        programId={program.id}
+        // Without an open opportunity the homeowner records the activity
+        // themselves: a meeting, a call, research or an errand.
+        anchor={heroLogAnchor}
+        defaultActivity={heroLogActivity}
+        phase={ownerPhase}
+        properties={properties.map((p) => ({ id: p.id, name: p.name }))}
+        onDone={invalidate}
+      />
 
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
