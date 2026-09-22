@@ -665,5 +665,5 @@ Batch B (work surface)
 
 ## Onboarding walkthrough (2026-09-22)
 - [x] Fix "column onboarding_projects.archived_at does not exist" when saving scope dates
-- [ ] Homeowner card with add/edit owner + co-owner on property and onboarding pages
-- [ ] Program type toggle (Standard / Active Owner) on the onboarding dashboard
+- [x] Homeowner card with add/edit owner + co-owner on property and onboarding pages
+- [x] Program type toggle (Standard / Active Owner) on the onboarding dashboard
