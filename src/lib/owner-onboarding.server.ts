@@ -18,6 +18,15 @@ import { ownerTrackProgress, type OwnerTaskRow, type OwnerTrackProgress } from "
 
 type Client = SupabaseClient<Database>;
 
+/** An existing participation opportunity the homeowner may log time against. */
+export type OwnerParticipationAnchor = {
+  reviewId: string;
+  phase: string;
+  ticketId: string | null;
+  propertyIds: string[];
+  title: string;
+};
+
 export type OwnerOnboardingFile = {
   id: string;
   title: string;
