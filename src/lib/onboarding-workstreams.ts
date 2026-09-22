@@ -12,7 +12,7 @@
 
 import type { TaskView, WorkflowTask } from "@/lib/onboarding-workflow";
 import { viewTask } from "@/lib/onboarding-workflow";
-import type { ReleaseContext } from "@/lib/onboarding-release";
+import type { ReleaseContext } from "@/lib/onboarding-state";
 
 export const WORKSTREAM_KEYS = [
   "access_utilities",
