@@ -72,6 +72,8 @@ export type OwnerOnboardingHome = {
 export type OwnerOnboardingView = {
   inOnboarding: boolean;
   preview: boolean;
+  /** The homeowner's own program, so time can be logged from here. */
+  programId: string | null;
   pending: OwnerOnboardingAction[];
   decided: OwnerOnboardingAction[];
   homes: OwnerOnboardingHome[];
@@ -80,6 +82,7 @@ export type OwnerOnboardingView = {
 const EMPTY: OwnerOnboardingView = {
   inOnboarding: false,
   preview: false,
+  programId: null,
   pending: [],
   decided: [],
   homes: [],
