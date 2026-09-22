@@ -11,7 +11,6 @@ import { LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/u
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { usDate } from "@/lib/dates";
 import { awaitingMyReview } from "@/lib/onboarding-hub";
-import { applyTestDataFilter } from "@/lib/test-data";
 import { lifecycleStageMeta, withinDays, type ProjectSummary } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
 import heroImage from "@/assets/hero-arha-property.jpg";
