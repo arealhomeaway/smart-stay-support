@@ -136,54 +136,6 @@ export function CurrentWork({
         </section>
       )}
 
-      {/* ---------------------------------------------- applicable branches */}
-      {branches.length > 0 && (
-        <section className="surface p-4">
-          <p className="eyebrow">This home&apos;s work</p>
-          <p className="pb-2 text-xs text-muted-foreground">
-            Only the branches that apply to this property. Nothing here needs an N/A.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {branches.map((b) => (
-              <span
-                key={b.key}
-                className={cn(
-                  "rounded-md border px-2.5 py-1 text-xs font-medium",
-                  b.done === b.total
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                    : "border-border bg-card text-muted-foreground",
-                )}
-              >
-                {b.label} · {b.done}/{b.total}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ------------------------------------------------------ review gates */}
-      <section className="surface p-4">
-        <p className="eyebrow">Handoff gates</p>
-        <div className="mt-2 grid gap-1.5 sm:grid-cols-6">
-          {gates.map((g) => (
-            <div
-              key={g.key}
-              title={g.blurb}
-              className={cn(
-                "rounded-md border px-2.5 py-1.5 text-xs",
-                g.state === "done" && "border-emerald-200 bg-emerald-50 text-emerald-800",
-                g.state === "current" && "border-primary bg-primary/10 font-medium text-primary",
-                g.state === "upcoming" && "border-border bg-card/40 text-muted-foreground",
-              )}
-            >
-              {g.label}
-            </div>
-          ))}
-        </div>
-        <p className="pt-2 text-xs text-muted-foreground">
-          Gates run in order. A future gate is a milestone, not an action.
-        </p>
-      </section>
     </div>
   );
 }
