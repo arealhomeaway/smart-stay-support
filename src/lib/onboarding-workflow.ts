@@ -241,9 +241,10 @@ export function viewTask(
     status = RELEASE_TO_STATUS[verdict.state] ?? "ready";
     reason = verdict.reason ?? reason;
     canComplete = verdict.canComplete;
-  } else if (status === "needs_review" || status === "blocked" || status === "not_ready") {
+  } else if (status !== "ready" && status !== "in_progress" && status !== "complete") {
     canComplete = false;
   }
+
 
   // Overdue describes work someone can actually do today. A task that is
   // still waiting on a prerequisite, an internal blocker or a homeowner
