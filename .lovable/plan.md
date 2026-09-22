@@ -24,9 +24,13 @@ Add a closeout card in the homeowner hub that appears as Day 90 approaches and a
 
 ## 4. Your ARHA contacts
 
-The packet names the people. The portal names nobody.
+The packet names the people. The portal names nobody. The card makes the working relationship explicit rather than implying Kati and Emily handle day-to-day traffic:
 
-Add a contacts card showing the homeowner's onboarding contact (Kati Hand) and Active Owner contact (Emily Jimenez) during the program, switching to James Miller after closeout — with role, email and direct line, matching the packet exactly.
+- **During onboarding** — the homeowner's day-to-day contacts are their project manager and utility manager, shown by name from the home's actual assignments. Kati Hand (Director of Onboarding) and Emily Jimenez (COO) are listed as the escalation contacts.
+- **After handoff and listing** — the day-to-day contacts become their property coordinator and the Director of Onboarding for continued management of the home. Emily remains the escalation contact through the program period.
+- **After Day-90 closeout** — James Miller, Jr. (CFO) becomes the primary contact for invoicing, billing and ongoing owner concerns.
+
+Each person shows role, email and direct line; the packet's people are exact, the PM / utility manager / coordinator come from the home's assignments and fall back to the escalation contact when a seat is unfilled.
 
 ## What I am not changing
 
