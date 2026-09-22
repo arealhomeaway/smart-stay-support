@@ -775,7 +775,7 @@ export async function sendTaskToOwner(
   // with the request instead of leaving the homeowner an empty card with no
   // instructions and nothing to act on.
   let published = false;
-  if (channel === "portal") {
+  if (channel === "in_app") {
     const { loadOwnerApprovalPublicationContext, publishOwnerApproval } = await import(
       "./owner-approval.server"
     );

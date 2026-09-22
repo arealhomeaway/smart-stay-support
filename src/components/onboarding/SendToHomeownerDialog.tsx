@@ -62,7 +62,9 @@ export function SendToHomeownerDialog({
       toast.success(
         result.channel === "email"
           ? "Sent — the homeowner received a Resolve email."
-          : "Sent — it is now in the homeowner's Onboarding actions.",
+          : result.published
+            ? "Sent — your instructions are in the homeowner's portal and they can respond."
+            : "Sent — it is in the homeowner's portal, but your instructions still need publishing.",
       );
       setOpen(false);
       setNote("");
@@ -162,7 +164,7 @@ export function SendToHomeownerDialog({
               Cancel
             </Button>
             <Button
-              disabled={disabled || note.trim().length < 5 || mutation.isPending}
+              disabled={disabled || note.trim().length < 20 || mutation.isPending}
               onClick={() =>
                 mutation.mutate({
                   taskId,
