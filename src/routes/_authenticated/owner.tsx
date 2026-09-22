@@ -380,7 +380,7 @@ function OwnerHubBody({
         // A home is still being set up when its open work is onboarding work.
         phase={ownerPhase}
         openReviews={openReviews.length}
-        onLogHours={preview ? undefined : openManualLog}
+        {...(preview ? {} : { onLogHours: openManualLog })}
       />
 
       <OwnerApprovalPanel readOnly={preview} />
