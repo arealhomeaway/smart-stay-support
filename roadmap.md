@@ -610,3 +610,4 @@ is now doable from Resolve.
 - [x] Vendor staging & trade coverage lookup per home
 - [x] Email composer warns when the shared inbox is disconnected
 - [ ] Email sending live — blocked: the Microsoft 365 shared mailbox (info@arealhomeaway.com) must be reconnected on Integrations
+- [ ] Show profile photos on task assignees, activity updates and team member lists
