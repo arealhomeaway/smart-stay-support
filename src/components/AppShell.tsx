@@ -62,6 +62,7 @@ import {
 } from "@/components/PortalSwitcher";
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
+import { OwnerSidebarNav } from "@/components/owner/OwnerSidebarNav";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -307,9 +308,9 @@ const vendorGroups: NavGroup[] = [
     items: [{ to: "/vendor", label: "My work orders", icon: HardHat, tour: "vendor" }],
   },
 ];
-const ownerGroups: NavGroup[] = [
-  { label: "My home", items: [{ to: "/owner", label: "My home", icon: KeyRound, tour: "owner" }] },
-];
+// Homeowner navigation is data-driven (their homes) and page-section based, so
+// it is rendered by OwnerSidebarNav instead of a static group list.
+const ownerGroups: NavGroup[] = [];
 
 /** Unfinished general tour/welcome popup — hidden until role-specific tours land. */
 const SHOW_GENERAL_TOUR = false;
@@ -460,6 +461,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </SidebarHeader>
         <SidebarContent>
+          {ownerMode ? <OwnerSidebarNav /> : null}
           {groups.map((group) => (
             <SidebarGroup key={group.label}>
               <SidebarGroupLabel className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/50">
