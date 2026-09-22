@@ -92,8 +92,8 @@ export function LogTimeDialog({
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!anchor) throw new Error("Open the opportunity before logging participation.");
-      if (anchor.phase !== "onboarding" && anchor.phase !== "ongoing") {
+      const entryPhase = anchor ? anchor.phase : phase;
+      if (entryPhase !== "onboarding" && entryPhase !== "ongoing") {
         throw new Error("This opportunity needs a valid participation phase.");
       }
       let attachmentPath: string | null = null;
