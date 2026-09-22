@@ -225,7 +225,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     activeOwnerProperties: [...participation.values()],
     approvalMismatches,
     handoffs: handoffs.data ?? [],
-    people: people.data ?? [],
+    people: peopleWithRoles,
     notes: notes.data ?? [],
     reviews: reviews.data ?? [],
     externalDatabases: extDbs.data ?? [],
