@@ -76,7 +76,8 @@ export const getComposerContext = createServerFn({ method: "GET" })
     const { gatherComposerContext, loadPreviousContacts } = await import(
       "./email-composer.server"
     );
-    const name = await senderName(context as never as Ctx);
+    const profile = await senderProfile(context as never as Ctx);
+    const name = profile.full_name;
     const gathered = await gatherComposerContext(
       context.supabase as never,
       data.context,
@@ -101,6 +102,8 @@ export const getComposerContext = createServerFn({ method: "GET" })
     return {
       ...gathered,
       previousContacts,
+      signature: profile.email_signature,
+      senderName: profile.full_name,
       canManageTemplates: Boolean(canManage),
       templates: (templates ?? []).filter((t) =>
         ((t["contexts"] as string[] | null) ?? []).includes(data.context),
@@ -174,7 +177,7 @@ export const sendComposedEmail = createServerFn({ method: "POST" })
 
     // The record must be readable by this person before anything leaves.
     const { gatherComposerContext } = await import("./email-composer.server");
-    const name = await senderName(context as never as Ctx);
+    const name = (await senderProfile(context as never as Ctx)).full_name;
     await gatherComposerContext(context.supabase as never, data.context, data.recordId, name);
 
     const { sendEmail, emailShell } = await import("./email.server");
