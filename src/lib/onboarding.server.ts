@@ -371,6 +371,9 @@ export async function saveOnboardingTask(
   },
 ) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // Adding work to a plan is a director decision; project managers work the
+  // plan they are given and may still edit existing steps.
+  if (!input.id) await assertCap(supabase, userId, "is_supervisor");
   if (!input.id && input.status === "complete") {
     throw new Error("Create the step first, then complete it after its readiness checks.");
   }
