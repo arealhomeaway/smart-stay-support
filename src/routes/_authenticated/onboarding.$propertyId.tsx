@@ -405,6 +405,13 @@ function PropertyWorkspace() {
         </p>
       )}
 
+      <GoLiveBanner
+        target={target}
+        blockers={blockers}
+        accepted={Boolean(current.handoff_accepted_at)}
+        onOpenTask={setOpenTaskId}
+      />
+
       <CurrentWork
         stage={stage}
         chain={chain}
