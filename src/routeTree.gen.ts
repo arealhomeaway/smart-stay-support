@@ -22,6 +22,7 @@ import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
+import { Route as AuthenticatedHomeownersRouteImport } from './routes/_authenticated/homeowners'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedInquirySourcesRouteImport } from './routes/_authenticated/inquiry-sources'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
@@ -33,6 +34,7 @@ import { Route as AuthenticatedOpsAnalyticsRouteImport } from './routes/_authent
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner-analytics'
+import { Route as AuthenticatedOwnerOversightRouteImport } from './routes/_authenticated/owner-oversight'
 import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
@@ -147,6 +149,11 @@ const AuthenticatedDemoRoute = AuthenticatedDemoRouteImport.update({
   path: '/demo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHomeownersRoute = AuthenticatedHomeownersRouteImport.update({
+  id: '/homeowners',
+  path: '/homeowners',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
   id: '/hub',
   path: '/hub',
@@ -204,6 +211,12 @@ const AuthenticatedOwnerAnalyticsRoute =
   AuthenticatedOwnerAnalyticsRouteImport.update({
     id: '/owner-analytics',
     path: '/owner-analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerOversightRoute =
+  AuthenticatedOwnerOversightRouteImport.update({
+    id: '/owner-oversight',
+    path: '/owner-oversight',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOwnerProgramsRoute =
@@ -485,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
+  '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -496,6 +510,7 @@ export interface FileRoutesByFullPath {
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -556,6 +571,7 @@ export interface FileRoutesByTo {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
+  '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -565,6 +581,7 @@ export interface FileRoutesByTo {
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -626,6 +643,7 @@ export interface FileRoutesById {
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/demo': typeof AuthenticatedDemoRoute
+  '/_authenticated/homeowners': typeof AuthenticatedHomeownersRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
@@ -637,6 +655,7 @@ export interface FileRoutesById {
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/_authenticated/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
@@ -700,6 +719,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/dashboard'
     | '/demo'
+    | '/homeowners'
     | '/hub'
     | '/inquiry-sources'
     | '/integrations'
@@ -711,6 +731,7 @@ export interface FileRouteTypes {
     | '/oversight'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-oversight'
     | '/owner-programs'
     | '/playbooks'
     | '/properties'
@@ -771,6 +792,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/dashboard'
     | '/demo'
+    | '/homeowners'
     | '/hub'
     | '/inquiry-sources'
     | '/integrations'
@@ -780,6 +802,7 @@ export interface FileRouteTypes {
     | '/oversight'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-oversight'
     | '/owner-programs'
     | '/playbooks'
     | '/properties'
@@ -840,6 +863,7 @@ export interface FileRouteTypes {
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
     | '/_authenticated/demo'
+    | '/_authenticated/homeowners'
     | '/_authenticated/hub'
     | '/_authenticated/inquiry-sources'
     | '/_authenticated/integrations'
@@ -851,6 +875,7 @@ export interface FileRouteTypes {
     | '/_authenticated/oversight'
     | '/_authenticated/owner'
     | '/_authenticated/owner-analytics'
+    | '/_authenticated/owner-oversight'
     | '/_authenticated/owner-programs'
     | '/_authenticated/playbooks'
     | '/_authenticated/properties'
@@ -1010,6 +1035,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDemoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/homeowners': {
+      id: '/_authenticated/homeowners'
+      path: '/homeowners'
+      fullPath: '/homeowners'
+      preLoaderRoute: typeof AuthenticatedHomeownersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/hub': {
       id: '/_authenticated/hub'
       path: '/hub'
@@ -1085,6 +1117,13 @@ declare module '@tanstack/react-router' {
       path: '/owner-analytics'
       fullPath: '/owner-analytics'
       preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner-oversight': {
+      id: '/_authenticated/owner-oversight'
+      path: '/owner-oversight'
+      fullPath: '/owner-oversight'
+      preLoaderRoute: typeof AuthenticatedOwnerOversightRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner-programs': {
@@ -1526,6 +1565,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
+  AuthenticatedHomeownersRoute: typeof AuthenticatedHomeownersRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedInquirySourcesRoute: typeof AuthenticatedInquirySourcesRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
@@ -1537,6 +1577,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
+  AuthenticatedOwnerOversightRoute: typeof AuthenticatedOwnerOversightRoute
   AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
@@ -1566,6 +1607,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDemoRoute: AuthenticatedDemoRoute,
+  AuthenticatedHomeownersRoute: AuthenticatedHomeownersRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedInquirySourcesRoute: AuthenticatedInquirySourcesRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
@@ -1577,6 +1619,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
+  AuthenticatedOwnerOversightRoute: AuthenticatedOwnerOversightRoute,
   AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,

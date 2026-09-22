@@ -14,6 +14,7 @@ import {
   PROGRESS_META,
   nextMilestone,
 } from "./owner-participation";
+import { milestoneCheckpoints, milestoneWindow } from "./owner-milestones";
 import {
   loadProgramAggregate,
   recordEvent,
@@ -76,6 +77,25 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       severity: 2,
       title: "A few activities are still waiting for you",
       body: `It has been about a week since your last participation entry and you have ${openTasks.length} activit${openTasks.length === 1 ? "y" : "ies"} open. If you have already done the work, please record the time you spent.`,
+    });
+  }
+
+  // Day 30 / 60 / 90 check-in. One gentle message per checkpoint window,
+  // encouraging either way, and never a statement about tax treatment.
+  const checkpoint = milestoneWindow(s.day);
+  if (checkpoint) {
+    const view = milestoneCheckpoints({ day: s.day, reportedHours: hours }).find(
+      (c) => c.day === checkpoint,
+    );
+    const onPace = view?.state === "met";
+    out.push({
+      kind: `checkpoint_${checkpoint}`,
+      alertKind: "progress_checkpoint",
+      severity: onPace ? 1 : 3,
+      title: `Day ${checkpoint} check-in`,
+      body: onPace
+        ? `You are at the day ${checkpoint} point of your 90 days with ${hours} hours entered — right on pace. Thank you for keeping your entries up to date.`
+        : `You are at the day ${checkpoint} point of your 90 days with ${hours} hours entered, a little behind the ${view?.expectedHours ?? 0}-hour pace for this checkpoint. If you have completed activities you have not entered yet, this is a good moment to add them.`,
     });
   }
 
@@ -230,6 +250,23 @@ export async function syncCoverageAlerts(supabase: Client, agg: ProgramAggregate
       title: "Owner reached the 100-hour target with property work still open",
       body: "The combined hour goal is met, but required property tasks or decisions remain outstanding.",
       reason: "goal_met_work_open",
+    });
+  }
+
+  // Day 30 / 60 / 90 touchpoint for the assigned staff, once per checkpoint.
+  const s = agg.snapshot;
+  const checkpoint = milestoneWindow(s.day);
+  if (checkpoint && !agg.goalMet) {
+    const view = milestoneCheckpoints({ day: s.day, reportedHours: s.reportedHours }).find(
+      (c) => c.day === checkpoint,
+    );
+    const onPace = view?.state === "met";
+    rows.push({
+      title: `Day ${checkpoint} checkpoint for ${agg.program.ownerName ?? "this homeowner"}`,
+      body: onPace
+        ? `Day ${checkpoint} of 90 with ${s.reportedHours} hours entered — on pace. A short check-in call keeps it steady.`
+        : `Day ${checkpoint} of 90 with ${s.reportedHours} hours entered, about ${view?.shortfallHours ?? 0} behind the ${view?.expectedHours ?? 0}-hour pace point. Worth a personal touchpoint this week.`,
+      reason: `milestone_touchpoint_${checkpoint}`,
     });
   }
 

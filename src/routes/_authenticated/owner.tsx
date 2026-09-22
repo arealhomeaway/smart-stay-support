@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,6 +18,8 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { MilestonePacing } from "@/components/owner/MilestonePacing";
+import { useRole } from "@/hooks/useRole";
 import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +96,7 @@ function OwnerHub() {
   // In demo mode the homeowner portal always opens the demo home, so staff can
   // walk the homeowner experience instead of hitting the "no home linked" wall.
   const previewing = Boolean(ownerPreview) || demoMode;
+  const { isStaff: isStaffViewer } = useRole();
 
   const home = useQuery({
     queryKey: [
@@ -112,6 +115,27 @@ function OwnerHub() {
 
   if (home.isLoading) return <LoadingPage tiles={4} />;
   if (!home.data || !home.data.linked) {
+    // Staff land here by clicking around; tell them where their own view is
+    // rather than leaving them on a homeowner's empty screen.
+    if (isStaffViewer) {
+      return (
+        <EmptyState
+          title="You are looking at the homeowner portal."
+          hint="This screen only fills in for a homeowner whose account is linked to a home. The program-wide view for staff is Active Owner program oversight."
+          icon={<HomeIcon className="size-8" />}
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button asChild>
+                <Link to="/owner-oversight">Open program oversight</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/owner-programs">Program admin</Link>
+              </Button>
+            </div>
+          }
+        />
+      );
+    }
     return (
       <EmptyState
         title="No home is linked to your account yet."
@@ -221,6 +245,14 @@ function OwnerHubBody({
           ))}
         </div>
       </div>
+
+      <MilestonePacing
+        day={snapshot.day}
+        reportedHours={snapshot.reportedHours}
+        benchmark={snapshot.benchmark}
+        goalMet={targetReached}
+        audience="owner"
+      />
 
       <SectionCard
         title="Needs your attention"
