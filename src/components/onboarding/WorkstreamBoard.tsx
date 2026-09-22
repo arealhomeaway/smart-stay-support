@@ -10,7 +10,6 @@
  */
 
 import { Chip, SectionCard } from "@/components/ui/page";
-import { Button } from "@/components/ui/button";
 import { stateChip } from "@/lib/semantic";
 import { usDate } from "@/lib/dates";
 import {
@@ -190,5 +189,3 @@ export function WorkstreamBoard({
     </div>
   );
 }
-
-export { Button as _WorkstreamBoardButton };
