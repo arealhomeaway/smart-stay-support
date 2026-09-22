@@ -416,6 +416,26 @@ function ProgramCard({
     void router.navigate({ to: "/owner" });
   }
 
+  /**
+   * Step fully into the homeowner's account to test what they can actually do.
+   * Unlike the preview, everything here is real and recorded as them.
+   */
+  async function actAsHomeowner() {
+    if (!row.ownerUserId) return;
+    setActing(true);
+    try {
+      await beginActAs({ userId: row.ownerUserId, origin: "/owner-programs" });
+      await router.navigate({ to: "/owner" });
+      router.invalidate();
+      toast.success("You are now acting as this homeowner.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open a test session.");
+    } finally {
+      setActing(false);
+    }
+  }
+
+
   return (
     <SectionCard
       title={row.ownerName || "Owner not named yet"}
@@ -440,6 +460,16 @@ function ProgramCard({
           <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
             <Eye className="size-4" /> Preview as homeowner
           </Button>
+          {isSupervisor && row.ownerUserId ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={acting}
+              onClick={() => void actAsHomeowner()}
+            >
+              <UserCheck className="size-4" /> {acting ? "Opening…" : "Act as this homeowner"}
+            </Button>
+          ) : null}
           <Button size="sm" variant="outline" onClick={onToggle}>
             {expanded ? "Hide" : "Manage"}
           </Button>
