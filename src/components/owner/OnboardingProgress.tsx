@@ -4,12 +4,18 @@
  * Four tracks, one meter each, plus an overall figure. No task titles,
  * assignees, blockers, vendors or costs ever appear here.
  */
+import { CalendarClock } from "lucide-react";
 import { SectionCard } from "@/components/ui/page";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { usCalendarDate } from "@/lib/dates";
+import { ownerGoLive } from "@/lib/owner-onboarding";
+import { todayCalendarDate } from "@/lib/onboarding-golive";
 import type { OwnerOnboardingHome } from "@/lib/owner-onboarding.server";
 
 export function OnboardingProgress({ homes }: { homes: OwnerOnboardingHome[] }) {
   if (homes.length === 0) return null;
+  const today = todayCalendarDate();
 
   return (
     <SectionCard
