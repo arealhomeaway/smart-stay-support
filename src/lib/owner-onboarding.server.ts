@@ -361,6 +361,8 @@ export async function loadOwnerOnboardingPreview(
       decidedAt: (r.decided_at as string | null) ?? null,
       createdAt: (r.created_at as string) ?? new Date().toISOString(),
       files: files.get(r.entity_id as string) ?? [],
+      // Staff previews never log an owner's time.
+      participation: null,
     };
   });
 
