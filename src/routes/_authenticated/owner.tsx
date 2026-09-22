@@ -45,6 +45,12 @@ import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
 import { OwnerBadges } from "@/components/OwnerBadges";
+import { JourneyStrip } from "@/components/owner/JourneyStrip";
+import { ArhaContacts } from "@/components/owner/ArhaContacts";
+import { AfterDayNinety } from "@/components/owner/AfterDayNinety";
+import { programStage } from "@/lib/owner-journey";
+import { JAMES, contactsFor, contactPhaseFor } from "@/lib/arha-contacts";
+import { ownerContacts } from "@/lib/owner-contacts.functions";
 import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
 import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
 import { useOwnerPreview } from "@/lib/owner-preview";
@@ -175,6 +181,45 @@ function OwnerHubBody({
   );
   const heroPhoto = properties.find((p) => p.photoUrl)?.photoUrl ?? undefined;
 
+  // The Welcome Packet's six milestones, positioned from signals ARHA already
+  // tracks on each enrolled home.
+  const included = properties.filter((p) => p.inclusionStatus === "included");
+  const journeyHomes = (included.length ? included : properties).map((p) => ({
+    name: p.name,
+    closingConfirmed: p.closingConfirmed ?? null,
+    onboardingStatus: p.onboardingStatus ?? null,
+    launchStatus: p.launchStatus ?? null,
+  }));
+  const stage = programStage(
+    {
+      status: program.status,
+      completedAt: program.completedAt ?? null,
+      programDay: snapshot.day,
+    },
+    journeyHomes,
+  );
+
+  const loadContacts = useServerFn(ownerContacts);
+  const contactsQuery = useQuery({
+    queryKey: ["owner-contacts", program.id, preview],
+    queryFn: () => loadContacts({ data: { programId: program.id, preview } }),
+  });
+  const handedOff =
+    journeyHomes.length > 0 &&
+    journeyHomes.every((h) =>
+      ["ready", "launching", "launched", "live"].includes((h.launchStatus ?? "").toLowerCase()),
+    );
+  const contacts =
+    contactsQuery.data ??
+    contactsFor(
+      contactPhaseFor({
+        completedAt: program.completedAt ?? null,
+        status: program.status,
+        handedOff,
+      }),
+    );
+  const closeoutVisible = Boolean(program.completedAt) || snapshot.daysLeft <= 30;
+
   // "Log hours" from the hero uses the first participation opportunity staff
   // have opened; without one there is nothing to attach the time to.
   const [heroLogOpen, setHeroLogOpen] = useState(false);
@@ -301,6 +346,8 @@ function OwnerHubBody({
         audience="owner"
       />
 
+      <JourneyStrip current={stage} />
+
       <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
         title="Needs your attention"
@@ -375,6 +422,16 @@ function OwnerHubBody({
         )}
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
       </div>
+
+      {closeoutVisible && (
+        <AfterDayNinety
+          daysLeft={Math.max(0, snapshot.daysLeft)}
+          completed={Boolean(program.completedAt)}
+          primaryContact={contacts.primary ?? JAMES}
+        />
+      )}
+
+      <ArhaContacts contacts={contacts} />
 
       <SectionCard
         title="Your logged participation"
