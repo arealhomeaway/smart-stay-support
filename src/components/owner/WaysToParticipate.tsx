@@ -12,6 +12,9 @@ import {
   PARTICIPATION_PROMPT_NOTE,
 } from "@/lib/owner-participation-prompts";
 
+/** Suggestions that point straight at something already waiting on the owner. */
+const LINKED_PROMPTS = new Set(["pending-actions", "mood-board", "access"]);
+
 export function WaysToParticipate({
   phase,
   pendingOnboardingActions = 0,
