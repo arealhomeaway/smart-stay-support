@@ -83,7 +83,7 @@ export function AddPropertyDialog({
         </DialogHeader>
 
         {done ? (
-          <Outcome result={done} onClose={() => setOpen(false)} onAgain={() => setDone(null)} />
+          <OutcomePanel result={done} onClose={() => setOpen(false)} onAgain={() => setDone(null)} />
         ) : (
           <Tabs defaultValue="ownerrez" className="space-y-4">
             <TabsList>
