@@ -21,6 +21,7 @@ import {
   importOwnerRezPropertyFn,
   searchOwnerRezPropertiesFn,
 } from "@/lib/property-intake.functions";
+import { startOwnerProgram } from "@/lib/owner-program.functions";
 import type { IntakeMatch, OwnerRezCandidate } from "@/lib/property-intake";
 
 /**
@@ -123,6 +124,7 @@ function Outcome({
         Onboarding has not been started. Open the home and choose <strong>Start onboarding</strong>{" "}
         when you are ready.
       </p>
+      {result.status !== "duplicate" && <EnrollActiveOwner propertyId={p.id} name={p.name} />}
       <div className="flex flex-wrap gap-2">
         <Button asChild onClick={onClose}>
           <Link to="/property/$propertyId" params={{ propertyId: p.id }}>
@@ -138,6 +140,49 @@ function Outcome({
           Add another
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Every home arrives standard. Participation is a deliberate choice, so it is
+ * offered here rather than assumed — a supervisor can make it in the moment
+ * instead of discovering later that the home was never enrolled.
+ */
+function EnrollActiveOwner({ propertyId, name }: { propertyId: string; name: string }) {
+  const enroll = useServerFn(startOwnerProgram);
+  const [enrolled, setEnrolled] = useState(false);
+  const run = useMutation({
+    mutationFn: () => enroll({ data: { propertyId, ownerName: "", ownerEmail: "" } }),
+    onSuccess: () => {
+      setEnrolled(true);
+      toast.success(`${name} is enrolled in the Active Owner program.`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (enrolled) {
+    return (
+      <div className="surface space-y-1 p-4 text-sm">
+        <p className="font-medium">Enrolled in the Active Owner program</p>
+        <p className="text-muted-foreground">
+          The program is a draft. Activate it, and add the homeowner&apos;s details, on the home
+          page or the program record.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="surface space-y-2 p-4">
+      <p className="text-sm font-medium">Is this an Active Owner home?</p>
+      <p className="text-sm text-muted-foreground">
+        Standard is the default. Enrolling creates a draft participation program — the 90-day clock
+        only starts when you activate it.
+      </p>
+      <Button size="sm" variant="outline" onClick={() => run.mutate()} disabled={run.isPending}>
+        {run.isPending ? "Enrolling…" : "Enroll in Active Owner"}
+      </Button>
     </div>
   );
 }

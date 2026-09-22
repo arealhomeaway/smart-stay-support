@@ -36,6 +36,7 @@ import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
+import { ActiveOwnerPanel } from "@/components/property/ActiveOwnerPanel";
 import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
@@ -143,6 +144,16 @@ function PropertyHubPage() {
       {hub.viewer.staff && (
         <div id="credentials">
           <PropertyCredentialsPanel propertyId={propertyId} />
+        </div>
+      )}
+
+      {hub.viewer.staff && (
+        <div id="active-owner">
+          <ActiveOwnerPanel
+            propertyId={propertyId}
+            propertyName={hub.property.name}
+            canManage={hub.viewer.supervisor}
+          />
         </div>
       )}
 

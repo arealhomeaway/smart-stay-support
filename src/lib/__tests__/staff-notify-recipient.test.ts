@@ -92,6 +92,10 @@ function fixture(recipients: Recipient[]) {
               error: recipient?.unavailable === "roles" ? new Error("Roles unavailable") : null,
             }).then(resolve);
           }
+          if (table === "user_notification_preferences") {
+            // Nobody in this fixture has changed their settings.
+            return Promise.resolve({ data: [], error: null }).then(resolve);
+          }
           throw new Error(`Unexpected table: ${table}`);
         },
       };

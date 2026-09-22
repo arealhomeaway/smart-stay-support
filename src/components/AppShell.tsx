@@ -60,6 +60,7 @@ import {
   PortalSwitcher,
   ViewAsBanner,
 } from "@/components/PortalSwitcher";
+import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
@@ -500,6 +501,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           <DemoSidebarItem />
+          <AccountSidebarItem />
           <p className="px-2 pb-1 text-[0.65rem] leading-relaxed text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
             Every home. Every guest. Every time.
           </p>

@@ -113,6 +113,20 @@
       "when": 1790088455780,
       "tag": "0015_onboarding_budgets_and_assessment_findings",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790095050993,
+      "tag": "0016_account_profile_photos_and_notification_preferences",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790095119539,
+      "tag": "0017_avatar_storage_policies",
+      "breakpoints": true
     }
   ]
 }

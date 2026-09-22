@@ -611,3 +611,10 @@ is now doable from Resolve.
 - [x] Email composer warns when the shared inbox is disconnected
 - [ ] Email sending live — blocked: the Microsoft 365 shared mailbox (info@arealhomeaway.com) must be reconnected on Integrations
 - [ ] Show profile photos on task assignees, activity updates and team member lists
+
+## Account, photos & property controls (Emily, 2026-09-22)
+- [x] Account page with profile, photo upload and notification preferences (sidebar avatar entry)
+- [x] Profile photos on assignees, activity updates and team lists
+- [x] Move 3915 Maple Manor (3915 W 104th St S) back to onboarding lifecycle and initialize its onboarding workflow/tasks (176 steps created)
+- [x] Active Owner enrollment toggle/control on the Property Hub page (supervisor-gated)
+- [x] Enrolling a home into onboarding must offer the Active Owner choice at import (1399 Foxtail Ln came in as a standard property)
