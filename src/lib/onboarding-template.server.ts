@@ -101,7 +101,7 @@ async function loadContext(supabase: Client, propertyId: string) {
   const existing = await supabase
     .from("onboarding_tasks")
     .select(
-      "id, title, stage, parent_task_id, detail, due_on, requires_owner_approval, owner_approval_status",
+      "id, title, stage, parent_task_id, detail, due_on, due_on_overridden, status, completed_at, requires_owner_approval, owner_approval_status",
     )
     .eq("property_id", propertyId)
     .is("archived_at", null);
@@ -222,7 +222,17 @@ export async function previewOnboardingTemplate(
 export async function applyOnboardingTemplate(
   supabase: Client,
   userId: string,
-  input: { propertyId: string; templateId?: string | null },
+  input: {
+    propertyId: string;
+    templateId?: string | null;
+    /**
+     * "new" adds only the steps this home is missing. "new_and_existing" also
+     * refreshes the steps it already has from the plan — wording, tags, rules
+     * and timing — so a home that started before a plan change catches up.
+     * Finished work and manually set dates are never rewritten.
+     */
+     mode?: "new" | "new_and_existing" | null;
+  },
   audit: typeof writeAudit = writeAudit,
 ) {
   await assertOnboardingStaff(supabase, userId);
@@ -306,6 +316,56 @@ export async function applyOnboardingTemplate(
     }
   }
 
+  // Refreshing what is already here, when asked for.
+  let refreshed = 0;
+  if (input.mode === "new_and_existing") {
+    const byKey = new Map(plan.tasks.map((t) => [taskKey(t.stage, t.title), t] as const));
+    for (const row of existing) {
+      if (row.parent_task_id) continue;
+      if (row.status === "complete" || row.completed_at) continue;
+      const template =
+        byKey.get(taskKey(row.stage, row.title)) ??
+        byKey.get(taskKey(masterStageForLegacyTask(row.stage, row.title) ?? row.stage, row.title));
+      if (!template) continue;
+
+      const patch: Record<string, unknown> = {
+        stage: template.stage,
+        detail: detailFor(template),
+        blocks_handoff: template.blocksHandoff,
+        evidence_required: Boolean(template.evidenceRequired),
+        tags: template.tags ?? [],
+        sort_order: template.sortOrder,
+      };
+      // An approval already sent to the homeowner keeps its own state.
+      if (row.owner_approval_status === "not_required" || row.owner_approval_status === "pending") {
+        patch["requires_owner_approval"] = needsOwnerApproval(template);
+        patch["owner_approval_status"] = needsOwnerApproval(template) ? "pending" : "not_required";
+      }
+      if (!row.due_on_overridden) {
+        const schedule = {
+          position: positionOf.get(taskKey(template.stage, template.title)) ?? 0,
+          total,
+          windowDays,
+        };
+        const scheduled = Boolean(anchors.actual_access);
+        patch["due_on"] = dueFor(template, anchors, schedule);
+        patch["due_on_source"] = scheduled
+          ? "access_schedule"
+          : template.anchor
+            ? "template_anchor"
+            : null;
+        patch["schedule_anchor"] = scheduled ? "actual_access" : (template.anchor ?? null);
+        patch["schedule_offset_days"] = scheduled
+          ? offsetFromAccess({ title: template.title, ...schedule })
+          : (template.offsetDays ?? null);
+      }
+
+      const write = await supabase.from("onboarding_tasks").update(patch).eq("id", row.id);
+      if (write.error) throw write.error;
+      refreshed += 1;
+    }
+  }
+
   // Prepare canonical decisions without contacting an owner during plan setup.
   // Retry also repairs requests omitted by an earlier interrupted setup; the RPC
   // reuses pending approvals and preserves any decision already recorded.
@@ -370,6 +430,7 @@ export async function applyOnboardingTemplate(
     after: {
       template: plan.key,
       created: rows.length,
+      refreshed,
       subtasks: subRows.length,
       skipped: plan.tasks.length - pending.length,
     },
@@ -377,6 +438,7 @@ export async function applyOnboardingTemplate(
 
   return {
     created: rows.length,
+    refreshed,
     subtasksCreated: subRows.length,
     skipped: plan.tasks.length - pending.length,
   };
