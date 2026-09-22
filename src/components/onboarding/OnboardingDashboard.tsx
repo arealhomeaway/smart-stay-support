@@ -15,10 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { saveOnboardingMilestonesFn } from "@/lib/onboarding.functions";
+import { Textarea } from "@/components/ui/textarea";
+import { DialogFooter } from "@/components/ui/dialog";
+import {
+  saveOnboardingMilestonesFn,
+  setOnboardingProgramTypeFn,
+} from "@/lib/onboarding.functions";
 import { autoHandoffDate, handoffExplainer, type HandoffDateSource } from "@/lib/onboarding-dates";
 import { usDate, usDateTime } from "@/lib/dates";
 import { PersonAvatar } from "@/components/PersonAvatar";
+import { HomeownerCard } from "@/components/property/HomeownerCard";
 
 type Note = {
   id: string;
@@ -111,17 +117,20 @@ export function OnboardingDashboard({
           <CalendarDays className="size-4 text-muted-foreground" />
           <p className="eyebrow">Key dates</p>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="ml-auto"
-          onClick={() => setOpenNotes(true)}
-        >
-          <NotebookPen className="mr-1.5 size-4" />
-          Notes ({notes.length})
-        </Button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <ProgramTypeControl
+            propertyId={propertyId}
+            activeOwner={activeOwner}
+            canEdit={canEdit}
+          />
+          <Button type="button" size="sm" variant="outline" onClick={() => setOpenNotes(true)}>
+            <NotebookPen className="mr-1.5 size-4" />
+            Notes ({notes.length})
+          </Button>
+        </div>
       </div>
+
+      <HomeownerCard propertyId={propertyId} canManage={canEdit} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <DateField
@@ -248,5 +257,88 @@ function DateField({
       )}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+/**
+ * Standard or Active Owner, changed while onboarding is under way. It is a
+ * scope change, so it carries a reason and the handoff date follows the new
+ * program unless someone typed their own.
+ */
+function ProgramTypeControl({
+  propertyId,
+  activeOwner,
+  canEdit,
+}: {
+  propertyId: string;
+  activeOwner: boolean;
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const setType = useServerFn(setOnboardingProgramTypeFn);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      setType({ data: { propertyId, activeOwner: !activeOwner, reason } } as never),
+    onSuccess: () => {
+      setOpen(false);
+      setReason("");
+      toast.success(
+        activeOwner
+          ? "This home is now a standard home."
+          : "This home is now in the Active Owner Program.",
+      );
+      void router.invalidate();
+    },
+    onError: (error: Error) => toast.error(error.message || "The program could not be changed."),
+  });
+
+  return (
+    <>
+      <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+        {activeOwner ? "Active Owner Program" : "Standard home"}
+      </span>
+      {canEdit && (
+        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+          {activeOwner ? "Change to standard" : "Move to Active Owner"}
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {activeOwner ? "Change to a standard home" : "Move to the Active Owner Program"}
+            </DialogTitle>
+            <DialogDescription>
+              {activeOwner
+                ? "Owner participation steps stop applying and the target handoff goes back to three weeks after access."
+                : "Owner participation steps apply and the target handoff becomes four weeks after access."}{" "}
+              A hand-set handoff date is left alone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">
+              Why is this changing? (kept in this home&apos;s history)
+            </Label>
+            <Textarea
+              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Owner signed the Active Owner agreement on the closing call."
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={reason.trim().length < 5 || mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? "Saving…" : "Save the change"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

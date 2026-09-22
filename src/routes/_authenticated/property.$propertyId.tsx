@@ -36,7 +36,9 @@ import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
+import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { ActiveOwnerPanel } from "@/components/property/ActiveOwnerPanel";
+import { LifecycleSwitcher } from "@/components/property/LifecycleSwitcher";
 import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
@@ -109,7 +111,13 @@ function PropertyHubPage() {
       <HubHeader hub={hub} />
 
       {hub.viewer.staff && (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <LifecycleSwitcher
+            propertyId={propertyId}
+            propertyName={hub.property.name}
+            lifecycleStatus={hub.property.lifecycleStatus ?? null}
+            canManage={hub.viewer.supervisor}
+          />
           <EmailComposer context="property" recordId={propertyId} label="Email the homeowner" />
         </div>
       )}
@@ -134,6 +142,8 @@ function PropertyHubPage() {
         </div>
       )}
 
+      {hub.viewer.staff && <HomeownerCard propertyId={propertyId} canManage={hub.viewer.staff} />}
+
       {hub.viewer.staff && (
         <div id="special-handling">
           <SpecialHandlingPanel propertyId={propertyId} canEdit={hub.viewer.supervisor} />
@@ -153,6 +163,7 @@ function PropertyHubPage() {
             propertyId={propertyId}
             propertyName={hub.property.name}
             canManage={hub.viewer.supervisor}
+            lifecycleStatus={hub.property.lifecycleStatus ?? null}
           />
         </div>
       )}

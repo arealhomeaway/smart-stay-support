@@ -450,3 +450,37 @@ export const overrideOnboardingTaskDateFn = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return overrideOnboardingTaskDate(context.supabase, context.userId, data, supabaseAdmin);
   });
+
+/** Supervisors move a home between Onboarding and Active operations. */
+export const switchPropertyLifecycleFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        target: z.enum(["onboarding", "active_operations"]),
+        reason: z.string().trim().min(3).max(500),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { switchPropertyLifecycle } = await import("./property-lifecycle.server");
+    return switchPropertyLifecycle(context.supabase, context.userId, data);
+  });
+
+/** Move a home between the standard and Active Owner program mid-onboarding. */
+export const setOnboardingProgramTypeFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        activeOwner: z.boolean(),
+        reason: z.string().trim().min(5).max(500),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { setOnboardingProgramType } = await import("./onboarding-program-type.server");
+    return setOnboardingProgramType(context.supabase, context.userId, data);
+  });

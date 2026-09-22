@@ -46,6 +46,7 @@ import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OnboardingDashboard } from "@/components/onboarding/OnboardingDashboard";
+import { HomeownerCard } from "@/components/property/HomeownerCard";
 
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
@@ -358,6 +359,8 @@ function PropertyWorkspace() {
             </Summary>
           </dl>
         </section>
+
+        <HomeownerCard propertyId={current.id} canManage={canEdit} />
 
         <ProjectScopePanel
           propertyId={current.id}

@@ -6787,6 +6787,9 @@ export type Database = {
         Row: {
           active: boolean
           city: string | null
+          co_owner_email: string | null
+          co_owner_name: string | null
+          co_owner_phone: string | null
           created_at: string
           email: string | null
           id: string
@@ -6803,6 +6806,9 @@ export type Database = {
         Insert: {
           active?: boolean
           city?: string | null
+          co_owner_email?: string | null
+          co_owner_name?: string | null
+          co_owner_phone?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -6819,6 +6825,9 @@ export type Database = {
         Update: {
           active?: boolean
           city?: string | null
+          co_owner_email?: string | null
+          co_owner_name?: string | null
+          co_owner_phone?: string | null
           created_at?: string
           email?: string | null
           id?: string

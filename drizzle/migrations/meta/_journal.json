@@ -141,6 +141,13 @@
       "when": 1790101258928,
       "tag": "0019_onboarding_scope_appliances_pool_furnishing",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790110890233,
+      "tag": "0020_owner_co_owner_contact",
+      "breakpoints": true
     }
   ]
 }
