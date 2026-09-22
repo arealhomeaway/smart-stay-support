@@ -98,6 +98,9 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
     console.error("PriceLabs quotes unavailable:", error);
     return new Map<string, { quote: null; unavailableReason: string }>();
   });
+  // The chosen inquiry source carries the fee settings this quote is built from.
+  const source = input.inquirySourceId ? await loadInquirySource(supabase, input.inquirySourceId) : null;
+  const pets = (input.dogs ?? 0) + (input.cats ?? 0);
   const results: AvailabilityResult[] = [];
   // Bound concurrent read traffic to OwnerRez while preserving distance order.
   for (let offset = 0; offset < nearby.length; offset += 5) {
@@ -105,12 +108,14 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
     const rows = await Promise.all(batch.map(async (property) => {
       const bookings = await bookingsForPeriod(ids.get(property.id)!, input.checkIn, input.checkOut);
       const read = facts.get(property.id) ?? { facts: unknownFacts(), unavailableReason: null };
+      const quote = quotes.get(property.id)?.quote ?? null;
       return {
         ...property,
         ...classifyAvailability(bookings, input.checkIn, input.checkOut),
         facts: read.facts,
         factsUnavailable: read.unavailableReason,
-        quote: quotes.get(property.id)?.quote ?? null,
+        quote,
+        sourceQuote: buildSourceQuote(quote, source, pets),
         quoteUnavailable: quotes.get(property.id)?.unavailableReason
           ?? (quotes.has(property.id) ? null : "PriceLabs could not be reached, so no price estimate is shown."),
       };
