@@ -397,6 +397,12 @@ export async function applyOnboardingTemplate(
     if (!t.subtasks?.length) continue;
     const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
     if (!parentId) continue;
+    const position = positionOf.get(taskKey(t.stage, t.title)) ?? 0;
+    const scheduled = Boolean(anchors.actual_access);
+    const offsetDays = scheduled
+      ? offsetFromAccess({ title: t.title, position, total, windowDays })
+      : (t.offsetDays ?? null);
+    const dueOn = dueFor(t, anchors, { position, total, windowDays });
     t.subtasks.forEach((title, i) => {
       if (takenSubs.has(subKey(parentId, title))) return;
       subRows.push({
@@ -410,6 +416,10 @@ export async function applyOnboardingTemplate(
         owner_approval_status: "not_required",
         evidence_required: false,
         parent_task_id: parentId,
+        due_on: dueOn,
+        due_on_source: scheduled ? "access_schedule" : t.anchor ? "template_anchor" : null,
+        schedule_anchor: scheduled ? "actual_access" : (t.anchor ?? null),
+        schedule_offset_days: offsetDays,
         sort_order: t.sortOrder + i + 1,
         ...seatFields(t.role, t.stage, seatHolders),
         created_by: userId,

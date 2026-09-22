@@ -308,10 +308,9 @@ export async function repaceProjectFromAccess(
 
   const tasks = await supabase
     .from("onboarding_tasks")
-    .select("id, title, status, due_on_overridden, sort_order")
+    .select("id, title, status, due_on_overridden, sort_order, parent_task_id")
     .eq("property_id", input.propertyId)
     .is("archived_at", null)
-    .is("parent_task_id", null)
     .order("sort_order");
   if (tasks.error) throw tasks.error;
 
@@ -320,16 +319,29 @@ export async function repaceProjectFromAccess(
   const windowDays = setupWindowDays(Boolean(await activeOwnerFor(supabase, input.propertyId)));
 
   const list = tasks.data ?? [];
-  const total = list.length;
-  let updated = 0;
+  const parents = list.filter((task) => !task.parent_task_id);
+  const total = parents.length;
+  const offsetByTask = new Map<string, number>();
   for (let position = 0; position < total; position += 1) {
-    const t = list[position]!;
+    const task = parents[position];
+    if (!task) continue;
+    offsetByTask.set(
+      task.id,
+      offsetFromAccess({ title: task.title, position, total, windowDays }),
+    );
+  }
+  let updated = 0;
+  for (const t of list) {
     if (t.status === "complete" || t.due_on_overridden) continue;
+    const offset = t.parent_task_id
+      ? offsetByTask.get(t.parent_task_id)
+      : offsetByTask.get(t.id);
+    if (offset === undefined) continue;
     const { error } = await supabase
       .from("onboarding_tasks")
       .update({
         schedule_anchor: "actual_access",
-        schedule_offset_days: offsetFromAccess({ title: t.title, position, total, windowDays }),
+        schedule_offset_days: offset,
       })
       .eq("id", t.id);
     if (error) throw error;
