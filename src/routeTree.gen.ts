@@ -59,6 +59,7 @@ import { Route as AuthenticatedLeadsPipelineRouteImport } from './routes/_authen
 import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated/onboarding.index'
 import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/_authenticated/onboarding.$propertyId'
 import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
+import { Route as AuthenticatedOnboardingTemplatesRouteImport } from './routes/_authenticated/onboarding.templates'
 import { Route as AuthenticatedOnboardingTransitionsRouteImport } from './routes/_authenticated/onboarding.transitions'
 import { Route as AuthenticatedOnboardingUtilitiesRouteImport } from './routes/_authenticated/onboarding.utilities'
 import { Route as AuthenticatedPropertyPropertyIdRouteImport } from './routes/_authenticated/property.$propertyId'
@@ -352,6 +353,12 @@ const AuthenticatedOnboardingMyWorkRoute =
     path: '/my-work',
     getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
+const AuthenticatedOnboardingTemplatesRoute =
+  AuthenticatedOnboardingTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
 const AuthenticatedOnboardingTransitionsRoute =
   AuthenticatedOnboardingTransitionsRouteImport.update({
     id: '/transitions',
@@ -545,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
+  '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
   '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
   '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
@@ -616,6 +624,7 @@ export interface FileRoutesByTo {
   '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
+  '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
   '/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
   '/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
   '/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
@@ -694,6 +703,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
+  '/_authenticated/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
   '/_authenticated/onboarding/transitions': typeof AuthenticatedOnboardingTransitionsRoute
   '/_authenticated/onboarding/utilities': typeof AuthenticatedOnboardingUtilitiesRoute
   '/_authenticated/property/$propertyId': typeof AuthenticatedPropertyPropertyIdRoute
@@ -772,6 +782,7 @@ export interface FileRouteTypes {
     | '/leads/pipeline'
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
+    | '/onboarding/templates'
     | '/onboarding/transitions'
     | '/onboarding/utilities'
     | '/property/$propertyId'
@@ -843,6 +854,7 @@ export interface FileRouteTypes {
     | '/leads/pipeline'
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
+    | '/onboarding/templates'
     | '/onboarding/transitions'
     | '/onboarding/utilities'
     | '/property/$propertyId'
@@ -920,6 +932,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/pipeline'
     | '/_authenticated/onboarding/$propertyId'
     | '/_authenticated/onboarding/my-work'
+    | '/_authenticated/onboarding/templates'
     | '/_authenticated/onboarding/transitions'
     | '/_authenticated/onboarding/utilities'
     | '/_authenticated/property/$propertyId'
@@ -1319,6 +1332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingMyWorkRouteImport
       parentRoute: typeof AuthenticatedOnboardingRoute
     }
+    '/_authenticated/onboarding/templates': {
+      id: '/_authenticated/onboarding/templates'
+      path: '/templates'
+      fullPath: '/onboarding/templates'
+      preLoaderRoute: typeof AuthenticatedOnboardingTemplatesRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
     '/_authenticated/onboarding/transitions': {
       id: '/_authenticated/onboarding/transitions'
       path: '/transitions'
@@ -1534,6 +1554,7 @@ const AuthenticatedLeadsRouteWithChildren =
 interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingPropertyIdRoute: typeof AuthenticatedOnboardingPropertyIdRoute
   AuthenticatedOnboardingMyWorkRoute: typeof AuthenticatedOnboardingMyWorkRoute
+  AuthenticatedOnboardingTemplatesRoute: typeof AuthenticatedOnboardingTemplatesRoute
   AuthenticatedOnboardingTransitionsRoute: typeof AuthenticatedOnboardingTransitionsRoute
   AuthenticatedOnboardingUtilitiesRoute: typeof AuthenticatedOnboardingUtilitiesRoute
   AuthenticatedOnboardingIndexRoute: typeof AuthenticatedOnboardingIndexRoute
@@ -1544,6 +1565,8 @@ const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren
     AuthenticatedOnboardingPropertyIdRoute:
       AuthenticatedOnboardingPropertyIdRoute,
     AuthenticatedOnboardingMyWorkRoute: AuthenticatedOnboardingMyWorkRoute,
+    AuthenticatedOnboardingTemplatesRoute:
+      AuthenticatedOnboardingTemplatesRoute,
     AuthenticatedOnboardingTransitionsRoute:
       AuthenticatedOnboardingTransitionsRoute,
     AuthenticatedOnboardingUtilitiesRoute:
