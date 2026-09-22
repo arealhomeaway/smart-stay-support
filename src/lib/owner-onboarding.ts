@@ -47,3 +47,28 @@ export function ownerTrackProgress(tasks: OwnerTaskRow[]) {
 export function isOnboardingAction(approval: { entity_type?: string | null }) {
   return approval.entity_type === "onboarding_task";
 }
+
+/**
+ * Homeowner-friendly go-live countdown. Plain and honest: a target date and
+ * how far away it is, with no operational detail behind it.
+ */
+export function ownerGoLive(
+  target: string | null | undefined,
+  today: string,
+): { target: string; days: number; label: string } | null {
+  if (!target || !/^\d{4}-\d{2}-\d{2}$/.test(target)) return null;
+  const day = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / 86_400_000);
+  const t = day(target);
+  const n = day(today);
+  if (Number.isNaN(t) || Number.isNaN(n)) return null;
+  const days = t - n;
+  const label =
+    days > 1
+      ? `${days} days away`
+      : days === 1
+        ? "Tomorrow"
+        : days === 0
+          ? "Today"
+          : `${Math.abs(days)} ${Math.abs(days) === 1 ? "day" : "days"} past target`;
+  return { target, days, label };
+}
