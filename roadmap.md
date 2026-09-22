@@ -576,3 +576,9 @@ is now doable from Resolve.
 - [ ] Batch 1 — Ways to Participate This Week: 3-4 stage-aware suggestions in /owner with compliance relevance and estimated time
 - [ ] Batch 1 — One-click "Log participation time for this review?" prompt after a homeowner approves an onboarding action
 - [ ] Batch 1 — Optional photo/receipt evidence when logging participation hours, shown in history and the 90-day report
+
+## Batch 3 — Active Owner milestone pacing (2026-09-22)
+- [x] Day 30/60/90 checkpoint model + pacing health (src/lib/owner-milestones.ts, tests)
+- [x] Checkpoint strip in the homeowner portal (/owner) and supervisor list (/owner-programs)
+- [x] Milestone check-in alerts for homeowners + staff touchpoint alerts at each window
+- [ ] Bug (Emily): demo onboarding projects (Willow, Birch) missing from the Onboarding Director hub with show-test on — every lens reads 0
