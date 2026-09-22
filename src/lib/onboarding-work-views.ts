@@ -147,23 +147,32 @@ export function myWorkSelection<T extends { assigned_to: string | null; property
   const canBrowseTeam = supervisor || managed.size > 0;
   const who = canBrowseTeam ? requested : "me";
   const target = who === "me" ? viewerId : who === "unassigned" ? null : who;
+  const inScope = (propertyId: string) => supervisor || managed.has(propertyId);
   return {
     canBrowseTeam,
     who,
-    tasks: tasks.filter(
-      (task) =>
-        (who === "me" || supervisor || managed.has(task.property_id)) &&
-        (who === "me" && !viewerId ? false : task.assigned_to === target),
-    ),
+    tasks: tasks.filter((task) => {
+      // "all" shows every task the viewer is allowed to see, so work can be
+      // filtered and dispatched without hunting through each home.
+      if (who === "all") return inScope(task.property_id);
+      if (who === "me") return Boolean(viewerId) && task.assigned_to === viewerId;
+      return inScope(task.property_id) && task.assigned_to === target;
+    }),
   };
 }
 
-export function validateMyWorkSearch(search: { who?: unknown } & SearchSchemaInput) {
+export function validateMyWorkSearch(
+  search: { who?: unknown; program?: unknown; home?: unknown; state?: unknown } & SearchSchemaInput,
+) {
+  const text = (v: unknown, fallback: string) => (typeof v === "string" && v ? v : fallback);
+  const who = text(search.who, "me");
+  const program = text(search.program, "all");
+  const state = text(search.state, "all");
   return {
     who:
-      typeof search.who === "string" &&
-      (search.who === "unassigned" || /^[0-9a-f-]{36}$/i.test(search.who))
-        ? search.who
-        : "me",
+      who === "unassigned" || who === "all" || /^[0-9a-f-]{36}$/i.test(who) ? who : "me",
+    program: ["all", "active_owner", "standard"].includes(program) ? program : "all",
+    home: /^[0-9a-f-]{36}$/i.test(text(search.home, "")) ? text(search.home, "all") : "all",
+    state: Object.hasOwn(WORK_FILTER_LABELS, state) ? state : "all",
   };
 }
