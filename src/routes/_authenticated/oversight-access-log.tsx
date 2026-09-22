@@ -184,7 +184,7 @@ function AccessLogPage() {
                 </TableRow>
               ))}
             </TableBody>
-          </TableSection>
+          </Table>
         </SectionCard>
       )}
     </div>
