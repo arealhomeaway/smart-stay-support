@@ -52,7 +52,7 @@ export function OwnerSidebarNav() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Overview" className={buttonClass}>
-                <Link to="/owner" search={{ home: undefined }} data-tour="owner">
+                <Link to="/owner" search={{}} data-tour="owner">
                   <KeyRound aria-hidden="true" />
                   <span>Overview</span>
                 </Link>
@@ -61,7 +61,7 @@ export function OwnerSidebarNav() {
             {sections.map((section) => (
               <SidebarMenuItem key={section.hash}>
                 <SidebarMenuButton asChild tooltip={section.label} className={buttonClass}>
-                  <Link to="/owner" search={(prev) => prev} hash={section.hash}>
+                  <Link to="/owner" hash={section.hash}>
                     <section.icon aria-hidden="true" />
                     <span>{section.label}</span>
                   </Link>
@@ -86,7 +86,7 @@ export function OwnerSidebarNav() {
                   tooltip="All homes"
                   className={buttonClass}
                 >
-                  <Link to="/owner" search={{ home: undefined }}>
+                  <Link to="/owner" search={{}}>
                     <Home aria-hidden="true" />
                     <span>All homes</span>
                   </Link>

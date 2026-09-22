@@ -60,9 +60,8 @@ import { useDemo } from "@/components/DemoProvider";
 export const Route = createFileRoute("/_authenticated/owner")({
   // Homeowners with more than one home switch between them here, so the chosen
   // home lives in the URL and stays shareable and bookmarkable.
-  validateSearch: (search: Record<string, unknown>) => ({
-    home: typeof search["home"] === "string" ? (search["home"] as string) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { home?: string } =>
+    typeof search["home"] === "string" ? { home: search["home"] as string } : {},
   head: () => ({
     meta: [
       { title: "Your home — Resolve" },
@@ -388,7 +387,7 @@ function OwnerHubBody({
                 size="sm"
                 variant={selectedHomeId ? "outline" : "default"}
               >
-                <Link to="/owner" search={{ home: undefined }}>
+                <Link to="/owner" search={{}}>
                   All homes
                 </Link>
               </Button>
