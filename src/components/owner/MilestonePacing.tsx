@@ -9,7 +9,7 @@ export function MilestonePacing({
   day,
   reportedHours,
   benchmark,
-  goalMet,
+  goalMet = false,
   audience = "owner",
 }: {
   day: number;
