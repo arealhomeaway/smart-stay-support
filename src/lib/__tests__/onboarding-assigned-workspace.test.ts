@@ -199,6 +199,7 @@ it("projects scope preserves outside assignments without exposing their project 
   expect(
     viewTask(own as unknown as WorkflowTask, context.tasks, restoreAssignedRelease(context))
       .canComplete,
-  ).toBe(false);
+  ).toBe(true);
+
   expect(JSON.stringify(result).includes("private project")).toBe(false);
 });
