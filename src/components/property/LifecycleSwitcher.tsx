@@ -93,7 +93,7 @@ export function LifecycleSwitcher({
             <DialogDescription>
               {target === "onboarding"
                 ? "The home appears in the Onboarding hub straight away. If it already has a plan, that work and its notes stay exactly as they are; if it has none, a full plan is created."
-                : "The home moves to Active operations. Onboarding work already recorded stays on the record."}
+                : "Only use this for a home that never went through onboarding. A home in onboarding leaves it through the handoff review instead."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
