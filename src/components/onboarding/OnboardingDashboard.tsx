@@ -68,47 +68,15 @@ export function OnboardingDashboard({
   people: Person[];
   taskTitle: (taskId: string) => string | null;
 }) {
-  const router = useRouter();
-  const save = useServerFn(saveOnboardingMilestonesFn);
   const [openNotes, setOpenNotes] = useState(false);
-  const [closing, setClosing] = useState(actualClosingOn ?? "");
-  const [planned, setPlanned] = useState(plannedClosingOn ?? "");
-  const [access, setAccess] = useState(actualAccessOn ?? "");
-  const [handoff, setHandoff] = useState(targetHandoffOn ?? "");
-  const [handoffTouched, setHandoffTouched] = useState(false);
 
   const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-  const autoHandoff = autoHandoffDate(access || null, activeOwner);
-
-  const mutation = useMutation({
-    mutationFn: async () =>
-      save({
-        data: {
-          propertyId,
-          plannedClosingOn: planned || null,
-          actualClosingOn: closing || null,
-          actualAccessOn: access || null,
-          ...(handoffTouched ? { targetHandoffOn: handoff || null } : {}),
-        },
-      } as never),
-    onSuccess: () => {
-      setHandoffTouched(false);
-      toast.success("Dates saved. Deadlines were recalculated from the access date.");
-      void router.invalidate();
-    },
-    onError: (error: Error) => toast.error(error.message || "Those dates could not be saved."),
-  });
 
   const nameOf = (id: string | null) => {
     const person = people.find((p) => p.id === id);
     return person?.full_name || person?.email || "Teammate";
   };
 
-  const dirty =
-    (planned || "") !== (plannedClosingOn ?? "") ||
-    (closing || "") !== (actualClosingOn ?? "") ||
-    (access || "") !== (actualAccessOn ?? "") ||
-    handoffTouched;
 
   return (
     <section className="surface space-y-4 p-4">
