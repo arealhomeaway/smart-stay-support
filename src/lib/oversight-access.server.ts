@@ -35,7 +35,7 @@ export async function requireLeadership(
 export async function recordOversightAccess(input: {
   actorId: string;
   role: LeadershipRole;
-  action: "oversight_viewed" | "homeowner_directory_viewed";
+  action: "oversight_viewed" | "homeowner_directory_viewed" | "oversight_access_log_viewed";
   entityType: string;
   recordCount: number;
 }) {

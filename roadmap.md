@@ -593,3 +593,7 @@ is now doable from Resolve.
 - [x] Automated positive/negative authorization tests for platform owner, director and homeowner on every oversight and directory endpoint
 - [x] Audit logging for directory views and oversight access (acting role, target record, timestamp)
 - [x] Run the full authorization suite across oversight + directory endpoints and report any failing role or cross-homeowner case
+- [ ] Oversight filters (Emily): pacing status, checkpoint window, open owner items, last-contact date
+- [ ] CSV + PDF export of the filtered oversight dashboard and enrolled property records
+- [ ] Restricted access-log viewer: search directory/oversight access by actor, role, target record, date range
+- [ ] Configurable alerts: behind pace, overdue check-ins, unresolved owner-response items
