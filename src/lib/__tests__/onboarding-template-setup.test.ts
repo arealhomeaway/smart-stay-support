@@ -250,7 +250,6 @@ describe("onboarding template setup", () => {
     expect(message).toContain("Only a current real property can route an owner decision");
     expect(f.approvals.get(task.id)).toBe("original-pending-approval");
   });
-});
 
   it("refreshes steps already on the home when asked for new and existing", async () => {
     const f = fixture(true);
@@ -266,3 +265,4 @@ describe("onboarding template setup", () => {
     expect(result.refreshed).toBeGreaterThan(0);
     expect(open.detail).not.toBe("stale wording");
   });
+});
