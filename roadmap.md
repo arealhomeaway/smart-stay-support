@@ -590,3 +590,5 @@ is now doable from Resolve.
 - [ ] Empty Active Owner hub for supervisors (only demo program exists / demo gating) — confirm and fix
 - [ ] Role-based access controls (Emily): platform owner + director see oversight data; homeowner personal data limited to those who need it (DB-enforced)
 - [ ] Verify access (Emily): leadership sees only permitted oversight data; homeowners cannot reach other homeowners' or properties' details
+- [ ] Automated positive/negative authorization tests for platform owner, director and homeowner on every oversight and directory endpoint
+- [ ] Audit logging for directory views and oversight access (acting role, target record, timestamp)
