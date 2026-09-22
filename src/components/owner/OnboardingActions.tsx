@@ -23,6 +23,7 @@ import { decideOwnerApproval } from "@/lib/owner-portal.functions";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
 import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
+import { LogTimeDialog, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 
 function SharedFile({ file, disabled }: { file: OwnerOnboardingFile; disabled: boolean }) {
   const getUrl = useServerFn(attachmentUrlFn);
