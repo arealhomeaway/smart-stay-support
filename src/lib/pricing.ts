@@ -83,14 +83,15 @@ export function formatMoney(amount: number, currency = "USD") {
   return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
 }
 
-/** Internal wording: total, average night, and the standing base rate. */
+/**
+ * Coordinator wording: the stay total and the average night only.
+ * The standing base rate stays an internal number and is never shown here.
+ */
 export function internalQuoteLine(quote: StayQuote) {
-  const parts = [
+  return [
     `Estimated stay total ${formatMoney(quote.total, quote.currency)}`,
     `${formatMoney(quote.averageNightly, quote.currency)} average per night`,
-  ];
-  if (quote.basePrice !== null) parts.push(`base rate ${formatMoney(quote.basePrice, quote.currency)}/night`);
-  return parts.join(" · ");
+  ].join(" · ");
 }
 
 /** How a quote was sourced, said plainly for the coordinator. */
