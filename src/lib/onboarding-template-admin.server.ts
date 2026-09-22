@@ -137,7 +137,7 @@ async function uniqueKey(supabase: Client, name: string) {
 export async function createOnboardingTemplate(
   supabase: Client,
   userId: string,
-  input: { name: string; description?: string | null; copyBuiltIn?: boolean },
+  input: { name: string; description?: string | null | undefined; copyBuiltIn?: boolean | undefined },
   audit: typeof writeAudit = writeAudit,
 ) {
   await assertSupervisor(supabase, userId);
@@ -181,9 +181,9 @@ export async function updateOnboardingTemplate(
   userId: string,
   input: {
     templateId: string;
-    name?: string;
-    description?: string | null;
-    isArchived?: boolean;
+    name?: string | undefined;
+    description?: string | null | undefined;
+    isArchived?: boolean | undefined;
   },
   audit: typeof writeAudit = writeAudit,
 ) {
@@ -257,20 +257,20 @@ export async function setDefaultOnboardingTemplate(
 
 export type TemplateStepInput = {
   templateId: string;
-  stepId?: string;
+  stepId?: string | undefined;
   stage: string;
   title: string;
-  role?: string | null;
-  detail?: string | null;
-  sortOrder?: number | null;
-  blocksHandoff?: boolean;
-  requiresOwnerApproval?: boolean;
-  ownerApprovalWhenActiveOwner?: boolean;
-  evidenceRequired?: boolean;
-  scheduleAnchor?: "planned_closing" | "actual_closing" | "actual_access" | null;
-  offsetDays?: number | null;
-  breezewayTemplateId?: string | null;
-  subtasks?: string[];
+  role?: string | null | undefined;
+  detail?: string | null | undefined;
+  sortOrder?: number | null | undefined;
+  blocksHandoff?: boolean | undefined;
+  requiresOwnerApproval?: boolean | undefined;
+  ownerApprovalWhenActiveOwner?: boolean | undefined;
+  evidenceRequired?: boolean | undefined;
+  scheduleAnchor?: "planned_closing" | "actual_closing" | "actual_access" | null | undefined;
+  offsetDays?: number | null | undefined;
+  breezewayTemplateId?: string | null | undefined;
+  subtasks?: string[] | undefined;
 };
 
 export async function saveTemplateStep(
