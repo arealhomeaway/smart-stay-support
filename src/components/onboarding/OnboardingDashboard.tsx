@@ -15,10 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { saveOnboardingMilestonesFn } from "@/lib/onboarding.functions";
+import { Textarea } from "@/components/ui/textarea";
+import { DialogFooter } from "@/components/ui/dialog";
+import {
+  saveOnboardingMilestonesFn,
+  setOnboardingProgramTypeFn,
+} from "@/lib/onboarding.functions";
 import { autoHandoffDate, handoffExplainer, type HandoffDateSource } from "@/lib/onboarding-dates";
 import { usDate, usDateTime } from "@/lib/dates";
 import { PersonAvatar } from "@/components/PersonAvatar";
+import { HomeownerCard } from "@/components/property/HomeownerCard";
 
 type Note = {
   id: string;
