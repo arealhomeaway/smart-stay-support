@@ -601,6 +601,95 @@ function reviewTone(status: string): StatusTone {
   return "review";
 }
 
+/**
+ * A homeowner's own home, opened read-only. Same details staff see in the
+ * Property Hub, minus anything operational they cannot act on.
+ */
+function OwnerPropertyCard({
+  property,
+  attention,
+}: {
+  property: ProgramPropertyRow;
+  attention: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const rows: { label: string; value: string }[] = [
+    { label: "Address", value: property.address || "—" },
+    {
+      label: "Closing date",
+      value: property.closingDate
+        ? `${usCalendarDate(property.closingDate)}${property.closingConfirmed ? " (confirmed)" : " (not confirmed yet)"}`
+        : "Not set",
+    },
+    { label: "Added to your program", value: usCalendarDate(property.addedOn) },
+    { label: "Enrollment", value: titleCase(property.inclusionStatus) },
+    { label: "Onboarding", value: titleCase(property.onboardingStatus) },
+    { label: "Listing", value: titleCase(property.launchStatus) },
+    {
+      label: "Setup work",
+      value: `${property.completedTasks} of ${property.requiredTasks} of your items done`,
+    },
+    {
+      label: "Waiting on you",
+      value: property.outstandingDecisions
+        ? `${property.outstandingDecisions} item${property.outstandingDecisions === 1 ? "" : "s"}${property.overdueDecisions ? ` · ${property.overdueDecisions} past due` : ""}`
+        : "Nothing right now",
+    },
+    {
+      label: "Your last activity",
+      value: property.lastOwnerActivityAt ? usDate(property.lastOwnerActivityAt) : "None recorded",
+    },
+  ];
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex min-w-56 flex-1 items-center gap-3 rounded-xl border border-border bg-card px-3 py-3 text-left transition-colors hover:border-primary/60 hover:bg-accent/40"
+      >
+        <PropertyPhoto url={property.photoUrl} name={property.name} rounded="rounded-lg" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{property.name}</p>
+          <p className="truncate text-xs text-muted-foreground">{property.address || "—"}</p>
+          {attention > 0 ? (
+            <span className="numeric mt-1 inline-block rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+              {attention} waiting on you
+            </span>
+          ) : null}
+        </div>
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{property.name}</DialogTitle>
+            <DialogDescription>Your home's details, view only.</DialogDescription>
+          </DialogHeader>
+          <dl className="space-y-2">
+            {rows.map((row) => (
+              <div key={row.label} className="flex flex-wrap justify-between gap-3 border-b border-border/60 pb-2 text-sm last:border-0">
+                <dt className="text-muted-foreground">{row.label}</dt>
+                <dd className="text-right font-medium">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function titleCase(value: string) {
+  const text = (value ?? "").replace(/_/g, " ").trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "—";
+}
+
 function ReviewRow({
   review,
   properties,
