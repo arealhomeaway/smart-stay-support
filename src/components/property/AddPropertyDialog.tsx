@@ -611,6 +611,8 @@ function ManualForm({
           ownerRecordId: null,
           ownerName: form.ownerName || null,
           ownerEmail: form.ownerEmail || null,
+          ownerPhone: form.ownerPhone || null,
+
           ownerRezPropertyId: form.ownerRezPropertyId || null,
           isDemo,
           milestones: milestonePayload(milestones),
