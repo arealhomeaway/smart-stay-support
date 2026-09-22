@@ -162,8 +162,34 @@ function AvailabilityFinderPage() {
           })}
         </div>
       </fieldset>
+      <div className="space-y-1 text-sm md:col-span-3">
+        <label htmlFor="inquiry-source">Inquiry source (company or portal)</label>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input id="inquiry-source" className="max-w-sm" list="inquiry-source-options" value={sourceName} placeholder="Search sources, e.g. ALE or Sirva"
+            onChange={(event) => setSourceName(event.target.value)} />
+          <datalist id="inquiry-source-options">
+            {searchSources(sourceList, sourceName).map((entry) => <option key={entry.id} value={entry.name}>{entry.sourceType ?? ""}</option>)}
+          </datalist>
+          <Button type="button" variant="outline" onClick={() => setAddingSource(true)}>Add inquiry source</Button>
+        </div>
+        {sourceName.trim() && !typedSource
+          ? <p className="text-xs text-amber-700">No source matches that name yet. Pick one from the list or add it, or search without a source for nightly rates only.</p>
+          : typedSource
+            ? <p className="text-xs text-muted-foreground">Quotes use {typedSource.name}&apos;s fees, discount and deposit settings.</p>
+            : <p className="text-xs text-muted-foreground">Leave blank to see nightly rates only.</p>}
+      </div>
       {validation && <p role="alert" className="text-destructive md:col-span-4">{validation}</p>}
     </form>
+    <Dialog open={addingSource} onOpenChange={setAddingSource}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader><DialogTitle>Add inquiry source</DialogTitle></DialogHeader>
+        <InquirySourceForm onCancel={() => setAddingSource(false)} onSaved={async (id) => {
+          setAddingSource(false);
+          const refreshed = await sources.refetch();
+          setSourceName(refreshed.data?.find((entry) => entry.id === id)?.name ?? "");
+        }} />
+      </DialogContent>
+    </Dialog>
     {query.isPending && inputReady && <p role="status">Checking OwnerRez reservations and nearby properties…</p>}
     {query.error && <p role="alert" className="rounded border border-destructive p-4 text-destructive">{query.error instanceof Error ? query.error.message : "Search failed."} No availability result was issued.</p>}
     {query.data && <>
