@@ -190,16 +190,8 @@ export function viewTask(
       }.`,
     });
   }
-  if ((task.depends_on ?? []).length > 0) {
-    markers.push({
-      key: "dependency",
-      label: "Dependency",
-      explain:
-        waitingOn.length > 0
-          ? `Released after ${waitingOn.join(", ")} completes.`
-          : "Released — every prerequisite task is complete.",
-    });
-  }
+  // Prerequisites are advisory only — no "waiting on" marker is shown.
+
   if (task.requires_owner_approval) {
     markers.push({
       key: "owner",
