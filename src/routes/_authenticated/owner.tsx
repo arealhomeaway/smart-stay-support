@@ -96,6 +96,7 @@ function OwnerHub() {
   // In demo mode the homeowner portal always opens the demo home, so staff can
   // walk the homeowner experience instead of hitting the "no home linked" wall.
   const previewing = Boolean(ownerPreview) || demoMode;
+  const { isStaff: isStaffViewer } = useRole();
 
   const home = useQuery({
     queryKey: [
