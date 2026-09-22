@@ -206,6 +206,20 @@ export function OnboardingActions({
           ? "Approved — thank you. Your project manager has been notified."
           : "Sent back to your project manager with your note.",
       );
+      const p = v.action.participation;
+      if (p) {
+        setLogPrompt({
+          anchor: {
+            id: p.reviewId,
+            phase: p.phase,
+            ticketId: p.ticketId,
+            propertyIds: p.propertyIds,
+            ownerUpdateRevision: null,
+          },
+          activity: `Reviewed and responded to "${v.action.title}".`,
+          title: v.action.title,
+        });
+      }
       void qc.invalidateQueries({ queryKey: ["owner-onboarding"] });
       void qc.invalidateQueries({ queryKey: ["owner-approvals"] });
       void qc.invalidateQueries({ queryKey: ["owner-home"] });
