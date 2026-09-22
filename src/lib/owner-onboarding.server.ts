@@ -43,6 +43,12 @@ export type OwnerOnboardingAction = {
   decidedAt: string | null;
   createdAt: string;
   files: OwnerOnboardingFile[];
+  /**
+   * The existing participation opportunity for this onboarding task, when
+   * staff offered one. Its presence is what lets the homeowner log the time
+   * they spent right after deciding. Never created here.
+   */
+  participation: OwnerParticipationAnchor | null;
 };
 
 export type OwnerOnboardingHome = {
