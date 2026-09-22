@@ -106,7 +106,9 @@ function AvailabilityFinderPage() {
       ...(catCount > 0 ? { cats: catCount } : {}),
       ...(bedroomCount > 0 ? { minBedrooms: bedroomCount } : {}),
       ...(amenities.length ? { amenities: amenities.join(",") } : {}),
+      ...(typedSource ? { inquirySourceId: typedSource.id } : {}),
     } });
+    setSourceEdit(null);
   }
 
   async function downloadPdf() {
@@ -121,7 +123,7 @@ function AvailabilityFinderPage() {
     try {
       // The document is never left spinning: if the build takes too long, say so.
       const file = await Promise.race([
-        downloadOptions({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, propertyIds: selectedResults.map((row) => row.id) } }),
+        downloadOptions({ data: { checkIn: search.checkIn!, checkOut: search.checkOut!, location: search.location!, propertyIds: selectedResults.map((row) => row.id), ...(search.inquirySourceId ? { inquirySourceId: search.inquirySourceId } : {}) } }),
         new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("The PDF took too long to build. Try again, or with fewer properties.")), 60000)),
       ]);
       const bytes = Uint8Array.from(atob(file.base64), (char) => char.charCodeAt(0));
