@@ -18,6 +18,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
 import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
+import { MilestonePacing } from "@/components/owner/MilestonePacing";
 import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
