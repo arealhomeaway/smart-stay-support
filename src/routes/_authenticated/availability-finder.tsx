@@ -5,15 +5,18 @@ import { useCallback, useState, type FormEvent } from "react";
 import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availability-finder.functions";
 import { AVAILABILITY_RADIUS_MILES, emailSummary, needsStrRebook, rebookStepSummary, validStay, verifiedPublicListingUrl, visibleResults } from "@/lib/availability-finder";
 import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
-import { internalQuoteLine, PRICE_ESTIMATE_NOTE, quoteSourceNote } from "@/lib/pricing";
+import { formatMoney, internalQuoteLine, PRICE_ESTIMATE_NOTE, quoteSourceNote } from "@/lib/pricing";
 import { AvailabilityMap } from "@/components/AvailabilityMap";
 import { EmailComposer } from "@/components/EmailComposer";
+import { InquirySourceForm } from "@/components/InquirySourceForm";
+import { useInquirySources } from "@/routes/_authenticated/inquiry-sources";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined };
+type FinderSearch = { checkIn?: string | undefined; checkOut?: string | undefined; location?: string | undefined; showUnavailable?: boolean | undefined; selected?: string | undefined; dogs?: number | undefined; cats?: number | undefined; minBedrooms?: number | undefined; amenities?: string | undefined; inquirySourceId?: string | undefined };
 
 function countParam(value: unknown, max: number) {
   const parsed = Number(value);
@@ -36,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/availability-finder")({
     cats: countParam(search["cats"], 10),
     minBedrooms: countParam(search["minBedrooms"], 12),
     amenities: typeof search["amenities"] === "string" ? search["amenities"] : undefined,
+    inquirySourceId: typeof search["inquirySourceId"] === "string" ? search["inquirySourceId"] : undefined,
   }),
   component: AvailabilityFinderPage,
 });
