@@ -214,7 +214,14 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   const independentReadiness = independentResult.data as unknown as IndependentReadiness[];
   // Permission roles ride along so assignment pickers can show only the people
   // who can actually work onboarding.
-  const roleRows = await supabase.from("user_roles").select("user_id, role");
+  const roleRows = await readCountedRows(
+    supabase
+      .from("user_roles")
+      .select("user_id, role", { count: "exact" })
+      .order("user_id")
+      .order("id"),
+  );
+  if (roleRows.error) throw roleRows.error;
   const rolesByUser = new Map<string, string[]>();
   for (const row of roleRows.data ?? []) {
     rolesByUser.set(row.user_id, [...(rolesByUser.get(row.user_id) ?? []), row.role as string]);
