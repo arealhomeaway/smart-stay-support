@@ -23,6 +23,7 @@ import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
+import { Route as AuthenticatedInquirySourcesRouteImport } from './routes/_authenticated/inquiry-sources'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedJoinRouteImport } from './routes/_authenticated/join'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
@@ -150,6 +151,12 @@ const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
   path: '/hub',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInquirySourcesRoute =
+  AuthenticatedInquirySourcesRouteImport.update({
+    id: '/inquiry-sources',
+    path: '/inquiry-sources',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIntegrationsRoute =
   AuthenticatedIntegrationsRouteImport.update({
     id: '/integrations',
@@ -472,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -541,6 +549,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
   '/hub': typeof AuthenticatedHubRoute
+  '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/join': typeof AuthenticatedJoinRoute
   '/map': typeof AuthenticatedMapRoute
@@ -609,6 +618,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/demo': typeof AuthenticatedDemoRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
+  '/_authenticated/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/join': typeof AuthenticatedJoinRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -681,6 +691,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/hub'
+    | '/inquiry-sources'
     | '/integrations'
     | '/join'
     | '/leads'
@@ -750,6 +761,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/hub'
+    | '/inquiry-sources'
     | '/integrations'
     | '/join'
     | '/map'
@@ -817,6 +829,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/demo'
     | '/_authenticated/hub'
+    | '/_authenticated/inquiry-sources'
     | '/_authenticated/integrations'
     | '/_authenticated/join'
     | '/_authenticated/leads'
@@ -989,6 +1002,13 @@ declare module '@tanstack/react-router' {
       path: '/hub'
       fullPath: '/hub'
       preLoaderRoute: typeof AuthenticatedHubRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inquiry-sources': {
+      id: '/_authenticated/inquiry-sources'
+      path: '/inquiry-sources'
+      fullPath: '/inquiry-sources'
+      preLoaderRoute: typeof AuthenticatedInquirySourcesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/integrations': {
@@ -1484,6 +1504,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
+  AuthenticatedInquirySourcesRoute: typeof AuthenticatedInquirySourcesRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedJoinRoute: typeof AuthenticatedJoinRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
@@ -1523,6 +1544,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDemoRoute: AuthenticatedDemoRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
+  AuthenticatedInquirySourcesRoute: AuthenticatedInquirySourcesRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedJoinRoute: AuthenticatedJoinRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
