@@ -202,6 +202,10 @@ export function TaskDrawer({
   // Design and listing work is looked at, not read — those drawers get the gallery.
   const track = trackForTask({ title: task.title, stage: task.stage });
   const visualTrack = track === "furnishing_staging" || track === "media_listing";
+  // The kind of work this step is — decides which tools its pop-up shows.
+  const kind = taskKind({ title: task.title, detail: task.detail });
+  const dispatchable = showsBreezeway({ title: task.title, detail: task.detail });
+
 
   // One guided step at a time — the same pattern as the ticket workspace.
   // Every effect below routes through the callbacks this drawer already uses,
