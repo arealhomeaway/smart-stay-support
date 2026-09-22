@@ -60,6 +60,16 @@ export const updateOnboardingTemplateFn = createServerFn({ method: "POST" })
     return updateOnboardingTemplate(context.supabase, context.userId, data);
   });
 
+export const deleteOnboardingTemplateFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ templateId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { deleteOnboardingTemplate } = await import("./onboarding-template-admin.server");
+    return deleteOnboardingTemplate(context.supabase, context.userId, data);
+  });
+
 export const setDefaultOnboardingTemplateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

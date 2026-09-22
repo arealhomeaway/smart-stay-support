@@ -275,6 +275,48 @@ export async function updateOnboardingTemplate(
   return { ok: true as const };
 }
 
+/**
+ * Removing a plan outright. The built-in ARHA plan stays — every home falls
+ * back to it — and its steps go with it, so nothing is left orphaned.
+ */
+export async function deleteOnboardingTemplate(
+  supabase: Client,
+  userId: string,
+  input: { templateId: string },
+  audit: typeof writeAudit = writeAudit,
+) {
+  await assertSupervisor(supabase, userId);
+  const found = await supabase
+    .from("onboarding_templates")
+    .select("id, key, name")
+    .eq("id", input.templateId)
+    .maybeSingle();
+  if (found.error) throw found.error;
+  if (!found.data) throw new Error("That plan no longer exists.");
+  if (found.data.key === BUILT_IN_TEMPLATE_KEY)
+    throw new Error("The ARHA plan is the fallback for every home and cannot be deleted.");
+
+  const steps = await supabase
+    .from("onboarding_template_tasks")
+    .delete()
+    .eq("template_id", input.templateId);
+  if (steps.error) throw steps.error;
+  const { error } = await supabase
+    .from("onboarding_templates")
+    .delete()
+    .eq("id", input.templateId);
+  if (error) throw error;
+
+  await audit({
+    actorId: userId,
+    action: "onboarding_template_deleted",
+    entityType: "onboarding_template",
+    entityId: input.templateId,
+    entityLabel: found.data.name,
+  });
+  return { ok: true as const };
+}
+
 export async function setDefaultOnboardingTemplate(
   supabase: Client,
   userId: string,
