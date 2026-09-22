@@ -279,6 +279,7 @@ export function reportCsv(report: OwnerReport) {
       "no",
       receipt.inPeriod ? "yes" : "no",
       "Response history only; no participation hours added.",
+      "",
       "review_response",
       receipt.id,
       receipt.createdAt,
