@@ -92,6 +92,13 @@
       "when": 1790036984254,
       "tag": "0012_create_inquiry_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790038135229,
+      "tag": "0013_add_profile_email_signature",
+      "breakpoints": true
     }
   ]
 }
