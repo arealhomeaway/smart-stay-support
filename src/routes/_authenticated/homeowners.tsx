@@ -156,7 +156,7 @@ function HomeownersPage() {
                           {row.properties.map((p) => (
                             <Link
                               key={p.id}
-                              to="/properties/$propertyId"
+                              to="/property/$propertyId"
                               params={{ propertyId: p.id }}
                               className="text-primary hover:underline"
                             >

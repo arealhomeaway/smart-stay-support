@@ -22,6 +22,7 @@ import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDemoRouteImport } from './routes/_authenticated/demo'
+import { Route as AuthenticatedHomeownersRouteImport } from './routes/_authenticated/homeowners'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedInquirySourcesRouteImport } from './routes/_authenticated/inquiry-sources'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
@@ -146,6 +147,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedDemoRoute = AuthenticatedDemoRouteImport.update({
   id: '/demo',
   path: '/demo',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeownersRoute = AuthenticatedHomeownersRouteImport.update({
+  id: '/homeowners',
+  path: '/homeowners',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHubRoute = AuthenticatedHubRouteImport.update({
@@ -492,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
+  '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -564,6 +571,7 @@ export interface FileRoutesByTo {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/demo': typeof AuthenticatedDemoRoute
+  '/homeowners': typeof AuthenticatedHomeownersRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
@@ -635,6 +643,7 @@ export interface FileRoutesById {
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/demo': typeof AuthenticatedDemoRoute
+  '/_authenticated/homeowners': typeof AuthenticatedHomeownersRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/inquiry-sources': typeof AuthenticatedInquirySourcesRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
@@ -710,6 +719,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/dashboard'
     | '/demo'
+    | '/homeowners'
     | '/hub'
     | '/inquiry-sources'
     | '/integrations'
@@ -782,6 +792,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/dashboard'
     | '/demo'
+    | '/homeowners'
     | '/hub'
     | '/inquiry-sources'
     | '/integrations'
@@ -852,6 +863,7 @@ export interface FileRouteTypes {
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
     | '/_authenticated/demo'
+    | '/_authenticated/homeowners'
     | '/_authenticated/hub'
     | '/_authenticated/inquiry-sources'
     | '/_authenticated/integrations'
@@ -1021,6 +1033,13 @@ declare module '@tanstack/react-router' {
       path: '/demo'
       fullPath: '/demo'
       preLoaderRoute: typeof AuthenticatedDemoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/homeowners': {
+      id: '/_authenticated/homeowners'
+      path: '/homeowners'
+      fullPath: '/homeowners'
+      preLoaderRoute: typeof AuthenticatedHomeownersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hub': {
@@ -1546,6 +1565,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDemoRoute: typeof AuthenticatedDemoRoute
+  AuthenticatedHomeownersRoute: typeof AuthenticatedHomeownersRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedInquirySourcesRoute: typeof AuthenticatedInquirySourcesRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
@@ -1587,6 +1607,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDemoRoute: AuthenticatedDemoRoute,
+  AuthenticatedHomeownersRoute: AuthenticatedHomeownersRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedInquirySourcesRoute: AuthenticatedInquirySourcesRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
