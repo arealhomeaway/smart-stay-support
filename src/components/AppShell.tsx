@@ -63,6 +63,7 @@ import {
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { OwnerNotificationBell } from "@/components/owner/OwnerNotificationBell";
+import { ActAsBanner } from "@/components/ActAsBanner";
 import { OwnerSidebarNav } from "@/components/owner/OwnerSidebarNav";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
@@ -574,6 +575,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Tooltip>
               </div>
             </div>
+            <ActAsBanner />
             <ViewAsBanner />
           </header>
         </TooltipProvider>
