@@ -267,7 +267,14 @@ export const setTaskScheduleFn = createServerFn({ method: "POST" })
 
 export const previewOnboardingTemplateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        templateId: z.string().uuid().nullable().default(null),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     const { previewOnboardingTemplate } = await import("./onboarding-template.server");
     return previewOnboardingTemplate(context.supabase, context.userId, data);
@@ -275,7 +282,14 @@ export const previewOnboardingTemplateFn = createServerFn({ method: "POST" })
 
 export const applyOnboardingTemplateFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ propertyId: z.string().uuid() }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        propertyId: z.string().uuid(),
+        templateId: z.string().uuid().nullable().default(null),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     const { applyOnboardingTemplate } = await import("./onboarding-template.server");
     return applyOnboardingTemplate(context.supabase, context.userId, data);
