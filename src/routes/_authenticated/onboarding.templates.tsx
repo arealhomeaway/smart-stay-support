@@ -201,6 +201,8 @@ function TemplatesPage() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      // The plan every new home falls back to must stay available.
+                      disabled={t.builtIn}
                       onClick={() =>
                         doArchive.mutate({ templateId: t.id as string, isArchived: !t.isArchived })
                       }

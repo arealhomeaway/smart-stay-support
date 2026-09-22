@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+  BUILT_IN_TEMPLATE_KEY,
   builtInAsRows,
   builtInSummary,
   templateKeyFrom,
@@ -8,6 +9,7 @@ import {
 } from "../onboarding-template-catalog";
 import {
   createOnboardingTemplate,
+  ensureBuiltInTemplate,
   saveTemplateStep,
   deleteTemplateStep,
 } from "../onboarding-template-admin.server";
@@ -110,5 +112,75 @@ describe("only the director may change templates", () => {
         title: "no",
       }),
     ).rejects.toThrow("at least three characters");
+  });
+});
+
+describe("the built-in plan is edited in place, never duplicated", () => {
+  function db() {
+    const templates: Record<string, unknown>[] = [];
+    const steps: Record<string, unknown>[] = [];
+    const client = {
+      rpc: async (name: string) => {
+        if (name === "is_supervisor" || name === "is_onboarding_staff")
+          return { data: true, error: null };
+        throw new Error(`Unexpected RPC: ${name}`);
+      },
+      from: (table: string) => {
+        const rows = table === "onboarding_templates" ? templates : steps;
+        const matches: ((r: Record<string, unknown>) => boolean)[] = [];
+        const query = {
+          select: () => query,
+          order: () => query,
+          in: () => query,
+          like: () => query,
+          eq: (k: string, v: unknown) => {
+            matches.push((r) => r[k] === v);
+            return query;
+          },
+          maybeSingle: async () => ({
+            data: rows.find((r) => matches.every((m) => m(r))) ?? null,
+            error: null,
+          }),
+          then: (resolve: (v: unknown) => unknown) =>
+            resolve({ data: rows.filter((r) => matches.every((m) => m(r))), error: null }),
+          insert: (value: Record<string, unknown> | Record<string, unknown>[]) => {
+            const list = Array.isArray(value) ? value : [value];
+            const created = list.map((r, i) => ({
+              id: `${table}-${rows.length + i}`,
+              is_default: false,
+              is_archived: false,
+              ...r,
+            }));
+            rows.push(...created);
+            return {
+              select: () => ({ single: async () => ({ data: created[0], error: null }) }),
+              then: (resolve: (v: unknown) => unknown) => resolve({ data: created, error: null }),
+            };
+          },
+        };
+        return query;
+      },
+    } as never;
+    return { client, templates, steps };
+  }
+
+  it("saves the shipped plan once and reuses it afterwards", async () => {
+    const { client, templates, steps } = db();
+    const first = await ensureBuiltInTemplate(client, "director", async () => {});
+    expect(first.created).toBe(true);
+    expect(templates.length).toBe(1);
+    expect(templates[0]!["key"]).toBe(BUILT_IN_TEMPLATE_KEY);
+    expect(steps.length).toBe(builtInSummary().taskCount);
+
+    const second = await ensureBuiltInTemplate(client, "director", async () => {});
+    expect(second.created).toBe(false);
+    expect(second.id).toBe(first.id);
+    expect(templates.length).toBe(1);
+  });
+
+  it("refuses a project manager", async () => {
+    await expect(ensureBuiltInTemplate(gatedDb(false), "pm", async () => {})).rejects.toThrow(
+      "Only the onboarding director can change templates.",
+    );
   });
 });
