@@ -970,46 +970,6 @@ function EvidenceLink({ entryId }: { entryId: string }) {
   );
 }
 
-function LogTimeButton({
-  review,
-  programId,
-  onDone,
-  readOnly,
-}: {
-  review: Review;
-  programId: string;
-  onDone: () => void;
-  readOnly: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
-    null,
-  );
-
-  return (
-    <>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={readOnly}
-        onClick={() => {
-          setReviewed(captureReviewedOpportunity(review));
-          setOpen(true);
-        }}
-      >
-        <Clock className="size-4" /> Log time
-      </Button>
-      <LogTimeDialog
-        open={open}
-        onOpenChange={setOpen}
-        programId={programId}
-        anchor={reviewed}
-        onDone={onDone}
-      />
-    </>
-  );
-}
-
 async function loadHome() {
   return {} as Awaited<ReturnType<typeof ownerHome>>;
 }
