@@ -650,3 +650,15 @@ Batch B (work surface)
 - [ ] F. Scope dialog reorganised (appliances / furnishing / pool location / smart lock), editable later
 - [ ] G. Work surface: assignee avatars, pop-up work window, task-specific content, remove "This home's work"
 - [ ] H. Breezeway vs. Resolve vendor work orders on onboarding homes
+
+## Lifecycle switcher on the Property Hub (2026-09-22)
+- [ ] Root cause: Active Owner enrolment left lifecycle_status untouched, stranding homes out of the Onboarding hub
+- [ ] Prominent Onboarding <-> Active operations switcher on the property page (supervisor only, reason recorded)
+- [ ] Moving to Onboarding creates or reactivates the project + task plan without losing task progress or notes
+- [ ] Moving to Active operations confirms cleanly (conflicts with the handoff review chain — flagged to Emily)
+- [x] 9211 Fitzgerald Dr. moved into onboarding with its task plan
+
+## Program type + homeowner on the property (2026-09-22)
+- [ ] Standard <-> Active Owner toggle on /onboarding/$propertyId (enrol, retime handoff to +4w, participation tracking; back to Standard keeps progress)
+- [ ] Homeowner card on the property workspace/dashboard: name, email, phone, prominent "Add Owner" when empty
+- [ ] Search an existing homeowner or create/edit one inline (name, email, phone, co-owner) and link to the property

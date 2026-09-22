@@ -28,6 +28,8 @@ import {
   setOwnerProgramStatus,
   startOwnerProgram,
 } from "@/lib/owner-program.functions";
+import { startOnboardingProjectFn } from "@/lib/onboarding.functions";
+import { defaultModules } from "@/lib/onboarding-scope";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft — not started",
@@ -44,17 +46,24 @@ export function ActiveOwnerPanel({
   propertyId,
   propertyName,
   canManage,
+  lifecycleStatus = null,
 }: {
   propertyId: string;
   propertyName: string;
   canManage: boolean;
+  /** The home's lifecycle, so enrolment can offer to start onboarding too. */
+  lifecycleStatus?: string | null;
 }) {
   const qc = useQueryClient();
   const loadPrograms = useServerFn(ownerPrograms);
   const loadDetail = useServerFn(ownerProgramDetail);
   const enrollFn = useServerFn(startOwnerProgram);
   const statusFn = useServerFn(setOwnerProgramStatus);
+  const startProjectFn = useServerFn(startOnboardingProjectFn);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+
+  // Enrolment alone never moves a home; onboarding is a deliberate second step.
+  const inOnboarding = lifecycleStatus === "onboarding";
 
   const programs = useQuery({
     queryKey: ["owner-programs", "property", propertyId],
@@ -84,6 +93,36 @@ export function ActiveOwnerPanel({
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
+  // Enrolment records participation; this is what actually gives the team work
+  // to do — it moves the home into the onboarding pipeline with its task plan.
+  const startOnboarding = useMutation({
+    mutationFn: () =>
+      startProjectFn({
+        data: {
+          propertyId,
+          branch: null,
+          projectManager: null,
+          director: null,
+          plannedClosingOn: null,
+          possessionOn: null,
+          targetHandoffOn: null,
+          furnishingScope: "full_furnishing" as const,
+          modules: row ? [...defaultModules(), "active_owner" as const] : defaultModules(),
+          poolLocation: "none" as const,
+          notes: null,
+          externalRefs: {},
+        },
+      }),
+    onSuccess: () => {
+      toast.success(`${propertyName} is now in onboarding with its task plan.`);
+      refresh();
+      void qc.invalidateQueries();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+
 
   const changeStatus = useMutation({
     mutationFn: (status: string) =>
@@ -182,6 +221,26 @@ export function ActiveOwnerPanel({
               </p>
             </div>
           ) : null}
+          {canManage ? (
+            <div className="space-y-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => startOnboarding.mutate()}
+                disabled={startOnboarding.isPending}
+              >
+                {startOnboarding.isPending
+                  ? "Starting…"
+                  : inOnboarding
+                    ? "Check the onboarding plan"
+                    : "Start onboarding"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Enrolling records participation. This puts the home in the Onboarding hub with its
+                task plan, and fills the plan in if it is missing.
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="space-y-3">
@@ -190,9 +249,18 @@ export function ActiveOwnerPanel({
             it; the 90-day clock only starts when you activate it.
           </p>
           {canManage ? (
-            <Button onClick={() => enroll.mutate()} disabled={enroll.isPending}>
-              {enroll.isPending ? "Enrolling…" : "Enroll in Active Owner"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => enroll.mutate()} disabled={enroll.isPending}>
+                {enroll.isPending ? "Enrolling…" : "Enroll in Active Owner"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => startOnboarding.mutate()}
+                disabled={startOnboarding.isPending}
+              >
+                {startOnboarding.isPending ? "Starting…" : "Start onboarding"}
+              </Button>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">
               A supervisor can enroll this home in the program.
