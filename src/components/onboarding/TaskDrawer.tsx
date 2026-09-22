@@ -30,6 +30,8 @@ import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
 import { TaskGallery } from "@/components/onboarding/TaskGallery";
 import { trackForTask } from "@/lib/onboarding-workstreams";
+import { showsBreezeway, taskKind, uploadHint, uploadTitle } from "@/lib/onboarding-task-kind";
+
 import { stateChip } from "@/lib/semantic";
 import { repairApprovalGuidance } from "@/lib/onboarding-scope";
 import type { ReleaseContext } from "@/lib/onboarding-state";
