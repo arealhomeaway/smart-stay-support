@@ -33,6 +33,7 @@ import { Route as AuthenticatedOpsAnalyticsRouteImport } from './routes/_authent
 import { Route as AuthenticatedOversightRouteImport } from './routes/_authenticated/oversight'
 import { Route as AuthenticatedOwnerRouteImport } from './routes/_authenticated/owner'
 import { Route as AuthenticatedOwnerAnalyticsRouteImport } from './routes/_authenticated/owner-analytics'
+import { Route as AuthenticatedOwnerOversightRouteImport } from './routes/_authenticated/owner-oversight'
 import { Route as AuthenticatedOwnerProgramsRouteImport } from './routes/_authenticated/owner-programs'
 import { Route as AuthenticatedPlaybooksRouteImport } from './routes/_authenticated/playbooks'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
@@ -204,6 +205,12 @@ const AuthenticatedOwnerAnalyticsRoute =
   AuthenticatedOwnerAnalyticsRouteImport.update({
     id: '/owner-analytics',
     path: '/owner-analytics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOwnerOversightRoute =
+  AuthenticatedOwnerOversightRouteImport.update({
+    id: '/owner-oversight',
+    path: '/owner-oversight',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOwnerProgramsRoute =
@@ -496,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -565,6 +573,7 @@ export interface FileRoutesByTo {
   '/oversight': typeof AuthenticatedOversightRoute
   '/owner': typeof AuthenticatedOwnerRoute
   '/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/playbooks': typeof AuthenticatedPlaybooksRoute
   '/properties': typeof AuthenticatedPropertiesRoute
@@ -637,6 +646,7 @@ export interface FileRoutesById {
   '/_authenticated/oversight': typeof AuthenticatedOversightRoute
   '/_authenticated/owner': typeof AuthenticatedOwnerRoute
   '/_authenticated/owner-analytics': typeof AuthenticatedOwnerAnalyticsRoute
+  '/_authenticated/owner-oversight': typeof AuthenticatedOwnerOversightRoute
   '/_authenticated/owner-programs': typeof AuthenticatedOwnerProgramsRoute
   '/_authenticated/playbooks': typeof AuthenticatedPlaybooksRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
@@ -711,6 +721,7 @@ export interface FileRouteTypes {
     | '/oversight'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-oversight'
     | '/owner-programs'
     | '/playbooks'
     | '/properties'
@@ -780,6 +791,7 @@ export interface FileRouteTypes {
     | '/oversight'
     | '/owner'
     | '/owner-analytics'
+    | '/owner-oversight'
     | '/owner-programs'
     | '/playbooks'
     | '/properties'
@@ -851,6 +863,7 @@ export interface FileRouteTypes {
     | '/_authenticated/oversight'
     | '/_authenticated/owner'
     | '/_authenticated/owner-analytics'
+    | '/_authenticated/owner-oversight'
     | '/_authenticated/owner-programs'
     | '/_authenticated/playbooks'
     | '/_authenticated/properties'
@@ -1085,6 +1098,13 @@ declare module '@tanstack/react-router' {
       path: '/owner-analytics'
       fullPath: '/owner-analytics'
       preLoaderRoute: typeof AuthenticatedOwnerAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/owner-oversight': {
+      id: '/_authenticated/owner-oversight'
+      path: '/owner-oversight'
+      fullPath: '/owner-oversight'
+      preLoaderRoute: typeof AuthenticatedOwnerOversightRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/owner-programs': {
@@ -1537,6 +1557,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOversightRoute: typeof AuthenticatedOversightRoute
   AuthenticatedOwnerRoute: typeof AuthenticatedOwnerRoute
   AuthenticatedOwnerAnalyticsRoute: typeof AuthenticatedOwnerAnalyticsRoute
+  AuthenticatedOwnerOversightRoute: typeof AuthenticatedOwnerOversightRoute
   AuthenticatedOwnerProgramsRoute: typeof AuthenticatedOwnerProgramsRoute
   AuthenticatedPlaybooksRoute: typeof AuthenticatedPlaybooksRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
@@ -1577,6 +1598,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOversightRoute: AuthenticatedOversightRoute,
   AuthenticatedOwnerRoute: AuthenticatedOwnerRoute,
   AuthenticatedOwnerAnalyticsRoute: AuthenticatedOwnerAnalyticsRoute,
+  AuthenticatedOwnerOversightRoute: AuthenticatedOwnerOversightRoute,
   AuthenticatedOwnerProgramsRoute: AuthenticatedOwnerProgramsRoute,
   AuthenticatedPlaybooksRoute: AuthenticatedPlaybooksRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
