@@ -1,6 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import type { MergeValues } from "@/lib/email-composer";
-import { draftFieldProblems, missingOwnerDetails, sendGate } from "@/lib/email-composer";
+import type { MergeValues, RecipientSuggestion } from "@/lib/email-composer";
+import {
+  draftFieldProblems,
+  missingOwnerDetails,
+  rankRecipientSuggestions,
+  sendGate,
+} from "@/lib/email-composer";
 
 describe("owner and property details", () => {
   const full = {
@@ -124,5 +129,33 @@ describe("the Send button", () => {
 
   it("does not hold a vendor message to homeowner details", () => {
     expect(sendGate(draft, { property: "Sunset Cottage" }, "vendor").canSend).toBe(true);
+  });
+});
+
+describe("rankRecipientSuggestions", () => {
+  const options: RecipientSuggestion[] = [
+    { email: "old@vendor.com", group: "previous", lastSentAt: "2026-01-02T00:00:00Z" },
+    { email: "riley@example.com", name: "Riley Adler", group: "record" },
+    { email: "rick@guest.com", group: "previous" },
+  ];
+
+  it("puts addresses that start with what was typed first", () => {
+    const out = rankRecipientSuggestions("ri", options);
+    expect(out.map((o) => o.email)).toEqual(["riley@example.com", "rick@guest.com"]);
+  });
+
+  it("matches on the contact name too", () => {
+    expect(rankRecipientSuggestions("adler", options).map((o) => o.email)).toEqual([
+      "riley@example.com",
+    ]);
+  });
+
+  it("leaves out anyone already on the message", () => {
+    const out = rankRecipientSuggestions("", options, ["RILEY@example.com"]);
+    expect(out.some((o) => o.email === "riley@example.com")).toBe(false);
+  });
+
+  it("shows everything when nothing has been typed", () => {
+    expect(rankRecipientSuggestions("", options)).toHaveLength(3);
   });
 });
