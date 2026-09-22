@@ -36,6 +36,7 @@ import { SectionBand } from "@/components/ui/page";
 import { PropertyDetailSections } from "@/components/PropertyDetailSections";
 import { PropertyDocumentLibrary } from "@/components/PropertyDocumentLibrary";
 import { OwnerLinkPanel } from "@/components/OwnerLinkPanel";
+import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { ActiveOwnerPanel } from "@/components/property/ActiveOwnerPanel";
 import { LifecycleSwitcher } from "@/components/property/LifecycleSwitcher";
 import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
