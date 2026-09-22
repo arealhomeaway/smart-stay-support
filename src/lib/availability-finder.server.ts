@@ -89,6 +89,15 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
   const facts = await ownerRezFactsFor(
     nearby.map((property) => ({ id: property.id, ownerRezPropertyId: ids.get(property.id)! })),
   );
+  // Price estimates come from PriceLabs; a failure there costs the price, never the search.
+  const { stayQuotesFor } = await import("./pricelabs.server");
+  const quotes = await stayQuotesFor(
+    nearby.map((property) => ({ id: property.id, ownerRezPropertyId: ids.get(property.id)! })),
+    input.checkIn, input.checkOut,
+  ).catch((error) => {
+    console.error("PriceLabs quotes unavailable:", error);
+    return new Map<string, { quote: null; unavailableReason: string }>();
+  });
   const results: AvailabilityResult[] = [];
   // Bound concurrent read traffic to OwnerRez while preserving distance order.
   for (let offset = 0; offset < nearby.length; offset += 5) {
@@ -101,6 +110,9 @@ export async function findAvailableProperties(supabase: Client, input: FinderInp
         ...classifyAvailability(bookings, input.checkIn, input.checkOut),
         facts: read.facts,
         factsUnavailable: read.unavailableReason,
+        quote: quotes.get(property.id)?.quote ?? null,
+        quoteUnavailable: quotes.get(property.id)?.unavailableReason
+          ?? (quotes.has(property.id) ? null : "PriceLabs could not be reached, so no price estimate is shown."),
       };
     }));
     results.push(...rows);
