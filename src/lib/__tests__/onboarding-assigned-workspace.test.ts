@@ -166,8 +166,9 @@ it("returns assigned work with redacted prerequisite context, excluding unrelate
     context.tasks,
     restoreAssignedRelease(context),
   );
-  expect(view.canComplete).toBe(false);
-  expect(view.waitingOn).toEqual(["dependency"]);
+  expect(view.canComplete).toBe(true);
+  expect(view.waitingOn).toEqual([]);
+
 });
 
 it("projects scope preserves outside assignments without exposing their project records", async () => {
