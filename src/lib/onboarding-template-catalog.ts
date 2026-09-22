@@ -94,9 +94,9 @@ export function builtInSummary(): TemplateSummary {
   return {
     id: null,
     key: BUILT_IN_TEMPLATE_KEY,
-    name: "ARHA Full Furnishing (built in)",
+    name: "ARHA Full Furnishing",
     description:
-      "The standard ARHA onboarding plan that ships with Resolve. Duplicate it to make an editable copy.",
+      "The standard ARHA onboarding plan. Edit it here — homes started from it get your version.",
     isDefault: false,
     isArchived: false,
     builtIn: true,
