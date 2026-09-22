@@ -46,14 +46,15 @@ describe("overdue is only claimed for workable tasks", () => {
     expect(viewTask(t, [t]).overdue).toBe(true);
   });
 
-  it("does not mark a dependency-blocked task overdue", () => {
+  it("marks a past-due task with an open prerequisite overdue — nothing is held back", () => {
     const prereq = task({ id: "a", title: "Owner signs agreement", status: "open" });
     const dependent = task({ id: "b", depends_on: ["a"] });
     const view = viewTask(dependent, [prereq, dependent]);
-    expect(view.status).toBe("not_ready");
-    expect(view.overdue).toBe(false);
-    expect(view.waitingOn).toEqual(["Owner signs agreement"]);
+    expect(view.status).toBe("ready");
+    expect(view.overdue).toBe(true);
+    expect(view.waitingOn).toEqual([]);
   });
+
 
   it("releases the dependent task once the prerequisite completes", () => {
     const prereq = task({ id: "a", status: "complete" });
