@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CalendarClock, FlaskConical, Search, Users } from "lucide-react";
 import { EmptyState, LoadingPage, PageHeader, SectionCard, StatTile } from "@/components/ui/page";
-import { SupervisorOnly } from "@/components/SupervisorOnly";
+import { CapabilityGate } from "@/components/CapabilityGate";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ownerPrograms } from "@/lib/owner-program.functions";
+import { ownerOversight } from "@/lib/owner-oversight.functions";
 import { useDemo } from "@/components/DemoProvider";
 import { usDate } from "@/lib/dates";
 import { OWNER_GOAL_HOURS, PROGRAM_TOTAL_DAYS } from "@/lib/owner-participation";
@@ -48,9 +48,9 @@ export const Route = createFileRoute("/_authenticated/owner-oversight")({
     ],
   }),
   component: () => (
-    <SupervisorOnly>
+    <CapabilityGate capability="owner_oversight" title="Program oversight is restricted">
       <OwnerOversightPage />
-    </SupervisorOnly>
+    </CapabilityGate>
   ),
 });
 
@@ -61,7 +61,7 @@ const TONE: Record<string, StatusTone> = {
 };
 
 function OwnerOversightPage() {
-  const load = useServerFn(ownerPrograms);
+  const load = useServerFn(ownerOversight);
   const { demoMode } = useDemo();
   const [showDemo, setShowDemo] = useState(false);
   const viewingDemo = demoMode || showDemo;
@@ -70,7 +70,7 @@ function OwnerOversightPage() {
   const [sort, setSort] = useState<OversightSort>("pace");
 
   const programs = useQuery({
-    queryKey: ["owner-programs", viewingDemo],
+    queryKey: ["owner-oversight", viewingDemo],
     queryFn: () => load({ data: { demo: viewingDemo } }),
   });
 
