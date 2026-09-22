@@ -588,3 +588,4 @@ is now doable from Resolve.
 - [ ] Homeowners Directory page (searchable, capability-gated, enrollment + login status)
 - [ ] /owner explainer for staff accounts linking to /owner-programs
 - [ ] Empty Active Owner hub for supervisors (only demo program exists / demo gating) — confirm and fix
+- [ ] Role-based access controls (Emily): platform owner + director see oversight data; homeowner personal data limited to those who need it (DB-enforced)
