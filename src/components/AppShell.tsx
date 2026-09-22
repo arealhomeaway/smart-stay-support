@@ -62,6 +62,7 @@ import {
 } from "@/components/PortalSwitcher";
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
+import { OwnerNotificationBell } from "@/components/owner/OwnerNotificationBell";
 import { OwnerSidebarNav } from "@/components/owner/OwnerSidebarNav";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
@@ -549,7 +550,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   <CircleHelp className="size-4" aria-hidden="true" />
                 </IconAction>
-                {!vendorMode && !ownerMode && <NotificationBell placement="header" />}
+                {ownerMode ? (
+                  <OwnerNotificationBell />
+                ) : vendorMode ? null : (
+                  <NotificationBell placement="header" />
+                )}
                 <ThemeToggle />
                 <DemoButton />
                 <PortalSwitcher />
