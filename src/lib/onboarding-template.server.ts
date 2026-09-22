@@ -135,11 +135,29 @@ async function loadContext(supabase: Client, propertyId: string) {
   return { property: property.data, anchors, taken, takenSubs, parentIdByKey, existing: rows };
 }
 
-function dueFor(t: TemplateTask, anchors: TemplatePreview["anchors"]) {
+/**
+ * Access (possession) is the anchor the whole plan dates itself from. When the
+ * property has an access date every step gets a deadline: the Asana steps keep
+ * their stated day, the rest are paced across the setup window. Without an
+ * access date the older per-task anchors still apply, and anything else stays
+ * blank rather than being invented.
+ */
+function dueFor(
+  t: TemplateTask,
+  anchors: TemplatePreview["anchors"],
+  schedule?: { position: number; total: number; windowDays: number },
+) {
+  if (anchors.actual_access && schedule) {
+    return shift(
+      anchors.actual_access,
+      offsetFromAccess({ title: t.title, ...schedule }),
+    );
+  }
   if (!t.anchor || t.offsetDays == null) return null;
   const base = anchors[t.anchor];
   return base ? shift(base, t.offsetDays) : null;
 }
+
 
 export async function previewOnboardingTemplate(
   supabase: Client,
