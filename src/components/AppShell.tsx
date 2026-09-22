@@ -63,6 +63,8 @@ import {
 import { AccountSidebarItem } from "@/components/AccountSidebarItem";
 import { WelcomeDialog, useWelcomeGate } from "@/components/WelcomeDialog";
 import { OwnerNotificationBell } from "@/components/owner/OwnerNotificationBell";
+import { ActAsBanner } from "@/components/ActAsBanner";
+import { clearActAs } from "@/lib/act-as";
 import { OwnerSidebarNav } from "@/components/owner/OwnerSidebarNav";
 import { useRole } from "@/hooks/useRole";
 import { useSeat } from "@/hooks/useSeat";
@@ -436,6 +438,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [vendorMode, ownerMode, pathname, personalPage, router]);
 
   async function signOut() {
+    // A test session must never outlive the sign-out that ended it.
+    clearActAs();
     await supabase.auth.signOut();
     router.navigate({ to: "/auth" });
   }
@@ -574,6 +578,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Tooltip>
               </div>
             </div>
+            <ActAsBanner />
             <ViewAsBanner />
           </header>
         </TooltipProvider>

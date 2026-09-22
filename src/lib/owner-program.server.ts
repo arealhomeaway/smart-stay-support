@@ -72,6 +72,8 @@ export type AdminProgramRow = {
   ownerName: string | null;
   ownerEmail: string | null;
   ownerLinked: boolean;
+  /** The homeowner's portal account, when one is linked. */
+  ownerUserId: string | null;
   status: ProgramStatus;
   startedOn: string | null;
   endsOn: string | null;
@@ -200,6 +202,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
       ownerName: p.canonical_owner?.name ?? "Owner link unresolved",
       ownerEmail: p.canonical_owner?.email ?? null,
       ownerLinked: Boolean(p.owner_user_id),
+      ownerUserId: p.owner_user_id ?? null,
       status: p.status as ProgramStatus,
       startedOn: p.started_on,
       endsOn: p.ends_on,

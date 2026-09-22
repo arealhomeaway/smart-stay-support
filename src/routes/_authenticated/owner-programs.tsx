@@ -16,6 +16,7 @@ import {
   KeyRound,
   Plus,
   Route as RouteIcon,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -73,6 +74,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDemo } from "@/components/DemoProvider";
 import { useViewAs } from "@/hooks/useViewAs";
 import { setOwnerPreview } from "@/lib/owner-preview";
+import { beginActAs } from "@/lib/act-as";
+import { useRole } from "@/hooks/useRole";
 import {
   Select,
   SelectContent,
@@ -109,6 +112,7 @@ type ProgramRow = {
   ownerName: string | null;
   ownerEmail: string | null;
   ownerLinked: boolean;
+  ownerUserId?: string | null;
   status: ProgramStatus;
   startedOn: string | null;
   endsOn: string | null;
@@ -402,6 +406,9 @@ function ProgramCard({
   const percent = Math.min(100, Math.round((row.reportedHours / OWNER_GOAL_HOURS) * 100));
   const router = useRouter();
   const { setViewAs } = useViewAs();
+  const { isSupervisor } = useRole();
+  const [acting, setActing] = useState(false);
+
 
   /** Open this program's hub exactly as its homeowner sees it — read-only. */
   function previewAsHomeowner() {
@@ -414,6 +421,26 @@ function ProgramCard({
     setViewAs("owner");
     void router.navigate({ to: "/owner" });
   }
+
+  /**
+   * Step fully into the homeowner's account to test what they can actually do.
+   * Unlike the preview, everything here is real and recorded as them.
+   */
+  async function actAsHomeowner() {
+    if (!row.ownerUserId) return;
+    setActing(true);
+    try {
+      await beginActAs({ userId: row.ownerUserId, origin: "/owner-programs" });
+      await router.navigate({ to: "/owner" });
+      router.invalidate();
+      toast.success("You are now acting as this homeowner.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open a test session.");
+    } finally {
+      setActing(false);
+    }
+  }
+
 
   return (
     <SectionCard
@@ -439,6 +466,16 @@ function ProgramCard({
           <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
             <Eye className="size-4" /> Preview as homeowner
           </Button>
+          {isSupervisor && row.ownerUserId ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={acting}
+              onClick={() => void actAsHomeowner()}
+            >
+              <UserCheck className="size-4" /> {acting ? "Opening…" : "Act as this homeowner"}
+            </Button>
+          ) : null}
           <Button size="sm" variant="outline" onClick={onToggle}>
             {expanded ? "Hide" : "Manage"}
           </Button>
