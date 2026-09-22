@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { isOnboardingAction, ownerTrackProgress } from "@/lib/owner-onboarding";
 
 const task = (title: string, stage: string, status: string) => ({ title, stage, status });
