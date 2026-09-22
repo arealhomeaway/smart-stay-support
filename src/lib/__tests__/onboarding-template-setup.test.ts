@@ -89,6 +89,7 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
       )
         throw new Error(`Unexpected owner contact or other access: ${table}`);
       let inserted: Task[] | null = null;
+      let patched: Record<string, unknown> | null = null;
       const matches: ((row: Task) => boolean)[] = [];
       const result = () => ({
         data:
@@ -148,7 +149,19 @@ function fixture(partiallySaved = false, allowOwnerContactRead = false) {
           tasks.push(...inserted);
           return query;
         },
-        then: (resolve: (value: unknown) => unknown) => Promise.resolve(result()).then(resolve),
+        update: (patch: Record<string, unknown>) => {
+          if (table !== "onboarding_tasks") throw new Error("Unexpected non-task write");
+          patched = patch;
+          return query;
+        },
+        then: (resolve: (value: unknown) => unknown) => {
+          if (patched) {
+            for (const task of tasks.filter((t) => matches.every((m) => m(t))))
+              Object.assign(task, patched);
+            return Promise.resolve({ data: null, error: null }).then(resolve);
+          }
+          return Promise.resolve(result()).then(resolve);
+        },
       };
       return query;
     },
