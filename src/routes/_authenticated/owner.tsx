@@ -290,6 +290,34 @@ function OwnerHubBody({
         <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
       </div>
 
+      <SectionCard
+        title="Your logged participation"
+        description="Everything you have recorded, with any photos or receipts you attached."
+      >
+        {data.entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            You have not logged any participation time yet.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {data.entries.slice(0, 25).map((entry) => (
+              <div
+                key={entry.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">{entry.activity}</p>
+                  <p className="numeric text-xs text-muted-foreground">
+                    {usCalendarDate(entry.entry_date)} · {entry.minutes} minutes
+                  </p>
+                </div>
+                {entry.attachment_path && <EvidenceLink entryId={entry.id} />}
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
       <SectionCard title="Reviewed updates in your participation history">
         <div className="space-y-2">
           {data.entries
