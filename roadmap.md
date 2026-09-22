@@ -584,12 +584,12 @@ is now doable from Resolve.
 - [ ] Bug (Emily): demo onboarding projects (Willow, Birch) missing from the Onboarding Director hub with show-test on — every lens reads 0
 
 ## Active Owner oversight + Homeowners Directory (Emily, 2026-09-22)
-- [ ] Program oversight dashboard for directors/supervisors/admin (all enrolled owners, pacing, reviews due, last contact, summary strip, filters, demo included)
-- [ ] Homeowners Directory page (searchable, capability-gated, enrollment + login status)
-- [ ] /owner explainer for staff accounts linking to /owner-programs
-- [ ] Empty Active Owner hub for supervisors (only demo program exists / demo gating) — confirm and fix
-- [ ] Role-based access controls (Emily): platform owner + director see oversight data; homeowner personal data limited to those who need it (DB-enforced)
+- [x] Program oversight dashboard for directors/supervisors/admin (all enrolled owners, pacing, reviews due, last contact, summary strip, filters, demo included)
+- [x] Homeowners Directory page (searchable, capability-gated, enrollment + login status)
+- [x] /owner explainer for staff accounts linking to /owner-programs
+- [x] Empty Active Owner hub for supervisors (only demo program exists / demo gating) — confirm and fix
+- [x] Role-based access controls (Emily): platform owner + director see oversight data; homeowner personal data limited to those who need it (DB-enforced)
 - [ ] Verify access (Emily): leadership sees only permitted oversight data; homeowners cannot reach other homeowners' or properties' details
-- [ ] Automated positive/negative authorization tests for platform owner, director and homeowner on every oversight and directory endpoint
-- [ ] Audit logging for directory views and oversight access (acting role, target record, timestamp)
-- [ ] Run the full authorization suite across oversight + directory endpoints and report any failing role or cross-homeowner case
+- [x] Automated positive/negative authorization tests for platform owner, director and homeowner on every oversight and directory endpoint
+- [x] Audit logging for directory views and oversight access (acting role, target record, timestamp)
+- [x] Run the full authorization suite across oversight + directory endpoints and report any failing role or cross-homeowner case
