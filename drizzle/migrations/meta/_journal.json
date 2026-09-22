@@ -155,6 +155,13 @@
       "when": 1790113331512,
       "tag": "0021_owner_manual_time_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790115074518,
+      "tag": "0022_notify_owner_when_onboarding_task_published",
+      "breakpoints": true
     }
   ]
 }
