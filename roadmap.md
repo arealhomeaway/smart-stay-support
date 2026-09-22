@@ -602,3 +602,11 @@ is now doable from Resolve.
 - [x] CSV + PDF export of the filtered oversight list and enrolled homes
 - [x] Configurable follow-up alerts (behind pace, overdue check-ins, owner items)
 - [x] Restricted homeowner data access log (person, role, area, date range)
+
+## Onboarding & Operations activation (Emily, 2026-09-22)
+- [x] Breezeway outbound enabled for every verified property (flag on; server-side verified-mapping gate unchanged)
+- [x] Budget & expenses tab on every onboarding home (approved / estimated / committed / actual + append-only change history)
+- [x] Assessment findings → auto-created correction task (owner seat, due date by severity, photo required)
+- [x] Vendor staging & trade coverage lookup per home
+- [x] Email composer warns when the shared inbox is disconnected
+- [ ] Email sending live — blocked: the Microsoft 365 shared mailbox (info@arealhomeaway.com) must be reconnected on Integrations

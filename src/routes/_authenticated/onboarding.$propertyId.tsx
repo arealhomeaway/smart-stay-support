@@ -49,6 +49,9 @@ import { OperationsContextPanel } from "@/components/onboarding/OperationsContex
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
+import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
+import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
+import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import {
@@ -435,6 +438,9 @@ function PropertyWorkspace() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="workflow">Work</TabsTrigger>
           <TabsTrigger value="property">Property</TabsTrigger>
+          <TabsTrigger value="budget">Budget &amp; expenses</TabsTrigger>
+          <TabsTrigger value="findings">Findings</TabsTrigger>
+          <TabsTrigger value="vendors">Vendor coverage</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="handoff">Handoff</TabsTrigger>
           <TabsTrigger value="activity">History</TabsTrigger>
@@ -868,6 +874,25 @@ function PropertyWorkspace() {
               documentsEnabled={docsEnabled}
             />
           </details>
+        </TabsContent>
+
+        {/* ------------------------------------------- Budget & expenses */}
+        <TabsContent value="budget" className="space-y-4">
+          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
+        </TabsContent>
+
+        {/* --------------------------------------------------- Findings */}
+        <TabsContent value="findings" className="space-y-4">
+          <AssessmentFindingsPanel
+            propertyId={current.id}
+            canEdit={canEdit}
+            onOpenTask={setOpenTaskId}
+          />
+        </TabsContent>
+
+        {/* --------------------------------------------- Vendor coverage */}
+        <TabsContent value="vendors" className="space-y-4">
+          <VendorCoveragePanel propertyId={current.id} />
         </TabsContent>
 
         {/* ------------------------------------------------------ Financial */}

@@ -266,6 +266,105 @@ export type Database = {
           },
         ]
       }
+      assessment_findings: {
+        Row: {
+          category: string
+          context: string
+          correction_task_id: string | null
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          finding_key: string | null
+          id: string
+          is_demo: boolean
+          location: string | null
+          photo_url: string | null
+          project_id: string | null
+          property_id: string
+          severity: string
+          source_task_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          context?: string
+          correction_task_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          finding_key?: string | null
+          id?: string
+          is_demo?: boolean
+          location?: string | null
+          photo_url?: string | null
+          project_id?: string | null
+          property_id: string
+          severity?: string
+          source_task_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          context?: string
+          correction_task_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          finding_key?: string | null
+          id?: string
+          is_demo?: boolean
+          location?: string | null
+          photo_url?: string | null
+          project_id?: string | null
+          property_id?: string
+          severity?: string
+          source_task_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_findings_correction_task_id_fkey"
+            columns: ["correction_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_findings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_findings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "assessment_findings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_findings_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -3647,6 +3746,210 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_budget_changes: {
+        Row: {
+          budget_id: string
+          changed_at: string
+          changed_by: string | null
+          field: string
+          id: string
+          line_id: string | null
+          new_value: string | null
+          old_value: string | null
+          reason: string
+        }
+        Insert: {
+          budget_id: string
+          changed_at?: string
+          changed_by?: string | null
+          field: string
+          id?: string
+          line_id?: string | null
+          new_value?: string | null
+          old_value?: string | null
+          reason: string
+        }
+        Update: {
+          budget_id?: string
+          changed_at?: string
+          changed_by?: string | null
+          field?: string
+          id?: string
+          line_id?: string | null
+          new_value?: string | null
+          old_value?: string | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_budget_changes_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_budget_changes_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_budget_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_budget_lines: {
+        Row: {
+          actual_amount: number | null
+          budget_id: string
+          category: string
+          committed_amount: number | null
+          created_at: string
+          created_by: string | null
+          estimated_amount: number
+          financial_request_id: string | null
+          id: string
+          is_demo: boolean
+          label: string
+          note: string | null
+          property_id: string
+          status: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          actual_amount?: number | null
+          budget_id: string
+          category?: string
+          committed_amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          estimated_amount?: number
+          financial_request_id?: string | null
+          id?: string
+          is_demo?: boolean
+          label: string
+          note?: string | null
+          property_id: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          actual_amount?: number | null
+          budget_id?: string
+          category?: string
+          committed_amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          estimated_amount?: number
+          financial_request_id?: string | null
+          id?: string
+          is_demo?: boolean
+          label?: string
+          note?: string | null
+          property_id?: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_budget_lines_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_budget_lines_financial_request_id_fkey"
+            columns: ["financial_request_id"]
+            isOneToOne: false
+            referencedRelation: "financial_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_budget_lines_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "onboarding_budget_lines_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_budgets: {
+        Row: {
+          approved_amount: number | null
+          approved_at: string | null
+          approved_basis: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_demo: boolean
+          notes: string | null
+          project_id: string | null
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_amount?: number | null
+          approved_at?: string | null
+          approved_basis?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          project_id?: string | null
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_amount?: number | null
+          approved_at?: string | null
+          approved_basis?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          project_id?: string | null
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_budgets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_budgets_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "onboarding_budgets_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]

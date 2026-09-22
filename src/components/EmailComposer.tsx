@@ -59,6 +59,7 @@ import {
   type MessageAudience,
 } from "@/lib/email-composer";
 import { RecipientCombobox } from "@/components/RecipientCombobox";
+import { getMailboxStatus } from "@/lib/mailbox.functions";
 import {
   getComposerContext,
   getMessageHistory,
@@ -148,6 +149,14 @@ function ComposerBody({
     queryKey: ["composer-history", context, recordId],
     queryFn: () => loadHistory({ data: { context, recordId } }),
   });
+  const mailboxStatus = useServerFn(getMailboxStatus);
+  const mailbox = useQuery({
+    queryKey: ["composer-mailbox-status"],
+    queryFn: () => mailboxStatus(),
+    staleTime: 60_000,
+  });
+
+
 
   const recipients = ctx.data?.recipients ?? [];
   const templates = (ctx.data?.templates ?? []) as TemplateRow[];
@@ -485,6 +494,21 @@ function ComposerBody({
         </TabsList>
 
         <TabsContent value="write" className="space-y-4 pt-4">
+          {mailbox.data && !mailbox.data.connected ? (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"
+            >
+              <p>
+                The shared inbox ({mailbox.data.mailbox}) is not connected, so this message will be
+                saved but not delivered. Reconnect it on the Integrations page, then send again.
+              </p>
+              <Button size="sm" variant="outline" asChild>
+                <a href="/integrations">Open Integrations</a>
+              </Button>
+            </div>
+          ) : null}
+
           {recovered ? (
             <div
               role="status"
