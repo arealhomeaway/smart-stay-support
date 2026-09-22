@@ -62,7 +62,17 @@ type Draft = {
   evidenceRequired: boolean;
   breezewayTemplateId: string;
   subtasks: string;
+  tags: string;
 };
+
+/** The one reserved tag: this step is work the homeowner does. */
+export const ACTIVE_OWNER_TAG = "active_owner";
+
+export function tagLabel(tag: string) {
+  return tag === ACTIVE_OWNER_TAG
+    ? "Active Owner"
+    : tag.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
 
 function emptyDraft(): Draft {
   return {
@@ -78,6 +88,7 @@ function emptyDraft(): Draft {
     evidenceRequired: false,
     breezewayTemplateId: "",
     subtasks: "",
+    tags: "",
   };
 }
 
@@ -96,6 +107,7 @@ function draftFrom(step: Step): Draft {
     evidenceRequired: Boolean(step.evidenceRequired),
     breezewayTemplateId: step.breezewayTemplateId ?? "",
     subtasks: (step.subtasks ?? []).join("\n"),
+    tags: (step.tags ?? []).join(", "),
   };
 }
 
@@ -137,6 +149,10 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
           subtasks: d.subtasks
             .split("\n")
             .map((s) => s.trim())
+            .filter(Boolean),
+          tags: d.tags
+            .split(",")
+            .map((t) => t.trim())
             .filter(Boolean),
         },
       }),
@@ -290,6 +306,10 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
                   }}
                   className={`flex items-start justify-between gap-3 p-3 ${
                     dragging === s.id ? "opacity-50" : ""
+                  } ${
+                    (s.tags ?? []).includes(ACTIVE_OWNER_TAG)
+                      ? "bg-primary/5 border-primary border-l-4"
+                      : ""
                   }`}
                 >
                   <div className="flex min-w-0 items-start gap-2">
@@ -322,6 +342,14 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
                         <Badge variant="outline">Approval for Active Owner homes</Badge>
                       ) : null}
                       {s.evidenceRequired ? <Badge variant="outline">Evidence required</Badge> : null}
+                      {(s.tags ?? []).map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant={tag === ACTIVE_OWNER_TAG ? "default" : "secondary"}
+                        >
+                          {tagLabel(tag)}
+                        </Badge>
+                      ))}
                       {s.subtasks?.length ? (
                         <Badge variant="outline">{s.subtasks.length} subtasks</Badge>
                       ) : null}
@@ -459,6 +487,37 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
                   value={draft.subtasks}
                   onChange={(e) => setDraft({ ...draft, subtasks: e.target.value })}
                 />
+              </div>
+              <div className="space-y-1">
+                <Label>Tags (comma separated)</Label>
+                <Input
+                  placeholder="active_owner, design"
+                  value={draft.tags}
+                  onChange={(e) => setDraft({ ...draft, tags: e.target.value })}
+                />
+                <p className="text-muted-foreground text-xs">
+                  Tag a step <span className="font-medium">active_owner</span> when the homeowner
+                  does it. Those steps stand out on the home and can be sent straight to the
+                  homeowner&rsquo;s portal.
+                </p>
+                <label className="flex items-center gap-2 pt-1 text-sm">
+                  <Checkbox
+                    checked={draft.tags
+                      .split(",")
+                      .map((t) => t.trim().toLowerCase())
+                      .includes(ACTIVE_OWNER_TAG)}
+                    onCheckedChange={(v) => {
+                      const list = draft.tags
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean)
+                        .filter((t) => t.toLowerCase() !== ACTIVE_OWNER_TAG);
+                      if (v === true) list.unshift(ACTIVE_OWNER_TAG);
+                      setDraft({ ...draft, tags: list.join(", ") });
+                    }}
+                  />
+                  Active Owner step
+                </label>
               </div>
               <div className="space-y-1">
                 <Label>Breezeway template ID (optional)</Label>
