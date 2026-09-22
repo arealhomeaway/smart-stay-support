@@ -287,6 +287,7 @@ export async function loadOwnerOnboarding(
   return {
     inOnboarding: homes.length > 0 || actions.length > 0,
     preview: false,
+    programId,
     ...splitDecided(actions),
     homes,
   };
