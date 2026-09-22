@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { usCalendarDate, usDateTime } from "@/lib/dates";
+import { SILENCE_IS_NOT_APPROVAL, deadlineState } from "@/lib/owner-deadline";
 import { formatBytes } from "@/lib/attachments";
 import { attachmentUrlFn } from "@/lib/attachments.functions";
 import { decideOwnerApproval } from "@/lib/owner-portal.functions";
@@ -90,6 +91,7 @@ function ActionCard({
 }) {
   const [note, setNote] = useState("");
   const decidable = action.canRespond && !readOnly && Boolean(action.publicationId);
+  const deadline = deadlineState(action.dueOn);
 
   return (
     <div className="rounded-xl border border-border p-4">
@@ -98,9 +100,15 @@ function ActionCard({
         {action.propertyName && (
           <span className="text-xs text-muted-foreground">{action.propertyName}</span>
         )}
-        {action.dueOn && (
-          <span className="numeric text-xs text-muted-foreground">
-            Needed by {usCalendarDate(action.dueOn)}
+        {deadline && (
+          <span
+            className={[
+              "numeric text-xs",
+              deadline.overdue ? "font-semibold text-destructive" : "text-muted-foreground",
+            ].join(" ")}
+          >
+            {deadline.label}
+            {deadline.note ? ` · ${deadline.note}` : ""}
           </span>
         )}
       </div>
@@ -240,6 +248,9 @@ export function OnboardingActions({
         title="Onboarding actions"
         description="Choices your setup team needs from you before the work can move forward."
       >
+        <p className="mb-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          {SILENCE_IS_NOT_APPROVAL}
+        </p>
         {logPrompt && data.programId && (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
             <div className="min-w-0">
