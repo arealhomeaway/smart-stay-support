@@ -81,6 +81,7 @@ import {
 } from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { WorkstreamBoard } from "@/components/onboarding/WorkstreamBoard";
+import { GoLiveBanner } from "@/components/onboarding/GoLiveBanner";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
@@ -404,6 +405,13 @@ function PropertyWorkspace() {
           home&apos;s state.
         </p>
       )}
+
+      <GoLiveBanner
+        target={target}
+        blockers={blockers}
+        accepted={Boolean(current.handoff_accepted_at)}
+        onOpenTask={setOpenTaskId}
+      />
 
       <CurrentWork
         stage={stage}

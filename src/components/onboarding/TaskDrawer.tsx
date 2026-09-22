@@ -27,6 +27,9 @@ import {
   type TaskActionId,
 } from "@/lib/onboarding-task-action";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
+import { SendToHomeownerDialog } from "@/components/onboarding/SendToHomeownerDialog";
+import { TaskGallery } from "@/components/onboarding/TaskGallery";
+import { trackForTask } from "@/lib/onboarding-workstreams";
 import { stateChip } from "@/lib/semantic";
 import { repairApprovalGuidance } from "@/lib/onboarding-scope";
 import type { ReleaseContext } from "@/lib/onboarding-state";
@@ -194,6 +197,9 @@ export function TaskDrawer({
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
   const awaitingOwner = task.requires_owner_approval && task.owner_approval_status !== "approved";
   const dueChanged = (due || null) !== (task.due_on ?? null);
+  // Design and listing work is looked at, not read — those drawers get the gallery.
+  const track = trackForTask({ title: task.title, stage: task.stage });
+  const visualTrack = track === "furnishing_staging" || track === "media_listing";
 
   // One guided step at a time — the same pattern as the ticket workspace.
   // Every effect below routes through the callbacks this drawer already uses,
@@ -312,6 +318,22 @@ export function TaskDrawer({
       }
     >
       <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <SendToHomeownerDialog
+            taskId={task.id}
+            taskTitle={task.title}
+            disabled={disabled || task.owner_approval_status === "approved"}
+            alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
+          />
+          {task.owner_approval_status === "awaiting_owner" && (
+            <span className="text-xs text-muted-foreground">
+              Waiting on the homeowner since the last send.
+            </span>
+          )}
+        </div>
+
+        {visualTrack && <TaskGallery taskId={task.id} />}
+
         {action && (
           <GuidedActionCard
             action={{
