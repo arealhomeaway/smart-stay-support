@@ -5907,31 +5907,37 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           email: string | null
           email_signature: string | null
           full_name: string | null
           id: string
+          job_title: string | null
           oncall_eligible: boolean
           phone: string | null
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           email_signature?: string | null
           full_name?: string | null
           id: string
+          job_title?: string | null
           oncall_eligible?: boolean
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           email_signature?: string | null
           full_name?: string | null
           id?: string
+          job_title?: string | null
           oncall_eligible?: boolean
           phone?: string | null
           updated_at?: string
@@ -7931,6 +7937,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_notification_preferences: {
+        Row: {
+          created_at: string
+          email_approvals: boolean
+          email_assignments: boolean
+          email_enabled: boolean
+          email_escalations: boolean
+          email_handoffs: boolean
+          email_work_orders: boolean
+          inapp_approvals: boolean
+          inapp_assignments: boolean
+          inapp_escalations: boolean
+          inapp_handoffs: boolean
+          inapp_work_orders: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_approvals?: boolean
+          email_assignments?: boolean
+          email_enabled?: boolean
+          email_escalations?: boolean
+          email_handoffs?: boolean
+          email_work_orders?: boolean
+          inapp_approvals?: boolean
+          inapp_assignments?: boolean
+          inapp_escalations?: boolean
+          inapp_handoffs?: boolean
+          inapp_work_orders?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_approvals?: boolean
+          email_assignments?: boolean
+          email_enabled?: boolean
+          email_escalations?: boolean
+          email_handoffs?: boolean
+          email_work_orders?: boolean
+          inapp_approvals?: boolean
+          inapp_assignments?: boolean
+          inapp_escalations?: boolean
+          inapp_handoffs?: boolean
+          inapp_work_orders?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

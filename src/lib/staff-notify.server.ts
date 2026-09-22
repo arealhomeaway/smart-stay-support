@@ -16,6 +16,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { DEFAULT_PREFERENCES, allowsEmail, readPreferences } from "./notification-preferences";
 
 type Client = SupabaseClient<Database>;
 
@@ -78,10 +79,33 @@ export async function drainStaffNotifications(supabase: Client, limit = 50, deli
     .in("id", userIds);
   const emailFor = new Map((profiles ?? []).map((p) => [p.id, p.email]));
 
+  // Each person decides which kinds of work reach their mailbox. The in-app
+  // record is already written either way, so nothing is lost by not emailing.
+  const { data: prefRows } = await supabase
+    .from("user_notification_preferences")
+    .select("*")
+    .in("user_id", userIds);
+  const prefsFor = new Map(
+    (prefRows ?? []).map((p) => [p.user_id, readPreferences(p as Record<string, unknown>)]),
+  );
+
   let emailed = 0;
   const notes: string[] = [];
 
   for (const row of rows) {
+    const prefs = prefsFor.get(row.user_id) ?? DEFAULT_PREFERENCES;
+    if (!allowsEmail(prefs, row.kind)) {
+      await supabase
+        .from("staff_notifications")
+        .update({
+          email_status: "skipped",
+          email_error: "The recipient has turned off email for this kind of update.",
+        })
+        .eq("id", row.id)
+        .eq("email_status", "pending");
+      continue;
+    }
+
     if (row.is_demo) {
       await supabase
         .from("staff_notifications")

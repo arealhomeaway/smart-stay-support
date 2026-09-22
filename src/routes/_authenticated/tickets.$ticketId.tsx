@@ -82,6 +82,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Chip } from "@/components/ui/page";
+import { PersonChip } from "@/components/PersonAvatar";
 import { stateChip } from "@/lib/semantic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1379,7 +1380,10 @@ function TicketDetail() {
                     </div>
                   </div>
                 )}
-                <Field label="Assigned to" value={assigneeName} />
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-muted-foreground">Assigned to</span>
+                  <PersonChip userId={ownerId} name={assigneeName} size="xs" />
+                </div>
                 <Field label="Priority" value={meta.short} />
                 <Field
                   label="Type"

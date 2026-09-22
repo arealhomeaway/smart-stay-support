@@ -25,6 +25,7 @@ import { VendorScoreboardPanel } from "@/components/VendorScoreboardPanel";
 import { CoverageSchedulePanel } from "@/components/CoverageSchedulePanel";
 import { AssignmentExceptionQueue } from "@/components/AssignmentExceptionQueue";
 import { OwnerDirectoryPanel } from "@/components/OwnerDirectoryPanel";
+import { PersonChip } from "@/components/PersonAvatar";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({
@@ -142,14 +143,22 @@ function TeamPage() {
                             icon={<UserCheck className="size-4" />}
                             label="Current seat holder"
                             value={
-                              role.current_seat_holder
-                                ? (role.current_seat_name ??
-                                  data.people.find((p) => p.id === role.current_seat_holder)
-                                    ?.full_name ??
-                                  "Unassigned")
-                                : role.current_seat_name
-                                  ? `${role.current_seat_name} — invitation pending`
-                                  : "Unassigned"
+                              role.current_seat_holder ? (
+                                <PersonChip
+                                  userId={role.current_seat_holder}
+                                  name={
+                                    role.current_seat_name ??
+                                    data.people.find((p) => p.id === role.current_seat_holder)
+                                      ?.full_name ??
+                                    "Unassigned"
+                                  }
+                                  size="xs"
+                                />
+                              ) : role.current_seat_name ? (
+                                `${role.current_seat_name} — invitation pending`
+                              ) : (
+                                "Unassigned"
+                              )
                             }
                           />
                           <Row
@@ -314,7 +323,15 @@ function SeatEditor({
   );
 }
 
-function Row({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Row({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-muted-foreground">{icon}</span>

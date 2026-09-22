@@ -21,6 +21,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PersonAvatar } from "@/components/PersonAvatar";
 
 export type ActivityKind =
   | "repair" /* work order / vendor work — amber */
@@ -48,6 +49,8 @@ const KIND: Record<ActivityKind, { tint: string; icon: ComponentType<{ className
 export type ActivityEvent = {
   id: string;
   kind: ActivityKind;
+  /** Who did it, when that is known — shown as their photo instead of the icon. */
+  person?: { id?: string | null; name?: string | null; photoUrl?: string | null };
   /** One plain-language sentence. */
   label: ReactNode;
   /** Human time, e.g. "12 min ago". */
@@ -63,12 +66,21 @@ function Row({ event }: { event: ActivityEvent }) {
   const Icon = meta.icon;
   return (
     <>
-      <span
-        aria-hidden="true"
-        className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", meta.tint)}
-      >
-        <Icon className="size-3.5" />
-      </span>
+      {event.person ? (
+        <PersonAvatar
+          name={event.person.name}
+          photoUrl={event.person.photoUrl}
+          size="md"
+          className="shrink-0"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", meta.tint)}
+        >
+          <Icon className="size-3.5" />
+        </span>
+      )}
       <span className="min-w-0 flex-1 truncate text-sm">{event.label}</span>
       {event.when ? (
         <span className="numeric shrink-0 text-xs text-muted-foreground">{event.when}</span>

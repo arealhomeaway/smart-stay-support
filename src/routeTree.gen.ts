@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AwaitingAccessRouteImport } from './routes/awaiting-access'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAvailabilityFinderRouteImport } from './routes/_authenticated/availability-finder'
@@ -107,6 +108,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   id: '/analytics',
@@ -497,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
@@ -572,6 +579,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
@@ -644,6 +652,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/awaiting-access': typeof AwaitingAccessRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
@@ -721,6 +730,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/awaiting-access'
     | '/reset-password'
+    | '/account'
     | '/analytics'
     | '/audit'
     | '/availability-finder'
@@ -796,6 +806,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/awaiting-access'
     | '/reset-password'
+    | '/account'
     | '/analytics'
     | '/audit'
     | '/availability-finder'
@@ -867,6 +878,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/awaiting-access'
     | '/reset-password'
+    | '/_authenticated/account'
     | '/_authenticated/analytics'
     | '/_authenticated/audit'
     | '/_authenticated/availability-finder'
@@ -991,6 +1003,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/analytics': {
       id: '/_authenticated/analytics'
@@ -1577,6 +1596,7 @@ const AuthenticatedWorkOrdersRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedAvailabilityFinderRoute: typeof AuthenticatedAvailabilityFinderRoute
@@ -1620,6 +1640,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedAvailabilityFinderRoute: AuthenticatedAvailabilityFinderRoute,

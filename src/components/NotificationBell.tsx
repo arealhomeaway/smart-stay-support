@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDemo } from "@/components/DemoProvider";
+import { allowsInApp, readPreferences } from "@/lib/notification-preferences";
 
 type Row = {
   id: string;
@@ -57,7 +58,24 @@ export function NotificationBell({
     },
   });
 
-  const rows = useMemo(() => data ?? [], [data]);
+  // Each person chooses which kinds of update they want shown here.
+  const { data: prefRow } = useQuery({
+    queryKey: ["my-notification-preferences"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_notification_preferences")
+        .select("*")
+        .maybeSingle();
+      return (data ?? null) as Record<string, unknown> | null;
+    },
+  });
+  const prefs = useMemo(() => readPreferences(prefRow), [prefRow]);
+
+  const rows = useMemo(
+    () => (data ?? []).filter((r) => allowsInApp(prefs, r.kind)),
+    [data, prefs],
+  );
   const unread = rows.filter((r) => !r.read_at);
 
   async function markRead(ids: string[]) {
