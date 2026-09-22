@@ -4385,6 +4385,110 @@ export type Database = {
           },
         ]
       }
+      onboarding_template_tasks: {
+        Row: {
+          blocks_handoff: boolean
+          breezeway_template_id: string | null
+          created_at: string
+          detail: string | null
+          evidence_required: boolean
+          id: string
+          offset_days: number | null
+          owner_approval_when_active_owner: boolean
+          requires_owner_approval: boolean
+          role: string | null
+          schedule_anchor: string | null
+          sort_order: number
+          stage: string
+          subtasks: string[]
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blocks_handoff?: boolean
+          breezeway_template_id?: string | null
+          created_at?: string
+          detail?: string | null
+          evidence_required?: boolean
+          id?: string
+          offset_days?: number | null
+          owner_approval_when_active_owner?: boolean
+          requires_owner_approval?: boolean
+          role?: string | null
+          schedule_anchor?: string | null
+          sort_order?: number
+          stage: string
+          subtasks?: string[]
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          blocks_handoff?: boolean
+          breezeway_template_id?: string | null
+          created_at?: string
+          detail?: string | null
+          evidence_required?: boolean
+          id?: string
+          offset_days?: number | null
+          owner_approval_when_active_owner?: boolean
+          requires_owner_approval?: boolean
+          role?: string | null
+          schedule_anchor?: string | null
+          sort_order?: number
+          stage?: string
+          subtasks?: string[]
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_template_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_archived: boolean
+          is_default: boolean
+          key: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_default?: boolean
+          key: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_default?: boolean
+          key?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       oncall_roster: {
         Row: {
           created_at: string

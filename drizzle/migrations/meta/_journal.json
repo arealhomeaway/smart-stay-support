@@ -162,6 +162,13 @@
       "when": 1790115074518,
       "tag": "0022_notify_owner_when_onboarding_task_published",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790117973377,
+      "tag": "0023_onboarding_templates",
+      "breakpoints": true
     }
   ]
 }
