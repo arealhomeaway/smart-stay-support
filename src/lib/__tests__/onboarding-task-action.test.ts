@@ -92,21 +92,22 @@ describe("the one guided action on an onboarding task", () => {
     expect(onboardingTaskAction(v(task({ status: "carryover" })))).toBeNull();
   });
 
-  it("advances to the next workable step in plan order", () => {
+  it("advances to the very next step in plan order", () => {
     const a = task({ id: "bbbbbbb1-1111-4111-8111-111111111111", sort_order: 1 });
-    const blocked = task({
+    const next = task({
       id: "bbbbbbb2-2222-4222-8222-222222222222",
-      title: "Blocked step",
+      title: "Next step",
       sort_order: 2,
       depends_on: ["bbbbbbb9-9999-4999-8999-999999999999"],
     });
-    const workable = task({
+    const later = task({
       id: "bbbbbbb3-3333-4333-8333-333333333333",
-      title: "Next real step",
+      title: "Later step",
       sort_order: 3,
     });
-    const all = [a, blocked, workable];
-    expect(nextActionableTask(a, all)?.id).toBe(workable.id);
+    const all = [a, next, later];
+    expect(nextActionableTask(a, all)?.id).toBe(next.id);
+
     expect(nextActionableTask(a, [a])).toBeNull();
   });
 
