@@ -341,21 +341,8 @@ export function TaskDrawer({
       }
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <SendToHomeownerDialog
-            taskId={task.id}
-            taskTitle={task.title}
-            disabled={disabled || task.owner_approval_status === "approved"}
-            alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
-          />
-          {task.owner_approval_status === "awaiting_owner" && (
-            <span className="text-xs text-muted-foreground">
-              Waiting on the homeowner since the last send.
-            </span>
-          )}
-        </div>
-
         {visualTrack && <TaskGallery taskId={task.id} />}
+
 
         {/*
          * Finishing comes last. Anything that unblocks the step stays at the
