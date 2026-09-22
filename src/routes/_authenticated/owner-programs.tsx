@@ -109,6 +109,7 @@ type ProgramRow = {
   ownerName: string | null;
   ownerEmail: string | null;
   ownerLinked: boolean;
+  ownerUserId?: string | null;
   status: ProgramStatus;
   startedOn: string | null;
   endsOn: string | null;
