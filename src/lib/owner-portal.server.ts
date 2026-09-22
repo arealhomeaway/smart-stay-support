@@ -175,10 +175,10 @@ export type LogTimeInput = {
  * combined total can never double count.
  */
 export async function logOwnerTime(supabase: Client, _userId: string, input: LogTimeInput) {
-  // Every new entry is anchored to a documented participation opportunity.
-  // Legacy entries created before this rule keep their history untouched.
-  if (!input.reviewId) {
-    throw new Error("Choose the participation opportunity this time belongs to.");
+  // An entry either answers a documented participation opportunity or is one
+  // the homeowner recorded themselves; a self-recorded entry carries no Ticket.
+  if (!input.reviewId && input.ticketId) {
+    throw new Error("A self-recorded activity cannot carry a Ticket link.");
   }
   // Eligibility, current enrollment and evidence are checked under database locks.
   const chosen = [...new Set(input.propertyIds)];
