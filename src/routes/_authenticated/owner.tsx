@@ -189,6 +189,11 @@ function OwnerHubBody({
   data: Extract<Awaited<ReturnType<typeof loadHome>>, { linked: true }>;
   preview: boolean;
 }) {
+  const { user } = Route.useRouteContext();
+  const signedInName =
+    typeof user.user_metadata?.["full_name"] === "string"
+      ? (user.user_metadata["full_name"] as string)
+      : null;
   const qc = useQueryClient();
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["owner-home"] });
