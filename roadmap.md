@@ -618,3 +618,24 @@ is now doable from Resolve.
 - [x] Move 3915 Maple Manor (3915 W 104th St S) back to onboarding lifecycle and initialize its onboarding workflow/tasks (176 steps created)
 - [x] Active Owner enrollment toggle/control on the Property Hub page (supervisor-gated)
 - [x] Enrolling a home into onboarding must offer the Active Owner choice at import (1399 Foxtail Ln came in as a standard property)
+
+## Onboarding walkthrough feedback — Kati & Emily (2026-09-22)
+Batch A (workability, dates, enrollment)
+- [ ] Unlock every work activity — no dependency/phase locking, remove "waiting on" labels
+- [ ] Closing / access / handoff dates editable from the home dashboard
+- [ ] Target handoff auto-dates from access (+3 wks standard, +4 wks Active Owner), recalcs unless hand-edited
+- [ ] Project manager list corrected — Iveth and Sofia Alvarez
+- [ ] Enrollment: import owner from OwnerRez or create owner record inline; drop the extra "review" step
+- [ ] "Start onboarding" at enrollment starts it immediately (no second click)
+- [ ] Start-onboarding scope reorganised (appliances new/existing/both, furnishing full/owner/existing, pool neighborhood vs property, smart lock under security) and editable later
+- [ ] Task deadlines auto-populate from possession/access date, mirroring the Asana template (pull offsets via Asana connector)
+
+Batch B (work surface)
+- [ ] Assignee is a specific person with avatar
+- [ ] Remove Handoff gates tab (decision needed — see plan)
+- [ ] Remove redundant "This home's work"
+- [ ] Nav tabs moved under the main dashboard; dashboard shows closing/access dates
+- [ ] Auto status bar from progress + "Notes" button listing all work notes
+- [ ] Work activity opens as a centred pop-up, easier to navigate; Send to homeowner moved to the bottom
+- [ ] Track work orders pushed to Breezeway vs non-Breezeway vendor work orders (inside onboarding)
+- [ ] Task drawers specific to the task type; simple upload everywhere; no Breezeway export on document tasks
