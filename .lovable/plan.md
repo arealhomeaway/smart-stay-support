@@ -45,6 +45,11 @@ Once the four pieces are in, I run the whole journey against a sample Active Own
 
 I report the result phase by phase, naming anything that did not fire. Email delivery is still blocked until the ARHA mailbox reconnects, so mail steps are verified as far as the queued, correctly addressed message and flagged as unsent.
 
+## What I am not changing
+
+- The eight request categories, their wording, and the "what good completion looks like" behavior — already correct.
+- Anything that would state a number of hours to a homeowner or imply a tax result. The packet is careful here and so is the portal.
+
 ## Technical notes
 
 - New `src/lib/owner-journey.ts` (pure): the six packet milestones, plus a function deriving current stage from the existing program/onboarding/booking signals. Unit tested.
