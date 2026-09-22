@@ -278,6 +278,7 @@ export async function loadOwnerOnboarding(
     decidedAt: a.decided_at,
     createdAt: a.created_at,
     files: files.get(taskByApproval.get(a.id) ?? "") ?? [],
+    participation: participation.get(taskByApproval.get(a.id) ?? "") ?? null,
   }));
 
   return {
