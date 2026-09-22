@@ -282,6 +282,20 @@ export function AttachmentsPanel({
         />
       </CardHeader>
       <CardContent className="space-y-3">
+        {canDrop ? (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className={`w-full rounded-lg border-2 border-dashed px-4 py-6 text-center text-sm transition-colors ${
+              dragging
+                ? "border-primary bg-primary/5 text-foreground"
+                : "border-border text-muted-foreground hover:border-primary/60"
+            }`}
+          >
+            Drag a photo or document here, or click to choose one.
+          </button>
+        ) : null}
+
         {progress ? (
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Uploading {progress.name}…</p>
