@@ -161,12 +161,24 @@ function dueFor(
 }
 
 
+/**
+ * Which plan to apply: the template the director picked, else the one marked
+ * default, else the built-in ARHA plan. The shape is identical either way.
+ */
+async function planFor(supabase: Client, templateId?: string | null) {
+  const { resolveTemplateTasks } = await import("./onboarding-template-admin.server");
+  const custom = await resolveTemplateTasks(supabase, templateId ?? null);
+  if (custom) return { key: custom.templateKey, tasks: custom.tasks };
+  return { key: TEMPLATE_KEY, tasks: MASTER_ONBOARDING_TEMPLATE };
+}
+
 export async function previewOnboardingTemplate(
   supabase: Client,
   userId: string,
-  input: { propertyId: string },
+  input: { propertyId: string; templateId?: string | null },
 ): Promise<TemplatePreview> {
   await assertOnboardingStaff(supabase, userId);
+  const plan = await planFor(supabase, input.templateId);
   const { anchors, taken, takenSubs, parentIdByKey } = await loadContext(
     supabase,
     input.propertyId,
@@ -174,12 +186,12 @@ export async function previewOnboardingTemplate(
 
   const { activeOwnerFor } = await import("./active-owner.server");
   const windowDays = setupWindowDays(Boolean(await activeOwnerFor(supabase, input.propertyId)));
-  const total = MASTER_ONBOARDING_TEMPLATE.length;
+  const total = plan.tasks.length;
 
   const toCreate: TemplatePreview["toCreate"] = [];
   const skipped: TemplatePreview["skipped"] = [];
   let subtasksToCreate = 0;
-  MASTER_ONBOARDING_TEMPLATE.forEach((t, position) => {
+  plan.tasks.forEach((t, position) => {
     const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
     subtasksToCreate += (t.subtasks ?? []).filter(
       (title) => !parentId || !takenSubs.has(subKey(parentId, title)),
@@ -199,7 +211,7 @@ export async function previewOnboardingTemplate(
 
   return {
     propertyId: input.propertyId,
-    templateKey: TEMPLATE_KEY,
+    templateKey: plan.key,
     toCreate,
     subtasksToCreate,
     skipped,
@@ -210,20 +222,21 @@ export async function previewOnboardingTemplate(
 export async function applyOnboardingTemplate(
   supabase: Client,
   userId: string,
-  input: { propertyId: string },
+  input: { propertyId: string; templateId?: string | null },
   audit: typeof writeAudit = writeAudit,
 ) {
   await assertOnboardingStaff(supabase, userId);
+  const plan = await planFor(supabase, input.templateId);
   const { property, anchors, taken, takenSubs, parentIdByKey, existing } = await loadContext(
     supabase,
     input.propertyId,
   );
 
   const positionOf = new Map(
-    MASTER_ONBOARDING_TEMPLATE.map((t, position) => [taskKey(t.stage, t.title), position] as const),
+    plan.tasks.map((t, position) => [taskKey(t.stage, t.title), position] as const),
   );
-  const total = MASTER_ONBOARDING_TEMPLATE.length;
-  const pending = MASTER_ONBOARDING_TEMPLATE.filter((t) => !taken.has(taskKey(t.stage, t.title)));
+  const total = plan.tasks.length;
+  const pending = plan.tasks.filter((t) => !taken.has(taskKey(t.stage, t.title)));
 
   // Ownership: every task opens owned by a SEAT, and by the person holding
   // that seat today. Nothing is created unassigned.
@@ -273,7 +286,7 @@ export async function applyOnboardingTemplate(
       !t.parent_task_id &&
       t.requires_owner_approval &&
       ["pending", "awaiting_owner"].includes(t.owner_approval_status) &&
-      MASTER_ONBOARDING_TEMPLATE.some(
+      plan.tasks.some(
         (template) => taskKey(template.stage, template.title) === taskKey(t.stage, t.title),
       ),
   );
@@ -297,7 +310,7 @@ export async function applyOnboardingTemplate(
   // reuses pending approvals and preserves any decision already recorded.
   const { ensureOwnerApprovalRequest } = await import("./onboarding.server");
   for (const task of approvalTasks) {
-    const template = MASTER_ONBOARDING_TEMPLATE.find(
+    const template = plan.tasks.find(
       (entry) => taskKey(entry.stage, entry.title) === taskKey(task.stage, task.title),
     );
     await ensureOwnerApprovalRequest(supabase, userId, {
@@ -315,7 +328,7 @@ export async function applyOnboardingTemplate(
   // already existed, so a partially applied plan is completed rather than
   // duplicated.
   const subRows: Record<string, unknown>[] = [];
-  for (const t of MASTER_ONBOARDING_TEMPLATE) {
+  for (const t of plan.tasks) {
     if (!t.subtasks?.length) continue;
     const parentId = parentIdByKey.get(taskKey(t.stage, t.title));
     if (!parentId) continue;
@@ -354,16 +367,16 @@ export async function applyOnboardingTemplate(
     entityId: input.propertyId,
     entityLabel: property.name,
     after: {
-      template: TEMPLATE_KEY,
+      template: plan.key,
       created: rows.length,
       subtasks: subRows.length,
-      skipped: MASTER_ONBOARDING_TEMPLATE.length - pending.length,
+      skipped: plan.tasks.length - pending.length,
     },
   });
 
   return {
     created: rows.length,
     subtasksCreated: subRows.length,
-    skipped: MASTER_ONBOARDING_TEMPLATE.length - pending.length,
+    skipped: plan.tasks.length - pending.length,
   };
 }
