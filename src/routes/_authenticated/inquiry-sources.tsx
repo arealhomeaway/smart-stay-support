@@ -1,16 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InquirySourceForm } from "@/components/InquirySourceForm";
+import { useInquirySources } from "@/hooks/useInquirySources";
 import { formatMoney } from "@/lib/pricing";
 import { searchSources, type InquirySource } from "@/lib/inquiry-sources";
-import { INQUIRY_SOURCE_COLUMNS, mapInquirySource } from "@/lib/inquiry-sources.data";
 
 export const Route = createFileRoute("/_authenticated/inquiry-sources")({
   head: () => ({
@@ -25,17 +23,6 @@ export const Route = createFileRoute("/_authenticated/inquiry-sources")({
   }),
   component: InquirySourcesPage,
 });
-
-export function useInquirySources() {
-  return useQuery({
-    queryKey: ["inquiry-sources"],
-    queryFn: async (): Promise<InquirySource[]> => {
-      const { data, error } = await supabase.from("inquiry_sources").select(INQUIRY_SOURCE_COLUMNS).order("name");
-      if (error) throw error;
-      return (data ?? []).map((row) => mapInquirySource(row as Record<string, unknown>));
-    },
-  });
-}
 
 function amount(value: number | null) {
   return value === null ? <span className="text-muted-foreground">—</span> : formatMoney(value);
