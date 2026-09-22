@@ -12,6 +12,8 @@ import { unknownFacts, type AmenityKey, type MatchRequirements } from "./propert
 import { ownerRezFactsFor } from "./property-facts.server";
 import type { AppRole } from "./permissions";
 import { activePublicListing } from "./availability-listing";
+import { buildSourceQuote } from "./inquiry-sources";
+import { INQUIRY_SOURCE_COLUMNS, mapInquirySource } from "./inquiry-sources.data";
 
 type Client = SupabaseClient<Database>;
 export type FinderInput = {
@@ -25,7 +27,16 @@ export type FinderInput = {
   /** Smallest acceptable bedroom count; 0 means size is not a requirement. */
   minBedrooms?: number | undefined;
   amenities?: AmenityKey[] | undefined;
+  /** Inquiry source whose fee settings the quote is built from. */
+  inquirySourceId?: string | undefined;
 };
+
+/** Reads one inquiry source; a missing or inactive source simply yields no source quote. */
+export async function loadInquirySource(supabase: Client, id: string) {
+  const { data, error } = await supabase.from("inquiry_sources").select(INQUIRY_SOURCE_COLUMNS).eq("id", id).maybeSingle();
+  if (error || !data) return null;
+  return mapInquirySource(data as Record<string, unknown>);
+}
 
 export async function assertFinderAccess(supabase: Client, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
