@@ -212,9 +212,9 @@ export async function importOwnerRezProperty(
  * somebody has to fill in task by task later.
  */
 export type PropertyMilestones = {
-  plannedClosingOn?: string | null;
-  actualClosingOn?: string | null;
-  accessOn?: string | null;
+  plannedClosingOn?: string | null | undefined;
+  actualClosingOn?: string | null | undefined;
+  accessOn?: string | null | undefined;
 };
 
 function milestoneColumns(m: PropertyMilestones | undefined) {
