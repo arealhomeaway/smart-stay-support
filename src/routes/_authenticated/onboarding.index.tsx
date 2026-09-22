@@ -196,14 +196,104 @@ function Hub() {
       applyTestDataFilter(data.properties, showTest, (p) => p).some((p) => p.id === h.property_id),
   );
 
+  // The hub's own figures follow the same test/QA opt-in the rows do.
+  const scoped = applyTestDataFilter(projects, showTest, (p) => p.property);
+  const viewer = { userId, reviewCapabilities: data.reviewCapabilities };
+  const activeProjects = scoped.filter((p) => p.stage !== "live");
+  const myDecisions = activeProjects.filter((p) => awaitingMyReview(p, viewer));
+  const atRisk = activeProjects.filter(
+    (p) => p.risk.level === "at_risk" || p.risk.level === "blocked",
+  );
+  const inReview = activeProjects.filter((p) => p.inReview || p.stageReviewCount > 0);
+  const soon = activeProjects.filter((p) => withinDays(p.target, 14));
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Onboarding"
-        title={data.workspaceMode === "portfolio" ? "Director hub" : "Project hub"}
-        description="What needs attention today, what is at risk and why, which homes are waiting on a review gate, and which handoffs land this week."
-        actions={<AddPropertyDialog disabled={readOnly} />}
+    <div className="space-y-8">
+      <PageHero
+        image={heroImage}
+        eyebrow={new Date().toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })}
+        title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
+        description="From keys to kickoff."
+        actions={
+          <>
+            <Link
+              to="/onboarding/my-work"
+              search={{ who: "me" } as never}
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+            >
+              <ClipboardList className="size-4" /> My work
+            </Link>
+            <button
+              type="button"
+              onClick={() => setParam({ lens: "review" })}
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+            >
+              <Inbox className="size-4" /> Onboarding queue
+            </button>
+            <AddPropertyDialog
+              disabled={readOnly}
+              trigger={
+                <button
+                  type="button"
+                  disabled={readOnly}
+                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
+                >
+                  <Plus className="size-4" /> Enroll property
+                </button>
+              }
+            />
+          </>
+        }
       />
+
+      <SectionCard
+        tone={myDecisions.length > 0 ? "critical" : "default"}
+        title="Needs my decision"
+        description="Gate reviews and stage captures that are yours to decide right now."
+        bodyClassName="space-y-1.5"
+      >
+        {myDecisions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            You are clear. Nothing is waiting on a decision from you.
+          </p>
+        ) : (
+          myDecisions.map((p) => (
+            <DecisionRow key={p.property.id} project={p} originToken={originToken} />
+          ))
+        )}
+      </SectionCard>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <HubTile
+          value={myDecisions.length}
+          label="Awaiting my review"
+          tone="critical"
+          onClick={() => setParam({ lens: "mine" })}
+        />
+        <HubTile
+          value={atRisk.length}
+          label="At risk or blocked"
+          tone="attention"
+          onClick={() => setParam({ lens: "at_risk" })}
+        />
+        <HubTile
+          value={inReview.length}
+          label="In review"
+          tone="review"
+          onClick={() => setParam({ lens: "review" })}
+        />
+        <HubTile
+          value={soon.length}
+          label="Handoffs in 14 days"
+          tone="progress"
+          onClick={() => setParam({ lens: "handoffs" })}
+        />
+      </div>
+
 
       <Tabs defaultValue="hub" className="space-y-5">
         <TabsList>
