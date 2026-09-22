@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
+import type { ProgramPropertyRow } from "@/lib/owner-participation.server";
 import { LogTimeDialog } from "@/components/owner/LogTimeDialog";
 import { WaysToParticipate } from "@/components/owner/WaysToParticipate";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
