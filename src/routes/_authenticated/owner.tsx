@@ -373,6 +373,13 @@ function OwnerHubBody({
         onDone={invalidate}
       />
 
+      {!preview && logHoursBlockedReason ? (
+        <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm" role="status">
+          <p className="font-medium">Logging hours is not open yet</p>
+          <p className="mt-1 text-muted-foreground">{logHoursBlockedReason}</p>
+        </div>
+      ) : null}
+
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
           Thank you for the time you've put in. Your final report will be ready when your 90 days
