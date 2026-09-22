@@ -167,8 +167,14 @@ export function clientPriceLine(result: AvailabilityResult) {
   return result.quote ? clientQuoteLine(result.quote) : null;
 }
 
+/** The warm opening on a property options email, in the words a guest reads first. */
+export function availabilityGreeting(checkIn: string, checkOut: string, location: string) {
+  const where = location.trim();
+  return `Hello,\n\nThanks so much for reaching out about properties near ${where}. Here are the options we have for ${usCalendarDate(checkIn)} to ${usCalendarDate(checkOut)}:`;
+}
+
 export function emailSummary(results: AvailabilityResult[], checkIn: string, checkOut: string, location: string) {
-  const body = `Property options for ${checkIn} to ${checkOut} near ${location.trim()}:\n\n${results.map((r) => {
+  const body = `${availabilityGreeting(checkIn, checkOut, location)}\n\n${results.map((r) => {
     const price = clientPriceLine(r);
     return `${r.name} — ${r.address}${r.bookingUrl ? `\n${r.bookingUrl}` : ""}${price ? `\n${price}` : ""}\n${externalAvailabilityText(r)}`;
   }).join("\n\n")}`;
