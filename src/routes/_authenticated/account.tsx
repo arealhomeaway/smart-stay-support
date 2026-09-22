@@ -338,6 +338,10 @@ function AccountPage() {
             </div>
           </SectionCard>
         </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <PasswordCard email={account.data?.email ?? null} />
+        </TabsContent>
       </Tabs>
     </div>
   );
