@@ -127,6 +127,13 @@
       "when": 1790095119539,
       "tag": "0017_avatar_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790100804585,
+      "tag": "0018_onboarding_handoff_date_source",
+      "breakpoints": true
     }
   ]
 }
