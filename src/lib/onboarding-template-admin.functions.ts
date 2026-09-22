@@ -107,6 +107,24 @@ export const deleteTemplateStepFn = createServerFn({ method: "POST" })
     return deleteTemplateStep(context.supabase, context.userId, data);
   });
 
+export const arrangeTemplateStepsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        templateId: z.string().uuid(),
+        order: z
+          .array(z.object({ stepId: z.string().uuid(), stage: z.string().min(1) }))
+          .min(1)
+          .max(1000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { arrangeTemplateSteps } = await import("./onboarding-template-admin.server");
+    return arrangeTemplateSteps(context.supabase, context.userId, data);
+  });
+
 export const reorderTemplateStepFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

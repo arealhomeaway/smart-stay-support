@@ -413,6 +413,50 @@ export async function deleteTemplateStep(
   return { ok: true as const };
 }
 
+/**
+ * Save a whole new arrangement: which stage each step sits in and the order
+ * within it. The caller sends the complete list, so a step dragged into
+ * another stage and the renumbering that follows are one save; only rows that
+ * actually moved are written.
+ */
+export async function arrangeTemplateSteps(
+  supabase: Client,
+  userId: string,
+  input: { templateId: string; order: { stepId: string; stage: string }[] },
+) {
+  await assertSupervisor(supabase, userId);
+  const rows = await supabase
+    .from("onboarding_template_tasks")
+    .select("id, stage, sort_order")
+    .eq("template_id", input.templateId);
+  if (rows.error) throw rows.error;
+
+  const current = new Map((rows.data ?? []).map((r) => [r.id, r]));
+  if (input.order.length !== current.size) {
+    throw new Error("The plan changed while you were arranging it. Refresh and try again.");
+  }
+  for (const entry of input.order) {
+    if (!current.has(entry.stepId)) {
+      throw new Error("The plan changed while you were arranging it. Refresh and try again.");
+    }
+  }
+
+  let moved = 0;
+  for (const [index, entry] of input.order.entries()) {
+    const row = current.get(entry.stepId)!;
+    const sortOrder = (index + 1) * 10;
+    if (row.stage === entry.stage && row.sort_order === sortOrder) continue;
+    const write = await supabase
+      .from("onboarding_template_tasks")
+      .update({ stage: entry.stage, sort_order: sortOrder })
+      .eq("id", entry.stepId)
+      .eq("template_id", input.templateId);
+    if (write.error) throw write.error;
+    moved += 1;
+  }
+  return { ok: true as const, moved };
+}
+
 /** Move one step up or down in the plan order. */
 export async function reorderTemplateStep(
   supabase: Client,
