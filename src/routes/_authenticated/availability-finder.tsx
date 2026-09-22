@@ -5,6 +5,7 @@ import { useCallback, useState, type FormEvent } from "react";
 import { searchAvailability, downloadAvailabilityOptions } from "@/lib/availability-finder.functions";
 import { AVAILABILITY_RADIUS_MILES, emailSummary, needsStrRebook, rebookStepSummary, validStay, verifiedPublicListingUrl, visibleResults } from "@/lib/availability-finder";
 import { AMENITY_LABELS, AMENITY_SPECS, confirmedAmenities, petSummary, type AmenityKey } from "@/lib/property-facts";
+import { internalQuoteLine, PRICE_ESTIMATE_NOTE, quoteSourceNote } from "@/lib/pricing";
 import { AvailabilityMap } from "@/components/AvailabilityMap";
 import { EmailComposer } from "@/components/EmailComposer";
 import { useRole } from "@/hooks/useRole";
@@ -171,6 +172,9 @@ function AvailabilityFinderPage() {
                 <p className="text-sm">{row.bedrooms ?? "—"} beds · {row.bathrooms ?? "—"} baths · {row.maxGuests ?? "—"} guests</p>
                 <p className="text-sm text-muted-foreground">{petSummary(row.facts)}{confirmedAmenities(row.facts).length ? ` · ${confirmedAmenities(row.facts).map((key) => AMENITY_LABELS[key]).join(", ")}` : ""}</p>
                 {row.factsUnavailable && <p className="text-xs text-amber-700">{row.factsUnavailable}</p>}
+                {row.quote
+                  ? <p className="mt-1 text-sm font-medium">{internalQuoteLine(row.quote)}<span className="block text-xs font-normal text-muted-foreground">{quoteSourceNote(row.quote)} {PRICE_ESTIMATE_NOTE}</span></p>
+                  : <p className="mt-1 text-xs text-amber-700">{row.quoteUnavailable ?? "No price estimate available."}</p>}
               </div>
             </div>
             <p className={`mt-3 font-semibold ${row.status === "conditional" ? "text-amber-700 dark:text-amber-400" : row.status === "available" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>{row.status === "conditional" ? "Conditional — STR relocation required" : row.status === "available" ? "Available" : "Unavailable"}</p>
