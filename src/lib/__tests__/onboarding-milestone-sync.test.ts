@@ -7,7 +7,9 @@ import { describe, expect, it, mock } from "bun:test";
 
 mock.module("@/lib/audit.server", () => ({ writeAudit: async () => {} }));
 mock.module("../audit.server", () => ({ writeAudit: async () => {} }));
+const realAccess = await import("../onboarding-task-access.server");
 mock.module("../onboarding-task-access.server", () => ({
+  ...realAccess,
   assertOnboardingPropertyManagement: async () => {},
 }));
 const realSchedule = await import("../onboarding-schedule.server");
