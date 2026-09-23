@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowRight, ClipboardList, Database, Inbox, Plus } from "lucide-react";
+import { ArrowRight, ClipboardList, Database, Home, Inbox, Plus, Users, Workflow } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -247,9 +247,34 @@ function Hub() {
                 </button>
               }
             />
+            <Link
+              to="/onboarding/team"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+            >
+              <Users className="size-4" /> Manage Team
+            </Link>
           </>
         }
       />
+
+      <SectionCard title="Manage Onboarding" bodyClassName="flex flex-wrap gap-2">
+        <Button asChild variant="outline">
+          <Link to="/onboarding/team">
+            <Users className="mr-1.5 size-4" /> Manage Team
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link to="/onboarding/templates">
+            <Workflow className="mr-1.5 size-4" /> Manage Workflow &amp; Templates
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link to="/onboarding" search={{ lens: "all" } as never}>
+            <Home className="mr-1.5 size-4" /> Onboarding Properties
+          </Link>
+        </Button>
+      </SectionCard>
+
 
       <SectionCard
         tone={myDecisions.length > 0 ? "critical" : "default"}
