@@ -38,7 +38,7 @@ export function MilestonePacing({
       </div>
 
       <div className="grid gap-2 sm:grid-cols-4">
-        {checkpoints.map((c) => (
+        {checkpoints.map((c, i) => (
           <div
             key={c.day}
             className={`rounded-lg border p-2 ${
@@ -46,7 +46,7 @@ export function MilestonePacing({
             }`}
           >
             <div className="flex items-baseline justify-between gap-2">
-              <p className="text-sm font-semibold">Day {c.day}</p>
+              <p className="text-sm font-semibold">Checkpoint {i + 1}</p>
               <span
                 className={`rounded-full border px-1.5 py-0.5 text-[11px] ${chipClass(c.state)}`}
               >

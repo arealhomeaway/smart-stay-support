@@ -13,7 +13,7 @@ export function JourneyStrip({ current }: { current: JourneyKey }) {
         Your journey at a glance
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        The path every Active Owner home follows, from first conversation to the Day-90 review.
+        The path every Active Owner home follows, from first conversation to the year-end review.
       </p>
       <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {steps.map((step, i) => (
