@@ -225,6 +225,13 @@
       "when": 1790184999966,
       "tag": "0031_v2_work_items_templates_handoff",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790186462747,
+      "tag": "0032_noop_placeholder_skip",
+      "breakpoints": true
     }
   ]
 }
