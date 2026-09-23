@@ -81,6 +81,6 @@ describe("progress state", () => {
     const s = progressSnapshot({ status: "active" as never, startedOn: null, reportedMinutes: 0 });
     expect(s.state).toBe("not_started");
     expect(s.day).toBe(0);
-    expect(s.daysLeft).toBe(PROGRAM_TOTAL_DAYS);
+    expect(s.daysLeft).toBe(0);
   });
 });

@@ -288,7 +288,7 @@ function OwnerHubBody({
   const logHoursBlockedReason = canLogHours
     ? null
     : program.completedAt
-      ? "Your 90 days have closed, so no further hours can be added."
+      ? "Your program closed on December 31, so no further hours can be added."
       : "Your Active Owner program has not started yet. Hours can be logged as soon as your ARHA team activates it — usually at closing.";
 
   // The onboarding task behind an attention item carries the instructions,
@@ -433,7 +433,7 @@ function OwnerHubBody({
 
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
-          Thank you for the time you've put in. Your final report will be ready when your 90 days
+          Thank you for the time you've put in. Your final report will be ready when your program year
           close.
         </Celebrate>
       ) : null}

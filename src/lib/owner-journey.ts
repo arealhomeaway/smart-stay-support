@@ -57,7 +57,7 @@ export type JourneyHomeSignals = {
 export type JourneyProgramSignals = {
   status: string;
   completedAt: string | null;
-  /** Whole days elapsed in the 90-day window, 0 before it starts. */
+  /** Whole days elapsed in the closing-date-to-December-31 window, 0 before it starts. */
   programDay: number;
 };
 

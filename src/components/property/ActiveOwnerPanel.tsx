@@ -3,7 +3,7 @@
  *
  * A supervisor can enrol a home, see where its programme stands, and pause or
  * resume it without going looking for the programme admin screen. Enrolment
- * creates a draft: activation, with its 90-day clock, stays a deliberate step
+ * creates a draft: activation stays a deliberate step
  * on the programme record itself.
  */
 import { useState } from "react";
@@ -216,7 +216,7 @@ export function ActiveOwnerPanel({
                 {changeStatus.isPending ? "Saving…" : "Update status"}
               </Button>
               <p className="w-full text-xs text-muted-foreground">
-                Starting the 90-day clock and adding the homeowner&apos;s details happen on the
+                Activating the program and adding the homeowner&apos;s details happen on the
                 program record.
               </p>
             </div>
@@ -246,7 +246,7 @@ export function ActiveOwnerPanel({
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             {propertyName} is a standard home. Enrolling creates a draft Active Owner program for
-            it; the 90-day clock only starts when you activate it.
+            it; participation runs from the closing date to December 31.
           </p>
           {canManage ? (
             <div className="flex flex-wrap gap-2">
