@@ -42,6 +42,7 @@ import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
 import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
+import { PropertyOpportunitiesPanel } from "@/components/onboarding/PropertyOpportunitiesPanel";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
@@ -525,6 +526,8 @@ function PropertyWorkspace() {
               <ul className="space-y-2">{nextUp.map(taskRow)}</ul>
             )}
           </section>
+
+          {activeOwner ? <PropertyOpportunitiesPanel propertyId={current.id} /> : null}
 
           <ProjectTeamPanel propertyId={current.id} />
         </TabsContent>

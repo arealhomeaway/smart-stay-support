@@ -253,6 +253,13 @@
       "when": 1790188021876,
       "tag": "0035_deficiency_uses_project_team",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790191380034,
+      "tag": "0036_staff_owner_opportunities",
+      "breakpoints": true
     }
   ]
 }

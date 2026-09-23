@@ -10401,6 +10401,17 @@ export type Database = {
         }
         Returns: string
       }
+      save_owner_opportunity: {
+        Args: {
+          _content: Json
+          _id: string
+          _linked_task_id: string
+          _property_id: string
+          _send: boolean
+          _title: string
+        }
+        Returns: string
+      }
       save_ticket_owner_update: {
         Args: {
           _actor_id: string

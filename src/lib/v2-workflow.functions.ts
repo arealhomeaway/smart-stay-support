@@ -282,3 +282,64 @@ export const completeMyOpportunity = createServerFn({ method: "POST" })
     fail((await context.supabase.rpc("complete_owner_opportunity", { _id: data.id })).error);
     return { ok: true };
   });
+
+/* ------------------------------ staff-managed Opportunities for one home */
+
+/** Opportunities (all states) and linkable internal Tasks for one enrolled home. */
+export const readPropertyOpportunities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const sb = context.supabase;
+    const [opps, tasks, home] = await Promise.all([
+      sb
+        .from("work_items")
+        .select("id, title, owner_content, status, linked_task_id, completed_at, created_at")
+        .eq("kind", "opportunity")
+        .eq("property_id", data.propertyId)
+        .neq("status", "archived")
+        .order("created_at", { ascending: false }),
+      sb
+        .from("work_items")
+        .select("id, title")
+        .eq("kind", "task")
+        .eq("property_id", data.propertyId)
+        .neq("status", "archived")
+        .order("title"),
+      sb.from("properties").select("actual_closing_on, planned_closing_on").eq("id", data.propertyId).single(),
+    ]);
+    fail(opps.error);
+    fail(tasks.error);
+    return {
+      opportunities: (opps.data ?? []).map((o) => ({ ...o, owner_content: (o.owner_content ?? null) as OpportunityContent | null })),
+      tasks: tasks.data ?? [],
+      actualClosingOn: home.data?.actual_closing_on ?? null,
+      plannedClosingOn: home.data?.planned_closing_on ?? null,
+    };
+  });
+
+export const saveOwnerOpportunity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().nullable(),
+        propertyId: z.string().uuid(),
+        content: opportunitySchema.unwrap(),
+        linkedTaskId: z.string().uuid().nullable(),
+        send: z.boolean(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: id, error } = await context.supabase.rpc("save_owner_opportunity", {
+      _id: data.id as string,
+      _property_id: data.propertyId,
+      _title: data.content.title,
+      _content: data.content,
+      _linked_task_id: data.linkedTaskId as string,
+      _send: data.send,
+    });
+    fail(error);
+    return { id: id as string };
+  });
