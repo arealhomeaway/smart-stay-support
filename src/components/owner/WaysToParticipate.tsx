@@ -1,13 +1,13 @@
 /**
- * "Ways to participate this week" — stage-aware suggestions.
+ * "Optional ways to participate" — self-directed opportunities.
  *
- * These are a fixed, deterministic set of suggestions chosen from the
- * homeowner's stage and what is already waiting on them. Nothing here is
- * generated, and no time figures are offered: ARHA presents the opportunity,
- * the homeowner logs whatever time they actually spend. No tax claims.
+ * Nothing in this section is assigned, and nobody is waiting on it. Work the
+ * ARHA team needs from the homeowner lives in "Needs your attention" instead.
  *
- * Each suggestion can be worked from here: record what was done, attach a
- * photo or receipt as evidence, or jump to the item that is waiting.
+ * These are a fixed, deterministic set of opportunities chosen from the
+ * homeowner's stage. Nothing here is generated, and no time figures are
+ * offered: ARHA presents the opportunity, the homeowner logs whatever time
+ * they actually spend. No tax claims.
  */
 import { Camera, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,61 +17,46 @@ import {
   PARTICIPATION_PROMPT_NOTE,
 } from "@/lib/owner-participation-prompts";
 
-/** Suggestions that point straight at something already waiting on the owner. */
-const LINKED_PROMPTS = new Set(["pending-actions", "mood-board", "access", "work-review"]);
-
 /**
  * What the homeowner should capture for this kind of activity, so the entry
  * stands on its own later. Descriptive only — never an amount of time.
  */
 const EVIDENCE_HINT: Record<string, string> = {
-  "pending-actions": "Your decision and any note you sent back to the team.",
-  "mood-board": "A screenshot of what you approved, or the changes you asked for.",
+  "mood-board": "Screenshots, saved listings or photos of the pieces you liked.",
   guidebook: "Your written list of places, or a photo of your notes.",
   "guidebook-refresh": "The updated list, or a photo of anywhere new you visited.",
+  "house-notes": "The notes or instructions you wrote, or photos of what they describe.",
+  "house-notes-refresh": "Your rewritten notes, welcome message or instructions.",
   supplies: "Photos of what is missing, plus any receipts if you bought supplies.",
   "supplies-ongoing": "Photos of the wear or shortage you found, plus any receipts.",
-  access: "A photo of the lock or router setup, or the instructions you wrote.",
-  "work-review": "Your notes or questions about the work you reviewed.",
+  "amenity-ideas": "Your list of ideas, product links, or photos of what inspired them.",
+  "market-inspiration": "Screenshots of the listings you studied and what you noted.",
   planning: "Your notes on pricing, blocked dates or the upgrades you considered.",
 };
 
 export function WaysToParticipate({
   phase,
-  pendingOnboardingActions = 0,
-  openReviews = 0,
   onLogHours,
   blockedReason = null,
-  onGoToWaiting,
 }: {
   phase: string | null | undefined;
-  pendingOnboardingActions?: number;
-  openReviews?: number;
-  /** Starts a self-recorded entry for this suggestion. */
+  /** Starts a self-recorded entry for this opportunity. */
   onLogHours?: (activity: string) => void;
   /** Shown instead of the buttons when hours cannot be recorded yet. */
   blockedReason?: string | null;
-  onGoToWaiting?: () => void;
 }) {
-  const prompts = buildParticipationPrompts({ phase, pendingOnboardingActions, openReviews });
+  const prompts = buildParticipationPrompts({ phase });
   if (prompts.length === 0) return null;
-
-  const goToWaiting =
-    onGoToWaiting ??
-    (() =>
-      document
-        .getElementById("owner-decisions")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" }));
 
   return (
     <SectionCard
       title={
         <span className="flex items-center gap-2">
           <Sparkles className="size-4 text-primary" aria-hidden="true" />
-          Ways to participate this week
+          Optional ways to participate
         </span>
       }
-      description="Ideas for taking part in running your home. Pick whatever fits your week, do it, then record it here with a photo or receipt."
+      description="Optional opportunities you can take on yourself — nothing here is assigned and nobody is waiting on it. Pick whatever fits your week, do it, then record it with your files or photos so it counts toward your 100-hour benchmark."
     >
       {blockedReason ? (
         <p className="mb-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
@@ -97,12 +82,7 @@ export function WaysToParticipate({
               <div className="mt-3 flex flex-wrap gap-2 pt-1">
                 {onLogHours && !blockedReason ? (
                   <Button size="sm" onClick={() => onLogHours(p.title)}>
-                    Record this and attach evidence
-                  </Button>
-                ) : null}
-                {LINKED_PROMPTS.has(p.id) ? (
-                  <Button size="sm" variant="outline" onClick={goToWaiting}>
-                    Go to what is waiting on you
+                    Record this and attach files
                   </Button>
                 ) : null}
               </div>

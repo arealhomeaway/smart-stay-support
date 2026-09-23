@@ -73,6 +73,9 @@ export const logOwnerParticipation = createServerFn({ method: "POST" })
         output: z.string().trim().max(1000).default(""),
         comments: z.string().trim().max(1000).default(""),
         attachmentPath: z.string().trim().max(400).nullable().default(null),
+        // Every file the homeowner attached, in upload order. The first is
+        // also kept in attachmentPath so existing readers keep working.
+        attachmentPaths: z.array(z.string().trim().min(1).max(400)).max(10).default([]),
         // Optional: a homeowner may also record participation they did on
         // their own initiative, with no staff-created item to attach it to.
         reviewId: z.string().uuid().nullable().default(null),

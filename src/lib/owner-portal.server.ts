@@ -163,6 +163,8 @@ export type LogTimeInput = {
   output: string;
   comments: string;
   attachmentPath: string | null;
+  /** Every file attached to this entry, in upload order; the first is also attachmentPath. */
+  attachmentPaths?: string[];
   reviewId: string | null;
   ticketId: string | null;
   propertyIds: string[];

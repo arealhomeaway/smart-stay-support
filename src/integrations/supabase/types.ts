@@ -5659,6 +5659,7 @@ export type Database = {
           activity_category: string | null
           amends_entry_id: string | null
           attachment_path: string | null
+          attachment_paths: Json
           attested: boolean
           comments: string | null
           correction_reason: string | null
@@ -5689,6 +5690,7 @@ export type Database = {
           activity_category?: string | null
           amends_entry_id?: string | null
           attachment_path?: string | null
+          attachment_paths?: Json
           attested?: boolean
           comments?: string | null
           correction_reason?: string | null
@@ -5719,6 +5721,7 @@ export type Database = {
           activity_category?: string | null
           amends_entry_id?: string | null
           attachment_path?: string | null
+          attachment_paths?: Json
           attested?: boolean
           comments?: string | null
           correction_reason?: string | null

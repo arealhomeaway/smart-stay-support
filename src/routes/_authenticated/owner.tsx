@@ -526,10 +526,7 @@ function OwnerHubBody({
       <WaysToParticipate
         // A home is still being set up when its open work is onboarding work.
         phase={ownerPhase}
-        openReviews={openReviews.length}
-        pendingOnboardingActions={onboardingQuery.data?.pending.length ?? 0}
         blockedReason={preview ? "Preview only — hours are recorded by the homeowner." : logHoursBlockedReason}
-        onGoToWaiting={() => scrollToSection("owner-decisions")}
         {...(preview ? {} : { onLogHours: openManualLog })}
       />
 
@@ -607,7 +604,20 @@ function OwnerHubBody({
                     {usCalendarDate(entry.entry_date)} · {entry.minutes} minutes
                   </p>
                 </div>
-                {entry.attachment_path && <EvidenceLink entryId={entry.id} />}
+                {attachmentCount(entry) > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from({ length: attachmentCount(entry) }, (_, i) => (
+                      <EvidenceLink
+                        key={`${entry.id}-file-${i}`}
+                        entryId={entry.id}
+                        index={i}
+                        label={
+                          attachmentCount(entry) > 1 ? `View file ${i + 1}` : "View attachment"
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -955,8 +965,23 @@ function ReviewRow({
   );
 }
 
-/** Opens the photo or receipt a homeowner attached to a logged entry. */
-function EvidenceLink({ entryId }: { entryId: string }) {
+/** How many files a homeowner attached to one logged entry. */
+function attachmentCount(entry: { attachment_path?: string | null; attachment_paths?: unknown }) {
+  const many = Array.isArray(entry.attachment_paths) ? entry.attachment_paths.length : 0;
+  if (many > 0) return many;
+  return entry.attachment_path ? 1 : 0;
+}
+
+/** Opens one file a homeowner attached to a logged entry. */
+function EvidenceLink({
+  entryId,
+  index = 0,
+  label = "View attachment",
+}: {
+  entryId: string;
+  index?: number;
+  label?: string;
+}) {
   const getUrl = useServerFn(participationEvidenceUrlFn);
   const [busy, setBusy] = useState(false);
   return (
@@ -967,7 +992,7 @@ function EvidenceLink({ entryId }: { entryId: string }) {
       onClick={async () => {
         setBusy(true);
         try {
-          const { url } = await getUrl({ data: { entryId, download: false } });
+          const { url } = await getUrl({ data: { entryId, download: false, index } });
           window.open(url, "_blank", "noopener");
         } catch (e) {
           toast.error(e instanceof Error ? e.message : "Could not open the file");
@@ -976,7 +1001,7 @@ function EvidenceLink({ entryId }: { entryId: string }) {
         }
       }}
     >
-      <Paperclip className="size-4" /> View attachment
+      <Paperclip className="size-4" /> {label}
     </Button>
   );
 }
