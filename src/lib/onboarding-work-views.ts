@@ -36,39 +36,34 @@ export function workspaceSearchFromLens(lens: string, hasHandoffGate: boolean) {
           : lens === "attention" || lens === "at_risk"
             ? "attention"
             : "all";
-  return { tab: workFilter === "all" ? "overview" : "workflow", workFilter };
+  return { tab: "work", workFilter };
 }
+
+/** Four tabs: Work & Scope, Property & Financial, Handoff, Files & History. */
+export const WORKSPACE_TABS = ["work", "property", "handoff", "files"] as const;
 
 export function parseWorkspaceSearch(search: {
   tab?: unknown;
   workFilter?: unknown;
   from?: unknown;
 }) {
+  // Older links used nine tabs; send each to the tab that now holds it.
   const aliases: Record<string, string> = {
-    timeline: "workflow",
-    calendar: "workflow",
-    files: "property",
-    work: "workflow",
-    history: "activity",
+    overview: "work",
+    workflow: "work",
+    timeline: "work",
+    calendar: "work",
+    budget: "property",
+    findings: "property",
+    workorders: "property",
+    vendors: "property",
+    financial: "property",
+    activity: "files",
+    history: "files",
   };
-  const candidate =
-    typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "overview";
+  const candidate = typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "work";
   return {
-    tab: [
-      "overview",
-      "workflow",
-      "property",
-      "budget",
-      "findings",
-      "workorders",
-
-      "vendors",
-      "financial",
-      "handoff",
-      "activity",
-    ].includes(candidate)
-      ? candidate
-      : "overview",
+    tab: (WORKSPACE_TABS as readonly string[]).includes(candidate) ? candidate : "work",
     workFilter:
       typeof search.workFilter === "string" && Object.hasOwn(WORK_FILTER_LABELS, search.workFilter)
         ? (search.workFilter as WorkFilter)

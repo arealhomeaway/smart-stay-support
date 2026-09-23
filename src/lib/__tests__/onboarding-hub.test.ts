@@ -55,7 +55,7 @@ it("keeps Director stage review distinct from PM execution and drills into revie
   const project = { ...summary(), inReview: false, gateStep: null, stageReviewCount: 1 };
   expect(matchesOnboardingLens(project, "mine", viewer("director"))).toBe(true);
   expect(matchesOnboardingLens(project, "mine", viewer("pm"))).toBe(false);
-  expect(workspaceSearchFromLens("mine", false)).toEqual({ tab: "workflow", workFilter: "review" });
+  expect(workspaceSearchFromLens("mine", false)).toEqual({ tab: "work", workFilter: "review" });
 });
 it("removes Live projects from every action queue and preserves the portfolio", () => {
   const project = { ...summary(), stage: "live" as const };
