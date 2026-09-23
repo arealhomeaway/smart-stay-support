@@ -51,6 +51,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
 import { RouteProgress } from "@/components/nav/RouteProgress";
 import { useAmbientOrigin } from "@/components/nav/NavContext";
+import { ShellNav, ShellNavProvider } from "@/components/nav/ShellNav";
 import { readOrigin } from "@/lib/nav-context";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -595,7 +596,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             orientationSurface ? "warm-canvas" : "work-canvas"
           }`}
         >
-          <div className="mx-auto w-full max-w-[1400px]">{children}</div>
+          <div className="mx-auto w-full max-w-[1400px]">
+            <ShellNavProvider>
+              {(pageLabel) => (
+                <>
+                  {!ownerMode && !vendorMode && <ShellNav pageLabel={pageLabel} />}
+                  {children}
+                </>
+              )}
+            </ShellNavProvider>
+          </div>
         </main>
 
         {/*
