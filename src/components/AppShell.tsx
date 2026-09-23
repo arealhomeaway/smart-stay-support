@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { HelpFeedbackButton } from "@/components/HelpFeedback";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch, type SearchTarget } from "@/components/GlobalSearch";
 import { RouteProgress } from "@/components/nav/RouteProgress";
@@ -296,6 +297,13 @@ const navGroups: NavGroup[] = [
         label: "Audit history",
         icon: History,
         tour: "audit",
+        capability: "audit_history",
+      },
+      {
+        to: "/help-tickets",
+        label: "Help tickets",
+        icon: CircleHelp,
+        tour: "help-tickets",
         capability: "audit_history",
       },
     ],
@@ -607,6 +615,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </ShellNavProvider>
           </div>
         </main>
+
+        {/* Global Help & Feedback — every page inherits it from the shell. */}
+        <HelpFeedbackButton />
 
         {/*
           General "Welcome to Resolve" popup and guided tour are hidden until
