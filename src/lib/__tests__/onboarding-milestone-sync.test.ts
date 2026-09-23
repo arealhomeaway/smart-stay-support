@@ -17,6 +17,7 @@ const { saveOnboardingMilestones } = await import("../onboarding-milestones.serv
 function fixture() {
   const writes: { table: string; patch: Record<string, unknown> }[] = [];
   const db = {
+    rpc: async () => ({ data: true, error: null }),
     from(table: string) {
       const query = {
         select: () => query,
