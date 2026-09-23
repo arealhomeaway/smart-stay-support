@@ -24,7 +24,7 @@ import { decideOwnerApproval } from "@/lib/owner-portal.functions";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
 import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
-import { LogTimeDialog, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
+import { LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 
 function SharedFile({ file, disabled }: { file: OwnerOnboardingFile; disabled: boolean }) {
   const getUrl = useServerFn(attachmentUrlFn);
@@ -185,6 +185,7 @@ export function OnboardingActions({
     title: string;
   } | null>(null);
   const [logOpen, setLogOpen] = useState(false);
+  const openShared = useOpenLogTime();
 
   const q = useQuery({
     queryKey: ["owner-onboarding", programId, readOnly],
@@ -263,7 +264,18 @@ export function OnboardingActions({
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
-              <Button size="sm" onClick={() => setLogOpen(true)}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (openShared && logPrompt) {
+                    openShared({
+                      anchor: logPrompt.anchor,
+                      activity: logPrompt.activity,
+                      onDone: () => setLogPrompt(null),
+                    });
+                  } else setLogOpen(true);
+                }}
+              >
                 <Clock className="mr-1 size-4" aria-hidden="true" /> Log my time
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setLogPrompt(null)}>
@@ -323,7 +335,7 @@ export function OnboardingActions({
 
       <OnboardingProgress homes={data.homes} />
 
-      {logPrompt && data.programId && (
+      {!openShared && logPrompt && data.programId && (
         <LogTimeDialog
           open={logOpen}
           onOpenChange={setLogOpen}

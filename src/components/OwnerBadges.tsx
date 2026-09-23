@@ -20,12 +20,51 @@ export type EarnedBadge = {
 export function OwnerBadges({
   earned,
   reportedHours,
+  compact = false,
 }: {
   earned: EarnedBadge[];
   reportedHours: number;
+  /** A one-line milestone strip for inside another panel. */
+  compact?: boolean;
 }) {
   const earnedCodes = earned.filter((badge) => !badge.needs_review).map((badge) => badge.code);
   const next = nextHourBadge(reportedHours, earnedCodes);
+
+  if (compact) {
+    return (
+      <div className="space-y-2 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="eyebrow flex items-center gap-1.5">
+            <Award className="size-3.5 text-primary" /> Your milestones
+          </p>
+          {next && (
+            <span className="text-xs text-muted-foreground">
+              Next: {next.badge.name} · {next.hoursAway} hr{next.hoursAway === 1 ? "" : "s"} away
+            </span>
+          )}
+        </div>
+        <ol className="flex flex-wrap gap-1.5">
+          {BADGES.map((def) => {
+            const got = earned.find((b) => b.code === def.code);
+            return (
+              <li
+                key={def.code}
+                title={`${def.requirement}${got ? ` — earned ${usDate(got.awarded_at)}` : ""}`}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${
+                  got ? "bg-sage/15 text-sage" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {got ? <Award className="size-3" /> : <Lock className="size-3" />}
+                {def.name}
+                {got?.needs_review ? " (under review)" : ""}
+              </li>
+            );
+          })}
+        </ol>
+        <p className="text-[0.6875rem] text-muted-foreground">{BADGE_HOURS_NOTE}</p>
+      </div>
+    );
+  }
 
   return (
     <SectionCard

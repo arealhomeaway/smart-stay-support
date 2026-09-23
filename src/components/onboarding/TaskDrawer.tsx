@@ -228,6 +228,27 @@ export function TaskDrawer({
   const finishesStep = action?.id === "complete_task" || action?.id === "reopen_or_move_on";
   // A step the plan tagged Active Owner is the homeowner's own work.
   const activeOwnerStep = ((task.tags ?? []) as string[]).includes("active_owner");
+  const mode: "active_owner" | "vendor" | "internal" = activeOwnerStep
+    ? "active_owner"
+    : dispatchable
+      ? "vendor"
+      : "internal";
+  const sendToOwner = (
+    <div className="flex flex-wrap items-center gap-2">
+      <SendToHomeownerDialog
+        taskId={task.id}
+        taskTitle={task.title}
+        disabled={disabled || task.owner_approval_status === "approved"}
+        alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
+        {...(activeOwnerStep ? { label: "Send to Active Owner" } : {})}
+      />
+      {task.owner_approval_status === "awaiting_owner" && (
+        <span className="text-xs text-muted-foreground">
+          Waiting on the homeowner since the last send.
+        </span>
+      )}
+    </div>
+  );
 
   const runAction = (id: TaskActionId, values: Record<string, string>) => {
     const text = (k: string) => (values[k] ?? "").trim();
@@ -393,6 +414,34 @@ export function TaskDrawer({
     >
       <div className="space-y-5">
         {visualTrack && <TaskGallery taskId={task.id} />}
+
+        {/* What this kind of step is for, first: the homeowner's own work,
+            a vendor job, or ordinary internal work finished below. */}
+        {mode === "active_owner" && (
+          <section className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4">
+            <p className="font-medium">Send to Active Owner</p>
+            <p className="text-xs text-muted-foreground">
+              This step is tagged Active Owner — the homeowner does it. Sending puts it in their
+              portal as a task, with your instructions and any files you pick.
+            </p>
+            {sendToOwner}
+          </section>
+        )}
+        {mode === "vendor" && (
+          <section className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-4">
+            <p className="font-medium">Dispatch to a vendor</p>
+            <p className="text-xs text-muted-foreground">
+              Send this job to Breezeway, or track a non-Breezeway vendor under Work orders on the
+              Property &amp; Financial tab.
+            </p>
+            <BreezewayTaskPanel
+              sourceType="onboarding_task"
+              sourceId={task.id}
+              defaultTitle={task.title}
+              defaultDescription={task.detail ?? null}
+            />
+          </section>
+        )}
 
 
         {/*
@@ -739,23 +788,14 @@ export function TaskDrawer({
           </>
         )}
 
-        <Separator />
-        <section className="space-y-2">
-          <p className="eyebrow">Active Owner</p>
-          <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
-        </section>
-
-        {/* Only steps that dispatch field work can send a job to Breezeway. */}
-        {dispatchable && (
-          <section className="space-y-2">
-            <p className="eyebrow">Send this job to Breezeway</p>
-            <BreezewayTaskPanel
-              sourceType="onboarding_task"
-              sourceId={task.id}
-              defaultTitle={task.title}
-              defaultDescription={task.detail ?? null}
-            />
-          </section>
+        {mode === "active_owner" && (
+          <>
+            <Separator />
+            <section className="space-y-2">
+              <p className="eyebrow">Active Owner participation</p>
+              <OwnerParticipationOffer source="onboarding" sourceId={task.id} />
+            </section>
+          </>
         )}
 
         {canRecordException && !task.exception_reason && (
@@ -788,33 +828,18 @@ export function TaskDrawer({
           </>
         )}
 
-        {/* Last of all: sending something to the homeowner. */}
-        <Separator />
-        <section className="space-y-2">
-          <p className="eyebrow">
-            {activeOwnerStep ? "Send to the Active Owner" : "Send to the homeowner"}
-          </p>
-          {activeOwnerStep ? (
-            <p className="text-muted-foreground text-xs">
-              This step is tagged Active Owner — the homeowner does it. Sending puts it in their
-              portal as a task, with your instructions and any files you pick.
-            </p>
-          ) : null}
-          <div className="flex flex-wrap items-center gap-2">
-            <SendToHomeownerDialog
-              taskId={task.id}
-              taskTitle={task.title}
-              disabled={disabled || task.owner_approval_status === "approved"}
-              alreadyWaiting={task.owner_approval_status === "awaiting_owner"}
-              {...(activeOwnerStep ? { label: "Send to Active Owner" } : {})}
-            />
-            {task.owner_approval_status === "awaiting_owner" && (
-              <span className="text-xs text-muted-foreground">
-                Waiting on the homeowner since the last send.
-              </span>
-            )}
-          </div>
-        </section>
+        {/* Standard internal steps keep homeowner sending out of the way. */}
+        {mode !== "active_owner" && (
+          <>
+            <Separator />
+            <details className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground">
+                Need something from the homeowner?
+              </summary>
+              <div className="mt-2">{sendToOwner}</div>
+            </details>
+          </>
+        )}
       </div>
 
     </TaskWorkspace>

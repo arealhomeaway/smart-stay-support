@@ -703,3 +703,9 @@ Batch B (work surface)
 - [x] Ensure onboarding task due dates autopopulate and remain consistent across all views
 
 - [x] Fix template step/stage drag-and-drop and remove arrow movement controls
+
+## Streamline pass (Emily, 9/23)
+- [x] Hub: four views (Needs attention / Handoffs & reviews / Active pipeline / All homes); handoff reviews inline; Source records in a drawer
+- [x] Property work: lane filters (All / My assigned / Utilities & access / Active owner); context-aware finish actions
+- [x] My Work: Due today & overdue / Upcoming this week / Blocked-waiting; inline checkoff
+- [x] Owner: one Log time dialog w/ multi-file; clickable hero home cards; Recent activity = completed only; badges as milestone strip

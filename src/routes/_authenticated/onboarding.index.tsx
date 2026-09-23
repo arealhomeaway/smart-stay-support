@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowRight, ClipboardList, Inbox, Plus } from "lucide-react";
+import { ArrowRight, ClipboardList, Database, Inbox, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -14,7 +14,8 @@ import { awaitingMyReview } from "@/lib/onboarding-hub";
 import { lifecycleStageMeta, withinDays, type ProjectSummary } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
 import heroImage from "@/assets/hero-arha-property.jpg";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
@@ -229,7 +230,7 @@ function Hub() {
             </Link>
             <button
               type="button"
-              onClick={() => setParam({ lens: "review" })}
+              onClick={() => setParam({ lens: "reviews" })}
               className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
             >
               <Inbox className="size-4" /> Onboarding queue
@@ -269,40 +270,56 @@ function Hub() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <HubTile
-          value={myDecisions.length}
-          label="Awaiting my review"
-          tone="critical"
-          onClick={() => setParam({ lens: "mine" })}
-        />
-        <HubTile
           value={atRisk.length}
-          label="At risk or blocked"
+          label="Needs attention"
           tone="attention"
-          onClick={() => setParam({ lens: "at_risk" })}
+          onClick={() => setParam({ lens: "attention" })}
         />
         <HubTile
-          value={inReview.length}
-          label="In review"
+          value={pendingReviews.length + inReview.filter((p) => !p.inReview).length}
+          label="Handoffs & reviews waiting"
           tone="review"
-          onClick={() => setParam({ lens: "review" })}
+          onClick={() => setParam({ lens: "reviews" })}
+        />
+        <HubTile
+          value={activeProjects.length}
+          label="Active pipeline"
+          tone="progress"
+          onClick={() => setParam({ lens: "pipeline" })}
         />
         <HubTile
           value={soon.length}
           label="Handoffs in 14 days"
-          tone="progress"
-          onClick={() => setParam({ lens: "handoffs" })}
+          tone="critical"
+          onClick={() => setParam({ lens: "reviews" })}
         />
       </div>
 
-
-      <Tabs defaultValue="hub" className="space-y-5">
-        <TabsList>
-          <TabsTrigger value="hub">Hub ({projects.length})</TabsTrigger>
-          <TabsTrigger value="reviews">Handoff gate ({pendingReviews.length})</TabsTrigger>
-          <TabsTrigger value="records">Source records</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="hub" className="space-y-4">
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Database className="size-4" /> Source records
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
+              <SheetHeader>
+                <SheetTitle>Source records</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <ExternalRecordsPanel
+                  databases={data.externalDatabases as never}
+                  records={data.externalRecords as never}
+                  properties={data.properties}
+                  syncConfigured={enabled("onboarding_external_sync")}
+                  disabled={readOnly || !can("handoff_request")}
+                  onResolve={(input) => resolveRecord.mutate({ data: input })}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
           {notStarted.length > 0 && (
             <section className="surface p-4">
               <p className="eyebrow">Onboarding not started ({notStarted.length})</p>
@@ -341,38 +358,39 @@ function Hub() {
             onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
             showTest={showTest}
             onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
+            beforeRows={
+              lens === "reviews" ? (
+                <div className="space-y-3">
+                  <p className="eyebrow">Handoff gate decisions ({pendingReviews.length})</p>
+                  {pendingReviews.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No handoff is waiting at a review gate.
+                    </p>
+                  )}
+                  {pendingReviews.map((h) => (
+                    <HandoffGatePanel
+                      key={h.id}
+                      handoff={h as never}
+                      reviews={data.reviews as never}
+                      people={data.people}
+                      propertyName={
+                        data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"
+                      }
+                      canReview={
+                        !readOnly && canReviewOnboardingGate(data.reviewCapabilities, h.gate_step)
+                      }
+                      disabled={readOnly}
+                      onDecision={(input) =>
+                        reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })
+                      }
+                    />
+                  ))}
+                  <p className="eyebrow pt-2">Homes in review or handing off soon</p>
+                </div>
+              ) : null
+            }
           />
-        </TabsContent>
-
-        <TabsContent value="reviews" className="space-y-4">
-          {pendingReviews.length === 0 && (
-            <p className="text-sm text-muted-foreground">No handoff is waiting at a review gate.</p>
-          )}
-          {pendingReviews.map((h) => (
-            <HandoffGatePanel
-              key={h.id}
-              handoff={h as never}
-              reviews={data.reviews as never}
-              people={data.people}
-              propertyName={data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"}
-              canReview={!readOnly && canReviewOnboardingGate(data.reviewCapabilities, h.gate_step)}
-              disabled={readOnly}
-              onDecision={(input) => reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })}
-            />
-          ))}
-        </TabsContent>
-
-        <TabsContent value="records">
-          <ExternalRecordsPanel
-            databases={data.externalDatabases as never}
-            records={data.externalRecords as never}
-            properties={data.properties}
-            syncConfigured={enabled("onboarding_external_sync")}
-            disabled={readOnly || !can("handoff_request")}
-            onResolve={(input) => resolveRecord.mutate({ data: input })}
-          />
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }

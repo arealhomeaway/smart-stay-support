@@ -15,6 +15,8 @@ export type Lens =
   | "up7"
   | "up14"
   | "up30"
+  | "reviews"
+  | "pipeline"
   | "all";
 
 export type HubViewer = {
@@ -45,10 +47,12 @@ export function matchesOnboardingLens(p: ProjectSummary, lens: Lens, viewer?: Hu
         (p.risk.level === "blocked" ||
           p.risk.level === "at_risk" ||
           p.property.lifecycle_status === "handoff_corrections" ||
-          p.stageCorrectionCount > 0 ||
-          awaitingMyReview(p, viewer) ||
-          (!p.next.waiting && !p.inReview))
+          p.stageCorrectionCount > 0)
       );
+    case "reviews":
+      return !live && (p.inReview || p.stageReviewCount > 0 || withinDays(p.target, 14));
+    case "pipeline":
+      return !live;
     case "mine":
       return !live && awaitingMyReview(p, viewer);
     case "at_risk":

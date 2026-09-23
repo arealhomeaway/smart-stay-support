@@ -5,7 +5,7 @@
  * homeowner types the real minutes they spent. An optional photo, receipt or
  * document can be attached as their own evidence of the work.
  */
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Paperclip, X } from "lucide-react";
@@ -39,6 +39,21 @@ export type LogTimeAnchor = {
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * One Log time window per page. Any button (a review row, an onboarding item,
+ * a participation idea) asks the page's single dialog to open instead of
+ * mounting its own copy.
+ */
+export type OpenLogTime = (opts?: {
+  anchor?: LogTimeAnchor | null;
+  activity?: string;
+  onDone?: () => void;
+}) => void;
+export const LogTimeContext = createContext<OpenLogTime | null>(null);
+export function useOpenLogTime() {
+  return useContext(LogTimeContext);
+}
 
 /** Enough for a receipt, a couple of photos and a document on one activity. */
 const MAX_FILES = 10;

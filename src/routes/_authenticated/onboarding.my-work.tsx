@@ -18,13 +18,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TaskRow } from "@/components/onboarding/WorkflowTable";
-import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
+import { TaskDrawer, taskPayload, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useRole } from "@/hooks/useRole";
 import { viewTask, type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
 import { buildReleaseContext } from "@/lib/onboarding-state";
 import {
-  groupMyWork,
+  groupMyWorkSimple,
+  canQuickComplete,
   myWorkSelection,
   matchesWorkFilter,
   validateMyWorkSearch,
@@ -332,10 +334,10 @@ function MyWork() {
         />
       )}
 
-      {groupMyWork(filtered, t0)
+      {groupMyWorkSimple(filtered, t0)
         .filter((g) => g.items.length > 0)
         .map((g) => (
-          <details key={g.key} open={g.key !== "future"} className="surface overflow-hidden">
+          <details key={g.key} open={g.key !== "later"} className="surface overflow-hidden">
             <summary className="cursor-pointer border-b border-border bg-muted/40 px-3 py-2">
               <p className="text-sm font-semibold">
                 {g.label} <span className="numeric text-muted-foreground">({g.items.length})</span>
@@ -345,14 +347,31 @@ function MyWork() {
             {g.items
               .sort((a, b) => (a.task.due_on ?? "9999").localeCompare(b.task.due_on ?? "9999"))
               .map((v) => (
-                <TaskRow
-                  key={v.task.id}
-                  view={v}
-                  people={data.people}
-                  selected={openTaskId === v.task.id}
-                  onSelect={(t) => setOpenTaskId(t.id)}
-                  showProperty={propertyName(v.task.property_id)}
-                />
+                <div key={v.task.id} className="flex items-center border-b border-border/60 last:border-b-0">
+                  <span className="flex w-10 shrink-0 justify-center">
+                    {canQuickComplete(v) && canEdit ? (
+                      <Checkbox
+                        aria-label={`Mark "${v.task.title}" done`}
+                        disabled={saveTask.isPending}
+                        onCheckedChange={(checked) => {
+                          if (checked)
+                            saveTask.mutate({
+                              data: taskPayload(v.task, { status: "complete", blocker: "" }),
+                            } as never);
+                        }}
+                      />
+                    ) : null}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <TaskRow
+                      view={v}
+                      people={data.people}
+                      selected={openTaskId === v.task.id}
+                      onSelect={(t) => setOpenTaskId(t.id)}
+                      showProperty={propertyName(v.task.property_id)}
+                    />
+                  </div>
+                </div>
               ))}
           </details>
         ))}
