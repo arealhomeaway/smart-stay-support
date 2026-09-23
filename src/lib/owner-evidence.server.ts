@@ -50,22 +50,32 @@ export async function beginParticipationEvidence(
   return { path, token: signed.data.token };
 }
 
-/** A short-lived link to the evidence on one of the caller's own entries. */
+/**
+ * A short-lived link to one evidence file on one of the caller's own entries.
+ * An entry may carry several files; `index` picks which one, in upload order.
+ */
 export async function participationEvidenceUrl(
   supabase: Client,
   admin: Client,
   entryId: string,
   download: boolean,
+  index = 0,
 ) {
   const { data, error } = await supabase
     .from("owner_time_entries")
-    .select("id, attachment_path")
+    .select("id, attachment_path, attachment_paths")
     .eq("id", entryId)
     .maybeSingle();
-  if (error || !data?.attachment_path) throw new Error("That file is no longer on file.");
+  if (error || !data) throw new Error("That file is no longer on file.");
+  const many = Array.isArray(data.attachment_paths)
+    ? (data.attachment_paths as unknown[]).filter((p): p is string => typeof p === "string")
+    : [];
+  const paths = many.length > 0 ? many : data.attachment_path ? [data.attachment_path] : [];
+  const path = paths[index];
+  if (!path) throw new Error("That file is no longer on file.");
   const signed = await admin.storage
     .from(ATTACHMENT_BUCKET)
-    .createSignedUrl(data.attachment_path, 60, download ? { download: true } : {});
+    .createSignedUrl(path, 60, download ? { download: true } : {});
   if (signed.error || !signed.data) throw new Error("Resolve could not open that file.");
   return { url: signed.data.signedUrl };
 }
