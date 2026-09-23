@@ -33,6 +33,16 @@ import {
 
 type Stage = { id: string; name: string; sort_order: number; active: boolean };
 type Step = Awaited<ReturnType<typeof readTemplateV2>>["steps"][number];
+type StepInput = {
+  stepId: string;
+  functionalRole: string | null;
+  isRequired: boolean;
+  blocksHandoff: boolean;
+  isActive: boolean;
+  module: string | null;
+  offsetDays: number | null;
+  opportunity: OpportunityContent | null;
+};
 
 function onErr(e: unknown) {
   toast.error(e instanceof Error ? e.message : "Something went wrong.");
@@ -57,7 +67,7 @@ function SortableStage({ stage, onRename, onToggle }: { stage: Stage; onRename: 
 
 const emptyOpp: OpportunityContent = { title: "", what: "", why: "", how: "", resources: [], ways_to_document: "", suggested_minutes: null };
 
-function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: () => void; onSave: (v: Parameters<typeof saveTemplateStepV2>[0]["data"]) => void; saving: boolean }) {
+function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: () => void; onSave: (v: StepInput) => void; saving: boolean }) {
   const [role, setRole] = useState(step.functional_role ?? "none");
   const [required, setRequired] = useState(step.is_required);
   const [blocking, setBlocking] = useState(step.blocks_handoff);
@@ -164,7 +174,7 @@ export function TemplateV2Settings({ templateId }: { templateId: string }) {
 
   const stageM = useMutation({ mutationFn: (d: { stageId?: string; name: string; active: boolean }) => saveStage({ data: { templateId, ...d } }), onSuccess: refresh, onError: onErr });
   const reorderM = useMutation({ mutationFn: (ids: string[]) => reorder({ data: { templateId, stageIds: ids } }), onSuccess: refresh, onError: onErr });
-  const stepM = useMutation({ mutationFn: (d: Parameters<typeof saveStep>[0]["data"]) => saveStep({ data: d }), onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); }, onError: onErr });
+  const stepM = useMutation({ mutationFn: (d: StepInput) => saveStep({ data: d }), onSuccess: () => { toast.success("Step saved."); setEditing(null); refresh(); }, onError: onErr });
   const publishM = useMutation({ mutationFn: () => publish({ data: { templateId } }), onSuccess: () => { toast.success("New version published. Homes already started keep their version."); refresh(); }, onError: onErr });
 
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Loading plan settings…</p>;

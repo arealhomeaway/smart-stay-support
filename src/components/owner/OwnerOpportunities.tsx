@@ -8,7 +8,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { SectionCard } from "@/components/SectionCard";
+import { SectionCard } from "@/components/ui/page";
 import { completeMyOpportunity, listMyOpportunities } from "@/lib/v2-workflow.functions";
 
 export function OwnerOpportunities({ onLogHours, readOnly = false }: { onLogHours?: (activity: string) => void; readOnly?: boolean }) {
