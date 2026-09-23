@@ -220,7 +220,7 @@ export function OpportunityEditor({
 
   async function upload(file: File) {
     const check = validateFile({ name: file.name, type: file.type, size: file.size });
-    if (!check.ok) return toast.error(check.message);
+    if (!check.ok) { toast.error(check.message); return; }
     setUploading(true);
     try {
       const started = await begin({
