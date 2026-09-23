@@ -266,8 +266,9 @@ export function progressSnapshot(input: {
   reportedMinutes: number;
 }): ProgressSnapshot {
   const day = projectDay(input.startedOn);
+  const totalDays = programLengthDays(input.startedOn);
   const reportedHours = hoursFromMinutes(input.reportedMinutes);
-  const benchmark = benchmarkHours(day);
+  const benchmark = benchmarkHours(day, totalDays);
   const variance = Math.round((reportedHours - benchmark) * 100) / 100;
   const active = Boolean(input.startedOn) && day > 0;
 
@@ -289,17 +290,19 @@ export function progressSnapshot(input: {
 
   return {
     day,
+    totalDays,
+    endsOn: programWindowEnd(input.startedOn),
     daysLeft: daysRemaining(input.startedOn),
     reportedHours,
     benchmark,
     variance,
     percentOfTarget: Math.min(
       100,
-      Math.round((reportedHours / OPERATING_TARGET_HOURS) * 1000) / 10,
+      Math.round((reportedHours / OWNER_GOAL_HOURS) * 1000) / 10,
     ),
     hoursToGoal: Math.ceil(Math.max(0, OWNER_GOAL_HOURS - input.reportedMinutes / 60) * 100) / 100,
     state,
-    next: nextMilestone(day),
+    next: nextMilestone(day, totalDays),
   };
 }
 
@@ -481,24 +484,25 @@ export function parseReviewPhotos(raw: unknown): ReviewPhoto[] {
     .map((p) => ({ url: p.url, caption: p.caption ?? null }));
 }
 
-/** Corrections replace earlier entries; returned work does not count toward progress. */
+/**
+ * Logged time counts immediately — there is no review, approval or return
+ * state. Only a correction replaces the entry it amends, so a pair is never
+ * counted twice.
+ */
 export function countableParticipationEntries<
-  T extends { id: string; amends_entry_id: string | null; review_status: string },
+  T extends { id: string; amends_entry_id: string | null },
 >(entries: T[]): T[] {
   const superseded = new Set(entries.map((entry) => entry.amends_entry_id).filter(Boolean));
-  return entries.filter((entry) => entry.review_status !== "returned" && !superseded.has(entry.id));
+  return entries.filter((entry) => !superseded.has(entry.id));
 }
 
-/** One inclusive 90-day window; historical rows remain available outside it. */
+/** Closing date → December 31 of that year; an earlier stored end still wins. */
 export function participationWindowEnd(
   startedOn: string | null | undefined,
   endsOn?: string | null,
 ) {
-  if (!startedOn) return null;
-  const start = new Date(`${startedOn}T00:00:00Z`);
-  if (!Number.isFinite(start.getTime())) return null;
-  start.setUTCDate(start.getUTCDate() + PROGRAM_TOTAL_DAYS - 1);
-  const lastDay = start.toISOString().slice(0, 10);
+  const lastDay = programWindowEnd(startedOn);
+  if (!lastDay) return null;
   return endsOn && endsOn < lastDay ? endsOn : lastDay;
 }
 
