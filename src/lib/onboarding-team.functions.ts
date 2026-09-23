@@ -266,8 +266,16 @@ export const takeOnboardingTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ taskId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertCanManage(context as unknown as Ctx);
     const db = await admin();
+    const { data: task } = await db
+      .from("onboarding_tasks")
+      .select("property_id")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (!task) throw new Error("That Task was not found.");
+    const { onboardingTaskAccess } = await import("./onboarding-task-access.server");
+    const access = await onboardingTaskAccess(context.supabase, context.userId, task.property_id, null);
+    if (!access.canManage) throw new Error("Only the Director or this home's lead can take this Task.");
     const { error } = await db
       .from("onboarding_tasks")
       .update({ assigned_to: context.userId })

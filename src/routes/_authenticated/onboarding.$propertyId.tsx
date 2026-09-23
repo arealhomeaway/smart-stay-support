@@ -248,6 +248,7 @@ function PropertyWorkspace() {
   const pm = data.people.find((p) => p.id === pmId);
   const utilityManager = data.people.find((p) => p.id === projectRow?.utility_manager);
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
+  const isOnboardingDirector = directorQuery.data === true;
   const canEdit = !readOnly && can("handoff_request");
   const canExecuteProject =
     !readOnly && (data.reviewCapabilities.is_admin || projectRow?.project_manager === userId);
@@ -793,7 +794,7 @@ function PropertyWorkspace() {
         canRecordException={can("handoff_review")}
         canManageTask={canManageOnboardingProperty(
           userId,
-          can("handoff_review"),
+          can("handoff_review") || isOnboardingDirector,
           openTask?.property_id,
           data.projects,
         )}
