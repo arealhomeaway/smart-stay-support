@@ -40,6 +40,9 @@ export type LogTimeAnchor = {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/** Enough for a receipt, a couple of photos and a document on one activity. */
+const MAX_FILES = 10;
+
 export function LogTimeDialog({
   open,
   onOpenChange,
