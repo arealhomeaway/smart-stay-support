@@ -5,7 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowRight, ClipboardList, Database, Home, Inbox, Plus, Users, Workflow } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardList,
+  Database,
+  Home,
+  Inbox,
+  Plus,
+  Users,
+  Workflow,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -210,115 +219,126 @@ function Hub() {
 
   return (
     <div className="space-y-8">
-      <PageHero
-        image={heroImage}
-        eyebrow={new Date().toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })}
-        title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
-        description="From keys to kickoff."
-        actions={
-          <>
-            <Link
-              to="/onboarding/my-work"
-              search={{ who: "me" } as never}
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-            >
-              <ClipboardList className="size-4" /> My work
-            </Link>
-            <button
-              type="button"
-              onClick={() => setParam({ lens: "reviews" })}
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
-            >
-              <Inbox className="size-4" /> Onboarding queue
-            </button>
-            <AddPropertyDialog
-              disabled={readOnly}
-              trigger={
+      {lens === "all" ? (
+        <header className="space-y-1">
+          <p className="eyebrow">Onboarding</p>
+          <h1 className="text-2xl font-semibold">Properties</h1>
+          <p className="text-sm text-muted-foreground">
+            Every onboarding home. Open one to see its Tasks, team and handoff.
+          </p>
+        </header>
+      ) : (
+        <>
+          <PageHero
+            image={heroImage}
+            eyebrow={new Date().toLocaleDateString(undefined, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+            title={`${greeting()}${firstName ? `, ${firstName}` : ""}.`}
+            description="From keys to kickoff."
+            actions={
+              <>
+                <Link
+                  to="/onboarding/my-work"
+                  search={{ who: "me" } as never}
+                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+                >
+                  <ClipboardList className="size-4" /> My work
+                </Link>
                 <button
                   type="button"
-                  disabled={readOnly}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
+                  onClick={() => setParam({ lens: "reviews" })}
+                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
                 >
-                  <Plus className="size-4" /> Enroll property
+                  <Inbox className="size-4" /> Onboarding queue
                 </button>
-              }
+                <AddPropertyDialog
+                  disabled={readOnly}
+                  trigger={
+                    <button
+                      type="button"
+                      disabled={readOnly}
+                      className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20 disabled:opacity-50"
+                    >
+                      <Plus className="size-4" /> Enroll property
+                    </button>
+                  }
+                />
+                <Link
+                  to="/onboarding/team"
+                  className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
+                >
+                  <Users className="size-4" /> Manage Team
+                </Link>
+              </>
+            }
+          />
+
+          <SectionCard title="Manage Onboarding" bodyClassName="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link to="/onboarding/team">
+                <Users className="mr-1.5 size-4" /> Manage Team
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/onboarding/templates">
+                <Workflow className="mr-1.5 size-4" /> Manage Workflow &amp; Templates
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/onboarding" search={{ lens: "all" } as never}>
+                <Home className="mr-1.5 size-4" /> Onboarding Properties
+              </Link>
+            </Button>
+          </SectionCard>
+
+          <SectionCard
+            tone={myDecisions.length > 0 ? "critical" : "default"}
+            title="Needs my decision"
+            description="Gate reviews and stage captures that are yours to decide right now."
+            bodyClassName="space-y-1.5"
+          >
+            {myDecisions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                You are clear. Nothing is waiting on a decision from you.
+              </p>
+            ) : (
+              myDecisions.map((p) => (
+                <DecisionRow key={p.property.id} project={p} originToken={originToken} />
+              ))
+            )}
+          </SectionCard>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <HubTile
+              value={atRisk.length}
+              label="Needs attention"
+              tone="attention"
+              onClick={() => setParam({ lens: "attention" })}
             />
-            <Link
-              to="/onboarding/team"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
-            >
-              <Users className="size-4" /> Manage Team
-            </Link>
-          </>
-        }
-      />
-
-      <SectionCard title="Manage Onboarding" bodyClassName="flex flex-wrap gap-2">
-        <Button asChild variant="outline">
-          <Link to="/onboarding/team">
-            <Users className="mr-1.5 size-4" /> Manage Team
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link to="/onboarding/templates">
-            <Workflow className="mr-1.5 size-4" /> Manage Workflow &amp; Templates
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link to="/onboarding" search={{ lens: "all" } as never}>
-            <Home className="mr-1.5 size-4" /> Onboarding Properties
-          </Link>
-        </Button>
-      </SectionCard>
-
-
-      <SectionCard
-        tone={myDecisions.length > 0 ? "critical" : "default"}
-        title="Needs my decision"
-        description="Gate reviews and stage captures that are yours to decide right now."
-        bodyClassName="space-y-1.5"
-      >
-        {myDecisions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            You are clear. Nothing is waiting on a decision from you.
-          </p>
-        ) : (
-          myDecisions.map((p) => (
-            <DecisionRow key={p.property.id} project={p} originToken={originToken} />
-          ))
-        )}
-      </SectionCard>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <HubTile
-          value={atRisk.length}
-          label="Needs attention"
-          tone="attention"
-          onClick={() => setParam({ lens: "attention" })}
-        />
-        <HubTile
-          value={pendingReviews.length + inReview.filter((p) => !p.inReview).length}
-          label="Handoffs & reviews waiting"
-          tone="review"
-          onClick={() => setParam({ lens: "reviews" })}
-        />
-        <HubTile
-          value={activeProjects.length}
-          label="Active pipeline"
-          tone="progress"
-          onClick={() => setParam({ lens: "pipeline" })}
-        />
-        <HubTile
-          value={soon.length}
-          label="Handoffs in 14 days"
-          tone="critical"
-          onClick={() => setParam({ lens: "reviews" })}
-        />
-      </div>
+            <HubTile
+              value={pendingReviews.length + inReview.filter((p) => !p.inReview).length}
+              label="Handoffs & reviews waiting"
+              tone="review"
+              onClick={() => setParam({ lens: "reviews" })}
+            />
+            <HubTile
+              value={activeProjects.length}
+              label="Active pipeline"
+              tone="progress"
+              onClick={() => setParam({ lens: "pipeline" })}
+            />
+            <HubTile
+              value={soon.length}
+              label="Handoffs in 14 days"
+              tone="critical"
+              onClick={() => setParam({ lens: "reviews" })}
+            />
+          </div>
+        </>
+      )}
 
       <div className="space-y-4">
         <div className="flex justify-end">
@@ -345,76 +365,76 @@ function Hub() {
             </SheetContent>
           </Sheet>
         </div>
-          {notStarted.length > 0 && (
-            <section className="surface p-4">
-              <p className="eyebrow">Onboarding not started ({notStarted.length})</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                These homes are in the pipeline but no one has set the scope yet. Open the home to
-                start onboarding.
-                {notStartedTestCount > 0
-                  ? ` ${notStartedTestCount} QA/test home${notStartedTestCount === 1 ? " is" : "s are"} hidden — find them under Properties.`
-                  : ""}
-              </p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {notStarted.map((p) => (
-                  <li key={p.id}>
-                    <Link
-                      to="/onboarding/$propertyId"
-                      params={{ propertyId: p.id }}
-                      search={{ from: originToken } as never}
-                      className="inline-flex rounded-md border border-border px-2.5 py-1 text-sm hover:bg-muted"
-                    >
-                      {p.name}
-                    </Link>
-                  </li>
+        {notStarted.length > 0 && (
+          <section className="surface p-4">
+            <p className="eyebrow">Onboarding not started ({notStarted.length})</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              These homes are in the pipeline but no one has set the scope yet. Open the home to
+              start onboarding.
+              {notStartedTestCount > 0
+                ? ` ${notStartedTestCount} QA/test home${notStartedTestCount === 1 ? " is" : "s are"} hidden — find them under Properties.`
+                : ""}
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {notStarted.map((p) => (
+                <li key={p.id}>
+                  <Link
+                    to="/onboarding/$propertyId"
+                    params={{ propertyId: p.id }}
+                    search={{ from: originToken } as never}
+                    className="inline-flex rounded-md border border-border px-2.5 py-1 text-sm hover:bg-muted"
+                  >
+                    {p.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        <DirectorHub
+          projects={projects}
+          viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
+          originToken={originToken}
+          lens={lens}
+          onLensChange={(v) => setParam({ lens: v })}
+          find={find}
+          onFindChange={(v) => setParam({ find: v || undefined })}
+          owner={owner}
+          onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
+          showTest={showTest}
+          onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
+          beforeRows={
+            lens === "reviews" ? (
+              <div className="space-y-3">
+                <p className="eyebrow">Handoff gate decisions ({pendingReviews.length})</p>
+                {pendingReviews.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No handoff is waiting at a review gate.
+                  </p>
+                )}
+                {pendingReviews.map((h) => (
+                  <HandoffGatePanel
+                    key={h.id}
+                    handoff={h as never}
+                    reviews={data.reviews as never}
+                    people={data.people}
+                    propertyName={
+                      data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"
+                    }
+                    canReview={
+                      !readOnly && canReviewOnboardingGate(data.reviewCapabilities, h.gate_step)
+                    }
+                    disabled={readOnly}
+                    onDecision={(input) =>
+                      reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })
+                    }
+                  />
                 ))}
-              </ul>
-            </section>
-          )}
-          <DirectorHub
-            projects={projects}
-            viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
-            originToken={originToken}
-            lens={lens}
-            onLensChange={(v) => setParam({ lens: v })}
-            find={find}
-            onFindChange={(v) => setParam({ find: v || undefined })}
-            owner={owner}
-            onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
-            showTest={showTest}
-            onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
-            beforeRows={
-              lens === "reviews" ? (
-                <div className="space-y-3">
-                  <p className="eyebrow">Handoff gate decisions ({pendingReviews.length})</p>
-                  {pendingReviews.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No handoff is waiting at a review gate.
-                    </p>
-                  )}
-                  {pendingReviews.map((h) => (
-                    <HandoffGatePanel
-                      key={h.id}
-                      handoff={h as never}
-                      reviews={data.reviews as never}
-                      people={data.people}
-                      propertyName={
-                        data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"
-                      }
-                      canReview={
-                        !readOnly && canReviewOnboardingGate(data.reviewCapabilities, h.gate_step)
-                      }
-                      disabled={readOnly}
-                      onDecision={(input) =>
-                        reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })
-                      }
-                    />
-                  ))}
-                  <p className="eyebrow pt-2">Homes in review or handing off soon</p>
-                </div>
-              ) : null
-            }
-          />
+                <p className="eyebrow pt-2">Homes in review or handing off soon</p>
+              </div>
+            ) : null
+          }
+        />
       </div>
     </div>
   );

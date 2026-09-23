@@ -11,13 +11,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
-import {
-  Chip,
-  EmptyState,
-  LoadingPage,
-  PageHeader,
-  ProgressRing,
-} from "@/components/ui/page";
+import { Chip, EmptyState, LoadingPage, PageHeader, ProgressRing } from "@/components/ui/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
 import { Button } from "@/components/ui/button";
@@ -67,16 +61,8 @@ import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
-import {
-  buildReleaseContext,
-  deriveLifecycle,
-  handoffReadiness,
-} from "@/lib/onboarding-state";
-import {
-  targetHandoff,
-  type OpenHandoff,
-  type ProjectProperty,
-} from "@/lib/onboarding-lifecycle";
+import { buildReleaseContext, deriveLifecycle, handoffReadiness } from "@/lib/onboarding-state";
+import { targetHandoff, type OpenHandoff, type ProjectProperty } from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
@@ -667,11 +653,20 @@ function PropertyWorkspace() {
         </TabsContent>
 
         <TabsContent value="handoff" className="space-y-5">
-          <TwoStepHandoff propertyId={current.id} readOnly={readOnly} onOpenTask={(id) => setOpenTaskId(id)} />
+          <TwoStepHandoff
+            propertyId={current.id}
+            readOnly={readOnly}
+            onOpenTask={(id) => setOpenTaskId(id)}
+          />
         </TabsContent>
 
         <TabsContent value="files" className="space-y-4">
-          <PhotoStrip entityType="property" entityId={current.id} title="Visual evidence" limit={16} />
+          <PhotoStrip
+            entityType="property"
+            entityId={current.id}
+            title="Visual evidence"
+            limit={16}
+          />
           <AttachmentsPanel
             entityType="property"
             entityId={current.id}
