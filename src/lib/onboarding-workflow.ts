@@ -394,13 +394,16 @@ export function assigneeLabel(
   task: Pick<WorkflowTask, "assigned_to" | "assigned_seat">,
   people: { id: string; full_name: string | null; email: string | null }[],
 ): string {
+  const role = task.assigned_seat
+    ? (SEAT_LABELS[task.assigned_seat as SeatCode] ??
+      task.assigned_seat.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()))
+    : null;
   if (task.assigned_to) {
     const p = people.find((x) => x.id === task.assigned_to);
-    return p?.full_name || p?.email || "Teammate";
+    const name = p?.full_name || p?.email || "Teammate";
+    return role ? `${name} · ${role}` : name;
   }
-  if (task.assigned_seat) {
-    return SEAT_LABELS[task.assigned_seat as SeatCode] ?? task.assigned_seat;
-  }
+  if (role) return role;
   return "Unassigned";
 }
 

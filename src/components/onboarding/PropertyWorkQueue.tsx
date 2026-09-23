@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { CalendarDays, CircleAlert, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/page";
-import { WorkflowTable, type Person } from "@/components/onboarding/WorkflowTable";
+import type { Person } from "@/components/onboarding/WorkflowTable";
 import { stateChip } from "@/lib/semantic";
 import { usDate } from "@/lib/dates";
 import {
@@ -19,11 +19,7 @@ import {
   viewTask,
   type WorkflowTask,
 } from "@/lib/onboarding-workflow";
-import {
-  buildWorkstreams,
-  trackForTask,
-  workstreamMeta,
-} from "@/lib/onboarding-workstreams";
+import { trackForTask, workstreamMeta } from "@/lib/onboarding-workstreams";
 import type { ReleaseContext } from "@/lib/onboarding-state";
 
 export function PropertyWorkQueue({
@@ -32,9 +28,7 @@ export function PropertyWorkQueue({
   viewerId,
   filter,
   onFilterChange,
-  selectedId,
   onSelect,
-  outOfScope,
   release,
 }: {
   tasks: WorkflowTask[];
@@ -59,14 +53,13 @@ export function PropertyWorkQueue({
   const actionable = views.filter(
     (view) => !isWaitingTask(view) && !["complete", "carryover"].includes(view.status),
   ).length;
-  const tracks = buildWorkstreams(tasks, release);
 
   return (
     <section className="surface overflow-hidden" aria-labelledby="work-queue-heading">
       <div className="border-b border-border p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 id="work-queue-heading" className="text-xl font-semibold">Work queue</h2>
+            <h2 id="work-queue-heading" className="text-xl font-semibold">Tasks</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Start at the top. Work that can move now comes before anything waiting.
             </p>
@@ -144,31 +137,6 @@ export function PropertyWorkQueue({
         )}
       </div>
 
-      <details className="border-t border-border">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-medium hover:bg-muted/50">
-          Browse full plan by track or stage
-        </summary>
-        <div className="space-y-4 border-t border-border bg-muted/20 p-4">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {tracks.map((track) => (
-              <div key={track.key} className="rounded-md border border-border bg-background p-3">
-                <p className="text-sm font-medium">{track.label}</p>
-                <p className="numeric mt-1 text-xs text-muted-foreground">
-                  {track.done}/{track.total} complete · {track.ready.length} ready
-                </p>
-              </div>
-            ))}
-          </div>
-          <WorkflowTable
-            tasks={tasks}
-            people={people}
-            onSelect={onSelect}
-            {...(outOfScope ? { outOfScope } : {})}
-            {...(selectedId !== undefined ? { selectedId } : {})}
-            {...(release ? { release } : {})}
-          />
-        </div>
-      </details>
     </section>
   );
 }
