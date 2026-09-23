@@ -6,7 +6,7 @@
  * is written from this component; rows navigate to the project workspace.
  */
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Chip, ProgressRing } from "@/components/ui/page";
 import { Input } from "@/components/ui/input";
@@ -94,7 +94,7 @@ export function DirectorHub({
   showTest: boolean;
   onShowTestChange: (showTest: boolean) => void;
   /** Rendered above the home list (e.g. inline handoff reviews). */
-  beforeRows?: React.ReactNode;
+  beforeRows?: ReactNode;
 }) {
   // Test/QA homes never count towards live onboarding reporting. One shared
   // rule (src/lib/test-data.ts) decides this everywhere in Resolve.
