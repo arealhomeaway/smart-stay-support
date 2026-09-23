@@ -3271,6 +3271,75 @@ export type Database = {
           },
         ]
       }
+      help_tickets: {
+        Row: {
+          attachments: Json
+          description: string
+          email_status: string | null
+          id: string
+          kind: string
+          page_title: string | null
+          portal: string | null
+          property_id: string | null
+          property_label: string | null
+          route: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string
+          submitter_email: string | null
+          submitter_name: string | null
+          ticket_number: number
+          updated_at: string
+          user_agent: string | null
+          user_role: string | null
+          work_item_id: string | null
+        }
+        Insert: {
+          attachments?: Json
+          description: string
+          email_status?: string | null
+          id?: string
+          kind: string
+          page_title?: string | null
+          portal?: string | null
+          property_id?: string | null
+          property_label?: string | null
+          route?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          submitter_email?: string | null
+          submitter_name?: string | null
+          ticket_number?: never
+          updated_at?: string
+          user_agent?: string | null
+          user_role?: string | null
+          work_item_id?: string | null
+        }
+        Update: {
+          attachments?: Json
+          description?: string
+          email_status?: string | null
+          id?: string
+          kind?: string
+          page_title?: string | null
+          portal?: string | null
+          property_id?: string | null
+          property_label?: string | null
+          route?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          submitter_email?: string | null
+          submitter_name?: string | null
+          ticket_number?: never
+          updated_at?: string
+          user_agent?: string | null
+          user_role?: string | null
+          work_item_id?: string | null
+        }
+        Relationships: []
+      }
       inquiry_sources: {
         Row: {
           active: boolean
