@@ -723,3 +723,8 @@ Batch B (work surface)
 - [ ] Unstarted projects → clean V2 workflow; started projects keep history
 - [ ] Owner UI: "Opportunity" wording + Ways to document your participation
 - [ ] Retire legacy paths after data verified
+- [x] V2 shared Work Item engine (work_items: Tasks + linked owner Opportunities; onboarding + tickets)
+- [x] V2 template settings: stages, roles, required/blocking/active, module, due offset, Opportunity content, immutable published versions
+- [x] V2 two-step handoff (Ready for Operations → accept or deficiency Task)
+- [x] V2 clean restart of Foxtail, Buckland, 3915 W 104th, Fitzgerald
+- [ ] Fitzgerald has no access date — V2 Tasks have no due dates until one is set (needs date from team)
