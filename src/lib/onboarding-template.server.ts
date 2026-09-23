@@ -240,7 +240,15 @@ export async function applyOnboardingTemplate(
 
   // V2: a template with a published version is instantiated from that
   // immutable version (roles, due rules, owner Opportunities), once per home.
-  const v2 = await startFromPublishedVersion(supabase, input.propertyId, input.templateId ?? null);
+  const v2 =
+    input.mode === "new_and_existing"
+      ? null
+      : await startFromPublishedVersion(supabase, input.propertyId, input.templateId ?? null).catch(
+          (e: unknown) => {
+            if (e instanceof Error && e.message.startsWith("V2:")) throw new Error(e.message.slice(3));
+            return null;
+          },
+        );
   if (v2) return v2;
 
   const plan = await planFor(supabase, input.templateId);
@@ -497,6 +505,6 @@ async function startFromPublishedVersion(
     _project_id: project.data.id,
     _version_id: version.data.id,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`V2:${error.message}`);
   return { created: (data as number) ?? 0, refreshed: 0, subtasksCreated: 0, skipped: 0 };
 }
