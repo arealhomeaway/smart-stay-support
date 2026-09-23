@@ -34,8 +34,8 @@ import { matchesOnboardingLens, type Lens, type HubViewer } from "@/lib/onboardi
 const LENSES: { key: Lens; label: string; hint: string }[] = [
   {
     key: "attention",
-    label: "Needs attention now",
-    hint: "Something an ARHA person must do today.",
+    label: "Needs attention",
+    hint: "Blocked, overdue, at risk, or returned for correction.",
   },
   {
     key: "mine",
@@ -50,20 +50,21 @@ const LENSES: { key: Lens; label: string; hint: string }[] = [
   { key: "up7", label: "Next 7 days", hint: "Target handoff within 7 days." },
   { key: "up14", label: "Next 14 days", hint: "Target handoff within 14 days." },
   { key: "up30", label: "Next 30 days", hint: "Target handoff within 30 days." },
-  { key: "all", label: "All projects", hint: "The whole pipeline." },
+  {
+    key: "reviews",
+    label: "Handoffs & reviews",
+    hint: "Handoff gates and stage reviews waiting, and handoffs due within 14 days.",
+  },
+  {
+    key: "pipeline",
+    label: "Active pipeline",
+    hint: "Every home still in onboarding, soonest target handoff first.",
+  },
+  { key: "all", label: "All homes", hint: "The whole pipeline, including live homes." },
 ];
 
 /** Lenses shown as chips; the day-window lenses are reached from secondary detail. */
-const CHIP_LENSES: Lens[] = [
-  "attention",
-  "mine",
-  "corrections",
-  "at_risk",
-  "blocked",
-  "review",
-  "handoffs",
-  "all",
-];
+const CHIP_LENSES: Lens[] = ["attention", "reviews", "pipeline", "all"];
 
 export function DirectorHub({
   projects: allProjects,
@@ -77,6 +78,7 @@ export function DirectorHub({
   onOwnerChange,
   showTest,
   onShowTestChange,
+  beforeRows,
 }: {
   projects: ProjectSummary[];
   viewer?: HubViewer;
@@ -91,6 +93,8 @@ export function DirectorHub({
   onOwnerChange: (owner: string | null) => void;
   showTest: boolean;
   onShowTestChange: (showTest: boolean) => void;
+  /** Rendered above the home list (e.g. inline handoff reviews). */
+  beforeRows?: React.ReactNode;
 }) {
   // Test/QA homes never count towards live onboarding reporting. One shared
   // rule (src/lib/test-data.ts) decides this everywhere in Resolve.
@@ -185,6 +189,7 @@ export function DirectorHub({
           )}
         </div>
 
+        {beforeRows}
         <div className="space-y-2">
           {visible.length === 0 && (
             <p className="surface p-4 text-sm text-muted-foreground">
