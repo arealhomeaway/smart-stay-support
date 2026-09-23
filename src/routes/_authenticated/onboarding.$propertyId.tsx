@@ -460,22 +460,14 @@ function PropertyWorkspace() {
         className="space-y-5"
       >
         <TabsList className="flex h-auto flex-wrap justify-start">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="workflow">Work</TabsTrigger>
-          <TabsTrigger value="property">Property</TabsTrigger>
-          <TabsTrigger value="budget">Budget &amp; expenses</TabsTrigger>
-          <TabsTrigger value="findings">Findings</TabsTrigger>
-          <TabsTrigger value="workorders">Work orders</TabsTrigger>
-          <TabsTrigger value="vendors">Vendor coverage</TabsTrigger>
-
-          <TabsTrigger value="financial">Financial</TabsTrigger>
-          <TabsTrigger value="handoff">Ready for Operations</TabsTrigger>
-          <TabsTrigger value="activity">History</TabsTrigger>
+          <TabsTrigger value="work">Work &amp; Scope</TabsTrigger>
+          <TabsTrigger value="property">Property &amp; Financial</TabsTrigger>
+          <TabsTrigger value="handoff">Handoff</TabsTrigger>
+          <TabsTrigger value="files">Files &amp; History</TabsTrigger>
         </TabsList>
 
-
-        {/* ------------------------------------------------------- Overview */}
-        <TabsContent value="overview" className="space-y-5">
+        {/* ------------------------------------------------ Work & Scope */}
+        <TabsContent value="work" className="space-y-5">
           <ProjectScopePanel
             propertyId={current.id}
             propertyName={current.name}
@@ -661,10 +653,6 @@ function PropertyWorkspace() {
               ))}
             </div>
           </section>
-        </TabsContent>
-
-        {/* ------------------------------------------------------- Workflow */}
-        <TabsContent value="workflow" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
               Four tracks move at the same time. Start with anything under Ready now — open a step
@@ -825,55 +813,25 @@ function PropertyWorkspace() {
         {/* ------------------------------------------------------- Property */}
         <TabsContent value="property" className="space-y-4">
           <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
-          <details className="surface space-y-4 p-4">
-            <summary className="cursor-pointer font-medium">Documents and media</summary>
-            <PhotoStrip entityType="property" entityId={current.id} title="Photos" limit={16} />
-            <AttachmentsPanel
-              entityType="property"
-              entityId={current.id}
-              title="Property documents & media"
-            />
-            <OperationsContextPanel
-              property={current as never}
-              tasks={tasks as never}
-              records={data.externalRecords as never}
-              documents={data.documents as never}
-              documentsEnabled={docsEnabled}
-            />
-          </details>
-        </TabsContent>
-
-        {/* ------------------------------------------- Budget & expenses */}
-        <TabsContent value="budget" className="space-y-4">
-          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
-        </TabsContent>
-
-        {/* --------------------------------------------------- Findings */}
-        <TabsContent value="findings" className="space-y-4">
-          <AssessmentFindingsPanel
-            propertyId={current.id}
-            canEdit={canEdit}
-            onOpenTask={setOpenTaskId}
+          <OperationsContextPanel
+            property={current as never}
+            tasks={tasks as never}
+            records={data.externalRecords as never}
+            documents={data.documents as never}
+            documentsEnabled={docsEnabled}
           />
-        </TabsContent>
-
-        {/* ------------------------------------------------- Work orders */}
-        <TabsContent value="workorders" className="space-y-4">
-          <OnboardingWorkOrdersPanel propertyId={current.id} />
-        </TabsContent>
-
-        {/* --------------------------------------------- Vendor coverage */}
-
-        <TabsContent value="vendors" className="space-y-4">
           <VendorCoveragePanel propertyId={current.id} />
-        </TabsContent>
-
-        {/* ------------------------------------------------------ Financial */}
-        <TabsContent value="financial" className="space-y-4">
+          <OnboardingWorkOrdersPanel propertyId={current.id} />
+          <BudgetPanel propertyId={current.id} canEdit={canEdit} />
           <FinancialPanel
             propertyId={current.id}
             canEdit={canEdit}
             isAdmin={roles.includes("admin")}
+          />
+          <AssessmentFindingsPanel
+            propertyId={current.id}
+            canEdit={canEdit}
+            onOpenTask={setOpenTaskId}
           />
         </TabsContent>
 
@@ -927,7 +885,7 @@ function PropertyWorkspace() {
                     key={item.id}
                     type="button"
                     className="block text-primary underline"
-                    onClick={() => void navigate({ search: { ...search, tab: "financial" } })}
+                    onClick={() => void navigate({ search: { ...search, tab: "property" } })}
                   >
                     Review financial request: {item.title}
                   </button>
@@ -984,7 +942,13 @@ function PropertyWorkspace() {
         {/* ---------------------------------------------------------- Files */}
 
         {/* ------------------------------------------------------- Activity */}
-        <TabsContent value="activity" className="space-y-4">
+        <TabsContent value="files" className="space-y-4">
+          <PhotoStrip entityType="property" entityId={current.id} title="Visual evidence" limit={16} />
+          <AttachmentsPanel
+            entityType="property"
+            entityId={current.id}
+            title="Shared documents & media"
+          />
           <ProjectHistory
             propertyId={current.id}
             tasks={tasks}
