@@ -66,7 +66,7 @@ export function OwnerFilesPanel({ homes, selectedHomeId, readOnly = false }: { h
   const [request, setRequest] = useState<{ id: string; title: string; entityType: AttachmentEntity; entityId: string; propertyId: string | null } | null>(null);
   const inScope = <T extends { property_id?: string | null; propertyId?: string | null }>(x: T) =>
     !selectedHomeId || (x.property_id ?? x.propertyId) === selectedHomeId;
-  const files = (q.data?.files ?? []).filter(inScope);
+  const files = (q.data?.files ?? []).filter(inScope).sort((a, b) => (b.uploaded_at ?? b.created_at).localeCompare(a.uploaded_at ?? a.created_at));
   const requests = (q.data?.requests ?? []).filter(inScope);
   const showHome = !selectedHomeId && homes.length > 1;
 

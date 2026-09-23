@@ -26,7 +26,7 @@ export function OwnerOpportunities({ onLogHours, readOnly = false, homes = [] }:
     onSuccess: () => { toast.success("Marked done. Thank you!"); void qc.invalidateQueries({ queryKey: ["owner-opportunities"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update."),
   });
-  const items = q.data ?? [];
+  const items = (q.data ?? []).map((o) => ({ ...o, propertyName: homes.find((h) => h.propertyId === o.property_id)?.name ?? o.propertyName }));
   if (!q.isLoading && items.length === 0) return null;
 
   return (
