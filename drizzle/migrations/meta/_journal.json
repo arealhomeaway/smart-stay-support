@@ -204,6 +204,13 @@
       "when": 1790183986517,
       "tag": "0028_enrollment_allows_confirmed_future_closing",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790184607824,
+      "tag": "0029_program_window_closing_to_year_end",
+      "breakpoints": true
     }
   ]
 }
