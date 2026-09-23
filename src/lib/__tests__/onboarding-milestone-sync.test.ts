@@ -22,17 +22,9 @@ mock.module("../onboarding-task-access.server", () => ({
       ? undefined
       : (realAccess.assertOnboardingPropertyManagement as (...a: unknown[]) => unknown)(...args),
 }));
-const realSchedule = await import("../onboarding-schedule.server");
-const stubOr =
-  (name: keyof typeof realSchedule, value: unknown) =>
-  async (...args: unknown[]) =>
-    stubbed ? value : (realSchedule[name] as (...a: unknown[]) => unknown)(...args);
-mock.module("../onboarding-schedule.server", () => ({
-  ...realSchedule,
-  previewScheduleRecalc: stubOr("previewScheduleRecalc", { rows: [] }),
-  applyScheduleRecalc: stubOr("applyScheduleRecalc", { applied: 0 }),
-  autopopulateProjectDeadlines: stubOr("autopopulateProjectDeadlines", { applied: 0 }),
-}));
+// The schedule recalculation is deliberately NOT mocked: saveOnboardingMilestones
+// already treats a recalculation failure as non-fatal, and mocking it here would
+// leak into every other suite in the run.
 
 const { saveOnboardingMilestones } = await import("../onboarding-milestones.server");
 
