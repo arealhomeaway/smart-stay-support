@@ -235,25 +235,55 @@ export function LogTimeDialog({
               onChange={(e) => setMinutes(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="log-evidence">Add a photo or receipt (optional)</Label>
-            <Input
-              id="log-evidence"
-              type="file"
-              onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
-            />
-            {file && (
-              <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Paperclip className="size-3" aria-hidden="true" />
-                {file.name} · {formatBytes(file.size)}
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 underline"
-                  onClick={() => setFile(null)}
-                >
-                  <X className="size-3" aria-hidden="true" /> Remove
-                </button>
+          <div className="space-y-2">
+            <Label htmlFor="log-evidence">Attach files, documents or photos (optional)</Label>
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                addFiles(Array.from(e.dataTransfer.files));
+              }}
+              className="rounded-xl border border-dashed border-border bg-muted/30 p-3"
+            >
+              <Input
+                id="log-evidence"
+                type="file"
+                multiple
+                onChange={(e) => {
+                  addFiles(Array.from(e.target.files ?? []));
+                  e.target.value = "";
+                }}
+              />
+              <p className="mt-2 text-xs text-muted-foreground">
+                Drag files here or choose them above. Receipts, notes, screenshots and photos are
+                all kept with this entry as your record of the work.
               </p>
+            </div>
+            {files.length > 0 && (
+              <ul className="space-y-1">
+                {files.map((item) => (
+                  <li
+                    key={`${item.name}-${item.size}`}
+                    className="flex items-center gap-2 text-xs text-muted-foreground"
+                  >
+                    <Paperclip className="size-3 shrink-0" aria-hidden="true" />
+                    <span className="truncate">
+                      {item.name} · {formatBytes(item.size)}
+                    </span>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 underline"
+                      onClick={() =>
+                        setFiles((current) =>
+                          current.filter((f) => !(f.name === item.name && f.size === item.size)),
+                        )
+                      }
+                    >
+                      <X className="size-3" aria-hidden="true" /> Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
           <label className="flex items-start gap-2 text-sm">
