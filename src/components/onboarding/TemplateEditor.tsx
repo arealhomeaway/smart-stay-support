@@ -2,7 +2,7 @@
  * Edit one onboarding template: its steps, their stage, timing and rules.
  * Directors only — the page that renders this already gates on the capability.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   closestCenter,
   DndContext,
@@ -175,7 +175,7 @@ function SortableStep({
   );
 }
 
-function StageDropZone({ stage, children }: { stage: string; children: React.ReactNode }) {
+function StageDropZone({ stage, children }: { stage: string; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({
     id: stageDropId(stage),
     data: { type: "stage", stage },
