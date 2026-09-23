@@ -70,7 +70,7 @@ function HelpTicketsPage() {
 
   async function setRowStatus(id: string, s: string) {
     const { error } = await supabase.from("help_tickets").update({ status: s, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error) return toast.error("Could not update status.");
+    if (error) { toast.error("Could not update status."); return; }
     void qc.invalidateQueries({ queryKey: ["help-tickets"] });
   }
   async function openFile(a: Att) {
@@ -107,7 +107,7 @@ function HelpTicketsPage() {
         {isLoading ? (
           <Skeleton className="h-40" />
         ) : rows.length === 0 ? (
-          <EmptyState title="No help tickets" description="Nothing matches these filters." />
+          <EmptyState title="No help tickets" hint="Nothing matches these filters." />
         ) : (
           <ul className="divide-y">
             {rows.map((r) => (
@@ -161,11 +161,11 @@ function RecipientSetting() {
   const [draft, setDraft] = useState<string | null>(null);
   const value = draft ?? data ?? "";
   async function save() {
-    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim())) return toast.error("Enter a valid email address.");
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(value.trim())) { toast.error("Enter a valid email address."); return; }
     const { error } = await supabase
       .from("app_settings")
       .upsert({ key: "help_feedback_recipient", value: { email: value.trim() }, updated_at: new Date().toISOString() });
-    if (error) return toast.error("Only administrators can change this.");
+    if (error) { toast.error("Only administrators can change this."); return; }
     toast.success("Notification email saved.");
     setDraft(null);
     void qc.invalidateQueries({ queryKey: ["help-feedback-recipient"] });
