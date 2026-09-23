@@ -1,68 +1,90 @@
 /**
- * How the homeowner's onboarding is going — counts only.
+ * "Getting your home ready" — a small informational status per home.
  *
- * Four tracks, one meter each, plus an overall figure. No task titles,
- * assignees, blockers, vendors or costs ever appear here.
+ * One line per home (phase, target launch, overall progress). The high-level
+ * areas only appear when the homeowner expands a home. Counts only: no task
+ * titles, assignees, vendors or costs ever appear here.
  */
-import { CalendarClock } from "lucide-react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ChevronDown } from "lucide-react";
 import { SectionCard } from "@/components/ui/page";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { usCalendarDate } from "@/lib/dates";
-import { ownerGoLive } from "@/lib/owner-onboarding";
-import { todayCalendarDate } from "@/lib/onboarding-golive";
+import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingHome } from "@/lib/owner-onboarding.server";
 
-export function OnboardingProgress({ homes }: { homes: OwnerOnboardingHome[] }) {
+export const PARTICIPATION_PROCESS_NOTE =
+  "Your participation can help move certain parts of your property's setup forward. ARHA will continue managing the onboarding process and applying the same property-readiness standards regardless of which Opportunities you choose to participate in.";
+
+function HomeRow({ home, phase }: { home: OwnerOnboardingHome; phase: string | null }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className="rounded-lg border border-border">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2.5 text-left"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold">{home.name}</span>
+          <span className="block text-xs text-muted-foreground">
+            {phase ?? "In setup"}
+            {home.targetGoLive ? ` · Target launch ${usCalendarDate(home.targetGoLive)}` : ""}
+          </span>
+        </span>
+        <span className="flex w-40 items-center gap-2">
+          <Progress value={home.percent} className="h-1.5" aria-label={`${home.name} overall progress`} />
+          <span className="numeric w-9 text-right text-xs text-muted-foreground">{home.percent}%</span>
+        </span>
+        <ChevronDown className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+      {open ? (
+        <ul className="grid gap-2 border-t border-border px-3 py-3 sm:grid-cols-2">
+          {home.tracks.map((track) => (
+            <li key={track.key} className="flex items-center justify-between gap-2 text-xs">
+              <span>{track.label}</span>
+              <span className="numeric text-muted-foreground">{track.percent}%</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  );
+}
+
+export function OnboardingProgress({
+  readOnly,
+  programId,
+  homeId,
+  phaseFor,
+}: {
+  readOnly: boolean;
+  programId: string | null;
+  homeId: string | null;
+  phaseFor: (propertyId: string) => string | null;
+}) {
+  const load = useServerFn(ownerOnboardingActions);
+  const q = useQuery({
+    queryKey: ["owner-onboarding", programId, readOnly],
+    queryFn: () => load({ data: { programId, preview: readOnly } }),
+  });
+  const homes = (q.data?.homes ?? []).filter((h) => !homeId || h.propertyId === homeId);
   if (homes.length === 0) return null;
-  const today = todayCalendarDate();
 
   return (
     <SectionCard
       title="Getting your home ready"
-      description="Where each part of the setup stands today. We update this as the work is completed."
+      description="Where setup stands today. Open a home to see its main areas."
     >
-      <div className="space-y-6">
-        {homes.map((home) => {
-          const golive = ownerGoLive(home.targetGoLive, today);
-          return (
-          <div key={home.propertyId} className="space-y-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-sm font-semibold">{home.name}</p>
-              <p className="numeric text-xs text-muted-foreground">
-                {home.percent}% complete · {home.done} of {home.total} steps done
-              </p>
-            </div>
-            {golive && (
-              <Badge variant="secondary" className="gap-1.5">
-                <CalendarClock className="size-3.5" aria-hidden="true" />
-                <span className="numeric">
-                  Target launch: {usCalendarDate(golive.target)} · {golive.label}
-                </span>
-              </Badge>
-            )}
-            <Progress value={home.percent} aria-label={`${home.name} overall progress`} />
-            <div className="grid gap-3 sm:grid-cols-2">
-              {home.tracks.map((track) => (
-                <div key={track.key} className="rounded-xl border border-border bg-card p-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-medium">{track.label}</p>
-                    <span className="numeric text-xs text-muted-foreground">
-                      {track.done}/{track.total}
-                    </span>
-                  </div>
-                  <Progress
-                    className="mt-2 h-1.5"
-                    value={track.percent}
-                    aria-label={`${home.name} — ${track.label}`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          );
-        })}
-      </div>
+      <ul className="space-y-2">
+        {homes.map((home) => (
+          <HomeRow key={home.propertyId} home={home} phase={phaseFor(home.propertyId)} />
+        ))}
+      </ul>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{PARTICIPATION_PROCESS_NOTE}</p>
     </SectionCard>
   );
 }

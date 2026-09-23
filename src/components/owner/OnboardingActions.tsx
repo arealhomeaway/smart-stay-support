@@ -11,7 +11,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Clock, Download, FileText, ImageIcon, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { SectionCard } from "@/components/ui/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +22,6 @@ import { attachmentUrlFn } from "@/lib/attachments.functions";
 import { decideOwnerApproval } from "@/lib/owner-portal.functions";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction, OwnerOnboardingFile } from "@/lib/owner-onboarding.server";
-import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
 import { LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 
 function SharedFile({ file, disabled }: { file: OwnerOnboardingFile; disabled: boolean }) {
@@ -168,9 +166,12 @@ function ActionCard({
 export function OnboardingActions({
   readOnly,
   programId,
+  homeId = null,
 }: {
   readOnly: boolean;
   programId: string | null;
+  /** The homeowner's selected home; null means All Homes. */
+  homeId?: string | null;
 }) {
   const qc = useQueryClient();
   const load = useServerFn(ownerOnboardingActions);
@@ -242,13 +243,15 @@ export function OnboardingActions({
   if (q.isLoading) return <Skeleton className="h-40 w-full" />;
   const data = q.data;
   if (q.error || !data || !data.inOnboarding) return null;
+  const inHome = (a: OwnerOnboardingAction) => !homeId || !a.propertyId || a.propertyId === homeId;
+  const pending = data.pending.filter(inHome);
+  const decided = data.decided.filter(inHome);
+  if (pending.length === 0 && decided.length === 0 && !logPrompt) return null;
 
+  // Rendered inside "Needs your attention" — no card or heading of its own.
   return (
-    <div className="space-y-6">
-      <SectionCard
-        title="Onboarding actions"
-        description="Choices your setup team needs from you before the work can move forward."
-      >
+    <div className="space-y-3">
+      <div>
         <p className="mb-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
           {SILENCE_IS_NOT_APPROVAL}
         </p>
@@ -285,13 +288,9 @@ export function OnboardingActions({
           </div>
         )}
 
-        {data.pending.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nothing from your setup team is waiting on you right now.
-          </p>
-        ) : (
+        {pending.length === 0 ? null : (
           <div className="space-y-3">
-            {data.pending.map((action) => (
+            {pending.map((action) => (
               <ActionCard
                 key={action.approvalId}
                 action={action}
@@ -303,12 +302,12 @@ export function OnboardingActions({
           </div>
         )}
 
-        {data.decided.length > 0 && (
+        {decided.length > 0 && (
           <div className="mt-4 space-y-2">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Recently decided
             </p>
-            {data.decided.map((action) => (
+            {decided.slice(0, 3).map((action) => (
               <div
                 key={action.approvalId}
                 className="rounded-lg border border-border/60 p-3 text-sm"
@@ -331,9 +330,7 @@ export function OnboardingActions({
             ))}
           </div>
         )}
-      </SectionCard>
-
-      <OnboardingProgress homes={data.homes} />
+      </div>
 
       {!openShared && logPrompt && data.programId && (
         <LogTimeDialog

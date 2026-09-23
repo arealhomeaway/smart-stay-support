@@ -28,15 +28,16 @@ function ContactRow({ contact }: { contact: ArhaContact }) {
 }
 
 /** Who to talk to, in the order the homeowner should try them. */
-export function ArhaContacts({ contacts }: { contacts: ContactsView }) {
+export function ArhaContacts({ contacts, supports = null }: { contacts: ContactsView; supports?: string | null }) {
   return (
     <section
       aria-labelledby="owner-contacts-heading"
       className="rounded-xl border border-border bg-card p-5 shadow-card"
     >
       <h2 id="owner-contacts-heading" className="font-display text-lg font-semibold">
-        Your ARHA contacts
+        My Team
       </h2>
+      {supports ? <p className="mt-1 text-sm text-muted-foreground">Supporting {supports}</p> : null}
 
       {contacts.primary && (
         <div className="mt-4">
