@@ -33,12 +33,12 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", userId).maybeSingle(),
       supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
       data.propertyId
-        ? supabaseAdmin.from("properties").select("name, address").eq("id", data.propertyId).maybeSingle()
+        ? supabaseAdmin.from("properties").select("name, address_line1").eq("id", data.propertyId).maybeSingle()
         : Promise.resolve({ data: null }),
       supabaseAdmin.from("app_settings").select("value").eq("key", "help_feedback_recipient").maybeSingle(),
     ]);
-    const prop = propRes.data as { name: string | null; address: string | null } | null;
-    const propertyLabel = prop ? [prop.name, prop.address].filter(Boolean).join(" — ") : null;
+    const prop = propRes.data as { name: string | null; address_line1: string | null } | null;
+    const propertyLabel = prop ? [prop.name, prop.address_line1].filter(Boolean).join(" — ") : null;
     const roles = (roleRows ?? []).map((r) => r.role).join(", ") || "—";
     const email = (profile as { email?: string } | null)?.email ?? (context.claims as { email?: string })?.email ?? null;
     const name = (profile as { full_name?: string } | null)?.full_name ?? email ?? "Unknown user";
@@ -92,7 +92,7 @@ export const submitHelpTicket = createServerFn({ method: "POST" })
         `<br/><br/><strong>Feedback:</strong><br/>${escapeHtml(data.description).replace(/\n/g, "<br/>")}` +
         (links.length ? `<br/><br/><strong>Attachments (links valid 7 days):</strong><br/>${links.join("<br/>")}` : "");
       const subject = `Resolve Help Ticket #${row.ticket_number} — ${kindLabel} — ${data.pageTitle}`.slice(0, 280);
-      const html = emailShell(subject, "__BODY__", { label: "Open the page in Resolve", url: `${data.origin}${data.route}` }).replace(
+      const html = emailShell(subject, "__BODY__", { label: "Open the page in Resolve", url: escapeHtml(`${data.origin}${data.route}`) }).replace(
         escapeHtml("__BODY__"),
         body,
       );
