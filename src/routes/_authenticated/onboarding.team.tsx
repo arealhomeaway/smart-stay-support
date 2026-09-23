@@ -20,7 +20,7 @@ import {
   readOnboardingTeam,
   removeRolePoolMember,
   setOnboardingDirector,
-  setProjectPrimaryPM,
+  setProjectRoleAssignee,
 } from "@/lib/onboarding-team.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding/team")({
@@ -45,7 +45,7 @@ function OnboardingTeamPage() {
   const addFn = useServerFn(addRolePoolMember);
   const removeFn = useServerFn(removeRolePoolMember);
   const directorFn = useServerFn(setOnboardingDirector);
-  const pmFn = useServerFn(setProjectPrimaryPM);
+  const pmFn = useServerFn(setProjectRoleAssignee);
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: KEY, queryFn: () => load() });
 
@@ -60,7 +60,7 @@ function OnboardingTeamPage() {
   const remove = useMutation({ mutationFn: (v: { roleCode: string; userId: string }) => removeFn({ data: v }), onSuccess: () => done(), onError });
   const director = useMutation({ mutationFn: (userId: string | null) => directorFn({ data: { userId } }), onSuccess: () => done(), onError });
   const pm = useMutation({
-    mutationFn: (v: { projectId: string; userId: string | null; reassignPending: boolean }) => pmFn({ data: v }),
+    mutationFn: (v: { projectId: string; userId: string | null; reassignPending: boolean }) => pmFn({ data: { ...v, roleCode: "onboarding_project_manager" } }),
     onSuccess: (r) => done(r.moved ? `Project manager changed. ${r.moved} pending Task(s) moved.` : "Project manager changed."),
     onError,
   });
@@ -83,8 +83,9 @@ function OnboardingTeamPage() {
         <p className="eyebrow">Manage Onboarding</p>
         <h1 className="text-2xl font-semibold">Onboarding team</h1>
         <p className="text-sm text-muted-foreground">
-          Roles decide where Tasks go by default. The Onboarding Director can still take or reassign any
-          Onboarding Task. Property Coordinators are managed by Operations.
+          These lists are who is available for each role. Who actually gets a home's Tasks is set on
+          that home's Project Team. The Onboarding Director can still take or reassign any Onboarding
+          Task. Property Coordinators are managed by Operations.
         </p>
       </div>
 
@@ -123,7 +124,7 @@ function OnboardingTeamPage() {
           description={
             pool.code === "onboarding_project_manager"
               ? "Everyone who can be a home's Primary Project Manager."
-              : "Team members who take this role's Tasks."
+              : "Team members available for this role on a home's Project Team."
           }
           members={pool.members}
           people={data.people}
