@@ -1,17 +1,16 @@
 /**
- * Day 30 / 60 / 90 checkpoints for the 90-day Active Owner program.
+ * Hour checkpoints for the Active Owner program (25 / 50 / 75 / 100 hours),
+ * spaced evenly across the closing-date-to-December-31 window.
  *
- * Pure, browser-safe pacing arithmetic on top of the existing benchmark curve.
- * Nothing here estimates or suggests an amount of time, and nothing here makes
- * any statement about tax treatment — a checkpoint only compares the hours the
- * homeowner already reported against the program's own pace benchmark.
+ * Pure, browser-safe pacing arithmetic. Nothing here estimates or suggests an
+ * amount of time for any activity and nothing here makes any statement about
+ * tax treatment — a checkpoint only compares the hours already logged.
  */
 
-import { benchmarkHours, hoursFromMinutes, PROGRAM_TOTAL_DAYS } from "./owner-participation";
+import { benchmarkHours, hoursFromMinutes, OWNER_GOAL_HOURS } from "./owner-participation";
 
-/** The three checkpoints staff and homeowners both watch. */
-export const MILESTONE_DAYS = [30, 60, 90] as const;
-export type MilestoneDay = (typeof MILESTONE_DAYS)[number];
+/** Share of the goal each checkpoint represents. */
+export const MILESTONE_FRACTIONS = [0.25, 0.5, 0.75, 1] as const;
 
 /** How close to a checkpoint counts as "approaching" and opens the window. */
 export const MILESTONE_WINDOW_DAYS = 7;
@@ -21,16 +20,14 @@ export const MILESTONE_GRACE_DAYS = 3;
 export type MilestoneState = "upcoming" | "approaching" | "met" | "behind";
 
 export type MilestoneCheckpoint = {
-  day: MilestoneDay;
-  /** The program pace benchmark at that day, in hours. */
+  /** Program day the checkpoint falls on. */
+  day: number;
+  /** Hours this checkpoint represents (25 / 50 / 75 / 100). */
   expectedHours: number;
   state: MilestoneState;
-  /** Short chip text: "On pace", "Behind pace", "In 5 days", "Day 60". */
   label: string;
-  /** Hours still short of the benchmark, 0 when on pace. */
   shortfallHours: number;
   daysAway: number;
-  /** True while this checkpoint is the one worth a touchpoint today. */
   inWindow: boolean;
 };
 
@@ -44,25 +41,34 @@ function round(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-/** Whether today falls inside a checkpoint's touchpoint window. */
-export function milestoneWindow(day: number): MilestoneDay | null {
-  for (const m of MILESTONE_DAYS) {
+function checkpointDays(totalDays: number) {
+  return MILESTONE_FRACTIONS.map((f) => Math.max(1, Math.round(totalDays * f)));
+}
+
+/** The checkpoint day whose touchpoint window contains today, if any. */
+export function milestoneWindow(day: number, totalDays: number): number | null {
+  if (totalDays <= 0) return null;
+  for (const m of checkpointDays(totalDays)) {
     if (day >= m - MILESTONE_WINDOW_DAYS && day <= m + MILESTONE_GRACE_DAYS) return m;
   }
   return null;
 }
 
-/** The three checkpoints as they stand today. */
+/** The four hour checkpoints as they stand today. */
 export function milestoneCheckpoints(input: {
   day: number;
+  totalDays: number;
   reportedHours: number;
   goalMet?: boolean;
 }): MilestoneCheckpoint[] {
-  const day = Math.max(0, Math.min(PROGRAM_TOTAL_DAYS, Math.round(input.day)));
-  const open = milestoneWindow(day);
+  const totalDays = Math.max(0, input.totalDays);
+  const day = Math.max(0, Math.min(totalDays, Math.round(input.day)));
+  const open = milestoneWindow(day, totalDays);
+  const days = checkpointDays(totalDays);
 
-  return MILESTONE_DAYS.map((m) => {
-    const expectedHours = Math.round(benchmarkHours(m));
+  return MILESTONE_FRACTIONS.map((f, i) => {
+    const m = days[i]!;
+    const expectedHours = Math.round(OWNER_GOAL_HOURS * f);
     const daysAway = m - day;
     const reached = input.goalMet === true || input.reportedHours >= expectedHours;
 
@@ -74,14 +80,14 @@ export function milestoneCheckpoints(input: {
 
     const label =
       state === "met"
-        ? "On pace"
+        ? "Reached"
         : state === "behind"
           ? "Behind pace"
           : state === "approaching"
             ? daysAway <= 0
               ? "Today"
               : `In ${daysAway} day${daysAway === 1 ? "" : "s"}`
-            : `Day ${m}`;
+            : `${expectedHours} hrs`;
 
     return {
       day: m,
@@ -93,6 +99,11 @@ export function milestoneCheckpoints(input: {
       inWindow: open === m,
     };
   });
+}
+
+/** Even-pace hours expected by `day` of a `totalDays` window. */
+export function expectedHoursOn(day: number, totalDays: number) {
+  return benchmarkHours(day, totalDays);
 }
 
 /** One-word pacing health for a program row or portal header. */
