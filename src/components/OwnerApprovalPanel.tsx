@@ -44,12 +44,40 @@ function money(amount: number | null, currency: string) {
   }
 }
 
-export function OwnerApprovalPanel({ readOnly = false }: { readOnly?: boolean }) {
+export function OwnerApprovalPanel({
+  readOnly = false,
+  embedded = false,
+  hasOtherItems = false,
+}: {
+  readOnly?: boolean;
+  /** Render as rows inside the unified "Needs your attention" section. */
+  embedded?: boolean;
+  /** When embedded, whether the section already shows other items (controls the single empty state). */
+  hasOtherItems?: boolean;
+}) {
   const { user } = useRouteContext({ from: "/_authenticated" });
-  return <AccountApprovals key={user.id} userId={user.id} readOnly={readOnly} />;
+  return (
+    <AccountApprovals
+      key={user.id}
+      userId={user.id}
+      readOnly={readOnly}
+      embedded={embedded}
+      hasOtherItems={hasOtherItems}
+    />
+  );
 }
 
-function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: boolean }) {
+function AccountApprovals({
+  userId,
+  readOnly,
+  embedded,
+  hasOtherItems,
+}: {
+  userId: string;
+  readOnly: boolean;
+  embedded: boolean;
+  hasOtherItems: boolean;
+}) {
   const qc = useQueryClient();
   const load = useServerFn(ownerApprovals);
   const decide = useServerFn(decideOwnerApproval);
@@ -99,23 +127,18 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
   const pending = all.filter((a) => a.status === "pending");
   const decided = all.filter((a) => a.status !== "pending");
 
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
-          Decisions for your approval
-        </CardTitle>
-        <CardDescription>
-          Each item shows what is being approved. Your name, the time and any note you add are
-          recorded with the decision.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {pending.length === 0 && (
+  const body = (
+    <>
+        {pending.length === 0 && !embedded && (
           <p className="text-sm text-muted-foreground">
             Nothing is waiting for your approval right now.
           </p>
+        )}
+        {pending.length === 0 && embedded && !hasOtherItems && (
+          <p className="text-sm text-muted-foreground">Nothing is waiting on you right now.</p>
+        )}
+        {embedded && pending.length > 0 && (
+          <h3 className="text-sm font-semibold">Approvals</h3>
         )}
 
         {pending.map((a) => {
@@ -281,7 +304,23 @@ function AccountApprovals({ userId, readOnly }: { userId: string; readOnly: bool
             </div>
           </div>
         )}
-      </CardContent>
+    </>
+  );
+
+  if (embedded) return <div className="space-y-3">{body}</div>;
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+          Decisions for your approval
+        </CardTitle>
+        <CardDescription>
+          Each item shows what is being approved. Your name, the time and any note you add are
+          recorded with the decision.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">{body}</CardContent>
     </Card>
   );
 }
