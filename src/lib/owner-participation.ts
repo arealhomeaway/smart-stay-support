@@ -165,28 +165,22 @@ export function formatDuration(minutes: number) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Cumulative pace benchmark for the whole program, independent of how many
- * homes are attached. 60 hours by day 35, 105 by day 90.
+ * Even pace toward the 100-hour goal across the closing-date-to-year-end
+ * window. `totalDays` is that window's length (see programLengthDays).
  */
-export function benchmarkHours(day: number) {
-  if (day <= 0) return 0;
-  const d = Math.min(day, PROGRAM_TOTAL_DAYS);
-  const raw =
-    d <= ONBOARDING_MILESTONE_DAY
-      ? ONBOARDING_MILESTONE_HOURS * (d / ONBOARDING_MILESTONE_DAY)
-      : ONBOARDING_MILESTONE_HOURS + 45 * ((d - ONBOARDING_MILESTONE_DAY) / 55);
-  return Math.min(OPERATING_TARGET_HOURS, Math.round(raw * 100) / 100);
+export function benchmarkHours(day: number, totalDays: number) {
+  if (day <= 0 || totalDays <= 0) return 0;
+  const d = Math.min(day, totalDays);
+  return Math.round(OWNER_GOAL_HOURS * (d / totalDays) * 100) / 100;
 }
 
-export const BENCHMARK_MILESTONES = [7, 14, 21, 28, 35, 45, 60, 75, 85, 90].map((day) => ({
-  day,
-  hours: Math.round(benchmarkHours(day)),
-}));
-
-const FINAL_MILESTONE = { day: PROGRAM_TOTAL_DAYS, hours: OPERATING_TARGET_HOURS };
-
-export function nextMilestone(day: number): { day: number; hours: number } {
-  return BENCHMARK_MILESTONES.find((m) => m.day > day) ?? FINAL_MILESTONE;
+/** Next quarter-of-goal marker (25 / 50 / 75 / 100 hours) and the day it falls on. */
+export function nextMilestone(day: number, totalDays: number): { day: number; hours: number } {
+  const marks = [0.25, 0.5, 0.75, 1].map((f) => ({
+    day: Math.max(1, Math.round(totalDays * f)),
+    hours: Math.round(OWNER_GOAL_HOURS * f),
+  }));
+  return marks.find((m) => m.day > day) ?? marks[marks.length - 1]!;
 }
 
 /* ------------------------------------------------------------------ */
