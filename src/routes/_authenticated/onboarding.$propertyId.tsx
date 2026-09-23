@@ -249,6 +249,7 @@ function PropertyWorkspace() {
   // otherwise a reassignment in the scope panel would never show up here.
   const pmId = projectRow?.project_manager ?? current.onboarding_owner;
   const pm = data.people.find((p) => p.id === pmId);
+  const utilityManager = data.people.find((p) => p.id === projectRow?.utility_manager);
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
   const canEdit = !readOnly && can("handoff_request");
   const canExecuteProject =
