@@ -2,10 +2,12 @@ import type { TaskView } from "./onboarding-workflow";
 import type { SearchSchemaInput } from "@tanstack/react-router";
 
 export const PROPERTY_QUEUE_FILTER_LABELS = {
-  all: "All work",
   attention: "Needs attention",
-  mine: "My assigned",
+  mine: "My Tasks",
+  ready: "Ready",
   waiting: "Waiting",
+  completed: "Completed",
+  all: "All",
 } as const;
 export type PropertyQueueFilter = keyof typeof PROPERTY_QUEUE_FILTER_LABELS;
 
@@ -25,8 +27,10 @@ export function matchesPropertyQueueFilter(
   filter: PropertyQueueFilter,
   viewerId: string | null,
 ) {
-  if (filter === "mine") return view.task.assigned_to === viewerId;
-  if (filter === "waiting") return isWaitingTask(view);
+  if (filter === "mine") return !isFinished(view) && view.task.assigned_to === viewerId;
+  if (filter === "completed") return isFinished(view);
+  if (filter === "ready") return !isFinished(view) && view.status === "ready";
+  if (filter === "waiting") return !isFinished(view) && isWaitingTask(view);
   if (filter === "attention") {
     return (
       !isFinished(view) &&
@@ -97,8 +101,8 @@ export function workspaceSearchFromLens(lens: string, hasHandoffGate: boolean) {
   return { tab: "work", workFilter };
 }
 
-/** Four tabs: Work & Scope, Property & Financial, Handoff, Files & History. */
-export const WORKSPACE_TABS = ["work", "property", "handoff", "files"] as const;
+/** Five tabs: Overview, Tasks ("work"), Property Details, Files & History, Handoff. */
+export const WORKSPACE_TABS = ["overview", "work", "property", "files", "handoff"] as const;
 
 export function parseWorkspaceSearch(search: {
   tab?: unknown;
@@ -107,7 +111,7 @@ export function parseWorkspaceSearch(search: {
 }) {
   // Older links used nine tabs; send each to the tab that now holds it.
   const aliases: Record<string, string> = {
-    overview: "work",
+    tasks: "work",
     workflow: "work",
     timeline: "work",
     calendar: "work",
@@ -119,9 +123,9 @@ export function parseWorkspaceSearch(search: {
     activity: "files",
     history: "files",
   };
-  const candidate = typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "work";
+  const candidate = typeof search.tab === "string" ? (aliases[search.tab] ?? search.tab) : "overview";
   return {
-    tab: (WORKSPACE_TABS as readonly string[]).includes(candidate) ? candidate : "work",
+    tab: (WORKSPACE_TABS as readonly string[]).includes(candidate) ? candidate : "overview",
     workFilter:
       typeof search.workFilter === "string" && Object.hasOwn(WORK_FILTER_LABELS, search.workFilter)
         ? (search.workFilter as WorkFilter)

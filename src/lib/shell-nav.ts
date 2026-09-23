@@ -43,7 +43,6 @@ export const DEPARTMENTS: Department[] = [
       { label: "Team", to: "/onboarding/team" },
       { label: "Workflow templates", to: "/onboarding/templates", capability: "onboarding_templates" },
       { label: "Utilities & Accounts", to: "/onboarding/utilities" },
-      { label: "Transitions", to: "/onboarding/transitions" },
     ],
   },
   {
@@ -80,7 +79,8 @@ const SUBPAGE_LABELS: Record<string, string> = {
 };
 
 const ONBOARDING_TABS: Record<string, string> = {
-  property: "Property & Financial",
+  work: "Tasks",
+  property: "Property Details",
   handoff: "Handoff",
   files: "Files & History",
 };
