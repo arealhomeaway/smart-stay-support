@@ -88,6 +88,7 @@ import {
 } from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
 import { WorkstreamBoard } from "@/components/onboarding/WorkstreamBoard";
+import { trackForTask } from "@/lib/onboarding-workstreams";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
@@ -157,6 +158,12 @@ function PropertyWorkspace() {
   const { can, readOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  const [lane, setLane] = useState<"all" | "mine" | "access" | "active_owner">("all");
+  const inLane = (t: WorkflowTask, key: typeof lane) =>
+    key === "all" ||
+    (key === "mine" && t.assigned_to === userId) ||
+    (key === "access" && trackForTask(t) === "access_utilities") ||
+    (key === "active_owner" && (t.tags ?? []).includes("active_owner"));
   // Where the Director hub was left — filters, search and lens intact — so
   // Back restores that exact view rather than a bare "/onboarding".
   const { origin } = useRecordOrigin("onboarding");
@@ -690,6 +697,30 @@ function PropertyWorkspace() {
               </ul>
             </section>
           )}
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Task lanes">
+            {(
+              [
+                ["all", "All tasks"],
+                ["mine", "My assigned"],
+                ["access", "Utilities & access"],
+                ["active_owner", "Active owner"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setLane(key)}
+                aria-pressed={lane === key}
+                className={
+                  lane === key
+                    ? "rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary"
+                    : "rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+                }
+              >
+                {label} ({tasks.filter((t) => inLane(t, key)).length})
+              </button>
+            ))}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="work-filter">Show work</Label>
             <select
@@ -713,6 +744,7 @@ function PropertyWorkspace() {
           <WorkflowTable
             tasks={tasks}
             visibleTaskIds={tasks
+              .filter((task) => inLane(task, lane))
               .filter((task) =>
                 matchesWorkFilter(
                   viewTask(task, tasks, release),
