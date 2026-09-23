@@ -264,3 +264,19 @@ export function storagePathFor(
 ) {
   return `${entityType}/${entityId}/${uploadKey}-${safeFilename(filename)}`;
 }
+
+/** Owner-facing categories, mapped onto the internal property library shelves. */
+export const OWNER_UPLOAD_CATEGORIES = [
+  { value: "property_document", label: "Property Document", internal: "ownership" },
+  { value: "photo", label: "Photo", internal: "media" },
+  { value: "receipt", label: "Receipt / Purchase", internal: "other" },
+  { value: "research", label: "Research / Reference", internal: "reference" },
+  { value: "participation", label: "Active Owner Participation", internal: "onboarding_evidence" },
+  { value: "other", label: "Other", internal: "other" },
+] as const satisfies ReadonlyArray<{ value: string; label: string; internal: DocumentCategory }>;
+
+export type OwnerUploadCategory = (typeof OWNER_UPLOAD_CATEGORIES)[number]["value"];
+
+export function ownerCategoryLabel(value: string | null | undefined) {
+  return OWNER_UPLOAD_CATEGORIES.find((c) => c.value === value)?.label ?? null;
+}
