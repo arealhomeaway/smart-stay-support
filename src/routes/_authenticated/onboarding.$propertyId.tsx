@@ -63,7 +63,6 @@ import {
   orderPropertyWorkQueue,
   validateWorkspaceSearch,
 } from "@/lib/onboarding-work-views";
-import { assigneeLabel, viewTask } from "@/lib/onboarding-workflow";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
@@ -400,12 +399,11 @@ function PropertyWorkspace() {
       : overdue > 0
         ? `At risk — ${overdue} overdue, ${handoffLeft} handoff Tasks left`
         : `On track — ${handoffLeft} handoff Tasks left`;
-  const openTask = (id: string) => setOpenTaskId(id);
   const taskRow = (v: (typeof views)[number]) => (
     <li key={v.task.id}>
       <button
         type="button"
-        onClick={() => openTask(v.task.id)}
+        onClick={() => setOpenTaskId(v.task.id)}
         className="flex w-full flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-muted/50"
       >
         <span className="min-w-0 flex-1 truncate font-medium">{v.task.title}</span>
