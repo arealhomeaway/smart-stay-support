@@ -383,7 +383,7 @@ export async function reportPdf(report: OwnerReport) {
   });
   page.drawText(
     report.kind === "final"
-      ? "Hours & Participation Report — End of 90-day period"
+      ? "Hours & Participation Report — Year-end"
       : "Hours & Participation Report — Progress",
     { x: M, y: H - 66, size: 11, font, color: rgb(0.9, 0.96, 0.96) },
   );

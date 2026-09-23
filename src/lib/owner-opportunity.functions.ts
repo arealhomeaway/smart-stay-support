@@ -37,6 +37,9 @@ export const offerOwnerOpportunity = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
+    const { vagueOpportunityReason } = await import("./owner-opportunity");
+    const vague = vagueOpportunityReason(data.title, data.instructions);
+    if (vague) throw new Error(vague);
     const { offerToOwner } = await import("./owner-opportunity.server");
     return offerToOwner(context.supabase, context.userId, {
       ...data,

@@ -449,7 +449,7 @@ function OwnerHubBody({
               reported toward {OWNER_GOAL_LABEL.toLowerCase()}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Day {snapshot.day} of 90 · {snapshot.daysLeft} days left
+              Program period ends {snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
             </p>
           </div>
         </div>

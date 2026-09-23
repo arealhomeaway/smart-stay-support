@@ -332,6 +332,11 @@ export const saveOwnerOpportunity = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ context, data }) => {
+    if (data.send) {
+      const { vagueOpportunityReason } = await import("./owner-opportunity");
+      const vague = vagueOpportunityReason(data.content.title, [data.content.what, data.content.how].join("\n"));
+      if (vague) throw new Error(vague);
+    }
     const { data: id, error } = await context.supabase.rpc("save_owner_opportunity", {
       _id: data.id as string,
       _property_id: data.propertyId,
