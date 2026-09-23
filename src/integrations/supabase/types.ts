@@ -2644,6 +2644,45 @@ export type Database = {
           },
         ]
       }
+      functional_role_members: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          role_code: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          role_code: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          role_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "functional_role_members_role_code_fkey"
+            columns: ["role_code"]
+            isOneToOne: false
+            referencedRelation: "functional_roles"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "functional_role_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       functional_roles: {
         Row: {
           active: boolean
@@ -9926,6 +9965,7 @@ export type Database = {
       }
       is_director: { Args: { _user_id: string }; Returns: boolean }
       is_internal_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_onboarding_director: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }

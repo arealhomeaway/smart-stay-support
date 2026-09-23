@@ -146,6 +146,16 @@ function PropertyWorkspace() {
   const qc = useQueryClient();
   const { can, readOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
+  const directorQuery = useQuery({
+    queryKey: ["is-onboarding-director", userId],
+    enabled: Boolean(userId),
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase.rpc("is_onboarding_director", { _user_id: userId! });
+      return data === true;
+    },
+  });
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
     search.workFilter === "blocked"
@@ -248,6 +258,7 @@ function PropertyWorkspace() {
   const pm = data.people.find((p) => p.id === pmId);
   const utilityManager = data.people.find((p) => p.id === projectRow?.utility_manager);
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
+  const isOnboardingDirector = directorQuery.data === true;
   const canEdit = !readOnly && can("handoff_request");
   const canExecuteProject =
     !readOnly && (data.reviewCapabilities.is_admin || projectRow?.project_manager === userId);
@@ -793,7 +804,7 @@ function PropertyWorkspace() {
         canRecordException={can("handoff_review")}
         canManageTask={canManageOnboardingProperty(
           userId,
-          can("handoff_review"),
+          can("handoff_review") || isOnboardingDirector,
           openTask?.property_id,
           data.projects,
         )}

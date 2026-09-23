@@ -9,6 +9,35 @@
  */
 
 import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { useRole } from "@/hooks/useRole";
+import { takeOnboardingTask } from "@/lib/onboarding-team.functions";
+
+/** Assign to me — the Director (or leadership) takes any Onboarding Task. */
+function TakeTaskButton({ taskId, assignedTo }: { taskId: string; assignedTo: string | null }) {
+  const { userId } = useRole();
+  const take = useServerFn(takeOnboardingTask);
+  const router = useRouter();
+  const qc = useQueryClient();
+  const m = useMutation({
+    mutationFn: () => take({ data: { taskId } }),
+    onSuccess: () => {
+      toast.success("This Task is now yours.");
+      void qc.invalidateQueries();
+      void router.invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || "The Task could not be assigned to you."),
+  });
+  if (!userId || assignedTo === userId) return null;
+  return (
+    <Button variant="secondary" disabled={m.isPending} onClick={() => m.mutate()}>
+      Assign to me
+    </Button>
+  );
+}
 import { TaskWorkspace } from "@/components/ui/workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -405,6 +434,9 @@ export function TaskDrawer({
                 Reopen with reason
               </Button>
             </div>
+          )}
+          {canManageTask && !disabled && task.status !== "complete" && (
+            <TakeTaskButton taskId={task.id} assignedTo={task.assigned_to} />
           )}
           <Button variant="ghost" onClick={onClose}>
             Close
