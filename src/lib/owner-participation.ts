@@ -1,19 +1,18 @@
 /**
- * Browser-safe model for the 90-Day Owner Participation Program.
+ * Browser-safe model for the Active Owner Participation Program.
  *
- * One homeowner, one program, one 90-day clock, one combined hour commitment —
- * however many homes are attached to it. Nothing in this module ever produces,
- * estimates or suggests an amount of participation time: benchmarks describe
- * pace only, and every hour in the system was typed in by the homeowner.
+ * One homeowner, one program, one combined hour goal (100+ logged hours),
+ * running from each property's closing date to December 31 of that year.
+ * Nothing in this module ever produces, estimates or suggests an amount of
+ * participation time: every hour was logged by the homeowner and counts
+ * as soon as it is logged.
  */
 
-export const PROGRAM_TOTAL_DAYS = 90;
-/** Locked participation target: exactly 100 documented hours qualifies. */
+/** Participation goal: 100+ logged hours. */
 export const OWNER_GOAL_HOURS = 100;
-/** ARHA's internal operating target used for pacing and the progress ring. */
-export const OPERATING_TARGET_HOURS = 105;
+/** Kept for stored-row compatibility; pacing now targets the 100-hour goal. */
+export const OPERATING_TARGET_HOURS = OWNER_GOAL_HOURS;
 export const ONBOARDING_MILESTONE_HOURS = 60;
-export const ONBOARDING_MILESTONE_DAY = 35;
 
 export const OWNER_GOAL_LABEL = "At least 100 hours";
 
@@ -112,18 +111,36 @@ export const ACTIVITY_CATEGORIES = [
 /* Timeline                                                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Program window: the property's closing date through December 31 of the
+ * same calendar year. There is no fixed day count.
+ */
+export function programWindowEnd(startedOn: string | null | undefined) {
+  if (!startedOn || !/^\d{4}-\d{2}-\d{2}/.test(startedOn)) return null;
+  return `${startedOn.slice(0, 4)}-12-31`;
+}
+
+/** Inclusive length of the closing-date-to-year-end window, in days. */
+export function programLengthDays(startedOn: string | null | undefined) {
+  const end = programWindowEnd(startedOn);
+  if (!startedOn || !end) return 0;
+  const start = Date.parse(`${startedOn.slice(0, 10)}T00:00:00Z`);
+  const last = Date.parse(`${end}T00:00:00Z`);
+  return Math.max(1, Math.round((last - start) / 86_400_000) + 1);
+}
+
 export function projectDay(startedOn: string | null | undefined) {
   if (!startedOn) return 0;
   const start = new Date(`${startedOn}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.floor((today.getTime() - start.getTime()) / 86_400_000) + 1;
-  return Math.max(0, Math.min(PROGRAM_TOTAL_DAYS, days));
+  return Math.max(0, Math.min(programLengthDays(startedOn), days));
 }
 
 export function daysRemaining(startedOn: string | null | undefined) {
-  if (!startedOn) return PROGRAM_TOTAL_DAYS;
-  return Math.max(0, PROGRAM_TOTAL_DAYS - projectDay(startedOn));
+  if (!startedOn) return 0;
+  return Math.max(0, programLengthDays(startedOn) - projectDay(startedOn));
 }
 
 export function hoursFromMinutes(minutes: number) {
