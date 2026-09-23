@@ -91,5 +91,6 @@ describe("onboarding milestone sync", () => {
     expect(home.patch["actual_access_on"]).toBe("2026-09-22");
     expect(project.patch["planned_closing_on"]).toBe("2026-09-24");
     expect(project.patch["possession_on"]).toBe("2026-09-22");
+    releaseStubs();
   });
 });
