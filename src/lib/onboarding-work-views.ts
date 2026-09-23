@@ -1,6 +1,64 @@
 import type { TaskView } from "./onboarding-workflow";
 import type { SearchSchemaInput } from "@tanstack/react-router";
 
+export const PROPERTY_QUEUE_FILTER_LABELS = {
+  all: "All work",
+  attention: "Needs attention",
+  mine: "My assigned",
+  waiting: "Waiting",
+} as const;
+export type PropertyQueueFilter = keyof typeof PROPERTY_QUEUE_FILTER_LABELS;
+
+function isFinished(view: TaskView) {
+  return view.status === "complete" || view.status === "carryover";
+}
+
+export function isWaitingTask(view: TaskView) {
+  return (
+    ["blocked", "not_ready", "needs_review", "future"].includes(view.status) ||
+    view.task.owner_approval_status === "awaiting_owner"
+  );
+}
+
+export function matchesPropertyQueueFilter(
+  view: TaskView,
+  filter: PropertyQueueFilter,
+  viewerId: string | null,
+) {
+  if (filter === "mine") return view.task.assigned_to === viewerId;
+  if (filter === "waiting") return isWaitingTask(view);
+  if (filter === "attention") {
+    return (
+      !isFinished(view) &&
+      (view.overdue ||
+        view.status === "correction" ||
+        view.status === "in_progress" ||
+        Boolean((view.task.blocker ?? "").trim()))
+    );
+  }
+  return true;
+}
+
+/** One stable queue: workable steps first, waiting work next, finished history last. */
+export function orderPropertyWorkQueue(views: TaskView[]) {
+  const rank = (view: TaskView) => {
+    if (isFinished(view)) return 3;
+    if (isWaitingTask(view)) return 2;
+    return 1;
+  };
+
+  return [...views].sort((a, b) => {
+    const rankDifference = rank(a) - rank(b);
+    if (rankDifference) return rankDifference;
+    if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+    const aDue = a.task.due_on ?? "";
+    const bDue = b.task.due_on ?? "";
+    if (aDue && bDue && aDue !== bDue) return aDue.localeCompare(bDue);
+    if (aDue !== bDue) return aDue ? -1 : 1;
+    return a.task.sort_order - b.task.sort_order;
+  });
+}
+
 export const WORK_FILTER_LABELS = {
   all: "All work",
   attention: "Needs attention",
