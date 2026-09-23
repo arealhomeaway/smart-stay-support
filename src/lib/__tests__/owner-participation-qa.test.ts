@@ -1,13 +1,12 @@
 /**
- * Active Owner QA: day count, 90-day window, pace, milestones and goal state.
+ * Active Owner QA: closing-to-year-end window, pace, milestones and goal state.
  */
 import { describe, expect, it } from "bun:test";
 import {
-  OPERATING_TARGET_HOURS,
   OWNER_GOAL_HOURS,
-  PROGRAM_TOTAL_DAYS,
+  programLengthDays,
+  programWindowEnd,
   benchmarkHours,
-  daysRemaining,
   nextMilestone,
   progressSnapshot,
   projectDay,
@@ -21,31 +20,25 @@ function daysAgo(n: number) {
   return d.toISOString().slice(0, 10);
 }
 
-describe("program day and window", () => {
-  it("counts the start day as day 1 and caps at 90", () => {
-    expect(projectDay(daysAgo(0))).toBe(1);
-    expect(projectDay(daysAgo(34))).toBe(35);
-    expect(projectDay(daysAgo(200))).toBe(PROGRAM_TOTAL_DAYS);
+describe("program window: closing date through December 31", () => {
+  it("ends on December 31 of the closing year", () => {
+    expect(programWindowEnd("2026-09-22")).toBe("2026-12-31");
+    expect(programLengthDays("2026-09-22")).toBe(101);
+    expect(programLengthDays("2026-12-31")).toBe(1);
     expect(projectDay(null)).toBe(0);
-  });
-
-  it("reports the days left in the 90-day window", () => {
-    expect(daysRemaining(daysAgo(0))).toBe(89);
-    expect(daysRemaining(daysAgo(89))).toBe(0);
   });
 });
 
 describe("benchmark pace", () => {
-  it("hits 60 hours by day 35 and the operating target by day 90", () => {
-    expect(benchmarkHours(35)).toBe(60);
-    expect(benchmarkHours(PROGRAM_TOTAL_DAYS)).toBe(OPERATING_TARGET_HOURS);
-    expect(benchmarkHours(0)).toBe(0);
+  it("paces evenly to the 100-hour goal", () => {
+    expect(benchmarkHours(50, 100)).toBe(50);
+    expect(benchmarkHours(100, 100)).toBe(OWNER_GOAL_HOURS);
+    expect(benchmarkHours(0, 100)).toBe(0);
   });
 
-  it("names the next milestone ahead of the current day", () => {
-    expect(nextMilestone(1).day).toBe(7);
-    expect(nextMilestone(35).day).toBe(45);
-    expect(nextMilestone(90)).toEqual({ day: 90, hours: OPERATING_TARGET_HOURS });
+  it("names the next hour milestone", () => {
+    expect(nextMilestone(1, 100)).toEqual({ day: 25, hours: 25 });
+    expect(nextMilestone(100, 100)).toEqual({ day: 100, hours: 100 });
   });
 });
 
