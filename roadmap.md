@@ -699,5 +699,5 @@ Batch B (work surface)
 - [x] Templates page: close the expanded "Edit steps" list; allow the director to delete a template outright (not just archive)
 - [x] Property dates (closing, possession/access, handoff) must read the same on every page and section — one source of truth
 
-- [ ] Fix OwnerRez property photos for 1399 Foxtail and 1464 Buckland across onboarding/property views
-- [ ] Ensure onboarding task due dates autopopulate and remain consistent across all views
+- [x] Fix OwnerRez property photos for 1399 Foxtail and 1464 Buckland across onboarding/property views
+- [x] Ensure onboarding task due dates autopopulate and remain consistent across all views
