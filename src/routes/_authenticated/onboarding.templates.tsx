@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateEditor } from "@/components/onboarding/TemplateEditor";
+import { OwnerEmailCopyCard } from "@/components/onboarding/OwnerEmailCopyCard";
 import { useRole } from "@/hooks/useRole";
 import {
   createOnboardingTemplateFn,
@@ -265,6 +266,8 @@ function TemplatesPage() {
           <TemplateEditor templateId={selected} />
         </div>
       ) : null}
+
+      <OwnerEmailCopyCard canEdit={allowed} />
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent>
