@@ -9,10 +9,10 @@
  *
  * The control sequence, which nothing may shortcut:
  *   Assigned PM completes the work
- *     -> Kati Hand approves onboarding readiness (step 20)
- *     -> Micah Sinor approves operational readiness (step 21)
+ *     -> Onboarding Director approves onboarding readiness (step 20)
+ *     -> Operations Director approves operational readiness (step 21)
  *     -> Operations formally accepts the property (step 22)
- *     -> James Almario confirms Live (step 23).
+ *     -> Operations Supervisor confirms Live (step 23).
  *
  * Data only. Nothing here reads or writes.
  */
@@ -45,7 +45,7 @@ export const ONBOARDING_ROLES: OnboardingRole[] = [
   {
     code: "director_onboarding",
     title: "Director of Onboarding",
-    holder: "Kati Hand",
+    holder: "Current Onboarding Director",
     responsibility:
       "Department standards, staffing, portfolio oversight, owner relationship before handoff, exceptions, and final onboarding approval",
   },
@@ -90,13 +90,13 @@ export const ONBOARDING_ROLES: OnboardingRole[] = [
   {
     code: "director_operations",
     title: "Director of Operations",
-    holder: "Micah Sinor",
+    holder: "Current Operations Director",
     responsibility: "Operational-readiness review and approval",
   },
   {
     code: "ops_supervisor",
     title: "Operations Supervisor",
-    holder: "James Almario",
+    holder: "Current Operations Supervisor",
     responsibility: "Operations acceptance coordination and final Live confirmation",
   },
   {
@@ -214,7 +214,7 @@ export const MASTER_STEPS: MasterStep[] = [
     title: "Receive the property from Business Development or DFY",
     stage: "intake_identity",
     roles: ["director_onboarding", "assigned_pm"],
-    who: "Kati and assigned PM",
+    who: "Onboarding Director and assigned PM",
     blocksHandoff: true,
   },
   {
@@ -299,7 +299,7 @@ export const MASTER_STEPS: MasterStep[] = [
     title: "Obtain owner decisions and approvals",
     stage: "design_approvals_procurement",
     roles: ["assigned_pm", "director_onboarding", "owner"],
-    who: "Assigned PM; Kati on sensitive items",
+    who: "Assigned PM; Onboarding Director on sensitive items",
     blocksHandoff: true,
     requiresOwnerApproval: true,
   },
