@@ -143,7 +143,9 @@ function PropertyWorkspace() {
       return data === true;
     },
   });
-  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  const [openTaskId, setOpenTaskId] = useState<string | null>(
+    () => ("task" in search && typeof search.task === "string" ? search.task : null),
+  );
   const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
     search.workFilter === "blocked" ? "waiting" : "open",
   );

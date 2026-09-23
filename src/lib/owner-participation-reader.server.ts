@@ -94,6 +94,7 @@ const alertSchema = z.object({
   created_at: z.string(),
   title: z.string(),
   body: z.string(),
+  action_path: text.optional(),
 });
 const schemas = {
   reviews: reviewSchema,
