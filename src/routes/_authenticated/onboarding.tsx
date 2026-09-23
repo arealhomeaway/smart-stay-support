@@ -54,6 +54,9 @@ function OnboardingLayout() {
         {can("onboarding_templates") && (
           <SubLink to="/onboarding/templates">Templates</SubLink>
         )}
+        {data && data.workspaceMode !== "assigned" && (
+          <SubLink to="/onboarding/team">Team</SubLink>
+        )}
       </nav>
       <Outlet />
     </div>
