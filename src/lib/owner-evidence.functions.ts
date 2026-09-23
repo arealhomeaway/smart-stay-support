@@ -24,7 +24,7 @@ export const beginParticipationEvidenceFn = createServerFn({ method: "POST" })
 
 export const participationEvidenceUrlFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { entryId: string; download?: boolean }) => input)
+  .inputValidator((input: { entryId: string; download?: boolean; index?: number }) => input)
   .handler(async ({ data, context }) => {
     const m = await import("@/lib/owner-evidence.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -33,5 +33,6 @@ export const participationEvidenceUrlFn = createServerFn({ method: "POST" })
       supabaseAdmin,
       data.entryId,
       data.download ?? false,
+      Math.max(0, Math.trunc(data.index ?? 0)),
     );
   });
