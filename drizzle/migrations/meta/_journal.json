@@ -267,6 +267,13 @@
       "when": 1790192014858,
       "tag": "0037_owner_property_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790192841409,
+      "tag": "0038_owner_opportunity_read_fix",
+      "breakpoints": true
     }
   ]
 }

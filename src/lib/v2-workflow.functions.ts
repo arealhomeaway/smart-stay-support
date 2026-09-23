@@ -263,7 +263,7 @@ export const listMyOpportunities = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("work_items")
-      .select("id, title, owner_content, status, due_on, property_id, program_id, completed_at, properties(name)")
+      .select("id, title, owner_content, status, due_on, property_id, program_id, completed_at")
       .eq("kind", "opportunity")
       .neq("status", "archived")
       .order("due_on", { ascending: true, nullsFirst: false });
@@ -271,7 +271,7 @@ export const listMyOpportunities = createServerFn({ method: "GET" })
     return (data ?? []).map((w) => ({
       ...w,
       owner_content: (w.owner_content ?? null) as OpportunityContent | null,
-      propertyName: (w.properties as { name: string } | null)?.name ?? "Your home",
+      propertyName: "Your home",
     }));
   });
 
