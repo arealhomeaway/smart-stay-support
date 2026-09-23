@@ -49,6 +49,7 @@ import { HomeownerCard } from "@/components/property/HomeownerCard";
 
 import { OperationsContextPanel } from "@/components/onboarding/OperationsContextPanel";
 import { ProjectScopePanel } from "@/components/onboarding/ProjectScopePanel";
+import { ProjectTeamPanel } from "@/components/onboarding/ProjectTeamPanel";
 import { independentReadinessForTasks } from "@/lib/onboarding-independent-readiness";
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
@@ -485,6 +486,9 @@ function PropertyWorkspace() {
             canEdit={canEdit}
             hints={{ planned_closing_on: current.planned_closing_on ?? null }}
           />
+
+          <ProjectTeamPanel propertyId={current.id} />
+
 
           <OnboardingDashboard
             propertyId={current.id}
