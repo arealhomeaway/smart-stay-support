@@ -15,6 +15,7 @@ type Alert = {
   body: string;
   read_at: string | null;
   created_at: string;
+  action_path?: string | null | undefined;
 };
 
 /**
@@ -97,6 +98,10 @@ export function OwnerNotificationBell() {
                     onClick={() => {
                       if (!alert.read_at) mark.mutate([alert.id]);
                       setOpen(false);
+                      if (alert.action_path?.startsWith("/owner")) {
+                        router.history.push(alert.action_path);
+                        return;
+                      }
                       void router.navigate({
                         to: "/owner",
                         search: {},

@@ -348,3 +348,212 @@ export const saveOwnerOpportunity = createServerFn({ method: "POST" })
     fail(error);
     return { id: id as string };
   });
+
+/* ------------------------------------ ARHA-provided owner collaboration */
+
+export const RESPONSE_TYPES = [
+  { code: "acknowledge", label: "Review / Acknowledge" },
+  { code: "feedback", label: "Written Feedback" },
+  { code: "documentation", label: "Upload / Documentation" },
+  { code: "decision", label: "Business Decision" },
+] as const;
+export type ResponseType = (typeof RESPONSE_TYPES)[number]["code"];
+
+const resourceInput = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("file"), document_id: z.string().uuid() }),
+  z.object({ kind: z.literal("link"), label: z.string().trim().min(1).max(120), url: z.string().trim().url().max(1000) }),
+]);
+export type ResourceInput = z.infer<typeof resourceInput>;
+
+export type OwnerResponse = { kind: string; decision: string | null; text: string | null; at: string };
+
+const COLLAB_COLUMNS =
+  "id, title, owner_content, status, linked_task_id, source, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id";
+
+type CollabRow = {
+  id: string;
+  title: string;
+  owner_content: unknown;
+  status: string;
+  linked_task_id: string | null;
+  source: string | null;
+  source_task_id: string | null;
+  response_types: string[];
+  sent_at: string | null;
+  viewed_at: string | null;
+  responded_at: string | null;
+  completed_at: string | null;
+  owner_response: unknown;
+  created_at: string;
+  program_id: string | null;
+  property_id: string | null;
+};
+
+async function withResources(sb: import("@supabase/supabase-js").SupabaseClient, rows: CollabRow[]) {
+  const ids = rows.map((r) => r.id);
+  const res = ids.length
+    ? await sb
+        .from("work_item_resources")
+        .select("id, work_item_id, kind, document_id, label, url, sort_order, documents(title, original_filename)")
+        .in("work_item_id", ids)
+        .is("removed_at", null)
+        .order("sort_order")
+    : { data: [], error: null };
+  fail(res.error);
+  type R = { id: string; work_item_id: string; kind: string; document_id: string | null; label: string | null; url: string | null; documents: { title: string | null; original_filename: string | null } | null };
+  const list = (res.data ?? []) as unknown as R[];
+  return rows.map((o) => ({
+    ...o,
+    owner_content: (o.owner_content ?? null) as OpportunityContent | null,
+    response_types: (o.response_types ?? []) as ResponseType[],
+    owner_response: (Array.isArray(o.owner_response) ? o.owner_response : []) as OwnerResponse[],
+    resources: list
+      .filter((r) => r.work_item_id === o.id)
+      .map((r) => ({
+        id: r.id,
+        kind: r.kind as "file" | "link",
+        documentId: r.document_id,
+        label: r.kind === "file" ? (r.documents?.title ?? r.documents?.original_filename ?? "File") : (r.label ?? ""),
+        url: r.url,
+      })),
+  }));
+}
+
+/** Staff view: every Opportunity on one home plus its enrolment, files and Tasks. */
+export const readOwnerCollaboration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const sb = context.supabase;
+    const [opps, tasks, home, files] = await Promise.all([
+      sb.from("work_items").select(COLLAB_COLUMNS).eq("kind", "opportunity").eq("property_id", data.propertyId).neq("status", "archived").order("created_at", { ascending: false }),
+      sb.from("onboarding_tasks").select("id, title").eq("property_id", data.propertyId).is("archived_at", null).order("title"),
+      sb.from("properties").select("actual_closing_on, planned_closing_on").eq("id", data.propertyId).single(),
+      sb.from("documents").select("id, title, original_filename, work_item_id, uploaded_by, uploaded_at, created_at").eq("property_id", data.propertyId).is("deleted_at", null).is("archived_at", null).eq("upload_status", "stored").order("created_at", { ascending: false }).limit(200),
+    ]);
+    fail(opps.error);
+    fail(tasks.error);
+    fail(files.error);
+    const rows = await withResources(sb, (opps.data ?? []) as CollabRow[]);
+    // Older Opportunities pointed at the Task's mirror; resolve that to the real Task.
+    const mirrorIds = rows.map((r) => r.linked_task_id).filter((x): x is string => Boolean(x));
+    const mirrors = mirrorIds.length ? await sb.from("work_items").select("id, source_id").in("id", mirrorIds) : { data: [] };
+    const toTask = new Map((mirrors.data ?? []).map((m) => [m.id, m.source_id as string | null]));
+    return {
+      opportunities: rows.map((r) => ({ ...r, taskId: r.source_task_id ?? (r.linked_task_id ? toTask.get(r.linked_task_id) ?? null : null) })),
+      tasks: tasks.data ?? [],
+      files: (files.data ?? []).map((f) => ({ id: f.id, title: f.title ?? f.original_filename ?? "File", workItemId: f.work_item_id, uploadedAt: f.uploaded_at ?? f.created_at })),
+      actualClosingOn: home.data?.actual_closing_on ?? null,
+      plannedClosingOn: home.data?.planned_closing_on ?? null,
+    };
+  });
+
+export const saveArhaOpportunity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().nullable(),
+        propertyId: z.string().uuid(),
+        sourceTaskId: z.string().uuid().nullable(),
+        content: opportunitySchema.unwrap(),
+        responseTypes: z.array(z.enum(["acknowledge", "feedback", "documentation", "decision"])).min(1, "Choose at least one owner response type").max(4),
+        resources: z.array(resourceInput).max(20),
+        send: z.boolean(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    if (data.send) {
+      const { vagueOpportunityReason } = await import("./owner-opportunity");
+      const vague = vagueOpportunityReason(data.content.title, [data.content.what, data.content.how].join("\n"));
+      if (vague) throw new Error(vague);
+    }
+    const { data: id, error } = await context.supabase.rpc("save_arha_opportunity", {
+      _id: data.id as string,
+      _property_id: data.propertyId,
+      _source_task_id: data.sourceTaskId as string,
+      _title: data.content.title,
+      _content: { ...data.content, resources: [] },
+      _response_types: data.responseTypes,
+      _resources: data.resources,
+      _send: data.send,
+    });
+    fail(error);
+    return { id: id as string };
+  });
+
+/** Owner: Opportunities with resources and their own responses. */
+export const listMyCollaboration = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("work_items")
+      .select(COLLAB_COLUMNS + ", due_on")
+      .eq("kind", "opportunity")
+      .neq("status", "archived")
+      .neq("status", "draft")
+      .order("sent_at", { ascending: false, nullsFirst: false });
+    fail(error);
+    const rows = (data ?? []) as unknown as (CollabRow & { due_on: string | null })[];
+    const withRes = await withResources(context.supabase, rows);
+    return withRes.map((r, i) => ({ ...r, due_on: rows[i]!.due_on }));
+  });
+
+export const markOpportunityViewed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    fail((await context.supabase.rpc("mark_owner_opportunity_viewed", { _id: data.id })).error);
+    return { ok: true };
+  });
+
+export const respondToOpportunity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        kind: z.enum(["acknowledge", "feedback", "decision"]),
+        decision: z.enum(["authorize", "changes"]).nullable().default(null),
+        text: z.string().max(5000).default(""),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    fail(
+      (
+        await context.supabase.rpc("respond_owner_opportunity", {
+          _id: data.id,
+          _kind: data.kind,
+          _decision: data.decision as string,
+          _text: data.text,
+        })
+      ).error,
+    );
+    return { ok: true };
+  });
+
+/** Open a resource file. Readable resource row (RLS) is the permission. */
+export const opportunityResourceUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ resourceId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const row = await context.supabase
+      .from("work_item_resources")
+      .select("document_id, kind")
+      .eq("id", data.resourceId)
+      .is("removed_at", null)
+      .maybeSingle();
+    if (row.error || !row.data || row.data.kind !== "file" || !row.data.document_id) throw new Error("That resource is not available.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const doc = await supabaseAdmin
+      .from("documents")
+      .select("storage_path, deleted_at, upload_status")
+      .eq("id", row.data.document_id)
+      .maybeSingle();
+    if (!doc.data?.storage_path || doc.data.deleted_at || doc.data.upload_status !== "stored") throw new Error("That file is no longer on file.");
+    const signed = await supabaseAdmin.storage.from("resolve-attachments").createSignedUrl(doc.data.storage_path, 300);
+    if (signed.error) throw new Error("Resolve could not open that file.");
+    return { url: signed.data.signedUrl };
+  });
