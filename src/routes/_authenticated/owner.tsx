@@ -526,6 +526,7 @@ function OwnerHubBody({
       </div>
 
       <OwnerOpportunities
+        focusId={Route.useSearch().opportunity ?? null}
         homes={ownerHomes}
         selectedHomeId={selectedHomeId}
         readOnly={preview}
