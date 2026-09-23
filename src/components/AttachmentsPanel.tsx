@@ -33,6 +33,7 @@ import {
   type AttachmentEntity,
   DOCUMENT_CATEGORIES,
   documentCategoryLabel,
+  ownerCategoryLabel,
   formatBytes,
   MAX_FILE_BYTES,
   validateFile,
@@ -357,6 +358,19 @@ export function AttachmentsPanel({
                     {usDate(f.uploaded_at)}
                   </span>
                 )}
+                {ownerCategoryLabel((f as { owner_category?: string | null }).owner_category) ? (
+                  <Badge variant="outline">
+                    Owner upload · {ownerCategoryLabel((f as { owner_category?: string | null }).owner_category)}
+                  </Badge>
+                ) : null}
+                {(f as { work_items?: { title: string } | null }).work_items?.title ? (
+                  <Badge variant="outline">
+                    Opportunity: {(f as { work_items?: { title: string } | null }).work_items!.title}
+                  </Badge>
+                ) : null}
+                {f.note && f.upload_status === "stored" ? (
+                  <span className="w-full text-xs text-muted-foreground">Note: {f.note}</span>
+                ) : null}
                 {f.visibility === "owner_shared" && f.owner_recipient_id ? (
                   <Badge variant="outline">Shared with the homeowner</Badge>
                 ) : null}

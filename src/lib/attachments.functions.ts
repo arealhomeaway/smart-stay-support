@@ -99,3 +99,25 @@ export const listOwnerFileRecordsFn = createServerFn({ method: "POST" })
     const viewer = await m.loadViewer(context.supabase, context.userId);
     return m.listOwnerFileRecords(viewer);
   });
+
+export const listOwnerDocumentsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const m = await import("@/lib/attachments.server");
+    const viewer = await m.loadViewer(context.supabase, context.userId);
+    return m.listOwnerDocuments(viewer);
+  });
+
+/** Records the owner-facing category and optional Opportunity on the uploader's own file. */
+export const tagOwnerUploadFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { documentId: string; ownerCategory: string; workItemId?: string | null }) => input)
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("tag_owner_upload", {
+      _document_id: data.documentId,
+      _owner_category: data.ownerCategory,
+      _work_item_id: (data.workItemId ?? null) as string,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

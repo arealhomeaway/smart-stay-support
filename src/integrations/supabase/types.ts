@@ -1652,6 +1652,7 @@ export type Database = {
           mime_type: string | null
           note: string | null
           original_filename: string | null
+          owner_category: string | null
           owner_recipient_id: string | null
           owner_recipient_program_id: string | null
           property_id: string | null
@@ -1666,6 +1667,7 @@ export type Database = {
           uploaded_at: string | null
           uploaded_by: string | null
           visibility: string
+          work_item_id: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -1686,6 +1688,7 @@ export type Database = {
           mime_type?: string | null
           note?: string | null
           original_filename?: string | null
+          owner_category?: string | null
           owner_recipient_id?: string | null
           owner_recipient_program_id?: string | null
           property_id?: string | null
@@ -1700,6 +1703,7 @@ export type Database = {
           uploaded_at?: string | null
           uploaded_by?: string | null
           visibility?: string
+          work_item_id?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -1720,6 +1724,7 @@ export type Database = {
           mime_type?: string | null
           note?: string | null
           original_filename?: string | null
+          owner_category?: string | null
           owner_recipient_id?: string | null
           owner_recipient_program_id?: string | null
           property_id?: string | null
@@ -1734,6 +1739,7 @@ export type Database = {
           uploaded_at?: string | null
           uploaded_by?: string | null
           visibility?: string
+          work_item_id?: string | null
         }
         Relationships: [
           {
@@ -1783,6 +1789,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]
@@ -10477,6 +10490,14 @@ export type Database = {
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
       sync_ticket_opportunities: {
         Args: { _property_id: string; _ticket_id?: string }
+        Returns: undefined
+      }
+      tag_owner_upload: {
+        Args: {
+          _document_id: string
+          _owner_category: string
+          _work_item_id: string
+        }
         Returns: undefined
       }
     }
