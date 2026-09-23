@@ -9205,6 +9205,60 @@ export type Database = {
           },
         ]
       }
+      work_item_resources: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string | null
+          id: string
+          kind: string
+          label: string | null
+          removed_at: string | null
+          sort_order: number
+          url: string | null
+          work_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          id?: string
+          kind: string
+          label?: string | null
+          removed_at?: string | null
+          sort_order?: number
+          url?: string | null
+          work_item_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          id?: string
+          kind?: string
+          label?: string | null
+          removed_at?: string | null
+          sort_order?: number
+          url?: string | null
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_resources_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_resources_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_items: {
         Row: {
           assigned_to: string | null
@@ -9219,14 +9273,23 @@ export type Database = {
           kind: string
           linked_task_id: string | null
           owner_content: Json | null
+          owner_response: Json
           program_id: string | null
           property_id: string | null
           required: boolean
+          responded_at: string | null
+          response_types: string[]
+          sent_at: string | null
+          source: string | null
+          source_department: string | null
           source_id: string
+          source_project_id: string | null
           source_table: string
+          source_task_id: string | null
           status: string
           title: string
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           assigned_to?: string | null
@@ -9241,14 +9304,23 @@ export type Database = {
           kind: string
           linked_task_id?: string | null
           owner_content?: Json | null
+          owner_response?: Json
           program_id?: string | null
           property_id?: string | null
           required?: boolean
+          responded_at?: string | null
+          response_types?: string[]
+          sent_at?: string | null
+          source?: string | null
+          source_department?: string | null
           source_id: string
+          source_project_id?: string | null
           source_table: string
+          source_task_id?: string | null
           status?: string
           title: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           assigned_to?: string | null
@@ -9263,14 +9335,23 @@ export type Database = {
           kind?: string
           linked_task_id?: string | null
           owner_content?: Json | null
+          owner_response?: Json
           program_id?: string | null
           property_id?: string | null
           required?: boolean
+          responded_at?: string | null
+          response_types?: string[]
+          sent_at?: string | null
+          source?: string | null
+          source_department?: string | null
           source_id?: string
+          source_project_id?: string | null
           source_table?: string
+          source_task_id?: string | null
           status?: string
           title?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -10068,6 +10149,10 @@ export type Database = {
         Returns: string
       }
       mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
+      mark_owner_opportunity_viewed: {
+        Args: { _id: string }
+        Returns: undefined
+      }
       mark_ready_for_operations: {
         Args: { _project_id: string }
         Returns: undefined
@@ -10433,6 +10518,10 @@ export type Database = {
         }
         Returns: string
       }
+      respond_owner_opportunity: {
+        Args: { _decision: string; _id: string; _kind: string; _text: string }
+        Returns: undefined
+      }
       respond_owner_review: {
         Args: {
           _decision: string
@@ -10472,6 +10561,19 @@ export type Database = {
           _entry_id: string
           _expected_version: string
           _note: string
+        }
+        Returns: string
+      }
+      save_arha_opportunity: {
+        Args: {
+          _content: Json
+          _id: string
+          _property_id: string
+          _resources: Json
+          _response_types: string[]
+          _send: boolean
+          _source_task_id: string
+          _title: string
         }
         Returns: string
       }

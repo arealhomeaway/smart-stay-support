@@ -281,6 +281,13 @@
       "when": 1790195563064,
       "tag": "0039_help_tickets",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790207287752,
+      "tag": "0040_arha_owner_collaboration",
+      "breakpoints": true
     }
   ]
 }
