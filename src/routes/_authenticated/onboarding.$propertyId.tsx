@@ -146,6 +146,16 @@ function PropertyWorkspace() {
   const qc = useQueryClient();
   const { can, readOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
+  const directorQuery = useQuery({
+    queryKey: ["is-onboarding-director", userId],
+    enabled: Boolean(userId),
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase.rpc("is_onboarding_director", { _user_id: userId! });
+      return data === true;
+    },
+  });
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
     search.workFilter === "blocked"
