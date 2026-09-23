@@ -116,6 +116,60 @@ export function groupMyWork(views: TaskView[], today: string) {
   return groups;
 }
 
+/**
+ * My Work's three everyday buckets (plus a collapsed "Later" so nothing
+ * disappears): due today & overdue, upcoming this week, blocked / waiting.
+ */
+export function groupMyWorkSimple(views: TaskView[], today: string) {
+  const weekEnd = new Date(`${today}T12:00:00Z`);
+  weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
+  const end = weekEnd.toISOString().slice(0, 10);
+  const groups = [
+    {
+      key: "due",
+      label: "Due today & overdue",
+      hint: "Past due, due today, or returned for a correction.",
+    },
+    { key: "week", label: "Upcoming this week", hint: "Due in the next seven days." },
+    {
+      key: "blocked",
+      label: "Blocked / Waiting on others",
+      hint: "A blocker, prerequisite, review or homeowner answer must come first.",
+    },
+    { key: "later", label: "Later & undated", hint: "Due after this week, or not dated yet." },
+  ].map((group) => ({ ...group, items: [] as TaskView[] }));
+  for (const view of views) {
+    if (view.status === "complete" || view.status === "carryover") continue;
+    const due = view.task.due_on;
+    const key =
+      view.status === "correction" ||
+      (view.overdue && !["blocked", "not_ready"].includes(view.status))
+        ? "due"
+        : ["blocked", "not_ready", "needs_review", "future"].includes(view.status) ||
+            view.task.owner_approval_status === "awaiting_owner"
+          ? "blocked"
+          : due && due <= today
+            ? "due"
+            : due && due <= end
+              ? "week"
+              : "later";
+    groups.find((group) => group.key === key)!.items.push(view);
+  }
+  return groups;
+}
+
+/** A step simple enough to tick off from a list: nothing to attach or approve. */
+export function canQuickComplete(view: TaskView) {
+  const t = view.task;
+  return (
+    view.canComplete &&
+    !t.evidence_required &&
+    !t.requires_owner_approval &&
+    !(t.blocker ?? "").trim() &&
+    !["needs_review", "correction", "complete"].includes(view.status)
+  );
+}
+
 /** Team browsing is a work view, not an additional data permission. */
 export function myWorkSelection<T extends { assigned_to: string | null; property_id: string }>(
   tasks: T[],
@@ -164,8 +218,7 @@ export function validateMyWorkSearch(
   const program = text(search.program, "all");
   const state = text(search.state, "all");
   return {
-    who:
-      who === "unassigned" || who === "all" || /^[0-9a-f-]{36}$/i.test(who) ? who : "me",
+    who: who === "unassigned" || who === "all" || /^[0-9a-f-]{36}$/i.test(who) ? who : "me",
     program: ["all", "active_owner", "standard"].includes(program) ? program : "all",
     home: /^[0-9a-f-]{36}$/i.test(text(search.home, "")) ? text(search.home, "all") : "all",
     state: Object.hasOwn(WORK_FILTER_LABELS, state) ? state : "all",
