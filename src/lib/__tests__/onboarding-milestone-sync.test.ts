@@ -3,21 +3,35 @@
  * dashboard writes the home AND the onboarding project, so the scope card can
  * never show an older copy of the same date.
  */
-import { describe, expect, it, mock } from "bun:test";
+import { afterAll, describe, expect, it, mock } from "bun:test";
+
+// Module mocks are global to the test run, so every stub here stays opt-in and
+// is switched back off once this file finishes — other suites keep the real code.
+let stubbed = true;
+afterAll(() => {
+  stubbed = false;
+});
 
 mock.module("@/lib/audit.server", () => ({ writeAudit: async () => {} }));
 mock.module("../audit.server", () => ({ writeAudit: async () => {} }));
 const realAccess = await import("../onboarding-task-access.server");
 mock.module("../onboarding-task-access.server", () => ({
   ...realAccess,
-  assertOnboardingPropertyManagement: async () => {},
+  assertOnboardingPropertyManagement: async (...args: unknown[]) =>
+    stubbed
+      ? undefined
+      : (realAccess.assertOnboardingPropertyManagement as (...a: unknown[]) => unknown)(...args),
 }));
 const realSchedule = await import("../onboarding-schedule.server");
+const stubOr =
+  (name: keyof typeof realSchedule, value: unknown) =>
+  async (...args: unknown[]) =>
+    stubbed ? value : (realSchedule[name] as (...a: unknown[]) => unknown)(...args);
 mock.module("../onboarding-schedule.server", () => ({
   ...realSchedule,
-  previewScheduleRecalc: async () => ({ rows: [] }),
-  applyScheduleRecalc: async () => ({ applied: 0 }),
-  autopopulateProjectDeadlines: async () => ({ applied: 0 }),
+  previewScheduleRecalc: stubOr("previewScheduleRecalc", { rows: [] }),
+  applyScheduleRecalc: stubOr("applyScheduleRecalc", { applied: 0 }),
+  autopopulateProjectDeadlines: stubOr("autopopulateProjectDeadlines", { applied: 0 }),
 }));
 
 const { saveOnboardingMilestones } = await import("../onboarding-milestones.server");
