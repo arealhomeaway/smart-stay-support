@@ -179,11 +179,6 @@ export async function previewOnboardingTemplate(
 ): Promise<TemplatePreview> {
   await assertOnboardingStaff(supabase, userId);
 
-  // V2: a template with a published version is instantiated from that
-  // immutable version (roles, due rules, owner Opportunities), once per home.
-  const v2 = await startFromPublishedVersion(supabase, input.propertyId, input.templateId ?? null);
-  if (v2) return v2;
-
   const plan = await planFor(supabase, input.templateId);
   const { anchors, taken, takenSubs, parentIdByKey } = await loadContext(
     supabase,
@@ -242,6 +237,12 @@ export async function applyOnboardingTemplate(
   audit: typeof writeAudit = writeAudit,
 ) {
   await assertOnboardingStaff(supabase, userId);
+
+  // V2: a template with a published version is instantiated from that
+  // immutable version (roles, due rules, owner Opportunities), once per home.
+  const v2 = await startFromPublishedVersion(supabase, input.propertyId, input.templateId ?? null);
+  if (v2) return v2;
+
   const plan = await planFor(supabase, input.templateId);
   const { property, anchors, taken, takenSubs, parentIdByKey, existing } = await loadContext(
     supabase,
