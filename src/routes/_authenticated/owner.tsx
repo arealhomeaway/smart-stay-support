@@ -486,11 +486,10 @@ function OwnerHubBody({
       <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
         title="Needs your attention"
-        description="A short question or decision from your ARHA team."
+        description="Questions, approvals and decisions from your ARHA team — each one labelled by type. Your name, the time and any note are recorded with every decision."
       >
-        {openReviews.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing is waiting on you right now.</p>
-        ) : (
+        <div className="space-y-5">
+        {openReviews.length > 0 && (
           <div className="space-y-5">
             {attentionGroups.map((group) => (
               <div key={group.key} className="space-y-2">
@@ -517,6 +516,8 @@ function OwnerHubBody({
             ))}
           </div>
         )}
+        <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0} />
+        </div>
       </SectionCard>
       </div>
 
@@ -529,8 +530,6 @@ function OwnerHubBody({
         blockedReason={preview ? "Preview only — hours are recorded by the homeowner." : logHoursBlockedReason}
         {...(preview ? {} : { onLogHours: openManualLog })}
       />
-
-      <OwnerApprovalPanel readOnly={preview} />
 
       <SectionCard
         title="Property work to review"
