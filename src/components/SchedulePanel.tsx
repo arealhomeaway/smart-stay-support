@@ -2,10 +2,9 @@
  * Milestone dates and controlled date recalculation for one onboarding home.
  *
  * Planned closing, actual closing and actual access are three separate dates.
- * Saving them never moves a task. Recalculation is always preview-first: the
- * proposed dates are shown next to the current dates, completed tasks and
- * manually overridden dates are preserved, conflicts are flagged, and only the
- * rows that are ticked are written. Nothing is pushed to outside systems.
+ * Saving access automatically dates all unfinished work. Preview remains
+ * available for reviewing future schedule changes; manually overridden and
+ * completed dates are always preserved.
  */
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,8 +63,10 @@ export function SchedulePanel({
           actualAccessOn: access || null,
         },
       }),
-    onSuccess: () => {
-      toast.success("Milestone dates saved. No task dates were changed.");
+    onSuccess: (result) => {
+      toast.success(
+        `Milestone dates saved. ${result.dated} work date${result.dated === 1 ? "" : "s"} updated.`,
+      );
       void qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
       onChange();
     },
@@ -113,8 +114,8 @@ export function SchedulePanel({
           Milestone dates
         </CardTitle>
         <CardDescription>
-          Planned closing, actual closing and actual access are recorded separately. Saving a date
-          never moves a task on its own — recalculation is previewed and confirmed.
+          Planned closing, actual closing and actual access are recorded separately. Saving access
+          automatically dates all unfinished work while preserving completed and manually dated work.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

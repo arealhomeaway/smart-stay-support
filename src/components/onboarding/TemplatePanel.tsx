@@ -76,8 +76,8 @@ export function TemplatePanel({
           The ARHA onboarding plan for this home: {counts.tasks} tasks and {counts.subtasks}{" "}
           subtasks across seven phases, {counts.workOrders} linked Breezeway templates,{" "}
           {counts.ownerApprovals} homeowner decisions and {counts.evidence} evidence-gated steps.
-          Dates are only pre-filled for the {counts.scheduled} tasks whose written instructions
-          state the timing.
+          When possession/access is recorded, every step and subtask receives a deadline paced
+          across the home's onboarding window.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -136,10 +136,10 @@ export function TemplatePanel({
               <Badge variant="secondary">{preview.toCreate.length} to add</Badge>
               <Badge variant="secondary">{preview.subtasksToCreate} subtasks to add</Badge>
               <Badge variant="outline">{preview.skipped.length} already present</Badge>
-              {preview.anchors.planned_closing ? (
-                <Badge variant="outline">Planned closing {preview.anchors.planned_closing}</Badge>
+              {preview.anchors.actual_access ? (
+                <Badge variant="outline">Access {preview.anchors.actual_access}</Badge>
               ) : (
-                <Badge variant="outline">No closing date recorded — dates left blank</Badge>
+                <Badge variant="outline">No access date recorded — dates left blank</Badge>
               )}
             </div>
             <ScrollArea className="h-64">

@@ -387,6 +387,14 @@ export async function updateProject(
     if (synced.error) throw synced.error;
   }
 
+  // Possession/access is the schedule anchor. A scope save must leave every
+  // unfinished, non-manual step with its current calculated deadline; staff
+  // should never need a second button to make the plan usable.
+  if (input.possessionOn) {
+    const { autopopulateProjectDeadlines } = await import("./onboarding-schedule.server");
+    await autopopulateProjectDeadlines(supabase, userId, data.property_id);
+  }
+
   let enrollmentWarning: string | null = null;
   const scopeChanged = input.modules !== undefined || input.furnishingScope !== undefined;
   if (scopeChanged) {
