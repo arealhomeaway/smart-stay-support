@@ -433,8 +433,8 @@ function OwnerHubBody({
 
       {targetReached ? (
         <Celebrate title="You've reached at least 100 hours of reported participation.">
-          Thank you for the time you've put in. Your final report will be ready when your program year
-          close.
+          Thank you for the time you've put in. Your final report will be ready when your program closes on
+          December 31.
         </Celebrate>
       ) : null}
 
