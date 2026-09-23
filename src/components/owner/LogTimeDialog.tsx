@@ -65,7 +65,7 @@ export function LogTimeDialog({
   const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState(defaultActivity);
   const [confirmed, setConfirmed] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [entryDate, setEntryDate] = useState(today);
   const [homes, setHomes] = useState<string[]>([]);
   const log = useServerFn(logOwnerParticipation);
@@ -75,19 +75,35 @@ export function LogTimeDialog({
     setMinutes("");
     setActivity(defaultActivity);
     setConfirmed(false);
-    setFile(null);
+    setFiles([]);
     setEntryDate(today());
     setHomes([]);
   };
 
-  const pickFile = (chosen: File | null) => {
-    if (!chosen) return setFile(null);
-    const check = validateFile({ name: chosen.name, type: chosen.type, size: chosen.size });
-    if (!check.ok) {
-      toast.error(check.message);
-      return;
+  /** Files build up across picks and drops, so nothing already chosen is lost. */
+  const addFiles = (chosen: File[]) => {
+    const keep: File[] = [];
+    for (const item of chosen) {
+      const check = validateFile({ name: item.name, type: item.type, size: item.size });
+      if (!check.ok) {
+        toast.error(`${item.name}: ${check.message}`);
+        continue;
+      }
+      keep.push(item);
     }
-    setFile(chosen);
+    if (keep.length === 0) return;
+    setFiles((current) => {
+      const merged = [...current];
+      for (const item of keep) {
+        if (merged.some((f) => f.name === item.name && f.size === item.size)) continue;
+        merged.push(item);
+      }
+      if (merged.length > MAX_FILES) {
+        toast.error(`You can attach up to ${MAX_FILES} files on one entry.`);
+        return merged.slice(0, MAX_FILES);
+      }
+      return merged;
+    });
   };
 
   const save = useMutation({
@@ -96,23 +112,23 @@ export function LogTimeDialog({
       if (entryPhase !== "onboarding" && entryPhase !== "ongoing") {
         throw new Error("This opportunity needs a valid participation phase.");
       }
-      let attachmentPath: string | null = null;
-      if (file) {
+      const attachmentPaths: string[] = [];
+      for (const item of files) {
         const started = await beginEvidence({
           data: {
             programId,
             uploadKey: crypto.randomUUID(),
-            filename: file.name,
-            mimeType: file.type,
-            sizeBytes: file.size,
+            filename: item.name,
+            mimeType: item.type,
+            sizeBytes: item.size,
           },
         });
         const { supabase } = await import("@/integrations/supabase/client");
         const put = await supabase.storage
           .from("resolve-attachments")
-          .uploadToSignedUrl(started.path, started.token!, file, { upsert: false });
-        if (put.error) throw new Error("That file did not finish uploading. Try again.");
-        attachmentPath = started.path;
+          .uploadToSignedUrl(started.path, started.token!, item, { upsert: false });
+        if (put.error) throw new Error(`${item.name} did not finish uploading. Try again.`);
+        attachmentPaths.push(started.path);
       }
       return log({
         data: {
@@ -121,7 +137,8 @@ export function LogTimeDialog({
           entryDate: anchor ? today() : entryDate,
           minutes: parseOwnerMinutes(minutes),
           activity: activity.trim(),
-          attachmentPath,
+          attachmentPath: attachmentPaths[0] ?? null,
+          attachmentPaths,
           reviewId: anchor ? anchor.id : null,
           ticketId: anchor ? anchor.ticketId : null,
           ownerUpdateRevision: anchor ? anchor.ownerUpdateRevision : null,
