@@ -40,10 +40,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SchedulePanel } from "@/components/SchedulePanel";
-import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
 import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
-import { OnboardingDashboard } from "@/components/onboarding/OnboardingDashboard";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
 import { HomeownerCard } from "@/components/property/HomeownerCard";
 
@@ -61,11 +59,13 @@ import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import {
   type PropertyQueueFilter,
+  matchesPropertyQueueFilter,
+  orderPropertyWorkQueue,
   validateWorkspaceSearch,
 } from "@/lib/onboarding-work-views";
+import { assigneeLabel, viewTask } from "@/lib/onboarding-workflow";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
-import { StageCapturePanel } from "@/components/onboarding/StageCapturePanel";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
 import {
@@ -159,11 +159,7 @@ function PropertyWorkspace() {
   });
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
-    search.workFilter === "blocked"
-      ? "waiting"
-      : search.workFilter === "all"
-        ? "all"
-        : "attention",
+    search.workFilter === "blocked" ? "waiting" : "attention",
   );
   // Where the Director hub was left — filters, search and lens intact — so
   // Back restores that exact view rather than a bare "/onboarding".
@@ -386,6 +382,41 @@ function PropertyWorkspace() {
   }
 
   const target = targetHandoff(project);
+  const views = orderPropertyWorkQueue(tasks.map((t) => viewTask(t, tasks, release)));
+  const attention = views.filter((v) => matchesPropertyQueueFilter(v, "attention", userId));
+  const nextUp = views.filter((v) => matchesPropertyQueueFilter(v, "ready", userId)).slice(0, 3);
+  const blocked = views.filter((v) => matchesPropertyQueueFilter(v, "waiting", userId));
+  const handoffLeft = tasks.filter(
+    (t) =>
+      (t as { blocks_handoff?: boolean }).blocks_handoff &&
+      (t as { is_required?: boolean }).is_required !== false &&
+      t.status !== "complete",
+  ).length;
+  const overdue = views.filter((v) => v.overdue && v.status !== "complete").length;
+  const onTrack = life.accepted
+    ? "Accepted by Operations"
+    : handoffLeft === 0
+      ? "Ready to mark Ready for Operations"
+      : overdue > 0
+        ? `At risk — ${overdue} overdue, ${handoffLeft} handoff Tasks left`
+        : `On track — ${handoffLeft} handoff Tasks left`;
+  const openTask = (id: string) => setOpenTaskId(id);
+  const taskRow = (v: (typeof views)[number]) => (
+    <li key={v.task.id}>
+      <button
+        type="button"
+        onClick={() => openTask(v.task.id)}
+        className="flex w-full flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-muted/50"
+      >
+        <span className="min-w-0 flex-1 truncate font-medium">{v.task.title}</span>
+        {v.overdue && <Chip className={stateChip("blocked")}>Overdue</Chip>}
+        <span className="text-xs text-muted-foreground">
+          {assigneeLabel(v.task, data.people)}
+          {v.task.due_on ? ` · ${usDate(v.task.due_on)}` : ""}
+        </span>
+      </button>
+    </li>
+  );
 
   return (
     <div className="space-y-5">
@@ -404,23 +435,18 @@ function PropertyWorkspace() {
           <PageHeader
             eyebrow="Onboarding"
             title={current.name}
-            description={`${life.label} · ${roll.done}/${roll.total} applicable steps complete`}
+            description={
+              [current.address_line1, current.city, current.state].filter(Boolean).join(", ") ||
+              undefined
+            }
           />
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
-        {activeOwner && <Chip className={stateChip("waiting")}>Active Owner Program</Chip>}
-        {pm && <Chip className={stateChip("info")}>PM · {pm.full_name ?? pm.email}</Chip>}
-        {utilityManager && (
-          <Chip className={stateChip("info")}>
-            Utilities · {utilityManager.full_name ?? utilityManager.email}
-          </Chip>
-        )}
-        {openHandoff && !life.accepted && (
-          <Chip className={stateChip("waiting")}>Handoff — {gateLabel(openHandoff.gate_step)}</Chip>
-        )}
+        <Chip className={stateChip("info")}>{stageLabel(current.onboarding_stage)}</Chip>
+        {activeOwner && <Chip className={stateChip("waiting")}>Active Owner</Chip>}
         <Button asChild size="sm" variant="outline" className="ml-auto">
           <Link
             to="/tickets/new"
@@ -437,21 +463,18 @@ function PropertyWorkspace() {
           <dd className="numeric font-medium">{current.planned_closing_on ?? "Not set"}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted-foreground">Access</dt>
+          <dt className="text-xs text-muted-foreground">Access / possession</dt>
           <dd className="numeric font-medium">{current.actual_access_on ?? "Not set"}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Target handoff</dt>
           <dd className="numeric font-medium">{target ?? "Not set"}</dd>
         </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Project manager</dt>
+          <dd className="font-medium">{pm?.full_name ?? pm?.email ?? "Unassigned"}</dd>
+        </div>
       </dl>
-
-      {life.staleHandoff && (
-        <p className="text-xs text-muted-foreground">
-          A handoff record from before acceptance is kept for history. It no longer affects this
-          home&apos;s state.
-        </p>
-      )}
 
       <Tabs
         value={search.tab}
@@ -459,26 +482,125 @@ function PropertyWorkspace() {
         className="space-y-5"
       >
         <TabsList className="flex h-auto flex-wrap justify-start">
-          <TabsTrigger value="work">Work &amp; Scope</TabsTrigger>
-          <TabsTrigger value="property">Property &amp; Financial</TabsTrigger>
-          <TabsTrigger value="handoff">Handoff</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="work">Tasks</TabsTrigger>
+          <TabsTrigger value="property">Property Details</TabsTrigger>
           <TabsTrigger value="files">Files &amp; History</TabsTrigger>
+          <TabsTrigger value="handoff">Handoff</TabsTrigger>
         </TabsList>
 
-        {/* ------------------------------------------------ Work & Scope */}
+        <TabsContent value="overview" className="space-y-5">
+          <section className="surface grid gap-4 p-4 sm:grid-cols-3">
+            <div className="flex items-center gap-3">
+              <ProgressRing value={roll.progress} />
+              <div>
+                <p className="text-xs text-muted-foreground">Progress</p>
+                <p className="numeric text-sm font-medium">
+                  {roll.done} of {roll.total} Tasks done
+                </p>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Handoff</p>
+              <p className="text-sm font-medium">{onTrack}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Blocked or waiting</p>
+              <p className="numeric text-sm font-medium">
+                {blocked.length === 0 ? "Nothing blocked" : `${blocked.length} Tasks`}
+              </p>
+            </div>
+          </section>
+
+          <section className="surface space-y-3 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-semibold">Needs attention</h2>
+              {attention.length > 5 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setQueueFilter("attention");
+                    void navigate({ search: { ...search, tab: "work" }, replace: true });
+                  }}
+                >
+                  See all {attention.length}
+                </Button>
+              )}
+            </div>
+            {attention.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nothing needs attention right now.</p>
+            ) : (
+              <ul className="space-y-2">{attention.slice(0, 5).map(taskRow)}</ul>
+            )}
+          </section>
+
+          <section className="surface space-y-3 p-4">
+            <h2 className="font-semibold">What&apos;s next</h2>
+            {nextUp.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No Tasks are ready to start.</p>
+            ) : (
+              <ul className="space-y-2">{nextUp.map(taskRow)}</ul>
+            )}
+          </section>
+
+          <ProjectTeamPanel propertyId={current.id} />
+        </TabsContent>
+
         <TabsContent value="work" className="space-y-5">
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <NewTaskDialog
+              propertyId={current.id}
+              people={data.people}
+              tasks={tasks}
+              // Only directors add work to a plan; project managers work the plan.
+              disabled={!canEdit || !can("handoff_review")}
+              onSave={(values) => saveTask.mutate({ data: values } as never)}
+            />
+          </div>
+          {life.locked && (
+            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              This onboarding plan is locked
+              {life.lockedAt ? ` (${life.lockedAt.slice(0, 10)})` : ""}. Record a correction or
+              report an issue instead.
+            </p>
+          )}
+          {postAcceptance.length > 0 && (
+            <section className="surface p-4">
+              <p className="font-medium">Found after acceptance ({postAcceptance.length})</p>
+              <p className="text-sm text-muted-foreground">
+                These were created after Operations accepted the home. Handle each as a correction
+                or an Operations ticket.
+              </p>
+            </section>
+          )}
           <PropertyWorkQueue
             tasks={tasks}
             people={data.people}
             viewerId={userId}
             filter={queueFilter}
             onFilterChange={setQueueFilter}
-            selectedId={openTaskId}
             onSelect={(task) => setOpenTaskId(task.id)}
-            outOfScope={outOfScope}
             release={release}
           />
+        </TabsContent>
 
+        <TabsContent value="property" className="space-y-4">
+          <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
+          <HomeownerCard propertyId={current.id} canManage={canEdit} />
+          <section className="surface space-y-4 p-4">
+            <p className="font-medium">Key dates</p>
+            <SchedulePanel
+              propertyId={current.id}
+              plannedClosingOn={current.planned_closing_on ?? null}
+              actualClosingOn={
+                (current as { actual_closing_on?: string | null }).actual_closing_on ?? null
+              }
+              actualAccessOn={current.actual_access_on ?? null}
+              canEdit={canEdit}
+              onChange={() => void refresh()}
+            />
+          </section>
           <ProjectScopePanel
             propertyId={current.id}
             propertyName={current.name}
@@ -486,40 +608,7 @@ function PropertyWorkspace() {
             canEdit={canEdit}
             hints={{ planned_closing_on: current.planned_closing_on ?? null }}
           />
-
-          <ProjectTeamPanel propertyId={current.id} />
-
-
-          <OnboardingDashboard
-            propertyId={current.id}
-            activeOwner={Boolean(activeOwner)}
-            canEdit={canEdit}
-            done={roll.done}
-            total={roll.total}
-            notes={notes as never}
-            people={data.people}
-            taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
-          />
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Summary label="Overall progress">
-              <div className="flex items-center gap-3">
-                <ProgressRing value={roll.progress} />
-                <span className="text-sm text-muted-foreground">
-                  {roll.done} of {roll.total} tasks
-                </span>
-              </div>
-            </Summary>
-            <Summary label="Project manager">{pm?.full_name ?? pm?.email ?? "Unassigned"}</Summary>
-            <Summary label="Next milestone">{roll.nextMilestone ?? "—"}</Summary>
-            <Summary label="Program">{activeOwner ? "Active Owner Program" : "Standard"}</Summary>
-            <Summary label="Carryover items">{String(roll.carryover)}</Summary>
-            <Summary label="Handoff accepted">
-              {current.handoff_accepted_at ? usDate(current.handoff_accepted_at) : "Not yet"}
-            </Summary>
-          </div>
-
-          <div className="flex flex-wrap items-end gap-3">
+          <section className="surface flex flex-wrap items-end gap-3 p-4">
             <div className="flex flex-col gap-1">
               <Label className="eyebrow">Lifecycle</Label>
               <Select
@@ -555,174 +644,8 @@ function PropertyWorkspace() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1">
-              <Label className="eyebrow">Stage</Label>
-              <p className="text-sm">{stageLabel(current.onboarding_stage)}</p>
-              <p className="text-xs text-muted-foreground">
-                Stage capture and review control progression.
-              </p>
-            </div>
-          </div>
-
-          {mismatches.length > 0 && (
-            <section className="surface p-4">
-              <p className="font-medium">Participation change — confirm affected steps</p>
-              <p className="text-sm text-muted-foreground">
-                This home&apos;s Active Owner Program enrollment changed after these steps were
-                created. Nothing is applied automatically.
-              </p>
-              <div className="mt-3 space-y-2">
-                {mismatches.map((m) => (
-                  <div
-                    key={m.taskId}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-sm"
-                  >
-                    <div>
-                      <p className="font-medium">{m.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {m.shouldRequire
-                          ? "Enrolled now — this step should require the homeowner's approval."
-                          : "No longer enrolled — this step no longer needs a homeowner approval."}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!canEdit}
-                      onClick={() =>
-                        confirmRequirement.mutate({
-                          data: {
-                            taskId: m.taskId,
-                            requiresOwnerApproval: m.shouldRequire,
-                            reason: "Confirmed after an Active Owner Program participation change",
-                          },
-                        } as never)
-                      }
-                    >
-                      {m.shouldRequire ? "Require owner approval" : "Remove approval requirement"}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <NewTaskDialog
-              propertyId={current.id}
-              people={data.people}
-              tasks={tasks}
-              // Only directors add work to a plan; project managers work the plan.
-              disabled={!canEdit || !can("handoff_review")}
-              onSave={(values) => saveTask.mutate({ data: values } as never)}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
-          {life.locked && (
-            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              This onboarding plan is locked
-              {life.lockedAt ? ` (${life.lockedAt.slice(0, 10)})` : ""}. Template changes cannot
-              inject new work here — record a correction or report an issue instead.
-            </p>
-          )}
-          {postAcceptance.length > 0 && (
-            <section className="surface p-4">
-              <p className="font-medium">Found after acceptance ({postAcceptance.length})</p>
-              <p className="text-sm text-muted-foreground">
-                These steps were created after Operations accepted the home, so they are not part of
-                the historical plan. Handle each as a correction or an Operations ticket.
-              </p>
-              <ul className="mt-2 list-inside list-disc text-sm">
-                {postAcceptance.map((t) => (
-                  <li key={t.id}>{t.title}</li>
-                ))}
-              </ul>
-            </section>
-          )}
-          <StageCapturePanel
-            propertyId={current.id}
-            canEdit={canExecuteProject && !life.locked && !openHandoff}
-            canReview={
-              !readOnly && !life.locked && !openHandoff && data.reviewCapabilities.can_review_stages
-            }
-            documents={data.documents.filter((d) => d.entity_id === current.id)}
-          />
-          {!life.locked && (
-            <TemplatePanel
-              propertyId={current.id}
-              propertyName={current.name}
-              readOnly={!canEdit}
-            />
-          )}
-          <details className="surface space-y-4 p-4">
-            <summary className="cursor-pointer font-medium">Timeline and milestones</summary>
-            <SchedulePanel
-              propertyId={current.id}
-              plannedClosingOn={
-                (current as { planned_closing_on?: string | null }).planned_closing_on ?? null
-              }
-              actualClosingOn={
-                (current as { actual_closing_on?: string | null }).actual_closing_on ?? null
-              }
-              actualAccessOn={
-                (current as { actual_access_on?: string | null }).actual_access_on ?? null
-              }
-              canEdit={canEdit}
-              onChange={() => void refresh()}
-            />
-            <section className="surface p-4">
-              <p className="font-medium">Section timeline</p>
-              <p className="text-sm text-muted-foreground">
-                Where each workflow section should land, from the dates Resolve calculated. Only
-                milestone-level dates are shown — individual task dates live in the Workflow tab.
-              </p>
-              <div className="mt-3 space-y-2">
-                {sections.map((s) => {
-                  const dates = s.tasks
-                    .map((v) => v.task.due_on)
-                    .filter((d): d is string => Boolean(d))
-                    .sort();
-                  const late = s.tasks.filter((v) => v.overdue).length;
-                  return (
-                    <div
-                      key={s.key}
-                      className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3 text-sm"
-                    >
-                      <span className="min-w-0 flex-1 truncate font-medium">{s.label}</span>
-                      <span className="numeric text-xs text-muted-foreground">
-                        {dates.length > 0 ? `${dates[0]} → ${dates.at(-1)}` : "No dates set"}
-                      </span>
-                      <Chip
-                        className={stateChip(
-                          s.state === "complete"
-                            ? "done"
-                            : s.state === "blocked"
-                              ? "blocked"
-                              : "active",
-                        )}
-                      >
-                        {s.done}/{s.total}
-                      </Chip>
-                      {late > 0 && <Chip className={stateChip("blocked")}>{late} late</Chip>}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </details>
-          <details className="surface space-y-4 p-4">
-            <summary className="cursor-pointer font-medium">Task calendar</summary>
-            <TaskCalendar
-              tasks={tasks}
-              people={data.people}
-              onSelect={(t) => setOpenTaskId(t.id)}
-            />
-          </details>
-        </TabsContent>
-
-        {/* ------------------------------------------------------- Property */}
-        <TabsContent value="property" className="space-y-4">
-          <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
+            <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
+          </section>
           <OperationsContextPanel
             property={current as never}
             tasks={tasks as never}
@@ -745,18 +668,10 @@ function PropertyWorkspace() {
           />
         </TabsContent>
 
-        {/* -------------------------------------------------------- Handoff */}
         <TabsContent value="handoff" className="space-y-5">
           <TwoStepHandoff propertyId={current.id} readOnly={readOnly} onOpenTask={(id) => setOpenTaskId(id)} />
         </TabsContent>
 
-        {/* ------------------------------------------------------- Timeline */}
-
-        {/* ------------------------------------------------------- Calendar */}
-
-        {/* ---------------------------------------------------------- Files */}
-
-        {/* ------------------------------------------------------- Activity */}
         <TabsContent value="files" className="space-y-4">
           <PhotoStrip entityType="property" entityId={current.id} title="Visual evidence" limit={16} />
           <AttachmentsPanel
@@ -787,15 +702,6 @@ function PropertyWorkspace() {
           />
         </TabsContent>
       </Tabs>
-
-      <div className="surface p-4">
-        <PhotoStrip
-          entityType="property"
-          entityId={current.id}
-          title="Visual evidence"
-          emptyHint="No photos on file yet for this home."
-        />
-      </div>
 
       <TaskDrawer
         task={openTask}
