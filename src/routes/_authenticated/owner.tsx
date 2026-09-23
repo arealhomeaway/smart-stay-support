@@ -38,6 +38,7 @@ import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-port
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 import { WaysToParticipate } from "@/components/owner/WaysToParticipate";
+import { OwnerOpportunities } from "@/components/owner/OwnerOpportunities";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
@@ -544,6 +545,8 @@ function OwnerHubBody({
       </div>
 
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
+
+      <OwnerOpportunities readOnly={preview} {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })} />
 
       <div id="owner-participate" className="scroll-mt-24" />
       <WaysToParticipate

@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateEditor } from "@/components/onboarding/TemplateEditor";
+import { TemplateV2Settings } from "@/components/onboarding/TemplateV2Settings";
 import { OwnerEmailCopyCard } from "@/components/onboarding/OwnerEmailCopyCard";
 import { useRole } from "@/hooks/useRole";
 import {
@@ -263,6 +264,7 @@ function TemplatesPage() {
               <X className="mr-1 h-4 w-4" /> Close steps
             </Button>
           </div>
+          <TemplateV2Settings templateId={selected} />
           <TemplateEditor templateId={selected} />
         </div>
       ) : null}
