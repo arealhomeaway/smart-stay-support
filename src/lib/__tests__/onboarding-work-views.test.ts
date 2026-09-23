@@ -47,20 +47,20 @@ describe("work attention views", () => {
   it("routes gate reviews to handoff and other queues to their matching work filter", () => {
     expect(workspaceSearchFromLens("mine", true)).toEqual({ tab: "handoff", workFilter: "all" });
     expect(workspaceSearchFromLens("review", false)).toEqual({
-      tab: "workflow",
+      tab: "work",
       workFilter: "review",
     });
     expect(workspaceSearchFromLens("corrections", false)).toEqual({
-      tab: "workflow",
+      tab: "work",
       workFilter: "corrections",
     });
   });
   it("preserves navigation origin and supports old links after workspace consolidation", () => {
     expect(parseWorkspaceSearch({ tab: "files", from: "saved-hub", workFilter: "review" })).toEqual(
-      { tab: "property", from: "saved-hub", workFilter: "review" },
+      { tab: "files", from: "saved-hub", workFilter: "review" },
     );
     expect(parseWorkspaceSearch({ tab: "calendar", workFilter: "invalid" })).toEqual({
-      tab: "workflow",
+      tab: "work",
       workFilter: "all",
     });
   });
