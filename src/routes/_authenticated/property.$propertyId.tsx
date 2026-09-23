@@ -360,7 +360,7 @@ function OverviewTab({ hub }: { hub: Hub }) {
       {o.program && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">90-Day Owner Participation</CardTitle>
+            <CardTitle className="text-base">Active Owner Participation</CardTitle>
             <CardDescription>
               {o.program.ownerName ?? "Homeowner"} · {label(o.program.status)}
               {o.program.startedOn ? ` · ${o.program.startedOn} to ${o.program.endsOn ?? "—"}` : ""}

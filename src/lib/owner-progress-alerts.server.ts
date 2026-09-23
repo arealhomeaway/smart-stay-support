@@ -115,7 +115,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       kind: "final_five_days",
       alertKind: "progress_deadline",
       severity: 4,
-      title: "Five days remain in your 90-day program",
+      title: "Five days remain in your program year",
       body: `You have reported ${hours} hours. Please review your remaining activities and record any participation you have not yet entered.`,
     });
   } else if (s.daysLeft <= 10) {
@@ -123,7 +123,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       kind: "final_ten_days",
       alertKind: "progress_deadline",
       severity: 3,
-      title: "Ten days remain in your 90-day program",
+      title: "Ten days remain in your program year",
       body: `You have reported ${hours} hours. There is still good time to complete your remaining activities and record them.`,
     });
   }

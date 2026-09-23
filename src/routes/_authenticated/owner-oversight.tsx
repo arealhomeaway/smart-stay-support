@@ -313,7 +313,7 @@ function OwnerOversightPage() {
         {visible.length === 0 ? (
           <EmptyState
             title="No homeowner matches this view."
-            hint="Programs appear here once a homeowner's 90-day clock is running. Turn on demo programs to walk through the example home."
+            hint="Programs appear here once a homeowner's program is running. Turn on demo programs to walk through the example home."
             icon={<Users className="size-8" />}
           />
         ) : (

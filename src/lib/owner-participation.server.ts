@@ -1,5 +1,5 @@
 /**
- * Server-side aggregation for the 90-Day Owner Participation Program.
+ * Server-side aggregation for the Active Owner Participation Program.
  *
  * One rule governs every total in here: minutes live on the participation
  * entry and nowhere else. Property links carry no time, so the combined

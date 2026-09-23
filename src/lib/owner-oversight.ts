@@ -39,7 +39,7 @@ export type OversightInput = {
 };
 
 export type OversightRow = OversightInput & {
-  /** Hours the whole 90 days is aiming at. */
+  /** Hours the whole program is aiming at. */
   targetHours: number;
   health: PaceHealth;
   checkpoints: MilestoneCheckpoint[];

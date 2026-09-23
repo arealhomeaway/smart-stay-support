@@ -125,7 +125,7 @@ export const updateOwnerProgram = createServerFn({ method: "POST" })
     return updateProgramSettings(context.supabase, context.userId, data);
   });
 
-/** Supervisor: manually activate the single 90-day clock. */
+/** Supervisor: manually activate the program window. */
 export const activateOwnerProgram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

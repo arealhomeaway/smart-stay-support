@@ -1,13 +1,13 @@
 /**
  * Shared (browser-safe) model for the Active Owner Participation Program.
  *
- * The program is a 90-day operating window per home. ARHA sets the roadmap,
+ * The program runs from each home's closing date to December 31. ARHA sets the roadmap,
  * the homeowner does the reviews and self-reports the time they actually
  * spent. Nothing in here ever suggests an amount of time to an owner: the
  * planning ranges exist so ARHA can staff the roadmap, and stay internal.
  */
 
-export const PROGRAM_DAYS = 90;
+import { programLengthDays } from "./owner-participation";
 
 /** ARHA's split: 60 hours getting the home open, 40+ running it. */
 export const DEFAULT_TARGET_HOURS = 100;
@@ -108,19 +108,19 @@ export function formatHours(minutes: number) {
   return `${h} hr${h === 1 ? "" : "s"}`;
 }
 
-/** Whole days elapsed in the 90-day window (0 before it starts). */
+/** Whole days elapsed in the closing-to-December-31 window (0 before it starts). */
 export function programDay(startedOn: string | null) {
   if (!startedOn) return 0;
   const start = new Date(`${startedOn}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.floor((today.getTime() - start.getTime()) / 86_400_000) + 1;
-  return Math.max(0, Math.min(PROGRAM_DAYS, days));
+  return Math.max(0, Math.min(programLengthDays(startedOn), days));
 }
 
 export function daysRemaining(startedOn: string | null) {
-  if (!startedOn) return PROGRAM_DAYS;
-  return Math.max(0, PROGRAM_DAYS - programDay(startedOn));
+  if (!startedOn) return 0;
+  return Math.max(0, programLengthDays(startedOn) - programDay(startedOn));
 }
 
 /**
@@ -132,7 +132,7 @@ export function paceState(startedOn: string | null, reportedMinutes: number, tar
   const day = programDay(startedOn);
   if (!startedOn || day === 0)
     return { state: "not_started" as const, expectedHours: 0, gapHours: 0 };
-  const expectedHours = Math.round(targetHours * (day / PROGRAM_DAYS) * 10) / 10;
+  const expectedHours = Math.round(targetHours * (day / programLengthDays(startedOn)) * 10) / 10;
   const actual = hoursFromMinutes(reportedMinutes);
   const gapHours = Math.round((expectedHours - actual) * 10) / 10;
   if (actual >= targetHours) return { state: "target_met" as const, expectedHours, gapHours };

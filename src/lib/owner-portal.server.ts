@@ -1,7 +1,7 @@
 /**
  * The homeowner's own view of their participation program (server-only).
  *
- * One homeowner, one program, one 90-day clock, one combined hour
+ * One homeowner, one program, one program window (closing date → December 31), one combined hour
  * commitment — across every home attached to the program. Ticket visibility
  * is automatic: enrolling a property is what turns on the feed. Internal
  * staff chatter is never included.

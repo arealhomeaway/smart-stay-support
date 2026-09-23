@@ -34,7 +34,7 @@ export const JOURNEY_STEPS = [
   },
   {
     key: "day_90_review",
-    label: "Day-90 Review",
+    label: "Year-End Review",
     blurb: "Close the structured program period and confirm next-step ownership.",
   },
 ] as const;
@@ -90,7 +90,7 @@ export function programStage(
   const current: JourneyKey = stages.length
     ? (ORDER[Math.min(...stages.map(journeyIndex))] as JourneyKey)
     : "initial_onboarding";
-  // The Day-90 review is a calendar event, not a property event: once the
+  // The year-end review is a calendar event, not a property event: once the
   // window closes it is the step in front of the homeowner regardless.
   if (program.programDay >= 90) return "day_90_review";
   return current;

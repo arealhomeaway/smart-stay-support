@@ -29,7 +29,7 @@ export const EMILY: ArhaContact = {
   role: "Chief Operating Officer",
   email: "emily.jimenez@arealhomeaway.com",
   phone: "918-215-2504 ext. 5",
-  use: "Escalations on program oversight, expectations and concerns during the 90-day period.",
+  use: "Escalations on program oversight, expectations and concerns during the program year.",
 };
 
 export const JAMES: ArhaContact = {
@@ -37,7 +37,7 @@ export const JAMES: ArhaContact = {
   role: "Chief Financial Officer",
   email: "james@arealhomeaway.com",
   phone: "405-446-7259",
-  use: "Invoicing, billing questions and ongoing owner concerns after the Day-90 closeout.",
+  use: "Invoicing, billing questions and ongoing owner concerns after the year-end closeout.",
 };
 
 export type ContactPhase = "onboarding" | "post_handoff" | "after_closeout";
@@ -56,7 +56,7 @@ export type ContactsView = {
   dayToDay: ContactSeat[];
   /** Named people to escalate to. */
   escalation: ArhaContact[];
-  /** Set only after the Day-90 closeout. */
+  /** Set only after the year-end closeout. */
   primary: ArhaContact | null;
 };
 
