@@ -710,3 +710,15 @@ Batch B (work surface)
 - [x] Property work: lane filters (All / My assigned / Utilities & access / Active owner); context-aware finish actions
 - [x] My Work: Due today & overdue / Upcoming this week / Blocked-waiting; inline checkoff
 - [x] Owner: one Log time dialog w/ multi-file; clickable hero home cards; Recent activity = completed only; badges as milestone strip
+
+## V2 rebuild (Emily, 9/23 — approved with corrections)
+- [x] Victor: 3915 W 104th re-enrolled in his existing program (guard now allows confirmed future closing)
+- [ ] Program window: closing date → Dec 31, 100+ hours; remove 90-day/Day 30/60/90 logic and displays
+- [ ] Owner hours: remove review/approval states; count immediately; legacy unknown-source = "Legacy / Unlinked"
+- [ ] Functional roles table + role→person mapping screen
+- [ ] work_items engine (tasks + linked opportunities), versioned templates with configurable stages
+- [ ] Template builder v2 (roles, required/blocking, rules, opportunity content, publish versions)
+- [ ] Handoff readiness = required blocking tasks only; deficiency tasks on Operations return
+- [ ] Unstarted projects → clean V2 workflow; started projects keep history
+- [ ] Owner UI: "Opportunity" wording + Ways to document your participation
+- [ ] Retire legacy paths after data verified
