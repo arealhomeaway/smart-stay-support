@@ -3,10 +3,10 @@
  * role architecture used everywhere else.
  *  - Onboarding Director: the single `functional_roles` seat.
  *  - Project Managers / Utilities / Design & Staging: pools
- *    (`functional_role_members`). The seat holder stays the default router and
- *    follows the pool (first member) automatically.
- *  - Each property's Primary Project Manager lives on `onboarding_projects`,
- *    and PM Tasks route to that person, never to one global PM.
+ *    (`functional_role_members`) — who is AVAILABLE, never who gets work.
+ *  - Each project's Project Team (onboarding_projects: project_manager,
+ *    utility_manager, role_assignments) decides the person per role; the
+ *    database routes Tasks via project_role_assignee().
  * Property Coordinator is owned by Operations and is never shown here.
  */
 import { createServerFn } from "@tanstack/react-start";
@@ -35,33 +35,6 @@ async function assertCanManage(ctx: Ctx) {
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
-}
-
-/** Keep the role's default seat pointed at a current pool member. */
-async function syncSeatToPool(roleCode: string) {
-  const db = await admin();
-  const [{ data: role }, { data: members }] = await Promise.all([
-    db.from("functional_roles").select("current_seat_holder").eq("code", roleCode).maybeSingle(),
-    db
-      .from("functional_role_members")
-      .select("user_id, profiles:user_id(full_name, email)")
-      .eq("role_code", roleCode)
-      .order("created_at"),
-  ]);
-  const list = (members ?? []) as unknown as {
-    user_id: string;
-    profiles: { full_name: string | null; email: string | null } | null;
-  }[];
-  const holder = role?.current_seat_holder ?? null;
-  if (holder && list.some((m) => m.user_id === holder)) return;
-  const next = list[0] ?? null;
-  await db
-    .from("functional_roles")
-    .update({
-      current_seat_holder: next?.user_id ?? null,
-      current_seat_name: next ? (next.profiles?.full_name ?? next.profiles?.email ?? null) : null,
-    })
-    .eq("code", roleCode);
 }
 
 export const readOnboardingTeam = createServerFn({ method: "POST" })
@@ -165,7 +138,6 @@ export const addRolePoolMember = createServerFn({ method: "POST" })
         { onConflict: "role_code,user_id" },
       );
     if (error) throw new Error(error.message);
-    await syncSeatToPool(data.roleCode);
     return { ok: true as const };
   });
 
@@ -183,7 +155,6 @@ export const removeRolePoolMember = createServerFn({ method: "POST" })
       .eq("role_code", data.roleCode)
       .eq("user_id", data.userId);
     if (error) throw new Error(error.message);
-    await syncSeatToPool(data.roleCode);
     return { ok: true as const };
   });
 
@@ -208,16 +179,24 @@ export const setOnboardingDirector = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Where each project-level role assignment is stored on the project. */
+function projectRoleColumn(roleCode: string): "project_manager" | "utility_manager" | null {
+  if (roleCode === "onboarding_project_manager") return "project_manager";
+  if (roleCode === "utilities") return "utility_manager";
+  return null;
+}
+
 /**
- * Change a property's Primary Project Manager. Optionally moves that home's
- * pending Project Manager Tasks to the new PM.
+ * Assign a person to one functional role on one project (the Project Team).
+ * Optionally moves that home's unfinished Tasks for that role to them.
  */
-export const setProjectPrimaryPM = createServerFn({ method: "POST" })
+export const setProjectRoleAssignee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
         projectId: z.string().uuid(),
+        roleCode: z.string().min(2).max(60),
         userId: z.string().uuid().nullable(),
         reassignPending: z.boolean().default(false),
       })
@@ -225,16 +204,25 @@ export const setProjectPrimaryPM = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCanManage(context as unknown as Ctx);
+    if (OPERATIONS_OWNED.has(data.roleCode) || data.roleCode === "onboarding_director")
+      throw new Error("That role is not assigned from the Project Team.");
     const db = await admin();
     const { data: project } = await db
       .from("onboarding_projects")
-      .select("id, property_id, project_manager")
+      .select("id, property_id, project_manager, utility_manager, role_assignments")
       .eq("id", data.projectId)
       .maybeSingle();
     if (!project) throw new Error("That onboarding project was not found.");
+    const column = projectRoleColumn(data.roleCode);
+    const assignments = { ...((project.role_assignments ?? {}) as Record<string, string>) };
+    const before = column ? project[column] : (assignments[data.roleCode] ?? null);
+    if (!column) {
+      if (data.userId) assignments[data.roleCode] = data.userId;
+      else delete assignments[data.roleCode];
+    }
     const { error } = await db
       .from("onboarding_projects")
-      .update({ project_manager: data.userId })
+      .update(column ? { [column]: data.userId } : { role_assignments: assignments })
       .eq("id", data.projectId);
     if (error) throw new Error(error.message);
 
@@ -244,7 +232,7 @@ export const setProjectPrimaryPM = createServerFn({ method: "POST" })
         .from("onboarding_tasks")
         .update({ assigned_to: data.userId })
         .eq("property_id", project.property_id)
-        .eq("assigned_seat", "onboarding_project_manager")
+        .eq("assigned_seat", data.roleCode)
         .in("status", ["open", "in_progress", "blocked"])
         .select("id");
       if (e2) throw new Error(e2.message);
@@ -252,13 +240,74 @@ export const setProjectPrimaryPM = createServerFn({ method: "POST" })
     }
     await db.from("audit_log").insert({
       actor_id: context.userId,
-      action: "onboarding.primary_pm_changed",
+      action: "onboarding.project_team_changed",
       entity_type: "onboarding_project",
       entity_id: data.projectId,
-      before: { project_manager: project.project_manager },
-      after: { project_manager: data.userId, reassigned_tasks: moved },
+      entity_label: data.roleCode,
+      before: { role: data.roleCode, user: before },
+      after: { role: data.roleCode, user: data.userId, reassigned_tasks: moved },
     } as never);
     return { ok: true as const, moved };
+  });
+
+/** One home's Project Team: each role its workflow uses, who holds it, and the pool to pick from. */
+export const readProjectTeam = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+    const { data: project } = await sb
+      .from("onboarding_projects")
+      .select("id, project_manager, utility_manager, role_assignments, template_version_id")
+      .eq("property_id", data.propertyId)
+      .neq("status", "cancelled")
+      .maybeSingle();
+    if (!project) return null;
+    const [roles, members, profiles, version, taskSeats, canEdit] = await Promise.all([
+      sb.from("functional_roles").select("code, name, team, active, sort_order").order("sort_order"),
+      sb.from("functional_role_members").select("role_code, user_id"),
+      sb.from("profiles").select("id, full_name, email"),
+      project.template_version_id
+        ? sb.from("onboarding_template_versions").select("snapshot").eq("id", project.template_version_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      sb.from("onboarding_tasks").select("assigned_seat").eq("property_id", data.propertyId).in("status", ["open", "in_progress", "blocked"]),
+      canManageTeam(context as unknown as Ctx),
+    ]);
+    const used = new Set<string>(POOL_ROLES);
+    const steps = ((version.data?.snapshot as { steps?: { functional_role?: string | null }[] } | null)?.steps ?? []);
+    for (const s of steps) if (s.functional_role) used.add(s.functional_role);
+    for (const t of taskSeats.data ?? []) if (t.assigned_seat) used.add(t.assigned_seat);
+    const all = roles.data ?? [];
+    const assignments = (project.role_assignments ?? {}) as Record<string, string>;
+    const profile = new Map((profiles.data ?? []).map((p) => [p.id, p]));
+    const list = all
+      .filter(
+        (r) =>
+          r.active &&
+          used.has(r.code) &&
+          r.team === "onboarding" &&
+          !OPERATIONS_OWNED.has(r.code) &&
+          r.code !== "onboarding_director",
+      )
+      .map((r) => {
+        const column = projectRoleColumn(r.code);
+        const assignee = column ? (project[column] as string | null) : (assignments[r.code] ?? null);
+        const pool = (members.data ?? [])
+          .filter((m) => m.role_code === r.code)
+          .map((m) => m.user_id);
+        if (assignee && !pool.includes(assignee)) pool.push(assignee);
+        return {
+          code: r.code,
+          name: r.code === "onboarding_project_manager" ? "Primary Project Manager" : r.name,
+          assignee,
+          pool: pool.map((id) => ({
+            id,
+            full_name: profile.get(id)?.full_name ?? null,
+            email: profile.get(id)?.email ?? null,
+          })),
+        };
+      });
+    return { projectId: project.id, canEdit, roles: list };
   });
 
 /** The Director (or leadership) takes any Onboarding Task directly. */
