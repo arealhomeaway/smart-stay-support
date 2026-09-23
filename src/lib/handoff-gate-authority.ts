@@ -3,10 +3,13 @@
  *
  * The sequence is fixed and nobody shortcuts it:
  *   the assigned PM submits the readiness record
- *     -> Director of Onboarding (Kati Hand) approves onboarding readiness
- *     -> Director of Operations (Micah Sinor) approves operational readiness
+ *     -> Onboarding Director approves onboarding readiness
+ *     -> Operations Director approves operational readiness
  *     -> Operations formally accepts the property
- *     -> Operations Supervisor (James Almario) confirms Live.
+ *     -> Operations Supervisor confirms Live.
+ *
+ * People are never named here: each role maps to whoever holds that seat
+ * in the team roles list, which leadership can change at any time.
  *
  * Two separations are enforced here and again in the database:
  *  1. The project manager who submitted the handoff never approves it —
@@ -22,28 +25,28 @@ export const HANDOFF_GATES = [
     order: 1,
     label: "Director of Onboarding review",
     role: "Director of Onboarding",
-    holder: "Kati Hand",
+    holder: "Current Onboarding Director",
   },
   {
     step: "micah_review",
     order: 2,
     label: "Operational Readiness Review",
     role: "Director of Operations",
-    holder: "Micah Sinor",
+    holder: "Current Operations Director",
   },
   {
     step: "operations_acceptance",
     order: 3,
     label: "Operations acceptance",
     role: "Operations Supervisor",
-    holder: "James Almario and the receiving Operations team",
+    holder: "Current Operations Supervisor and the receiving Operations team",
   },
   {
     step: "live_confirmation",
     order: 4,
     label: "Live confirmation",
     role: "Operations Supervisor",
-    holder: "James Almario or designated Ops Supervisor",
+    holder: "Current Operations Supervisor",
   },
 ] as const;
 
