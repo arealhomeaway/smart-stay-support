@@ -28,6 +28,7 @@ import {
 } from "@/lib/v2-workflow.functions";
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
 import { validateFile } from "@/lib/attachments";
+import { ownerPrograms } from "@/lib/owner-program.functions";
 
 export type CollabData = Awaited<ReturnType<typeof readOwnerCollaboration>>;
 export type CollabOpp = CollabData["opportunities"][number];
@@ -344,7 +345,10 @@ export function OpportunityEditor({
 }
 
 /** Owner Collaboration inside one internal Task. Hidden when the home has no Active Owner program. */
-export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle, enrolled }: { propertyId: string; taskId: string; taskTitle: string; enrolled: boolean }) {
+export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle }: { propertyId: string; taskId: string; taskTitle: string }) {
+  const loadPrograms = useServerFn(ownerPrograms);
+  const programs = useQuery({ queryKey: ["owner-programs", "property", propertyId], queryFn: () => loadPrograms({ data: {} }) });
+  const enrolled = (programs.data?.rows ?? []).some((p) => p.properties.some((h) => h.id === propertyId));
   const q = useOwnerCollaboration(propertyId);
   const [editing, setEditing] = useState<CollabOpp | "new" | null>(null);
   if (!enrolled) return null;

@@ -46,6 +46,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Chip } from "@/components/ui/page";
 import { Separator } from "@/components/ui/separator";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
+import { TaskOwnerCollaboration } from "@/components/onboarding/OwnerCollaboration";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
 import { EmailComposer } from "@/components/EmailComposer";
@@ -610,6 +611,8 @@ export function TaskDrawer({
             description={uploadHint(kind)}
           />
         </section>
+
+        <TaskOwnerCollaboration propertyId={task.property_id} taskId={task.id} taskTitle={task.title} />
 
 
         <Separator />
