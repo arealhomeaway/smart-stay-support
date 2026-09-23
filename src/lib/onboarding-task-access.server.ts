@@ -21,6 +21,9 @@ export async function onboardingTaskAccess(
   const supervisor = await supabase.rpc("is_supervisor", { _user_id: userId });
   if (supervisor.error) throw new Error("Could not verify task access.");
   if (supervisor.data) return { canManage: true };
+  // The Onboarding Director works any Onboarding Task, whatever its default role.
+  const director = await supabase.rpc("is_onboarding_director", { _user_id: userId });
+  if (director.data === true) return { canManage: true };
   const projects = await supabase
     .from("onboarding_projects")
     .select("project_manager, director")
