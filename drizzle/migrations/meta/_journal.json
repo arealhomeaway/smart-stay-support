@@ -197,6 +197,13 @@
       "when": 1790164871774,
       "tag": "0027_owner_time_entry_multi_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790183986517,
+      "tag": "0028_enrollment_allows_confirmed_future_closing",
+      "breakpoints": true
     }
   ]
 }
