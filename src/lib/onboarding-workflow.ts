@@ -390,12 +390,20 @@ export function dueExplanation(task: WorkflowTask): string | null {
 
 /* -------------------------------------------------------------- assignee */
 
+const ROLE_NAMES: Record<string, string> = {
+  onboarding_project_manager: "Project Manager",
+  onboarding_director: "Onboarding Director",
+  design_staging: "Design & Staging",
+  utilities: "Utilities",
+};
+
 export function assigneeLabel(
   task: Pick<WorkflowTask, "assigned_to" | "assigned_seat">,
   people: { id: string; full_name: string | null; email: string | null }[],
 ): string {
   const role = task.assigned_seat
-    ? (SEAT_LABELS[task.assigned_seat as SeatCode] ??
+    ? (ROLE_NAMES[task.assigned_seat] ??
+      SEAT_LABELS[task.assigned_seat as SeatCode] ??
       task.assigned_seat.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()))
     : null;
   if (task.assigned_to) {

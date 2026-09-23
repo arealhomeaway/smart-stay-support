@@ -325,8 +325,7 @@ function PropertyWorkspace() {
   if (life.notStarted) {
     return (
       <div className="space-y-5">
-        <BackControl origin={origin} />
-        <PageHeader
+          <PageHeader
           eyebrow="Onboarding"
           title={current.name}
           description="Onboarding has not been started for this home yet."
@@ -404,7 +403,6 @@ function PropertyWorkspace() {
 
   return (
     <div className="space-y-5">
-      <BackControl origin={origin} />
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="h-24 w-36 shrink-0 overflow-hidden rounded-lg bg-sunken">
