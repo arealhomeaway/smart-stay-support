@@ -4,29 +4,29 @@ import {
   PARTICIPATION_PROMPT_NOTE,
 } from "../owner-participation-prompts";
 
-describe("ways to participate prompts", () => {
-  it("offers three to four stage-aware suggestions", () => {
+describe("optional participation opportunities", () => {
+  it("offers several stage-aware suggestions", () => {
     const onboarding = buildParticipationPrompts({ phase: "onboarding" });
     const ongoing = buildParticipationPrompts({ phase: "ongoing" });
     for (const set of [onboarding, ongoing]) {
-      expect(set.length >= 3).toBe(true);
-      expect(set.length <= 4).toBe(true);
+      expect(set.length >= 4).toBe(true);
+      expect(set.length <= 8).toBe(true);
     }
     expect(onboarding.map((p) => p.id)).not.toEqual(ongoing.map((p) => p.id));
   });
 
-  it("puts a waiting decision first when one is pending", () => {
-    const prompts = buildParticipationPrompts({
-      phase: "onboarding",
-      pendingOnboardingActions: 1,
-    });
-    expect(prompts[0]?.id).toBe("pending-actions");
+  it("never mixes in work the team assigned", () => {
+    for (const phase of ["onboarding", "ongoing"]) {
+      const ids = buildParticipationPrompts({ phase }).map((p) => p.id);
+      expect(ids).not.toContain("pending-actions");
+      expect(new Set(ids).size).toBe(ids.length);
+    }
   });
 
   it("never suggests an amount of time or promises a tax outcome", () => {
     const text = [
       PARTICIPATION_PROMPT_NOTE,
-      ...buildParticipationPrompts({ phase: "onboarding", openReviews: 2 }).flatMap((p) => [
+      ...buildParticipationPrompts({ phase: "onboarding" }).flatMap((p) => [
         p.title,
         p.description,
         p.relevance,
