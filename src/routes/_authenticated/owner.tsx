@@ -59,9 +59,10 @@ export const Route = createFileRoute("/_authenticated/owner")({
   // home lives in the URL and stays shareable and bookmarkable.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { home?: string; view?: "documents" | "team" } => ({
+  ): { home?: string; view?: "documents" | "team"; opportunity?: string } => ({
     ...(typeof search["home"] === "string" ? { home: search["home"] as string } : {}),
     ...(search["view"] === "documents" || search["view"] === "team" ? { view: search["view"] } : {}),
+    ...(typeof search["opportunity"] === "string" ? { opportunity: search["opportunity"] as string } : {}),
   }),
   head: () => ({
     meta: [
