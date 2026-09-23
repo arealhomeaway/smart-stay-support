@@ -3,14 +3,14 @@
  * dashboard writes the home AND the onboarding project, so the scope card can
  * never show an older copy of the same date.
  */
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 // Module mocks are global to the test run, so every stub here stays opt-in and
 // is switched back off once this file finishes — other suites keep the real code.
 let stubbed = true;
-afterAll(() => {
+const releaseStubs = () => {
   stubbed = false;
-});
+};
 
 mock.module("@/lib/audit.server", () => ({ writeAudit: async () => {} }));
 mock.module("../audit.server", () => ({ writeAudit: async () => {} }));
