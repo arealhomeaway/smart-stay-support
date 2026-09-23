@@ -161,11 +161,11 @@ export function PropertyWorkQueue({
           </div>
           <WorkflowTable
             tasks={tasks}
-            outOfScope={outOfScope}
             people={people}
-            selectedId={selectedId}
-            release={release}
             onSelect={onSelect}
+            {...(outOfScope ? { outOfScope } : {})}
+            {...(selectedId !== undefined ? { selectedId } : {})}
+            {...(release ? { release } : {})}
           />
         </div>
       </details>
