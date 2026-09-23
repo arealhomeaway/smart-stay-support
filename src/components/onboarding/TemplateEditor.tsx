@@ -3,10 +3,27 @@
  * Directors only — the page that renders this already gates on the capability.
  */
 import { useMemo, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +51,6 @@ import {
   arrangeTemplateStepsFn,
   deleteTemplateStepFn,
   readOnboardingTemplateFn,
-  reorderTemplateStepFn,
   saveTemplateStepFn,
 } from "@/lib/onboarding-template-admin.functions";
 
@@ -72,6 +88,103 @@ export function tagLabel(tag: string) {
   return tag === ACTIVE_OWNER_TAG
     ? "Active Owner"
     : tag.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
+const stepDragId = (id: string) => `step:${id}`;
+const stageDropId = (stage: string) => `stage:${stage}`;
+
+function SortableStep({
+  step,
+  onEdit,
+  onDelete,
+}: {
+  step: Step;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: stepDragId(step.id),
+    data: { type: "step", stepId: step.id, stage: step.stage },
+  });
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-start justify-between gap-3 p-3 ${isDragging ? "z-10 opacity-50" : ""} ${
+        (step.tags ?? []).includes(ACTIVE_OWNER_TAG)
+          ? "bg-primary/5 border-primary border-l-4"
+          : ""
+      }`}
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Drag ${step.title} to reorder`}
+          className="text-muted-foreground -ml-2 h-7 w-7 shrink-0 cursor-grab touch-none active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-medium">{step.title}</p>
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            {step.role ? <Badge variant="outline">{step.role}</Badge> : null}
+            {step.anchor ? (
+              <Badge variant="secondary">
+                {step.anchor === "actual_access"
+                  ? "Access"
+                  : step.anchor === "actual_closing"
+                    ? "Closing"
+                    : "Planned closing"}{" "}
+                {(step.offsetDays ?? 0) >= 0 ? "+" : ""}
+                {step.offsetDays}d
+              </Badge>
+            ) : (
+              <Badge variant="outline">Paced automatically</Badge>
+            )}
+            {step.blocksHandoff ? <Badge variant="outline">Blocks handoff</Badge> : null}
+            {step.requiresOwnerApproval ? <Badge variant="outline">Homeowner approval</Badge> : null}
+            {step.ownerApprovalWhenActiveOwner ? (
+              <Badge variant="outline">Approval for Active Owner homes</Badge>
+            ) : null}
+            {step.evidenceRequired ? <Badge variant="outline">Evidence required</Badge> : null}
+            {(step.tags ?? []).map((tag) => (
+              <Badge key={tag} variant={tag === ACTIVE_OWNER_TAG ? "default" : "secondary"}>
+                {tagLabel(tag)}
+              </Badge>
+            ))}
+            {step.subtasks?.length ? (
+              <Badge variant="outline">{step.subtasks.length} subtasks</Badge>
+            ) : null}
+          </div>
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-1">
+        <Button variant="ghost" size="icon" aria-label="Edit step" onClick={onEdit}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" aria-label="Remove step" onClick={onDelete}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+function StageDropZone({ stage, children }: { stage: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: stageDropId(stage),
+    data: { type: "stage", stage },
+  });
+  return (
+    <div ref={setNodeRef} className={isOver ? "rounded-md ring-2 ring-primary/40" : undefined}>
+      {children}
+    </div>
+  );
 }
 
 function emptyDraft(): Draft {
@@ -116,10 +229,12 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
   const read = useServerFn(readOnboardingTemplateFn);
   const saveStep = useServerFn(saveTemplateStepFn);
   const removeStep = useServerFn(deleteTemplateStepFn);
-  const reorder = useServerFn(reorderTemplateStepFn);
   const arrangeSteps = useServerFn(arrangeTemplateStepsFn);
-  const [dragging, setDragging] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const key = ["onboarding-template", templateId];
   const { data, isLoading } = useQuery({
@@ -170,13 +285,6 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
       toast.success("Step removed from the template.");
       refresh();
     },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const move = useMutation({
-    mutationFn: (v: { stepId: string; direction: "up" | "down" }) =>
-      reorder({ data: { templateId, ...v } }),
-    onSuccess: refresh,
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -231,6 +339,18 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
     arrange.mutate(order);
   };
 
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || arrange.isPending) return;
+    const stepId = String(active.data.current?.stepId ?? "");
+    if (!stepId) return;
+    const targetType = over.data.current?.type;
+    const targetStage = String(over.data.current?.stage ?? "");
+    if (!targetStage) return;
+    const beforeStepId = targetType === "step" ? String(over.data.current?.stepId ?? "") : null;
+    if (beforeStepId === stepId) return;
+    dropStep(stepId, targetStage, beforeStepId);
+  };
+
   if (isLoading) return <p className="text-muted-foreground text-sm">Loading the template…</p>;
   if (!data) return <p className="text-muted-foreground text-sm">That template was not found.</p>;
 
@@ -257,144 +377,40 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
           </p>
         ) : null}
 
-        {grouped
-          // An empty stage is noise until there is something to drop into it.
-          .filter(([, steps]) => steps.length > 0 || dragging)
-          .map(([stage, steps]) => (
-          <div
-            key={stage}
-            className="space-y-2"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const held = e.dataTransfer.getData("text/plain") || dragging;
-              if (held) dropStep(held, stage, null);
-              setDragging(null);
-            }}
-          >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          {grouped.map(([stage, steps]) => (
+          <div key={stage} className="space-y-2">
             <h3 className="text-sm font-medium">
               {stageLabel(stage)}{" "}
               <span className="text-muted-foreground font-normal">
                 · {steps.length} step{steps.length === 1 ? "" : "s"}
               </span>
             </h3>
-            {steps.length === 0 ? (
-              <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
-                No steps in this stage. Drop one here to move it.
-              </p>
-            ) : null}
-            <ul className="divide-y rounded-md border empty:hidden">
-              {steps.map((s) => (
-                <li
-                  key={s.id}
-                  draggable
-                  onDragStart={(e) => {
-                    // The id travels with the drag as well as in state, so a
-                    // drop never depends on a render having happened first.
-                    e.dataTransfer.setData("text/plain", s.id);
-                    e.dataTransfer.effectAllowed = "move";
-                    setDragging(s.id);
-                  }}
-                  onDragEnd={() => setDragging(null)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const held = e.dataTransfer.getData("text/plain") || dragging;
-                    if (held && held !== s.id) dropStep(held, stage, s.id);
-                    setDragging(null);
-                  }}
-                  className={`flex items-start justify-between gap-3 p-3 ${
-                    dragging === s.id ? "opacity-50" : ""
-                  } ${
-                    (s.tags ?? []).includes(ACTIVE_OWNER_TAG)
-                      ? "bg-primary/5 border-primary border-l-4"
-                      : ""
-                  }`}
-                >
-                  <div className="flex min-w-0 items-start gap-2">
-                    <GripVertical
-                      aria-label="Drag to reorder"
-                      className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0 cursor-grab"
+            <StageDropZone stage={stage}>
+              <SortableContext
+                items={steps.map((step) => stepDragId(step.id))}
+                strategy={verticalListSortingStrategy}
+              >
+                {steps.length === 0 ? (
+                  <p className="text-muted-foreground rounded-md border border-dashed p-3 text-xs">
+                    No steps in this stage. Drop one here to move it.
+                  </p>
+                ) : null}
+                <ul className="divide-y rounded-md border empty:hidden">
+                  {steps.map((step) => (
+                    <SortableStep
+                      key={step.id}
+                      step={step}
+                      onEdit={() => setDraft(draftFrom(step))}
+                      onDelete={() => del.mutate(step.id)}
                     />
-                    <div className="min-w-0 space-y-1">
-                    <p className="text-sm font-medium">{s.title}</p>
-                    <div className="flex flex-wrap gap-1.5 text-xs">
-                      {s.role ? <Badge variant="outline">{s.role}</Badge> : null}
-                      {s.anchor ? (
-                        <Badge variant="secondary">
-                          {s.anchor === "actual_access"
-                            ? "Access"
-                            : s.anchor === "actual_closing"
-                              ? "Closing"
-                              : "Planned closing"}{" "}
-                          {(s.offsetDays ?? 0) >= 0 ? "+" : ""}
-                          {s.offsetDays}d
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">Paced automatically</Badge>
-                      )}
-                      {s.blocksHandoff ? <Badge variant="outline">Blocks handoff</Badge> : null}
-                      {s.requiresOwnerApproval ? (
-                        <Badge variant="outline">Homeowner approval</Badge>
-                      ) : null}
-                      {s.ownerApprovalWhenActiveOwner ? (
-                        <Badge variant="outline">Approval for Active Owner homes</Badge>
-                      ) : null}
-                      {s.evidenceRequired ? <Badge variant="outline">Evidence required</Badge> : null}
-                      {(s.tags ?? []).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant={tag === ACTIVE_OWNER_TAG ? "default" : "secondary"}
-                        >
-                          {tagLabel(tag)}
-                        </Badge>
-                      ))}
-                      {s.subtasks?.length ? (
-                        <Badge variant="outline">{s.subtasks.length} subtasks</Badge>
-                      ) : null}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Move up"
-                      onClick={() => move.mutate({ stepId: s.id, direction: "up" })}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Move down"
-                      onClick={() => move.mutate({ stepId: s.id, direction: "down" })}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Edit step"
-                      onClick={() => setDraft(draftFrom(s))}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Remove step"
-                      onClick={() => del.mutate(s.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  ))}
+                </ul>
+              </SortableContext>
+            </StageDropZone>
           </div>
           ))}
+        </DndContext>
       </CardContent>
 
       <Dialog open={Boolean(draft)} onOpenChange={(o) => !o && setDraft(null)}>
