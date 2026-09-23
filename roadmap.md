@@ -705,7 +705,7 @@ Batch B (work surface)
 - [x] Fix template step/stage drag-and-drop and remove arrow movement controls
 
 ## Streamline pass (Emily, 9/23)
-- [ ] Property workspace simplification: one ordered Work queue, one filter, no duplicate homeowner decisions; tracks/stages demoted
+- [x] Property workspace simplification: one ordered Work queue, one filter, no duplicate homeowner decisions; tracks/stages demoted
 - [x] Hub: four views (Needs attention / Handoffs & reviews / Active pipeline / All homes); handoff reviews inline; Source records in a drawer
 - [x] Property work: lane filters (All / My assigned / Utilities & access / Active owner); context-aware finish actions
 - [x] My Work: Due today & overdue / Upcoming this week / Blocked-waiting; inline checkoff

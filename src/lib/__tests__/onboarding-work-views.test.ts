@@ -1,7 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import {
   groupMyWork,
+  isWaitingTask,
   matchesWorkFilter,
+  matchesPropertyQueueFilter,
+  orderPropertyWorkQueue,
   parseWorkspaceSearch,
   workspaceSearchFromLens,
 } from "../onboarding-work-views";
@@ -63,5 +66,27 @@ describe("work attention views", () => {
       tab: "work",
       workFilter: "all",
     });
+  });
+  it("orders one property queue with workable steps before waiting and finished work", () => {
+    const ready = view("ready", "ready", "2026-09-16");
+    const overdue = view("overdue", "in_progress", "2026-09-10", true);
+    const waiting = view("waiting", "blocked", "2026-09-12");
+    const done = view("done", "complete", "2026-09-01");
+    expect(orderPropertyWorkQueue([done, waiting, ready, overdue]).map((item) => item.task.id)).toEqual([
+      "overdue",
+      "ready",
+      "waiting",
+      "done",
+    ]);
+  });
+  it("uses one filter model for attention, assignment and waiting", () => {
+    const assigned = view("assigned", "ready");
+    assigned.task.assigned_to = "viewer";
+    const owner = view("owner", "needs_review");
+    owner.task.owner_approval_status = "awaiting_owner";
+    expect(matchesPropertyQueueFilter(assigned, "mine", "viewer")).toBe(true);
+    expect(matchesPropertyQueueFilter(assigned, "waiting", "viewer")).toBe(false);
+    expect(matchesPropertyQueueFilter(owner, "waiting", "viewer")).toBe(true);
+    expect(isWaitingTask(owner)).toBe(true);
   });
 });

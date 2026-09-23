@@ -59,36 +59,25 @@ import { OnboardingWorkOrdersPanel } from "@/components/onboarding/OnboardingWor
 import { PropertyFactsPanel } from "@/components/onboarding/PropertyFactsPanel";
 import { projectScope, scopeSummary, splitByScope } from "@/lib/onboarding-scope";
 import {
-  WORK_FILTER_LABELS,
-  matchesWorkFilter,
+  type PropertyQueueFilter,
   validateWorkspaceSearch,
-  type WorkFilter,
 } from "@/lib/onboarding-work-views";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
-import { WorkflowTable } from "@/components/onboarding/WorkflowTable";
+import { PropertyWorkQueue } from "@/components/onboarding/PropertyWorkQueue";
 import { StageCapturePanel } from "@/components/onboarding/StageCapturePanel";
-import { CurrentWork } from "@/components/onboarding/CurrentWork";
 import { PhotoStrip } from "@/components/onboarding/PhotoStrip";
 import { ProjectHistory } from "@/components/onboarding/ProjectHistory";
 import {
   buildReleaseContext,
-  chainProgress,
   deriveLifecycle,
   handoffReadiness,
 } from "@/lib/onboarding-state";
 import {
-  deriveBlockers,
-  deriveNextAction,
-  deriveRisk,
-  deriveStage,
-  lifecycleStageMeta,
   targetHandoff,
   type OpenHandoff,
   type ProjectProperty,
 } from "@/lib/onboarding-lifecycle";
 import { TaskDrawer, type SaveTaskInput } from "@/components/onboarding/TaskDrawer";
-import { WorkstreamBoard } from "@/components/onboarding/WorkstreamBoard";
-import { trackForTask } from "@/lib/onboarding-workstreams";
 import { useRole } from "@/hooks/useRole";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { stateChip } from "@/lib/semantic";
@@ -158,12 +147,13 @@ function PropertyWorkspace() {
   const { can, readOnly, userId, roles } = useRole();
   const { enabled } = useFeatureFlags();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
-  const [lane, setLane] = useState<"all" | "mine" | "access" | "active_owner">("all");
-  const inLane = (t: WorkflowTask, key: typeof lane) =>
-    key === "all" ||
-    (key === "mine" && t.assigned_to === userId) ||
-    (key === "access" && trackForTask(t) === "access_utilities") ||
-    (key === "active_owner" && (t.tags ?? []).includes("active_owner"));
+  const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
+    search.workFilter === "blocked"
+      ? "waiting"
+      : search.workFilter === "all"
+        ? "all"
+        : "attention",
+  );
   // Where the Director hub was left — filters, search and lens intact — so
   // Back restores that exact view rather than a bare "/onboarding".
   const { origin } = useRecordOrigin("onboarding");
@@ -325,12 +315,6 @@ function PropertyWorkspace() {
     }).checks,
     independent.extras,
   );
-  const chain = chainProgress({
-    property: current as never,
-    project: projectRow as never,
-    tasks,
-    handoff: (openHandoff ?? null) as never,
-  });
   // Work recorded after Operations accepted the home is never part of that
   // finished plan: it is a correction or an Operations ticket.
   const postAcceptance = life.lockedAt
@@ -341,7 +325,6 @@ function PropertyWorkspace() {
           t.status !== "carryover",
       )
     : [];
-  const stage = deriveStage(project);
 
   // Before onboarding is actually started there is no plan to act on. Showing
   // scope pickers, Add task or template actions here would imply a project
@@ -390,9 +373,6 @@ function PropertyWorkspace() {
     );
   }
 
-  const nextAction = deriveNextAction(project);
-  const risk = deriveRisk(project);
-  const blockers = deriveBlockers(project);
   const target = targetHandoff(project);
 
   return (
@@ -475,6 +455,18 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------ Work & Scope */}
         <TabsContent value="work" className="space-y-5">
+          <PropertyWorkQueue
+            tasks={tasks}
+            people={data.people}
+            viewerId={userId}
+            filter={queueFilter}
+            onFilterChange={setQueueFilter}
+            selectedId={openTaskId}
+            onSelect={(task) => setOpenTaskId(task.id)}
+            outOfScope={outOfScope}
+            release={release}
+          />
+
           <ProjectScopePanel
             propertyId={current.id}
             propertyName={current.name}
@@ -494,22 +486,6 @@ function PropertyWorkspace() {
             taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
           />
 
-          <CurrentWork
-            stage={stage}
-            chain={chain}
-            next={nextAction}
-            risk={risk}
-            blockers={blockers}
-            tasks={tasks}
-            handoff={(openHandoff ?? null) as OpenHandoff}
-            accepted={Boolean(current.handoff_accepted_at)}
-            target={target}
-            onOpenTask={setOpenTaskId}
-          />
-
-
-
-
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary label="Overall progress">
               <div className="flex items-center gap-3">
@@ -521,11 +497,7 @@ function PropertyWorkspace() {
             </Summary>
             <Summary label="Project manager">{pm?.full_name ?? pm?.email ?? "Unassigned"}</Summary>
             <Summary label="Next milestone">{roll.nextMilestone ?? "—"}</Summary>
-            <Summary label="Primary blocker">{roll.primaryBlocker ?? "None"}</Summary>
             <Summary label="Program">{activeOwner ? "Active Owner Program" : "Standard"}</Summary>
-            <Summary label="Open owner decisions">
-              {String(approvals.filter((a) => a.status === "pending").length)}
-            </Summary>
             <Summary label="Carryover items">{String(roll.carryover)}</Summary>
             <Summary label="Handoff accepted">
               {current.handoff_accepted_at ? usDate(current.handoff_accepted_at) : "Not yet"}
@@ -620,51 +592,7 @@ function PropertyWorkspace() {
             </section>
           )}
 
-          <section className="surface p-4">
-            <p className="font-medium">Homeowner decisions</p>
-            {approvals.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No homeowner approval has been requested for this home.
-              </p>
-            )}
-            <div className="mt-2 space-y-2">
-              {approvals.map((a) => (
-                <div key={a.id} className="rounded-md border border-border p-3 text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Chip
-                      className={stateChip(
-                        a.status === "approved"
-                          ? "done"
-                          : a.status === "pending"
-                            ? "waiting"
-                            : "info",
-                      )}
-                    >
-                      {a.status === "pending"
-                        ? "Waiting on homeowner"
-                        : a.status === "approved"
-                          ? "Approved"
-                          : "Sent back"}
-                    </Chip>
-                    <span className="font-medium">{a.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {a.decided_at
-                        ? usDateTime(a.decided_at)
-                        : `Requested ${usDate(a.created_at)}`}
-                    </span>
-                  </div>
-                  {a.decision_note && (
-                    <p className="mt-1 text-muted-foreground">{a.decision_note}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              Four tracks move at the same time. Start with anything under Ready now — open a step
-              to see the detail and why it is where it is.
-            </p>
             <NewTaskDialog
               propertyId={current.id}
               people={data.people}
@@ -674,7 +602,6 @@ function PropertyWorkspace() {
               onSave={(values) => saveTask.mutate({ data: values } as never)}
             />
           </div>
-          <WorkstreamBoard tasks={tasks} release={release} onOpenTask={setOpenTaskId} />
           <p className="text-xs text-muted-foreground">Scope · {scopeSummary(scope)}</p>
           {life.locked && (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
@@ -697,70 +624,6 @@ function PropertyWorkspace() {
               </ul>
             </section>
           )}
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Task lanes">
-            {(
-              [
-                ["all", "All tasks"],
-                ["mine", "My assigned"],
-                ["access", "Utilities & access"],
-                ["active_owner", "Active owner"],
-              ] as const
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setLane(key)}
-                aria-pressed={lane === key}
-                className={
-                  lane === key
-                    ? "rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary"
-                    : "rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-                }
-              >
-                {label} ({tasks.filter((t) => inLane(t, key)).length})
-              </button>
-            ))}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="work-filter">Show work</Label>
-            <select
-              id="work-filter"
-              className="w-full rounded-md border bg-background p-2 text-sm sm:max-w-xs"
-              value={search.workFilter}
-              onChange={(event) =>
-                void navigate({
-                  search: { ...search, workFilter: event.target.value as WorkFilter },
-                  replace: true,
-                })
-              }
-            >
-              {Object.entries(WORK_FILTER_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <WorkflowTable
-            tasks={tasks}
-            visibleTaskIds={tasks
-              .filter((task) => inLane(task, lane))
-              .filter((task) =>
-                matchesWorkFilter(
-                  viewTask(task, tasks, release),
-                  search.workFilter,
-                  data.stageCaptures.find(
-                    (capture) => capture.propertyId === current.id && capture.stage === task.stage,
-                  )?.status,
-                ),
-              )
-              .map((task) => task.id)}
-            outOfScope={outOfScope}
-            people={data.people}
-            selectedId={openTaskId}
-            release={release}
-            onSelect={(t) => setOpenTaskId(t.id)}
-          />
           <StageCapturePanel
             propertyId={current.id}
             canEdit={canExecuteProject && !life.locked && !openHandoff}
