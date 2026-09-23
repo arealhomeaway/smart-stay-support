@@ -4,21 +4,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  Award,
   Clock,
-  FolderOpen,
+  Download,
   Home as HomeIcon,
   MessageSquare,
   Paperclip,
-  ShieldCheck,
 } from "lucide-react";
 import { participationEvidenceUrlFn } from "@/lib/owner-evidence.functions";
 import { EmptyState, LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { Celebrate } from "@/components/ui/feedback";
-import { ActivityList, type ActivityEvent } from "@/components/ui/activity";
-import { PropertyPhoto } from "@/components/PropertyPhoto";
-import { MilestonePacing } from "@/components/owner/MilestonePacing";
 import { useRole } from "@/hooks/useRole";
 import { usCalendarDate, usDate, usDateTime } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
@@ -37,10 +32,9 @@ import {
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
-import { WaysToParticipate } from "@/components/owner/WaysToParticipate";
 import { OwnerOpportunities } from "@/components/owner/OwnerOpportunities";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
-import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
+import { ownerTicketResponseGuidance } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
 import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
@@ -48,23 +42,27 @@ import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction } from "@/lib/owner-onboarding.server";
 import { ownerReviewPresentation } from "@/lib/owner-review-presentation";
 import type { OwnerTicketRequest } from "@/lib/owner-ticket-authority";
-import { OwnerBadges } from "@/components/OwnerBadges";
-import { JourneyStrip } from "@/components/owner/JourneyStrip";
 import { ArhaContacts } from "@/components/owner/ArhaContacts";
 import { AfterDayNinety } from "@/components/owner/AfterDayNinety";
-import { programStage } from "@/lib/owner-journey";
 import { JAMES, contactsFor, contactPhaseFor } from "@/lib/arha-contacts";
 import { ownerContacts } from "@/lib/owner-contacts.functions";
-import { OwnerFilesPanel } from "@/components/OwnerFilesPanel";
-import { ParticipationReportPanel } from "@/components/ParticipationReportPanel";
+import { OwnerFilesPanel, useOwnerDocuments } from "@/components/OwnerFilesPanel";
+import { OnboardingProgress } from "@/components/owner/OnboardingProgress";
+import { ownerReportFile } from "@/lib/owner-report.functions";
+import { saveOwnerReportFile } from "@/lib/owner-report-download";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOwnerPreview } from "@/lib/owner-preview";
 import { useDemo } from "@/components/DemoProvider";
 
 export const Route = createFileRoute("/_authenticated/owner")({
   // Homeowners with more than one home switch between them here, so the chosen
   // home lives in the URL and stays shareable and bookmarkable.
-  validateSearch: (search: Record<string, unknown>): { home?: string } =>
-    typeof search["home"] === "string" ? { home: search["home"] as string } : {},
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { home?: string; view?: "documents" | "team" } => ({
+    ...(typeof search["home"] === "string" ? { home: search["home"] as string } : {}),
+    ...(search["view"] === "documents" || search["view"] === "team" ? { view: search["view"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Your home — Resolve" },
@@ -250,16 +248,6 @@ function OwnerHubBody({
     onboardingStatus: p.onboardingStatus ?? null,
     launchStatus: p.launchStatus ?? null,
   }));
-  const stage = programStage(
-    {
-      status: program.status,
-      completedAt: program.completedAt ?? null,
-      programDay: snapshot.day,
-      programTotalDays: snapshot.totalDays,
-    },
-    journeyHomes,
-  );
-
   const loadContacts = useServerFn(ownerContacts);
   const contactsQuery = useQuery({
     queryKey: ["owner-contacts", program.id, preview],
@@ -331,38 +319,67 @@ function OwnerHubBody({
       ? "onboarding"
       : "ongoing";
   const openManualLog = (activity: string) => openLogTime({ activity });
-  const scrollToSection = (id: string) =>
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   const percent = snapshot.percentOfTarget;
   const targetReached =
     snapshot.state === "target_reached" || snapshot.state === "program_completed";
 
-  // Recent activity is history only: finished work and decisions made.
-  const events: ActivityEvent[] = useMemo(() => {
-    const done: { id: string; kind: ActivityEvent["kind"]; label: string; at: string }[] = [
+  const homeName = (id: string | null | undefined) =>
+    properties.find((p) => p.propertyId === id)?.name ?? null;
+  const docs = useOwnerDocuments();
+  const inHome = (ids: (string | null | undefined)[]) =>
+    !selectedHomeId || ids.includes(selectedHomeId);
+  const propertyLabel = (ids: (string | null | undefined)[]) => {
+    const names = ids.map(homeName).filter(Boolean) as string[];
+    return names.length ? names.join(" · ") : properties.length > 1 ? "All your homes" : properties[0]?.name ?? "";
+  };
+
+  // Recent activity: what happened, always labelled with the home it belongs to.
+  const activity = useMemo(() => {
+    type Item = { id: string; at: string; property: string; label: string; entryId?: string; files?: number };
+    const items: Item[] = [
+      ...data.entries
+        .filter((e) => !e.superseded && inHome(e.propertyIds))
+        .map((e) => ({
+          id: `entry-${e.id}`,
+          at: e.entry_date,
+          property: propertyLabel(e.propertyIds),
+          label: `Logged ${Math.round((e.minutes / 60) * 100) / 100} hours — ${e.activity}`,
+          entryId: e.id,
+          files: attachmentCount(e),
+        })),
+      ...(docs.data?.files ?? [])
+        .filter((f) => f.uploaded_by_name === "You" && inHome([f.property_id]))
+        .map((f) => ({
+          id: `file-${f.id}`,
+          at: f.uploaded_at ?? f.created_at,
+          property: propertyLabel([f.property_id]),
+          label: `Uploaded ${f.title}`,
+        })),
       ...tickets
-        .filter((t) => t.status === "closed")
+        .filter((t) => t.status === "closed" && inHome([t.property_id]))
         .map((t) => ({
           id: `ticket-${t.id}`,
-          kind: "completed" as const,
-          label: `Completed: ${t.title}`,
           at: t.reported_at,
+          property: propertyLabel([t.property_id]),
+          label: `Completed: ${t.title}`,
         })),
       ...(reviews as Review[])
-        .filter((r) => r.responded_at)
+        .filter((r) => r.responded_at && (r.propertyIds.length === 0 || inHome(r.propertyIds)))
         .map((r) => ({
           id: `review-${r.id}`,
-          kind: "completed" as const,
-          label: `You responded: ${r.title}`,
           at: r.responded_at as string,
+          property: propertyLabel(r.propertyIds),
+          label: `You responded: ${r.title}`,
         })),
     ];
-    return done
-      .sort((a, b) => (a.at < b.at ? 1 : -1))
-      .slice(0, 10)
-      .map((e) => ({ id: e.id, kind: e.kind, label: e.label, when: usDateTime(e.at) }));
-  }, [reviews, tickets]);
+    return items.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 15);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.entries, docs.data, tickets, reviews, selectedHomeId, properties]);
+
+  const ownerHomes = properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }));
+  const navigate = Route.useNavigate();
+  const view = Route.useSearch().view ?? "home";
 
   return (
     <LogTimeContext.Provider value={preview ? null : openLogTime}>
@@ -377,24 +394,11 @@ function OwnerHubBody({
         title={`Welcome back, ${firstName(signedInName, program.ownerName)}`}
         description="Here is where things stand across your homes, and anything that needs your attention."
         actions={
-          <>
-            {preview || !canLogHours ? null : (
-              <Button onClick={() => openManualLog("")}>
-                <Clock className="size-4" aria-hidden="true" /> Log hours
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => scrollToSection("owner-decisions")}>
-              Pending decisions
-              {openReviews.length > 0 ? (
-                <span className="numeric ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  {openReviews.length}
-                </span>
-              ) : null}
+          preview || !canLogHours ? null : (
+            <Button onClick={() => openManualLog("")}>
+              <Clock className="size-4" aria-hidden="true" /> Log hours
             </Button>
-            <Button variant="outline" onClick={() => scrollToSection("owner-documents")}>
-              Shared documents
-            </Button>
-          </>
+          )
         }
       />
 
@@ -403,14 +407,9 @@ function OwnerHubBody({
         open={heroLogOpen}
         onOpenChange={setHeroLogOpen}
         programId={program.id}
-        // Without an open opportunity the homeowner records the activity
-        // themselves: a meeting, a call, research or an errand.
         anchor={heroLogAnchor}
         defaultActivity={heroLogActivity}
         phase={ownerPhase}
-        // Only homes still enrolled and past their confirmed closing may carry
-        // participation time, and the entry records the Property, not the
-        // enrollment row.
         properties={properties
           .filter(
             (p) =>
@@ -440,7 +439,7 @@ function OwnerHubBody({
         </Celebrate>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-[auto_1fr] md:items-center">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
           <ProgressRing value={percent} tone="owner" label="of target" />
           <div>
@@ -451,65 +450,45 @@ function OwnerHubBody({
             <p className="mt-1 text-xs text-muted-foreground">
               Program period ends {snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
             </p>
+            {preview ? null : <ReportDownloads />}
           </div>
         </div>
-        <div id="owner-homes" className="scroll-mt-24 space-y-2">
-          {properties.length > 1 ? (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                asChild
-                size="sm"
-                variant={selectedHomeId ? "outline" : "default"}
-              >
-                <Link to="/owner" search={{}}>
-                  All homes
-                </Link>
-              </Button>
-              {properties.map((p) => (
-                <Button
-                  key={`switch-${p.id}`}
-                  asChild
-                  size="sm"
-                  variant={selectedHomeId === p.propertyId ? "default" : "outline"}
-                >
-                  <Link to="/owner" search={{ home: p.propertyId }}>
-                    {p.name}
-                  </Link>
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        <div className="flex flex-wrap gap-2">
-          {scopedProperties.map((p) => (
-            <OwnerPropertyCard
-              key={p.id}
-              property={p}
-              attention={
-                openReviews.filter((r) => r.propertyIds.includes(p.propertyId)).length
+        {properties.length > 1 ? (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="owner-home-filter" className="text-sm text-muted-foreground">Viewing:</Label>
+            <Select
+              value={selectedHomeId ?? "all"}
+              onValueChange={(v) =>
+                void navigate({ search: (prev) => { const { home: _h, ...rest } = prev; return v === "all" ? rest : { ...rest, home: v }; } })
               }
-            />
-          ))}
-        </div>
-        </div>
+            >
+              <SelectTrigger id="owner-home-filter" className="w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Homes</SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.propertyId} value={p.propertyId}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
       </div>
 
-      <MilestonePacing
-        day={snapshot.day}
-        totalDays={snapshot.totalDays}
-        reportedHours={snapshot.reportedHours}
-        benchmark={snapshot.benchmark}
-        goalMet={targetReached}
-        audience="owner"
-      />
-
-      <div id="owner-journey" className="scroll-mt-24">
-        <JourneyStrip current={stage} />
-      </div>
-
+      {view === "documents" ? (
+        <OwnerFilesPanel homes={ownerHomes} selectedHomeId={selectedHomeId} readOnly={preview} />
+      ) : view === "team" ? (
+        <ArhaContacts
+          contacts={contacts}
+          supports={selectedHomeId ? homeName(selectedHomeId) ?? "This home" : properties.length > 1 ? `All your homes: ${properties.map((p) => p.name).join(", ")}` : properties[0]?.name ?? null}
+        />
+      ) : (
+        <>
       <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
         title="Needs your attention"
-        description="Questions, approvals and decisions from your ARHA team — each one labelled by type. Your name, the time and any note are recorded with every decision."
+        description="Specific questions, decisions and actions your ARHA team has sent you."
       >
         <div className="space-y-5">
         {openReviews.length > 0 && (
@@ -539,59 +518,49 @@ function OwnerHubBody({
             ))}
           </div>
         )}
+        <OnboardingActions readOnly={preview} programId={preview ? program.id : null} homeId={selectedHomeId} />
         <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0} />
         </div>
       </SectionCard>
       </div>
 
-      <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
-
-      <OwnerOpportunities homes={properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }))} readOnly={preview} {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })} />
-
-      <div id="owner-participate" className="scroll-mt-24" />
-      <WaysToParticipate
-        // A home is still being set up when its open work is onboarding work.
+      <OwnerOpportunities
+        homes={ownerHomes}
+        selectedHomeId={selectedHomeId}
+        readOnly={preview}
         phase={ownerPhase}
-        blockedReason={preview ? "Preview only — hours are recorded by the homeowner." : logHoursBlockedReason}
-        {...(preview ? {} : { onLogHours: openManualLog })}
+        blockedReason={preview ? null : logHoursBlockedReason}
+        {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
+        extra={
+          availableReviews.length ? (
+            <div className="space-y-3">
+              {availableReviews.map((r) => (
+                <ReviewRow
+                  key={r.id}
+                  review={r}
+                  properties={properties}
+                  programId={program.id}
+                  onDone={invalidate}
+                  readOnly={preview}
+                  action={actionByReview.get(r.id) ?? null}
+                  canLogHours={canLogHours}
+                  logHoursBlockedReason={logHoursBlockedReason}
+                />
+              ))}
+            </div>
+          ) : undefined
+        }
       />
 
-      <SectionCard
-        title="Property work to review"
-        description="Review what is happening at your homes, retain your participation history, and log time you actually spend reviewing."
-      >
-        {availableReviews.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No property work is available to review yet.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {availableReviews.map((r) => (
-              <ReviewRow
-                key={r.id}
-                review={r}
-                properties={properties}
-                programId={program.id}
-                onDone={invalidate}
-                readOnly={preview}
-                action={actionByReview.get(r.id) ?? null}
-                canLogHours={canLogHours}
-                logHoursBlockedReason={logHoursBlockedReason}
-              />
-            ))}
-          </div>
-        )}
-      </SectionCard>
-
-      <ParticipationReportPanel>
-        {data.badgeRefreshPending && (
-          <p className="text-sm text-muted-foreground">
-            Achievements are awaiting a refresh. Your participation record is still available;
-            reopening this page will retry.
-          </p>
-        )}
-        <OwnerBadges compact earned={badges} reportedHours={snapshot.reportedHours} />
-      </ParticipationReportPanel>
+      <OnboardingProgress
+        readOnly={preview}
+        programId={preview ? program.id : null}
+        homeId={selectedHomeId}
+        phaseFor={(id) => {
+          const p = properties.find((x) => x.propertyId === id);
+          return p ? titleCase(p.onboardingStatus) : null;
+        }}
+      />
 
       {closeoutVisible && (
         <AfterDayNinety
@@ -601,143 +570,61 @@ function OwnerHubBody({
         />
       )}
 
-      <div id="owner-contacts" className="scroll-mt-24">
-        <ArhaContacts contacts={contacts} />
-      </div>
-
-      <div id="owner-hours" className="scroll-mt-24" />
-      <SectionCard
-        title="Your logged participation"
-        description="Everything you have recorded, with any photos or receipts you attached."
-      >
-        {data.entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            You have not logged any participation time yet.
-          </p>
+      <SectionCard title="Recent activity">
+        {activity.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
         ) : (
-          <div className="space-y-2">
-            {data.entries.slice(0, 25).map((entry) => (
-              <div
-                key={entry.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"
-              >
+          <ul className="divide-y divide-border">
+            {activity.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                 <div className="min-w-0">
-                  <p className="font-medium">{entry.activity}</p>
                   <p className="numeric text-xs text-muted-foreground">
-                    {usCalendarDate(entry.entry_date)} · {entry.minutes} minutes
+                    {usCalendarDate(a.at.slice(0, 10))} · <span className="font-medium text-foreground">{a.property}</span>
                   </p>
+                  <p className="mt-0.5">{a.label}</p>
                 </div>
-                {attachmentCount(entry) > 0 ? (
+                {a.entryId && a.files ? (
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: attachmentCount(entry) }, (_, i) => (
-                      <EvidenceLink
-                        key={`${entry.id}-file-${i}`}
-                        entryId={entry.id}
-                        index={i}
-                        label={
-                          attachmentCount(entry) > 1 ? `View file ${i + 1}` : "View attachment"
-                        }
-                      />
+                    {Array.from({ length: a.files }, (_, i) => (
+                      <EvidenceLink key={`${a.id}-${i}`} entryId={a.entryId!} index={i} label={a.files! > 1 ? `File ${i + 1}` : "View attachment"} />
                     ))}
                   </div>
                 ) : null}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </SectionCard>
-
-      <SectionCard title="Reviewed updates in your participation history">
-        <div className="space-y-2">
-          {data.entries
-            .filter((entry) => entry.owner_update_snapshot)
-            .map((entry) => {
-              const reviewed = entry.owner_update_snapshot!;
-              return (
-                <details key={entry.id} className="rounded-lg border p-3 text-sm">
-                  <summary className="cursor-pointer">
-                    {usCalendarDate(entry.entry_date)} · {entry.activity} · Revision{" "}
-                    {reviewed.revision}
-                    {entry.superseded ? " · Superseded entry" : ""}
-                  </summary>
-                  <div className="mt-2 space-y-2 whitespace-pre-wrap">
-                    <p>{reviewed.issue}</p>
-                    <p>{reviewed.work_performed}</p>
-                    {reviewed.outcome && <p>{reviewed.outcome}</p>}
-                    {reviewedTicketRequestText(reviewed) && (
-                      <p>{reviewedTicketRequestText(reviewed)}</p>
-                    )}
-                    <p className="text-muted-foreground">
-                      Owner update reviewed {usDate(reviewed.reviewed_at)}. Retained with this
-                      participation entry.
-                    </p>
-                  </div>
-                </details>
-              );
-            })}
-          {!data.entries.some((entry) => entry.owner_update_snapshot) && (
-            <p className="text-sm text-muted-foreground">
-              No participation entries have a saved owner-update revision yet.
-            </p>
-          )}
-        </div>
-      </SectionCard>
-
-      <div id="owner-documents" className="scroll-mt-24">
-        <OwnerFilesPanel homes={properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }))} selectedHomeId={selectedHomeId} readOnly={preview} />
-      </div>
-
-      <SectionCard title="Your recorded review responses">
-        <div className="space-y-2">
-          {data.responseReceipts.map((receipt) => (
-            <details key={receipt.id} className="rounded-lg border p-3 text-sm">
-              <summary className="cursor-pointer">
-                {usDateTime(receipt.createdAt)} · Review response
-                {receipt.ownerUpdate ? ` · Revision ${receipt.ownerUpdate.revision}` : ""}
-              </summary>
-              <div className="mt-2 space-y-2 whitespace-pre-wrap">
-                <p className="text-muted-foreground">
-                  {properties.find((property) => property.propertyId === receipt.propertyId)
-                    ?.name ??
-                    (receipt.propertyId ? "Previously enrolled property" : "Program opportunity")}
-                  {receipt.ticketId
-                    ? ` · ${tickets.find((ticket) => ticket.id === receipt.ticketId)?.title ?? "Property work"}`
-                    : ""}
-                </p>
-                <p>{receipt.response || "Review acknowledged without a note."}</p>
-                {receipt.ownerUpdate ? (
-                  <>
-                    <p>{receipt.ownerUpdate.issue}</p>
-                    <p>{receipt.ownerUpdate.work_performed}</p>
-                    {receipt.ownerUpdate.outcome && <p>{receipt.ownerUpdate.outcome}</p>}
-                    {reviewedTicketRequestText(receipt.ownerUpdate) && (
-                      <p>{reviewedTicketRequestText(receipt.ownerUpdate)}</p>
-                    )}
-                    <p className="text-muted-foreground">
-                      This is the reviewed narrative retained with this response. A response does
-                      not add participation hours.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground">
-                    No narrative revision was retained with this response.
-                  </p>
-                )}
-              </div>
-            </details>
-          ))}
-          {data.responseReceipts.length === 0 && (
-            <p className="text-sm text-muted-foreground">No review responses recorded yet.</p>
-          )}
-        </div>
-      </SectionCard>
-
-      <div id="owner-activity" className="scroll-mt-24" />
-      <SectionCard title="Recent activity" description="Completed work and the decisions you've made.">
-        <ActivityList events={events} emptyLabel="No completed work or decisions yet." />
-      </SectionCard>
+        </>
+      )}
     </div>
     </LogTimeContext.Provider>
+  );
+}
+
+/** PDF / CSV of the homeowner's own hours — kept, without a dashboard card. */
+function ReportDownloads() {
+  const fetchFile = useServerFn(ownerReportFile);
+  const [busy, setBusy] = useState<"pdf" | "csv" | null>(null);
+  const download = async (format: "pdf" | "csv") => {
+    setBusy(format);
+    try {
+      saveOwnerReportFile(await fetchFile({ data: { format } }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not build the report");
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <p className="mt-2 flex gap-3 text-xs">
+      <button type="button" className="inline-flex items-center gap-1 text-primary hover:underline" disabled={busy !== null} onClick={() => void download("pdf")}>
+        <Download className="size-3.5" aria-hidden="true" /> Report (PDF)
+      </button>
+      <button type="button" className="inline-flex items-center gap-1 text-primary hover:underline" disabled={busy !== null} onClick={() => void download("csv")}>
+        <Download className="size-3.5" aria-hidden="true" /> CSV
+      </button>
+    </p>
   );
 }
 
@@ -764,90 +651,6 @@ type OwnerHome = {
   outstandingDecisions: number;
   overdueDecisions: number;
 };
-
-/**
- * A homeowner's own home, opened read-only. Same details staff see in the
- * Property Hub, minus anything operational they cannot act on.
- */
-function OwnerPropertyCard({
-  property,
-  attention,
-}: {
-  property: OwnerHome;
-  attention: number;
-}) {
-  const [open, setOpen] = useState(false);
-  const rows: { label: string; value: string }[] = [
-    { label: "Address", value: property.address || "—" },
-    {
-      label: "Closing date",
-      value: property.closingDate
-        ? `${usCalendarDate(property.closingDate)}${property.closingConfirmed ? " (confirmed)" : " (not confirmed yet)"}`
-        : "Not set",
-    },
-    { label: "Added to your program", value: usCalendarDate(property.addedOn) },
-    { label: "Enrollment", value: titleCase(property.inclusionStatus) },
-    { label: "Onboarding", value: titleCase(property.onboardingStatus) },
-    { label: "Listing", value: titleCase(property.launchStatus) },
-    {
-      label: "Setup work",
-      value: `${property.completedTasks} of ${property.requiredTasks} of your items done`,
-    },
-    {
-      label: "Waiting on you",
-      value: property.outstandingDecisions
-        ? `${property.outstandingDecisions} item${property.outstandingDecisions === 1 ? "" : "s"}${property.overdueDecisions ? ` · ${property.overdueDecisions} past due` : ""}`
-        : "Nothing right now",
-    },
-    {
-      label: "Your last activity",
-      value: property.lastOwnerActivityAt ? usDate(property.lastOwnerActivityAt) : "None recorded",
-    },
-  ];
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex min-w-56 flex-1 items-center gap-3 rounded-xl border border-border bg-card px-3 py-3 text-left transition-colors hover:border-primary/60 hover:bg-accent/40"
-      >
-        <PropertyPhoto url={property.photoUrl} name={property.name} rounded="rounded-lg" />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{property.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{property.address || "—"}</p>
-          {attention > 0 ? (
-            <span className="numeric mt-1 inline-block rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-              {attention} waiting on you
-            </span>
-          ) : null}
-        </div>
-      </button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{property.name}</DialogTitle>
-            <DialogDescription>Your home's details, view only.</DialogDescription>
-          </DialogHeader>
-          <dl className="space-y-2">
-            {rows.map((row) => (
-              <div key={row.label} className="flex flex-wrap justify-between gap-3 border-b border-border/60 pb-2 text-sm last:border-0">
-                <dt className="text-muted-foreground">{row.label}</dt>
-                <dd className="text-right font-medium">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
 
 function titleCase(value: string) {
   const text = (value ?? "").replace(/_/g, " ").trim();
