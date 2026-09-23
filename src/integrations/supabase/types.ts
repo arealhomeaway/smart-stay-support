@@ -4090,20 +4090,26 @@ export type Database = {
           director: string | null
           external_refs: Json
           furnishing_scope: string
+          handoff_state: string
           id: string
           is_demo: boolean
           modules: string[]
           notes: string | null
+          ops_accepted_at: string | null
+          ops_accepted_by: string | null
           planned_closing_on: string | null
           pool_location: string
           possession_on: string | null
           project_manager: string | null
           property_id: string
+          ready_for_ops_at: string | null
+          ready_for_ops_by: string | null
           started_at: string
           started_by: string | null
           status: string
           target_handoff_on: string | null
           target_handoff_source: string
+          template_version_id: string | null
           updated_at: string
           utility_manager: string | null
         }
@@ -4114,20 +4120,26 @@ export type Database = {
           director?: string | null
           external_refs?: Json
           furnishing_scope?: string
+          handoff_state?: string
           id?: string
           is_demo?: boolean
           modules?: string[]
           notes?: string | null
+          ops_accepted_at?: string | null
+          ops_accepted_by?: string | null
           planned_closing_on?: string | null
           pool_location?: string
           possession_on?: string | null
           project_manager?: string | null
           property_id: string
+          ready_for_ops_at?: string | null
+          ready_for_ops_by?: string | null
           started_at?: string
           started_by?: string | null
           status?: string
           target_handoff_on?: string | null
           target_handoff_source?: string
+          template_version_id?: string | null
           updated_at?: string
           utility_manager?: string | null
         }
@@ -4138,20 +4150,26 @@ export type Database = {
           director?: string | null
           external_refs?: Json
           furnishing_scope?: string
+          handoff_state?: string
           id?: string
           is_demo?: boolean
           modules?: string[]
           notes?: string | null
+          ops_accepted_at?: string | null
+          ops_accepted_by?: string | null
           planned_closing_on?: string | null
           pool_location?: string
           possession_on?: string | null
           project_manager?: string | null
           property_id?: string
+          ready_for_ops_at?: string | null
+          ready_for_ops_by?: string | null
           started_at?: string
           started_by?: string | null
           status?: string
           target_handoff_on?: string | null
           target_handoff_source?: string
+          template_version_id?: string | null
           updated_at?: string
           utility_manager?: string | null
         }
@@ -4168,6 +4186,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_projects_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_template_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -4251,6 +4276,7 @@ export type Database = {
           exception_reason: string | null
           id: string
           is_demo: boolean
+          is_required: boolean
           legacy_stage: string | null
           linked_ticket_id: string | null
           owner_approval_status: string
@@ -4263,6 +4289,7 @@ export type Database = {
           stage: string
           status: string
           tags: string[]
+          template_task_id: string | null
           title: string
           updated_at: string
         }
@@ -4291,6 +4318,7 @@ export type Database = {
           exception_reason?: string | null
           id?: string
           is_demo?: boolean
+          is_required?: boolean
           legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
@@ -4303,6 +4331,7 @@ export type Database = {
           stage?: string
           status?: string
           tags?: string[]
+          template_task_id?: string | null
           title: string
           updated_at?: string
         }
@@ -4331,6 +4360,7 @@ export type Database = {
           exception_reason?: string | null
           id?: string
           is_demo?: boolean
+          is_required?: boolean
           legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
@@ -4343,6 +4373,7 @@ export type Database = {
           stage?: string
           status?: string
           tags?: string[]
+          template_task_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -4391,15 +4422,56 @@ export type Database = {
           },
         ]
       }
+      onboarding_template_stages: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          template_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          template_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_template_stages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_template_tasks: {
         Row: {
           blocks_handoff: boolean
           breezeway_template_id: string | null
+          condition: Json | null
           created_at: string
           detail: string | null
           evidence_required: boolean
+          functional_role: string | null
           id: string
+          is_active: boolean
+          is_required: boolean
+          module: string | null
           offset_days: number | null
+          opportunity: Json | null
           owner_approval_when_active_owner: boolean
           requires_owner_approval: boolean
           role: string | null
@@ -4415,11 +4487,17 @@ export type Database = {
         Insert: {
           blocks_handoff?: boolean
           breezeway_template_id?: string | null
+          condition?: Json | null
           created_at?: string
           detail?: string | null
           evidence_required?: boolean
+          functional_role?: string | null
           id?: string
+          is_active?: boolean
+          is_required?: boolean
+          module?: string | null
           offset_days?: number | null
+          opportunity?: Json | null
           owner_approval_when_active_owner?: boolean
           requires_owner_approval?: boolean
           role?: string | null
@@ -4435,11 +4513,17 @@ export type Database = {
         Update: {
           blocks_handoff?: boolean
           breezeway_template_id?: string | null
+          condition?: Json | null
           created_at?: string
           detail?: string | null
           evidence_required?: boolean
+          functional_role?: string | null
           id?: string
+          is_active?: boolean
+          is_required?: boolean
+          module?: string | null
           offset_days?: number | null
+          opportunity?: Json | null
           owner_approval_when_active_owner?: boolean
           requires_owner_approval?: boolean
           role?: string | null
@@ -4455,6 +4539,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "onboarding_template_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_template_versions: {
+        Row: {
+          id: string
+          published_at: string
+          published_by: string | null
+          snapshot: Json
+          template_id: string
+          version: number
+        }
+        Insert: {
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          snapshot: Json
+          template_id: string
+          version: number
+        }
+        Update: {
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          snapshot?: Json
+          template_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_template_versions_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "onboarding_templates"
@@ -8962,6 +9081,104 @@ export type Database = {
           },
         ]
       }
+      work_items: {
+        Row: {
+          assigned_to: string | null
+          blocks_handoff: boolean
+          completed_at: string | null
+          created_at: string
+          department: string
+          due_on: string | null
+          functional_role: string | null
+          id: string
+          is_demo: boolean
+          kind: string
+          linked_task_id: string | null
+          owner_content: Json | null
+          program_id: string | null
+          property_id: string | null
+          required: boolean
+          source_id: string
+          source_table: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          blocks_handoff?: boolean
+          completed_at?: string | null
+          created_at?: string
+          department: string
+          due_on?: string | null
+          functional_role?: string | null
+          id?: string
+          is_demo?: boolean
+          kind: string
+          linked_task_id?: string | null
+          owner_content?: Json | null
+          program_id?: string | null
+          property_id?: string | null
+          required?: boolean
+          source_id: string
+          source_table: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          blocks_handoff?: boolean
+          completed_at?: string | null
+          created_at?: string
+          department?: string
+          due_on?: string | null
+          functional_role?: string | null
+          id?: string
+          is_demo?: boolean
+          kind?: string
+          linked_task_id?: string | null
+          owner_content?: Json | null
+          program_id?: string | null
+          property_id?: string | null
+          required?: boolean
+          source_id?: string
+          source_table?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_items_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "work_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_events: {
         Row: {
           author_id: string | null
@@ -9547,6 +9764,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_into_operations: {
+        Args: { _project_id: string }
+        Returns: undefined
+      }
       activate_owner_program: {
         Args: {
           _expected_version: string
@@ -9609,6 +9830,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      complete_owner_opportunity: { Args: { _id: string }; Returns: undefined }
       complete_owner_program: {
         Args: {
           _actor_id: string
@@ -9698,16 +9920,33 @@ export type Database = {
         }
         Returns: boolean
       }
+      instantiate_onboarding_v2: {
+        Args: { _project_id: string; _version_id: string }
+        Returns: number
+      }
       is_director: { Args: { _user_id: string }; Returns: boolean }
       is_internal_staff: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      log_handoff_deficiency: {
+        Args: {
+          _detail: string
+          _project_id: string
+          _role: string
+          _title: string
+        }
+        Returns: string
+      }
       log_owner_time_entry: {
         Args: { _entry: Json; _property_ids: string[] }
         Returns: string
       }
       mark_owner_alerts_read: { Args: { _ids: string[] }; Returns: number }
+      mark_ready_for_operations: {
+        Args: { _project_id: string }
+        Returns: undefined
+      }
       notify_staff: {
         Args: {
           _actor_id: string
@@ -9724,6 +9963,7 @@ export type Database = {
         }
         Returns: string
       }
+      open_handoff_blockers: { Args: { _property_id: string }; Returns: number }
       override_onboarding_task_date: {
         Args: {
           _actor_id: string
@@ -9771,6 +10011,10 @@ export type Database = {
           _owner_summary: string
           _work_order_id: string
         }
+        Returns: string
+      }
+      publish_onboarding_template: {
+        Args: { _template_id: string }
         Returns: string
       }
       publish_owner_approval: {
@@ -10142,6 +10386,7 @@ export type Database = {
         Args: { _at?: string; _role_code: string }
         Returns: boolean
       }
+      seat_holder: { Args: { _code: string }; Returns: string }
       seat_holder_at: {
         Args: { _at?: string; _role_code: string }
         Returns: string

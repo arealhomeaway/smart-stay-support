@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import { SchedulePanel } from "@/components/SchedulePanel";
 import { TemplatePanel } from "@/components/onboarding/TemplatePanel";
-import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
+import { TwoStepHandoff } from "@/components/onboarding/TwoStepHandoff";
 import { OnboardingNotes } from "@/components/onboarding/OnboardingNotes";
 import { OnboardingDashboard } from "@/components/onboarding/OnboardingDashboard";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -732,102 +732,7 @@ function PropertyWorkspace() {
 
         {/* -------------------------------------------------------- Handoff */}
         <TabsContent value="handoff" className="space-y-5">
-          {/* Gate chain and the gate-by-gate checklist were removed: a home is
-              either ready for Operations or it is not, and the blockers below
-              say why. Acceptance is still recorded by name and date. */}
-
-          {/* Handoff gate */}
-          {openHandoff && (
-            <HandoffGatePanel
-              handoff={openHandoff as never}
-              reviews={data.reviews as never}
-              people={data.people}
-              propertyName={current.name}
-              canReview={gateAuthority.ok}
-              blockedReason={gateAuthority.ok ? null : gateAuthority.reason}
-              disabled={readOnly}
-              onDecision={(input) =>
-                reviewHandoff.mutate({ data: { handoffId: openHandoff.id, ...input } } as never)
-              }
-            />
-          )}
-
-          <section className="surface p-4">
-            <p className="font-medium">Ready for Operations</p>
-            <p className="text-sm text-muted-foreground">
-              Anything still in the way is listed here. Acceptance is recorded by name and date.
-            </p>
-
-            {readiness.reasons.length > 0 && (
-              <div className="mt-3 rounded-md border border-state-blocked/40 bg-state-blocked/5 p-3">
-                <p className="text-sm font-medium">
-                  Handoff is blocked ({readiness.reasons.length})
-                </p>
-                <ul className="mt-1 space-y-1 text-sm">
-                  {readiness.reasons.map((r) => (
-                    <li key={r.key}>
-                      <span className="font-medium">{r.label}</span>{" "}
-                      <span className="text-muted-foreground">— {r.detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {(independent.financialBlockers.length > 0 || independent.fieldBlockers.length > 0) && (
-              <div className="mt-3 space-y-2 text-sm">
-                {independent.financialBlockers.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="block text-primary underline"
-                    onClick={() => void navigate({ search: { ...search, tab: "property" } })}
-                  >
-                    Review financial request: {item.title}
-                  </button>
-                ))}
-                {independent.fieldBlockers.map((item) => (
-                  <button
-                    key={item.sourceType + item.id}
-                    type="button"
-                    className="block text-primary underline"
-                    onClick={() =>
-                      setOpenTaskId(
-                        item.taskIds.find((id) => tasks.some((task) => task.id === id)) ?? null,
-                      )
-                    }
-                  >
-                    Review linked field work: {item.title}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="mt-3">
-              {openHandoff ? (
-                <Chip className={stateChip("waiting")}>
-                  Handoff in review — {gateLabel(openHandoff.gate_step)}
-                </Chip>
-              ) : (
-                <>
-                  {readiness.blocked && (
-                    <p className="mb-2 text-sm text-muted-foreground">
-                      Ready for handoff is unavailable until the blockers above are cleared.
-                    </p>
-                  )}
-                  <RequestHandoffDialog
-                    ready={readiness.ready && tasks.every((t) => t.status === "complete")}
-                    blockedReasons={readiness.hardReasons}
-                    disabled={!canExecuteProject || readiness.blocked}
-                    carryoverCount={tasks.filter((t) => t.status !== "complete").length}
-                    onRequest={(notes2, carryoverAccepted) =>
-                      requestHandoff.mutate({
-                        data: { propertyId: current.id, notes: notes2, carryoverAccepted },
-                      } as never)
-                    }
-                  />
-                </>
-              )}
-            </div>
-          </section>
+          <TwoStepHandoff propertyId={current.id} readOnly={readOnly} onOpenTask={(id) => setOpenTaskId(id)} />
         </TabsContent>
 
         {/* ------------------------------------------------------- Timeline */}

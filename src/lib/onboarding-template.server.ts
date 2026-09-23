@@ -178,6 +178,7 @@ export async function previewOnboardingTemplate(
   input: { propertyId: string; templateId?: string | null },
 ): Promise<TemplatePreview> {
   await assertOnboardingStaff(supabase, userId);
+
   const plan = await planFor(supabase, input.templateId);
   const { anchors, taken, takenSubs, parentIdByKey } = await loadContext(
     supabase,
@@ -236,6 +237,20 @@ export async function applyOnboardingTemplate(
   audit: typeof writeAudit = writeAudit,
 ) {
   await assertOnboardingStaff(supabase, userId);
+
+  // V2: a template with a published version is instantiated from that
+  // immutable version (roles, due rules, owner Opportunities), once per home.
+  const v2 =
+    input.mode === "new_and_existing"
+      ? null
+      : await startFromPublishedVersion(supabase, input.propertyId, input.templateId ?? null).catch(
+          (e: unknown) => {
+            if (e instanceof Error && e.message.startsWith("V2:")) throw new Error(e.message.slice(3));
+            return null;
+          },
+        );
+  if (v2) return v2;
+
   const plan = await planFor(supabase, input.templateId);
   const { property, anchors, taken, takenSubs, parentIdByKey, existing } = await loadContext(
     supabase,
@@ -456,4 +471,40 @@ export async function applyOnboardingTemplate(
     subtasksCreated: subRows.length,
     skipped: plan.tasks.length - pending.length,
   };
+}
+
+async function startFromPublishedVersion(
+  supabase: Client,
+  propertyId: string,
+  templateId: string | null,
+): Promise<{ created: number; refreshed: number; subtasksCreated: number; skipped: number } | null> {
+  const tpl = templateId
+    ? await supabase.from("onboarding_templates").select("id").eq("id", templateId).maybeSingle()
+    : await supabase.from("onboarding_templates").select("id").eq("is_default", true).limit(1).maybeSingle();
+  if (tpl.error || !tpl.data) return null;
+  const version = await supabase
+    .from("onboarding_template_versions")
+    .select("id")
+    .eq("template_id", tpl.data.id)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (version.error || !version.data) return null;
+  const project = await supabase
+    .from("onboarding_projects")
+    .select("id, template_version_id")
+    .eq("property_id", propertyId)
+    .neq("status", "cancelled")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (project.error || !project.data) return null;
+  // Homes already on a published version keep it; nothing is re-added.
+  if (project.data.template_version_id) return { created: 0, refreshed: 0, subtasksCreated: 0, skipped: 0 };
+  const { data, error } = await supabase.rpc("instantiate_onboarding_v2", {
+    _project_id: project.data.id,
+    _version_id: version.data.id,
+  });
+  if (error) throw new Error(`V2:${error.message}`);
+  return { created: (data as number) ?? 0, refreshed: 0, subtasksCreated: 0, skipped: 0 };
 }
