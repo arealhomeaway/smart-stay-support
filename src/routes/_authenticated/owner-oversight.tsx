@@ -262,9 +262,10 @@ function OwnerOversightPage() {
               <SelectItem value="open">Check-in open now</SelectItem>
               <SelectItem value="next_7">Checkpoint within 7 days</SelectItem>
               <SelectItem value="next_30">Checkpoint within 30 days</SelectItem>
-              <SelectItem value="day_30">Day 30 checkpoint</SelectItem>
-              <SelectItem value="day_60">Day 60 checkpoint</SelectItem>
-              <SelectItem value="day_90">Day 90 checkpoint</SelectItem>
+              <SelectItem value="q25">25-hour checkpoint</SelectItem>
+              <SelectItem value="q50">50-hour checkpoint</SelectItem>
+              <SelectItem value="q75">75-hour checkpoint</SelectItem>
+              <SelectItem value="q100">100-hour checkpoint</SelectItem>
             </SelectContent>
           </Select>
           <Select value={ownerItems} onValueChange={(v) => setOwnerItems(v as OwnerItemsFilter)}>

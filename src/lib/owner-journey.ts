@@ -59,6 +59,8 @@ export type JourneyProgramSignals = {
   completedAt: string | null;
   /** Whole days elapsed in the closing-date-to-December-31 window, 0 before it starts. */
   programDay: number;
+  /** Length of the closing-to-December-31 window. */
+  programTotalDays?: number;
 };
 
 const LAUNCHED = new Set(["launched", "live"]);
@@ -92,7 +94,7 @@ export function programStage(
     : "initial_onboarding";
   // The year-end review is a calendar event, not a property event: once the
   // window closes it is the step in front of the homeowner regardless.
-  if (program.programDay >= 90) return "day_90_review";
+  if (program.programTotalDays && program.programDay >= program.programTotalDays) return "day_90_review";
   return current;
 }
 

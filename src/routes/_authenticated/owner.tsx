@@ -254,6 +254,7 @@ function OwnerHubBody({
       status: program.status,
       completedAt: program.completedAt ?? null,
       programDay: snapshot.day,
+      programTotalDays: snapshot.totalDays,
     },
     journeyHomes,
   );

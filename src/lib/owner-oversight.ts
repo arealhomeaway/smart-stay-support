@@ -57,7 +57,7 @@ export type PaceFilter = "all" | "on_pace" | "behind" | "review_due" | "waiting_
 export type OversightSort = "pace" | "review" | "days_left" | "hours" | "name";
 
 /** Which 30/60/90 checkpoint window a homeowner sits in right now. */
-export type CheckpointFilter = "all" | "open" | "next_7" | "next_30" | "day_30" | "day_60" | "day_90";
+export type CheckpointFilter = "all" | "open" | "next_7" | "next_30" | "q25" | "q50" | "q75" | "q100";
 /** Whether anything is still sitting with the homeowner. */
 export type OwnerItemsFilter = "all" | "waiting" | "clear";
 /** How long since anyone last spoke with the homeowner. */
@@ -198,11 +198,12 @@ export function matchesCheckpointFilter(row: OversightRow, filter: CheckpointFil
       return row.reviewDueSoon;
     case "next_30":
       return Boolean(row.openCheckpoint) || row.nextCheckpoint.daysAway <= 30;
-    case "day_30":
-    case "day_60":
-    case "day_90": {
-      const day = Number(filter.slice(4));
-      return (row.openCheckpoint ?? row.nextCheckpoint).day === day;
+    case "q25":
+    case "q50":
+    case "q75":
+    case "q100": {
+      const hours = Number(filter.slice(1));
+      return (row.openCheckpoint ?? row.nextCheckpoint).expectedHours === hours;
     }
     default:
       return true;
