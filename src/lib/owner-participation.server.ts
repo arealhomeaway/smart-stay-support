@@ -393,7 +393,7 @@ export async function loadProgramAggregate(
     onboardingMinutes,
     operationalMinutes: reported - onboardingMinutes,
     reportedHours: hoursFromMinutes(reported),
-    benchmark: benchmarkHours(snapshot.day),
+    benchmark: benchmarkHours(snapshot.day, snapshot.totalDays),
     snapshot,
     lastOwnerActivityAt: lastActivity,
     goalMet: ownerGoalMet(reported),

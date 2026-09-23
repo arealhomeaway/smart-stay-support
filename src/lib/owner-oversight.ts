@@ -74,6 +74,7 @@ function latest(a: string | null, b: string | null): string | null {
 export function oversightRow(row: OversightInput): OversightRow {
   const checkpoints = milestoneCheckpoints({
     day: row.day,
+    totalDays: row.totalDays,
     reportedHours: row.reportedHours,
     goalMet: row.goalMet,
   });

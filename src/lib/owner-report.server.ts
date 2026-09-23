@@ -20,7 +20,6 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { Client } from "./owner-participation.server";
 import { loadProgramAggregate, combinedMinutes } from "./owner-participation.server";
 import {
-  PROGRAM_TOTAL_DAYS,
   hoursFromMinutes,
   participationWindowEnd,
   inParticipationWindow,
@@ -182,7 +181,7 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       startedOn,
       endsOn,
       day: agg.snapshot.day,
-      totalDays: PROGRAM_TOTAL_DAYS,
+      totalDays: agg.snapshot.totalDays,
     },
     properties: agg.includedProperties.map((x) => ({ name: x.name, address: x.address })),
     totals: {
