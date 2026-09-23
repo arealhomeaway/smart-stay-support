@@ -341,12 +341,13 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || arrange.isPending) return;
-    const stepId = String(active.data.current?.stepId ?? "");
+    const stepId = String(active.data.current?.["stepId"] ?? "");
     if (!stepId) return;
-    const targetType = over.data.current?.type;
-    const targetStage = String(over.data.current?.stage ?? "");
+    const targetType = over.data.current?.["type"];
+    const targetStage = String(over.data.current?.["stage"] ?? "");
     if (!targetStage) return;
-    const beforeStepId = targetType === "step" ? String(over.data.current?.stepId ?? "") : null;
+    const beforeStepId =
+      targetType === "step" ? String(over.data.current?.["stepId"] ?? "") : null;
     if (beforeStepId === stepId) return;
     dropStep(stepId, targetStage, beforeStepId);
   };
