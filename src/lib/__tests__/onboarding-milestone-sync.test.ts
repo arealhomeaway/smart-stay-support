@@ -5,26 +5,12 @@
  */
 import { describe, expect, it, mock } from "bun:test";
 
-// Module mocks are global to the test run, so every stub here stays opt-in and
-// is switched back off once this file finishes — other suites keep the real code.
-let stubbed = true;
-const releaseStubs = () => {
-  stubbed = false;
-};
-
 mock.module("@/lib/audit.server", () => ({ writeAudit: async () => {} }));
 mock.module("../audit.server", () => ({ writeAudit: async () => {} }));
-const realAccess = await import("../onboarding-task-access.server");
-mock.module("../onboarding-task-access.server", () => ({
-  ...realAccess,
-  assertOnboardingPropertyManagement: async (...args: unknown[]) =>
-    stubbed
-      ? undefined
-      : (realAccess.assertOnboardingPropertyManagement as (...a: unknown[]) => unknown)(...args),
-}));
-// The schedule recalculation is deliberately NOT mocked: saveOnboardingMilestones
-// already treats a recalculation failure as non-fatal, and mocking it here would
-// leak into every other suite in the run.
+// Access control is NOT mocked here: the fixture answers the supervisor check
+// instead, so no stub can leak into the other suites in the same test run.
+// The schedule recalculation is likewise left real — saveOnboardingMilestones
+// already treats a recalculation failure as non-fatal.
 
 const { saveOnboardingMilestones } = await import("../onboarding-milestones.server");
 
