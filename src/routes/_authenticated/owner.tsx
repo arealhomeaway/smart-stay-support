@@ -493,6 +493,7 @@ function OwnerHubBody({
 
       <MilestonePacing
         day={snapshot.day}
+        totalDays={snapshot.totalDays}
         reportedHours={snapshot.reportedHours}
         benchmark={snapshot.benchmark}
         goalMet={targetReached}

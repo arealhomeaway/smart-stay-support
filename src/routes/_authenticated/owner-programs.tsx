@@ -40,7 +40,7 @@ import {
   OWNER_GOAL_HOURS,
   OWNER_GOAL_LABEL,
   PROGRAM_STATUS_META,
-  PROGRAM_TOTAL_DAYS,
+  programLengthDays,
   PROGRESS_META,
   formatDuration,
   type CoverageState,
@@ -485,6 +485,7 @@ function ProgramCard({
       <div className="space-y-2">
         <MilestonePacing
           day={row.day}
+          totalDays={programLengthDays(row.startedOn)}
           reportedHours={row.reportedHours}
           benchmark={row.benchmark}
           goalMet={row.goalMet}
@@ -500,7 +501,7 @@ function ProgramCard({
           </span>
           <span className="text-muted-foreground">
             {row.startedOn
-              ? `Day ${row.day} of ${PROGRAM_TOTAL_DAYS} · ${row.daysLeft} days left`
+              ? `Day ${row.day} of ${programLengthDays(row.startedOn)} · ${row.daysLeft} days left in the year`
               : "Not activated"}
           </span>
         </div>
@@ -847,7 +848,7 @@ function ProgramDetail({
           )
         ) : (
           <p className="text-sm text-muted-foreground">
-            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usCalendarDate(row.startedOn)} · ends{" "}
+            Day {row.day} of {programLengthDays(row.startedOn)} · started {usCalendarDate(row.startedOn)} · ends{" "}
             {usCalendarDate(row.endsOn)}
           </p>
         )}

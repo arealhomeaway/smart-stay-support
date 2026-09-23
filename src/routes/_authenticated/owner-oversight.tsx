@@ -20,7 +20,7 @@ import {
 import { ownerOversight } from "@/lib/owner-oversight.functions";
 import { useDemo } from "@/components/DemoProvider";
 import { usDate } from "@/lib/dates";
-import { OWNER_GOAL_HOURS, PROGRAM_TOTAL_DAYS } from "@/lib/owner-participation";
+import { OWNER_GOAL_HOURS, programLengthDays } from "@/lib/owner-participation";
 import {
   enrolledRows,
   oversightFiltersActive,
@@ -369,7 +369,7 @@ function OwnerOversightPage() {
                         Day in program
                       </p>
                       <p className="text-sm font-medium">
-                        Day {row.day} of {PROGRAM_TOTAL_DAYS} · {row.daysLeft} left
+                        Day {row.day} of {programLengthDays(row.startedOn)} · {row.daysLeft} left
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Enrolled {row.startedOn ? usDate(row.startedOn) : "—"}

@@ -9,6 +9,7 @@
 import {
   BADGE_BY_CODE,
   benchmarkHours,
+  programLengthDays,
   hoursFromMinutes,
   ownerGoalMet,
   countableParticipationEntries,
@@ -104,7 +105,7 @@ export function earnedBadges(agg: ProgramAggregate): { code: string; rule: strin
       const cumulative = hoursFromMinutes(
         sorted.filter((e) => e.entry_date <= iso).reduce((n, e) => n + e.minutes, 0),
       );
-      streak = cumulative >= benchmarkHours(day) ? streak + 1 : 0;
+      streak = cumulative >= benchmarkHours(day, programLengthDays(agg.program.startedOn)) ? streak + 1 : 0;
       best = Math.max(best, streak);
     }
     if (best >= 3) add("on_track_owner", "Met three consecutive weekly pace benchmarks");

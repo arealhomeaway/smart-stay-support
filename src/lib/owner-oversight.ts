@@ -1,3 +1,4 @@
+import { programLengthDays } from "./owner-participation";
 /**
  * Supervisor oversight for the Active Owner participation program.
  *
@@ -74,7 +75,7 @@ function latest(a: string | null, b: string | null): string | null {
 export function oversightRow(row: OversightInput): OversightRow {
   const checkpoints = milestoneCheckpoints({
     day: row.day,
-    totalDays: row.totalDays,
+    totalDays: programLengthDays(row.startedOn),
     reportedHours: row.reportedHours,
     goalMet: row.goalMet,
   });

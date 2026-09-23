@@ -246,6 +246,8 @@ export const PROGRESS_SEVERITY: Record<ProgressState, number> = {
 
 export type ProgressSnapshot = {
   day: number;
+  totalDays: number;
+  endsOn: string | null;
   daysLeft: number;
   reportedHours: number;
   benchmark: number;
