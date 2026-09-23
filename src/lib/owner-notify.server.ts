@@ -10,6 +10,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ownerNotificationText } from "./owner-notification";
+import {
+  ownerEmailVariantFor,
+  renderOwnerEmail,
+  type OwnerEmailCopy,
+} from "./owner-email-copy";
 import { ticketAlertRecipient } from "./owner-ticket-alert.server";
 
 type Client = SupabaseClient<Database>;
@@ -25,15 +30,25 @@ async function sendEmail(
   body: string,
   ticketRef?: number | null,
   ticketId?: string | null,
+  // The wording wrapper the onboarding director controls. The facts stay ours.
+  copy?: { copy: OwnerEmailCopy; ownerName: string | null } | null,
 ) {
   const { sendEmail: send, emailShell } = await import("./email.server");
   const { refTag } = await import("./intake.server");
+  const rendered = copy
+    ? renderOwnerEmail(copy.copy, { title: subject, body, ownerName: copy.ownerName })
+    : { subject, body, actionLabel: "Open your owner portal" };
   // The tag lets an owner's reply land back on the ticket instead of an inbox.
-  const taggedSubject = ticketRef ? `${subject} ${refTag(ticketRef)}` : subject;
+  const taggedSubject = ticketRef ? `${rendered.subject} ${refTag(ticketRef)}` : rendered.subject;
   return send({
     to,
     subject: taggedSubject,
-    html: emailShell(subject, body, { label: "Open your owner portal", url: APP_URL }, "owner"),
+    html: emailShell(
+      rendered.subject,
+      rendered.body,
+      { label: rendered.actionLabel, url: APP_URL },
+      "owner",
+    ),
     purpose: "owner_alert",
     ticketId: ticketId ?? null,
   });
