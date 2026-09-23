@@ -75,6 +75,10 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
     .limit(limit);
   if (error) throw error;
 
+  // One read for the whole drain: the director's wording for every alert sent.
+  const { loadOwnerEmailCopy } = await import("./owner-email-copy.server");
+  const copyConfig = await loadOwnerEmailCopy(supabase);
+
   let emailed = 0;
   let escalated = 0;
   const notes: string[] = [];
@@ -140,6 +144,10 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
           safeText.body,
           ticketRef,
           row.ticket_id,
+          {
+            copy: copyConfig[ownerEmailVariantFor(row.kind)],
+            ownerName: program.owner_name ?? null,
+          },
         );
         patch.email_status = result.status;
         if (result.error) patch.delivery_error = result.error;
