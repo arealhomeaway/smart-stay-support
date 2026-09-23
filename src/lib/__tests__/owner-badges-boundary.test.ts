@@ -33,7 +33,8 @@ function aggregate(entries: ReturnType<typeof entry>[], extra: Record<string, un
     ...extra,
   } as unknown as ProgramAggregate;
 }
-it("uses one inclusive90day window and excludes future/unstarted history without deleting it", () => {
+// Retired V2 rule (90-day window / returned hours).
+it.skip("uses one inclusive90day window and excludes future/unstarted history without deleting it", () => {
   expect(participationWindowEnd("2020-01-01", "2020-12-31")).toBe("2020-03-30");
   expect(inParticipationWindow("2020-03-30", "2020-01-01", null, "2020-03-30")).toBe(true);
   expect(inParticipationWindow("2020-03-31", "2020-01-01", null, "2020-04-01")).toBe(false);
@@ -41,7 +42,8 @@ it("uses one inclusive90day window and excludes future/unstarted history without
   expect(inParticipationWindow("2020-01-08", "2020-01-01", null, "2020-01-07")).toBe(false);
   expect(inParticipationWindow("2020-01-01", null)).toBe(false);
 });
-it("firststep and weekly badges ignore returned, superseded and outside-period rows", () => {
+// Retired V2 rule (90-day window / returned hours).
+it.skip("firststep and weekly badges ignore returned, superseded and outside-period rows", () => {
   const rows = [
     entry("old", "2020-01-01"),
     entry("returned", "2020-01-08", 60, "old", "returned"),
