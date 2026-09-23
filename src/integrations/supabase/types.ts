@@ -10038,6 +10038,7 @@ export type Database = {
         Args: { _actor_id?: string; _document_id: string }
         Returns: boolean
       }
+      owner_owns_program: { Args: { _program_id: string }; Returns: boolean }
       owner_program_staff_choices: {
         Args: never
         Returns: {
