@@ -372,37 +372,6 @@ function Hub() {
           onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
           showTest={showTest}
           onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
-          beforeRows={
-            lens === "reviews" ? (
-              <div className="space-y-3">
-                <p className="eyebrow">Handoff gate decisions ({pendingReviews.length})</p>
-                {pendingReviews.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No handoff is waiting at a review gate.
-                  </p>
-                )}
-                {pendingReviews.map((h) => (
-                  <HandoffGatePanel
-                    key={h.id}
-                    handoff={h as never}
-                    reviews={data.reviews as never}
-                    people={data.people}
-                    propertyName={
-                      data.properties.find((p) => p.id === h.property_id)?.name ?? "Property"
-                    }
-                    canReview={
-                      !readOnly && canReviewOnboardingGate(data.reviewCapabilities, h.gate_step)
-                    }
-                    disabled={readOnly}
-                    onDecision={(input) =>
-                      reviewHandoff.mutate({ data: { handoffId: h.id, ...input } })
-                    }
-                  />
-                ))}
-                <p className="eyebrow pt-2">Homes in review or handing off soon</p>
-              </div>
-            ) : null
-          }
         />
         )}
       </div>
@@ -429,7 +398,7 @@ function DashboardSections({
   const needs = (p: ProjectSummary) => p.risk.reasons.length > 0 && p.risk.level !== "on_track";
   const q = find.trim().toLowerCase();
   const rows = projects
-    .filter((p) => !q || `${p.property.name} ${p.property.address ?? ""}`.toLowerCase().includes(q))
+    .filter((p) => !q || `${p.property.name} ${(p.property as { address?: string | null }).address ?? ""}`.toLowerCase().includes(q))
     .filter((p) =>
       filter === "attention" ? needs(p) : filter === "handoff" ? withinDays(p.target, 30) : true,
     )
