@@ -526,10 +526,7 @@ function OwnerHubBody({
       <WaysToParticipate
         // A home is still being set up when its open work is onboarding work.
         phase={ownerPhase}
-        openReviews={openReviews.length}
-        pendingOnboardingActions={onboardingQuery.data?.pending.length ?? 0}
         blockedReason={preview ? "Preview only — hours are recorded by the homeowner." : logHoursBlockedReason}
-        onGoToWaiting={() => scrollToSection("owner-decisions")}
         {...(preview ? {} : { onLogHours: openManualLog })}
       />
 
