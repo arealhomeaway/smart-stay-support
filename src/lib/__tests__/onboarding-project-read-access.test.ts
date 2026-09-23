@@ -26,7 +26,9 @@ function fixture(staff = true, supervisor = false, failedCapability = false) {
           ? [{ can_assign: false, director_id: "director" }]
           : name === "is_supervisor"
             ? supervisor
-            : staff,
+            : name === "is_onboarding_director"
+              ? false
+              : staff,
       error: failedCapability ? new Error("unavailable") : null,
     }),
     from: (table: string) => {
