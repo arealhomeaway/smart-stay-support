@@ -49,33 +49,37 @@ async function assertCap(
   if (!data) throw new Error("You do not have access to this action.");
 }
 
-export async function loadOnboardingWorkspace(supabase: Client, userId: string) {
+export async function loadOnboardingWorkspace(
+  supabase: Client,
+  userId: string,
+  propertyId?: string,
+) {
   await assertCap(supabase, userId, "is_onboarding_staff");
+  // One home's workspace reads only that home's rows; portfolio views read all.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const only = <Q,>(q: Q, column: string): Q => (propertyId ? (q as any).eq(column, propertyId) : q);
   const [props, tasks, handoffs, people, notes, reviews, extDbs, extRecords, docs] =
     await Promise.all([
-      readCountedRows(
+      readCountedRows(only(
         supabase
           .from("properties")
           .select(PROPERTY_FIELDS, { count: "exact" })
           .order("name")
-          .order("id"),
-      ),
-      readCountedRows(
+          .order("id"), "id")),
+      readCountedRows(only(
         supabase
           .from("onboarding_tasks")
           .select("*", { count: "exact" })
           .is("archived_at", null)
           .order("sort_order")
-          .order("id"),
-      ),
-      readCountedRows(
+          .order("id"), "property_id")),
+      readCountedRows(only(
         supabase
           .from("property_handoffs")
           .select("*", { count: "exact" })
           .is("archived_at", null)
           .order("requested_at", { ascending: false })
-          .order("id"),
-      ),
+          .order("id"), "property_id")),
       readCountedRows(
         supabase
           .from("profiles")
@@ -83,21 +87,19 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
           .order("full_name")
           .order("id"),
       ),
-      readCountedRows(
+      readCountedRows(only(
         supabase
           .from("onboarding_notes")
           .select("*", { count: "exact" })
           .is("archived_at", null)
           .order("created_at", { ascending: false })
-          .order("id"),
-      ),
-      readCountedRows(
+          .order("id"), "property_id")),
+      readCountedRows(only(
         supabase
           .from("handoff_reviews")
           .select("*", { count: "exact" })
           .order("created_at", { ascending: false })
-          .order("id"),
-      ),
+          .order("id"), "property_id")),
       readCountedRows(
         supabase
           .from("external_databases")
@@ -106,15 +108,14 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
           .order("label")
           .order("id"),
       ),
-      readCountedRows(
+      readCountedRows(only(
         supabase
           .from("external_records")
           .select("*", { count: "exact" })
           .is("archived_at", null)
           .order("created_at", { ascending: false })
-          .order("id"),
-      ),
-      readCountedRows(
+          .order("id"), "property_id")),
+      readCountedRows(only(
         supabase
           .from("documents")
           .select(
@@ -123,8 +124,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
           )
           .eq("entity_type", "property")
           .is("archived_at", null)
-          .order("id"),
-      ),
+          .order("id"), "entity_id")),
     ]);
   if (props.error) throw props.error;
   if (tasks.error) throw tasks.error;
@@ -136,7 +136,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   );
 
   // Homeowner decisions and their history — staff read-only.
-  const ownerApprovals = await readCountedRows(
+  const ownerApprovals = await readCountedRows(only(
     supabase
       .from("approvals")
       .select(
@@ -145,8 +145,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
       )
       .eq("approver_role", "owner")
       .order("created_at", { ascending: false })
-      .order("id"),
-  );
+      .order("id"), "property_id"));
 
   // Active Owner Program participation, per owner/property relationship.
   const { activeOwnerLinks } = await import("./active-owner.server");
@@ -178,6 +177,33 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   // where onboarding has actually been started.
   const { loadProjects } = await import("./onboarding-project.server");
   const projects = await loadProjects(supabase);
+  // Property → Project → Project Team → Role → Person. A Task carrying only a
+  // role resolves to the person the project team names for that role, so
+  // My Tasks and every list show a real name. No global pool fallback.
+  const roleHolder = (propertyIdForTask: string, seat: string | null): string | null => {
+    const project = projects.find(
+      (p) => p.property_id === propertyIdForTask && p.status !== "cancelled",
+    ) as
+      | (typeof projects)[number] & {
+          utility_manager?: string | null;
+          role_assignments?: Record<string, string> | null;
+        }
+      | undefined;
+    if (!project || !seat) return null;
+    if (seat === "onboarding_project_manager" || seat === "project_manager")
+      return project.project_manager ?? null;
+    if (seat === "onboarding_director" || seat === "director_onboarding")
+      return project.director ?? null;
+    if (seat === "utilities") return project.utility_manager ?? null;
+    const assigned = project.role_assignments?.[seat];
+    return typeof assigned === "string" && assigned ? assigned : null;
+  };
+  if (tasks.data)
+    tasks.data = tasks.data.map((t) =>
+      t.assigned_to || t.status === "complete"
+        ? t
+        : { ...t, assigned_to: roleHolder(t.property_id, t.assigned_seat) },
+    );
   const supervisor = await supabase.rpc("is_supervisor", { _user_id: userId });
   if (supervisor.error) throw new Error("Could not verify your workspace view.");
   const reviewCapabilities = await readOnboardingReviewCapabilities(supabase);
@@ -186,13 +212,12 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     Boolean(supervisor.data) || hasOnboardingReview(reviewCapabilities),
     projects,
   );
-  const stageEvents = await readCountedRows(
+  const stageEvents = await readCountedRows(only(
     supabase
       .from("onboarding_stage_captures")
       .select("project_id, property_id, new_value", { count: "exact" })
       .order("project_id")
-      .order("new_value"),
-  );
+      .order("new_value"), "property_id"));
   if (stageEvents.error) throw stageEvents.error;
   const stageCaptures = (stageEvents.data ?? [])
     .map((e) => ({
@@ -205,6 +230,7 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
   const independentResult = await supabase.rpc("read_onboarding_independent_readiness", {
     _property_ids: projects
       .filter((project) => project.status !== "cancelled")
+      .filter((project) => !propertyId || project.property_id === propertyId)
       .map((project) => project.property_id),
   });
   if (independentResult.error || !Array.isArray(independentResult.data))
@@ -230,7 +256,25 @@ export async function loadOnboardingWorkspace(supabase: Client, userId: string) 
     ...person,
     roles: rolesByUser.get(person.id) ?? [],
   }));
+  const retired = propertyId
+    ? await supabase
+        .from("onboarding_tasks")
+        .select("id, title, stage, assigned_seat, archived_at, exception_reason")
+        .eq("property_id", propertyId)
+        .not("archived_at", "is", null)
+        .not("exception_reason", "is", null)
+        .order("archived_at", { ascending: false })
+        .limit(500)
+    : { data: [] as never[] };
   const workspace = {
+    retiredTasks: (retired.data ?? []) as {
+      id: string;
+      title: string;
+      stage: string;
+      assigned_seat: string | null;
+      archived_at: string;
+      exception_reason: string | null;
+    }[],
     workspaceMode,
     reviewCapabilities,
     independentReadiness,
@@ -1265,11 +1309,25 @@ export async function archiveOnboardingTask(
   userId: string,
   input: { taskId: string; reason: string },
 ) {
-  await assertCap(supabase, userId, "is_supervisor");
+  // Leadership or the Onboarding Director may void a Task.
+  const [sup, dir] = await Promise.all([
+    supabase.rpc("is_supervisor", { _user_id: userId }),
+    supabase.rpc("is_onboarding_director", { _user_id: userId }),
+  ]);
+  if (!sup.data && !dir.data) throw new Error("You do not have access to this action.");
   await assertTaskRequirementEditable(supabase, input.taskId);
+  const now = new Date().toISOString();
+  // Void keeps the Task on record with who, when and why; it leaves the work
+  // queue and progress because archived Tasks are never counted.
   const { error } = await supabase
     .from("onboarding_tasks")
-    .update({ archived_at: new Date().toISOString(), archived_by: userId })
+    .update({
+      archived_at: now,
+      archived_by: userId,
+      exception_reason: `Voided — not needed: ${input.reason}`,
+      exception_by: userId,
+      exception_at: now,
+    })
     .eq("id", input.taskId);
   if (error) throw error;
   await writeAudit({

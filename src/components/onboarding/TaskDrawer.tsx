@@ -391,7 +391,7 @@ export function TaskDrawer({
                   disabled={disabled}
                   onClick={() => setVoidOpen(true)}
                 >
-                  Void — not needed for this home
+                  Void / Not needed
                 </Button>
               )}
             </div>
@@ -406,17 +406,30 @@ export function TaskDrawer({
                 className="w-full"
                 disabled={
                   disabled ||
-                  !view.canComplete ||
-                  view.waitingOn.length > 0 ||
-                  evidenceMissing ||
-                  awaitingOwner
+                  awaitingOwner ||
+                  (evidenceMissing
+                    ? evidence.trim().length < 3
+                    : !view.canComplete)
                 }
-                onClick={() => onSave(taskPayload(task, { status: "complete", blocker: "" }))}
+                onClick={() =>
+                  onSave(
+                    taskPayload(task, {
+                      status: "complete",
+                      blocker: "",
+                      ...(evidence.trim() ? { evidenceNote: evidence.trim() } : {}),
+                    }),
+                  )
+                }
               >
-                Mark complete
+                Complete
               </Button>
-              {!view.canComplete && view.reason && (
-                <p className="text-xs text-muted-foreground">{view.reason}</p>
+              {evidenceMissing && evidence.trim().length < 3 ? (
+                <p className="text-xs text-muted-foreground">
+                  Add a short completion note under Notes &amp; files to complete this Task.
+                </p>
+              ) : (
+                !view.canComplete &&
+                view.reason && <p className="text-xs text-muted-foreground">{view.reason}</p>
               )}
             </div>
           ) : (
@@ -492,32 +505,24 @@ export function TaskDrawer({
             value={task.due_on ?? "—"}
             hint={dueExplanation(task) ?? undefined}
           />
-          <Field label="Blocks handoff" value={task.blocks_handoff ? "Yes" : "No"} />
-          <Field
-            label="Owner approval"
-            value={
-              task.requires_owner_approval
-                ? task.owner_approval_status === "approved"
+          <Field label="Status" value={STATUS_LABEL[view.status]} />
+          {task.requires_owner_approval && (
+            <Field
+              label="Homeowner decision"
+              value={
+                task.owner_approval_status === "approved"
                   ? "Approved"
                   : task.owner_approval_status === "awaiting_owner"
                     ? "Waiting on homeowner"
                     : task.owner_approval_status === "changes_requested"
                       ? "Changes requested"
                       : "Required"
-                : "Not required"
-            }
-          />
+              }
+            />
+          )}
         </dl>
 
-        {/* Why this task exists — the plain-language automation story. */}
-        <section className="sunken rounded-lg p-3">
-          <p className="eyebrow">Why this task exists</p>
-          <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground">
-            {why.map((line) => (
-              <li key={line}>· {line}</li>
-            ))}
-          </ul>
-        </section>
+        {void why}
 
         {repairApprovalGuidance(task.title) && (
           <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
@@ -569,11 +574,11 @@ export function TaskDrawer({
         {/* Evidence gate */}
         <section className="space-y-2">
           <p className="eyebrow">
-            {task.evidence_required ? "Evidence required before completion" : "Notes & files"}
+            {task.evidence_required ? "Notes & files · a completion note is needed to finish" : "Notes & files"}
           </p>
           {evidenceMissing && (
             <p className="text-sm text-state-blocked">
-              Required evidence is missing — this task cannot be marked complete.
+              You can keep working on this Task. Add a short note on what was done before completing it.
             </p>
           )}
           <Textarea
@@ -592,7 +597,7 @@ export function TaskDrawer({
             }
             onClick={() => onSave(taskPayload(task, { evidenceNote: evidence.trim() }))}
           >
-            Save evidence
+            Save note
           </Button>
           {/*
            * Every step can take files — a document step is the whole point of
@@ -609,9 +614,6 @@ export function TaskDrawer({
 
         <Separator />
 
-        <TaskStageTrail taskId={task.id} />
-
-        <Separator />
 
         {/* Native capture: what the person actually found in the home. */}
         <section className="space-y-2">

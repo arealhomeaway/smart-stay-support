@@ -395,6 +395,9 @@ const ROLE_NAMES: Record<string, string> = {
   onboarding_director: "Onboarding Director",
   design_staging: "Design & Staging",
   utilities: "Utilities",
+  // Compatibility for older role keys still present in history.
+  project_manager: "Project Manager",
+  director_onboarding: "Onboarding Director",
 };
 
 export function assigneeLabel(
@@ -411,7 +414,7 @@ export function assigneeLabel(
     const name = p?.full_name || p?.email || "Teammate";
     return role ? `${name} · ${role}` : name;
   }
-  if (role) return role;
+  if (role) return `Unassigned — ${role}`;
   return "Unassigned";
 }
 

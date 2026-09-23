@@ -2,14 +2,15 @@ import type { TaskView } from "./onboarding-workflow";
 import type { SearchSchemaInput } from "@tanstack/react-router";
 
 export const PROPERTY_QUEUE_FILTER_LABELS = {
-  attention: "Needs attention",
   mine: "My Tasks",
-  ready: "Ready",
+  attention: "Needs attention",
+  open: "Open",
   waiting: "Waiting",
   completed: "Completed",
+  voided: "Voided",
   all: "All",
 } as const;
-export type PropertyQueueFilter = keyof typeof PROPERTY_QUEUE_FILTER_LABELS;
+export type PropertyQueueFilter = keyof typeof PROPERTY_QUEUE_FILTER_LABELS | "ready";
 
 function isFinished(view: TaskView) {
   return view.status === "complete" || view.status === "carryover";
@@ -29,7 +30,10 @@ export function matchesPropertyQueueFilter(
 ) {
   if (filter === "mine") return !isFinished(view) && view.task.assigned_to === viewerId;
   if (filter === "completed") return isFinished(view);
+  if (filter === "open") return !isFinished(view);
   if (filter === "ready") return !isFinished(view) && view.status === "ready";
+  // Voided Tasks are archived records, listed separately by the queue.
+  if (filter === "voided") return false;
   if (filter === "waiting") return !isFinished(view) && isWaitingTask(view);
   if (filter === "attention") {
     return (
