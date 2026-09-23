@@ -34,7 +34,7 @@ export const JOURNEY_STEPS = [
   },
   {
     key: "day_90_review",
-    label: "Day-90 Review",
+    label: "Year-End Review",
     blurb: "Close the structured program period and confirm next-step ownership.",
   },
 ] as const;
@@ -57,8 +57,10 @@ export type JourneyHomeSignals = {
 export type JourneyProgramSignals = {
   status: string;
   completedAt: string | null;
-  /** Whole days elapsed in the 90-day window, 0 before it starts. */
+  /** Whole days elapsed in the closing-date-to-December-31 window, 0 before it starts. */
   programDay: number;
+  /** Length of the closing-to-December-31 window. */
+  programTotalDays?: number;
 };
 
 const LAUNCHED = new Set(["launched", "live"]);
@@ -90,9 +92,9 @@ export function programStage(
   const current: JourneyKey = stages.length
     ? (ORDER[Math.min(...stages.map(journeyIndex))] as JourneyKey)
     : "initial_onboarding";
-  // The Day-90 review is a calendar event, not a property event: once the
+  // The year-end review is a calendar event, not a property event: once the
   // window closes it is the step in front of the homeowner regardless.
-  if (program.programDay >= 90) return "day_90_review";
+  if (program.programTotalDays && program.programDay >= program.programTotalDays) return "day_90_review";
   return current;
 }
 

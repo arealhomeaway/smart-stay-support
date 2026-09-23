@@ -41,7 +41,7 @@ export type TemplateTask = {
   blocksHandoff: boolean;
   requiresOwnerApproval?: boolean;
   /**
-   * Owner approval only for homes enrolled in the 90-Day Owner Participation
+   * Owner approval only for homes enrolled in the Active Owner Participation
    * Program. A regular owner completes the step with evidence of sending.
    */
   ownerApprovalWhenActiveOwner?: boolean;

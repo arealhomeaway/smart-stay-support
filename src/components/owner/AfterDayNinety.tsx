@@ -2,7 +2,7 @@ import { CalendarCheck } from "lucide-react";
 import type { ArhaContact } from "@/lib/arha-contacts";
 
 /**
- * What happens as the structured 90-day period closes.
+ * What happens as the program closes on December 31.
  *
  * States what changes and what continues under the management agreement. It
  * deliberately makes no claim about any tax outcome.
@@ -27,7 +27,7 @@ export function AfterDayNinety({
         </span>
         <div className="min-w-0">
           <h2 id="owner-closeout-heading" className="font-display text-lg font-semibold">
-            {completed ? "Your Day-90 review is complete" : "As your Day-90 review approaches"}
+            {completed ? "Your year-end review is complete" : "As your year-end review approaches"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {completed

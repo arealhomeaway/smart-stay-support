@@ -2,7 +2,7 @@
  * Active Owner Participation Program — staff side (server-only).
  *
  * One homeowner has one program. A program can carry one home or several;
- * either way there is a single 90-day clock, a single combined commitment of
+ * either way there is a single program window (closing date → December 31), a single combined commitment of
  * at least 100 hours and a single pace benchmark. Individual homes are
  * measured by the tasks and decisions they need, never by their own hour
  * target.
@@ -244,7 +244,7 @@ export async function loadPrograms(supabase: Client, demo = false) {
 
 export { ownerAttention as attentionRank } from "./owner-attention";
 
-/** Creates a draft program. The 90-day clock is never started here. */
+/** Creates a draft program. The program is never started here. */
 export async function createProgram(
   supabase: Client,
   _userId: string,
@@ -255,7 +255,7 @@ export async function createProgram(
 
 /**
  * Adds another home to an existing program. After activation this needs an
- * administrator, the property must have closed, and the 90-day clock and the
+ * administrator, the property must have closed, and the program window and the
  * combined hour commitment both stay exactly as they are.
  */
 export async function addProgramProperty(

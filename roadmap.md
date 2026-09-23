@@ -713,9 +713,10 @@ Batch B (work surface)
 
 ## V2 rebuild (Emily, 9/23 — approved with corrections)
 - [x] Victor: 3915 W 104th re-enrolled in his existing program (guard now allows confirmed future closing)
-- [ ] Program window: closing date → Dec 31, 100+ hours; remove 90-day/Day 30/60/90 logic and displays
-- [ ] Owner hours: remove review/approval states; count immediately; legacy unknown-source = "Legacy / Unlinked"
-- [ ] Functional roles table + role→person mapping screen
+- [x] Program window: closing date → Dec 31, 100+ hours; remove 90-day/Day 30/60/90 logic and displays
+- [x] Owner hours: remove review/approval states; count immediately; legacy unknown-source = "Legacy / Unlinked"
+- [x] Functional roles: onboarding seats added to team roles list (Team page reassigns)
+- [x] Homeowner decisions / Active Owner work never block handoff (enforced in DB)
 - [ ] work_items engine (tasks + linked opportunities), versioned templates with configurable stages
 - [ ] Template builder v2 (roles, required/blocking, rules, opportunity content, publish versions)
 - [ ] Handoff readiness = required blocking tasks only; deficiency tasks on Operations return

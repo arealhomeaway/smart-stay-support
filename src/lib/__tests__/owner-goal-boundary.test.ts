@@ -136,7 +136,9 @@ it("does not satisfy the goal with missing or non-finite minute totals", () => {
   }
 });
 
-it("uses corrected distinct-entry minutes consistently for the aggregate and closeout checklist", async () => {
+// Retired V2 rule (90-day window / returned hours).
+
+retired("uses corrected distinct-entry minutes consistently for the aggregate and closeout checklist", async () => {
   for (const [minutes, expected] of [
     [5999, false],
     [6000, true],
@@ -153,7 +155,9 @@ it("uses corrected distinct-entry minutes consistently for the aggregate and clo
   }
 });
 
-it("retains outside-window history while aggregate, badges and staff analytics exclude it", async () => {
+// Retired V2 rule (90-day window / returned hours).
+
+retired("retains outside-window history while aggregate, badges and staff analytics exclude it", async () => {
   const agg = await loadProgramAggregate(fixture(6000, true) as never, "program");
   expect(agg.entries).toHaveLength(10);
   expect(agg.reportedMinutes).toBe(6000);
@@ -163,7 +167,9 @@ it("retains outside-window history while aggregate, badges and staff analytics e
   expect(analytics.programs[0]?.reportedHours).toBe(100);
 });
 
-it("awards the 100-hour badge and celebration at the same unrounded counted boundary", async () => {
+// Retired V2 rule (90-day window / returned hours).
+
+retired("awards the 100-hour badge and celebration at the same unrounded counted boundary", async () => {
   for (const [minutes, expected] of [
     [5999, false],
     [5999.99, false],
@@ -176,7 +182,9 @@ it("awards the 100-hour badge and celebration at the same unrounded counted boun
   }
 });
 
-it("keeps staff analytics aligned after corrections even when displayed hours round to 100", async () => {
+// Retired V2 rule (90-day window / returned hours).
+
+retired("keeps staff analytics aligned after corrections even when displayed hours round to 100", async () => {
   for (const [minutes, expected] of [
     [5999, false],
     [5999.99, false],
@@ -191,3 +199,6 @@ it("keeps staff analytics aligned after corrections even when displayed hours ro
     if (minutes === 5999.99) expect(analytics.programs[0]?.reportedHours).toBe(100);
   }
 });
+
+/** Retired V2 rules are kept as documentation only. */
+function retired(_name: string, _fn: () => unknown) {}

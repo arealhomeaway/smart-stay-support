@@ -20,7 +20,7 @@ import {
 import { ownerOversight } from "@/lib/owner-oversight.functions";
 import { useDemo } from "@/components/DemoProvider";
 import { usDate } from "@/lib/dates";
-import { OWNER_GOAL_HOURS, PROGRAM_TOTAL_DAYS } from "@/lib/owner-participation";
+import { OWNER_GOAL_HOURS, programLengthDays } from "@/lib/owner-participation";
 import {
   enrolledRows,
   oversightFiltersActive,
@@ -262,9 +262,10 @@ function OwnerOversightPage() {
               <SelectItem value="open">Check-in open now</SelectItem>
               <SelectItem value="next_7">Checkpoint within 7 days</SelectItem>
               <SelectItem value="next_30">Checkpoint within 30 days</SelectItem>
-              <SelectItem value="day_30">Day 30 checkpoint</SelectItem>
-              <SelectItem value="day_60">Day 60 checkpoint</SelectItem>
-              <SelectItem value="day_90">Day 90 checkpoint</SelectItem>
+              <SelectItem value="q25">25-hour checkpoint</SelectItem>
+              <SelectItem value="q50">50-hour checkpoint</SelectItem>
+              <SelectItem value="q75">75-hour checkpoint</SelectItem>
+              <SelectItem value="q100">100-hour checkpoint</SelectItem>
             </SelectContent>
           </Select>
           <Select value={ownerItems} onValueChange={(v) => setOwnerItems(v as OwnerItemsFilter)}>
@@ -313,7 +314,7 @@ function OwnerOversightPage() {
         {visible.length === 0 ? (
           <EmptyState
             title="No homeowner matches this view."
-            hint="Programs appear here once a homeowner's 90-day clock is running. Turn on demo programs to walk through the example home."
+            hint="Programs appear here once a homeowner's program is running. Turn on demo programs to walk through the example home."
             icon={<Users className="size-8" />}
           />
         ) : (
@@ -369,7 +370,7 @@ function OwnerOversightPage() {
                         Day in program
                       </p>
                       <p className="text-sm font-medium">
-                        Day {row.day} of {PROGRAM_TOTAL_DAYS} · {row.daysLeft} left
+                        Day {row.day} of {programLengthDays(row.startedOn)} · {row.daysLeft} left
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Enrolled {row.startedOn ? usDate(row.startedOn) : "—"}

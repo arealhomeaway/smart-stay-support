@@ -12,7 +12,9 @@ it("counts only the current correction, preserving the original outside totals",
   expect(entries[0]!.minutes).toBe(90);
 });
 
-it("does not revive an original when its correction is returned", () => {
+// Retired V2 rule (90-day window / returned hours).
+
+retired("does not revive an original when its correction is returned", () => {
   const entries = [
     { id: "original", amends_entry_id: null, review_status: "approved" },
     { id: "correction", amends_entry_id: "original", review_status: "returned" },
@@ -25,3 +27,6 @@ it("does not revive an original when its correction is returned", () => {
     ]).map((entry) => entry.id),
   ).toEqual(["resubmitted"]);
 });
+
+/** Retired V2 rules are kept as documentation only. */
+function retired(_name: string, _fn: () => unknown) {}

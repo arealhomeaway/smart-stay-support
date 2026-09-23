@@ -61,8 +61,8 @@ export function ParticipationReportPanel({ children }: { children?: ReactNode } 
       }
       description={
         final
-          ? "Your 90-day window has closed. Download your complete record whenever you need it — no request to ARHA required."
-          : "A live snapshot of your participation so far. Your end-of-period report becomes available automatically once your 90-day window closes."
+          ? "Your program year has closed. Download your complete record whenever you need it — no request to ARHA required."
+          : "A live snapshot of your participation so far. Your end-of-period report becomes available automatically once your program closes on December 31."
       }
       actions={
         <StatusBadge tone={final ? "resolved" : "progress"}>
@@ -87,7 +87,7 @@ export function ParticipationReportPanel({ children }: { children?: ReactNode } 
             <p className="mt-1 text-lg font-semibold">
               {Math.round((t.returnedHours + t.supersededHours) * 100) / 100}
             </p>
-            <p className="text-xs text-muted-foreground">Returned or replaced by a correction</p>
+            <p className="text-xs text-muted-foreground">Replaced by a correction</p>
           </div>
         </div>
         <p className="text-xs leading-relaxed text-muted-foreground">

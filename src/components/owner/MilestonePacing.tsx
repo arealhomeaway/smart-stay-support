@@ -1,24 +1,26 @@
 import { milestoneCheckpoints, paceHealth } from "@/lib/owner-milestones";
 
 /**
- * The Day 30 / 60 / 90 checkpoint strip, shared by the supervisor list and the
+ * The 25 / 50 / 75 / 100-hour checkpoint strip, shared by the supervisor list and the
  * homeowner portal so both read the same picture. Encouraging wording only —
  * it never says anything about tax treatment.
  */
 export function MilestonePacing({
   day,
+  totalDays,
   reportedHours,
   benchmark,
   goalMet = false,
   audience = "owner",
 }: {
   day: number;
+  totalDays: number;
   reportedHours: number;
   benchmark: number;
   goalMet?: boolean;
   audience?: "owner" | "staff";
 }) {
-  const checkpoints = milestoneCheckpoints({ day, reportedHours, goalMet });
+  const checkpoints = milestoneCheckpoints({ day, totalDays, reportedHours, goalMet });
   const health = paceHealth({ day, reportedHours, benchmark, goalMet });
 
   return (
@@ -35,7 +37,7 @@ export function MilestonePacing({
         </span>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-4">
         {checkpoints.map((c) => (
           <div
             key={c.day}

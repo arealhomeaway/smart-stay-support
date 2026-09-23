@@ -40,7 +40,7 @@ import {
   OWNER_GOAL_HOURS,
   OWNER_GOAL_LABEL,
   PROGRAM_STATUS_META,
-  PROGRAM_TOTAL_DAYS,
+  programLengthDays,
   PROGRESS_META,
   formatDuration,
   type CoverageState,
@@ -51,7 +51,6 @@ import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { usCalendarDate, usDate } from "@/lib/dates";
 import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
-import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
 import { OwnerProgramActivation } from "@/components/OwnerProgramActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,12 +90,12 @@ export const Route = createFileRoute("/_authenticated/owner-programs")({
       {
         name: "description",
         content:
-          "Run the 90-day Active Owner Participation Program: enroll homes, activate one combined clock, follow pace benchmarks and generate the owner's participation report.",
+          "Run the Active Owner Participation Program: enroll homes, activate one combined clock, follow pace benchmarks and generate the owner's participation report.",
       },
       { property: "og:title", content: "Owner participation programs — Resolve Operations" },
       {
         property: "og:description",
-        content: "One owner, one 90-day clock, one combined participation record.",
+        content: "One owner, one program window (closing date → December 31), one combined participation record.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -223,7 +222,7 @@ function ProgramsBoard() {
         title="Owner participation programs"
         description={
           <>
-            Each homeowner runs one 90-day program with a single combined goal of{" "}
+            Each homeowner runs one program from closing through December 31 with a single combined goal of{" "}
             <span className="font-medium text-foreground">{OWNER_GOAL_LABEL.toLowerCase()}</span> of
             self-reported participation. {COMBINED_TOTAL_NOTICE}
           </>
@@ -232,7 +231,6 @@ function ProgramsBoard() {
 
       <OwnerContactAlerts />
 
-      <OwnerTimeReviewQueue />
 
       <ProgramSummary rows={rows} />
 
@@ -331,7 +329,7 @@ function ProgramsBoard() {
       ) : rows.length === 0 ? (
         <EmptyState
           title={viewingDemo ? "No QA / demo programs yet." : "No participation programs yet."}
-          hint="Pick a property above and create a draft program to start a homeowner's 90 days."
+          hint="Pick a property above and create a draft program to start a homeowner's program."
         />
       ) : (
         <div className="space-y-3">
@@ -485,6 +483,7 @@ function ProgramCard({
       <div className="space-y-2">
         <MilestonePacing
           day={row.day}
+          totalDays={programLengthDays(row.startedOn)}
           reportedHours={row.reportedHours}
           benchmark={row.benchmark}
           goalMet={row.goalMet}
@@ -500,7 +499,7 @@ function ProgramCard({
           </span>
           <span className="text-muted-foreground">
             {row.startedOn
-              ? `Day ${row.day} of ${PROGRAM_TOTAL_DAYS} · ${row.daysLeft} days left`
+              ? `Day ${row.day} of ${programLengthDays(row.startedOn)} · ${row.daysLeft} days left in the year`
               : "Not activated"}
           </span>
         </div>
@@ -653,7 +652,7 @@ function ProgramDetail({
           <Home className="size-4" /> Properties in this program
         </h3>
         <p className="text-xs text-muted-foreground">
-          Every home shares the one 90-day clock and the one combined hour goal. Properties are
+          Every home shares the one program window (closing date → December 31) and the one combined hour goal. Properties are
           measured by their tasks and decisions, never by their own hour target.
         </p>
         <div className="space-y-2">
@@ -824,7 +823,7 @@ function ProgramDetail({
 
       <section className="space-y-3">
         <h3 className="text-sm font-semibold">
-          {notActivated ? "Activate the 90-day program" : "Timeline"}
+          {notActivated ? "Activate the program" : "Timeline"}
         </h3>
         {notActivated ? (
           detail.data ? (
@@ -847,7 +846,7 @@ function ProgramDetail({
           )
         ) : (
           <p className="text-sm text-muted-foreground">
-            Day {row.day} of {PROGRAM_TOTAL_DAYS} · started {usCalendarDate(row.startedOn)} · ends{" "}
+            Day {row.day} of {programLengthDays(row.startedOn)} · started {usCalendarDate(row.startedOn)} · ends{" "}
             {usCalendarDate(row.endsOn)}
           </p>
         )}

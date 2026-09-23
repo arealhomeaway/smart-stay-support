@@ -583,7 +583,7 @@ export async function loadCommandCenter(
         denominator: `${activePrograms.length} active participation programs`,
         unavailable: activePrograms.length
           ? null
-          : "No participation program is active yet. Activate a 90-day program to populate this.",
+          : "No participation program is active yet. Activate an Active Owner program to populate this.",
         drill: { to: "/owner-programs", label: "Programs" },
       }),
     ],

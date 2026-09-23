@@ -77,7 +77,7 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
       }),
     onSuccess: () => {
       setDraft(null);
-      toast.success("Program activated. The 90-day clock has started.");
+      toast.success("Program activated. Participation runs from closing through December 31.");
       onRefresh();
       void queryClient.invalidateQueries({ queryKey: ["owner-home"] });
       void queryClient.invalidateQueries({ queryKey: ["owner-report"] });
@@ -111,7 +111,7 @@ function OwnerProgramActivationForm({ context, initialStartDate, onRefresh }: Pr
       >
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Activate the 90-day program</DialogTitle>
+            <DialogTitle>Activate the Active Owner program</DialogTitle>
             <DialogDescription>
               Activation starts one clock for all included properties. Adding homes later will not
               reset it.

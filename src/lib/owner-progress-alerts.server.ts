@@ -80,11 +80,11 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
     });
   }
 
-  // Day 30 / 60 / 90 check-in. One gentle message per checkpoint window,
+  // Hour checkpoint check-in. One gentle message per checkpoint window,
   // encouraging either way, and never a statement about tax treatment.
-  const checkpoint = milestoneWindow(s.day);
+  const checkpoint = milestoneWindow(s.day, s.totalDays);
   if (checkpoint) {
-    const view = milestoneCheckpoints({ day: s.day, reportedHours: hours }).find(
+    const view = milestoneCheckpoints({ day: s.day, totalDays: s.totalDays, reportedHours: hours }).find(
       (c) => c.day === checkpoint,
     );
     const onPace = view?.state === "met";
@@ -92,21 +92,21 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       kind: `checkpoint_${checkpoint}`,
       alertKind: "progress_checkpoint",
       severity: onPace ? 1 : 3,
-      title: `Day ${checkpoint} check-in`,
+      title: `${view?.expectedHours ?? 0}-hour check-in`,
       body: onPace
-        ? `You are at the day ${checkpoint} point of your 90 days with ${hours} hours entered — right on pace. Thank you for keeping your entries up to date.`
-        : `You are at the day ${checkpoint} point of your 90 days with ${hours} hours entered, a little behind the ${view?.expectedHours ?? 0}-hour pace for this checkpoint. If you have completed activities you have not entered yet, this is a good moment to add them.`,
+        ? `You have ${hours} hours logged — right on pace for your program, which runs through ${s.endsOn ?? "December 31"}. Thank you for keeping your entries up to date.`
+        : `You have ${hours} hours logged, a little behind the ${view?.expectedHours ?? 0}-hour point for this stage of your program (through ${s.endsOn ?? "December 31"}). If you have participated in anything you have not logged yet, this is a good moment to add it.`,
     });
   }
 
-  const next = nextMilestone(s.day);
+  const next = nextMilestone(s.day, s.totalDays);
   if (behind >= 1 && next.day - s.day <= 5) {
     out.push({
       kind: `milestone_${next.day}`,
       alertKind: "progress_milestone",
       severity: 2,
-      title: `Day ${next.day} milestone is coming up`,
-      body: `The day ${next.day} pace milestone is ${next.hours} hours. You have reported ${hours} so far — a good moment to log anything you have completed recently.`,
+      title: `${next.hours}-hour milestone is coming up`,
+      body: `Your next pace milestone is ${next.hours} hours. You have reported ${hours} so far — a good moment to log anything you have completed recently.`,
     });
   }
 
@@ -115,7 +115,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       kind: "final_five_days",
       alertKind: "progress_deadline",
       severity: 4,
-      title: "Five days remain in your 90-day program",
+      title: "Five days remain in your program year",
       body: `You have reported ${hours} hours. Please review your remaining activities and record any participation you have not yet entered.`,
     });
   } else if (s.daysLeft <= 10) {
@@ -123,7 +123,7 @@ export function candidateAlerts(agg: ProgramAggregate): Candidate[] {
       kind: "final_ten_days",
       alertKind: "progress_deadline",
       severity: 3,
-      title: "Ten days remain in your 90-day program",
+      title: "Ten days remain in your program year",
       body: `You have reported ${hours} hours. There is still good time to complete your remaining activities and record them.`,
     });
   }
@@ -253,19 +253,19 @@ export async function syncCoverageAlerts(supabase: Client, agg: ProgramAggregate
     });
   }
 
-  // Day 30 / 60 / 90 touchpoint for the assigned staff, once per checkpoint.
+  // Hour-checkpoint touchpoint for the assigned staff, once per checkpoint.
   const s = agg.snapshot;
-  const checkpoint = milestoneWindow(s.day);
+  const checkpoint = milestoneWindow(s.day, s.totalDays);
   if (checkpoint && !agg.goalMet) {
-    const view = milestoneCheckpoints({ day: s.day, reportedHours: s.reportedHours }).find(
+    const view = milestoneCheckpoints({ day: s.day, totalDays: s.totalDays, reportedHours: s.reportedHours }).find(
       (c) => c.day === checkpoint,
     );
     const onPace = view?.state === "met";
     rows.push({
-      title: `Day ${checkpoint} checkpoint for ${agg.program.ownerName ?? "this homeowner"}`,
+      title: `${view?.expectedHours ?? 0}-hour checkpoint for ${agg.program.ownerName ?? "this homeowner"}`,
       body: onPace
-        ? `Day ${checkpoint} of 90 with ${s.reportedHours} hours entered — on pace. A short check-in call keeps it steady.`
-        : `Day ${checkpoint} of 90 with ${s.reportedHours} hours entered, about ${view?.shortfallHours ?? 0} behind the ${view?.expectedHours ?? 0}-hour pace point. Worth a personal touchpoint this week.`,
+        ? `${s.reportedHours} hours logged — on pace for the program ending ${s.endsOn ?? "December 31"}. A short check-in call keeps it steady.`
+        : `${s.reportedHours} hours logged, about ${view?.shortfallHours ?? 0} behind the ${view?.expectedHours ?? 0}-hour pace point. Worth a personal touchpoint this week.`,
       reason: `milestone_touchpoint_${checkpoint}`,
     });
   }

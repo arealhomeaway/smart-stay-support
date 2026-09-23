@@ -465,7 +465,7 @@ function describeScope(row: ProjectRow) {
  * Active Owner is enrolled per PROPERTY, never as a global owner flag.
  *
  * If the owner already runs a participation program, this home joins it; if
- * not, a draft program is created for this home. The 90-day clock is never
+ * not, a draft program is created for this home. The program is never
  * started here — staff activate it from the Active Owner board.
  */
 export async function ensureActiveOwnerEnrollment(

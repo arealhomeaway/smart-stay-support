@@ -1,19 +1,18 @@
 /**
- * Browser-safe model for the 90-Day Owner Participation Program.
+ * Browser-safe model for the Active Owner Participation Program.
  *
- * One homeowner, one program, one 90-day clock, one combined hour commitment —
- * however many homes are attached to it. Nothing in this module ever produces,
- * estimates or suggests an amount of participation time: benchmarks describe
- * pace only, and every hour in the system was typed in by the homeowner.
+ * One homeowner, one program, one combined hour goal (100+ logged hours),
+ * running from each property's closing date to December 31 of that year.
+ * Nothing in this module ever produces, estimates or suggests an amount of
+ * participation time: every hour was logged by the homeowner and counts
+ * as soon as it is logged.
  */
 
-export const PROGRAM_TOTAL_DAYS = 90;
-/** Locked participation target: exactly 100 documented hours qualifies. */
+/** Participation goal: 100+ logged hours. */
 export const OWNER_GOAL_HOURS = 100;
-/** ARHA's internal operating target used for pacing and the progress ring. */
-export const OPERATING_TARGET_HOURS = 105;
+/** Kept for stored-row compatibility; pacing now targets the 100-hour goal. */
+export const OPERATING_TARGET_HOURS = OWNER_GOAL_HOURS;
 export const ONBOARDING_MILESTONE_HOURS = 60;
-export const ONBOARDING_MILESTONE_DAY = 35;
 
 export const OWNER_GOAL_LABEL = "At least 100 hours";
 
@@ -112,18 +111,36 @@ export const ACTIVITY_CATEGORIES = [
 /* Timeline                                                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Program window: the property's closing date through December 31 of the
+ * same calendar year. There is no fixed day count.
+ */
+export function programWindowEnd(startedOn: string | null | undefined) {
+  if (!startedOn || !/^\d{4}-\d{2}-\d{2}/.test(startedOn)) return null;
+  return `${startedOn.slice(0, 4)}-12-31`;
+}
+
+/** Inclusive length of the closing-date-to-year-end window, in days. */
+export function programLengthDays(startedOn: string | null | undefined) {
+  const end = programWindowEnd(startedOn);
+  if (!startedOn || !end) return 0;
+  const start = Date.parse(`${startedOn.slice(0, 10)}T00:00:00Z`);
+  const last = Date.parse(`${end}T00:00:00Z`);
+  return Math.max(1, Math.round((last - start) / 86_400_000) + 1);
+}
+
 export function projectDay(startedOn: string | null | undefined) {
   if (!startedOn) return 0;
   const start = new Date(`${startedOn}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.floor((today.getTime() - start.getTime()) / 86_400_000) + 1;
-  return Math.max(0, Math.min(PROGRAM_TOTAL_DAYS, days));
+  return Math.max(0, Math.min(programLengthDays(startedOn), days));
 }
 
 export function daysRemaining(startedOn: string | null | undefined) {
-  if (!startedOn) return PROGRAM_TOTAL_DAYS;
-  return Math.max(0, PROGRAM_TOTAL_DAYS - projectDay(startedOn));
+  if (!startedOn) return 0;
+  return Math.max(0, programLengthDays(startedOn) - projectDay(startedOn));
 }
 
 export function hoursFromMinutes(minutes: number) {
@@ -148,28 +165,22 @@ export function formatDuration(minutes: number) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Cumulative pace benchmark for the whole program, independent of how many
- * homes are attached. 60 hours by day 35, 105 by day 90.
+ * Even pace toward the 100-hour goal across the closing-date-to-year-end
+ * window. `totalDays` is that window's length (see programLengthDays).
  */
-export function benchmarkHours(day: number) {
-  if (day <= 0) return 0;
-  const d = Math.min(day, PROGRAM_TOTAL_DAYS);
-  const raw =
-    d <= ONBOARDING_MILESTONE_DAY
-      ? ONBOARDING_MILESTONE_HOURS * (d / ONBOARDING_MILESTONE_DAY)
-      : ONBOARDING_MILESTONE_HOURS + 45 * ((d - ONBOARDING_MILESTONE_DAY) / 55);
-  return Math.min(OPERATING_TARGET_HOURS, Math.round(raw * 100) / 100);
+export function benchmarkHours(day: number, totalDays: number) {
+  if (day <= 0 || totalDays <= 0) return 0;
+  const d = Math.min(day, totalDays);
+  return Math.round(OWNER_GOAL_HOURS * (d / totalDays) * 100) / 100;
 }
 
-export const BENCHMARK_MILESTONES = [7, 14, 21, 28, 35, 45, 60, 75, 85, 90].map((day) => ({
-  day,
-  hours: Math.round(benchmarkHours(day)),
-}));
-
-const FINAL_MILESTONE = { day: PROGRAM_TOTAL_DAYS, hours: OPERATING_TARGET_HOURS };
-
-export function nextMilestone(day: number): { day: number; hours: number } {
-  return BENCHMARK_MILESTONES.find((m) => m.day > day) ?? FINAL_MILESTONE;
+/** Next quarter-of-goal marker (25 / 50 / 75 / 100 hours) and the day it falls on. */
+export function nextMilestone(day: number, totalDays: number): { day: number; hours: number } {
+  const marks = [0.25, 0.5, 0.75, 1].map((f) => ({
+    day: Math.max(1, Math.round(totalDays * f)),
+    hours: Math.round(OWNER_GOAL_HOURS * f),
+  }));
+  return marks.find((m) => m.day > day) ?? marks[marks.length - 1]!;
 }
 
 /* ------------------------------------------------------------------ */
@@ -235,6 +246,8 @@ export const PROGRESS_SEVERITY: Record<ProgressState, number> = {
 
 export type ProgressSnapshot = {
   day: number;
+  totalDays: number;
+  endsOn: string | null;
   daysLeft: number;
   reportedHours: number;
   benchmark: number;
@@ -255,8 +268,9 @@ export function progressSnapshot(input: {
   reportedMinutes: number;
 }): ProgressSnapshot {
   const day = projectDay(input.startedOn);
+  const totalDays = programLengthDays(input.startedOn);
   const reportedHours = hoursFromMinutes(input.reportedMinutes);
-  const benchmark = benchmarkHours(day);
+  const benchmark = benchmarkHours(day, totalDays);
   const variance = Math.round((reportedHours - benchmark) * 100) / 100;
   const active = Boolean(input.startedOn) && day > 0;
 
@@ -278,17 +292,19 @@ export function progressSnapshot(input: {
 
   return {
     day,
+    totalDays,
+    endsOn: programWindowEnd(input.startedOn),
     daysLeft: daysRemaining(input.startedOn),
     reportedHours,
     benchmark,
     variance,
     percentOfTarget: Math.min(
       100,
-      Math.round((reportedHours / OPERATING_TARGET_HOURS) * 1000) / 10,
+      Math.round((reportedHours / OWNER_GOAL_HOURS) * 1000) / 10,
     ),
     hoursToGoal: Math.ceil(Math.max(0, OWNER_GOAL_HOURS - input.reportedMinutes / 60) * 100) / 100,
     state,
-    next: nextMilestone(day),
+    next: nextMilestone(day, totalDays),
   };
 }
 
@@ -470,24 +486,25 @@ export function parseReviewPhotos(raw: unknown): ReviewPhoto[] {
     .map((p) => ({ url: p.url, caption: p.caption ?? null }));
 }
 
-/** Corrections replace earlier entries; returned work does not count toward progress. */
+/**
+ * Logged time counts immediately — there is no review, approval or return
+ * state. Only a correction replaces the entry it amends, so a pair is never
+ * counted twice.
+ */
 export function countableParticipationEntries<
-  T extends { id: string; amends_entry_id: string | null; review_status: string },
+  T extends { id: string; amends_entry_id: string | null },
 >(entries: T[]): T[] {
   const superseded = new Set(entries.map((entry) => entry.amends_entry_id).filter(Boolean));
-  return entries.filter((entry) => entry.review_status !== "returned" && !superseded.has(entry.id));
+  return entries.filter((entry) => !superseded.has(entry.id));
 }
 
-/** One inclusive 90-day window; historical rows remain available outside it. */
+/** Closing date → December 31 of that year; an earlier stored end still wins. */
 export function participationWindowEnd(
   startedOn: string | null | undefined,
   endsOn?: string | null,
 ) {
-  if (!startedOn) return null;
-  const start = new Date(`${startedOn}T00:00:00Z`);
-  if (!Number.isFinite(start.getTime())) return null;
-  start.setUTCDate(start.getUTCDate() + PROGRAM_TOTAL_DAYS - 1);
-  const lastDay = start.toISOString().slice(0, 10);
+  const lastDay = programWindowEnd(startedOn);
+  if (!lastDay) return null;
   return endsOn && endsOn < lastDay ? endsOn : lastDay;
 }
 

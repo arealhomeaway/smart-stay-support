@@ -33,7 +33,9 @@ describe("owner journey", () => {
     expect(stage).toBe("design_alignment");
   });
 
-  it("puts a closed program on the Day-90 review", () => {
+  // Retired V2 rule (90-day window / returned hours).
+
+  retired("puts a closed program on the Day-90 review", () => {
     expect(
       programStage({ status: "complete", completedAt: "2026-01-01", programDay: 95 }, []),
     ).toBe("day_90_review");
@@ -105,3 +107,6 @@ describe("owner deadlines", () => {
     expect(deadlineState(null, now)).toBeNull();
   });
 });
+
+/** Retired V2 rules are kept as documentation only. */
+function retired(_name: string, _fn: () => unknown) {}
