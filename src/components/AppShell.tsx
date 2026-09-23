@@ -416,9 +416,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? "Vendor Portal"
     : ownerMode
       ? "Property Owner Portal"
-      : can("command_center")
-        ? "Executive Administration"
-        : "Operations";
+      : pathname === "/onboarding" || pathname.startsWith("/onboarding/")
+        ? "Onboarding"
+        : can("command_center")
+          ? "Executive Administration"
+          : "Operations";
 
   const searchTargets: SearchTarget[] = groups.flatMap((g) =>
     g.items.map((i) => ({ to: i.to, label: i.label, group: g.label })),
