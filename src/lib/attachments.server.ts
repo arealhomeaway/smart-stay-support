@@ -283,7 +283,7 @@ export async function listAttachments(
   const { data, error } = await supabaseAdmin
     .from("documents")
     .select(
-      "id, title, original_filename, mime_type, size_bytes, kind, visibility, requested_from, upload_status, uploaded_by, uploaded_at, entity_type, entity_id, property_id, note, category, created_at, is_demo, archived_at, owner_recipient_id, owner_recipient_program_id",
+      "id, title, original_filename, mime_type, size_bytes, kind, visibility, requested_from, upload_status, uploaded_by, uploaded_at, entity_type, entity_id, property_id, note, category, created_at, is_demo, archived_at, owner_recipient_id, owner_recipient_program_id, owner_category, work_item_id, work_items(title)",
     )
     .eq("entity_type", entityType)
     .eq("entity_id", entityId)
