@@ -701,3 +701,5 @@ Batch B (work surface)
 
 - [x] Fix OwnerRez property photos for 1399 Foxtail and 1464 Buckland across onboarding/property views
 - [x] Ensure onboarding task due dates autopopulate and remain consistent across all views
+
+- [ ] Fix template step/stage drag-and-drop and remove arrow movement controls
