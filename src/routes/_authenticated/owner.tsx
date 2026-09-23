@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-portal.functions";
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
-import { LogTimeDialog } from "@/components/owner/LogTimeDialog";
+import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 import { WaysToParticipate } from "@/components/owner/WaysToParticipate";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance, reviewedTicketRequestText } from "@/lib/owner-ticket-intent";
@@ -311,17 +311,24 @@ function OwnerHubBody({
   // a meeting, a phone call, research or an errand for their home.
   const [heroLogOpen, setHeroLogOpen] = useState(false);
   const [heroLogActivity, setHeroLogActivity] = useState("");
-  const heroLogAnchor = null;
+  const [heroLogAnchor, setHeroLogAnchor] = useState<LogTimeAnchor | null>(null);
+  const [logKey, setLogKey] = useState(0);
+  const [logAfter, setLogAfter] = useState<(() => void) | null>(null);
+  // The page's single Log time window; every button opens this one.
+  const openLogTime = (opts?: { anchor?: LogTimeAnchor | null; activity?: string; onDone?: () => void }) => {
+    setHeroLogAnchor(opts?.anchor ?? null);
+    setHeroLogActivity(opts?.activity ?? "");
+    setLogAfter(() => opts?.onDone ?? null);
+    setLogKey((k) => k + 1);
+    setHeroLogOpen(true);
+  };
   const ownerPhase: "onboarding" | "ongoing" =
     program.status === "ready_for_onboarding" ||
     program.status === "draft" ||
     openReviews.some((r) => r.phase === "onboarding")
       ? "onboarding"
       : "ongoing";
-  const openManualLog = (activity: string) => {
-    setHeroLogActivity(activity);
-    setHeroLogOpen(true);
-  };
+  const openManualLog = (activity: string) => openLogTime({ activity });
   const scrollToSection = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -329,25 +336,34 @@ function OwnerHubBody({
   const targetReached =
     snapshot.state === "target_reached" || snapshot.state === "program_completed";
 
+  // Recent activity is history only: finished work and decisions made.
   const events: ActivityEvent[] = useMemo(() => {
-    const fromAlerts: ActivityEvent[] = alerts.slice(0, 8).map((a) => ({
-      id: `alert-${a.id}`,
-      kind: a.kind === "urgent" ? "escalation" : "note",
-      label: a.title,
-      when: usDateTime(a.created_at),
-    }));
-    const fromTickets: ActivityEvent[] = tickets.slice(0, 6).map((t) => ({
-      id: `ticket-${t.id}`,
-      kind: t.status === "closed" ? "completed" : "handoff",
-      label: t.title,
-      when: usDate(t.reported_at),
-    }));
-    return [...fromAlerts, ...fromTickets]
-      .sort((a, b) => (a.when && b.when ? (a.when < b.when ? 1 : -1) : 0))
-      .slice(0, 10);
-  }, [alerts, tickets]);
+    const done: { id: string; kind: ActivityEvent["kind"]; label: string; at: string }[] = [
+      ...tickets
+        .filter((t) => t.status === "closed")
+        .map((t) => ({
+          id: `ticket-${t.id}`,
+          kind: "completed" as const,
+          label: `Completed: ${t.title}`,
+          at: t.reported_at,
+        })),
+      ...(reviews as Review[])
+        .filter((r) => r.responded_at)
+        .map((r) => ({
+          id: `review-${r.id}`,
+          kind: "completed" as const,
+          label: `You responded: ${r.title}`,
+          at: r.responded_at as string,
+        })),
+    ];
+    return done
+      .sort((a, b) => (a.at < b.at ? 1 : -1))
+      .slice(0, 10)
+      .map((e) => ({ id: e.id, kind: e.kind, label: e.label, when: usDateTime(e.at) }));
+  }, [reviews, tickets]);
 
   return (
+    <LogTimeContext.Provider value={preview ? null : openLogTime}>
     <div className="space-y-6">
       {preview ? (
         <StatusBadge tone="review">Preview only — staff view, read-only</StatusBadge>
@@ -381,6 +397,7 @@ function OwnerHubBody({
       />
 
       <LogTimeDialog
+        key={logKey}
         open={heroLogOpen}
         onOpenChange={setHeroLogOpen}
         programId={program.id}
@@ -401,7 +418,10 @@ function OwnerHubBody({
               p.closingDate <= new Date().toISOString().slice(0, 10),
           )
           .map((p) => ({ id: p.propertyId, name: p.name }))}
-        onDone={invalidate}
+        onDone={() => {
+          logAfter?.();
+          invalidate();
+        }}
       />
 
       {!preview && logHoursBlockedReason ? (
@@ -558,16 +578,15 @@ function OwnerHubBody({
         )}
       </SectionCard>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ParticipationReportPanel />
+      <ParticipationReportPanel>
         {data.badgeRefreshPending && (
           <p className="text-sm text-muted-foreground">
             Achievements are awaiting a refresh. Your participation record is still available;
             reopening this page will retry.
           </p>
         )}
-        <OwnerBadges earned={badges} reportedHours={snapshot.reportedHours} />
-      </div>
+        <OwnerBadges compact earned={badges} reportedHours={snapshot.reportedHours} />
+      </ParticipationReportPanel>
 
       {closeoutVisible && (
         <AfterDayNinety
@@ -709,10 +728,11 @@ function OwnerHubBody({
       </SectionCard>
 
       <div id="owner-activity" className="scroll-mt-24" />
-      <SectionCard title="Recent activity" description="What's happened lately across your homes.">
-        <ActivityList events={events} emptyLabel="Nothing has happened yet." />
+      <SectionCard title="Recent activity" description="Completed work and the decisions you've made.">
+        <ActivityList events={events} emptyLabel="No completed work or decisions yet." />
       </SectionCard>
     </div>
+    </LogTimeContext.Provider>
   );
 }
 
@@ -855,6 +875,7 @@ function ReviewRow({
 }) {
   const [open, setOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  const openShared = useOpenLogTime();
   const [reviewed, setReviewed] = useState<ReturnType<typeof captureReviewedOpportunity> | null>(
     null,
   );
@@ -947,19 +968,27 @@ function ReviewRow({
         canLogTime={timeLoggable}
         logTimeBlockedReason={logHoursBlockedReason}
         onLogTime={() => {
-          setReviewed(captureReviewedOpportunity(review));
+          const anchor = captureReviewedOpportunity(review);
+          if (openShared) {
+            setOpen(false);
+            openShared({ anchor, onDone });
+            return;
+          }
+          setReviewed(anchor);
           setLogOpen(true);
         }}
         onDecided={onDone}
       />
 
-      <LogTimeDialog
-        open={logOpen}
-        onOpenChange={setLogOpen}
-        programId={programId}
-        anchor={reviewed}
-        onDone={onDone}
-      />
+      {!openShared && (
+        <LogTimeDialog
+          open={logOpen}
+          onOpenChange={setLogOpen}
+          programId={programId}
+          anchor={reviewed}
+          onDone={onDone}
+        />
+      )}
     </div>
   );
 }

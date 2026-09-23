@@ -118,6 +118,7 @@ export function ParticipationReportPanel({ children }: { children?: ReactNode } 
             Download CSV detail
           </Button>
         </div>
+        {children}
       </div>
     </SectionCard>
   );
