@@ -546,7 +546,7 @@ function OwnerHubBody({
 
       <OnboardingActions readOnly={preview} programId={preview ? program.id : null} />
 
-      <OwnerOpportunities readOnly={preview} {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })} />
+      <OwnerOpportunities homes={properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }))} readOnly={preview} {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })} />
 
       <div id="owner-participate" className="scroll-mt-24" />
       <WaysToParticipate
@@ -684,7 +684,7 @@ function OwnerHubBody({
       </SectionCard>
 
       <div id="owner-documents" className="scroll-mt-24">
-        <OwnerFilesPanel />
+        <OwnerFilesPanel homes={properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }))} selectedHomeId={selectedHomeId} readOnly={preview} />
       </div>
 
       <SectionCard title="Your recorded review responses">
