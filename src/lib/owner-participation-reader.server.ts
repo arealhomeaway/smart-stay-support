@@ -94,7 +94,13 @@ const alertSchema = z.object({
   created_at: z.string(),
   title: z.string(),
   body: z.string(),
-  action_path: text.optional(),
+  // Only the Opportunity deep link the database writes may cross this boundary.
+  action_path: z
+    .unknown()
+    .transform((v) =>
+      typeof v === "string" && /^\/owner\?home=[0-9a-f-]{36}&opportunity=[0-9a-f-]{36}$/.test(v) ? v : null,
+    )
+    .optional(),
 });
 const schemas = {
   reviews: reviewSchema,
