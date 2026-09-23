@@ -554,12 +554,9 @@ export function releaseState(
     return { state: "waiting", reason: `Blocked — ${task.blocker!.trim()}`, canComplete: false };
 
   const evidenceMissing = task.evidence_required && !(task.evidence_note ?? "").trim();
-  if (evidenceMissing)
-    return {
-      state: "in_progress",
-      reason: "Required evidence is not recorded yet.",
-      canComplete: false,
-    };
+  // A completion note is asked for when finishing; it never makes a Task look
+  // started or hold it back from being worked.
+  if (evidenceMissing) return { state: "ready", reason: null, canComplete: false };
 
   const reopened = Boolean(task.completed_at) && task.status !== "complete";
   if (reopened)
