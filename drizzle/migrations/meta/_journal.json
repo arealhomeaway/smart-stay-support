@@ -218,6 +218,13 @@
       "when": 1790184689150,
       "tag": "0030_owner_work_never_blocks_handoff",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790184999966,
+      "tag": "0031_v2_work_items_templates_handoff",
+      "breakpoints": true
     }
   ]
 }
