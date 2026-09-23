@@ -7,19 +7,17 @@ import { describe, expect, it, mock } from "bun:test";
 
 mock.module("@/lib/audit.server", () => ({ writeAudit: async () => {} }));
 mock.module("../audit.server", () => ({ writeAudit: async () => {} }));
-mock.module("../onboarding-task-access.server", () => ({
-  assertOnboardingPropertyManagement: async () => {},
-}));
-mock.module("../onboarding-schedule.server", () => ({
-  previewScheduleRecalc: async () => ({ rows: [] }),
-  applyScheduleRecalc: async () => ({ applied: 0 }),
-}));
+// Access control is NOT mocked here: the fixture answers the supervisor check
+// instead, so no stub can leak into the other suites in the same test run.
+// The schedule recalculation is likewise left real — saveOnboardingMilestones
+// already treats a recalculation failure as non-fatal.
 
 const { saveOnboardingMilestones } = await import("../onboarding-milestones.server");
 
 function fixture() {
   const writes: { table: string; patch: Record<string, unknown> }[] = [];
   const db = {
+    rpc: async () => ({ data: true, error: null }),
     from(table: string) {
       const query = {
         select: () => query,

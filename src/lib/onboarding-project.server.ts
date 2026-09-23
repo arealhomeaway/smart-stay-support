@@ -392,7 +392,13 @@ export async function updateProject(
   // should never need a second button to make the plan usable.
   if (input.possessionOn) {
     const { autopopulateProjectDeadlines } = await import("./onboarding-schedule.server");
-    await autopopulateProjectDeadlines(supabase, userId, data.property_id);
+    // Best effort: the dates are already saved, so a pacing hiccup must never
+    // turn a successful save into an error the user sees.
+    try {
+      await autopopulateProjectDeadlines(supabase, userId, data.property_id);
+    } catch (error) {
+      console.error("deadline autopopulation skipped", error);
+    }
   }
 
   let enrollmentWarning: string | null = null;
