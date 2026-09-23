@@ -15,7 +15,7 @@ type Alert = {
   body: string;
   read_at: string | null;
   created_at: string;
-  action_path?: string | null;
+  action_path?: string | null | undefined;
 };
 
 /**
