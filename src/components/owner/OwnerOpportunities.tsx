@@ -3,6 +3,7 @@
  * language only: Opportunities, never tasks or requirements. Completing one
  * never changes ARHA's internal work.
  */
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2 } from "lucide-react";
@@ -10,8 +11,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/page";
 import { completeMyOpportunity, listMyOpportunities } from "@/lib/v2-workflow.functions";
+import { OwnerUploadDialog, type OwnerHome } from "@/components/owner/OwnerUploadDialog";
+import { OwnerFileRow, useOwnerDocuments } from "@/components/OwnerFilesPanel";
 
-export function OwnerOpportunities({ onLogHours, readOnly = false }: { onLogHours?: (activity: string) => void; readOnly?: boolean }) {
+export function OwnerOpportunities({ onLogHours, readOnly = false, homes = [] }: { onLogHours?: (activity: string) => void; readOnly?: boolean; homes?: OwnerHome[] }) {
+  const [uploadFor, setUploadFor] = useState<{ id: string; title: string; propertyId: string } | null>(null);
+  const docs = useOwnerDocuments();
   const qc = useQueryClient();
   const list = useServerFn(listMyOpportunities);
   const complete = useServerFn(completeMyOpportunity);
@@ -57,8 +62,18 @@ export function OwnerOpportunities({ onLogHours, readOnly = false }: { onLogHour
                   ) : null}
                 </dl>
               ) : null}
+              {(() => {
+                const linked = (docs.data?.files ?? []).filter((f) => f.work_item_id === o.id);
+                return linked.length ? (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm font-medium">Your documentation</p>
+                    <ul className="space-y-2">{linked.map((f) => <OwnerFileRow key={f.id} f={f} showHome={false} />)}</ul>
+                  </div>
+                ) : null;
+              })()}
               {!readOnly ? (
                 <div className="mt-3 flex flex-wrap gap-2">
+                  {o.property_id ? <Button size="sm" variant="outline" onClick={() => setUploadFor({ id: o.id, title: o.title, propertyId: o.property_id! })}>Upload documentation</Button> : null}
                   {onLogHours ? <Button size="sm" onClick={() => onLogHours(o.title)}>Log time</Button> : null}
                   {!finished ? <Button size="sm" variant="outline" disabled={done.isPending} onClick={() => done.mutate(o.id)}>Mark done</Button> : null}
                 </div>
@@ -67,6 +82,14 @@ export function OwnerOpportunities({ onLogHours, readOnly = false }: { onLogHour
           );
         })}
       </ul>
+      <OwnerUploadDialog
+        open={uploadFor !== null}
+        onOpenChange={(v) => !v && setUploadFor(null)}
+        homes={homes.length ? homes : uploadFor ? [{ propertyId: uploadFor.propertyId, name: items.find((i) => i.id === uploadFor.id)?.propertyName ?? "Your home" }] : []}
+        fixedPropertyId={uploadFor?.propertyId ?? null}
+        opportunity={uploadFor}
+        defaultCategory="participation"
+      />
     </SectionCard>
   );
 }
