@@ -335,19 +335,13 @@ export async function loadProgramAggregate(
   const supersededIds = new Set(
     entryRows.map((e) => e.amends_entry_id).filter((id): id is string => Boolean(id)),
   );
-  // A returned entry is waiting on the homeowner, so it does not count yet.
   // Nothing here ever adds, estimates or credits time on the owner's behalf.
   const reported = combinedMinutes(countable);
   const onboardingMinutes = combinedMinutes(countable.filter((e) => e.phase === "onboarding"));
-  const approvedMinutes = combinedMinutes(countable.filter((e) => e.review_status === "approved"));
-  const pendingReviewMinutes = combinedMinutes(
-    countable.filter((e) => e.review_status !== "approved"),
-  );
-  const returnedMinutes = combinedMinutes(
-    entryRows.filter(
-      (e) => inPeriod(e) && e.review_status === "returned" && !supersededIds.has(e.id),
-    ),
-  );
+  // Logged time counts immediately — there is no review, approval or return state.
+  const approvedMinutes = reported;
+  const pendingReviewMinutes = 0;
+  const returnedMinutes = 0;
 
   const snapshot = progressSnapshot({
     status: p.status as ProgramStatus,

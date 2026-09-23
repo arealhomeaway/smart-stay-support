@@ -95,8 +95,8 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
   const entries: ReportEntry[] = agg.entries.map((e) => {
     const isSuperseded = superseded.has(e.id);
     const opp = e.review_id ? opportunities.get(e.review_id) : undefined;
-    const returned = e.review_status === "returned";
-    const counts = !isSuperseded && !returned;
+    // Logged time counts immediately; only a later correction replaces it.
+    const counts = !isSuperseded;
     const inPeriod = inParticipationWindow(e.entry_date, startedOn, endsOn, today);
     return {
       id: e.id,
@@ -110,12 +110,12 @@ export async function buildOwnerReport(supabase: Client, programId: string) {
       hours: hoursFromMinutes(e.minutes),
       properties: e.propertyIds.map((id) => propNames.get(id) ?? "Property"),
       shared: e.propertyIds.length > 1,
-      status: isSuperseded ? "Superseded by a correction" : statusLabel(e.review_status),
+      status: isSuperseded ? "Superseded by a correction" : "Logged",
       counts,
-      reason: e.correction_reason ?? e.review_note ?? "",
+      reason: e.correction_reason ?? "",
       inPeriod,
       action: opp ? actionLabel(opp.owner_action_type) : (e.activity_category ?? "Participation"),
-      source: opp ? sourceLabel(opp.source_type) : "Legacy record",
+      source: opp ? sourceLabel(opp.source_type) : "Legacy / Unlinked",
       opportunity: opp ? opp.title : "",
       evidence: e.attachment_path ? e.attachment_path.split("/").pop()! : "",
     };

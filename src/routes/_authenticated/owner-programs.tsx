@@ -51,7 +51,6 @@ import { SupervisorOnly } from "@/components/SupervisorOnly";
 import { StatusBadge, type StatusTone } from "@/components/ui/status";
 import { usCalendarDate, usDate } from "@/lib/dates";
 import { OwnerContactAlerts } from "@/components/OwnerContactAlerts";
-import { OwnerTimeReviewQueue } from "@/components/OwnerTimeReviewQueue";
 import { OwnerProgramActivation } from "@/components/OwnerProgramActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -232,7 +231,6 @@ function ProgramsBoard() {
 
       <OwnerContactAlerts />
 
-      <OwnerTimeReviewQueue />
 
       <ProgramSummary rows={rows} />
 

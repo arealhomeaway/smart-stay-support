@@ -161,14 +161,13 @@ export async function loadOwnerAnalytics(
     const inPeriod = (e: { entry_date: string }) =>
       inParticipationWindow(e.entry_date, p.started_on, p.ends_on);
     const countable = mine.filter(
-      (e) => inPeriod(e) && e.review_status !== "returned" && !superseded.has(e.id),
+      (e) => inPeriod(e) && !superseded.has(e.id),
     );
     const reported = combinedMinutes(countable);
-    const approved = combinedMinutes(countable.filter((e) => e.review_status === "approved"));
-    const pending = combinedMinutes(countable.filter((e) => e.review_status !== "approved"));
-    const returned = combinedMinutes(
-      mine.filter((e) => inPeriod(e) && e.review_status === "returned" && !superseded.has(e.id)),
-    );
+    // No hour review: everything logged counts.
+    const approved = reported;
+    const pending = 0;
+    const returned = 0;
 
     const snapshot = progressSnapshot({
       status: p.status as ProgramStatus,
@@ -200,7 +199,7 @@ export async function loadOwnerAnalytics(
       approvedHours: hoursFromMinutes(approved),
       pendingHours: hoursFromMinutes(pending),
       returnedHours: hoursFromMinutes(returned),
-      pendingEntries: countable.filter((e) => e.review_status !== "approved").length,
+      pendingEntries: 0,
       flaggedEntries: mine.filter((e) => e.flagged).length,
       benchmarkHours: snapshot.benchmark,
       varianceHours: snapshot.variance,
