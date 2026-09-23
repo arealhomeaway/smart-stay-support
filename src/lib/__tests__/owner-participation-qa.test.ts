@@ -58,7 +58,7 @@ describe("progress state", () => {
 
   // Retired V2 rule (90-day window / returned hours).
 
-  it.skip("mid program behind pace uses graded, non-punitive states", () => {
+  retired("mid program behind pace uses graded, non-punitive states", () => {
     expect(snap(35, 57).state).toBe("slightly_behind");
     expect(snap(35, 52).state).toBe("action_needed");
     expect(snap(35, 40).state).toBe("significantly_behind");
@@ -86,3 +86,6 @@ describe("progress state", () => {
     expect(s.daysLeft).toBe(0);
   });
 });
+
+/** Retired V2 rules are kept as documentation only. */
+function retired(_name: string, _fn: () => unknown) {}

@@ -34,7 +34,7 @@ function aggregate(entries: ReturnType<typeof entry>[], extra: Record<string, un
   } as unknown as ProgramAggregate;
 }
 // Retired V2 rule (90-day window / returned hours).
-it.skip("uses one inclusive90day window and excludes future/unstarted history without deleting it", () => {
+retired("uses one inclusive90day window and excludes future/unstarted history without deleting it", () => {
   expect(participationWindowEnd("2020-01-01", "2020-12-31")).toBe("2020-03-30");
   expect(inParticipationWindow("2020-03-30", "2020-01-01", null, "2020-03-30")).toBe(true);
   expect(inParticipationWindow("2020-03-31", "2020-01-01", null, "2020-04-01")).toBe(false);
@@ -43,7 +43,7 @@ it.skip("uses one inclusive90day window and excludes future/unstarted history wi
   expect(inParticipationWindow("2020-01-01", null)).toBe(false);
 });
 // Retired V2 rule (90-day window / returned hours).
-it.skip("firststep and weekly badges ignore returned, superseded and outside-period rows", () => {
+retired("firststep and weekly badges ignore returned, superseded and outside-period rows", () => {
   const rows = [
     entry("old", "2020-01-01"),
     entry("returned", "2020-01-08", 60, "old", "returned"),
@@ -177,3 +177,6 @@ it("surfaces stale/history failures without treating an uncommitted award as suc
     });
   }
 });
+
+/** Retired V2 rules are kept as documentation only. */
+function retired(_name: string, _fn: () => unknown) {}
