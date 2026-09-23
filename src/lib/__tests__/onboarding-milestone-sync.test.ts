@@ -10,9 +10,12 @@ mock.module("../audit.server", () => ({ writeAudit: async () => {} }));
 mock.module("../onboarding-task-access.server", () => ({
   assertOnboardingPropertyManagement: async () => {},
 }));
+const realSchedule = await import("../onboarding-schedule.server");
 mock.module("../onboarding-schedule.server", () => ({
+  ...realSchedule,
   previewScheduleRecalc: async () => ({ rows: [] }),
   applyScheduleRecalc: async () => ({ applied: 0 }),
+  autopopulateProjectDeadlines: async () => ({ applied: 0 }),
 }));
 
 const { saveOnboardingMilestones } = await import("../onboarding-milestones.server");
