@@ -252,7 +252,7 @@ export function OnboardingActions({
         <p className="mb-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
           {SILENCE_IS_NOT_APPROVAL}
         </p>
-        {!openShared && logPrompt && data.programId && (
+        {logPrompt && data.programId && (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold">
