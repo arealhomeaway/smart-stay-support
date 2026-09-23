@@ -307,8 +307,11 @@ export function splitByScope<
   const inScope: T[] = [];
   const outOfScope: { task: T; reason: string }[] = [];
   const byId = new Map(tasks.filter((t) => t.id).map((t) => [t.id!, t]));
+  // Scope is structured: modules and furnishing are applied when the plan is
+  // created from the template version. Task title words never hide live work.
+  void scope;
   function reasonFor(task: T, visited = new Set<string>()): string | null {
-    const own = outOfScopeReason(task.title, scope);
+    const own: string | null = null;
     if (own) return own;
     if (!task.parent_task_id || visited.has(task.parent_task_id)) return null;
     visited.add(task.parent_task_id);

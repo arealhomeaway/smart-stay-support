@@ -145,15 +145,16 @@ function PropertyWorkspace() {
   });
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<PropertyQueueFilter>(() =>
-    search.workFilter === "blocked" ? "waiting" : "attention",
+    search.workFilter === "blocked" ? "waiting" : "open",
   );
   // Where the Director hub was left — filters, search and lens intact — so
   // Back restores that exact view rather than a bare "/onboarding".
   const { origin } = useRecordOrigin("onboarding");
 
   const { data, isLoading } = useQuery({
-    queryKey: onboardingWorkspaceKey(userId),
-    queryFn: () => load(),
+    // Only this Project's rows — never every home's Tasks, files and notes.
+    queryKey: [...onboardingWorkspaceKey(userId), "property", propertyId],
+    queryFn: () => load({ data: { propertyId } }),
     enabled: Boolean(userId),
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-workspace"] });
@@ -369,7 +370,7 @@ function PropertyWorkspace() {
   const target = targetHandoff(project);
   const views = orderPropertyWorkQueue(tasks.map((t) => viewTask(t, tasks, release)));
   const attention = views.filter((v) => matchesPropertyQueueFilter(v, "attention", userId));
-  const nextUp = views.filter((v) => matchesPropertyQueueFilter(v, "ready", userId)).slice(0, 3);
+  const focus = attention.length > 0 ? attention : views.filter((v) => matchesPropertyQueueFilter(v, "mine", userId));
   const blocked = views.filter((v) => matchesPropertyQueueFilter(v, "waiting", userId));
   const handoffLeft = tasks.filter(
     (t) =>
@@ -378,13 +379,20 @@ function PropertyWorkspace() {
       t.status !== "complete",
   ).length;
   const overdue = views.filter((v) => v.overdue && v.status !== "complete").length;
+  // Health is only claimed when the schedule can support it.
+  const scheduleIncomplete =
+    !current.actual_access_on || !tasks.some((t) => t.due_on && t.status !== "complete");
   const onTrack = life.accepted
     ? "Accepted by Operations"
     : handoffLeft === 0
       ? "Ready to mark Ready for Operations"
       : overdue > 0
         ? `At risk — ${overdue} overdue, ${handoffLeft} handoff Tasks left`
-        : `On track — ${handoffLeft} handoff Tasks left`;
+        : scheduleIncomplete
+          ? `Schedule incomplete — needs the access date · ${handoffLeft} handoff Tasks left`
+          : `On track — ${handoffLeft} handoff Tasks left`;
+  const actualClosing =
+    (current as { actual_closing_on?: string | null }).actual_closing_on ?? null;
   const taskRow = (v: (typeof views)[number]) => (
     <li key={v.task.id}>
       <button
@@ -440,24 +448,10 @@ function PropertyWorkspace() {
         </Button>
       </div>
 
-      <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-        <div>
-          <dt className="text-xs text-muted-foreground">Closing</dt>
-          <dd className="numeric font-medium">{current.planned_closing_on ?? "Not set"}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">Access / possession</dt>
-          <dd className="numeric font-medium">{current.actual_access_on ?? "Not set"}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">Target handoff</dt>
-          <dd className="numeric font-medium">{target ?? "Not set"}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">Project manager</dt>
-          <dd className="font-medium">{pm?.full_name ?? pm?.email ?? "Unassigned"}</dd>
-        </div>
-      </dl>
+      <p className="text-sm text-muted-foreground">
+        Onboarding Project · {tasks.filter((t) => t.status !== "complete").length} open Tasks ·
+        Project manager {pm?.full_name ?? pm?.email ?? "Unassigned"}
+      </p>
 
       <Tabs
         value={search.tab}
@@ -484,20 +478,60 @@ function PropertyWorkspace() {
               </div>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Handoff</p>
+              <p className="text-xs text-muted-foreground">Project health</p>
               <p className="text-sm font-medium">{onTrack}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Blocked or waiting</p>
+              <p className="text-xs text-muted-foreground">Waiting on something</p>
               <p className="numeric text-sm font-medium">
                 {blocked.length === 0 ? "Nothing blocked" : `${blocked.length} Tasks`}
               </p>
             </div>
           </section>
 
+          <section className="surface space-y-3 p-4" aria-label="Project dates">
+            <h2 className="font-semibold">Project dates</h2>
+            <dl className="grid gap-3 text-sm sm:grid-cols-4">
+              <div>
+                <dt className="text-xs text-muted-foreground">Actual closing</dt>
+                <dd className="numeric font-medium">
+                  {actualClosing ? usDate(actualClosing) : current.planned_closing_on ? `Planned ${usDate(current.planned_closing_on)}` : "Not set"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Access / possession</dt>
+                <dd className="numeric font-medium">
+                  {current.actual_access_on ? usDate(current.actual_access_on) : "Not set"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Target handoff</dt>
+                <dd className="numeric font-medium">
+                  {target ? usDate(target) : "Calculated once access is set"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Actual handoff</dt>
+                <dd className="numeric font-medium">
+                  {current.handoff_accepted_at ? usDate(current.handoff_accepted_at.slice(0, 10)) : "Not yet"}
+                </dd>
+              </div>
+            </dl>
+            <SchedulePanel
+              propertyId={current.id}
+              plannedClosingOn={current.planned_closing_on ?? null}
+              actualClosingOn={actualClosing}
+              actualAccessOn={current.actual_access_on ?? null}
+              canEdit={canEdit}
+              onChange={() => void refresh()}
+            />
+          </section>
+
+          <ProjectTeamPanel propertyId={current.id} />
+
           <section className="surface space-y-3 p-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold">Needs attention</h2>
+              <h2 className="font-semibold">{attention.length > 0 ? "Needs attention" : "My Tasks here"}</h2>
               {attention.length > 5 && (
                 <Button
                   size="sm"
@@ -511,25 +545,14 @@ function PropertyWorkspace() {
                 </Button>
               )}
             </div>
-            {attention.length === 0 ? (
+            {focus.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nothing needs attention right now.</p>
             ) : (
-              <ul className="space-y-2">{attention.slice(0, 5).map(taskRow)}</ul>
-            )}
-          </section>
-
-          <section className="surface space-y-3 p-4">
-            <h2 className="font-semibold">What&apos;s next</h2>
-            {nextUp.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No Tasks are ready to start.</p>
-            ) : (
-              <ul className="space-y-2">{nextUp.map(taskRow)}</ul>
+              <ul className="space-y-2">{focus.slice(0, 5).map(taskRow)}</ul>
             )}
           </section>
 
           {activeOwner ? <PropertyOpportunitiesPanel propertyId={current.id} /> : null}
-
-          <ProjectTeamPanel propertyId={current.id} />
         </TabsContent>
 
         <TabsContent value="work" className="space-y-5">
@@ -567,25 +590,14 @@ function PropertyWorkspace() {
             onFilterChange={setQueueFilter}
             onSelect={(task) => setOpenTaskId(task.id)}
             release={release}
+            voided={data.retiredTasks ?? []}
           />
         </TabsContent>
 
         <TabsContent value="property" className="space-y-4">
           <PropertyFactsPanel propertyId={current.id} canEdit={canEdit} />
           <HomeownerCard propertyId={current.id} canManage={canEdit} />
-          <section className="surface space-y-4 p-4">
-            <p className="font-medium">Key dates</p>
-            <SchedulePanel
-              propertyId={current.id}
-              plannedClosingOn={current.planned_closing_on ?? null}
-              actualClosingOn={
-                (current as { actual_closing_on?: string | null }).actual_closing_on ?? null
-              }
-              actualAccessOn={current.actual_access_on ?? null}
-              canEdit={canEdit}
-              onChange={() => void refresh()}
-            />
-          </section>
+
           <ProjectScopePanel
             propertyId={current.id}
             propertyName={current.name}
@@ -684,6 +696,23 @@ function PropertyWorkspace() {
             }
             people={data.people}
           />
+          {(data.retiredTasks ?? []).length > 0 && (
+            <details className="surface p-4">
+              <summary className="cursor-pointer text-sm font-medium">
+                Retired and voided Tasks ({data.retiredTasks.length})
+              </summary>
+              <ul className="mt-3 space-y-1.5">
+                {data.retiredTasks.map((t) => (
+                  <li key={t.id} className="text-sm">
+                    <span className="text-muted-foreground line-through">{t.title}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {t.exception_reason} · {usDate(t.archived_at.slice(0, 10))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           <OnboardingNotes
             notes={notes as never}
             people={data.people}

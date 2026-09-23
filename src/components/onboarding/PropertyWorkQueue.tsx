@@ -30,6 +30,7 @@ export function PropertyWorkQueue({
   onFilterChange,
   onSelect,
   release,
+  voided = [],
 }: {
   tasks: WorkflowTask[];
   people: Person[];
@@ -40,19 +41,23 @@ export function PropertyWorkQueue({
   onSelect: (task: WorkflowTask) => void;
   outOfScope?: { task: WorkflowTask; reason: string }[];
   release?: ReleaseContext;
+  /** Voided Tasks — kept on record, never counted as work. */
+  voided?: { id: string; title: string; archived_at: string; exception_reason: string | null }[];
 }) {
   const views = useMemo(
     () => orderPropertyWorkQueue(tasks.map((task) => viewTask(task, tasks, release))),
     [tasks, release],
   );
   const shown = views.filter((view) => matchesPropertyQueueFilter(view, filter, viewerId));
-  const waiting = views.filter(isWaitingTask);
-  const waitingOnOwner = waiting.filter(
-    (view) => view.task.owner_approval_status === "awaiting_owner",
-  ).length;
-  const actionable = views.filter(
-    (view) => !isWaitingTask(view) && !["complete", "carryover"].includes(view.status),
-  ).length;
+  const voidedRows = voided.filter((v) => (v.exception_reason ?? "").startsWith("Voided"));
+  const open = views.filter((view) => !["complete", "carryover"].includes(view.status)).length;
+  const waiting = views.filter(
+    (view) => isWaitingTask(view) && !["complete", "carryover"].includes(view.status),
+  );
+  const countFor = (key: PropertyQueueFilter) =>
+    key === "voided"
+      ? voidedRows.length
+      : views.filter((view) => matchesPropertyQueueFilter(view, key, viewerId)).length;
 
   return (
     <section className="surface overflow-hidden" aria-labelledby="work-queue-heading">
@@ -61,15 +66,12 @@ export function PropertyWorkQueue({
           <div>
             <h2 id="work-queue-heading" className="text-xl font-semibold">Tasks</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Start at the top. Work that can move now comes before anything waiting.
+              Every current Task for this Project. Any Task can be opened and worked at any time.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <span><strong className="numeric text-foreground">{actionable}</strong> ready</span>
-            <span><strong className="numeric text-foreground">{waiting.length}</strong> waiting</span>
-            {waitingOnOwner > 0 && (
-              <span><strong className="numeric text-foreground">{waitingOnOwner}</strong> on homeowner</span>
-            )}
+            <span><strong className="numeric text-foreground">{open}</strong> open</span>
+            <span><strong className="numeric text-foreground">{waiting.length}</strong> waiting on something</span>
           </div>
         </div>
 
@@ -86,7 +88,7 @@ export function PropertyWorkQueue({
               >
                 {label}
                 <span className="numeric opacity-75">
-                  {views.filter((view) => matchesPropertyQueueFilter(view, key, viewerId)).length}
+                  {countFor(key)}
                 </span>
               </Button>
             ),
@@ -95,7 +97,21 @@ export function PropertyWorkQueue({
       </div>
 
       <div>
-        {shown.length === 0 ? (
+        {filter === "voided" ? (
+          voidedRows.length === 0 ? (
+            <p className="p-5 text-sm text-muted-foreground">No Tasks have been voided.</p>
+          ) : (
+            voidedRows.map((v) => (
+              <div key={v.id} className="border-b border-border/60 px-4 py-3 last:border-b-0">
+                <p className="text-sm text-muted-foreground line-through">{v.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(v.exception_reason ?? "").replace(/^Voided — not needed: /, "Not needed: ")} ·{" "}
+                  {usDate(v.archived_at.slice(0, 10))}
+                </p>
+              </div>
+            ))
+          )
+        ) : shown.length === 0 ? (
           <p className="p-5 text-sm text-muted-foreground">No work matches this filter.</p>
         ) : (
           shown.map((view) => {

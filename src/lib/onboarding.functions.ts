@@ -4,9 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const getOnboardingWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) =>
+    z.object({ propertyId: z.string().uuid().optional() }).optional().parse(d),
+  )
+  .handler(async ({ context, data }) => {
     const { loadOnboardingWorkspace } = await import("./onboarding.server");
-    return loadOnboardingWorkspace(context.supabase, context.userId);
+    return loadOnboardingWorkspace(context.supabase, context.userId, data?.propertyId);
   });
 
 export const saveOnboardingTaskFn = createServerFn({ method: "POST" })
