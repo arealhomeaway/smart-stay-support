@@ -4143,6 +4143,7 @@ export type Database = {
           property_id: string
           ready_for_ops_at: string | null
           ready_for_ops_by: string | null
+          role_assignments: Json
           started_at: string
           started_by: string | null
           status: string
@@ -4173,6 +4174,7 @@ export type Database = {
           property_id: string
           ready_for_ops_at?: string | null
           ready_for_ops_by?: string | null
+          role_assignments?: Json
           started_at?: string
           started_by?: string | null
           status?: string
@@ -4203,6 +4205,7 @@ export type Database = {
           property_id?: string
           ready_for_ops_at?: string | null
           ready_for_ops_by?: string | null
+          role_assignments?: Json
           started_at?: string
           started_by?: string | null
           status?: string
@@ -10051,6 +10054,10 @@ export type Database = {
           _owner_summary: string
           _work_order_id: string
         }
+        Returns: string
+      }
+      project_role_assignee: {
+        Args: { _project_id: string; _role: string }
         Returns: string
       }
       publish_onboarding_template: {
