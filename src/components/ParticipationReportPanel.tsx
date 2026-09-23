@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Download, FileText, Loader2 } from "lucide-react";
@@ -16,7 +16,7 @@ import { usCalendarDate } from "@/lib/dates";
  * opened or downloaded, so a late correction or a new approval simply
  * produces a freshly dated report.
  */
-export function ParticipationReportPanel() {
+export function ParticipationReportPanel({ children }: { children?: ReactNode } = {}) {
   const fetchFile = useServerFn(ownerReportFile);
   const [busy, setBusy] = useState<"pdf" | "csv" | null>(null);
 
