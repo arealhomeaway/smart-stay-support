@@ -249,6 +249,7 @@ function PropertyWorkspace() {
   // otherwise a reassignment in the scope panel would never show up here.
   const pmId = projectRow?.project_manager ?? current.onboarding_owner;
   const pm = data.people.find((p) => p.id === pmId);
+  const utilityManager = data.people.find((p) => p.id === projectRow?.utility_manager);
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
   const canEdit = !readOnly && can("handoff_request");
   const canExecuteProject =
@@ -412,7 +413,12 @@ function PropertyWorkspace() {
       <div className="flex flex-wrap items-center gap-2">
         <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
         {activeOwner && <Chip className={stateChip("waiting")}>Active Owner Program</Chip>}
-        {pm && <Chip className={stateChip("info")}>{pm.full_name ?? pm.email}</Chip>}
+        {pm && <Chip className={stateChip("info")}>PM · {pm.full_name ?? pm.email}</Chip>}
+        {utilityManager && (
+          <Chip className={stateChip("info")}>
+            Utilities · {utilityManager.full_name ?? utilityManager.email}
+          </Chip>
+        )}
         {openHandoff && !life.accepted && (
           <Chip className={stateChip("waiting")}>Handoff — {gateLabel(openHandoff.gate_step)}</Chip>
         )}
@@ -426,45 +432,27 @@ function PropertyWorkspace() {
         </Button>
       </div>
 
+      <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+        <div>
+          <dt className="text-xs text-muted-foreground">Closing</dt>
+          <dd className="numeric font-medium">{current.planned_closing_on ?? "Not set"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Access</dt>
+          <dd className="numeric font-medium">{current.actual_access_on ?? "Not set"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Target handoff</dt>
+          <dd className="numeric font-medium">{target ?? "Not set"}</dd>
+        </div>
+      </dl>
+
       {life.staleHandoff && (
         <p className="text-xs text-muted-foreground">
           A handoff record from before acceptance is kept for history. It no longer affects this
           home&apos;s state.
         </p>
       )}
-
-      <ProjectScopePanel
-        propertyId={current.id}
-        propertyName={current.name}
-        people={data.people}
-        canEdit={canEdit}
-        hints={{ planned_closing_on: current.planned_closing_on ?? null }}
-      />
-
-      <OnboardingDashboard
-        propertyId={current.id}
-        activeOwner={Boolean(activeOwner)}
-        canEdit={canEdit}
-        done={roll.done}
-        total={roll.total}
-        notes={notes as never}
-        people={data.people}
-        taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
-      />
-
-
-      <CurrentWork
-        stage={stage}
-        chain={chain}
-        next={nextAction}
-        risk={risk}
-        blockers={blockers}
-        tasks={tasks}
-        handoff={(openHandoff ?? null) as OpenHandoff}
-        accepted={Boolean(current.handoff_accepted_at)}
-        target={target}
-        onOpenTask={setOpenTaskId}
-      />
 
       <Tabs
         value={search.tab}
@@ -488,6 +476,39 @@ function PropertyWorkspace() {
 
         {/* ------------------------------------------------------- Overview */}
         <TabsContent value="overview" className="space-y-5">
+          <ProjectScopePanel
+            propertyId={current.id}
+            propertyName={current.name}
+            people={data.people}
+            canEdit={canEdit}
+            hints={{ planned_closing_on: current.planned_closing_on ?? null }}
+          />
+
+          <OnboardingDashboard
+            propertyId={current.id}
+            activeOwner={Boolean(activeOwner)}
+            canEdit={canEdit}
+            done={roll.done}
+            total={roll.total}
+            notes={notes as never}
+            people={data.people}
+            taskTitle={(taskId: string) => tasks.find((t) => t.id === taskId)?.title ?? null}
+          />
+
+          <CurrentWork
+            stage={stage}
+            chain={chain}
+            next={nextAction}
+            risk={risk}
+            blockers={blockers}
+            tasks={tasks}
+            handoff={(openHandoff ?? null) as OpenHandoff}
+            accepted={Boolean(current.handoff_accepted_at)}
+            target={target}
+            onOpenTask={setOpenTaskId}
+          />
+
+
 
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
