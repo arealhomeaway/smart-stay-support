@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowRight, ClipboardList, Inbox, Plus } from "lucide-react";
+import { ArrowRight, ClipboardList, Database, Inbox, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingPage, PageHero, ProgressRing, SectionCard } from "@/components/ui/page";
 import { PropertyPhoto } from "@/components/PropertyPhoto";
@@ -14,7 +14,8 @@ import { awaitingMyReview } from "@/lib/onboarding-hub";
 import { lifecycleStageMeta, withinDays, type ProjectSummary } from "@/lib/onboarding-lifecycle";
 import { cn } from "@/lib/utils";
 import heroImage from "@/assets/hero-arha-property.jpg";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
@@ -229,7 +230,7 @@ function Hub() {
             </Link>
             <button
               type="button"
-              onClick={() => setParam({ lens: "review" })}
+              onClick={() => setParam({ lens: "reviews" })}
               className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-5 text-base font-medium text-white backdrop-blur transition-colors hover:bg-white/20"
             >
               <Inbox className="size-4" /> Onboarding queue
