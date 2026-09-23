@@ -628,3 +628,45 @@ export async function listOwnerFileRecords(viewer: Viewer, client?: Client) {
   }
   return { records };
 }
+
+/**
+ * The homeowner's Documents & Photos as ONE flat list across every home they
+ * can reach. Built from the same per-record checks as listAttachments; the
+ * internal record grouping is never shown to the owner.
+ */
+export async function listOwnerDocuments(viewer: Viewer, client?: Client) {
+  const supabaseAdmin =
+    client ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+  const { records } = await listOwnerFileRecords(viewer, supabaseAdmin);
+  const files: Array<Record<string, unknown> & { id: string; property_id: string | null }> = [];
+  const requests: Array<{ id: string; title: string; note: string | null; propertyId: string | null; entityType: AttachmentEntity; entityId: string }> = [];
+  for (const r of records) {
+    const listed = await listAttachments(viewer, r.entityType, r.entityId, supabaseAdmin);
+    for (const f of listed.files) {
+      if (f.requested_from === "owner" && f.upload_status === "pending") {
+        requests.push({ id: f.id, title: f.title, note: f.note, propertyId: f.property_id, entityType: r.entityType, entityId: r.entityId });
+      } else if (f.upload_status === "stored") files.push(f);
+    }
+  }
+  const ids = files.map((f) => f.id);
+  const extra = new Map<string, { owner_category: string | null; work_item_id: string | null }>();
+  if (ids.length) {
+    const { data } = await supabaseAdmin.from("documents").select("id, owner_category, work_item_id").in("id", ids);
+    for (const d of data ?? []) extra.set(d.id, d);
+  }
+  const propIds = [...new Set([...files.map((f) => f.property_id), ...requests.map((r) => r.propertyId)].filter(Boolean))] as string[];
+  const names = new Map<string, string>();
+  if (propIds.length) {
+    const { data } = await supabaseAdmin.from("properties").select("id, name, nickname").in("id", propIds);
+    for (const p of data ?? []) names.set(p.id, p.nickname || p.name);
+  }
+  return {
+    files: files.map((f) => ({
+      ...(f as unknown as AttachmentRow & { uploaded_by_name: string | null }),
+      owner_category: extra.get(f.id)?.owner_category ?? null,
+      work_item_id: extra.get(f.id)?.work_item_id ?? null,
+      propertyName: f.property_id ? (names.get(f.property_id) ?? "Your home") : "Your home",
+    })),
+    requests: requests.map((r) => ({ ...r, propertyName: r.propertyId ? (names.get(r.propertyId) ?? "Your home") : "Your home" })),
+  };
+}
