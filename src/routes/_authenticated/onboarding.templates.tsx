@@ -1,3 +1,4 @@
+import { useShellPageLabel } from "@/components/nav/ShellNav";
 /**
  * Onboarding plan templates. The onboarding director creates and edits the
  * plans; project managers work the projects those plans create.
@@ -83,6 +84,11 @@ function TemplatesPage() {
     enabled: allowed,
   });
 
+  useShellPageLabel(
+    selected
+      ? ((data as unknown as { id: string; name: string }[] | undefined)?.find?.((t) => t.id === selected)?.name ?? "Template")
+      : null,
+  );
   const refresh = () => void qc.invalidateQueries({ queryKey: ["onboarding-templates"] });
 
   const doCreate = useMutation({
