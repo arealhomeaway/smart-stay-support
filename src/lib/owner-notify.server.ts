@@ -19,7 +19,20 @@ import { ticketAlertRecipient } from "./owner-ticket-alert.server";
 
 type Client = SupabaseClient<Database>;
 
-const APP_URL = "https://smart-stay-support.lovable.app/owner";
+const APP_ORIGIN = "https://smart-stay-support.lovable.app";
+const APP_URL = `${APP_ORIGIN}/owner`;
+
+/** Only owner-portal paths are ever linked; anything else falls back to the portal. */
+function ownerLink(actionPath: string | null | undefined) {
+  if (actionPath && actionPath.startsWith("/owner")) return `${APP_ORIGIN}${actionPath}`;
+  return APP_URL;
+}
+
+/** The home a notification is about, read from its owner-portal link. */
+function homeIdFrom(actionPath: string | null | undefined) {
+  const m = actionPath?.match(/[?&]home=([0-9a-f-]{36})/i);
+  return m ? m[1]! : null;
+}
 
 // Texting is handled by people, not an SMS provider. When an alert asks for a
 // text we raise an internal "reach this homeowner" task instead.
@@ -32,21 +45,34 @@ async function sendEmail(
   ticketId?: string | null,
   // The wording wrapper the onboarding director controls. The facts stay ours.
   copy?: { copy: OwnerEmailCopy; ownerName: string | null } | null,
+  context?: { url: string; propertyName: string | null; item: string | null },
 ) {
   const { sendEmail: send, emailShell } = await import("./email.server");
   const { refTag } = await import("./intake.server");
   const rendered = copy
     ? renderOwnerEmail(copy.copy, { title: subject, body, ownerName: copy.ownerName })
     : { subject, body, actionLabel: "Open your owner portal" };
+  // Every property-related email names the item and the home in the subject.
+  const parts = [rendered.subject];
+  if (context?.item && !rendered.subject.includes(context.item)) parts.push(context.item);
+  if (context?.propertyName && !parts.join(" ").includes(context.propertyName))
+    parts.push(context.propertyName);
+  const fullSubject = parts.join(" — ");
+  const bodyText = context?.propertyName
+    ? `Property: ${context.propertyName}\n\n${rendered.body}`
+    : rendered.body;
+  const actionLabel = context?.item && subject.toLowerCase().includes("opportunity")
+    ? "View Opportunity"
+    : rendered.actionLabel;
   // The tag lets an owner's reply land back on the ticket instead of an inbox.
-  const taggedSubject = ticketRef ? `${rendered.subject} ${refTag(ticketRef)}` : rendered.subject;
+  const taggedSubject = ticketRef ? `${fullSubject} ${refTag(ticketRef)}` : fullSubject;
   return send({
     to,
     subject: taggedSubject,
     html: emailShell(
-      rendered.subject,
-      rendered.body,
-      { label: rendered.actionLabel, url: APP_URL },
+      fullSubject,
+      bodyText,
+      { label: actionLabel, url: context?.url ?? APP_URL },
       "owner",
     ),
     purpose: "owner_alert",
