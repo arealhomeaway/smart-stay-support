@@ -105,9 +105,18 @@ export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabDat
             {o.owner_response.map((r, i) => (
               <li key={i} className="rounded-md bg-muted/50 p-2">
                 <p className="text-xs text-muted-foreground">
-                  {r.kind === "decision" ? DECISION_LABEL[r.decision ?? ""] ?? "Decision" : r.kind === "acknowledge" ? "Acknowledged" : "Feedback"} · {when(r.at)}
+                  {r.kind === "decision"
+                    ? `${r.by ?? "The homeowner"} ${r.decision === "authorize" ? "authorized this work" : r.decision === "changes" ? "requested changes" : DECISION_LABEL[r.decision ?? ""] ?? "decided"}`
+                    : r.kind === "acknowledge" ? "Acknowledged" : "Feedback"} · {when(r.at)}
                 </p>
                 {r.text ? <p className="whitespace-pre-wrap">{r.text}</p> : null}
+                {r.task_approval ? (
+                  <p className="mt-1 text-xs font-medium">
+                    {r.task_approval === "approved"
+                      ? "Owner approval on this Task: approved — the Task can proceed."
+                      : "Owner approval on this Task: still waiting for the homeowner's authorization."}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>

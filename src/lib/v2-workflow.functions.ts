@@ -365,7 +365,10 @@ const resourceInput = z.discriminatedUnion("kind", [
 ]);
 export type ResourceInput = z.infer<typeof resourceInput>;
 
-export type OwnerResponse = { kind: string; decision: string | null; text: string | null; at: string };
+export type OwnerResponse = {
+  kind: string; decision: string | null; text: string | null; at: string;
+  by?: string; task_approval?: "approved" | "still_waiting";
+};
 
 const COLLAB_COLUMNS =
   "id, title, owner_content, status, linked_task_id, source, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id";
