@@ -382,6 +382,15 @@ function OwnerHubBody({
 
   const ownerHomes = properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }));
   const navigate = Route.useNavigate();
+  // Same query OnboardingActions renders from: keeps one consistent empty state.
+  const loadOnboarding = useServerFn(ownerOnboardingActions);
+  const onboardingQ = useQuery({
+    queryKey: ["owner-onboarding", preview ? program.id : null, preview],
+    queryFn: () => loadOnboarding({ data: { programId: preview ? program.id : null, preview } }),
+  });
+  const onboardingPending = (onboardingQ.data?.pending ?? []).filter(
+    (a) => !selectedHomeId || !a.propertyId || a.propertyId === selectedHomeId,
+  ).length;
   const view = Route.useSearch().view ?? "home";
 
   return (
@@ -533,7 +542,7 @@ function OwnerHubBody({
           </div>
         )}
         <OnboardingActions readOnly={preview} programId={preview ? program.id : null} homeId={selectedHomeId} />
-        <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0} />
+        <OwnerApprovalPanel readOnly={preview} embedded hasOtherItems={openReviews.length > 0 || onboardingPending > 0} />
         </div>
       </SectionCard>
       </div>
