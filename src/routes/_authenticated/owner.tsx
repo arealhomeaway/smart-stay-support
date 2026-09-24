@@ -305,9 +305,11 @@ function OwnerHubBody({
   const [heroLogAnchor, setHeroLogAnchor] = useState<LogTimeAnchor | null>(null);
   const [logKey, setLogKey] = useState(0);
   const [logAfter, setLogAfter] = useState<(() => void) | null>(null);
+  const [logHomes, setLogHomes] = useState<string[]>([]);
   // The page's single Log time window; every button opens this one.
-  const openLogTime = (opts?: { anchor?: LogTimeAnchor | null; activity?: string; onDone?: () => void }) => {
+  const openLogTime = (opts?: { anchor?: LogTimeAnchor | null; activity?: string; propertyId?: string | null; onDone?: () => void }) => {
     setHeroLogAnchor(opts?.anchor ?? null);
+    setLogHomes(opts?.propertyId ? [opts.propertyId] : []);
     setHeroLogActivity(opts?.activity ?? "");
     setLogAfter(() => opts?.onDone ?? null);
     setLogKey((k) => k + 1);
@@ -319,7 +321,7 @@ function OwnerHubBody({
     openReviews.some((r) => r.phase === "onboarding")
       ? "onboarding"
       : "ongoing";
-  const openManualLog = (activity: string) => openLogTime({ activity });
+  const openManualLog = (activity: string, propertyId: string | null = null) => openLogTime({ activity, propertyId });
 
   const percent = snapshot.percentOfTarget;
   const targetReached =
@@ -410,6 +412,7 @@ function OwnerHubBody({
         programId={program.id}
         anchor={heroLogAnchor}
         defaultActivity={heroLogActivity}
+        defaultPropertyIds={logHomes}
         phase={ownerPhase}
         properties={properties
           .filter(
@@ -530,10 +533,9 @@ function OwnerHubBody({
         homes={ownerHomes}
         selectedHomeId={selectedHomeId}
         readOnly={preview}
-        phase={ownerPhase}
         blockedReason={preview ? null : logHoursBlockedReason}
         {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
-        extra={
+        arhaExtra={
           availableReviews.length ? (
             <div className="space-y-3">
               {availableReviews.map((r) => (
