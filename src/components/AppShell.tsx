@@ -467,7 +467,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     : ownerMode
       ? ownerGroups
       : onboardingOnly
-        ? [onboardingGroup]
+        ? [
+            onboardingGroup,
+            // A single, authorised doorway into Active Owner management; the
+            // Active Owner menu itself appears once she is there.
+            ...(can("owner_programs")
+              ? [
+                  {
+                    label: "Active Owner",
+                    items: [
+                      { to: "/owner-programs", label: "Active Owner", icon: KeyRound, tour: "owner-programs" },
+                    ],
+                  } as NavGroup,
+                ]
+              : []),
+          ]
         : navGroups
             .map((g) => ({
               ...g,
@@ -671,7 +685,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {(pageLabel) => (
                 <>
                   {!ownerMode && !vendorMode && (
-                    <ShellNav pageLabel={pageLabel} hideDepartmentMenu={onboardingOnly} />
+                    <ShellNav pageLabel={pageLabel} hideDepartmentMenu={onboardingOnly && departmentFor(pathname)?.key !== "active-owner"} />
                   )}
                   {children}
                 </>
