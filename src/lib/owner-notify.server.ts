@@ -19,7 +19,20 @@ import { ticketAlertRecipient } from "./owner-ticket-alert.server";
 
 type Client = SupabaseClient<Database>;
 
-const APP_URL = "https://smart-stay-support.lovable.app/owner";
+const APP_ORIGIN = "https://smart-stay-support.lovable.app";
+const APP_URL = `${APP_ORIGIN}/owner`;
+
+/** Only owner-portal paths are ever linked; anything else falls back to the portal. */
+function ownerLink(actionPath: string | null | undefined) {
+  if (actionPath && actionPath.startsWith("/owner")) return `${APP_ORIGIN}${actionPath}`;
+  return APP_URL;
+}
+
+/** The home a notification is about, read from its owner-portal link. */
+function homeIdFrom(actionPath: string | null | undefined) {
+  const m = actionPath?.match(/[?&]home=([0-9a-f-]{36})/i);
+  return m ? m[1]! : null;
+}
 
 // Texting is handled by people, not an SMS provider. When an alert asks for a
 // text we raise an internal "reach this homeowner" task instead.
@@ -32,21 +45,34 @@ async function sendEmail(
   ticketId?: string | null,
   // The wording wrapper the onboarding director controls. The facts stay ours.
   copy?: { copy: OwnerEmailCopy; ownerName: string | null } | null,
+  context?: { url: string; propertyName: string | null; item: string | null },
 ) {
   const { sendEmail: send, emailShell } = await import("./email.server");
   const { refTag } = await import("./intake.server");
   const rendered = copy
     ? renderOwnerEmail(copy.copy, { title: subject, body, ownerName: copy.ownerName })
     : { subject, body, actionLabel: "Open your owner portal" };
+  // Every property-related email names the item and the home in the subject.
+  const parts = [rendered.subject];
+  if (context?.item && !rendered.subject.includes(context.item)) parts.push(context.item);
+  if (context?.propertyName && !parts.join(" ").includes(context.propertyName))
+    parts.push(context.propertyName);
+  const fullSubject = parts.join(" — ");
+  const bodyText = context?.propertyName
+    ? `Property: ${context.propertyName}\n\n${rendered.body}`
+    : rendered.body;
+  const actionLabel = context?.item && subject.toLowerCase().includes("opportunity")
+    ? "View Opportunity"
+    : rendered.actionLabel;
   // The tag lets an owner's reply land back on the ticket instead of an inbox.
-  const taggedSubject = ticketRef ? `${rendered.subject} ${refTag(ticketRef)}` : rendered.subject;
+  const taggedSubject = ticketRef ? `${fullSubject} ${refTag(ticketRef)}` : fullSubject;
   return send({
     to,
     subject: taggedSubject,
     html: emailShell(
-      rendered.subject,
-      rendered.body,
-      { label: rendered.actionLabel, url: APP_URL },
+      fullSubject,
+      bodyText,
+      { label: actionLabel, url: context?.url ?? APP_URL },
       "owner",
     ),
     purpose: "owner_alert",
@@ -63,16 +89,19 @@ export function channelStatus() {
   return { email: configured, sms: false as const };
 }
 
-/** Sends every alert still waiting on a channel. Safe to run on a schedule. */
-export async function drainOwnerAlerts(supabase: Client, limit = 50) {
-  const { data, error } = await supabase
+/**
+ * Sends every alert still waiting on a channel. Safe to run on a schedule.
+ * Pass `onlyId` to deliver one notification the moment it is created.
+ */
+export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: string) {
+  let query = supabase
     .from("owner_notifications")
     .select(
-      "id, kind, review_id, title, body, priority, ticket_id, sms_status, email_status, program_id, owner_user_id, is_demo, owner_programs(owner_email, owner_phone, owner_name)",
+      "id, kind, review_id, title, body, priority, ticket_id, sms_status, email_status, program_id, owner_user_id, is_demo, action_path, owner_programs(owner_email, owner_phone, owner_name)",
     )
-    .or("email_status.eq.pending,sms_status.eq.pending")
-    .order("created_at")
-    .limit(limit);
+    .or("email_status.eq.pending,sms_status.eq.pending");
+  if (onlyId) query = query.eq("id", onlyId);
+  const { data, error } = await query.order("created_at").limit(limit);
   if (error) throw error;
 
   // One read for the whole drain: the director's wording for every alert sent.
@@ -134,25 +163,67 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50) {
     const patch: Database["public"]["Tables"]["owner_notifications"]["Update"] = {};
 
     if (row.email_status === "pending") {
-      if (!program?.owner_email) {
+      // Claim the row first so one notification can only ever produce one email,
+      // even when the instant dispatch and a scheduled pass overlap.
+      const claim = await supabase
+        .from("owner_notifications")
+        .update({ email_status: "sending" })
+        .eq("id", row.id)
+        .eq("email_status", "pending")
+        .select("id");
+      const claimed = !claim.error && (claim.data ?? []).length === 1;
+
+      // Non-ticket alerts go to the owner's own sign-in email; the program
+      // contact is only a fallback for owners without an account email.
+      let to = program?.owner_email ?? null;
+      if (claimed && !row.ticket_id && row.owner_user_id) {
+        const account = await supabase.auth.admin.getUserById(row.owner_user_id);
+        const accountEmail = account.data?.user?.email ?? null;
+        if (accountEmail) to = accountEmail;
+      }
+
+      if (!claimed) {
+        // Another pass already owns this email.
+        if (row.sms_status !== "pending") continue;
+      } else if (!to) {
         patch.email_status = "skipped";
         patch.delivery_error = "No owner email on file.";
       } else {
-        const result = await sendEmail(
-          program.owner_email,
-          safeText.title,
-          safeText.body,
-          ticketRef,
-          row.ticket_id,
-          {
-            copy: copyConfig[ownerEmailVariantFor(row.kind)],
-            ownerName: program.owner_name ?? null,
-          },
-        );
-        patch.email_status = result.status;
-        if (result.error) patch.delivery_error = result.error;
-        if (result.status === "sent") emailed++;
-        else if (result.error) notes.push(result.error);
+        const homeId = homeIdFrom(row.action_path);
+        let propertyName: string | null = null;
+        if (homeId) {
+          const { data: home } = await supabase
+            .from("properties")
+            .select("nickname, name, address_line1")
+            .eq("id", homeId)
+            .maybeSingle();
+          propertyName = home?.nickname || home?.name || home?.address_line1 || null;
+        }
+        const segments = safeText.body.split(" · ");
+        const item = segments.length === 2 && safeText.body.length <= 200 ? segments[0]!.trim() : null;
+        try {
+          const result = await sendEmail(
+            to,
+            safeText.title,
+            safeText.body,
+            ticketRef,
+            row.ticket_id,
+            {
+              copy: copyConfig[ownerEmailVariantFor(row.kind)],
+              ownerName: program?.owner_name ?? null,
+            },
+            { url: ownerLink(row.action_path), propertyName, item },
+          );
+          patch.email_status = result.status;
+          if (result.error) patch.delivery_error = result.error;
+          if (result.status === "sent") emailed++;
+          else if (result.error) notes.push(result.error);
+        } catch (err) {
+          // Delivery never undoes the notification; the failure stays visible.
+          patch.email_status = "failed";
+          patch.delivery_error = err instanceof Error ? err.message : "Email delivery failed.";
+          notes.push(patch.delivery_error);
+        }
       }
     }
 
