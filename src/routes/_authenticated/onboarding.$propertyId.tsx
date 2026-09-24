@@ -102,8 +102,32 @@ import {
   recordOwnerTaskDecisionFn,
 } from "@/lib/onboarding.functions";
 
+const PROPERTY_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function InvalidPropertyRoute() {
+  return (
+    <div className="space-y-3 py-10 text-center">
+      <p className="text-muted-foreground">This home could not be found.</p>
+      <div className="flex justify-center gap-4 text-sm">
+        <Link to="/onboarding" search={{ lens: "all" } as never} className="underline">
+          Back to Properties
+        </Link>
+        <Link to="/onboarding" className="underline">
+          Onboarding Dashboard
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
   validateSearch: validateWorkspaceSearch,
+  // Only a real property id may open a workspace; anything else never
+  // reaches the server.
+  beforeLoad: ({ params }) => {
+    if (!PROPERTY_ID_RE.test(params.propertyId)) throw notFound();
+  },
+  notFoundComponent: InvalidPropertyRoute,
   head: () => ({
     meta: [
       { title: "Property onboarding workflow — Resolve" },
