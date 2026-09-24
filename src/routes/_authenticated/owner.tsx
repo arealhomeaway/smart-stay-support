@@ -382,13 +382,8 @@ function OwnerHubBody({
 
   const ownerHomes = properties.map((p) => ({ propertyId: p.propertyId, name: p.name, address: (p as { address?: string | null }).address ?? null }));
   const navigate = Route.useNavigate();
-  // Same query OnboardingActions renders from: keeps one consistent empty state.
-  const loadOnboarding = useServerFn(ownerOnboardingActions);
-  const onboardingQ = useQuery({
-    queryKey: ["owner-onboarding", preview ? program.id : null, preview],
-    queryFn: () => loadOnboarding({ data: { programId: preview ? program.id : null, preview } }),
-  });
-  const onboardingPending = (onboardingQ.data?.pending ?? []).filter(
+  // Same data OnboardingActions renders: keeps one consistent empty state.
+  const onboardingPending = (onboardingQuery.data?.pending ?? []).filter(
     (a) => !selectedHomeId || !a.propertyId || a.propertyId === selectedHomeId,
   ).length;
   const view = Route.useSearch().view ?? "home";
