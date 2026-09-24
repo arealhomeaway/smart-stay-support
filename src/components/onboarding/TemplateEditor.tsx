@@ -492,7 +492,7 @@ export function TemplateEditor({ templateId }: { templateId: string }) {
               <div className="space-y-1">
                 <Label>Instructions</Label>
                 <Textarea
-                  rows={3}
+                  rows={8} className="min-h-40 resize-y"
                   value={draft.detail}
                   onChange={(e) => setDraft({ ...draft, detail: e.target.value })}
                 />

@@ -120,10 +120,10 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
                 Homeowners see this as an Opportunity. It is separate from the internal Task and never blocks it.
               </p>
               <div className="space-y-1"><Label>Opportunity title</Label><Input value={opp.title} onChange={(e) => set("title", e.target.value)} /></div>
-              <div className="space-y-1"><Label>What you'll do</Label><Textarea rows={2} value={opp.what} onChange={(e) => set("what", e.target.value)} /></div>
-              <div className="space-y-1"><Label>Why this Opportunity matters</Label><Textarea rows={2} value={opp.why} onChange={(e) => set("why", e.target.value)} /></div>
-              <div className="space-y-1"><Label>How to complete it</Label><Textarea rows={2} value={opp.how} onChange={(e) => set("how", e.target.value)} /></div>
-              <div className="space-y-1"><Label>Ways to Document Your Participation</Label><Textarea rows={2} value={opp.ways_to_document} onChange={(e) => set("ways_to_document", e.target.value)} placeholder="Notes, screenshots, links, uploads…" /></div>
+              <div className="space-y-1"><Label>What you'll do</Label><Textarea rows={5} className="resize-y" value={opp.what} onChange={(e) => set("what", e.target.value)} /></div>
+              <div className="space-y-1"><Label>Why this Opportunity matters</Label><Textarea rows={5} className="resize-y" value={opp.why} onChange={(e) => set("why", e.target.value)} /></div>
+              <div className="space-y-1"><Label>How to complete it</Label><Textarea rows={5} className="resize-y" value={opp.how} onChange={(e) => set("how", e.target.value)} /></div>
+              <div className="space-y-1"><Label>Ways to Document Your Participation</Label><Textarea rows={5} className="resize-y" value={opp.ways_to_document} onChange={(e) => set("ways_to_document", e.target.value)} placeholder="Notes, screenshots, links, uploads…" /></div>
               <div className="space-y-1">
                 <Label>Helpful links (one per line)</Label>
                 <Textarea rows={2} value={opp.resources.join("\n")} onChange={(e) => setOpp((o) => ({ ...o, resources: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) }))} />

@@ -159,6 +159,7 @@ export function OpportunityEditor({
   const [link, setLink] = useState({ label: "", url: "" });
   const [pick, setPick] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
@@ -232,15 +233,17 @@ export function OpportunityEditor({
     const check = validateFile({ name: file.name, type: file.type, size: file.size });
     if (!check.ok) { toast.error(check.message); return; }
     setUploading(true);
+    setUploadPct(0);
     try {
       const started = await begin({
         data: { entityType: "property", entityId: propertyId, uploadKey: crypto.randomUUID(), filename: file.name, mimeType: file.type, sizeBytes: file.size, category: null },
       });
       if (!started.documentId) throw new Error("The upload could not start.");
-      const { supabase } = await import("@/integrations/supabase/client");
-      const put = await supabase.storage.from("resolve-attachments").uploadToSignedUrl(started.path!, started.token!, file, { upsert: false });
-      await complete({ data: { documentId: started.documentId, ok: !put.error } });
-      if (put.error) throw put.error;
+      const { uploadToSignedSlot } = await import("@/lib/signed-upload");
+      let failed: unknown = null;
+      await uploadToSignedSlot(started.path!, started.token!, file, (pct) => setUploadPct(pct)).catch((e) => { failed = e; });
+      await complete({ data: { documentId: started.documentId, ok: !failed } });
+      if (failed) throw failed;
       setResources((r) => [...r, { kind: "file", document_id: started.documentId! }]);
       await qc.invalidateQueries({ queryKey: ["owner-collaboration", propertyId] });
       toast.success("File added to this home's files and attached.");
@@ -309,7 +312,7 @@ export function OpportunityEditor({
               </Select>
               <input ref={fileInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void upload(f); }} />
               <Button type="button" size="sm" variant="outline" disabled={uploading} onClick={() => fileInput.current?.click()}>
-                <Upload className="size-3.5" /> {uploading ? "Uploading…" : "Add file"}
+                <Upload className="size-3.5" /> {uploading ? `Uploading… ${uploadPct}%` : "Add file"}
               </Button>
             </div>
             <div className="flex flex-wrap items-end gap-2">

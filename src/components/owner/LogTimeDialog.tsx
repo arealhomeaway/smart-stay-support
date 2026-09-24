@@ -146,11 +146,8 @@ export function LogTimeDialog({
             sizeBytes: item.size,
           },
         });
-        const { supabase } = await import("@/integrations/supabase/client");
-        const put = await supabase.storage
-          .from("resolve-attachments")
-          .uploadToSignedUrl(started.path, started.token!, item, { upsert: false });
-        if (put.error) throw new Error(`${item.name} did not finish uploading. Try again.`);
+        const { uploadToSignedSlot } = await import("@/lib/signed-upload");
+        await uploadToSignedSlot(started.path, started.token!, item);
         attachmentPaths.push(started.path);
       }
       return log({

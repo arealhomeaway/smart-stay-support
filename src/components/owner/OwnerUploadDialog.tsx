@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OWNER_UPLOAD_CATEGORIES, type AttachmentEntity, validateFile } from "@/lib/attachments";
+import { uploadToSignedSlot } from "@/lib/signed-upload";
 import { beginUploadFn, completeUploadFn, tagOwnerUploadFn } from "@/lib/attachments.functions";
 
 export type OwnerHome = { propertyId: string; name: string; address?: string | null };
@@ -56,7 +57,6 @@ export function OwnerUploadDialog({
   const run = async () => {
     if (!propertyId || files.length === 0) return;
     const internal = OWNER_UPLOAD_CATEGORIES.find((c) => c.value === category)?.internal ?? "other";
-    const { supabase } = await import("@/integrations/supabase/client");
     let done = 0;
     for (const file of files) {
       const check = validateFile({ name: file.name, type: file.type, size: file.size });
@@ -78,10 +78,11 @@ export function OwnerUploadDialog({
           },
         });
         if (!started.alreadyStored) {
-          const put = await supabase.storage.from("resolve-attachments").uploadToSignedUrl(started.path, started.token!, file, { upsert: false });
-          if (put.error) {
+          try {
+            await uploadToSignedSlot(started.path, started.token!, file, (pct) => setBusy(`Uploading ${file.name}… ${pct}%`));
+          } catch (err) {
             await complete({ data: { documentId: started.documentId, ok: false, fulfilsRequestId: request?.id ?? null } });
-            throw put.error;
+            throw err;
           }
           await complete({ data: { documentId: started.documentId, ok: true, fulfilsRequestId: request?.id ?? null } });
         }

@@ -10,7 +10,7 @@
 
 export const ATTACHMENT_BUCKET = "resolve-attachments";
 
-/** 50 MB — a phone video clip fits; anything larger fails fast on site. */
+/** 250 MB — matches the storage bucket limit; walkthrough videos fit. */
 export const MAX_FILE_BYTES = 250 * 1024 * 1024;
 
 export type AttachmentEntity = "ticket" | "onboarding_task" | "property";
