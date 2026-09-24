@@ -27,7 +27,10 @@ import {
   type ResponseType,
 } from "@/lib/v2-workflow.functions";
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
-import { validateFile } from "@/lib/attachments";
+import { MAX_FILE_BYTES, OVERSIZE_LINK_MESSAGE, validateFile } from "@/lib/attachments";
+
+const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
+
 import { ownerPrograms } from "@/lib/owner-program.functions";
 
 export type CollabData = Awaited<ReturnType<typeof readOwnerCollaboration>>;
@@ -93,6 +96,7 @@ export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabDat
                     <Link2 className="size-3.5" /> {r.label}
                   </a>
                 )}
+                {r.kind === "link" && r.note ? <p className="pl-5 text-xs text-muted-foreground">{r.note}</p> : null}
               </li>
             ))}
           </ul>
@@ -156,7 +160,8 @@ export function OpportunityEditor({
   const [form, setForm] = useState(EMPTY);
   const [types, setTypes] = useState<ResponseType[]>(["acknowledge"]);
   const [resources, setResources] = useState<ResourceInput[]>([]);
-  const [link, setLink] = useState({ label: "", url: "" });
+  const EMPTY_LINK = { label: "", url: "", note: "", type: "video" as "video" | "document" | "reference" | "other" };
+  const [link, setLink] = useState(EMPTY_LINK);
   const [pick, setPick] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadPct, setUploadPct] = useState(0);
@@ -185,11 +190,11 @@ export function OpportunityEditor({
       setTypes(editing.response_types.length ? editing.response_types : ["acknowledge"]);
       setResources(
         editing.resources.map((r) =>
-          r.kind === "file" ? { kind: "file", document_id: r.documentId! } : { kind: "link", label: r.label, url: r.url ?? "" },
+          r.kind === "file" ? { kind: "file", document_id: r.documentId! } : { kind: "link", label: r.label, url: r.url ?? "", note: r.note ?? undefined, resource_type: (r.resourceType ?? undefined) as "video" | "document" | "reference" | "other" | undefined },
         ),
       );
     }
-    setLink({ label: "", url: "" });
+    setLink(EMPTY_LINK);
     setPick("");
   }
 
@@ -231,7 +236,7 @@ export function OpportunityEditor({
 
   async function upload(file: File) {
     const check = validateFile({ name: file.name, type: file.type, size: file.size });
-    if (!check.ok) { toast.error(check.message); return; }
+    if (!check.ok) { toast.error(file.size > MAX_FILE_BYTES ? OVERSIZE_LINK_MESSAGE : check.message); return; }
     setUploading(true);
     setUploadPct(0);
     try {
@@ -294,7 +299,7 @@ export function OpportunityEditor({
                   <li key={i} className="flex items-center justify-between gap-2 rounded-md border border-border px-2 py-1 text-sm">
                     <span className="flex min-w-0 items-center gap-1 truncate">
                       {r.kind === "file" ? <FileText className="size-3.5 shrink-0" /> : <Link2 className="size-3.5 shrink-0" />}
-                      {r.kind === "file" ? fileName(r.document_id) : `${r.label} — ${r.url}`}
+                      {r.kind === "file" ? fileName(r.document_id) : <span className="truncate" title={r.url}>{r.label}{r.resource_type ? <span className="text-muted-foreground"> · {LINK_TYPES[r.resource_type]} link</span> : " · link"}</span>}
                     </span>
                     <Button size="icon" variant="ghost" aria-label="Remove resource" onClick={() => setResources((cur) => cur.filter((_, j) => j !== i))}>
                       <Trash2 className="size-3.5" />
@@ -315,18 +320,29 @@ export function OpportunityEditor({
                 <Upload className="size-3.5" /> {uploading ? `Uploading… ${uploadPct}%` : "Add file"}
               </Button>
             </div>
-            <div className="flex flex-wrap items-end gap-2">
-              <Input className="w-40" placeholder="Link label" value={link.label} onChange={(e) => setLink((l) => ({ ...l, label: e.target.value }))} />
-              <Input className="min-w-0 flex-1" placeholder="https://…" value={link.url} onChange={(e) => setLink((l) => ({ ...l, url: e.target.value }))} />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={!link.label.trim() || !/^https?:\/\//i.test(link.url.trim())}
-                onClick={() => { setResources((cur) => [...cur, { kind: "link", label: link.label.trim(), url: link.url.trim() }]); setLink({ label: "", url: "" }); }}
-              >
-                <Plus className="size-3.5" /> Add link
-              </Button>
+            <div className="grid gap-2 rounded-md border border-dashed border-border p-2">
+              <p className="text-xs text-muted-foreground">Or add a link — for large videos kept in your approved file-sharing location. Resolve links to it; it never copies it.</p>
+              <div className="flex flex-wrap gap-2">
+                <Input className="min-w-40 flex-1" aria-label="Link display name" placeholder="Display name, e.g. Pre-Work Walkthrough" value={link.label} onChange={(e) => setLink((l) => ({ ...l, label: e.target.value }))} />
+                <Select value={link.type} onValueChange={(v) => setLink((l) => ({ ...l, type: v as typeof l.type }))}>
+                  <SelectTrigger className="w-36" aria-label="Link type"><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(LINK_TYPES).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <Input aria-label="Link address" placeholder="https://…" value={link.url} onChange={(e) => setLink((l) => ({ ...l, url: e.target.value }))} />
+              <Input aria-label="Link note" placeholder="Short note (optional)" value={link.note} onChange={(e) => setLink((l) => ({ ...l, note: e.target.value }))} />
+              <div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={!link.label.trim() || !/^https:\/\/\S+$/i.test(link.url.trim())}
+                  onClick={() => { setResources((cur) => [...cur, { kind: "link", label: link.label.trim(), url: link.url.trim(), note: link.note.trim() || undefined, resource_type: link.type }]); setLink(EMPTY_LINK); }}
+                >
+                  <Plus className="size-3.5" /> Add link
+                </Button>
+                {link.url.trim() && !/^https:\/\/\S+$/i.test(link.url.trim()) ? <span className="ml-2 text-xs text-destructive">Use a secure address starting with https://</span> : null}
+              </div>
             </div>
           </div>
 

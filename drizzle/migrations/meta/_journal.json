@@ -330,6 +330,13 @@
       "when": 1790262450194,
       "tag": "0046_help_ticket_response_workflow",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1790263927694,
+      "tag": "0047_external_resource_links",
+      "breakpoints": true
     }
   ]
 }
