@@ -3271,6 +3271,56 @@ export type Database = {
           },
         ]
       }
+      help_ticket_events: {
+        Row: {
+          author_id: string
+          author_name: string | null
+          body: string | null
+          created_at: string
+          email_recipient: string | null
+          email_status: string | null
+          from_status: string | null
+          id: string
+          kind: string
+          ticket_id: string
+          to_status: string | null
+        }
+        Insert: {
+          author_id?: string
+          author_name?: string | null
+          body?: string | null
+          created_at?: string
+          email_recipient?: string | null
+          email_status?: string | null
+          from_status?: string | null
+          id?: string
+          kind: string
+          ticket_id: string
+          to_status?: string | null
+        }
+        Update: {
+          author_id?: string
+          author_name?: string | null
+          body?: string | null
+          created_at?: string
+          email_recipient?: string | null
+          email_status?: string | null
+          from_status?: string | null
+          id?: string
+          kind?: string
+          ticket_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "help_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       help_tickets: {
         Row: {
           attachments: Json
@@ -3278,6 +3328,7 @@ export type Database = {
           email_status: string | null
           id: string
           kind: string
+          last_activity_at: string | null
           page_title: string | null
           portal: string | null
           property_id: string | null
@@ -3300,6 +3351,7 @@ export type Database = {
           email_status?: string | null
           id?: string
           kind: string
+          last_activity_at?: string | null
           page_title?: string | null
           portal?: string | null
           property_id?: string | null
@@ -3322,6 +3374,7 @@ export type Database = {
           email_status?: string | null
           id?: string
           kind?: string
+          last_activity_at?: string | null
           page_title?: string | null
           portal?: string | null
           property_id?: string | null

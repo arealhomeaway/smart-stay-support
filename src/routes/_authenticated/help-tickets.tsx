@@ -1,16 +1,26 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RequireCapability } from "@/components/RequireCapability";
 import { PageHeader, SectionCard, EmptyState } from "@/components/ui/page";
 import { usDateTime } from "@/lib/dates";
+import {
+  HELP_STATUSES,
+  HELP_STATUS_LABEL,
+  getHelpTicketRecipient,
+  updateHelpTicket,
+} from "@/lib/help-ticket-response.functions";
 
 export const Route = createFileRoute("/_authenticated/help-tickets")({
+  validateSearch: z.object({ ticket: z.number().int().optional() }),
   head: () => ({
     meta: [
       { title: "Help tickets — Resolve" },
@@ -28,13 +38,14 @@ export const Route = createFileRoute("/_authenticated/help-tickets")({
   ),
 });
 
-const STATUSES = ["new", "reviewing", "planned", "resolved", "closed"] as const;
-const cap = (s: string) => s[0]!.toUpperCase() + s.slice(1);
 type Att = { path: string; name: string };
+type Filter = "open" | "all" | (typeof HELP_STATUSES)[number];
+const OPEN = ["new", "reviewing", "planned", "in_progress"];
+const label = (s: string) => HELP_STATUS_LABEL[s] ?? s;
+const sel = "h-9 rounded-md border bg-background px-2 text-sm";
 
-function HelpTicketsPage() {
-  const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
+function useTickets() {
+  return useQuery({
     queryKey: ["help-tickets"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -46,16 +57,32 @@ function HelpTicketsPage() {
       return data;
     },
   });
-  const [status, setStatus] = useState<"open" | "new" | "done" | "all">("open");
+}
+
+function HelpTicketsPage() {
+  const { ticket } = Route.useSearch();
+  const { data, isLoading } = useTickets();
+  const current = ticket != null ? data?.find((r) => r.ticket_number === ticket) : undefined;
+  if (ticket != null) {
+    if (isLoading) return <Skeleton className="h-96" />;
+    if (!current)
+      return (
+        <EmptyState title="Help ticket not found" hint="It may have been removed or you may not have access." />
+      );
+    return <TicketDetail t={current} />;
+  }
+  return <TicketList rows={data ?? []} isLoading={isLoading} />;
+}
+
+function TicketList({ rows: all, isLoading }: { rows: any[]; isLoading: boolean }) {
+  const [status, setStatus] = useState<Filter>("open");
   const [kind, setKind] = useState<"all" | "issue" | "suggestion">("all");
   const [portal, setPortal] = useState("all");
   const [q, setQ] = useState("");
-
-  const portals = useMemo(() => [...new Set((data ?? []).map((r) => r.portal).filter(Boolean))] as string[], [data]);
-  const rows = (data ?? []).filter((r) => {
-    if (status === "new" && r.status !== "new") return false;
-    if (status === "open" && ["resolved", "closed"].includes(r.status)) return false;
-    if (status === "done" && !["resolved", "closed"].includes(r.status)) return false;
+  const portals = useMemo(() => [...new Set(all.map((r) => r.portal).filter(Boolean))] as string[], [all]);
+  const rows = all.filter((r) => {
+    if (status === "open" && !OPEN.includes(r.status)) return false;
+    if (status !== "open" && status !== "all" && r.status !== status) return false;
     if (kind !== "all" && r.kind !== kind) return false;
     if (portal !== "all" && r.portal !== portal) return false;
     const needle = q.trim().toLowerCase();
@@ -68,27 +95,17 @@ function HelpTicketsPage() {
     return true;
   });
 
-  async function setRowStatus(id: string, s: string) {
-    const { error } = await supabase.from("help_tickets").update({ status: s, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error) { toast.error("Could not update status."); return; }
-    void qc.invalidateQueries({ queryKey: ["help-tickets"] });
-  }
-  async function openFile(a: Att) {
-    const { data } = await supabase.storage.from("help-feedback").createSignedUrl(a.path, 600);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener");
-  }
-
-  const sel = "h-9 rounded-md border bg-background px-2 text-sm";
   return (
     <div className="space-y-6">
       <PageHeader title="Help tickets" description="Issues and suggestions about Resolve, sent from the ? button on every page." />
       <RecipientSetting />
       <SectionCard title="Submissions">
         <div className="mb-4 flex flex-wrap gap-2">
-          <select className={sel} value={status} onChange={(e) => setStatus(e.target.value as typeof status)} aria-label="Status">
+          <select className={sel} value={status} onChange={(e) => setStatus(e.target.value as Filter)} aria-label="Status">
             <option value="open">Open</option>
-            <option value="new">New</option>
-            <option value="done">Resolved / Closed</option>
+            {HELP_STATUSES.map((s) => (
+              <option key={s} value={s}>{label(s)}</option>
+            ))}
             <option value="all">All statuses</option>
           </select>
           <select className={sel} value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} aria-label="Type">
@@ -111,39 +128,220 @@ function HelpTicketsPage() {
         ) : (
           <ul className="divide-y">
             {rows.map((r) => (
-              <li key={r.id} className="space-y-1.5 py-3">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="font-semibold">#{r.ticket_number}</span>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{r.kind === "issue" ? "Issue" : "Suggestion"}</span>
-                  <span className="text-muted-foreground">{r.portal} · {r.page_title}</span>
-                  <select
-                    className={`${sel} ml-auto h-8`}
-                    value={r.status}
-                    onChange={(e) => void setRowStatus(r.id, e.target.value)}
-                    aria-label={`Status for ticket ${r.ticket_number}`}
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>{cap(s)}</option>
-                    ))}
-                  </select>
-                </div>
-                <p className="whitespace-pre-wrap text-sm">{r.description}</p>
-                <p className="text-xs text-muted-foreground">
-                  {r.submitter_name} ({r.user_role}) · {usDateTime(r.submitted_at)}
-                  {r.property_label ? ` · ${r.property_label}` : ""} ·{" "}
-                  <a className="underline" href={r.route ?? "#"}>{r.route}</a>
-                </p>
-                {((r.attachments as Att[]) ?? []).length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {(r.attachments as Att[]).map((a) => (
-                      <Button key={a.path} size="sm" variant="outline" onClick={() => void openFile(a)}>{a.name}</Button>
-                    ))}
+              <li key={r.id}>
+                <Link
+                  to="/help-tickets"
+                  search={{ ticket: r.ticket_number }}
+                  className="block space-y-1 py-3 hover:bg-muted/40"
+                >
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-semibold">#{r.ticket_number}</span>
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{r.kind === "issue" ? "Issue" : "Suggestion"}</span>
+                    <span className="rounded border px-1.5 py-0.5 text-xs">{label(r.status)}</span>
+                    <span className="truncate text-muted-foreground">{r.property_label ?? r.portal} · {r.page_title}</span>
                   </div>
-                )}
+                  <p className="line-clamp-1 text-sm">{r.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.submitter_name} · Submitted {usDateTime(r.submitted_at)} · Last activity{" "}
+                    {usDateTime(r.last_activity_at ?? r.updated_at ?? r.submitted_at)}
+                  </p>
+                </Link>
               </li>
             ))}
           </ul>
         )}
+      </SectionCard>
+    </div>
+  );
+}
+
+function TicketDetail({ t }: { t: any }) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const update = useServerFn(updateHelpTicket);
+  const recipientFn = useServerFn(getHelpTicketRecipient);
+  const [status, setStatus] = useState<string>(t.status);
+  const [mode, setMode] = useState<"reply" | "note">("reply");
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const { data: events, isLoading } = useQuery({
+    queryKey: ["help-ticket-events", t.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("help_ticket_events")
+        .select("*")
+        .eq("ticket_id", t.id)
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const { data: recipient } = useQuery({
+    queryKey: ["help-ticket-recipient", t.id],
+    queryFn: () => recipientFn({ data: { ticketId: t.id } }),
+  });
+
+  const statusChanged = status !== t.status;
+  const reopening = statusChanged && ["resolved", "closed"].includes(t.status) && OPEN.includes(status);
+  const canSave = statusChanged || message.trim().length > 0;
+  const emails = statusChanged || (mode === "reply" && message.trim().length > 0);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await update({
+        data: {
+          ticketId: t.id,
+          status: statusChanged ? (status as any) : null,
+          mode,
+          message: message.trim(),
+          origin: window.location.origin,
+        },
+      });
+      toast.success(
+        res.emailStatus == null
+          ? "Saved."
+          : res.emailed
+            ? "Saved and emailed to the submitter."
+            : "Saved. The email could not be delivered — see the activity thread.",
+      );
+      setMessage("");
+      void qc.invalidateQueries({ queryKey: ["help-tickets"] });
+      void qc.invalidateQueries({ queryKey: ["help-ticket-events", t.id] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save.");
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function openFile(a: Att) {
+    const { data } = await supabase.storage.from("help-feedback").createSignedUrl(a.path, 600);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener");
+  }
+
+  const facts: [string, React.ReactNode][] = [
+    ["Type", t.kind === "issue" ? "Issue" : "Suggestion"],
+    ["Submitted by", t.submitter_name],
+    ["Submitter email", recipient?.email ?? t.submitter_email ?? "—"],
+    ["Role", t.user_role],
+    ["Portal", t.portal],
+    ...(t.property_label ? ([["Property", t.property_label]] as [string, React.ReactNode][]) : []),
+    ["Page", t.page_title],
+    ["Submitted", usDateTime(t.submitted_at)],
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={`Help Ticket #${t.ticket_number}`}
+        description={`${t.kind === "issue" ? "Issue" : "Suggestion"} · ${label(t.status)}`}
+      />
+      <Button variant="outline" size="sm" onClick={() => void navigate({ to: "/help-tickets", search: {} })}>
+        Back to Help tickets
+      </Button>
+
+      <SectionCard title="Ticket">
+        <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          {facts.map(([k, v]) => (
+            <div key={k}>
+              <dt className="text-xs text-muted-foreground">{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <h3 className="mt-4 text-xs text-muted-foreground">Original feedback</h3>
+        <p className="whitespace-pre-wrap text-sm">{t.description}</p>
+        {((t.attachments as Att[]) ?? []).length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(t.attachments as Att[]).map((a) => (
+              <Button key={a.path} size="sm" variant="outline" onClick={() => void openFile(a)}>{a.name}</Button>
+            ))}
+          </div>
+        )}
+        {t.route && (
+          <a className="mt-3 inline-block text-sm underline" href={t.route}>Open original page in Resolve</a>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Conversation & Activity">
+        <ol className="space-y-3 text-sm">
+          <li className="rounded-md border p-3">
+            <p><strong>{t.submitter_name}</strong> submitted this {t.kind === "issue" ? "issue" : "suggestion"}</p>
+            <p className="text-xs text-muted-foreground">{usDateTime(t.submitted_at)}</p>
+          </li>
+          {isLoading && <Skeleton className="h-16" />}
+          {(events ?? []).map((e) => (
+            <li key={e.id} className={`rounded-md border p-3 ${e.kind === "note" ? "bg-muted/50" : ""}`}>
+              {e.kind === "status" ? (
+                <p>
+                  <strong>{e.author_name}</strong>{" "}
+                  {["resolved", "closed"].includes(e.from_status ?? "") && OPEN.includes(e.to_status ?? "")
+                    ? "reopened the ticket"
+                    : "changed status"}
+                  : {label(e.from_status ?? "")} → {label(e.to_status ?? "")}
+                </p>
+              ) : (
+                <>
+                  <p>
+                    <strong>{e.author_name}</strong> {e.kind === "note" ? "added an internal note (not sent)" : "replied"}:
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap">{e.body}</p>
+                </>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {usDateTime(e.created_at)}
+                {e.email_status &&
+                  ` · ${e.email_status === "sent" ? `Email delivered to ${e.email_recipient}` : `Email not delivered (${e.email_status})`}`}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </SectionCard>
+
+      <SectionCard title="Respond">
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-sm">
+            Status:
+            <select className={sel} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
+              {HELP_STATUSES.map((s) => (
+                <option key={s} value={s}>{label(s)}</option>
+              ))}
+            </select>
+            {reopening && <span className="text-xs text-muted-foreground">Reopening — add an optional reason below.</span>}
+          </label>
+          <div className="flex gap-2" role="radiogroup" aria-label="Message type">
+            <Button size="sm" variant={mode === "reply" ? "default" : "outline"} onClick={() => setMode("reply")}>
+              Reply to Submitter
+            </Button>
+            <Button size="sm" variant={mode === "note" ? "default" : "outline"} onClick={() => setMode("note")}>
+              Internal Note
+            </Button>
+          </div>
+          <Textarea
+            rows={4}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={
+              mode === "reply"
+                ? status === "resolved" && statusChanged
+                  ? "Optional resolution message for the submitter…"
+                  : "Write a reply to the submitter…"
+                : "Internal note — only leadership sees this."
+            }
+            aria-label="Message"
+          />
+          <p className="text-xs text-muted-foreground">
+            {emails
+              ? `One email will go to ${recipient?.email ?? "the submitter"}${mode === "note" && message.trim() ? " (status only — the note stays internal)" : ""}.`
+              : mode === "note"
+                ? "Internal notes are never emailed."
+                : "Nothing will be emailed until you write a reply or change status."}
+          </p>
+          <Button onClick={() => void save()} disabled={!canSave || saving}>
+            {mode === "reply" && message.trim() ? "Send Reply" : "Save"}
+          </Button>
+        </div>
       </SectionCard>
     </div>
   );
