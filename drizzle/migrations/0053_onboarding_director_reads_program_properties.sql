@@ -1,0 +1,1 @@
+CREATE POLICY "Onboarding Director reads program properties" ON public.owner_program_properties FOR SELECT TO authenticated USING (public.is_onboarding_director(auth.uid()));
