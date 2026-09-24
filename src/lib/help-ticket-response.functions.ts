@@ -103,7 +103,7 @@ export const updateHelpTicket = createServerFn({ method: "POST" })
     let recipient: string | null = null;
     try {
       recipient = await submitterEmail(t);
-      const { sendEmail, emailShell, emailText, escapeHtml } = await import("./email.server");
+      const { sendEmail, emailShell, escapeHtml } = await import("./email.server");
       const newStatus = HELP_STATUS_LABEL[(statusChanged ? data.status : t.status) as string] ?? t.status;
       const kindLabel = t.kind === "issue" ? "Issue" : "Suggestion";
       const reopened = statusChanged && ["resolved", "closed"].includes(t.status) && !["resolved", "closed"].includes(data.status!);
@@ -128,12 +128,11 @@ export const updateHelpTicket = createServerFn({ method: "POST" })
         to: recipient ?? "",
         subject,
         html: emailShell(subject, body, action ? { ...action, url: escapeHtml(action.url) } : undefined),
-        text: emailText(subject, body, action),
         purpose: "help_ticket_response",
         entity: { type: "help_ticket", id: t.id },
         bodyText: body,
         sentBy: userId,
-      } as any);
+      });
       emailStatus = res.status;
     } catch (e) {
       console.error("Help ticket response email failed", e);
