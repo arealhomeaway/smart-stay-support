@@ -9396,6 +9396,7 @@ export type Database = {
           library_template_id: string | null
           linked_task_id: string | null
           owner_content: Json | null
+          owner_priority: number | null
           owner_response: Json
           program_id: string | null
           property_id: string | null
@@ -9430,6 +9431,7 @@ export type Database = {
           library_template_id?: string | null
           linked_task_id?: string | null
           owner_content?: Json | null
+          owner_priority?: number | null
           owner_response?: Json
           program_id?: string | null
           property_id?: string | null
@@ -9464,6 +9466,7 @@ export type Database = {
           library_template_id?: string | null
           linked_task_id?: string | null
           owner_content?: Json | null
+          owner_priority?: number | null
           owner_response?: Json
           program_id?: string | null
           property_id?: string | null
@@ -10639,6 +10642,10 @@ export type Database = {
           _program_id: string
         }
         Returns: Json
+      }
+      reorder_arha_opportunities: {
+        Args: { _ids: string[]; _property_id: string }
+        Returns: undefined
       }
       request_owner_document: {
         Args: { _actor_id: string; _input: Json }

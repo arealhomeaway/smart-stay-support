@@ -3,10 +3,15 @@
  * workspace. Shares the editor and status view with the Task drawer's Owner
  * collaboration section. Opportunity status never controls the internal Task.
  */
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Sparkles } from "lucide-react";
+import { GripVertical, Plus, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { compareArhaPriority, reorderArhaOpportunities } from "@/lib/v2-workflow.functions";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/page";
 import { ownerPrograms } from "@/lib/owner-program.functions";
@@ -17,6 +22,29 @@ function fmt(d: string | null | undefined) {
   return new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+/** One sortable ARHA card: only the grip handle starts a drag, so Details/Edit/links/text stay normal. */
+function SortableRow({ id, children }: { id: string; children: (handle: ReactNode) => ReactNode }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const handle = (
+    <button
+      type="button"
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      aria-label="Drag to change the order the homeowner sees"
+      title="Drag to reorder"
+      className="mt-0.5 cursor-grab touch-none rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
+    >
+      <GripVertical className="size-4" />
+    </button>
+  );
+  return (
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={isDragging ? "relative z-10 opacity-80" : undefined}>
+      {children(handle)}
+    </div>
+  );
+}
+
 export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string }) {
   const loadPrograms = useServerFn(ownerPrograms);
   const [editing, setEditing] = useState<CollabOpp | "new" | null>(null);
@@ -24,19 +52,43 @@ export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string 
   const programs = useQuery({ queryKey: ["owner-programs", "property", propertyId], queryFn: () => loadPrograms({ data: {} }) });
   const program = (programs.data?.rows ?? []).find((p) => p.properties.some((h) => h.id === propertyId));
   const q = useOwnerCollaboration(propertyId);
+  const qc = useQueryClient();
+  const reorderFn = useServerFn(reorderArhaOpportunities);
+  const [localOrder, setLocalOrder] = useState<string[] | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const reorder = useMutation({
+    mutationFn: (ids: string[]) => reorderFn({ data: { propertyId, ids } }),
+    onSuccess: async () => { await qc.invalidateQueries({ queryKey: ["owner-collaboration"] }); setLocalOrder(null); toast.success("Order saved. The homeowner now sees this order."); },
+    onError: (e) => { setLocalOrder(null); toast.error(e instanceof Error ? e.message : "Could not save the order."); },
+  });
 
   if (!programs.isLoading && !program) return null;
 
   const opps = q.data?.opportunities ?? [];
   const drafts = opps.filter((o) => o.status === "draft");
-  const available = opps.filter((o) => o.status !== "draft" && o.status !== "complete");
+  const sent = opps.filter((o) => o.status !== "draft" && o.status !== "complete");
+  const arhaSaved = sent.filter((o) => o.source === "arha").sort(compareArhaPriority);
+  const arhaSent = localOrder ? localOrder.map((id) => arhaSaved.find((o) => o.id === id)).filter((o): o is CollabOpp => Boolean(o)) : arhaSaved;
+  const otherSent = sent.filter((o) => o.source !== "arha");
+  const available = [...arhaSent, ...otherSent];
   const completed = opps.filter((o) => o.status === "complete");
   const closing = q.data?.actualClosingOn ?? program?.startedOn ?? q.data?.plannedClosingOn ?? null;
   const taskTitle = (id: string | null) => q.data?.tasks.find((t) => t.id === id)?.title;
 
-  const row = (o: CollabOpp) => (
+  const onDragEnd = (e: DragEndEvent) => {
+    if (!e.over || e.active.id === e.over.id) return;
+    const ids = arhaSent.map((o) => o.id);
+    const next = arrayMove(ids, ids.indexOf(String(e.active.id)), ids.indexOf(String(e.over.id)));
+    setLocalOrder(next);
+    reorder.mutate(next);
+  };
+
+  const row = (o: CollabOpp, handle?: ReactNode, position?: number) => (
     <li key={o.id} className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-2">
+        {handle}
+        {position ? <span className="numeric mt-0.5 text-xs font-semibold text-muted-foreground">{position}.</span> : null}
         <div className="min-w-0">
           <p className="font-medium">{o.title}</p>
           <p className="text-xs text-muted-foreground">
@@ -44,6 +96,7 @@ export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string 
             {taskTitle(o.taskId) ? ` · Related Task: ${taskTitle(o.taskId)}` : ""}
             {o.source === "arha" ? " · From your ARHA team" : ""}
           </p>
+        </div>
         </div>
         <div className="flex gap-1">
           <Button size="sm" variant="ghost" onClick={() => setExpanded(expanded === o.id ? null : o.id)}>{expanded === o.id ? "Hide" : "Details"}</Button>
@@ -66,14 +119,26 @@ export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string 
         <div><dt className="text-muted-foreground">Hours logged</dt><dd className="numeric font-medium">{(program?.reportedHours ?? 0).toFixed(1)} / 100+ hours</dd></div>
       </dl>
       <div className="space-y-4">
-        {drafts.length ? <div><h3 className="mb-2 text-sm font-semibold">Drafts (not visible to the homeowner)</h3><ul className="space-y-2">{drafts.map(row)}</ul></div> : null}
+        {drafts.length ? <div><h3 className="mb-2 text-sm font-semibold">Drafts (not visible to the homeowner)</h3><ul className="space-y-2">{drafts.map((o) => row(o))}</ul></div> : null}
         <div>
           <h3 className="mb-2 text-sm font-semibold">Sent to the homeowner ({available.length})</h3>
-          {available.length ? <ul className="space-y-2">{available.map(row)}</ul> : <p className="text-sm text-muted-foreground">None sent yet. Use Create Opportunity.</p>}
+          {arhaSent.length > 1 ? <p className="mb-2 text-xs text-muted-foreground">Drag the handle to set the order the homeowner sees ARHA Opportunities for this home. Presentation only — it never changes Tasks.</p> : null}
+          {available.length ? (
+            <ul className="space-y-2">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                <SortableContext items={arhaSent.map((o) => o.id)} strategy={verticalListSortingStrategy}>
+                  {arhaSent.map((o, i) => (
+                    <SortableRow key={o.id} id={o.id}>{(handle) => row(o, arhaSent.length > 1 ? handle : undefined, arhaSent.length > 1 ? i + 1 : undefined)}</SortableRow>
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {otherSent.map((o) => row(o))}
+            </ul>
+          ) : <p className="text-sm text-muted-foreground">None sent yet. Use Create Opportunity.</p>}
         </div>
         <div>
           <h3 className="mb-2 text-sm font-semibold">Completed ({completed.length})</h3>
-          {completed.length ? <ul className="space-y-2">{completed.map(row)}</ul> : <p className="text-sm text-muted-foreground">None completed yet.</p>}
+          {completed.length ? <ul className="space-y-2">{completed.map((o) => row(o))}</ul> : <p className="text-sm text-muted-foreground">None completed yet.</p>}
         </div>
       </div>
       <OpportunityEditor propertyId={propertyId} data={q.data} editing={editing} onClose={() => setEditing(null)} />
