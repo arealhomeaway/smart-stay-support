@@ -3,7 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Client = SupabaseClient<Database>;
 
-export type LeadershipRole = "platform_owner" | "director";
+export type LeadershipRole = "platform_owner" | "director" | "onboarding_director";
 
 /**
  * Who may read program-wide homeowner data.
@@ -17,6 +17,7 @@ export async function requireLeadership(
   supabase: Client,
   userId: string,
   what: string,
+  opts: { allowOnboardingDirector?: boolean } = {},
 ): Promise<LeadershipRole> {
   const [admin, manager] = await Promise.all([
     supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
@@ -25,6 +26,13 @@ export async function requireLeadership(
   if (admin.error || manager.error) throw new Error("Could not verify your access level.");
   if (admin.data) return "platform_owner";
   if (manager.data) return "director";
+  // The Onboarding Director manages owner participation during setup, so the
+  // Active Owner views that need it accept that seat — never Operations.
+  if (opts.allowOnboardingDirector) {
+    const seat = await supabase.rpc("is_onboarding_director", { _user_id: userId });
+    if (seat.error) throw new Error("Could not verify your access level.");
+    if (seat.data) return "onboarding_director";
+  }
   throw new Error(`${what} is limited to directors and the platform owner.`);
 }
 
