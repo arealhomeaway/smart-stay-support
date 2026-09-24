@@ -11,7 +11,7 @@
 export const ATTACHMENT_BUCKET = "resolve-attachments";
 
 /** 50 MB — a phone video clip fits; anything larger fails fast on site. */
-export const MAX_FILE_BYTES = 50 * 1024 * 1024;
+export const MAX_FILE_BYTES = 250 * 1024 * 1024;
 
 export type AttachmentEntity = "ticket" | "onboarding_task" | "property";
 

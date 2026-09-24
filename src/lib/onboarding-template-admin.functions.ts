@@ -33,7 +33,7 @@ export const createOnboardingTemplateFn = createServerFn({ method: "POST" })
     z
       .object({
         name: z.string().trim().min(3).max(120),
-        description: z.string().trim().max(600).optional(),
+        description: z.string().trim().max(20000).optional(),
         copyBuiltIn: z.boolean().default(false),
       })
       .parse(data),
@@ -50,7 +50,7 @@ export const updateOnboardingTemplateFn = createServerFn({ method: "POST" })
       .object({
         templateId: z.string().uuid(),
         name: z.string().trim().min(3).max(120).optional(),
-        description: z.string().trim().max(600).optional(),
+        description: z.string().trim().max(20000).optional(),
         isArchived: z.boolean().optional(),
       })
       .parse(data),
@@ -90,7 +90,7 @@ export const saveTemplateStepFn = createServerFn({ method: "POST" })
         stage: z.string().trim().min(1).max(80),
         title: z.string().trim().min(3).max(200),
         role: z.string().trim().max(80).optional(),
-        detail: z.string().trim().max(4000).optional(),
+        detail: z.string().trim().max(100000).optional(),
         blocksHandoff: z.boolean().default(false),
         requiresOwnerApproval: z.boolean().default(false),
         ownerApprovalWhenActiveOwner: z.boolean().default(false),
@@ -98,7 +98,7 @@ export const saveTemplateStepFn = createServerFn({ method: "POST" })
         scheduleAnchor: ANCHOR.nullable().default(null),
         offsetDays: z.number().int().min(-90).max(365).nullable().default(null),
         breezewayTemplateId: z.string().trim().max(60).optional(),
-        subtasks: z.array(z.string().trim().max(200)).max(50).default([]),
+        subtasks: z.array(z.string().trim().max(1000)).max(50).default([]),
         tags: z.array(z.string().trim().max(40)).max(10).default([]),
       })
       .parse(data),

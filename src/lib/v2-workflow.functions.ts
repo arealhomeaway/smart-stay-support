@@ -27,11 +27,11 @@ export function roleLabel(code: string | null | undefined) {
 const opportunitySchema = z
   .object({
     title: z.string().trim().min(3).max(200),
-    what: z.string().trim().max(2000).default(""),
-    why: z.string().trim().max(2000).default(""),
-    how: z.string().trim().max(2000).default(""),
+    what: z.string().trim().max(100000).default(""),
+    why: z.string().trim().max(100000).default(""),
+    how: z.string().trim().max(100000).default(""),
     resources: z.array(z.string().trim().max(500)).max(10).default([]),
-    ways_to_document: z.string().trim().max(2000).default(""),
+    ways_to_document: z.string().trim().max(100000).default(""),
     suggested_minutes: z.number().int().min(0).max(6000).nullable().default(null),
   })
   .nullable();
@@ -240,7 +240,7 @@ export const logHandoffDeficiency = createServerFn({ method: "POST" })
       .object({
         projectId: z.string().uuid(),
         title: z.string().trim().min(3).max(200),
-        detail: z.string().trim().max(2000).default(""),
+        detail: z.string().trim().max(100000).default(""),
         role: z.string().trim().max(60).default("onboarding_project_manager"),
       })
       .parse(d),
