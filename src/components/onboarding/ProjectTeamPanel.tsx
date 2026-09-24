@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Users } from "lucide-react";
+import { Truck, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { readProjectTeam, setProjectRoleAssignee } from "@/lib/onboarding-team.functions";
+import { readProjectTeam, setProjectRoleAssignee, setProjectStagingProvider } from "@/lib/onboarding-team.functions";
 
 const NONE = "__none__";
 
@@ -26,6 +27,13 @@ export function ProjectTeamPanel({ propertyId }: { propertyId: string }) {
     queryFn: () => readFn({ data: { propertyId } }),
   });
   const [pending, setPending] = useState<Record<string, string>>({});
+  const setProviderFn = useServerFn(setProjectStagingProvider);
+  const [provider, setProvider] = useState<string | null>(null);
+  const saveProvider = useMutation({
+    mutationFn: (v: string) => setProviderFn({ data: { projectId: q.data!.projectId, provider: v.trim() || null } }),
+    onSuccess: () => { toast.success("Staging Provider saved."); setProvider(null); qc.invalidateQueries({ queryKey: ["project-team", propertyId] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const [reassign, setReassign] = useState<Record<string, boolean>>({});
 
   const save = useMutation({
@@ -47,7 +55,9 @@ export function ProjectTeamPanel({ propertyId }: { propertyId: string }) {
   });
 
   if (!q.data) return null;
-  const { roles, canEdit } = q.data;
+  const { roles, canEdit, stagingProvider } = q.data;
+  const providerValue = provider ?? stagingProvider ?? "";
+  const providerChanged = provider !== null && provider.trim() !== (stagingProvider ?? "");
 
   return (
     <section className="rounded-lg border bg-card p-4" aria-label="Project Team">
@@ -120,6 +130,34 @@ export function ProjectTeamPanel({ propertyId }: { propertyId: string }) {
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-4 border-t pt-4" aria-label="Project Providers">
+        <div className="mb-1 flex items-center gap-2">
+          <Truck className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold">Project Providers</h3>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          External companies working on this home. For reference only — they aren't Resolve users and don't receive Tasks or notifications.
+        </p>
+        <div className="space-y-2 rounded-md border border-dashed p-3 sm:max-w-md">
+          <label htmlFor={`staging-${propertyId}`} className="flex items-center justify-between gap-2 text-sm font-medium">
+            Staging Provider <span className="text-xs font-normal text-muted-foreground">External provider</span>
+          </label>
+          <Input
+            id={`staging-${propertyId}`}
+            value={providerValue}
+            disabled={!canEdit}
+            maxLength={200}
+            placeholder={canEdit ? "Type the provider or team, e.g. name — company" : "Not set"}
+            onChange={(e) => setProvider(e.target.value)}
+          />
+          {providerChanged && (
+            <Button size="sm" disabled={saveProvider.isPending} onClick={() => saveProvider.mutate(provider!)}>
+              Save
+            </Button>
+          )}
+        </div>
       </div>
     </section>
   );

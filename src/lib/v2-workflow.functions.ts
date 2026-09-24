@@ -16,7 +16,7 @@ export const FUNCTIONAL_ROLES = [
   { code: "director_ops", label: "Operations Director" },
   { code: "property_coordinator", label: "Property Coordinator" },
   { code: "utilities", label: "Utilities" },
-  { code: "design_staging", label: "Design & Staging" },
+  { code: "design_staging", label: "Design" },
   { code: "owner", label: "Owner" },
 ] as const;
 

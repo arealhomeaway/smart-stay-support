@@ -95,7 +95,7 @@ export const readOnboardingTeam = createServerFn({ method: "POST" })
       const r = all.find((x) => x.code === code)!;
       return {
         code,
-        name: code === "onboarding_project_manager" ? "Project Managers" : r.name,
+        name: code === "onboarding_project_manager" ? "Project Managers" : code === "design_staging" ? "Design" : r.name,
         members: (members.data ?? []).filter((m) => m.role_code === code).map((m) => m.user_id),
         required: used.has(code),
       };
@@ -258,7 +258,7 @@ export const readProjectTeam = createServerFn({ method: "POST" })
     const sb = context.supabase;
     const { data: project } = await sb
       .from("onboarding_projects")
-      .select("id, project_manager, utility_manager, role_assignments, template_version_id")
+      .select("id, project_manager, utility_manager, role_assignments, template_version_id, staging_provider")
       .eq("property_id", data.propertyId)
       .neq("status", "cancelled")
       .maybeSingle();
@@ -298,7 +298,8 @@ export const readProjectTeam = createServerFn({ method: "POST" })
         if (assignee && !pool.includes(assignee)) pool.push(assignee);
         return {
           code: r.code,
-          name: r.code === "onboarding_project_manager" ? "Primary Project Manager" : r.name,
+          // Staging is an external provider (see staging_provider); this internal role is Design.
+          name: r.code === "onboarding_project_manager" ? "Primary Project Manager" : r.code === "design_staging" ? "Design" : r.name,
           assignee,
           pool: pool.map((id) => ({
             id,
@@ -307,7 +308,7 @@ export const readProjectTeam = createServerFn({ method: "POST" })
           })),
         };
       });
-    return { projectId: project.id, canEdit, roles: list };
+    return { projectId: project.id, canEdit, roles: list, stagingProvider: (project.staging_provider as string | null) ?? null };
   });
 
 /** The Director (or leadership) takes any Onboarding Task directly. */
@@ -331,5 +332,31 @@ export const takeOnboardingTask = createServerFn({ method: "POST" })
       .eq("id", data.taskId)
       .neq("status", "complete");
     if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Interim, informational only: the external staging provider planned for one project. Never a user; routes nothing. */
+export const setProjectStagingProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ projectId: z.string().uuid(), provider: z.string().trim().max(200).nullable() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCanManage(context as unknown as Ctx);
+    const db = await admin();
+    const { data: project } = await db.from("onboarding_projects").select("id, staging_provider").eq("id", data.projectId).maybeSingle();
+    if (!project) throw new Error("That onboarding project was not found.");
+    const next = data.provider ? data.provider : null;
+    const { error } = await db.from("onboarding_projects").update({ staging_provider: next }).eq("id", data.projectId);
+    if (error) throw new Error(error.message);
+    await db.from("audit_log").insert({
+      actor_id: context.userId,
+      action: "onboarding.staging_provider_changed",
+      entity_type: "onboarding_project",
+      entity_id: data.projectId,
+      entity_label: "Staging Provider",
+      before_value: { staging_provider: project.staging_provider },
+      after_value: { staging_provider: next },
+    } as never);
     return { ok: true as const };
   });
