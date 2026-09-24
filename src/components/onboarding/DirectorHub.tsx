@@ -202,107 +202,7 @@ export function DirectorHub({
         </div>
       </section>
 
-      {/* -------------------------------------------------- pipeline forecast */}
-      <section className="surface space-y-3 p-4">
-        <p className="eyebrow">Pipeline forecast</p>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
-          <span>
-            <span className="font-semibold">{active.length}</span>{" "}
-            <span className="text-muted-foreground">active</span>
-          </span>
-          <span>
-            <span
-              className={cn(
-                "font-semibold",
-                counts.at_risk + counts.blocked > 0 && "text-state-blocked",
-              )}
-            >
-              {counts.at_risk + counts.blocked}
-            </span>{" "}
-            <span className="text-muted-foreground">at risk or blocked</span>
-          </span>
-          <span>
-            <span className="font-semibold">{counts.mine}</span>{" "}
-            <span className="text-muted-foreground">awaiting my review</span>
-          </span>
-          <span>
-            <span className="font-semibold">
-              {bottleneck ? lifecycleStageMeta(bottleneck).label : "—"}
-            </span>{" "}
-            <span className="text-muted-foreground">is the bottleneck stage</span>
-          </span>
-          <span className="ml-auto flex items-center gap-3 text-muted-foreground">
-            {([7, 14, 30] as const).map((d) => {
-              const n = active.filter((p) => withinDays(p.target, d)).length;
-              const key = (d === 7 ? "up7" : d === 14 ? "up14" : "up30") as Lens;
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setLens(key)}
-                  className={cn(
-                    "underline-offset-2 hover:underline",
-                    lens === key && "font-medium text-foreground",
-                  )}
-                >
-                  {n} in {d}d
-                </button>
-              );
-            })}
-          </span>
-        </div>
-
-        {/* stage distribution — one slim bar, not equal-sized tiles */}
-        <div
-          className="flex h-2 w-full overflow-hidden rounded-full bg-muted"
-          title="Where active projects sit"
-        >
-          {LIFECYCLE_STAGES.filter((s) => s.value !== "live").map((s) => {
-            const inStage = active.filter((p) => p.stage === s.value).length;
-            const pct = active.length > 0 ? (inStage / active.length) * 100 : 0;
-            if (pct === 0) return null;
-            return (
-              <span
-                key={s.value}
-                title={`${s.label} · ${inStage}`}
-                className={cn("h-full", s.accent, "border-0")}
-                style={{ width: `${pct}%` }}
-              />
-            );
-          })}
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          {LIFECYCLE_STAGES.filter((s) => s.value !== "live").map((s) => {
-            const inStage = active.filter((p) => p.stage === s.value).length;
-            if (inStage === 0) return null;
-            return (
-              <span key={s.value}>
-                {s.label} · {inStage}
-              </span>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------- portfolio */}
-      <section className="space-y-3">
-        <p className="eyebrow">Project portfolio</p>
-        {active.length === 0 ? (
-          <p className="surface p-4 text-sm text-muted-foreground">
-            No active onboarding projects.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {active
-              .slice()
-              .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999"))
-              .map((p) => (
-                <PortfolioCard key={p.property.id} project={p} originToken={originToken} />
-              ))}
-          </div>
-        )}
-      </section>
-
+      {/* Pipeline Forecast and Project Portfolio are retired from daily use. */}
       {/* ------------------------------------------------------- secondary */}
       <details className="surface p-4">
         <summary className="cursor-pointer text-sm font-semibold">
@@ -338,7 +238,6 @@ export function DirectorHub({
           ))}
         </div>
       </details>
-
     </div>
   );
 }

@@ -281,11 +281,14 @@ function Hub() {
           </SectionCard>
 
           <p className="text-sm text-muted-foreground">
-            <span className="numeric font-semibold text-foreground">{activeProjects.length}</span> active
+            <span className="numeric font-semibold text-foreground">{activeProjects.length}</span>{" "}
+            active
             {" · "}
-            <span className="numeric font-semibold text-foreground">{atRisk.length}</span> need attention
+            <span className="numeric font-semibold text-foreground">{atRisk.length}</span> need
+            attention
             {" · "}
-            <span className="numeric font-semibold text-foreground">{soon.length}</span> handoffs coming up
+            <span className="numeric font-semibold text-foreground">{soon.length}</span> handoffs
+            coming up
           </p>
         </>
       )}
@@ -295,30 +298,30 @@ function Hub() {
             Onboarding work — only a Platform Owner sees them, and only on the
             full Properties list. */}
         {lens === "all" && isAdmin ? (
-        <div className="flex justify-end">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Database className="size-4" /> Source records
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
-              <SheetHeader>
-                <SheetTitle>Source records</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4">
-                <ExternalRecordsPanel
-                  databases={data.externalDatabases as never}
-                  records={data.externalRecords as never}
-                  properties={data.properties}
-                  syncConfigured={enabled("onboarding_external_sync")}
-                  disabled={readOnly || !can("handoff_request")}
-                  onResolve={(input) => resolveRecord.mutate({ data: input })}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+          <div className="flex justify-end">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Database className="size-4" /> Source records
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
+                <SheetHeader>
+                  <SheetTitle>Source records</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <ExternalRecordsPanel
+                    databases={data.externalDatabases as never}
+                    records={data.externalRecords as never}
+                    properties={data.properties}
+                    syncConfigured={enabled("onboarding_external_sync")}
+                    disabled={readOnly || !can("handoff_request")}
+                    onResolve={(input) => resolveRecord.mutate({ data: input })}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         ) : null}
         {lens !== "all" ? (
           <DashboardSections
@@ -328,19 +331,19 @@ function Hub() {
             onFindChange={(v) => setParam({ find: v || undefined })}
           />
         ) : (
-        <DirectorHub
-          projects={projects}
-          viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
-          originToken={originToken}
-          lens={lens}
-          onLensChange={(v) => setParam({ lens: v })}
-          find={find}
-          onFindChange={(v) => setParam({ find: v || undefined })}
-          owner={owner}
-          onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
-          showTest={showTest}
-          onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
-        />
+          <DirectorHub
+            projects={projects}
+            viewer={{ userId, reviewCapabilities: data.reviewCapabilities }}
+            originToken={originToken}
+            lens={lens}
+            onLensChange={(v) => setParam({ lens: v })}
+            find={find}
+            onFindChange={(v) => setParam({ find: v || undefined })}
+            owner={owner}
+            onOwnerChange={(v) => setParam({ owner: v ?? undefined })}
+            showTest={showTest}
+            onShowTestChange={(v) => setParam({ showTest: v ? true : undefined })}
+          />
         )}
       </div>
     </div>
@@ -366,11 +369,20 @@ function DashboardSections({
   const needs = (p: ProjectSummary) => p.risk.reasons.length > 0 && p.risk.level !== "on_track";
   const q = find.trim().toLowerCase();
   const rows = projects
-    .filter((p) => !q || `${p.property.name} ${(p.property as { address?: string | null }).address ?? ""}`.toLowerCase().includes(q))
+    .filter(
+      (p) =>
+        !q ||
+        `${p.property.name} ${(p.property as { address?: string | null }).address ?? ""}`
+          .toLowerCase()
+          .includes(q),
+    )
     .filter((p) =>
       filter === "attention" ? needs(p) : filter === "handoff" ? withinDays(p.target, 30) : true,
     )
-    .sort((a, b) => Number(needs(b)) - Number(needs(a)) || (a.target ?? "9").localeCompare(b.target ?? "9"));
+    .sort(
+      (a, b) =>
+        Number(needs(b)) - Number(needs(a)) || (a.target ?? "9").localeCompare(b.target ?? "9"),
+    );
   const upcoming = projects
     .filter((p) => p.target && withinDays(p.target, window))
     .sort((a, b) => (a.target ?? "").localeCompare(b.target ?? ""));
@@ -383,12 +395,19 @@ function DashboardSections({
     <div className="space-y-6">
       <SectionCard title="Onboarding properties" bodyClassName="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          {([
-            ["attention", "Needs attention"],
-            ["handoff", "Upcoming handoff"],
-            ["all", "All properties"],
-          ] as const).map(([k, l]) => (
-            <button key={k} type="button" className={chip(filter === k)} onClick={() => setFilter(k)}>
+          {(
+            [
+              ["attention", "Needs attention"],
+              ["handoff", "Upcoming handoff"],
+              ["all", "All properties"],
+            ] as const
+          ).map(([k, l]) => (
+            <button
+              key={k}
+              type="button"
+              className={chip(filter === k)}
+              onClick={() => setFilter(k)}
+            >
               {l}
             </button>
           ))}
@@ -405,7 +424,12 @@ function DashboardSections({
         ) : (
           <ul className="space-y-1.5">
             {rows.map((p) => (
-              <PropertyRow key={p.property.id} project={p} originToken={originToken} attention={needs(p)} />
+              <PropertyRow
+                key={p.property.id}
+                project={p}
+                originToken={originToken}
+                attention={needs(p)}
+              />
             ))}
           </ul>
         )}
@@ -414,7 +438,12 @@ function DashboardSections({
       <SectionCard title="Upcoming handoffs" bodyClassName="space-y-3">
         <div className="flex gap-2">
           {([7, 14, 30] as const).map((d) => (
-            <button key={d} type="button" className={chip(window === d)} onClick={() => setWindow(d)}>
+            <button
+              key={d}
+              type="button"
+              className={chip(window === d)}
+              onClick={() => setWindow(d)}
+            >
               Next {d} days
             </button>
           ))}
@@ -467,7 +496,9 @@ function PropertyRow({
           search={(originToken ? { from: originToken } : undefined) as never}
           className="min-w-0 flex-1 basis-full sm:basis-auto"
         >
-          <span className="block truncate text-base font-semibold hover:underline">{p.property.name}</span>
+          <span className="block truncate text-base font-semibold hover:underline">
+            {p.property.name}
+          </span>
           <span className="block truncate text-sm text-muted-foreground">
             {p.phaseLabel} · {p.next.headline}
           </span>
@@ -487,7 +518,9 @@ function PropertyRow({
             <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
           </button>
         ) : (
-          <span className="rounded-full bg-sage/15 px-2.5 py-1 text-xs font-medium text-sage">On track</span>
+          <span className="rounded-full bg-sage/15 px-2.5 py-1 text-xs font-medium text-sage">
+            On track
+          </span>
         )}
         <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
       </div>

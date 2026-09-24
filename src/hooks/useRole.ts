@@ -67,7 +67,9 @@ export function useRole() {
   const demoMode = canOperateDemo(actualRoles) && demoFlag;
   const roles: AppRole[] = previewing && viewAs ? [viewAs] : actualRoles;
   // A role preview shows the previewed role only, never the viewer's own seat.
-  const seats: AccessSeats = { onboardingDirector: !previewing && Boolean(query.data?.onboardingDirector) };
+  const seats: AccessSeats = {
+    onboardingDirector: !previewing && Boolean(query.data?.onboardingDirector),
+  };
   const access = { roles, seats };
 
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");

@@ -22,7 +22,6 @@ type Row = {
   created_at: string;
 };
 
-
 /**
  * The one place Resolve tells a teammate that something is waiting on them.
  * Only actionable events land here — assignment, handoff, approval, reopen.
@@ -67,10 +66,7 @@ export function NotificationBell({
   });
   const prefs = useMemo(() => readPreferences(prefRow), [prefRow]);
 
-  const rows = useMemo(
-    () => (data ?? []).filter((r) => allowsInApp(prefs, r.kind)),
-    [data, prefs],
-  );
+  const rows = useMemo(() => (data ?? []).filter((r) => allowsInApp(prefs, r.kind)), [data, prefs]);
   const unread = rows.filter((r) => !r.read_at);
 
   async function markRead(ids: string[]) {
