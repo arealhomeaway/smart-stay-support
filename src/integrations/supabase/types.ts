@@ -9329,7 +9329,9 @@ export type Database = {
           id: string
           kind: string
           label: string | null
+          note: string | null
           removed_at: string | null
+          resource_type: string | null
           sort_order: number
           url: string | null
           work_item_id: string
@@ -9341,7 +9343,9 @@ export type Database = {
           id?: string
           kind: string
           label?: string | null
+          note?: string | null
           removed_at?: string | null
+          resource_type?: string | null
           sort_order?: number
           url?: string | null
           work_item_id: string
@@ -9353,7 +9357,9 @@ export type Database = {
           id?: string
           kind?: string
           label?: string | null
+          note?: string | null
           removed_at?: string | null
+          resource_type?: string | null
           sort_order?: number
           url?: string | null
           work_item_id?: string
