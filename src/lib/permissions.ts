@@ -155,14 +155,31 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   owner: [],
 };
 
-export function capabilitiesFor(roles: AppRole[]): Set<Capability> {
+/**
+ * Responsibility seats that carry authority on their own, independent of the
+ * broad permission role. The Onboarding Director runs the whole Onboarding
+ * department without needing the leadership (`manager`) role, which would also
+ * open Operations.
+ */
+export type AccessSeats = { onboardingDirector?: boolean };
+
+export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
+  "onboarding_workspace",
+  "onboarding_templates",
+  "handoff_request",
+  // Stage/readiness review and Task exceptions inside Onboarding Projects.
+  "handoff_review",
+];
+
+export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<Capability> {
   const set = new Set<Capability>();
   for (const role of roles) for (const cap of ROLE_CAPABILITIES[role] ?? []) set.add(cap);
+  if (seats.onboardingDirector) for (const cap of ONBOARDING_DIRECTOR_CAPS) set.add(cap);
   return set;
 }
 
-export function can(roles: AppRole[], capability: Capability) {
-  return capabilitiesFor(roles).has(capability);
+export function can(roles: AppRole[], capability: Capability, seats: AccessSeats = {}) {
+  return capabilitiesFor(roles, seats).has(capability);
 }
 
 /** Where a person lands after sign-in. Exception-first for leadership. */
