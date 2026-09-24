@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { portalsFor } from "@/lib/portals";
+import { canOpenPath, homePathFor } from "@/lib/route-access";
 import type { AppRole } from "@/lib/permissions";
 import { watchAccountIdentity } from "@/lib/account-query-boundary";
 
@@ -15,16 +16,29 @@ export const Route = createFileRoute("/_authenticated")({
     // A signed-in account with no authorised role or portal membership never
     // sees the Operations shell — it lands on a neutral "Awaiting access"
     // page. Nothing is granted here; the invite flow stays the only way in.
-    const { data: roleRows } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id);
+    const [{ data: roleRows }, director] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+      supabase.rpc("is_onboarding_director", { _user_id: data.user.id }),
+    ]);
     const roles = (roleRows ?? []).map((r) => r.role as AppRole);
-    if (portalsFor(roles).length === 0 && !location.pathname.startsWith("/join")) {
+    const access = { roles, seats: { onboardingDirector: director.data === true } };
+    if (
+      portalsFor(roles).length === 0 &&
+      !access.seats.onboardingDirector &&
+      !location.pathname.startsWith("/join")
+    ) {
       throw redirect({ to: "/awaiting-access" });
     }
 
-    return { user: data.user, roles };
+    // Route authorization runs before any page renders, so a typed URL for a
+    // portal this person does not work in never flashes its data. They land
+    // in the most useful portal they ARE authorised to use instead.
+    if (!location.pathname.startsWith("/join") && !canOpenPath(location.pathname, access)) {
+      const home = homePathFor(access);
+      if (home !== location.pathname) throw redirect({ to: home as never, replace: true });
+    }
+
+    return { user: data.user, roles, access };
   },
   component: AuthenticatedLayout,
 });
