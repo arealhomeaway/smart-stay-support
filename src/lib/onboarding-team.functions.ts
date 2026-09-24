@@ -343,20 +343,22 @@ export const setProjectStagingProvider = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCanManage(context as unknown as Ctx);
-    const db = await admin();
-    const { data: project } = await db.from("onboarding_projects").select("id, staging_provider").eq("id", data.projectId).maybeSingle();
+    // Write as the signed-in user so normal RLS and project triggers apply.
+    const sb = context.supabase;
+    const { data: project } = await sb.from("onboarding_projects").select("id, staging_provider").eq("id", data.projectId).maybeSingle();
     if (!project) throw new Error("That onboarding project was not found.");
     const next = data.provider ? data.provider : null;
-    const { error } = await db.from("onboarding_projects").update({ staging_provider: next }).eq("id", data.projectId);
+    const { error } = await sb.from("onboarding_projects").update({ staging_provider: next }).eq("id", data.projectId);
     if (error) throw new Error(error.message);
+    const db = await admin();
     await db.from("audit_log").insert({
       actor_id: context.userId,
       action: "onboarding.staging_provider_changed",
       entity_type: "onboarding_project",
       entity_id: data.projectId,
       entity_label: "Staging Provider",
-      before: { staging_provider: project.staging_provider },
-      after: { staging_provider: next },
+      before_value: { staging_provider: project.staging_provider },
+      after_value: { staging_provider: next },
     } as never);
     return { ok: true as const };
   });
