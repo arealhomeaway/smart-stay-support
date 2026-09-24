@@ -59,9 +59,9 @@ export const Route = createFileRoute("/_authenticated/owner")({
   // home lives in the URL and stays shareable and bookmarkable.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { home?: string; view?: "documents" | "team"; opportunity?: string } => ({
+  ): { home?: string; view?: "documents" | "team" | "opportunities"; opportunity?: string } => ({
     ...(typeof search["home"] === "string" ? { home: search["home"] as string } : {}),
-    ...(search["view"] === "documents" || search["view"] === "team" ? { view: search["view"] } : {}),
+    ...(search["view"] === "documents" || search["view"] === "team" || search["view"] === "opportunities" ? { view: search["view"] } : {}),
     ...(typeof search["opportunity"] === "string" ? { opportunity: search["opportunity"] as string } : {}),
   }),
   head: () => ({
@@ -482,6 +482,16 @@ function OwnerHubBody({
 
       {view === "documents" ? (
         <OwnerFilesPanel homes={ownerHomes} selectedHomeId={selectedHomeId} readOnly={preview} />
+      ) : view === "opportunities" ? (
+        <OwnerOpportunities
+          variant="full"
+          focusId={Route.useSearch().opportunity ?? null}
+          homes={ownerHomes}
+          selectedHomeId={selectedHomeId}
+          readOnly={preview}
+          blockedReason={preview ? null : logHoursBlockedReason}
+          {...(preview || logHoursBlockedReason ? {} : { onLogHours: openManualLog })}
+        />
       ) : view === "team" ? (
         <ArhaContacts
           contacts={contacts}
@@ -529,6 +539,8 @@ function OwnerHubBody({
       </div>
 
       <OwnerOpportunities
+        variant="preview"
+        onViewAll={() => void navigateOwner({ to: "/owner", search: { ...(selectedHomeId ? { home: selectedHomeId } : {}), view: "opportunities" } })}
         focusId={Route.useSearch().opportunity ?? null}
         homes={ownerHomes}
         selectedHomeId={selectedHomeId}
