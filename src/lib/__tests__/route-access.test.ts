@@ -10,8 +10,10 @@ describe("route authorization", () => {
   it("Onboarding Director works all of Onboarding without Operations", () => {
     for (const p of ["/onboarding", "/onboarding/abc", "/onboarding/team", "/onboarding/templates", "/onboarding/utilities", "/onboarding/my-work"])
       expect(canOpenPath(p, kati)).toBe(true);
-    for (const p of ["/dashboard", "/oversight", "/team", "/team-queue", "/tickets", "/tickets/new", "/vendors", "/owner-library", "/owner-programs", "/command-center"])
+    for (const p of ["/dashboard", "/oversight", "/team", "/team-queue", "/tickets", "/tickets/new", "/vendors", "/owner-library", "/owner-analytics", "/command-center", "/audit", "/oversight-access-log"])
       expect(canOpenPath(p, kati)).toBe(false);
+    for (const p of ["/owner-programs", "/owner-oversight", "/homeowners"])
+      expect(canOpenPath(p, kati)).toBe(true);
     expect(homePathFor(kati)).toBe("/onboarding");
     expect(isOnboardingOnly(kati)).toBe(true);
     expect(can(kati.roles, "onboarding_templates", kati.seats)).toBe(true);
