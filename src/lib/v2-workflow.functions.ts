@@ -361,7 +361,13 @@ export type ResponseType = (typeof RESPONSE_TYPES)[number]["code"];
 
 const resourceInput = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("file"), document_id: z.string().uuid() }),
-  z.object({ kind: z.literal("link"), label: z.string().trim().min(1).max(120), url: z.string().trim().url().max(1000) }),
+  z.object({
+    kind: z.literal("link"),
+    label: z.string().trim().min(1, "Give the link a display name").max(120),
+    url: z.string().trim().max(2000).regex(/^https:\/\/\S+$/i, "Links must be a secure address starting with https://"),
+    note: z.string().trim().max(2000).optional(),
+    resource_type: z.enum(["video", "document", "reference", "other"]).optional(),
+  }),
 ]);
 export type ResourceInput = z.infer<typeof resourceInput>;
 
@@ -399,13 +405,13 @@ async function withResources(sb: import("@supabase/supabase-js").SupabaseClient,
   const res = ids.length
     ? await sb
         .from("work_item_resources")
-        .select("id, work_item_id, kind, document_id, label, url, sort_order, documents(title, original_filename)")
+        .select("id, work_item_id, kind, document_id, label, url, note, resource_type, sort_order, documents(title, original_filename)")
         .in("work_item_id", ids)
         .is("removed_at", null)
         .order("sort_order")
     : { data: [], error: null };
   fail(res.error);
-  type R = { id: string; work_item_id: string; kind: string; document_id: string | null; label: string | null; url: string | null; documents: { title: string | null; original_filename: string | null } | null };
+  type R = { id: string; work_item_id: string; kind: string; document_id: string | null; label: string | null; url: string | null; note: string | null; resource_type: string | null; documents: { title: string | null; original_filename: string | null } | null };
   const list = (res.data ?? []) as unknown as R[];
   // Owners can read a resource row (RLS) but not always the document row it
   // points at. Resolve only the filename for resources already visible.
@@ -432,6 +438,8 @@ async function withResources(sb: import("@supabase/supabase-js").SupabaseClient,
             ? r.label || r.documents?.title || r.documents?.original_filename || names.get(r.document_id ?? "") || "File"
             : (r.label ?? ""),
         url: r.url,
+        note: r.note,
+        resourceType: r.resource_type,
       })),
   }));
 }
