@@ -13,6 +13,9 @@ export const ATTACHMENT_BUCKET = "resolve-attachments";
 /** 250 MB — matches the storage bucket limit; walkthrough videos fit. */
 export const MAX_FILE_BYTES = 250 * 1024 * 1024;
 
+export const OVERSIZE_LINK_MESSAGE =
+  "This file is larger than Resolve's 250 MB upload limit. Upload it to your approved file-sharing location and add the link here instead.";
+
 export type AttachmentEntity = "ticket" | "onboarding_task" | "property";
 
 export const ATTACHMENT_ENTITIES: AttachmentEntity[] = ["ticket", "onboarding_task", "property"];
@@ -213,7 +216,7 @@ export function validateFile(input: {
   if (input.size > MAX_FILE_BYTES) {
     return {
       ok: false,
-      message: `${formatBytes(input.size)} is over the ${formatBytes(MAX_FILE_BYTES)} limit. Trim the clip or upload a smaller copy.`,
+      message: `${formatBytes(input.size)} is over Resolve's ${formatBytes(MAX_FILE_BYTES)} limit. Upload it to your approved file-sharing location and share the link instead.`,
     };
   }
   if (!(ALLOWED_MIME_TYPES as readonly string[]).includes(input.type)) {

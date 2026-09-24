@@ -9,7 +9,6 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
 import { FileText, Link2, Plus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,10 @@ import {
   type ResponseType,
 } from "@/lib/v2-workflow.functions";
 import { beginUploadFn, completeUploadFn } from "@/lib/attachments.functions";
-import { validateFile } from "@/lib/attachments";
+import { MAX_FILE_BYTES, OVERSIZE_LINK_MESSAGE, validateFile } from "@/lib/attachments";
+
+const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
+
 import { ownerPrograms } from "@/lib/owner-program.functions";
 
 export type CollabData = Awaited<ReturnType<typeof readOwnerCollaboration>>;

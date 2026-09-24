@@ -58,7 +58,7 @@ type Live = {
   how?: string | null;
   document?: string | null;
   suggestedMinutes?: number | null;
-  resources: { id: string; kind: "file" | "link"; label: string; url: string | null }[];
+  resources: { id: string; kind: "file" | "link"; label: string; url: string | null; note?: string | null }[];
   templateLink: { label: string; url: string } | null;
   responseTypes: ResponseType[];
   responses: OwnerResponse[];
@@ -465,7 +465,7 @@ function ResourceLinks({ items }: { items: Live["resources"] }) {
           </button>
         ) : (
           <a key={r.id} href={r.url ?? "#"} target="_blank" rel="noreferrer" className="flex items-center gap-1 truncate text-primary underline-offset-2 hover:underline">
-            <Link2 className="size-3.5" /> {r.label}
+            <Link2 className="size-3.5" /> {r.label}{r.note ? <span className="text-muted-foreground"> — {r.note}</span> : null}
           </a>
         ),
       )}
