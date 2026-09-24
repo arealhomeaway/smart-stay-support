@@ -57,8 +57,8 @@ export const DEPARTMENTS: Department[] = [
       { label: "Programs", to: "/owner-programs", capability: "owner_programs" },
       { label: "Program oversight", to: "/owner-oversight", capability: "owner_oversight" },
       { label: "Homeowners", to: "/homeowners", capability: "homeowner_directory" },
-      { label: "Participation insight", to: "/owner-analytics" },
-      { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_programs" },
+      { label: "Participation insight", to: "/owner-analytics", capability: "owner_program_admin" },
+      { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_program_admin" },
     ],
   },
 ];

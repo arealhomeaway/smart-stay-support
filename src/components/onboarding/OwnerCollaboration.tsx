@@ -31,6 +31,7 @@ import { MAX_FILE_BYTES, OVERSIZE_LINK_MESSAGE, validateFile } from "@/lib/attac
 
 const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference", other: "Other" } as const;
 
+import { ExistingFilePicker, SortableResourceList, ViewPropertyFilesLink } from "@/components/onboarding/ResourceControls";
 import { ownerPrograms } from "@/lib/owner-program.functions";
 
 export type CollabData = Awaited<ReturnType<typeof readOwnerCollaboration>>;
@@ -162,7 +163,6 @@ export function OpportunityEditor({
   const [resources, setResources] = useState<ResourceInput[]>([]);
   const EMPTY_LINK = { label: "", url: "", note: "", type: "video" as "video" | "document" | "reference" | "other" };
   const [link, setLink] = useState(EMPTY_LINK);
-  const [pick, setPick] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadPct, setUploadPct] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -195,7 +195,6 @@ export function OpportunityEditor({
       );
     }
     setLink(EMPTY_LINK);
-    setPick("");
   }
 
   const files = data?.files ?? [];
@@ -294,31 +293,22 @@ export function OpportunityEditor({
           <div className="grid gap-2">
             <Label>Resources for the homeowner</Label>
             {resources.length ? (
-              <ul className="space-y-1">
-                {resources.map((r, i) => (
-                  <li key={i} className="flex items-center justify-between gap-2 rounded-md border border-border px-2 py-1 text-sm">
-                    <span className="flex min-w-0 items-center gap-1 truncate">
-                      {r.kind === "file" ? <FileText className="size-3.5 shrink-0" /> : <Link2 className="size-3.5 shrink-0" />}
-                      {r.kind === "file" ? fileName(r.document_id) : <span className="truncate" title={r.url}>{r.label}{r.resource_type ? <span className="text-muted-foreground"> · {LINK_TYPES[r.resource_type]} link</span> : " · link"}</span>}
-                    </span>
-                    <Button size="icon" variant="ghost" aria-label="Remove resource" onClick={() => setResources((cur) => cur.filter((_, j) => j !== i))}>
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <SortableResourceList resources={resources} onChange={setResources} fileName={fileName} />
+                <p className="text-xs text-muted-foreground">Drag the handle to set the order the homeowner sees. Saved when you save the Opportunity.</p>
+              </>
             ) : <p className="text-xs text-muted-foreground">No resources yet.</p>}
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={pick} onValueChange={(v) => { setPick(""); if (!resources.some((r) => r.kind === "file" && r.document_id === v)) setResources((cur) => [...cur, { kind: "file", document_id: v }]); }}>
-                <SelectTrigger className="w-64"><SelectValue placeholder="Choose an existing file…" /></SelectTrigger>
-                <SelectContent>
-                  {files.length ? files.map((f) => <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>) : <SelectItem value="__none" disabled>No files on this home</SelectItem>}
-                </SelectContent>
-              </Select>
+              <ExistingFilePicker
+                files={files}
+                attached={new Set(resources.flatMap((r) => (r.kind === "file" ? [r.document_id] : [])))}
+                onAttach={(ids) => setResources((cur) => [...cur, ...ids.filter((id) => !cur.some((r) => r.kind === "file" && r.document_id === id)).map((id) => ({ kind: "file" as const, document_id: id }))])}
+              />
               <input ref={fileInput} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void upload(f); }} />
               <Button type="button" size="sm" variant="outline" disabled={uploading} onClick={() => fileInput.current?.click()}>
                 <Upload className="size-3.5" /> {uploading ? `Uploading… ${uploadPct}%` : "Add file"}
               </Button>
+              <ViewPropertyFilesLink propertyId={propertyId} />
             </div>
             <div className="grid gap-2 rounded-md border border-dashed border-border p-2">
               <p className="text-xs text-muted-foreground">Or add a link — for large videos kept in your approved file-sharing location. Resolve links to it; it never copies it.</p>

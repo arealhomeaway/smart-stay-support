@@ -11,6 +11,7 @@ export const homeownerDirectory = createServerFn({ method: "GET" })
       context.supabase,
       context.userId,
       "The homeowner directory",
+      { allowOnboardingDirector: true },
     );
     const result = await loadHomeowners(context.supabase);
     await recordOversightAccess({
