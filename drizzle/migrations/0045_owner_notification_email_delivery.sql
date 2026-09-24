@@ -1,0 +1,126 @@
+CREATE OR REPLACE FUNCTION public.save_arha_opportunity(_id uuid, _property_id uuid, _source_task_id uuid, _title text, _content jsonb, _response_types text[], _resources jsonb, _send boolean)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE _program uuid; _owner uuid; _demo boolean; _project uuid; _mirror uuid; _wid uuid; _was text; _sent boolean := false;
+  r jsonb; _i int := 0; _home text;
+BEGIN
+  IF NOT (is_onboarding_staff(auth.uid()) OR is_staff(auth.uid())) THEN RAISE EXCEPTION 'Only ARHA staff can manage Opportunities.'; END IF;
+  IF _response_types IS NULL OR NOT (_response_types <@ ARRAY['acknowledge','feedback','documentation','decision']) THEN
+    RAISE EXCEPTION 'Choose a valid owner response type.'; END IF;
+  SELECT x.program_id, pr.owner_user_id, p.is_demo INTO _program, _owner, _demo
+    FROM owner_program_properties x JOIN owner_programs pr ON pr.id=x.program_id JOIN properties p ON p.id=x.property_id
+   WHERE x.property_id=_property_id AND x.inclusion_status='included' AND x.archived_at IS NULL
+     AND pr.archived_at IS NULL AND pr.status NOT IN ('closed','completed','complete') LIMIT 1;
+  IF _program IS NULL THEN RAISE EXCEPTION 'This home is not enrolled in an Active Owner program.'; END IF;
+  IF _send AND _owner IS NULL THEN RAISE EXCEPTION 'The homeowner does not have portal access yet, so this cannot be sent. Save it as a draft.'; END IF;
+  IF _source_task_id IS NOT NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM onboarding_tasks WHERE id=_source_task_id AND property_id=_property_id AND archived_at IS NULL) THEN
+      RAISE EXCEPTION 'The related Task must belong to this home.'; END IF;
+    SELECT id INTO _mirror FROM work_items WHERE kind='task' AND source_table='onboarding_tasks' AND source_id=_source_task_id LIMIT 1;
+  END IF;
+  SELECT id INTO _project FROM onboarding_projects WHERE property_id=_property_id AND status <> 'cancelled' ORDER BY created_at DESC LIMIT 1;
+
+  IF _id IS NULL THEN
+    _wid := gen_random_uuid();
+    INSERT INTO work_items (id, department, kind, property_id, source_table, source_id, linked_task_id, program_id, title, owner_content,
+      status, functional_role, required, blocks_handoff, is_demo, source, source_department, source_project_id, source_task_id, response_types, sent_at)
+    VALUES (_wid, 'onboarding', 'opportunity', _property_id, 'staff_opportunity', _wid, _mirror, _program, _title, _content,
+      CASE WHEN _send THEN 'open' ELSE 'draft' END, 'owner', false, false, coalesce(_demo,false), 'arha', 'onboarding', _project,
+      _source_task_id, _response_types, CASE WHEN _send THEN now() END);
+    _sent := _send;
+  ELSE
+    SELECT status INTO _was FROM work_items WHERE id=_id AND kind='opportunity' AND property_id=_property_id;
+    IF _was IS NULL OR _was IN ('complete','archived') THEN RAISE EXCEPTION 'This Opportunity can no longer be edited.'; END IF;
+    UPDATE work_items SET title=_title, owner_content=_content, linked_task_id=coalesce(_mirror, linked_task_id),
+      source='arha', source_department='onboarding', source_project_id=coalesce(_project, source_project_id),
+      source_task_id=coalesce(_source_task_id, source_task_id), response_types=_response_types,
+      status=CASE WHEN _send AND status='draft' THEN 'open' ELSE status END,
+      sent_at=CASE WHEN _send AND status='draft' THEN now() ELSE sent_at END
+     WHERE id=_id;
+    _wid := _id;
+    _sent := _send AND _was='draft';
+  END IF;
+
+  UPDATE work_item_resources wr SET removed_at=now() WHERE wr.work_item_id=_wid AND wr.removed_at IS NULL
+    AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(_resources,'[]')) e WHERE
+      (wr.kind='file' AND e->>'kind'='file' AND (e->>'document_id')::uuid=wr.document_id) OR
+      (wr.kind='link' AND e->>'kind'='link' AND e->>'url'=wr.url AND e->>'label'=wr.label));
+  FOR r IN SELECT * FROM jsonb_array_elements(coalesce(_resources,'[]')) LOOP
+    _i := _i + 1;
+    IF r->>'kind'='file' THEN
+      IF NOT EXISTS (SELECT 1 FROM documents d WHERE d.id=(r->>'document_id')::uuid AND d.property_id=_property_id AND d.deleted_at IS NULL) THEN
+        RAISE EXCEPTION 'Resource files must be files on this home.'; END IF;
+      IF EXISTS (SELECT 1 FROM work_item_resources WHERE work_item_id=_wid AND removed_at IS NULL AND kind='file' AND document_id=(r->>'document_id')::uuid) THEN
+        UPDATE work_item_resources SET sort_order=_i WHERE work_item_id=_wid AND removed_at IS NULL AND kind='file' AND document_id=(r->>'document_id')::uuid;
+      ELSE INSERT INTO work_item_resources(work_item_id, kind, document_id, sort_order) VALUES (_wid,'file',(r->>'document_id')::uuid,_i); END IF;
+    ELSIF r->>'kind'='link' THEN
+      IF coalesce(trim(r->>'label'),'')='' OR (r->>'url') !~* '^https?://' THEN RAISE EXCEPTION 'Each link needs a label and a web address starting with https://'; END IF;
+      IF EXISTS (SELECT 1 FROM work_item_resources WHERE work_item_id=_wid AND removed_at IS NULL AND kind='link' AND url=r->>'url' AND label=r->>'label') THEN
+        UPDATE work_item_resources SET sort_order=_i WHERE work_item_id=_wid AND removed_at IS NULL AND kind='link' AND url=r->>'url' AND label=r->>'label';
+      ELSE INSERT INTO work_item_resources(work_item_id, kind, label, url, sort_order) VALUES (_wid,'link',trim(r->>'label'),r->>'url',_i); END IF;
+    END IF;
+  END LOOP;
+
+  IF _sent THEN
+    SELECT coalesce(nickname, name, address_line1, 'your home') INTO _home FROM properties WHERE id=_property_id;
+    INSERT INTO owner_notifications(program_id, owner_user_id, kind, priority, title, body, action_path, email_status, is_demo)
+    VALUES (_program, _owner, 'opportunity_sent', 'p3', 'New Opportunity from Your ARHA Team', _title||' · '||_home,
+      '/owner?home='||_property_id||'&opportunity='||_wid, 'pending', coalesce(_demo,false));
+  END IF;
+  RETURN _wid;
+END $function$;
+
+CREATE OR REPLACE FUNCTION public.notify_owner_of_onboarding_publication()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  program public.owner_programs%ROWTYPE;
+BEGIN
+  IF NEW.entity_type <> 'onboarding_task' THEN
+    RETURN NEW;
+  END IF;
+  SELECT * INTO program FROM public.owner_programs WHERE id = NEW.program_id AND archived_at IS NULL;
+  IF NOT FOUND OR program.owner_user_id IS NULL OR program.owner_user_id IS DISTINCT FROM NEW.recipient_id THEN
+    RETURN NEW;
+  END IF;
+  INSERT INTO public.owner_notifications (program_id, owner_user_id, kind, priority, title, body, action_path, email_status, sms_status, is_demo)
+  VALUES (
+    program.id, NEW.recipient_id, 'review_ready', 'p3',
+    'New request from Your ARHA Team',
+    coalesce(nullif(NEW.title,''),'A request needs your attention')||' · '||coalesce(nullif(NEW.property_name,''),'your home'),
+    CASE WHEN NEW.property_id IS NOT NULL THEN '/owner?home='||NEW.property_id ELSE '/owner' END,
+    CASE WHEN program.notify_email AND NOT program.is_demo THEN 'pending' ELSE 'skipped' END,
+    'skipped', program.is_demo
+  );
+  RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION private.dispatch_owner_notification_email()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $fn$
+BEGIN
+  -- Email is only a delivery channel: it never blocks the business event.
+  IF NEW.email_status = 'pending' AND NOT coalesce(NEW.is_demo,false) THEN
+    BEGIN
+      PERFORM net.http_post(
+        url := 'https://project--9ccd5407-8c2f-4bb6-af2b-c23477f01c08.lovable.app/api/public/hooks/owner-notification-email',
+        headers := jsonb_build_object('Content-Type','application/json','apikey','sb_publishable_QhE1wTc0Zy7gL_JWJOLJxQ_EN2hvJag'),
+        body := jsonb_build_object('id', NEW.id)
+      );
+    EXCEPTION WHEN others THEN
+      NULL;
+    END;
+  END IF;
+  RETURN NEW;
+END $fn$;
+
+DROP TRIGGER IF EXISTS owner_notification_email_dispatch ON public.owner_notifications;
+CREATE TRIGGER owner_notification_email_dispatch
+  AFTER INSERT ON public.owner_notifications
+  FOR EACH ROW EXECUTE FUNCTION private.dispatch_owner_notification_email();
