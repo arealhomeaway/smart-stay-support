@@ -31,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   completeMyOpportunity,
   listMyCollaboration,
+  compareArhaPriority,
   markOpportunityViewed,
   opportunityResourceUrl,
   respondToOpportunity,
