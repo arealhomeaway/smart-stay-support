@@ -35,7 +35,7 @@ import { useFeatureFlags } from "@/lib/feature-flags";
 import { summarizeProject, type ProjectProperty } from "@/lib/onboarding-lifecycle";
 import { type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
-import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
+import { applyTestDataFilter } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
   resolveExternalRecordFn,
