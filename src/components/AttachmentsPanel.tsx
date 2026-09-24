@@ -140,14 +140,13 @@ export function AttachmentsPanel({
       });
       if (started.alreadyStored) return { skipped: true as const };
 
-      setProgress({ name: file.name, pct: 35 });
+      setProgress({ name: file.name, pct: 5 });
       try {
         if (!attempt.bytesUploaded) {
-          const { supabase } = await import("@/integrations/supabase/client");
-          const put = await supabase.storage
-            .from("resolve-attachments")
-            .uploadToSignedUrl(started.path, started.token!, file, { upsert: false });
-          if (put.error) throw put.error;
+          const { uploadToSignedSlot } = await import("@/lib/signed-upload");
+          await uploadToSignedSlot(started.path, started.token!, file, (pct) =>
+            setProgress({ name: file.name, pct: 5 + Math.round(pct * 0.85) }),
+          );
           attempt.bytesUploaded = true;
         }
       } catch (err) {
@@ -158,7 +157,7 @@ export function AttachmentsPanel({
         throw err instanceof Error ? err : new Error("The upload did not finish.");
       }
 
-      setProgress({ name: file.name, pct: 85 });
+      setProgress({ name: file.name, pct: 95 });
       await complete({
         data: { documentId: started.documentId!, ok: true, fulfilsRequestId: attempt.requestId },
       });

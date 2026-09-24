@@ -58,10 +58,10 @@ describe("what counts as an acceptable file", () => {
     expect(validateFile({ name: "a.pdf", type: "application/pdf", size: 500_000 }).ok).toBe(true);
   });
 
-  it("refuses anything over 50 MB, and says so in plain words", () => {
+  it("refuses anything over 250 MB, and says so in plain words", () => {
     const r = validateFile({ name: "big.mp4", type: "video/mp4", size: MAX_FILE_BYTES + 1 });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.message).toContain("50.0 MB limit");
+    if (!r.ok) expect(r.message).toContain("250.0 MB limit");
   });
 
   it("refuses an executable and an empty file", () => {
