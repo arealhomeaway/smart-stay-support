@@ -5,7 +5,7 @@ import {
   onboardingWorkspaceKey,
   canManageOnboardingProperty,
 } from "@/lib/onboarding-workspace-view";
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -146,7 +146,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
     ],
   }),
   component: PropertyWorkspace,
-  errorComponent: () => <p className="text-muted-foreground">This home could not be loaded.</p>,
+  errorComponent: InvalidPropertyRoute,
 });
 
 function PropertyWorkspace() {
