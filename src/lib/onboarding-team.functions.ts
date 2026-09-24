@@ -355,8 +355,8 @@ export const setProjectStagingProvider = createServerFn({ method: "POST" })
       entity_type: "onboarding_project",
       entity_id: data.projectId,
       entity_label: "Staging Provider",
-      before_value: { staging_provider: project.staging_provider },
-      after_value: { staging_provider: next },
+      before: { staging_provider: project.staging_provider },
+      after: { staging_provider: next },
     } as never);
     return { ok: true as const };
   });
