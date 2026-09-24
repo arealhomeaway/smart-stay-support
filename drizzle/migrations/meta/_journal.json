@@ -351,6 +351,13 @@
       "when": 1790264801154,
       "tag": "0049_arha_opportunity_owner_priority",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1790265880439,
+      "tag": "0050_onboarding_project_staging_provider",
+      "breakpoints": true
     }
   ]
 }

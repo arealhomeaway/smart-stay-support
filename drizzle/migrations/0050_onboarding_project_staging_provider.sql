@@ -1,0 +1,3 @@
+ALTER TABLE public.onboarding_projects ADD COLUMN IF NOT EXISTS staging_provider text;
+ALTER TABLE public.onboarding_projects ADD CONSTRAINT onboarding_projects_staging_provider_len CHECK (staging_provider IS NULL OR char_length(staging_provider) <= 200);
+COMMENT ON COLUMN public.onboarding_projects.staging_provider IS 'Interim, informational free-text name of the external staging provider for this project. Not a user, never routes Tasks or notifications. To migrate later to a canonical Vendor reference; keep the text.';
