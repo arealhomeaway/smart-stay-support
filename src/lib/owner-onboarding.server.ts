@@ -65,6 +65,8 @@ export type OwnerOnboardingHome = {
   name: string;
   /** Target handoff date (YYYY-MM-DD) when one has been set. */
   targetGoLive: string | null;
+  /** Owner-friendly current status from the live Onboarding Project. */
+  statusLabel: string;
   tracks: OwnerTrackProgress[];
   done: number;
   total: number;
@@ -153,6 +155,7 @@ async function onboardingProgress(admin: Client, propertyIds: string[]) {
       propertyId: id,
       name: property?.nickname || property?.name || "Your home",
       targetGoLive: (project?.target_handoff_on as string | null) ?? null,
+      statusLabel: "Onboarding",
       ...progress,
     });
   }
@@ -258,13 +261,30 @@ export async function loadOwnerOnboarding(
   const propertyIds = await programProperties(admin, programId, userId);
   const homes = await onboardingProgress(admin, propertyIds);
 
-  const approvals = (await loadOwnerApprovals(supabase, userId)).filter(
+  const allApprovals = (await loadOwnerApprovals(supabase, userId)).filter(
     (a) => a.entity_type === "onboarding_task",
   );
-  const taskByApproval = await taskIdsFor(
+  const allTaskByApproval = await taskIdsFor(
     admin,
-    approvals.map((a) => a.id),
+    allApprovals.map((a) => a.id),
   );
+  // Draft privacy: a Task whose ARHA Owner Collaboration Opportunity is still
+  // a Draft is internal to ARHA. No other path may surface it to the owner.
+  const draftTasks = new Set<string>();
+  const candidateTasks = [...new Set(allTaskByApproval.values())];
+  if (candidateTasks.length) {
+    const drafts = await admin
+      .from("work_items")
+      .select("source_task_id")
+      .eq("kind", "opportunity")
+      .eq("source", "arha")
+      .eq("status", "draft")
+      .in("source_task_id", candidateTasks);
+    if (drafts.error) throw drafts.error;
+    for (const d of drafts.data ?? []) if (d.source_task_id) draftTasks.add(d.source_task_id as string);
+  }
+  const approvals = allApprovals.filter((a) => !draftTasks.has(allTaskByApproval.get(a.id) ?? ""));
+  const taskByApproval = allTaskByApproval;
   const taskIds = [...new Set(taskByApproval.values())];
   const files = await sharedFiles(admin, taskIds, false);
   const participation = await participationByTask(admin, programId, taskIds);
