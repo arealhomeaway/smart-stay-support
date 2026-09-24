@@ -238,7 +238,6 @@ export function DirectorHub({
           ))}
         </div>
       </details>
-
     </div>
   );
 }

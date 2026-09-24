@@ -55,9 +55,7 @@ export function OwnerNotificationBell() {
         <Button
           size="icon"
           variant="ghost"
-          aria-label={
-            unread.length ? `${unread.length} unread updates` : "Updates — nothing new"
-          }
+          aria-label={unread.length ? `${unread.length} unread updates` : "Updates — nothing new"}
           className="relative min-h-11 min-w-11 md:min-h-9 md:min-w-9"
         >
           <Bell className="size-4" aria-hidden="true" />

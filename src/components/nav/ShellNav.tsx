@@ -110,7 +110,10 @@ export function ShellNav({
               Back to {parent.label}
             </Link>
           )}
-          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center text-xs text-muted-foreground">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex flex-wrap items-center text-xs text-muted-foreground"
+          >
             {trail.map((c, i) => {
               const last = i === trail.length - 1;
               return (

@@ -118,9 +118,27 @@ const frontlineGroup: NavGroup = {
     // Coverage overlaps all day and the next available person still has to
     // handle the work, so the shared queue is open to every coordinator.
     { to: "/team-queue", label: "Team Queue", icon: Users, tour: "team-queue" },
-    { to: "/map", label: "Work Map", icon: MapPinned, tour: "map", capability: "work_orders_internal" },
-    { to: "/availability-finder", label: "Availability Finder", icon: MapPinned, tour: "availability-finder", capability: "work_orders_internal" },
-    { to: "/inquiry-sources", label: "Inquiry Sources", icon: MapPinned, tour: "inquiry-sources", capability: "work_orders_internal" },
+    {
+      to: "/map",
+      label: "Work Map",
+      icon: MapPinned,
+      tour: "map",
+      capability: "work_orders_internal",
+    },
+    {
+      to: "/availability-finder",
+      label: "Availability Finder",
+      icon: MapPinned,
+      tour: "availability-finder",
+      capability: "work_orders_internal",
+    },
+    {
+      to: "/inquiry-sources",
+      label: "Inquiry Sources",
+      icon: MapPinned,
+      tour: "inquiry-sources",
+      capability: "work_orders_internal",
+    },
     {
       to: "/work-orders",
       label: "Work orders",
@@ -366,14 +384,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   // A record opened from another workspace (e.g. a ticket reached from Work
   // orders) still lives under /tickets/*, but the sidebar should highlight
   // where the employee is actually working, not the URL's own segment.
-  const recordSearch = useSearch({ strict: false }) as { from?: string; view?: string } & Record<string, unknown>;
+  const recordSearch = useSearch({ strict: false }) as { from?: string; view?: string } & Record<
+    string,
+    unknown
+  >;
   const originSnapshot = readOrigin(recordSearch?.from);
   const activePathname = originSnapshot
     ? (originSnapshot.href.split("?")[0] ?? originSnapshot.href)
-    : pathname === "/team-queue" && recordSearch.view === "map" ? "/map" : pathname;
-  const mapSearch = pathname === "/team-queue"
-    ? { ...parseOperationsSearch(recordSearch), view: "map" }
-    : { view: "map" };
+    : pathname === "/team-queue" && recordSearch.view === "map"
+      ? "/map"
+      : pathname;
+  const mapSearch =
+    pathname === "/team-queue"
+      ? { ...parseOperationsSearch(recordSearch), view: "map" }
+      : { view: "map" };
 
   // The global "Log a ticket" action: capability-gated, hidden where the page
   // already owns that action, demoted where the page has its own primary, and
@@ -402,7 +426,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Reporting a property issue is an Operations workflow. Problems with
   // Resolve itself go through the global ? Help & Feedback control, so this
   // never appears outside Operations surfaces (Onboarding, Active Owner admin).
-  const operationsSurface = !departmentFor(pathname) && canOpen(pathname) && canOpen("/tickets/new");
+  const operationsSurface =
+    !departmentFor(pathname) && canOpen(pathname) && canOpen("/tickets/new");
   const showLogTicket =
     !vendorMode &&
     !ownerMode &&
@@ -443,20 +468,20 @@ export function AppShell({ children }: { children: ReactNode }) {
       ? ownerGroups
       : onboardingOnly
         ? [onboardingGroup]
-      : navGroups
-          .map((g) => ({
-            ...g,
-            items: g.items.filter(
-              (i) =>
-                canOpen(i.to) &&
-                (!i.capability ||
-                  can(i.capability) ||
-                  (i.capability === "leads_work" && seat.isGuestExperience)) &&
-                (!i.supervisorOnly || isSupervisor) &&
-                (!i.flag || flagEnabled(i.flag)),
-            ),
-          }))
-          .filter((g) => g.items.length > 0);
+        : navGroups
+            .map((g) => ({
+              ...g,
+              items: g.items.filter(
+                (i) =>
+                  canOpen(i.to) &&
+                  (!i.capability ||
+                    can(i.capability) ||
+                    (i.capability === "leads_work" && seat.isGuestExperience)) &&
+                  (!i.supervisorOnly || isSupervisor) &&
+                  (!i.flag || flagEnabled(i.flag)),
+              ),
+            }))
+            .filter((g) => g.items.length > 0);
 
   const workspace = vendorMode
     ? "Vendor Portal"
@@ -547,7 +572,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 ? { ...ticketContext }
                                 : item.to === "/map"
                                   ? mapSearch
-                                : item.search) as never
+                                  : item.search) as never
                             }
                             data-tour={item.tour}
                             aria-current={active ? "page" : undefined}

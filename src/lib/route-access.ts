@@ -7,7 +7,12 @@
  *
  * Pure functions only (no React, no data) so the rules are testable.
  */
-import { capabilitiesFor, type AccessSeats, type AppRole, type Capability } from "@/lib/permissions";
+import {
+  capabilitiesFor,
+  type AccessSeats,
+  type AppRole,
+  type Capability,
+} from "@/lib/permissions";
 import { portalsFor } from "@/lib/portals";
 
 export type AccessContext = { roles: AppRole[]; seats?: AccessSeats };
