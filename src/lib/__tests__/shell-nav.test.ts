@@ -13,7 +13,7 @@ describe("shared shell navigation", () => {
   });
   it("page label extends the trail", () => {
     const t = buildTrail({ pathname: "/onboarding/templates", search: {}, pageLabel: "ARHA Onboarding V2" });
-    expect(t.map((c) => c.label)).toEqual(["Onboarding", "Workflow templates", "ARHA Onboarding V2"]);
+    expect(t.map((c) => c.label)).toEqual(["Onboarding", "Workflow Templates", "ARHA Onboarding V2"]);
   });
   it("Active Owner pages share one department menu", () => {
     expect(departmentFor("/homeowners")?.key).toBe("active-owner");

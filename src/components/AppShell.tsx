@@ -366,7 +366,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // A record opened from another workspace (e.g. a ticket reached from Work
   // orders) still lives under /tickets/*, but the sidebar should highlight
   // where the employee is actually working, not the URL's own segment.
-  const recordSearch = useSearch({ strict: false }) as { from?: string; view?: string };
+  const recordSearch = useSearch({ strict: false }) as { from?: string; view?: string } & Record<string, unknown>;
   const originSnapshot = readOrigin(recordSearch?.from);
   const activePathname = originSnapshot
     ? (originSnapshot.href.split("?")[0] ?? originSnapshot.href)
@@ -525,7 +525,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {group.items.map((item) => {
                     const active = item.search
                       ? activePathname === item.to &&
-                        Object.entries(item.search).every(([k, v]) => recordSearch[k as "view"] === v)
+                        Object.entries(item.search).every(([k, v]) => recordSearch[k] === v)
                       : onboardingOnly && item.to === "/onboarding"
                         ? activePathname === item.to && !("lens" in recordSearch)
                         : activePathname === item.to ||

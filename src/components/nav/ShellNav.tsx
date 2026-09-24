@@ -47,7 +47,14 @@ function usePropertyName(propertyId: string | undefined) {
   return data ?? null;
 }
 
-export function ShellNav({ pageLabel }: { pageLabel: string | null }) {
+export function ShellNav({
+  pageLabel,
+  hideDepartmentMenu = false,
+}: {
+  pageLabel: string | null;
+  /** The sidebar already lists this department's destinations. */
+  hideDepartmentMenu?: boolean;
+}) {
   const location = useRouterState({ select: (s) => s.location });
   const params = useParams({ strict: false }) as { propertyId?: string };
   const { can } = useRole();
@@ -56,9 +63,11 @@ export function ShellNav({ pageLabel }: { pageLabel: string | null }) {
   const trail = buildTrail({ pathname: location.pathname, search, propertyName, pageLabel });
   const parent = parentOf(trail);
   const dept = departmentFor(location.pathname);
-  const links = dept?.links.filter((l) => !l.capability || can(l.capability)) ?? [];
+  const links = hideDepartmentMenu
+    ? []
+    : (dept?.links.filter((l) => !l.capability || can(l.capability)) ?? []);
 
-  if (!dept && trail.length < 2) return null;
+  if ((!dept || links.length === 0) && trail.length < 2) return null;
 
   return (
     <div className="mb-5 space-y-3">
