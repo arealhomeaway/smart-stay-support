@@ -407,6 +407,15 @@ async function withResources(sb: import("@supabase/supabase-js").SupabaseClient,
   fail(res.error);
   type R = { id: string; work_item_id: string; kind: string; document_id: string | null; label: string | null; url: string | null; documents: { title: string | null; original_filename: string | null } | null };
   const list = (res.data ?? []) as unknown as R[];
+  // Owners can read a resource row (RLS) but not always the document row it
+  // points at. Resolve only the filename for resources already visible.
+  const missing = list.filter((r) => r.kind === "file" && r.document_id && !r.label && !r.documents).map((r) => r.document_id!);
+  const names = new Map<string, string>();
+  if (missing.length) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const d = await supabaseAdmin.from("documents").select("id, title, original_filename").in("id", missing);
+    for (const x of d.data ?? []) names.set(x.id, x.title || x.original_filename || "");
+  }
   return rows.map((o) => ({
     ...o,
     owner_content: (o.owner_content ?? null) as OpportunityContent | null,
@@ -418,7 +427,10 @@ async function withResources(sb: import("@supabase/supabase-js").SupabaseClient,
         id: r.id,
         kind: r.kind as "file" | "link",
         documentId: r.document_id,
-        label: r.kind === "file" ? (r.documents?.title ?? r.documents?.original_filename ?? "File") : (r.label ?? ""),
+        label:
+          r.kind === "file"
+            ? r.label || r.documents?.title || r.documents?.original_filename || names.get(r.document_id ?? "") || "File"
+            : (r.label ?? ""),
         url: r.url,
       })),
   }));

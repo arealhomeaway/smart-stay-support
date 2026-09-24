@@ -100,7 +100,9 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
   return useMemo(() => {
     const name = (id: string | null) => homes.find((h) => h.propertyId === id)?.name ?? "Your home";
     const photo = (id: string | null) => homes.find((h) => h.propertyId === id)?.photoUrl ?? null;
+    // Explicit provenance only: ARHA or Optional Library. Unknown/legacy is neither.
     const rows: Live[] = (live.data ?? [])
+      .filter((o) => o.source === "arha" || o.source === "optional_library")
       .filter((o) => !selectedHomeId || o.property_id === selectedHomeId)
       .map((o) => {
         const c = (o.owner_content ?? {}) as Content;

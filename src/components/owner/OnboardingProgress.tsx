@@ -16,7 +16,7 @@ import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingHome } from "@/lib/owner-onboarding.server";
 
 export const PARTICIPATION_PROCESS_NOTE =
-  "Your participation can help move certain parts of your property's setup forward. ARHA will continue managing the onboarding process and applying the same property-readiness standards regardless of which Opportunities you choose to participate in.";
+  "Your participation can help move certain parts of your property's setup forward. ARHA will continue managing the property according to its approved scope, timeline, design approach, and property-readiness standards.";
 
 function HomeRow({ home, phase }: { home: OwnerOnboardingHome; phase: string | null }) {
   const [open, setOpen] = useState(false);
@@ -31,8 +31,8 @@ function HomeRow({ home, phase }: { home: OwnerOnboardingHome; phase: string | n
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">{home.name}</span>
           <span className="block text-xs text-muted-foreground">
-            {phase ?? "In setup"}
-            {home.targetGoLive ? ` · Target launch ${usCalendarDate(home.targetGoLive)}` : ""}
+            {home.statusLabel || phase || "Onboarding"}
+            {home.targetGoLive ? ` · Target launch ${usCalendarDate(home.targetGoLive)}` : " · Target date pending"}
           </span>
         </span>
         <span className="flex w-40 items-center gap-2">
