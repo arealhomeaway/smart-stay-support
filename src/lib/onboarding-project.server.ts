@@ -30,7 +30,7 @@ export type ProjectRow = Database["public"]["Tables"]["onboarding_projects"]["Ro
 async function assertOnboardingStaff(supabase: Client, userId: string) {
   const [staff, supervisor] = await Promise.all([
     supabase.rpc("is_onboarding_staff", { _user_id: userId }),
-    supabase.rpc("is_supervisor", { _user_id: userId }),
+    supabase.rpc("is_onboarding_leader", { _user_id: userId }),
   ]);
   if (staff.error || supervisor.error) throw new Error("Could not verify onboarding access.");
   if (!staff.data && !supervisor.data) {

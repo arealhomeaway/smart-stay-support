@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 /** Renders children only for admins and managers. */
 export function SupervisorOnly({ children }: { children: ReactNode }) {
-  const { isSupervisor, isLoading } = useRole();
+  const { isSupervisor, isLoading, landing } = useRole();
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
 
@@ -21,7 +21,7 @@ export function SupervisorOnly({ children }: { children: ReactNode }) {
           update your access.
         </p>
         <Button asChild variant="outline">
-          <Link to="/dashboard">Back to dashboard</Link>
+          <Link to={landing as never}>Back to my work</Link>
         </Button>
       </div>
     );

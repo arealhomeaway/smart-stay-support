@@ -22,7 +22,7 @@ export function CapabilityGate({
   title?: string;
   children: ReactNode;
 }) {
-  const { can, isLoading } = useRole();
+  const { can, isLoading, landing } = useRole();
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
 
@@ -36,7 +36,7 @@ export function CapabilityGate({
           access.
         </p>
         <Button asChild variant="outline">
-          <Link to="/dashboard">Back to dashboard</Link>
+          <Link to={landing as never}>Back to my work</Link>
         </Button>
       </div>
     );

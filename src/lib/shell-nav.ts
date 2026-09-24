@@ -39,9 +39,9 @@ export const DEPARTMENTS: Department[] = [
     links: [
       { label: "Dashboard", to: "/onboarding", exact: true },
       { label: "Properties", to: "/onboarding", search: { lens: "all" }, exact: true },
-      { label: "My work", to: "/onboarding/my-work" },
+      { label: "My Work", to: "/onboarding/my-work" },
       { label: "Team", to: "/onboarding/team" },
-      { label: "Workflow templates", to: "/onboarding/templates", capability: "onboarding_templates" },
+      { label: "Workflow Templates", to: "/onboarding/templates", capability: "onboarding_templates" },
       { label: "Utilities & Accounts", to: "/onboarding/utilities" },
     ],
   },
@@ -69,9 +69,9 @@ export function departmentFor(pathname: string): Department | null {
 
 /** Last path segment → page label for department sub-pages. */
 const SUBPAGE_LABELS: Record<string, string> = {
-  "/onboarding/my-work": "My work",
+  "/onboarding/my-work": "My Work",
   "/onboarding/team": "Team",
-  "/onboarding/templates": "Workflow templates",
+  "/onboarding/templates": "Workflow Templates",
   "/onboarding/utilities": "Utilities & Accounts",
   "/onboarding/transitions": "Transitions",
   "/owner-oversight": "Program oversight",

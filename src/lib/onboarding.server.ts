@@ -42,7 +42,7 @@ const PROPERTY_FIELDS =
 async function assertCap(
   supabase: Client,
   userId: string,
-  fn: "is_supervisor" | "is_onboarding_staff",
+  fn: "is_onboarding_leader" | "is_onboarding_staff",
 ) {
   const { data, error } = await supabase.rpc(fn, { _user_id: userId });
   if (error) throw new Error("Could not verify your access level.");
@@ -204,7 +204,8 @@ export async function loadOnboardingWorkspace(
         ? t
         : { ...t, assigned_to: roleHolder(t.property_id, t.assigned_seat) },
     );
-  const supervisor = await supabase.rpc("is_supervisor", { _user_id: userId });
+  // Department-wide view: leadership or the Onboarding Director seat.
+  const supervisor = await supabase.rpc("is_onboarding_leader", { _user_id: userId });
   if (supervisor.error) throw new Error("Could not verify your workspace view.");
   const reviewCapabilities = await readOnboardingReviewCapabilities(supabase);
   const workspaceMode = onboardingWorkspaceMode(
@@ -417,7 +418,7 @@ export async function saveOnboardingTask(
   await assertCap(supabase, userId, "is_onboarding_staff");
   // Adding work to a plan is a director decision; project managers work the
   // plan they are given and may still edit existing steps.
-  if (!input.id) await assertCap(supabase, userId, "is_supervisor");
+  if (!input.id) await assertCap(supabase, userId, "is_onboarding_leader");
   if (!input.id && input.status === "complete") {
     throw new Error("Create the step first, then complete it after its readiness checks.");
   }
@@ -1286,7 +1287,7 @@ export async function recordTaskException(
   userId: string,
   input: { taskId: string; reason: string },
 ) {
-  await assertCap(supabase, userId, "is_supervisor");
+  await assertCap(supabase, userId, "is_onboarding_leader");
   await assertTaskRequirementEditable(supabase, input.taskId);
   const now = new Date().toISOString();
   const { error } = await supabase

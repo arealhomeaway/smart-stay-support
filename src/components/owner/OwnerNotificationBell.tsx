@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ownerHome, markOwnerAlertsRead } from "@/lib/owner-portal.functions";
-import { usDateTime } from "@/lib/dates";
+import { NotificationList } from "@/components/notifications/NotificationList";
 
 type Alert = {
   id: string;
@@ -70,7 +70,7 @@ export function OwnerNotificationBell() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-3 py-2">
-          <p className="text-sm font-semibold">Updates</p>
+          <p className="text-sm font-semibold">Notifications</p>
           {unread.length > 0 && (
             <Button
               size="sm"
@@ -82,47 +82,20 @@ export function OwnerNotificationBell() {
           )}
         </div>
         <ScrollArea className="max-h-80">
-          {alerts.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              Nothing new right now.
-            </p>
-          ) : (
-            <ul className="divide-y">
-              {alerts.slice(0, 20).map((alert) => (
-                <li key={alert.id}>
-                  <button
-                    type="button"
-                    className={`w-full px-3 py-2 text-left transition-colors hover:bg-accent/50 ${
-                      alert.read_at ? "" : "bg-accent/30"
-                    }`}
-                    onClick={() => {
-                      if (!alert.read_at) mark.mutate([alert.id]);
-                      setOpen(false);
-                      if (alert.action_path?.startsWith("/owner")) {
-                        router.history.push(alert.action_path);
-                        return;
-                      }
-                      void router.navigate({
-                        to: "/owner",
-                        search: {},
-                        hash: "owner-decisions",
-                      });
-                    }}
-                  >
-                    <p className="text-sm font-medium">{alert.title}</p>
-                    {alert.body ? (
-                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                        {alert.body}
-                      </p>
-                    ) : null}
-                    <p className="numeric mt-1 text-[0.7rem] text-muted-foreground">
-                      {usDateTime(alert.created_at)}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <NotificationList
+            items={alerts.slice(0, 20)}
+            onOpen={(item) => {
+              const alert = alerts.find((a) => a.id === item.id);
+              if (!item.read_at) mark.mutate([item.id]);
+              setOpen(false);
+              // Owners only ever land inside their own portal.
+              if (alert?.action_path?.startsWith("/owner?")) {
+                router.history.push(alert.action_path);
+                return;
+              }
+              void router.navigate({ to: "/owner", search: {}, hash: "owner-decisions" });
+            }}
+          />
         </ScrollArea>
       </PopoverContent>
     </Popover>

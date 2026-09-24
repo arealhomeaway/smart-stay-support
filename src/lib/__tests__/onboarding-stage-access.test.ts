@@ -84,7 +84,7 @@ function fixture(
                   live_confirmation: Boolean(options.admin),
                 },
               ]
-          : name === "is_supervisor"
+          : (name === "is_supervisor" || name === "is_onboarding_leader")
             ? Boolean(options.supervisor)
             : options.staff !== false,
       error: options.capabilityError === name ? new Error("Capability unavailable") : null,

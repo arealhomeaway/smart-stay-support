@@ -25,6 +25,7 @@ import {
   HeartHandshake,
   Wrench,
   ReceiptText,
+  Workflow,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,9 +74,20 @@ import { useSeat } from "@/hooks/useSeat";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { type Capability } from "@/lib/permissions";
 import { parseOperationsSearch } from "@/lib/operations-view-state";
+import { DEPARTMENTS, departmentFor } from "@/lib/shell-nav";
+
+const ONBOARDING_ICONS: Record<string, typeof Home> = {
+  Dashboard: Home,
+  Properties: Building2,
+  "My Work": ClipboardList,
+  Team: Users,
+  "Workflow Templates": Workflow,
+  "Utilities & Accounts": PlugZap,
+};
 
 type NavItem = {
   to: string;
+  search?: Record<string, string>;
   label: string;
   icon: typeof Home;
   tour: string;
@@ -340,6 +352,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     readOnly,
     identityLabel,
     isLoading: rolesLoading,
+    canOpen,
+    onboardingOnly,
+    landing,
   } = useRole();
   // Guest Experience & Reservations seats work leads; Property Operations
   // seats do not. Seat, not permission role, decides this.
@@ -351,7 +366,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // A record opened from another workspace (e.g. a ticket reached from Work
   // orders) still lives under /tickets/*, but the sidebar should highlight
   // where the employee is actually working, not the URL's own segment.
-  const recordSearch = useSearch({ strict: false }) as { from?: string; view?: string };
+  const recordSearch = useSearch({ strict: false }) as { from?: string; view?: string } & Record<string, unknown>;
   const originSnapshot = readOrigin(recordSearch?.from);
   const activePathname = originSnapshot
     ? (originSnapshot.href.split("?")[0] ?? originSnapshot.href)
@@ -384,10 +399,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           origin: originHere,
         }
       : { origin: originHere };
+  // Reporting a property issue is an Operations workflow. Problems with
+  // Resolve itself go through the global ? Help & Feedback control, so this
+  // never appears outside Operations surfaces (Onboarding, Active Owner admin).
+  const operationsSurface = !departmentFor(pathname) && canOpen(pathname) && canOpen("/tickets/new");
   const showLogTicket =
     !vendorMode &&
     !ownerMode &&
     !readOnly &&
+    operationsSurface &&
     can("ticket_create") &&
     !pathname.startsWith("/tickets");
   const quietLogTicket = [
@@ -403,15 +423,32 @@ export function AppShell({ children }: { children: ReactNode }) {
     "/playbooks",
   ].some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
+  // Navigation is generated from route authorization: a link only appears when
+  // the same rule that guards the page lets this person open it.
+  const onboardingGroup: NavGroup = {
+    label: "Onboarding",
+    items: (DEPARTMENTS.find((d) => d.key === "onboarding")?.links ?? [])
+      .filter((l) => !l.capability || can(l.capability))
+      .map((l) => ({
+        to: l.to,
+        ...(l.search ? { search: l.search } : {}),
+        label: l.label,
+        icon: ONBOARDING_ICONS[l.label] ?? PackageCheck,
+        tour: `onboarding-${l.label}`,
+      })),
+  };
   const groups: NavGroup[] = vendorMode
     ? vendorGroups
     : ownerMode
       ? ownerGroups
+      : onboardingOnly
+        ? [onboardingGroup]
       : navGroups
           .map((g) => ({
             ...g,
             items: g.items.filter(
               (i) =>
+                canOpen(i.to) &&
                 (!i.capability ||
                   can(i.capability) ||
                   (i.capability === "leads_work" && seat.isGuestExperience)) &&
@@ -425,7 +462,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? "Vendor Portal"
     : ownerMode
       ? "Property Owner Portal"
-      : pathname === "/onboarding" || pathname.startsWith("/onboarding/")
+      : onboardingOnly || pathname === "/onboarding" || pathname.startsWith("/onboarding/")
         ? "Onboarding"
         : can("command_center")
           ? "Executive Administration"
@@ -455,7 +492,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.navigate({ to: "/auth" });
   }
 
-  const home = vendorMode ? "/vendor" : ownerMode ? "/owner" : "/dashboard";
+  const home = vendorMode ? "/vendor" : ownerMode ? "/owner" : landing;
 
   // Orientation surfaces: where people arrive, get their bearings and choose.
   const orientationSurface = ["/dashboard", "/welcome", "/owner", "/vendor", "/hub"].some(
@@ -486,10 +523,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => {
-                    const active =
-                      activePathname === item.to || activePathname.startsWith(`${item.to}/`);
+                    const active = item.search
+                      ? activePathname === item.to &&
+                        Object.entries(item.search).every(([k, v]) => recordSearch[k] === v)
+                      : onboardingOnly && item.to === "/onboarding"
+                        ? activePathname === item.to && !("lens" in recordSearch)
+                        : activePathname === item.to ||
+                          (!(onboardingOnly && item.to === "/onboarding") &&
+                            activePathname.startsWith(`${item.to}/`));
                     return (
-                      <SidebarMenuItem key={item.to}>
+                      <SidebarMenuItem key={`${item.to}-${item.label}`}>
                         <SidebarMenuButton
                           asChild
                           isActive={active}
@@ -504,7 +547,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 ? { ...ticketContext }
                                 : item.to === "/map"
                                   ? mapSearch
-                                : undefined) as never
+                                : item.search) as never
                             }
                             data-tour={item.tour}
                             aria-current={active ? "page" : undefined}
@@ -559,12 +602,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <ShieldAlert className="size-4" aria-hidden="true" />
                   </IconAction>
                 )}
-                <IconAction
-                  to={vendorMode || ownerMode ? home : "/welcome"}
-                  label="Help and guidance"
-                >
-                  <CircleHelp className="size-4" aria-hidden="true" />
-                </IconAction>
                 {ownerMode ? (
                   <OwnerNotificationBell />
                 ) : vendorMode ? null : (
@@ -608,7 +645,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ShellNavProvider>
               {(pageLabel) => (
                 <>
-                  {!ownerMode && !vendorMode && <ShellNav pageLabel={pageLabel} />}
+                  {!ownerMode && !vendorMode && (
+                    <ShellNav pageLabel={pageLabel} hideDepartmentMenu={onboardingOnly} />
+                  )}
                   {children}
                 </>
               )}

@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { entryPathFor } from "@/lib/portals";
+import { canOpenPath, homePathFor, isOnboardingOnly } from "@/lib/route-access";
 import {
   can,
   capabilitiesFor,
   primaryRole,
+  type AccessSeats,
   type AppRole,
   type Capability,
 } from "@/lib/permissions";
@@ -26,13 +27,20 @@ export function useMyRoles() {
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) return { userId: null as string | null, roles: [] as AppRole[] };
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", auth.user.id);
+      if (!auth.user)
+        return { userId: null as string | null, roles: [] as AppRole[], onboardingDirector: false };
+      const [{ data, error }, director] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", auth.user.id),
+        supabase.rpc("is_onboarding_director", { _user_id: auth.user.id }),
+      ]);
       if (error) throw error;
-      return { userId: auth.user.id, roles: (data ?? []).map((r) => r.role as AppRole) };
+      return {
+        userId: auth.user.id,
+        roles: (data ?? []).map((r) => r.role as AppRole),
+        // The Onboarding Director seat carries department-wide Onboarding
+        // authority on its own — never via the broad leadership role.
+        onboardingDirector: director.data === true,
+      };
     },
   });
 }
@@ -58,6 +66,9 @@ export function useRole() {
   // previewer is meant to act on.
   const demoMode = canOperateDemo(actualRoles) && demoFlag;
   const roles: AppRole[] = previewing && viewAs ? [viewAs] : actualRoles;
+  // A role preview shows the previewed role only, never the viewer's own seat.
+  const seats: AccessSeats = { onboardingDirector: !previewing && Boolean(query.data?.onboardingDirector) };
+  const access = { roles, seats };
 
   const isVendor = roles.includes("vendor") && !roles.some((r) => r !== "vendor");
   // Homeowners are program participants, never internal staff.
@@ -95,13 +106,18 @@ export function useRole() {
       previewRoleLabel: previewing && viewAs ? ROLE_LABELS[viewAs] : null,
       actualLabel: ROLE_LABELS[primaryRole(actualRoles)],
     }),
-    capabilities: capabilitiesFor(roles),
-    can: (capability: Capability) => can(roles, capability),
-    landing: entryPathFor(roles),
+    capabilities: capabilitiesFor(roles, seats),
+    can: (capability: Capability) => can(roles, capability, seats),
+    /** Route authorization shared with the authenticated layout's guard. */
+    canOpen: (pathname: string) => canOpenPath(pathname, access),
+    access,
+    isOnboardingDirector: seats.onboardingDirector === true,
+    onboardingOnly: isOnboardingOnly(access),
+    landing: homePathFor(access),
     isPlatformOwner: roles.includes("admin"),
     isAdmin: roles.includes("admin"),
     isSupervisor: roles.includes("admin") || roles.includes("manager"),
-    isOnboardingStaff: can(roles, "onboarding_workspace"),
+    isOnboardingStaff: can(roles, "onboarding_workspace", seats),
     isVendor,
     isOwner,
     isStaff: !isVendor && !isOwner,

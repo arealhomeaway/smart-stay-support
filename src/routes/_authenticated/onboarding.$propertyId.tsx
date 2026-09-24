@@ -440,14 +440,6 @@ function PropertyWorkspace() {
         <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
         <Chip className={stateChip("info")}>{stageLabel(current.onboarding_stage)}</Chip>
         {activeOwner && <Chip className={stateChip("waiting")}>Active Owner</Chip>}
-        <Button asChild size="sm" variant="outline" className="ml-auto">
-          <Link
-            to="/tickets/new"
-            search={{ property: current.id, project: current.id, from: "onboarding" }}
-          >
-            Report an issue
-          </Link>
-        </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">

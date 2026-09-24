@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRole } from "@/hooks/useRole";
 import { AlertTriangle, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,6 +48,7 @@ function OnboardingTeamPage() {
   const directorFn = useServerFn(setOnboardingDirector);
   const pmFn = useServerFn(setProjectRoleAssignee);
   const qc = useQueryClient();
+  const { canOpen } = useRole();
   const { data, isLoading } = useQuery({ queryKey: KEY, queryFn: () => load() });
 
   const done = (msg = "Onboarding team updated.") => {
@@ -157,7 +159,12 @@ function OnboardingTeamPage() {
 
       <p className="text-xs text-muted-foreground">
         Need to invite someone new to Resolve? An administrator can do that from{" "}
-        <Link to="/team" className="underline">Executive Administration</Link>.
+        {canOpen("/team") ? (
+          <Link to="/team" className="underline">Executive Administration</Link>
+        ) : (
+          "Executive Administration"
+        )}
+        .
       </p>
     </div>
   );

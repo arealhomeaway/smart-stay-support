@@ -32,7 +32,7 @@ function fixture(canAssign = false, directorId: string | null = director) {
       data:
         name === "read_onboarding_assignment_authority"
           ? [{ can_assign: canAssign, director_id: directorId }]
-          : name === "is_supervisor"
+          : (name === "is_supervisor" || name === "is_onboarding_leader")
             ? false
             : input?._user_id !== owner,
       error: null,

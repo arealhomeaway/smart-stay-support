@@ -302,6 +302,13 @@
       "when": 1790209851126,
       "tag": "0042_optional_opportunity_library",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790212653153,
+      "tag": "0043_pass4_onboarding_director_authority",
+      "breakpoints": true
     }
   ]
 }

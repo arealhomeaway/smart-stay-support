@@ -35,7 +35,7 @@ import { useFeatureFlags } from "@/lib/feature-flags";
 import { summarizeProject, type ProjectProperty } from "@/lib/onboarding-lifecycle";
 import { type WorkflowTask } from "@/lib/onboarding-workflow";
 import { projectScope, splitByScope } from "@/lib/onboarding-scope";
-import { applyTestDataFilter, countTestRecords } from "@/lib/test-data";
+import { applyTestDataFilter } from "@/lib/test-data";
 import {
   getOnboardingWorkspace,
   resolveExternalRecordFn,
@@ -86,7 +86,7 @@ type HubSearch = {
 function Hub() {
   const load = useServerFn(getOnboardingWorkspace);
   const qc = useQueryClient();
-  const { can, readOnly, userId } = useRole();
+  const { can, readOnly, userId, isAdmin } = useRole();
   const { enabled } = useFeatureFlags();
   const { token: originToken } = useWorkspaceOrigin("Onboarding hub");
   const navigate = Route.useNavigate();
@@ -187,17 +187,6 @@ function Hub() {
   if (isLoading || !data) return <LoadingPage />;
   if (data.workspaceMode === "assigned")
     return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
-
-  // Homes in the pipeline where nobody has started an Onboarding Project yet.
-  // A property existing is not the same as onboarding being under way.
-  const notStartedAll = data.properties.filter(
-    (p) =>
-      data.pipeline.includes(p.id) &&
-      !(data.projects ?? []).some((x) => x.property_id === p.id && x.status !== "cancelled"),
-  );
-  // Same shared QA/demo rule the rest of Resolve uses.
-  const notStarted = applyTestDataFilter(notStartedAll, false, (p) => p);
-  const notStartedTestCount = countTestRecords(notStartedAll, (p) => p);
 
   const pendingReviews = data.handoffs.filter(
     (h) =>
@@ -302,6 +291,10 @@ function Hub() {
       )}
 
       <div className="space-y-4">
+        {/* Source records are an administrator reconciliation tool, not daily
+            Onboarding work — only a Platform Owner sees them, and only on the
+            full Properties list. */}
+        {lens === "all" && isAdmin ? (
         <div className="flex justify-end">
           <Sheet>
             <SheetTrigger asChild>
@@ -326,32 +319,7 @@ function Hub() {
             </SheetContent>
           </Sheet>
         </div>
-        {notStarted.length > 0 && (
-          <section className="surface p-4">
-            <p className="eyebrow">Onboarding not started ({notStarted.length})</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              These homes are in the pipeline but no one has set the scope yet. Open the home to
-              start onboarding.
-              {notStartedTestCount > 0
-                ? ` ${notStartedTestCount} QA/test home${notStartedTestCount === 1 ? " is" : "s are"} hidden — find them under Properties.`
-                : ""}
-            </p>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {notStarted.map((p) => (
-                <li key={p.id}>
-                  <Link
-                    to="/onboarding/$propertyId"
-                    params={{ propertyId: p.id }}
-                    search={{ from: originToken } as never}
-                    className="inline-flex rounded-md border border-border px-2.5 py-1 text-sm hover:bg-muted"
-                  >
-                    {p.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        ) : null}
         {lens !== "all" ? (
           <DashboardSections
             projects={activeProjects}

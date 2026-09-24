@@ -8,6 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDemo } from "@/components/DemoProvider";
 import { allowsInApp, readPreferences } from "@/lib/notification-preferences";
+import { NotificationList } from "@/components/notifications/NotificationList";
+import { useRole } from "@/hooks/useRole";
 
 type Row = {
   id: string;
@@ -20,14 +22,6 @@ type Row = {
   created_at: string;
 };
 
-function timeAgo(iso: string) {
-  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
-}
 
 /**
  * The one place Resolve tells a teammate that something is waiting on them.
@@ -41,6 +35,7 @@ export function NotificationBell({
   const router = useRouter();
 
   const { demoMode } = useDemo();
+  const { canOpen } = useRole();
 
   const { data } = useQuery({
     queryKey: ["staff-notifications", demoMode],
@@ -130,7 +125,7 @@ export function NotificationBell({
         className="w-[22rem] p-0"
       >
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <p className="text-sm font-semibold">Waiting on you</p>
+          <p className="text-sm font-semibold">Notifications</p>
           {unread.length > 0 && (
             <Button
               size="sm"
@@ -143,52 +138,19 @@ export function NotificationBell({
           )}
         </div>
         <ScrollArea className="max-h-96">
-          {rows.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-muted-foreground">Nothing needs you right now.</p>
-          ) : (
-            <ul className="divide-y">
-              {rows.map((row) => {
-                const content = (
-                  <div className="flex gap-3">
-                    <span
-                      aria-hidden="true"
-                      className={`mt-1.5 size-2 shrink-0 rounded-full ${
-                        row.read_at
-                          ? "bg-transparent"
-                          : row.priority === "urgent"
-                            ? "bg-destructive"
-                            : "bg-primary"
-                      }`}
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{row.title}</p>
-                      <p className="line-clamp-2 text-xs text-muted-foreground">{row.body}</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {timeAgo(row.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                );
-                return (
-                  <li key={row.id} className="px-4 py-3 hover:bg-muted/50">
-                    <button
-                      type="button"
-                      className="w-full text-left"
-                      onClick={() => {
-                        setOpen(false);
-                        void markRead([row.id]);
-                        if (row.link_path) {
-                          void router.navigate({ to: row.link_path as never });
-                        }
-                      }}
-                    >
-                      {content}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+          <NotificationList
+            items={rows.map((r) => ({ ...r, urgent: r.priority === "urgent" }))}
+            onOpen={(row) => {
+              setOpen(false);
+              if (!row.read_at) void markRead([row.id]);
+              const link = rows.find((r) => r.id === row.id)?.link_path;
+              // Only open internal destinations this person may still open;
+              // the route guard re-checks on arrival as well.
+              if (link && link.startsWith("/") && !link.startsWith("//") && canOpen(link)) {
+                void router.navigate({ href: link } as never);
+              }
+            }}
+          />
         </ScrollArea>
       </PopoverContent>
     </Popover>

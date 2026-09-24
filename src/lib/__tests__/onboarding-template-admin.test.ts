@@ -77,7 +77,7 @@ describe("template catalog shaping", () => {
 function gatedDb(isSupervisor: boolean) {
   return {
     rpc: async (name: string) => {
-      if (name === "is_supervisor") return { data: isSupervisor, error: null };
+      if ((name === "is_supervisor" || name === "is_onboarding_leader")) return { data: isSupervisor, error: null };
       if (name === "is_onboarding_staff") return { data: true, error: null };
       throw new Error(`Unexpected RPC: ${name}`);
     },
@@ -122,7 +122,7 @@ describe("the built-in plan is edited in place, never duplicated", () => {
     const steps: Record<string, unknown>[] = [];
     const client = {
       rpc: async (name: string) => {
-        if (name === "is_supervisor" || name === "is_onboarding_staff")
+        if ((name === "is_supervisor" || name === "is_onboarding_leader") || name === "is_onboarding_staff")
           return { data: true, error: null };
         throw new Error(`Unexpected RPC: ${name}`);
       },
