@@ -137,7 +137,12 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
           templateId: o.library_template_id,
         } satisfies Live;
       });
-    const arha = rows.filter((r) => r.source === "arha");
+    // Each home keeps its own ARHA order (set by staff); All Homes keeps homes grouped.
+    const raw = new Map((live.data ?? []).map((o) => [o.id, o]));
+    const homeIndex = (id: string | null) => { const i = homes.findIndex((h) => h.propertyId === id); return i < 0 ? homes.length : i; };
+    const arha = rows
+      .filter((r) => r.source === "arha")
+      .sort((a, b) => homeIndex(a.propertyId) - homeIndex(b.propertyId) || compareArhaPriority(raw.get(a.id)!, raw.get(b.id)!));
     const optional = rows.filter((r) => r.source === "optional");
     // Templates the owner could still start in this view.
     const scopeHomes = selectedHomeId ? [selectedHomeId] : homes.map((h) => h.propertyId);

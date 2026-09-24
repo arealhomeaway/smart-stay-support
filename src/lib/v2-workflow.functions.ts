@@ -377,10 +377,11 @@ export type OwnerResponse = {
 };
 
 const COLLAB_COLUMNS =
-  "id, title, owner_content, status, linked_task_id, source, source_department, library_template_id, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id";
+  "id, title, owner_content, status, linked_task_id, source, source_department, library_template_id, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id, owner_priority";
 
 type CollabRow = {
   id: string;
+  owner_priority: number | null;
   title: string;
   owner_content: unknown;
   status: string;
@@ -471,6 +472,28 @@ export const readOwnerCollaboration = createServerFn({ method: "POST" })
       actualClosingOn: home.data?.actual_closing_on ?? null,
       plannedClosingOn: home.data?.planned_closing_on ?? null,
     };
+  });
+
+/** Presentation order for ARHA Opportunities within one home: saved priority first, unprioritised (newly sent) on top. */
+export function compareArhaPriority(
+  a: { owner_priority: number | null; sent_at: string | null; created_at: string },
+  b: { owner_priority: number | null; sent_at: string | null; created_at: string },
+) {
+  const pa = a.owner_priority, pb = b.owner_priority;
+  if (pa == null && pb != null) return -1;
+  if (pb == null && pa != null) return 1;
+  if (pa != null && pb != null && pa !== pb) return pa - pb;
+  return (b.sent_at ?? b.created_at).localeCompare(a.sent_at ?? a.created_at);
+}
+
+/** Staff: save the owner-facing order of sent ARHA Opportunities on one home. Presentation only. */
+export const reorderArhaOpportunities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ propertyId: z.string().uuid(), ids: z.array(z.string().uuid()).min(1).max(200) }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.rpc("reorder_arha_opportunities", { _property_id: data.propertyId, _ids: data.ids });
+    fail(error);
+    return { ok: true };
   });
 
 export const saveArhaOpportunity = createServerFn({ method: "POST" })
