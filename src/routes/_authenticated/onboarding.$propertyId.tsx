@@ -5,7 +5,7 @@ import {
   onboardingWorkspaceKey,
   canManageOnboardingProperty,
 } from "@/lib/onboarding-workspace-view";
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -102,8 +102,32 @@ import {
   recordOwnerTaskDecisionFn,
 } from "@/lib/onboarding.functions";
 
+const PROPERTY_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function InvalidPropertyRoute() {
+  return (
+    <div className="space-y-3 py-10 text-center">
+      <p className="text-muted-foreground">This home could not be found.</p>
+      <div className="flex justify-center gap-4 text-sm">
+        <Link to="/onboarding" search={{ lens: "all" } as never} className="underline">
+          Back to Properties
+        </Link>
+        <Link to="/onboarding" className="underline">
+          Onboarding Dashboard
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
   validateSearch: validateWorkspaceSearch,
+  // Only a real property id may open a workspace; anything else never
+  // reaches the server.
+  beforeLoad: ({ params }) => {
+    if (!PROPERTY_ID_RE.test(params.propertyId)) throw notFound();
+  },
+  notFoundComponent: InvalidPropertyRoute,
   head: () => ({
     meta: [
       { title: "Property onboarding workflow — Resolve" },
@@ -122,7 +146,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/$propertyId")({
     ],
   }),
   component: PropertyWorkspace,
-  errorComponent: () => <p className="text-muted-foreground">This home could not be loaded.</p>,
+  errorComponent: InvalidPropertyRoute,
 });
 
 function PropertyWorkspace() {
