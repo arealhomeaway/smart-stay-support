@@ -33,7 +33,7 @@ async function assertOnboardingStaff(supabase: Client, userId: string) {
 }
 
 async function assertSupervisor(supabase: Client, userId: string) {
-  const { data, error } = await supabase.rpc("is_supervisor", { _user_id: userId });
+  const { data, error } = await supabase.rpc("is_onboarding_leader", { _user_id: userId });
   if (error) throw new Error("Could not verify your access level.");
   if (!data) throw new Error("Only the onboarding director can change templates.");
 }

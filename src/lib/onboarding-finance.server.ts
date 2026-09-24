@@ -37,7 +37,7 @@ const ACCOUNTING_SETTING_KEY = "accounting_recipient";
 async function assertOnboardingStaff(supabase: Client, userId: string) {
   const [staff, supervisor] = await Promise.all([
     supabase.rpc("is_onboarding_staff", { _user_id: userId }),
-    supabase.rpc("is_supervisor", { _user_id: userId }),
+    supabase.rpc("is_onboarding_leader", { _user_id: userId }),
   ]);
   if (!staff.data && !supervisor.data) {
     throw new Error("You do not have access to change onboarding money records.");
