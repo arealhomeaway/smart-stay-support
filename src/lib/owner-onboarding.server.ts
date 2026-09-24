@@ -283,7 +283,10 @@ export async function loadOwnerOnboarding(
     if (drafts.error) throw drafts.error;
     for (const d of drafts.data ?? []) if (d.source_task_id) draftTasks.add(d.source_task_id as string);
   }
-  const approvals = allApprovals.filter((a) => !draftTasks.has(allTaskByApproval.get(a.id) ?? ""));
+  // Publication guardrail: owners only see approvals ARHA intentionally published.
+  const approvals = allApprovals.filter(
+    (a) => a.publication_id != null && !draftTasks.has(allTaskByApproval.get(a.id) ?? ""),
+  );
   const taskByApproval = allTaskByApproval;
   const taskIds = [...new Set(taskByApproval.values())];
   const files = await sharedFiles(admin, taskIds, false);
