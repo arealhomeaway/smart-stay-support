@@ -157,7 +157,12 @@ function OnboardingTeamPage() {
 
       <p className="text-xs text-muted-foreground">
         Need to invite someone new to Resolve? An administrator can do that from{" "}
-        <Link to="/team" className="underline">Executive Administration</Link>.
+        {canOpen("/team") ? (
+          <Link to="/team" className="underline">Executive Administration</Link>
+        ) : (
+          "Executive Administration"
+        )}
+        .
       </p>
     </div>
   );
