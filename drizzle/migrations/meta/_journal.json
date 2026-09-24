@@ -372,6 +372,13 @@
       "when": 1790273158531,
       "tag": "0052_onboarding_director_owner_lifecycle_and_demo",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1790276055861,
+      "tag": "0053_onboarding_director_reads_program_properties",
+      "breakpoints": true
     }
   ]
 }

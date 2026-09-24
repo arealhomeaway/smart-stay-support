@@ -49,7 +49,16 @@ export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string 
   const loadPrograms = useServerFn(ownerPrograms);
   const [editing, setEditing] = useState<CollabOpp | "new" | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const programs = useQuery({ queryKey: ["owner-programs", "property", propertyId], queryFn: () => loadPrograms({ data: {} }) });
+  // Demo homes belong to demo programs, which the production list leaves out.
+  const programs = useQuery({
+    queryKey: ["owner-programs", "property", propertyId],
+    queryFn: async () => {
+      const live = await loadPrograms({ data: {} });
+      if (live.rows.some((p) => p.properties.some((h) => h.id === propertyId))) return live;
+      const demo = await loadPrograms({ data: { demo: true } });
+      return { ...live, rows: [...live.rows, ...demo.rows] };
+    },
+  });
   const program = (programs.data?.rows ?? []).find((p) => p.properties.some((h) => h.id === propertyId));
   const q = useOwnerCollaboration(propertyId);
   const qc = useQueryClient();
