@@ -92,6 +92,10 @@ export type Capability =
   // the people who need the whole picture.
   | "homeowner_directory"
   | "vendor_admin"
+  // Optional Opportunity Library administration and participation analytics:
+  // leadership only (kept apart from owner_programs so the Onboarding
+  // Director's Active Owner access does not widen into executive tools).
+  | "owner_program_admin"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -125,6 +129,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "onboarding_workspace",
   "onboarding_templates",
   "owner_programs",
+  "owner_program_admin",
   "owner_oversight",
   "homeowner_directory",
   "vendor_admin",
@@ -169,6 +174,10 @@ export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "handoff_request",
   // Stage/readiness review and Task exceptions inside Onboarding Projects.
   "handoff_review",
+  // Active Owner management needed while Onboarding runs owner participation.
+  "owner_programs",
+  "owner_oversight",
+  "homeowner_directory",
 ];
 
 export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<Capability> {

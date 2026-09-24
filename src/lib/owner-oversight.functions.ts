@@ -23,6 +23,7 @@ export const ownerOversight = createServerFn({ method: "GET" })
       context.supabase,
       context.userId,
       "Active Owner program oversight",
+      { allowOnboardingDirector: true },
     );
     const result = await loadPrograms(context.supabase, data?.demo === true);
     await recordOversightAccess({
