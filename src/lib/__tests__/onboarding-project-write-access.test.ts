@@ -17,7 +17,7 @@ function fixture(supervisor = false, stale = false) {
   const filters: Record<string, unknown> = {};
   const db = {
     rpc: async (name: string) => ({
-      data: name === "is_supervisor" ? supervisor : true,
+      data: (name === "is_supervisor" || name === "is_onboarding_leader") ? supervisor : true,
       error: null,
     }),
     from: (table: string) => {

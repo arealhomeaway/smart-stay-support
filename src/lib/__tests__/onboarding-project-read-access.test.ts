@@ -24,7 +24,7 @@ function fixture(staff = true, supervisor = false, failedCapability = false) {
       data:
         name === "read_onboarding_assignment_authority"
           ? [{ can_assign: false, director_id: "director" }]
-          : name === "is_supervisor"
+          : (name === "is_supervisor" || name === "is_onboarding_leader")
             ? supervisor
             : name === "is_onboarding_director"
               ? false
