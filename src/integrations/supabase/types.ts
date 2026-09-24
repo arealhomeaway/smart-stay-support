@@ -10211,6 +10211,7 @@ export type Database = {
       is_director: { Args: { _user_id: string }; Returns: boolean }
       is_internal_staff: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_director: { Args: { _user_id: string }; Returns: boolean }
+      is_onboarding_leader: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
