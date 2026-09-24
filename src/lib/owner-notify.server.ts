@@ -184,6 +184,7 @@ export async function drainOwnerAlerts(supabase: Client, limit = 50, onlyId?: st
 
       if (!claimed) {
         // Another pass already owns this email.
+        if (row.sms_status !== "pending") continue;
       } else if (!to) {
         patch.email_status = "skipped";
         patch.delivery_error = "No owner email on file.";
