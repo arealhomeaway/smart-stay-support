@@ -44,6 +44,24 @@ export async function assertSupervisor(supabase: Client, userId: string) {
   }
 }
 
+/**
+ * Enrollment/activation authority: admin, manager, or the seated Onboarding
+ * Director (who owns Active Owner enrollment during Onboarding). Closeout,
+ * hour corrections, time review and program rules stay supervisor-only.
+ */
+export async function assertEnrollmentAuthority(supabase: Client, userId: string) {
+  const [admin, manager, director] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    supabase.rpc("has_role", { _user_id: userId, _role: "manager" }),
+    supabase.rpc("is_onboarding_director", { _user_id: userId }),
+  ]);
+  if (admin.error || manager.error || director.error)
+    throw new Error("Could not verify your access level.");
+  if (!admin.data && !manager.data && !director.data) {
+    throw new Error("Only a supervisor or the Onboarding Director can manage Active Owner enrollment.");
+  }
+}
+
 function locationOf(p: { city: string | null; state: string | null }) {
   return [p.city, p.state].filter(Boolean).join(", ");
 }
@@ -328,7 +346,7 @@ export async function activateProgram(
   userId: string,
   input: { programId: string; expectedVersion: string; startedOn: string },
 ) {
-  await assertSupervisor(supabase, userId);
+  await assertEnrollmentAuthority(supabase, userId);
   return activateOwnerProgramAtomically(supabase, input);
 }
 /** Moves a program between the non-activation lifecycle states. */

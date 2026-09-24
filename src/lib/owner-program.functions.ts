@@ -43,8 +43,8 @@ export const startOwnerProgram = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, createProgram } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, createProgram } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return createProgram(context.supabase, context.userId, data);
   });
 
@@ -62,8 +62,8 @@ export const addOwnerProgramProperty = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, addProgramProperty } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, addProgramProperty } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return addProgramProperty(context.supabase, context.userId, data);
   });
 
@@ -80,8 +80,8 @@ export const removeOwnerProgramProperty = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, removeProgramProperty } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, removeProgramProperty } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return removeProgramProperty(context.supabase, context.userId, data);
   });
 
@@ -99,8 +99,8 @@ export const confirmOwnerPropertyClosing = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, confirmPropertyClosing } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, confirmPropertyClosing } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return confirmPropertyClosing(context.supabase, context.userId, data);
   });
 
@@ -120,8 +120,8 @@ export const updateOwnerProgram = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, updateProgramSettings } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, updateProgramSettings } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return updateProgramSettings(context.supabase, context.userId, data);
   });
 
@@ -160,8 +160,8 @@ export const setOwnerProgramStatus = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, setProgramStatus } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, setProgramStatus } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return setProgramStatus(context.supabase, context.userId, data);
   });
 
@@ -208,8 +208,8 @@ export const seedOwnerRoadmap = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, seedRoadmap } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, seedRoadmap } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return seedRoadmap(context.supabase, context.userId, data);
   });
 
@@ -248,8 +248,8 @@ export const createOwnerInvite = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { assertSupervisor, createInvite } = await import("./owner-program.server");
-    await assertSupervisor(context.supabase, context.userId);
+    const { assertEnrollmentAuthority, createInvite } = await import("./owner-program.server");
+    await assertEnrollmentAuthority(context.supabase, context.userId);
     return createInvite(context.supabase, context.userId, data);
   });
 

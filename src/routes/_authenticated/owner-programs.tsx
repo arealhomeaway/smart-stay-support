@@ -162,11 +162,16 @@ const PROGRESS_STATE_TONE: Record<string, StatusTone> = {
 };
 
 function OwnerProgramsPage() {
-  return (
-    <SupervisorOnly>
-      <ProgramsBoard />
-    </SupervisorOnly>
-  );
+  const { can, isLoading } = useRole();
+  // Admins, managers and the Onboarding Director (owner_programs capability).
+  if (isLoading || !can("owner_programs")) {
+    return (
+      <SupervisorOnly>
+        <ProgramsBoard />
+      </SupervisorOnly>
+    );
+  }
+  return <ProgramsBoard />;
 }
 
 function ProgramsBoard() {

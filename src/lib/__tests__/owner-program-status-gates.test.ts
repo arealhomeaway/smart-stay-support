@@ -48,6 +48,7 @@ describe("owner program lifecycle action", () => {
           throw new Error("Activation must not reread a fresh version or append a separate event.");
         },
         rpc: async (name: string, args: Record<string, string>) => {
+          if (name === "is_onboarding_director") return { data: false, error: null };
           if (name === "has_role") {
             expect(args["_user_id"]).toBe("supervisor");
             checkedRoles.push(args["_role"]!);

@@ -52,6 +52,7 @@ it("rejects activation without supervisor authority before reading or writing th
         activationCalls++;
         throw new Error("The unauthorized caller must not invoke activation.");
       }
+      if (name === "is_onboarding_director") return { data: false, error: null };
       expect(name).toBe("has_role");
       expect(args["_user_id"]).toBe("staff");
       checkedRoles.push(args["_role"]!);

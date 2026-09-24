@@ -159,6 +159,6 @@ describe("reviewed owner program activation", () => {
         }),
       ),
     ).toContain("Only a supervisor");
-    expect(calls).toEqual(["has_role", "has_role"]);
+    expect(calls).toEqual(["has_role", "has_role", "is_onboarding_director"]);
   });
 });
