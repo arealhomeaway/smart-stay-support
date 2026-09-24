@@ -50,7 +50,7 @@ export const DEPARTMENTS: Department[] = [
     label: "Active Owner",
     home: "/owner-programs",
     match: (p) =>
-      ["/owner-programs", "/owner-oversight", "/owner-analytics", "/homeowners"].some(
+      ["/owner-programs", "/owner-oversight", "/owner-analytics", "/homeowners", "/owner-library"].some(
         (r) => p === r || p.startsWith(r + "/"),
       ),
     links: [
@@ -58,6 +58,7 @@ export const DEPARTMENTS: Department[] = [
       { label: "Program oversight", to: "/owner-oversight", capability: "owner_oversight" },
       { label: "Homeowners", to: "/homeowners", capability: "homeowner_directory" },
       { label: "Participation insight", to: "/owner-analytics" },
+      { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_programs" },
     ],
   },
 ];
@@ -76,6 +77,7 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "/owner-oversight": "Program oversight",
   "/owner-analytics": "Participation insight",
   "/homeowners": "Homeowners",
+  "/owner-library": "Optional Opportunity Library",
 };
 
 const ONBOARDING_TABS: Record<string, string> = {
