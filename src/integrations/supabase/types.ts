@@ -4279,6 +4279,7 @@ export type Database = {
           ready_for_ops_at: string | null
           ready_for_ops_by: string | null
           role_assignments: Json
+          staging_provider: string | null
           started_at: string
           started_by: string | null
           status: string
@@ -4310,6 +4311,7 @@ export type Database = {
           ready_for_ops_at?: string | null
           ready_for_ops_by?: string | null
           role_assignments?: Json
+          staging_provider?: string | null
           started_at?: string
           started_by?: string | null
           status?: string
@@ -4341,6 +4343,7 @@ export type Database = {
           ready_for_ops_at?: string | null
           ready_for_ops_by?: string | null
           role_assignments?: Json
+          staging_provider?: string | null
           started_at?: string
           started_by?: string | null
           status?: string
