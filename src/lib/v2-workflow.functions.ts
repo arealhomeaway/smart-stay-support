@@ -455,7 +455,7 @@ export const readOwnerCollaboration = createServerFn({ method: "POST" })
       sb.from("work_items").select(COLLAB_COLUMNS).eq("kind", "opportunity").eq("property_id", data.propertyId).neq("status", "archived").order("created_at", { ascending: false }),
       sb.from("onboarding_tasks").select("id, title").eq("property_id", data.propertyId).is("archived_at", null).order("title"),
       sb.from("properties").select("actual_closing_on, planned_closing_on").eq("id", data.propertyId).single(),
-      sb.from("documents").select("id, title, original_filename, work_item_id, uploaded_by, uploaded_at, created_at").eq("property_id", data.propertyId).is("deleted_at", null).is("archived_at", null).eq("upload_status", "stored").order("created_at", { ascending: false }).limit(200),
+      sb.from("documents").select("id, title, original_filename, category, note, work_item_id, uploaded_by, uploaded_at, created_at").eq("property_id", data.propertyId).is("deleted_at", null).is("archived_at", null).eq("upload_status", "stored").order("created_at", { ascending: false }).limit(1000),
     ]);
     fail(opps.error);
     fail(tasks.error);
@@ -468,7 +468,7 @@ export const readOwnerCollaboration = createServerFn({ method: "POST" })
     return {
       opportunities: rows.map((r) => ({ ...r, taskId: r.source_task_id ?? (r.linked_task_id ? toTask.get(r.linked_task_id) ?? null : null) })),
       tasks: tasks.data ?? [],
-      files: (files.data ?? []).map((f) => ({ id: f.id, title: f.title ?? f.original_filename ?? "File", workItemId: f.work_item_id, uploadedAt: f.uploaded_at ?? f.created_at })),
+      files: (files.data ?? []).map((f) => ({ id: f.id, title: f.title ?? f.original_filename ?? "File", filename: f.original_filename, category: f.category, note: f.note, workItemId: f.work_item_id, uploadedAt: f.uploaded_at ?? f.created_at })),
       actualClosingOn: home.data?.actual_closing_on ?? null,
       plannedClosingOn: home.data?.planned_closing_on ?? null,
     };
