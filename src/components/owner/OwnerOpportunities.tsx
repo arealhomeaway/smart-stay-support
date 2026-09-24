@@ -120,10 +120,10 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
           cover: arha
             ? arhaCover(o.title, o.resources.map((r) => r.label), photo(o.property_id))
             : imageFor(c.image_key ?? null),
-          what: c.what,
-          why: c.why,
-          how: c.how,
-          document: c.ways_to_document,
+          what: c.what ?? null,
+          why: c.why ?? null,
+          how: c.how ?? null,
+          document: c.ways_to_document ?? null,
           suggestedMinutes: c.suggested_minutes ?? null,
           resources: o.resources,
           templateLink: c.resource_url ? { label: c.resource_label || "Learn more", url: c.resource_url } : null,
