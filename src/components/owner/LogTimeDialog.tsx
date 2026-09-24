@@ -48,6 +48,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 export type OpenLogTime = (opts?: {
   anchor?: LogTimeAnchor | null;
   activity?: string;
+  /** An Opportunity's home: the entry is attributed to it. */
+  propertyId?: string | null;
   onDone?: () => void;
 }) => void;
 export const LogTimeContext = createContext<OpenLogTime | null>(null);
@@ -67,6 +69,7 @@ export function LogTimeDialog({
   onDone,
   phase = "ongoing",
   properties = [],
+  defaultPropertyIds = [],
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
@@ -79,13 +82,15 @@ export function LogTimeDialog({
   phase?: "onboarding" | "ongoing";
   /** Homes the owner may attribute a self-recorded activity to. */
   properties?: { id: string; name: string }[];
+  /** Pre-selected homes (an Opportunity's own home). */
+  defaultPropertyIds?: string[];
 }) {
   const [minutes, setMinutes] = useState("");
   const [activity, setActivity] = useState(defaultActivity);
   const [confirmed, setConfirmed] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [entryDate, setEntryDate] = useState(today);
-  const [homes, setHomes] = useState<string[]>([]);
+  const [homes, setHomes] = useState<string[]>(defaultPropertyIds);
   const log = useServerFn(logOwnerParticipation);
   const beginEvidence = useServerFn(beginParticipationEvidenceFn);
 
@@ -95,7 +100,7 @@ export function LogTimeDialog({
     setConfirmed(false);
     setFiles([]);
     setEntryDate(today());
-    setHomes([]);
+    setHomes(defaultPropertyIds);
   };
 
   /** Files build up across picks and drops, so nothing already chosen is lost. */

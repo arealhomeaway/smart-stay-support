@@ -5276,6 +5276,69 @@ export type Database = {
           },
         ]
       }
+      owner_opportunity_library: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          how: string
+          id: string
+          image_key: string
+          resource_label: string | null
+          resource_url: string | null
+          sort_order: number
+          suggested_minutes: number | null
+          summary: string
+          tags: string[]
+          title: string
+          updated_at: string
+          ways_to_document: string
+          what: string
+          why: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          how?: string
+          id?: string
+          image_key?: string
+          resource_label?: string | null
+          resource_url?: string | null
+          sort_order?: number
+          suggested_minutes?: number | null
+          summary?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          ways_to_document?: string
+          what?: string
+          why?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          how?: string
+          id?: string
+          image_key?: string
+          resource_label?: string | null
+          resource_url?: string | null
+          sort_order?: number
+          suggested_minutes?: number | null
+          summary?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          ways_to_document?: string
+          what?: string
+          why?: string
+        }
+        Relationships: []
+      }
       owner_program_events: {
         Row: {
           actor_id: string | null
@@ -9271,6 +9334,7 @@ export type Database = {
           id: string
           is_demo: boolean
           kind: string
+          library_template_id: string | null
           linked_task_id: string | null
           owner_content: Json | null
           owner_response: Json
@@ -9279,6 +9343,8 @@ export type Database = {
           required: boolean
           responded_at: string | null
           response_types: string[]
+          retired_at: string | null
+          retired_reason: string | null
           sent_at: string | null
           source: string | null
           source_department: string | null
@@ -9302,6 +9368,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           kind: string
+          library_template_id?: string | null
           linked_task_id?: string | null
           owner_content?: Json | null
           owner_response?: Json
@@ -9310,6 +9377,8 @@ export type Database = {
           required?: boolean
           responded_at?: string | null
           response_types?: string[]
+          retired_at?: string | null
+          retired_reason?: string | null
           sent_at?: string | null
           source?: string | null
           source_department?: string | null
@@ -9333,6 +9402,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           kind?: string
+          library_template_id?: string | null
           linked_task_id?: string | null
           owner_content?: Json | null
           owner_response?: Json
@@ -9341,6 +9411,8 @@ export type Database = {
           required?: boolean
           responded_at?: string | null
           response_types?: string[]
+          retired_at?: string | null
+          retired_reason?: string | null
           sent_at?: string | null
           source?: string | null
           source_department?: string | null
@@ -9354,6 +9426,13 @@ export type Database = {
           viewed_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "work_items_library_template_id_fkey"
+            columns: ["library_template_id"]
+            isOneToOne: false
+            referencedRelation: "owner_opportunity_library"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_items_linked_task_id_fkey"
             columns: ["linked_task_id"]
@@ -10660,6 +10739,10 @@ export type Database = {
         Returns: string
       }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
+      start_optional_opportunity: {
+        Args: { _property_id: string; _template_id: string }
+        Returns: string
+      }
       sync_ticket_opportunities: {
         Args: { _property_id: string; _ticket_id?: string }
         Returns: undefined

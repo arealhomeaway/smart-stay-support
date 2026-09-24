@@ -371,7 +371,7 @@ export type OwnerResponse = {
 };
 
 const COLLAB_COLUMNS =
-  "id, title, owner_content, status, linked_task_id, source, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id";
+  "id, title, owner_content, status, linked_task_id, source, source_department, library_template_id, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id";
 
 type CollabRow = {
   id: string;
@@ -380,6 +380,8 @@ type CollabRow = {
   status: string;
   linked_task_id: string | null;
   source: string | null;
+  source_department: string | null;
+  library_template_id: string | null;
   source_task_id: string | null;
   response_types: string[];
   sent_at: string | null;

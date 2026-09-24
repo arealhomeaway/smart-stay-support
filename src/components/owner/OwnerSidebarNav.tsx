@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { FolderOpen, Handshake, KeyRound } from "lucide-react";
+import { FolderOpen, Handshake, KeyRound, Sparkles } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/sidebar";
 
 /**
- * Homeowner navigation: Home, Documents & Photos, My Team. The home chosen in
+ * Homeowner navigation: Home, Opportunities, Documents & Photos, My Team. The home chosen in
  * the page's "Viewing" filter travels with every link.
  */
-const items: { view: undefined | "documents" | "team"; label: string; icon: typeof KeyRound }[] = [
+const items: { view: undefined | "opportunities" | "documents" | "team"; label: string; icon: typeof KeyRound }[] = [
   { view: undefined, label: "Home", icon: KeyRound },
+  { view: "opportunities", label: "Opportunities", icon: Sparkles },
   { view: "documents", label: "Documents & Photos", icon: FolderOpen },
   { view: "team", label: "My Team", icon: Handshake },
 ];
