@@ -23,6 +23,8 @@ type Rule = {
   portal?: "operations" | "onboarding" | "homeowner" | "vendor";
   /** Capability the person must hold (leadership / administration areas). */
   capability?: Capability;
+  /** Alternative capability that also opens it (read-only owner preview). */
+  orCapability?: Capability;
   /** Anyone signed in with a role may open it (their own account etc.). */
   shared?: boolean;
 };
@@ -39,7 +41,7 @@ const RULES: Rule[] = [
   { prefix: "/owner-analytics", capability: "owner_program_admin" },
   { prefix: "/owner-library", capability: "owner_program_admin" },
   { prefix: "/homeowners", capability: "homeowner_directory" },
-  { prefix: "/owner", portal: "homeowner" },
+  { prefix: "/owner", portal: "homeowner", orCapability: "owner_programs" },
   { prefix: "/vendors", capability: "vendor_admin" },
   { prefix: "/vendor", portal: "vendor" },
   { prefix: "/command-center", capability: "command_center" },
@@ -71,7 +73,11 @@ export function canOpenPath(pathname: string, ctx: AccessContext): boolean {
   const portals = portalIds(ctx);
   if (portals.size === 0) return false;
   if (rule.shared) return true;
-  if (rule.portal && !portals.has(rule.portal)) return false;
+  if (rule.portal && !portals.has(rule.portal)) {
+    // Staff who manage Active Owner may open the read-only homeowner preview.
+    if (!rule.orCapability || !capabilitiesFor(ctx.roles, ctx.seats).has(rule.orCapability))
+      return false;
+  }
   if (rule.capability && !capabilitiesFor(ctx.roles, ctx.seats).has(rule.capability)) return false;
   return true;
 }

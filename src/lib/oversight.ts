@@ -2,9 +2,13 @@
  * Cross-team oversight aggregation — pure, no data access.
  */
 
+import { currentOwnerId } from "@/lib/matters";
+
 export type WorkloadTicket = {
   current_action_owner: string | null;
   assigned_to: string | null;
+  record_owner?: string | null;
+  accountable_owner?: string | null;
 };
 
 export type WorkloadEntry = { id: string; who: string; count: number };
@@ -23,7 +27,7 @@ export function workloadByPerson(
 ): WorkloadEntry[] {
   const counts: Record<string, number> = {};
   for (const t of tickets) {
-    const key = t.current_action_owner ?? t.assigned_to ?? "unassigned";
+    const key = currentOwnerId(t) ?? "unassigned";
     counts[key] = (counts[key] ?? 0) + 1;
   }
   return Object.entries(counts)

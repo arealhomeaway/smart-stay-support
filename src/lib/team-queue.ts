@@ -176,6 +176,9 @@ export function applyTeamQueueFilters(
   return rows.filter((t) => {
     if (filters.status === "active") {
       if (!OPEN_STATUSES.includes(t.status)) return false;
+    } else if (filters.status === "closed") {
+      // "Closed" means finished everywhere in Resolve: resolved + closed.
+      if (t.status !== "closed" && t.status !== "resolved") return false;
     } else if (filters.status !== "all" && t.status !== filters.status) {
       return false;
     }

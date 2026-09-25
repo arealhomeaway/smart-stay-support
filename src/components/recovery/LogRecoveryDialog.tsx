@@ -59,10 +59,6 @@ type TicketOption = {
   priority: string | null;
   is_demo: boolean | null;
   ownerrez_booking_id: string | null;
-  ownerrez_channel: string | null;
-  ownerrez_confirmation_code: string | null;
-  ownerrez_arrival: string | null;
-  ownerrez_departure: string | null;
 };
 
 const SITUATIONS = Object.keys(SITUATION_LABELS) as RecoverySituation[];
@@ -92,7 +88,7 @@ export function LogRecoveryDialog() {
       const { data, error } = await supabase
         .from("tickets")
         .select(
-          "id,title,description,property_id,guest_name,priority,is_demo,ownerrez_booking_id,ownerrez_channel,ownerrez_confirmation_code,ownerrez_arrival,ownerrez_departure",
+          "id,title,description,property_id,guest_name,priority,is_demo,ownerrez_booking_id",
         )
         .in("status", OPEN_STATUSES)
         .order("created_at", { ascending: false })
@@ -170,11 +166,7 @@ export function LogRecoveryDialog() {
           impact_detail: impact.trim(),
           recovery_action: chosen,
           guest_name: ticket.guest_name,
-          reservation_channel: ticket.ownerrez_channel,
-          reservation_confirmation: ticket.ownerrez_confirmation_code,
           ownerrez_booking_id: ticket.ownerrez_booking_id,
-          stay_arrival: ticket.ownerrez_arrival,
-          stay_departure: ticket.ownerrez_departure,
           priority: ticket.priority ?? "p3",
           guest_requested_amount: requested ? Number(requested) : null,
           proposed_amount: amount ? Number(amount) : null,

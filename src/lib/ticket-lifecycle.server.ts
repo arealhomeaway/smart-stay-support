@@ -57,7 +57,7 @@ export async function gatherLifecycleFacts(
     db
       .from("work_orders")
       .select(
-        "id, scope, vendor_org_id, vendor_name, approval_status, quote_amount, approved_amount, emergency",
+        "id, scope, vendor_org_id, vendor_name, approval_status, quote_amount, approved_amount, emergency_reason",
       )
       .eq("ticket_id", ticketId),
     db
@@ -233,6 +233,17 @@ export async function applyStatusChange(
   }
   if (input.status === "resolved" && !ticket["resolved_at"]) patch["resolved_at"] = now;
   if (input.status === "closed" && !ticket["resolved_at"]) patch["resolved_at"] = now;
+  // Reopening: a finished ticket going back to active work clears its
+  // resolution stamp and records the reopen server-side.
+  if (
+    (facts.status === "resolved" || facts.status === "closed") &&
+    input.status !== "resolved" &&
+    input.status !== "closed"
+  ) {
+    patch["resolved_at"] = null;
+    patch["reopen_count"] = Number(ticket["reopen_count"] ?? 0) + 1;
+    patch["last_reopened_at"] = now;
+  }
 
   const { error } = await db.from("tickets").update(patch).eq("id", input.ticketId);
   if (error)
@@ -269,7 +280,7 @@ export async function applyStatusChange(
   if (input.status === "resolved" && merged.finalReviewRequired === false) {
     const { error: closeError } = await db
       .from("tickets")
-      .update({ status: "closed" })
+      .update({ status: "closed", closure_qa_result: "not_required" })
       .eq("id", input.ticketId);
     if (!closeError) {
       await db.from("ticket_activity").insert({
