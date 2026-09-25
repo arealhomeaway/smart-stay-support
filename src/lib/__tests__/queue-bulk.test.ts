@@ -43,7 +43,7 @@ describe("planning the change", () => {
   });
 
   it("de-duplicates the selection", () => {
-    const plan = planBulkUpdate({ ticketIds: [id(1), id(1), id(2)], action: "status", status: "waiting" });
+    const plan = planBulkUpdate({ ticketIds: [id(1), id(1), id(2)], action: "status", status: "in_progress" });
     expect(plan.ok && plan.ticketIds).toEqual([id(1), id(2)]);
   });
 

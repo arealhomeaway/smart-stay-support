@@ -12,10 +12,10 @@ export type BulkAction = (typeof BULK_ACTIONS)[number];
 /** Statuses that are a simple statement of where the work stands. */
 export const BULK_STATUSES = [
   { value: "open", label: "Open" },
-  { value: "dispatched", label: "Dispatched" },
   { value: "in_progress", label: "In progress" },
-  { value: "waiting", label: "Waiting on someone" },
 ] as const;
+// "Waiting" and "Dispatched" need per-ticket details (who, why, review date,
+// assignee), so they are set one ticket at a time.
 
 export type BulkStatus = (typeof BULK_STATUSES)[number]["value"];
 

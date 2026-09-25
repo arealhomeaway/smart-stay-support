@@ -54,16 +54,38 @@ export const bulkUpdateTicketsFn = createServerFn({ method: "POST" })
       // Nothing to do is not a failure — it just does not earn a history line.
       if (plan.action === "status" && row.status === plan.patch["status"]) continue;
       if (plan.action === "priority" && row.priority === plan.patch["priority"]) continue;
-      if (plan.action === "assign" && (row.assigned_to ?? null) === (plan.patch["assigned_to"] ?? null))
+      if (
+        plan.action === "assign" &&
+        (row.assigned_to ?? null) === (plan.patch["assigned_to"] ?? null)
+      )
         continue;
 
-      const { error } = await context.supabase
-        .from("tickets")
-        .update(plan.patch as never)
-        .eq("id", row.id);
-      if (error) {
-        skipped.push({ ref: row.ref ?? null, why: error.message });
-        continue;
+      if (plan.action === "status") {
+        // Same door as a single ticket: every lifecycle rule applies.
+        const m = await import("@/lib/ticket-lifecycle.server");
+        const privileged = roles.includes("admin") || roles.includes("manager");
+        const result = await m.applyStatusChange(
+          context.supabase as never,
+          context.userId,
+          privileged,
+          {
+            ticketId: row.id,
+            status: String(plan.patch["status"]),
+          },
+        );
+        if (!result.ok) {
+          skipped.push({ ref: row.ref ?? null, why: result.message });
+          continue;
+        }
+      } else {
+        const { error } = await context.supabase
+          .from("tickets")
+          .update(plan.patch as never)
+          .eq("id", row.id);
+        if (error) {
+          skipped.push({ ref: row.ref ?? null, why: error.message });
+          continue;
+        }
       }
       updated.push(row.id);
 
