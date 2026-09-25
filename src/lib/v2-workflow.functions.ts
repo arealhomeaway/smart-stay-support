@@ -474,16 +474,20 @@ export const readOwnerCollaboration = createServerFn({ method: "POST" })
     };
   });
 
-/** Presentation order for ARHA Opportunities within one home: saved priority first, unprioritised (newly sent) on top. */
+/**
+ * Presentation order for ARHA Opportunities within one home: saved priority
+ * first, then unprioritised (newly sent) at the BOTTOM, oldest sent first, so
+ * each new Opportunity appends without disturbing the curated order.
+ */
 export function compareArhaPriority(
   a: { owner_priority: number | null; sent_at: string | null; created_at: string },
   b: { owner_priority: number | null; sent_at: string | null; created_at: string },
 ) {
   const pa = a.owner_priority, pb = b.owner_priority;
-  if (pa == null && pb != null) return -1;
-  if (pb == null && pa != null) return 1;
+  if (pa == null && pb != null) return 1;
+  if (pb == null && pa != null) return -1;
   if (pa != null && pb != null && pa !== pb) return pa - pb;
-  return (b.sent_at ?? b.created_at).localeCompare(a.sent_at ?? a.created_at);
+  return (a.sent_at ?? a.created_at).localeCompare(b.sent_at ?? b.created_at);
 }
 
 /** Staff: save the owner-facing order of sent ARHA Opportunities on one home. Presentation only. */
