@@ -16,6 +16,8 @@ export type ActAsRecord = {
   /** The homeowner being acted as. */
   userId: string;
   name: string;
+  /** A real (non-demo) homeowner program — changes are live. */
+  live?: boolean;
   /** Where the supervisor started, to return them there. */
   origin: string;
   staffAccessToken: string;
@@ -42,7 +44,7 @@ function writeActAs(record: ActAsRecord | null) {
 }
 
 /** Step into the homeowner's account. Resolves once the session is theirs. */
-export async function beginActAs(input: { userId: string; origin: string }) {
+export async function beginActAs(input: { userId: string; origin: string; live?: boolean }) {
   const { data: current } = await supabase.auth.getSession();
   const staff = current.session;
   if (!staff) throw new Error("Your session expired — sign in again.");
@@ -58,6 +60,7 @@ export async function beginActAs(input: { userId: string; origin: string }) {
   writeActAs({
     userId: grant.userId,
     name: grant.name,
+    live: input.live ?? true,
     origin: input.origin,
     staffAccessToken: staff.access_token,
     staffRefreshToken: staff.refresh_token,

@@ -409,7 +409,8 @@ function ProgramCard({
   const percent = Math.min(100, Math.round((row.reportedHours / OWNER_GOAL_HOURS) * 100));
   const router = useRouter();
   const { setViewAs } = useViewAs();
-  const { isSupervisor } = useRole();
+  const { isSupervisor, isOnboardingDirector } = useRole();
+  const canActAs = isSupervisor || isOnboardingDirector;
   const [acting, setActing] = useState(false);
 
 
@@ -431,9 +432,16 @@ function ProgramCard({
    */
   async function actAsHomeowner() {
     if (!row.ownerUserId) return;
+    if (
+      !demo &&
+      !window.confirm(
+        `ACTING AS LIVE OWNER — ${row.ownerName || "this homeowner"}\n\nChanges made here affect the homeowner's real program. This is not a sandbox. Responses, uploads and hours are real and may notify staff or the homeowner.\n\nContinue?`,
+      )
+    )
+      return;
     setActing(true);
     try {
-      await beginActAs({ userId: row.ownerUserId, origin: "/owner-programs" });
+      await beginActAs({ userId: row.ownerUserId, origin: "/owner-programs", live: !demo });
       await router.navigate({ to: "/owner" });
       router.invalidate();
       toast.success("You are now acting as this homeowner.");
@@ -469,7 +477,7 @@ function ProgramCard({
           <Button size="sm" variant="outline" onClick={previewAsHomeowner}>
             <Eye className="size-4" /> Preview as homeowner
           </Button>
-          {isSupervisor && row.ownerUserId ? (
+          {canActAs && row.ownerUserId ? (
             <Button
               size="sm"
               variant="outline"

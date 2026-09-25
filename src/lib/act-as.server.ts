@@ -10,9 +10,14 @@ import { writeAudit } from "./audit.server";
  * unchanged. Entering and leaving are both audited.
  */
 
+/** Leadership or whoever holds the Onboarding Director seat — nobody else. */
 async function assertSupervisor(db: SupabaseClient, userId: string) {
-  const { data, error } = await db.rpc("is_supervisor", { _user_id: userId });
-  if (error || !data) throw new Error("Acting as another account is limited to leadership.");
+  const [sup, dir] = await Promise.all([
+    db.rpc("is_supervisor", { _user_id: userId }),
+    db.rpc("is_onboarding_director", { _user_id: userId }),
+  ]);
+  if (!sup.data && !dir.data)
+    throw new Error("Acting as a homeowner is limited to leadership and the Onboarding Director.");
 }
 
 export type ActAsGrant = {
