@@ -11,6 +11,14 @@ export async function assertOnboardingPropertyManagement(
   await onboardingTaskAccess(supabase, userId, propertyId, null);
 }
 
+/** Removing a configured Business Decision requirement: Onboarding Director or leadership only. */
+export async function canRemoveBusinessDecision(supabase: Client, userId: string) {
+  const supervisor = await supabase.rpc("is_supervisor", { _user_id: userId });
+  if (supervisor.data === true) return true;
+  const director = await supabase.rpc("is_onboarding_director", { _user_id: userId });
+  return director.data === true;
+}
+
 /** Called after the action verifies the onboarding capability. */
 export async function onboardingTaskAccess(
   supabase: Client,

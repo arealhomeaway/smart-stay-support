@@ -67,8 +67,3 @@ export function dependencyWaitingLabel(dep: OwnerDependency, title?: string | nu
   if (dep === "acknowledge") return "Owner review / acknowledgment requested";
   return null;
 }
-
-/** Tasks whose owner gate is a protected business decision and must not be reclassified here. */
-export function isProtectedDecision(title: string | null | undefined): boolean {
-  return /management agreement/i.test(title ?? "");
-}
