@@ -228,13 +228,19 @@ function TicketDetail() {
   const { data: branches } = useQuery({
     queryKey: ["ticket-branches", ticketId],
     queryFn: async () => {
-      const [claims, recoveries] = await Promise.all([
+      const [claims, recoveries, orders] = await Promise.all([
         supabase.from("claims").select("id").eq("ticket_id", ticketId),
         supabase.from("guest_recovery").select("id").eq("ticket_id", ticketId),
+        supabase.from("work_orders").select("approved_amount, quote_amount").eq("ticket_id", ticketId),
       ]);
       return {
         claim: (claims.data ?? []).length > 0,
         recovery: (recoveries.data ?? []).length > 0,
+        // Same repair figure the server uses for its Final Review rule.
+        repairAmount: (orders.data ?? []).reduce(
+          (max, o) => Math.max(max, Number(o.approved_amount ?? o.quote_amount ?? 0)),
+          0,
+        ),
       };
     },
   });
@@ -522,14 +528,15 @@ function TicketDetail() {
   async function applyStatus(
     status: string,
     patch: Record<string, unknown> = {},
-  ): Promise<boolean> {
+  ): Promise<false | string> {
     try {
       const result = await setStatusFn({ data: { ticketId, status, patch } });
       if (!result.ok) {
         toast.error(result.message);
         return false;
       }
-      return true;
+      // The status the server actually landed on (resolved may auto-close).
+      return String(result.status ?? status);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "That change could not be saved.");
       return false;
@@ -670,9 +677,10 @@ function TicketDetail() {
     });
 
     if (!ok) return;
+    const heldForReview = ok !== "closed";
     await log(
       "resolved",
-      willNeedFinalReview
+      heldForReview
         ? `Resolved as ${labelFor(OUTCOME_TYPES, outcome)} — closure review is next. ${summary}`
         : `Resolved and closed as ${labelFor(OUTCOME_TYPES, outcome)} — no review required. ${summary}`,
       "resolved",
@@ -682,7 +690,7 @@ function TicketDetail() {
     setEvidence("");
     await refresh();
     toast.success(
-      willNeedFinalReview
+      heldForReview
         ? "Resolved — it moves to closure review before it is closed."
         : "Closed — no review is required for this ticket.",
     );
@@ -799,6 +807,8 @@ function TicketDetail() {
     reopen_count: ticket.reopen_count,
     hasClaim: activeBranch.claim,
     hasRecovery: activeBranch.recovery,
+    repairAmount: branches?.repairAmount ?? 0,
+    ownerSensitive: Boolean(ticket.owner_notified || ticket.owner_approval_required),
   }).required;
   const resolveActionLabel = willNeedFinalReview ? "Resolve — send for review" : "Close ticket";
 
@@ -1322,6 +1332,10 @@ function TicketDetail() {
                         reopen_count: ticket["reopen_count"] as number,
                         hasClaim: activeBranch.claim,
                         hasRecovery: activeBranch.recovery,
+                        repairAmount: branches?.repairAmount ?? 0,
+                        ownerSensitive: Boolean(
+                          ticket["owner_notified"] || ticket["owner_approval_required"],
+                        ),
                       }}
                     />
                   )}
