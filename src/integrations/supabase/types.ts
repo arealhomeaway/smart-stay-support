@@ -4460,6 +4460,7 @@ export type Database = {
           legacy_stage: string | null
           linked_ticket_id: string | null
           owner_approval_status: string
+          owner_dependency: string | null
           parent_task_id: string | null
           property_id: string
           requires_owner_approval: boolean
@@ -4502,6 +4503,7 @@ export type Database = {
           legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
+          owner_dependency?: string | null
           parent_task_id?: string | null
           property_id: string
           requires_owner_approval?: boolean
@@ -4544,6 +4546,7 @@ export type Database = {
           legacy_stage?: string | null
           linked_ticket_id?: string | null
           owner_approval_status?: string
+          owner_dependency?: string | null
           parent_task_id?: string | null
           property_id?: string
           requires_owner_approval?: boolean

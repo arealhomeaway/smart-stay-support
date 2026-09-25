@@ -379,6 +379,13 @@
       "when": 1790276055861,
       "tag": "0053_onboarding_director_reads_program_properties",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790342955841,
+      "tag": "0054_onboarding_task_owner_dependency",
+      "breakpoints": true
     }
   ]
 }
