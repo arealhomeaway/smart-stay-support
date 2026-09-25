@@ -386,7 +386,8 @@ function OwnerHubBody({
   const onboardingPending = (onboardingQuery.data?.pending ?? []).filter(
     (a) => !selectedHomeId || !a.propertyId || a.propertyId === selectedHomeId,
   ).length;
-  const view = Route.useSearch().view ?? "home";
+  const search = Route.useSearch();
+  const view = search.view ?? "home";
 
   return (
     <LogTimeContext.Provider value={preview ? null : openLogTime}>
@@ -489,7 +490,7 @@ function OwnerHubBody({
       ) : view === "opportunities" ? (
         <OwnerOpportunities
           variant="full"
-          focusId={Route.useSearch().opportunity ?? null}
+          focusId={search.opportunity ?? null}
           homes={ownerHomes}
           selectedHomeId={selectedHomeId}
           readOnly={preview}
