@@ -41,7 +41,11 @@ export const oversightAlertConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { requireLeadership } = await import("./oversight-access.server");
-    await requireLeadership(context.supabase, context.userId, "Active Owner program oversight");
+    // Reading thresholds is part of the oversight view the Director already has;
+    // changing them stays leadership-only (setOversightAlertConfig).
+    await requireLeadership(context.supabase, context.userId, "Active Owner program oversight", {
+      allowOnboardingDirector: true,
+    });
     const { loadAlertConfig } = await import("./oversight-settings.server");
     return loadAlertConfig(context.supabase);
   });
