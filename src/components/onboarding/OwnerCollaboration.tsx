@@ -145,6 +145,7 @@ export function OpportunityEditor({
   editing,
   fixedTaskId,
   defaultTitle,
+  defaultResponseType,
   onClose,
 }: {
   propertyId: string;
@@ -152,6 +153,8 @@ export function OpportunityEditor({
   editing: CollabOpp | "new" | null;
   fixedTaskId?: string | null;
   defaultTitle?: string;
+  /** From the Task's owner dependency — a starting point Kati can change. */
+  defaultResponseType?: ResponseType;
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -174,7 +177,7 @@ export function OpportunityEditor({
     setLoadedFor(key);
     if (editing === "new") {
       setForm({ ...EMPTY, title: defaultTitle ?? "", task: fixedTaskId ?? "none" });
-      setTypes(["acknowledge"]);
+      setTypes([defaultResponseType ?? "acknowledge"]);
       setResources([]);
     } else if (editing) {
       const c = editing.owner_content;
@@ -363,7 +366,7 @@ export function OpportunityEditor({
 }
 
 /** Owner Collaboration inside one internal Task. Hidden when the home has no Active Owner program. */
-export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle }: { propertyId: string; taskId: string; taskTitle: string }) {
+export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle, defaultResponseType }: { propertyId: string; taskId: string; taskTitle: string; defaultResponseType?: ResponseType }) {
   const loadPrograms = useServerFn(ownerPrograms);
   const programs = useQuery({ queryKey: ["owner-programs", "property", propertyId], queryFn: () => loadPrograms({ data: {} }) });
   const enrolled = (programs.data?.rows ?? []).some((p) => p.properties.some((h) => h.id === propertyId));
@@ -377,7 +380,7 @@ export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle }: { prop
         <p className="eyebrow">Owner collaboration</p>
         <Button size="sm" variant="outline" onClick={() => setEditing("new")}><Plus className="size-3.5" /> Create Opportunity</Button>
       </div>
-      <p className="text-xs text-muted-foreground">What you ask the homeowner to review or decide. This Task&apos;s status stays yours — the homeowner&apos;s response never blocks it.</p>
+      <p className="text-xs text-muted-foreground">What you ask the homeowner to review, provide or decide. This Task&apos;s status stays yours — the homeowner&apos;s response never blocks it.</p>
       {mine.length === 0 ? (
         <p className="text-sm text-muted-foreground">No Opportunity for the homeowner on this Task.</p>
       ) : (
@@ -396,7 +399,7 @@ export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle }: { prop
           ))}
         </ul>
       )}
-      <OpportunityEditor propertyId={propertyId} data={q.data} editing={editing} fixedTaskId={taskId} defaultTitle={`Review: ${taskTitle}`} onClose={() => setEditing(null)} />
+      <OpportunityEditor propertyId={propertyId} data={q.data} editing={editing} fixedTaskId={taskId} defaultTitle={`Review: ${taskTitle}`} defaultResponseType={defaultResponseType} onClose={() => setEditing(null)} />
     </section>
   );
 }
