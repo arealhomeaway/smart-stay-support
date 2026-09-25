@@ -14,10 +14,10 @@ import {
   OWNER_DEPENDENCIES,
   SELECTABLE_DEPENDENCIES,
   effectiveDependency,
-  isProtectedDecision,
   type OwnerDependency,
 } from "@/lib/owner-dependency";
 import { setTaskOwnerDependency } from "@/lib/owner-dependency.functions";
+import { useRole } from "@/hooks/useRole";
 import type { WorkflowTask } from "@/lib/onboarding-workflow";
 
 export function TaskOwnerDependency({ task, canManage }: { task: WorkflowTask; canManage: boolean }) {
@@ -38,8 +38,10 @@ export function TaskOwnerDependency({ task, canManage }: { task: WorkflowTask; c
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const { isOnboardingDirector, isSupervisor } = useRole();
   const meta = OWNER_DEPENDENCIES.find((d) => d.code === current)!;
-  const locked = current === "business_decision" && isProtectedDecision(task.title);
+  // A configured Business Decision is removable only by Director authority.
+  const locked = current === "business_decision" && !isOnboardingDirector && !isSupervisor;
   const leavingDecision = current === "business_decision" && choice !== "business_decision";
   const editable = canManage && task.status !== "complete" && !locked;
 
