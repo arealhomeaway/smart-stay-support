@@ -231,7 +231,10 @@ function TicketDetail() {
       const [claims, recoveries, orders] = await Promise.all([
         supabase.from("claims").select("id").eq("ticket_id", ticketId),
         supabase.from("guest_recovery").select("id").eq("ticket_id", ticketId),
-        supabase.from("work_orders").select("approved_amount, quote_amount").eq("ticket_id", ticketId),
+        supabase
+          .from("work_orders")
+          .select("approved_amount, quote_amount")
+          .eq("ticket_id", ticketId),
       ]);
       return {
         claim: (claims.data ?? []).length > 0,
@@ -1142,8 +1145,6 @@ function TicketDetail() {
               )}
 
               <div id="current-work-detail" />
-
-
 
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">

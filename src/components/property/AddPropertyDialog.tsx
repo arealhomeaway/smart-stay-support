@@ -25,13 +25,13 @@ import {
 import { startOnboardingProjectFn } from "@/lib/onboarding.functions";
 import { suggestedModules, type ModuleKey } from "@/lib/onboarding-scope";
 import { startOwnerProgram } from "@/lib/owner-program.functions";
+import { useRole } from "@/hooks/useRole";
 import type { IntakeMatch, OwnerRezCandidate } from "@/lib/property-intake";
 
 /** What a home starts with before anyone answers the scope questions. */
 function defaultModules(): ModuleKey[] {
   return suggestedModules({ pool_spa: null, hoa: null });
 }
-
 
 /**
  * The two supported ways a home enters Resolve. Both create the same canonical
@@ -62,7 +62,6 @@ export function AddPropertyDialog({
     if (result.status !== "duplicate") onCreated?.(result.property.id);
   }
 
-
   return (
     <Dialog
       open={open}
@@ -83,7 +82,11 @@ export function AddPropertyDialog({
         </DialogHeader>
 
         {done ? (
-          <OutcomePanel result={done} onClose={() => setOpen(false)} onAgain={() => setDone(null)} />
+          <OutcomePanel
+            result={done}
+            onClose={() => setOpen(false)}
+            onAgain={() => setDone(null)}
+          />
         ) : (
           <Tabs defaultValue="ownerrez" className="space-y-4">
             <TabsList>
@@ -109,6 +112,8 @@ type Outcome = {
   /** True when the onboarding project and its plan were created here. */
   startedOnboarding?: boolean;
   activeOwner?: boolean;
+  /** Steps after the home was created that did not complete. */
+  problems?: string[];
 };
 
 function OutcomePanel({
@@ -121,14 +126,18 @@ function OutcomePanel({
   onAgain: () => void;
 }) {
   const p = result.property;
+  const { can } = useRole();
+  const mayEnroll = can("owner_programs");
   const heading =
     result.status === "duplicate"
       ? "Already in Resolve"
       : result.status === "linked"
         ? "Linked to the existing home"
-        : result.startedOnboarding
-          ? "Home added and onboarding started"
-          : "Property created";
+        : result.problems?.length
+          ? "Home added — setup not finished"
+          : result.startedOnboarding
+            ? "Home added and onboarding started"
+            : "Property created";
   return (
     <div className="space-y-4">
       <div className="surface space-y-1 p-4">
@@ -140,7 +149,25 @@ function OutcomePanel({
           {p.ownerRezId ? ` · OwnerRez ${p.ownerRezId}` : " · no OwnerRez link"}
         </p>
       </div>
-      {result.startedOnboarding ? (
+      {result.problems && result.problems.length > 0 && (
+        <div className="surface space-y-1 border-destructive/40 p-4 text-sm" role="alert">
+          <p className="font-medium">The home was created, but these steps did not finish:</p>
+          <ul className="list-disc pl-5 text-muted-foreground">
+            {result.problems.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+          <p className="text-muted-foreground">
+            You can finish them below — no need to add the home again.
+          </p>
+        </div>
+      )}
+      {result.status === "duplicate" ? (
+        <p className="text-sm text-muted-foreground">
+          This home is already in Resolve. If its onboarding plan was never started, choose{" "}
+          <strong>Start onboarding</strong> to open it and start the plan.
+        </p>
+      ) : result.startedOnboarding ? (
         <p className="text-sm text-muted-foreground">
           The onboarding plan is ready.
           {result.activeOwner
@@ -153,7 +180,7 @@ function OutcomePanel({
           <strong>Start onboarding</strong> when you are ready.
         </p>
       )}
-      {result.status !== "duplicate" && !result.startedOnboarding && (
+      {result.status !== "duplicate" && !result.activeOwner && mayEnroll && (
         <EnrollActiveOwner propertyId={p.id} name={p.name} />
       )}
       <div className="flex flex-wrap gap-2">
@@ -174,7 +201,6 @@ function OutcomePanel({
     </div>
   );
 }
-
 
 /**
  * Every home arrives standard. Participation is a deliberate choice, so it is
@@ -228,6 +254,8 @@ function OwnerRezImport({
   const [selected, setSelected] = useState<OwnerRezCandidate | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [activeOwner, setActiveOwner] = useState(false);
+  const { can } = useRole();
+  const mayEnroll = can("owner_programs");
   const [owner, setOwner] = useState({ name: "", email: "", phone: "" });
   const [milestones, setMilestones] = useState<Milestones>(emptyMilestones);
   const search = useServerFn(searchOwnerRezPropertiesFn);
@@ -275,31 +303,49 @@ function OwnerRezImport({
       });
       if (result.status === "duplicate" || input.linkToPropertyId) return result;
       const propertyId = result.property.id;
-      if (activeOwner) {
-        await enrollOwner({
-          data: { propertyId, ownerName: owner.name || "", ownerEmail: owner.email || "" },
-        });
+      // The home now exists. Each later step reports its own outcome so a
+      // failure never looks like "nothing happened".
+      const problems: string[] = [];
+      const wantsActiveOwner = activeOwner && mayEnroll;
+      let enrolled = false;
+      if (wantsActiveOwner) {
+        try {
+          await enrollOwner({
+            data: { propertyId, ownerName: owner.name || "", ownerEmail: owner.email || "" },
+          });
+          enrolled = true;
+        } catch (e) {
+          problems.push(
+            `Active Owner enrollment: ${e instanceof Error ? e.message : "could not be saved"}`,
+          );
+        }
       }
-      // One click: the project and its task plan exist before the modal closes.
-      await startProject({
-        data: {
-          propertyId,
-          branch: null,
-          projectManager: null,
-          director: null,
-          plannedClosingOn: milestones.plannedClosingOn || null,
-          possessionOn: milestones.accessOn || null,
-          targetHandoffOn: null,
-          furnishingScope: "full_furnishing",
-          modules: activeOwner
-            ? [...defaultModules(), "active_owner" as const]
-            : defaultModules(),
-          poolLocation: "none",
-          notes: null,
-          externalRefs: {},
-        },
-      });
-      return { ...result, startedOnboarding: true, activeOwner };
+      let started = false;
+      try {
+        // One click: the project and its task plan exist before the modal closes.
+        await startProject({
+          data: {
+            propertyId,
+            branch: null,
+            projectManager: null,
+            director: null,
+            plannedClosingOn: milestones.plannedClosingOn || null,
+            possessionOn: milestones.accessOn || null,
+            targetHandoffOn: null,
+            furnishingScope: "full_furnishing",
+            modules: enrolled ? [...defaultModules(), "active_owner" as const] : defaultModules(),
+            poolLocation: "none",
+            notes: null,
+            externalRefs: {},
+          },
+        });
+        started = true;
+      } catch (e) {
+        problems.push(
+          `Onboarding plan: ${e instanceof Error ? e.message : "could not be started"}`,
+        );
+      }
+      return { ...result, startedOnboarding: started, activeOwner: enrolled, problems };
     },
 
     onSuccess: (r) => onDone(r),
@@ -417,20 +463,22 @@ function OwnerRezImport({
 
             <MilestoneFields value={milestones} onChange={setMilestones} />
 
-            <label className="surface flex cursor-pointer items-start gap-2 p-4 text-sm">
-              <Checkbox
-                checked={activeOwner}
-                onCheckedChange={(v) => setActiveOwner(v === true)}
-                className="mt-0.5"
-              />
-              <span>
-                <span className="block font-medium">This is an Active Owner home</span>
-                <span className="block text-xs text-muted-foreground">
-                  Creates a draft participation program. The 90-day clock only starts when it is
-                  activated.
+            {mayEnroll && (
+              <label className="surface flex cursor-pointer items-start gap-2 p-4 text-sm">
+                <Checkbox
+                  checked={activeOwner}
+                  onCheckedChange={(v) => setActiveOwner(v === true)}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="block font-medium">This is an Active Owner home</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Creates a draft participation program. The 90-day clock only starts when it is
+                    activated.
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+            )}
 
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={isDemo} onCheckedChange={(v) => setIsDemo(v === true)} />
@@ -439,7 +487,9 @@ function OwnerRezImport({
 
             <Button
               disabled={enroll.isPending}
-              onClick={() => enroll.mutate({ listingId: selected.listingId, linkToPropertyId: null })}
+              onClick={() =>
+                enroll.mutate({ listingId: selected.listingId, linkToPropertyId: null })
+              }
             >
               {enroll.isPending ? "Setting the home up…" : "Start onboarding"}
             </Button>
@@ -493,7 +543,6 @@ function OwnerRezImport({
     </div>
   );
 }
-
 
 const emptyMilestones = { plannedClosingOn: "", actualClosingOn: "", accessOn: "" };
 type Milestones = typeof emptyMilestones;
