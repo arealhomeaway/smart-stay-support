@@ -148,8 +148,12 @@ function computeStats(rows: Ticket[]) {
     ? rate(resolved.length - reopened.filter((t) => t.resolved_at).length, resolved.length)
     : null;
 
+  // "not_required" = auto-closed with no review needed: neither pending nor reviewed.
   const qaReviewed = resolved.filter(
-    (t) => t.closure_qa_result && t.closure_qa_result !== "not_reviewed",
+    (t) =>
+      t.closure_qa_result &&
+      t.closure_qa_result !== "not_reviewed" &&
+      t.closure_qa_result !== "not_required",
   );
   const qaFailed = qaReviewed.filter((t) => t.closure_qa_result !== "pass");
   const qaPending = resolved.filter(
