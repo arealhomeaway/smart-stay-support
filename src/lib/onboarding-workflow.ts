@@ -38,6 +38,8 @@ export type WorkflowTask = {
   evidence_note: string | null;
   requires_owner_approval: boolean;
   owner_approval_status: string;
+  /** What the Task needs from the homeowner; see owner-dependency.ts. */
+  owner_dependency?: string | null;
   exception_reason: string | null;
   carryover_of: string | null;
   carryover_reason: string | null;

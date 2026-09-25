@@ -47,6 +47,8 @@ import { Chip } from "@/components/ui/page";
 import { Separator } from "@/components/ui/separator";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { TaskOwnerCollaboration } from "@/components/onboarding/OwnerCollaboration";
+import { TaskOwnerDependency } from "@/components/onboarding/TaskOwnerDependency";
+import { DEPENDENCY_RESPONSE_TYPE, dependencyWaitingLabel, effectiveDependency } from "@/lib/owner-dependency";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { TaskStageTrail } from "@/components/onboarding/TaskStageTrail";
 import { EmailComposer } from "@/components/EmailComposer";
@@ -507,6 +509,13 @@ export function TaskDrawer({
             hint={dueExplanation(task) ?? undefined}
           />
           <Field label="Status" value={STATUS_LABEL[view.status]} />
+          {!task.requires_owner_approval &&
+            dependencyWaitingLabel(effectiveDependency(task), task.title) && (
+              <Field
+                label="From the homeowner"
+                value={dependencyWaitingLabel(effectiveDependency(task), task.title)!}
+              />
+            )}
           {task.requires_owner_approval && (
             <Field
               label="Homeowner decision"
@@ -612,7 +621,17 @@ export function TaskDrawer({
           />
         </section>
 
-        <TaskOwnerCollaboration propertyId={task.property_id} taskId={task.id} taskTitle={task.title} />
+        <TaskOwnerDependency task={task} canManage={canManageTask && !disabled} />
+
+        <TaskOwnerCollaboration
+          propertyId={task.property_id}
+          taskId={task.id}
+          taskTitle={task.title}
+          defaultResponseType={(() => {
+            const dep = effectiveDependency(task);
+            return dep === "none" ? undefined : DEPENDENCY_RESPONSE_TYPE[dep];
+          })()}
+        />
 
 
         <Separator />

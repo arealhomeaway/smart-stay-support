@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { compareArhaPriority, reorderArhaOpportunities } from "@/lib/v2-workflow.functions";
+import { RESPONSE_TYPES, compareArhaPriority, reorderArhaOpportunities } from "@/lib/v2-workflow.functions";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/page";
 import { ownerPrograms } from "@/lib/owner-program.functions";
@@ -43,6 +43,38 @@ function SortableRow({ id, children }: { id: string; children: (handle: ReactNod
       {children(handle)}
     </div>
   );
+}
+
+function whenTs(ts: string | null | undefined) {
+  if (!ts) return "";
+  return new Date(ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+/** One plain sentence for the homeowner's latest response — never raw events. */
+function latestResponse(o: CollabOpp, owner: string, docs: { at: string }[]): { text: string; at: string } | null {
+  const items: { text: string; at: string }[] = [];
+  for (const r of o.owner_response ?? []) {
+    const verb =
+      r.kind === "decision"
+        ? r.decision === "authorize"
+          ? "authorized this work"
+          : r.decision === "changes"
+            ? "requested changes"
+            : "recorded a decision"
+        : r.kind === "acknowledge"
+          ? "acknowledged this"
+          : "submitted feedback";
+    if (r.at) items.push({ text: `${owner} ${verb}`, at: r.at });
+  }
+  for (const d of docs) items.push({ text: `${owner} uploaded documentation`, at: d.at });
+  if (o.status === "complete" && o.completed_at) items.push({ text: `${owner} marked this Opportunity complete`, at: o.completed_at });
+  items.sort((a, b) => b.at.localeCompare(a.at));
+  return items[0] ?? null;
+}
+
+function preview(text: string | null | undefined) {
+  const t = (text ?? "").trim();
+  return t ? t : null;
 }
 
 export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string }) {
@@ -92,7 +124,23 @@ export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string 
     reorder.mutate(next);
   };
 
-  const row = (o: CollabOpp, handle?: ReactNode, position?: number) => (
+  const ownerFirst = (program?.ownerName ?? "The homeowner").split(" ")[0] || "The homeowner";
+  const row = (o: CollabOpp, handle?: ReactNode, position?: number) => {
+    const c = o.owner_content;
+    const what = preview(c?.what);
+    const why = preview(c?.why);
+    const types = o.response_types.map((t) => RESPONSE_TYPES.find((r) => r.code === t)?.label ?? t);
+    const docs = (q.data?.files ?? []).filter((f) => f.workItemId === o.id).map((f) => ({ at: String(f.uploadedAt ?? "") })).filter((d) => d.at);
+    const latest = o.status === "draft" ? null : latestResponse(o, ownerFirst, docs);
+    const waitingFor =
+      o.status === "draft"
+        ? "Not sent — the homeowner can't see this yet."
+        : o.status === "complete"
+          ? null
+          : latest
+            ? "Review the homeowner's response."
+            : `Waiting for ${ownerFirst} to ${types.length ? types.join(" / ").toLowerCase() : "respond"}.`;
+    return (
     <li key={o.id} className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
@@ -102,9 +150,19 @@ export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string 
           <p className="font-medium">{o.title}</p>
           <p className="text-xs text-muted-foreground">
             {ownerState(o)}
-            {taskTitle(o.taskId) ? ` · Related Task: ${taskTitle(o.taskId)}` : ""}
-            {o.source === "arha" ? " · From your ARHA team" : ""}
+            {o.source === "arha" ? " · From your ARHA Onboarding Team" : ""}
           </p>
+          {types.length ? <p className="mt-1 text-xs"><span className="text-muted-foreground">Response type: </span>{types.join(", ")}</p> : null}
+          {what ? <p className="mt-1 line-clamp-2 text-sm"><span className="text-muted-foreground">What you&apos;ll do: </span>{what}</p> : null}
+          {why ? <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">Why this matters: {why}</p> : null}
+          {o.resources.length ? (
+            <p className="mt-1 text-xs"><span className="text-muted-foreground">Resources: </span>{o.resources.map((r) => r.label).join(" · ")}</p>
+          ) : null}
+          {taskTitle(o.taskId) ? <p className="mt-0.5 text-xs"><span className="text-muted-foreground">Related Task: </span>{taskTitle(o.taskId)}</p> : null}
+          {latest ? (
+            <p className="mt-1 text-xs font-medium">{latest.text} · {whenTs(latest.at)}</p>
+          ) : null}
+          {waitingFor ? <p className="mt-0.5 text-xs text-muted-foreground">{waitingFor}</p> : null}
         </div>
         </div>
         <div className="flex gap-1">
@@ -112,14 +170,21 @@ export function PropertyOpportunitiesPanel({ propertyId }: { propertyId: string 
           {o.status !== "complete" ? <Button size="sm" variant="outline" onClick={() => setEditing(o)}>{o.status === "draft" ? "Edit draft" : "Edit"}</Button> : null}
         </div>
       </div>
-      {expanded === o.id ? <div className="mt-2"><OpportunityDetail o={o} files={q.data?.files ?? []} /></div> : null}
+      {expanded === o.id ? (
+        <div className="mt-2 space-y-2 border-t border-border pt-2">
+          {what ? <div className="text-sm"><p className="text-xs font-medium">What you&apos;ll do</p><p className="whitespace-pre-wrap">{what}</p></div> : null}
+          {why ? <div className="text-sm"><p className="text-xs font-medium">Why this matters</p><p className="whitespace-pre-wrap">{why}</p></div> : null}
+          <OpportunityDetail o={o} files={q.data?.files ?? []} />
+        </div>
+      ) : null}
     </li>
-  );
+    );
+  };
 
   return (
     <SectionCard
       title={<span className="flex items-center gap-2"><Sparkles className="size-4" aria-hidden="true" /> Active Owner Opportunities</span>}
-      description="The homeowner's own ways to take part. Separate from ARHA's Tasks — they never block or change internal work."
+      description="Owner collaboration for this property. Review what ARHA has shared and track the homeowner's response."
       actions={<Button onClick={() => setEditing("new")}><Plus className="size-4" /> Create Opportunity</Button>}
     >
       <dl className="mb-4 grid gap-3 text-sm sm:grid-cols-3">
