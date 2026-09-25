@@ -33,9 +33,9 @@ describe("applyTeamQueueFilters — status: 'closed', the value the new Closed c
     expect(visible.map((t) => t.status).sort()).toEqual(["in_progress", "open"]);
   });
 
-  it("status: 'closed' shows only closed tickets — not resolved, not the open ones", () => {
+  it("status: 'closed' shows finished tickets — resolved and closed, not the open ones", () => {
     const visible = applyTeamQueueFilters(rows, filters({ status: "closed" }), homeTeamOf);
-    expect(visible.map((t) => t.status)).toEqual(["closed"]);
+    expect(visible.map((t) => t.status).sort()).toEqual(["closed", "resolved"]);
   });
 
   it("status: 'all' still includes closed tickets alongside everything else", () => {

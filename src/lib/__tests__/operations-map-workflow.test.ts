@@ -29,7 +29,7 @@ describe("Operations map access and population", () => {
   it("defaults to active work and requires explicit closed selection", () => {
     const rows = [ticket(), ticket({ id: "closed", status: "closed" }), ticket({ id: "resolved", status: "resolved" })];
     expect(applyTeamQueueFilters(rows, DEFAULT_TEAM_QUEUE_FILTERS, () => null).map((row) => row.id)).toEqual(["ticket-1"]);
-    expect(applyTeamQueueFilters(rows, { ...DEFAULT_TEAM_QUEUE_FILTERS, status: "closed" }, () => null).map((row) => row.id)).toEqual(["closed"]);
+    expect(applyTeamQueueFilters(rows, { ...DEFAULT_TEAM_QUEUE_FILTERS, status: "closed" }, () => null).map((row) => row.id)).toEqual(["closed", "resolved"]);
   });
 
   it("composes unscheduled, vendor, assignee and priority instead of returning early", () => {
