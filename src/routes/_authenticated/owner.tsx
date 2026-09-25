@@ -546,7 +546,7 @@ function OwnerHubBody({
       <OwnerOpportunities
         variant="preview"
         onViewAll={() => void navigate({ search: (prev) => ({ ...prev, view: "opportunities" as const }) })}
-        focusId={Route.useSearch().opportunity ?? null}
+        focusId={search.opportunity ?? null}
         homes={ownerHomes}
         selectedHomeId={selectedHomeId}
         readOnly={preview}
