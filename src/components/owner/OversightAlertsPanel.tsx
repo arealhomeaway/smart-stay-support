@@ -22,6 +22,7 @@ import {
   oversightAlerts,
   type OversightAlertConfig,
 } from "@/lib/oversight-alerts";
+import { useRole } from "@/hooks/useRole";
 import type { OversightRow } from "@/lib/owner-oversight";
 import {
   oversightAlertConfig,
@@ -38,6 +39,10 @@ export function OversightAlertsPanel({ rows }: { rows: OversightRow[] }) {
   const loadConfig = useServerFn(oversightAlertConfig);
   const saveConfig = useServerFn(setOversightAlertConfig);
   const queryClient = useQueryClient();
+  // Changing thresholds is leadership-only (server enforces it too); the
+  // Onboarding Director sees the settings read-only.
+  const { actualRoles } = useRole();
+  const canEdit = actualRoles.includes("admin") || actualRoles.includes("manager");
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<OversightAlertConfig>(DEFAULT_ALERT_CONFIG);
 
@@ -67,6 +72,7 @@ export function OversightAlertsPanel({ rows }: { rows: OversightRow[] }) {
         id={`alert-${key}`}
         type="number"
         min={0}
+        disabled={!canEdit}
         value={String(draft[key])}
         onChange={(e) => setDraft({ ...draft, [key]: Number(e.target.value) })}
       />
@@ -82,6 +88,7 @@ export function OversightAlertsPanel({ rows }: { rows: OversightRow[] }) {
       <Switch
         id={`alert-${key}`}
         checked={Boolean(draft[key])}
+        disabled={!canEdit}
         onCheckedChange={(v) => setDraft({ ...draft, [key]: v })}
       />
     </div>
@@ -133,12 +140,25 @@ export function OversightAlertsPanel({ rows }: { rows: OversightRow[] }) {
               )}
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => save.mutate(draft)} disabled={save.isPending}>
-                Save settings
-              </Button>
+              {canEdit ? (
+                <>
+                  <Button variant="ghost" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => save.mutate(draft)} disabled={save.isPending}>
+                    Save settings
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="mr-auto text-xs text-muted-foreground">
+                    View only — leadership changes these settings.
+                  </p>
+                  <Button variant="ghost" onClick={() => setOpen(false)}>
+                    Close
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
