@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { SELECTABLE_DEPENDENCIES, effectiveDependency, isProtectedDecision } from "@/lib/owner-dependency";
+import { SELECTABLE_DEPENDENCIES, effectiveDependency } from "@/lib/owner-dependency";
 
 /**
  * Classify what a live Onboarding Task needs from the homeowner. Director or
@@ -38,8 +38,11 @@ export const setTaskOwnerDependency = createServerFn({ method: "POST" })
     if (before === data.dependency) return { ok: true as const, changed: false };
     const wasDecision = before === "business_decision";
     if (wasDecision) {
-      if (isProtectedDecision(task.title))
-        throw new Error("The management agreement is a business decision and stays one.");
+      // A configured Business Decision is an owner-authorization control. Only
+      // the Onboarding Director or leadership may remove it — never a PM.
+      const { canRemoveBusinessDecision } = await import("./onboarding-task-access.server");
+      if (!(await canRemoveBusinessDecision(sb, context.userId)))
+        throw new Error("Only the Onboarding Director can remove a required homeowner business decision.");
       if (task.owner_approval_status === "changes_requested")
         throw new Error("The homeowner asked for changes on this decision. Resolve that before reclassifying it.");
       if (data.reason.length < 5)
