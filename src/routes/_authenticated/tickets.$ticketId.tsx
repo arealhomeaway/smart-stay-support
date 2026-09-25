@@ -811,7 +811,7 @@ function TicketDetail() {
     hasClaim: activeBranch.claim,
     hasRecovery: activeBranch.recovery,
     repairAmount: branches?.repairAmount ?? 0,
-    ownerSensitive: Boolean(ticket.owner_notified || ticket.owner_approval_required),
+    ownerSensitive: Boolean((ticket as Record<string, unknown>)["owner_notified"] || (ticket as Record<string, unknown>)["owner_approval_required"]),
   }).required;
   const resolveActionLabel = willNeedFinalReview ? "Resolve — send for review" : "Close ticket";
 
@@ -1335,7 +1335,7 @@ function TicketDetail() {
                         hasRecovery: activeBranch.recovery,
                         repairAmount: branches?.repairAmount ?? 0,
                         ownerSensitive: Boolean(
-                          ticket["owner_notified"] || ticket["owner_approval_required"],
+                          (ticket as Record<string, unknown>)["owner_notified"] || (ticket as Record<string, unknown>)["owner_approval_required"],
                         ),
                       }}
                     />
