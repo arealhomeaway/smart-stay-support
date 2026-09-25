@@ -234,7 +234,7 @@ function ProgramsBoard() {
         }
       />
 
-      <OwnerContactAlerts />
+      <SupervisorContactAlerts />
 
 
       <ProgramSummary rows={rows} />
@@ -1263,4 +1263,10 @@ function RoadmapCatalog({ templates, loading }: { templates: TaskTemplate[]; loa
       )}
     </SectionCard>
   );
+}
+
+/** The text/call queue is a supervisor duty — the Onboarding Director never loads it. */
+function SupervisorContactAlerts() {
+  const { isSupervisor } = useRole();
+  return isSupervisor ? <OwnerContactAlerts /> : null;
 }
