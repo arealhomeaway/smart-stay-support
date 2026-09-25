@@ -154,7 +154,7 @@ export function OpportunityEditor({
   fixedTaskId?: string | null;
   defaultTitle?: string;
   /** From the Task's owner dependency — a starting point Kati can change. */
-  defaultResponseType?: ResponseType;
+  defaultResponseType?: ResponseType | undefined;
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -366,7 +366,7 @@ export function OpportunityEditor({
 }
 
 /** Owner Collaboration inside one internal Task. Hidden when the home has no Active Owner program. */
-export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle, defaultResponseType }: { propertyId: string; taskId: string; taskTitle: string; defaultResponseType?: ResponseType }) {
+export function TaskOwnerCollaboration({ propertyId, taskId, taskTitle, defaultResponseType }: { propertyId: string; taskId: string; taskTitle: string; defaultResponseType?: ResponseType | undefined }) {
   const loadPrograms = useServerFn(ownerPrograms);
   const programs = useQuery({ queryKey: ["owner-programs", "property", propertyId], queryFn: () => loadPrograms({ data: {} }) });
   const enrolled = (programs.data?.rows ?? []).some((p) => p.properties.some((h) => h.id === propertyId));
