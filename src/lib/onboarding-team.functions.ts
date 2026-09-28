@@ -220,7 +220,9 @@ export const setProjectRoleAssignee = createServerFn({ method: "POST" })
       if (data.userId) assignments[data.roleCode] = data.userId;
       else delete assignments[data.roleCode];
     }
-    const { error } = await db
+    // Written as the signed-in person: the project's responsibility guard
+    // checks who is making the change, and a service-role write has no identity.
+    const { error } = await (context as unknown as Ctx).supabase
       .from("onboarding_projects")
       .update(column ? { [column]: data.userId } : { role_assignments: assignments })
       .eq("id", data.projectId);
