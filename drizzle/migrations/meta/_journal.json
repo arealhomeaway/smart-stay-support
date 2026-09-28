@@ -407,6 +407,13 @@
       "when": 1790633838741,
       "tag": "0057_avatars_read_own_or_staff",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1790639657569,
+      "tag": "0058_demo_environment_admin_read_only",
+      "breakpoints": true
     }
   ]
 }
