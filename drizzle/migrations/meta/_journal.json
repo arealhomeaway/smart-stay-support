@@ -393,6 +393,13 @@
       "when": 1790629986267,
       "tag": "0055_template_owner_dependency_and_subtask_instantiation",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1790632050592,
+      "tag": "0056_owner_program_rules_staff_read_only",
+      "breakpoints": true
     }
   ]
 }
