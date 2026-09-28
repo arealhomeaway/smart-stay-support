@@ -4656,6 +4656,7 @@ export type Database = {
           offset_days: number | null
           opportunity: Json | null
           owner_approval_when_active_owner: boolean
+          owner_dependency: string | null
           requires_owner_approval: boolean
           role: string | null
           schedule_anchor: string | null
@@ -4682,6 +4683,7 @@ export type Database = {
           offset_days?: number | null
           opportunity?: Json | null
           owner_approval_when_active_owner?: boolean
+          owner_dependency?: string | null
           requires_owner_approval?: boolean
           role?: string | null
           schedule_anchor?: string | null
@@ -4708,6 +4710,7 @@ export type Database = {
           offset_days?: number | null
           opportunity?: Json | null
           owner_approval_when_active_owner?: boolean
+          owner_dependency?: string | null
           requires_owner_approval?: boolean
           role?: string | null
           schedule_anchor?: string | null

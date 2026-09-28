@@ -30,6 +30,7 @@ import {
   saveTemplateStepV2,
   type OpportunityContent,
 } from "@/lib/v2-workflow.functions";
+import { OWNER_DEPENDENCIES, type OwnerDependency } from "@/lib/owner-dependency";
 
 type Stage = { id: string; name: string; sort_order: number; active: boolean };
 type Step = Awaited<ReturnType<typeof readTemplateV2>>["steps"][number];
@@ -39,6 +40,7 @@ type StepInput = {
   isRequired: boolean;
   blocksHandoff: boolean;
   isActive: boolean;
+  ownerDependency: OwnerDependency;
   module: string | null;
   offsetDays: number | null;
   opportunity: OpportunityContent | null;
@@ -73,6 +75,7 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
   const [blocking, setBlocking] = useState(step.blocks_handoff);
   const [active, setActive] = useState(step.is_active);
   const [module, setModule] = useState(step.module ?? "");
+  const [dependency, setDependency] = useState<OwnerDependency>((step.owner_dependency as OwnerDependency | null) ?? "none");
   const [offset, setOffset] = useState(step.offset_days == null ? "" : String(step.offset_days));
   const [eligible, setEligible] = useState(Boolean(step.opportunity));
   const [opp, setOpp] = useState<OpportunityContent>(step.opportunity ?? { ...emptyOpp, title: step.title });
@@ -102,6 +105,15 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
           <div className="space-y-1">
             <Label htmlFor="mod">Module (optional)</Label>
             <Input id="mod" value={module} onChange={(e) => setModule(e.target.value)} placeholder="e.g. furnishing, pool" />
+          </div>
+          <div className="space-y-1">
+            <Label>Needs from the homeowner</Label>
+            <Select value={dependency} onValueChange={(v) => setDependency(v as OwnerDependency)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {OWNER_DEPENDENCIES.map((d) => <SelectItem key={d.code} value={d.code}>{d.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex flex-col justify-end gap-2 text-sm">
             <label className="flex items-center gap-2"><Switch checked={required} onCheckedChange={setRequired} /> Required</label>
@@ -143,6 +155,7 @@ function StepDialog({ step, onClose, onSave, saving }: { step: Step; onClose: ()
                 isRequired: required,
                 blocksHandoff: blocking,
                 isActive: active,
+                ownerDependency: dependency,
                 module: module.trim() || null,
                 offsetDays: offset.trim() === "" || Number.isNaN(Number(offset)) ? null : Math.round(Number(offset)),
                 opportunity: eligible ? opp : null,
