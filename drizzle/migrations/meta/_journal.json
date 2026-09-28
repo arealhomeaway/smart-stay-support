@@ -400,6 +400,13 @@
       "when": 1790632050592,
       "tag": "0056_owner_program_rules_staff_read_only",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1790633838741,
+      "tag": "0057_avatars_read_own_or_staff",
+      "breakpoints": true
     }
   ]
 }
