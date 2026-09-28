@@ -53,7 +53,7 @@ export const readTemplateV2 = createServerFn({ method: "POST" })
       sb.from("onboarding_template_stages").select("id, name, sort_order, active").eq("template_id", data.templateId).order("sort_order"),
       sb
         .from("onboarding_template_tasks")
-        .select("id, title, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, schedule_anchor")
+        .select("id, title, stage, sort_order, functional_role, is_required, blocks_handoff, is_active, module, opportunity, offset_days, schedule_anchor, owner_dependency")
         .eq("template_id", data.templateId)
         .order("sort_order"),
       sb.from("onboarding_template_versions").select("id, version, published_at").eq("template_id", data.templateId).order("version", { ascending: false }),
@@ -129,6 +129,7 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
         isRequired: z.boolean(),
         blocksHandoff: z.boolean(),
         isActive: z.boolean(),
+        ownerDependency: z.enum(["none", "information", "feedback", "acknowledge", "business_decision"]).optional(),
         module: z.string().trim().max(60).nullable(),
         offsetDays: z.number().int().min(-90).max(365).nullable(),
         opportunity: opportunitySchema,
@@ -144,6 +145,7 @@ export const saveTemplateStepV2 = createServerFn({ method: "POST" })
         is_required: data.isRequired,
         blocks_handoff: data.blocksHandoff,
         is_active: data.isActive,
+        ...(data.ownerDependency ? { owner_dependency: data.ownerDependency === "none" ? null : data.ownerDependency } : {}),
         module: data.module || null,
         offset_days: data.offsetDays,
         schedule_anchor: data.offsetDays === null ? null : "actual_access",
