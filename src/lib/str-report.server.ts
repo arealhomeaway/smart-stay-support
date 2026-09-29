@@ -35,12 +35,6 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
   };
   const text = (s: string, o: { size?: number; f?: typeof font; color?: typeof INK; x?: number } = {}) =>
     page.drawText(clean(s), { x: o.x ?? M, y, size: o.size ?? 9, font: o.f ?? font, color: o.color ?? INK });
-  const fit = (s: string, w: number, size = 7.5) => {
-    s = clean(s);
-    if (font.widthOfTextAtSize(s, size) <= w) return s;
-    while (s.length > 1 && font.widthOfTextAtSize(`${s}...`, size) > w) s = s.slice(0, -1);
-    return `${s}...`;
-  };
   const wrap = (s: string, w: number, size: number, f = font) => {
     const out: string[] = [];
     let line = "";
