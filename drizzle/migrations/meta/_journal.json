@@ -470,6 +470,13 @@
       "when": 1790644542822,
       "tag": "0066_cleaner_hours_unclassified_review",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1790644584830,
+      "tag": "0067_cleaner_hours_cron_token",
+      "breakpoints": true
     }
   ]
 }
