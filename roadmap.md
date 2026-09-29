@@ -739,4 +739,5 @@ Batch B (work surface)
 - [x] Cleaner Hours Phase 1 foundation: schema, forward-only STR scope, webhook ingest, nightly slice route (private-secret auth), internal page /cleaner-hours
 - [x] Cleaner Hours Phase 1 hardening: nightly job scheduled, unclassified-account review items, newest-revision fix, QA
 - [ ] Cleaner Hours: publish so the live site runs the nightly check and live-update ingestion
-- [ ] Cleaner Hours next phase: thresholds/alerts/dispatch rules (not started by request)
+- [x] Cleaner Hours Phase 2: staged states, check-before-assign, single-clean/emergency overrides, provisional durations, alerts, weekly digest, dashboard
+- [ ] Cleaner Hours Phase 2: publish to go live
