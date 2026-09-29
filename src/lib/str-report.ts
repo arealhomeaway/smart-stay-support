@@ -41,17 +41,34 @@ export type StrReport = {
   rows: ReportRow[];
   summary: SummaryRow[];
   totals: {
+    /** Property-specific owner participation only. */
     ownerMinutes: number;
+    ownerProgramLevelMinutes?: number;
+    ownerProgramTotalMinutes?: number;
     ownerEntries: number;
     nonOwnerSupportedMinutes: number;
     underReview: number;
   };
+  programLevelNote?: string;
   disclaimer: string;
   underReviewNote?: string;
   version?: number;
   draft?: boolean;
   generatedAt?: string;
 };
+
+export const PROGRAM_LEVEL_NOTE =
+  "Program-Level Participation is owner participation not linked to a specific property. It is not automatically assigned to any property and is shown separately to avoid double-counting.";
+
+/** The three owner-participation lines shown on every property report. */
+export function ownerBreakdown(r: Pick<StrReport, "totals">): [string, string][] {
+  const f = (m: number | undefined) => `${(hrs(m ?? 0) ?? 0).toFixed(2)} hrs`;
+  return [
+    ["Property-Specific Owner Participation", f(r.totals.ownerMinutes)],
+    ["Program-Level / Shared Participation", f(r.totals.ownerProgramLevelMinutes)],
+    ["Total Active Owner Participation", f(r.totals.ownerProgramTotalMinutes ?? r.totals.ownerMinutes)],
+  ];
+}
 
 export const REPORT_DISCLAIMER =
   "This report summarizes operational participation and work activity recorded in Resolve and connected systems. Attributed time may be based on operational estimates where individual clock-in/clock-out data is unavailable. This report is provided for recordkeeping and operational support only and does not constitute tax, legal, or accounting advice or a determination of tax eligibility.";
@@ -121,6 +138,8 @@ export function strReportCsv(r: StrReport) {
     `# Program period,${programPeriod}`,
     `# Reporting period,${r.period.from} to ${r.period.to}`,
     `# Report version,${version}`,
+    ...(r.include.owner ? ownerBreakdown(r).map(([k, v]) => `# ${k},${v}`) : []),
+    ...(r.include.owner ? [`# ${(r.programLevelNote ?? PROGRAM_LEVEL_NOTE).replace(/,/g, ";")}`] : []),
     ...(r.underReviewNote ? [`# ${r.underReviewNote}`] : []),
     `# ${r.disclaimer.replace(/,/g, ";")}`,
   ];
