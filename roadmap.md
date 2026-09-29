@@ -741,5 +741,5 @@ Batch B (work surface)
 - [ ] Cleaner Hours: publish so the live site runs the nightly check and live-update ingestion
 - [x] Cleaner Hours Phase 2: staged states, check-before-assign, single-clean/emergency overrides, provisional durations, alerts, weekly digest, dashboard
 - [ ] Cleaner Hours Phase 2: publish to go live
-- [ ] Safeguard: alert on cleaner-time corrections (re-evaluate on every change, no duplicates)
-- [ ] STR reporting: extensible person+property work-record layer (Resolve Tasks, Breezeway maintenance/inspection, vendors, field staff, manual) without rebuilding cleaner ledger
+- [x] Safeguard: alert on cleaner-time corrections (re-evaluate on every change, no duplicates)
+- [x] STR reporting: extensible person+property work-record layer (Resolve Tasks, Breezeway maintenance/inspection, vendors, field staff, manual) without rebuilding cleaner ledger
