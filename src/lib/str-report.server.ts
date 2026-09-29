@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { DRAFT_LABEL, hrs, timeLabel, totalText, type StrReport } from "./str-report";
+import { PROGRAM_LEVEL_NOTE, ownerBreakdown, DRAFT_LABEL, hrs, timeLabel, totalText, type StrReport } from "./str-report";
 
 const TEAL = rgb(0.075, 0.455, 0.478);
 const INK = rgb(0.067, 0.09, 0.098);
