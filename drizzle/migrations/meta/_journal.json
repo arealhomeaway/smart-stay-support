@@ -484,6 +484,13 @@
       "when": 1790644734697,
       "tag": "0068_cleaner_hours_newest_source_revision",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1790646044551,
+      "tag": "0069_cleaner_safeguard_phase2",
+      "breakpoints": true
     }
   ]
 }

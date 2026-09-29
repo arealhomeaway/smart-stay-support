@@ -1206,6 +1206,99 @@ export type Database = {
           },
         ]
       }
+      cleaner_dispatch_decisions: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          breezeway_task_id: number | null
+          company_worker_id: string | null
+          created_at: string
+          evaluation: Json
+          id: string
+          is_fixture: boolean
+          note: string | null
+          override_id: string | null
+          property_id: string
+          scheduled_date: string | null
+          state: string
+          task_ref: string
+          worker_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          breezeway_task_id?: number | null
+          company_worker_id?: string | null
+          created_at?: string
+          evaluation?: Json
+          id?: string
+          is_fixture?: boolean
+          note?: string | null
+          override_id?: string | null
+          property_id: string
+          scheduled_date?: string | null
+          state: string
+          task_ref: string
+          worker_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          breezeway_task_id?: number | null
+          company_worker_id?: string | null
+          created_at?: string
+          evaluation?: Json
+          id?: string
+          is_fixture?: boolean
+          note?: string | null
+          override_id?: string | null
+          property_id?: string
+          scheduled_date?: string | null
+          state?: string
+          task_ref?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_dispatch_decisions_company_worker_id_fkey"
+            columns: ["company_worker_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_dispatch_decisions_override_id_fkey"
+            columns: ["override_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_safeguard_overrides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_dispatch_decisions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_dispatch_decisions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_dispatch_decisions_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_exposure_ledger: {
         Row: {
           assignee_count: number | null
@@ -1341,6 +1434,7 @@ export type Database = {
           is_fixture: boolean
           note: string | null
           property_id: string
+          standard_clean_minutes: number | null
           tracking_from: string
         }
         Insert: {
@@ -1351,6 +1445,7 @@ export type Database = {
           is_fixture?: boolean
           note?: string | null
           property_id: string
+          standard_clean_minutes?: number | null
           tracking_from: string
         }
         Update: {
@@ -1361,6 +1456,7 @@ export type Database = {
           is_fixture?: boolean
           note?: string | null
           property_id?: string
+          standard_clean_minutes?: number | null
           tracking_from?: string
         }
         Relationships: [
@@ -1491,6 +1587,100 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_safeguard_overrides: {
+        Row: {
+          approved_by: string
+          approved_by_name: string
+          breezeway_task_id: number | null
+          buffer_hours: number | null
+          created_at: string
+          current_hours: number
+          estimate_source: string | null
+          id: string
+          is_fixture: boolean
+          justification: string
+          kind: string
+          owner_hours: number
+          projected_clean_hours: number
+          projected_total_hours: number
+          property_id: string
+          reason_category: string
+          scheduled_date: string | null
+          state_at_approval: string
+          task_ref: string
+          worker_id: string
+          year: number
+        }
+        Insert: {
+          approved_by: string
+          approved_by_name: string
+          breezeway_task_id?: number | null
+          buffer_hours?: number | null
+          created_at?: string
+          current_hours: number
+          estimate_source?: string | null
+          id?: string
+          is_fixture?: boolean
+          justification: string
+          kind: string
+          owner_hours: number
+          projected_clean_hours: number
+          projected_total_hours: number
+          property_id: string
+          reason_category: string
+          scheduled_date?: string | null
+          state_at_approval: string
+          task_ref: string
+          worker_id: string
+          year: number
+        }
+        Update: {
+          approved_by?: string
+          approved_by_name?: string
+          breezeway_task_id?: number | null
+          buffer_hours?: number | null
+          created_at?: string
+          current_hours?: number
+          estimate_source?: string | null
+          id?: string
+          is_fixture?: boolean
+          justification?: string
+          kind?: string
+          owner_hours?: number
+          projected_clean_hours?: number
+          projected_total_hours?: number
+          property_id?: string
+          reason_category?: string
+          scheduled_date?: string | null
+          state_at_approval?: string
+          task_ref?: string
+          worker_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_safeguard_overrides_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_safeguard_overrides_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_safeguard_overrides_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
             referencedColumns: ["id"]
           },
         ]
@@ -10939,6 +11129,7 @@ export type Database = {
         }
         Returns: Json
       }
+      cleaner_dispatch_options: { Args: never; Returns: Json }
       cleaner_ingest_task: {
         Args: {
           _fixture?: boolean
@@ -10949,6 +11140,77 @@ export type Database = {
         Returns: Json
       }
       cleaner_recalculate_task: { Args: { _task: number }; Returns: Json }
+      cleaner_record_dispatch: {
+        Args: {
+          _acknowledged?: boolean
+          _breezeway_task_id?: number
+          _individuals?: string[]
+          _property: string
+          _scheduled: string
+          _task_ref: string
+          _worker: string
+        }
+        Returns: Json
+      }
+      cleaner_record_dispatch_one: {
+        Args: {
+          _ack: boolean
+          _bz: number
+          _company: string
+          _fx: boolean
+          _on: string
+          _property: string
+          _ref: string
+          _worker: string
+        }
+        Returns: Json
+      }
+      cleaner_rotation: {
+        Args: { _on?: string; _property: string }
+        Returns: Json
+      }
+      cleaner_safeguard_check: {
+        Args: {
+          _projected_minutes?: number
+          _property: string
+          _scheduled?: string
+          _task_ref: string
+          _worker: string
+        }
+        Returns: Json
+      }
+      cleaner_safeguard_override: {
+        Args: {
+          _breezeway_task_id?: number
+          _category: string
+          _justification: string
+          _kind: string
+          _property: string
+          _scheduled: string
+          _task_ref: string
+          _worker: string
+        }
+        Returns: string
+      }
+      cleaner_safeguard_portfolio: {
+        Args: { _include_fixture?: boolean; _year: number }
+        Returns: Json
+      }
+      cleaner_safeguard_request_override: {
+        Args: {
+          _note: string
+          _property: string
+          _scheduled: string
+          _task_ref: string
+          _worker: string
+        }
+        Returns: undefined
+      }
+      cleaner_safeguard_weekly_digest: { Args: never; Returns: undefined }
+      cleaner_set_standard_duration: {
+        Args: { _minutes: number; _property: string }
+        Returns: undefined
+      }
       cleaner_verify_cron_token: { Args: { _token: string }; Returns: boolean }
       close_owner_opportunity: {
         Args: {
