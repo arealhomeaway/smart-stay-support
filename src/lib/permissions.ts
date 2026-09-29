@@ -98,6 +98,8 @@ export type Capability =
   | "owner_program_admin"
   // STR Cleaner Hours Safeguard monitoring: Operations leadership only.
   | "cleaner_hours"
+  // STR cleaner safeguard check before dispatch: Operations coordinators and leadership.
+  | "cleaner_dispatch_check"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -141,6 +143,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   // part of the job — not a platform-owner tool.
   "work_orders_internal",
   "cleaner_hours",
+  "cleaner_dispatch_check",
 ];
 
 export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
@@ -157,7 +160,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
   // Operations coordinators can see current guest/tenant contact details, the
   // shared Team Queue, and the work orders attached to what they are running.
-  tech: [...STAFF_BASE, "guest_contact", "work_orders_internal"],
+  tech: [...STAFF_BASE, "guest_contact", "work_orders_internal", "cleaner_dispatch_check"],
 
   vendor: [],
   owner: [],

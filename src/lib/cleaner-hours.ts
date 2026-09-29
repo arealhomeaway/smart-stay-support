@@ -15,6 +15,8 @@ export const METHOD_LABEL: Record<string, string> = {
   company_only_needs_review: "Company account only — needs review",
   invalid_duration_needs_review: "No usable elapsed time — needs review",
   company_account_not_counted: "Company account alongside named cleaners — not counted",
+  provisional_duration: "Provisional standard duration — needs review",
+  provisional_cap: "Provisional cap (standard + 2 h) — needs review",
 };
 
 export const REVIEW_KIND_LABEL: Record<string, string> = {
@@ -28,6 +30,10 @@ export const REVIEW_KIND_LABEL: Record<string, string> = {
   manual_entry: "Off-Breezeway clean entered manually",
   source_changed_after_correction: "Breezeway changed after a correction",
   source_missing: "Task no longer returned by Breezeway",
+  company_identity_needed: "Company login — identify the individual cleaner(s)",
+  override_request: "Override requested — leadership review required",
+  native_assignment_alert: "Assigned in Breezeway outside the safeguard",
+  threshold_reached: "Safeguard state reached",
 };
 
 export const CLASSIFICATION_LABEL: Record<string, string> = {
@@ -105,4 +111,129 @@ export function groupSummary(rows: SummaryRow[], by: "property" | "worker"): Gro
     map.set(key, g);
   }
   return [...map.values()].sort((a, b) => b.minutes - a.minutes);
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 — staged safeguard states. The rule itself lives in the database
+// (private.cleaner_safeguard_state); these are display labels only.
+
+export type SafeguardState = "normal" | "monitor" | "warning" | "restricted" | "hard_block" | "identity_required" | "not_tracked";
+
+export const STATE_LABEL: Record<SafeguardState, string> = {
+  normal: "Normal",
+  monitor: "Monitor",
+  warning: "Warning",
+  restricted: "Restricted",
+  hard_block: "Hard Block",
+  identity_required: "Identify cleaner",
+  not_tracked: "Not tracked",
+};
+
+export const STATE_TONE: Record<SafeguardState, "neutral" | "review" | "attention" | "critical" | "positive"> = {
+  normal: "positive",
+  monitor: "review",
+  warning: "attention",
+  restricted: "critical",
+  hard_block: "critical",
+  identity_required: "attention",
+  not_tracked: "neutral",
+};
+
+/** Badge classes on semantic tokens (Hard Block is the solid crimson). */
+export const STATE_BADGE: Record<SafeguardState, string> = {
+  normal: "border-success/40 bg-success/10 text-success",
+  monitor: "border-info/40 bg-info/10 text-info",
+  warning: "border-warning/50 bg-warning/15 text-warning-foreground",
+  restricted: "border-danger/50 bg-danger/10 text-danger",
+  hard_block: "border-danger bg-danger text-danger-foreground",
+  identity_required: "border-warning/50 bg-warning/15 text-warning-foreground",
+  not_tracked: "border-border text-muted-foreground",
+};
+
+export const STATE_GUIDANCE: Record<SafeguardState, string> = {
+  normal: "Standard dispatch.",
+  monitor: "Standard dispatch. Keep an eye on this cleaner's Attributed Cleaner Time here.",
+  warning: "Consider rotating cleaner. Confirm that rotation was considered before dispatching.",
+  restricted: "Standard dispatch is locked. Leadership review required: a single-clean override by the Director of Operations or an Admin.",
+  hard_block: "Standard dispatch is locked at the 95-hour operational safeguard threshold. Only a single-clean emergency override by the Director of Operations or an Admin can allow a clean.",
+  identity_required: "A company / vendor login cannot be dispatched directly. Identify the individual cleaner(s) doing the work.",
+  not_tracked: "This home is not enrolled in the STR cleaner-hours safeguard.",
+};
+
+export const OWNER_ZERO_COPY =
+  "Owner participation data is not yet sufficient for comparison. Fixed operational safeguards are being used.";
+
+export const ESTIMATE_SOURCE_LABEL: Record<string, string> = {
+  property_standard: "Property standard clean duration",
+  historical_average: "Average of this home's last completed cleans",
+  conservative_default: "Conservative default (4.0 h)",
+  supplied: "Entered estimate",
+  none: "No projected clean",
+};
+
+export const MANAGER_OVERRIDE_CATEGORIES: { value: string; label: string }[] = [
+  { value: "no_alternative_cleaner", label: "No alternative cleaner available" },
+  { value: "guest_or_owner_request", label: "Guest or owner specific request" },
+  { value: "quality_recovery", label: "Quality recovery clean" },
+  { value: "schedule_conflict", label: "Schedule conflict" },
+  { value: "other", label: "Other (explain)" },
+];
+
+export const EMERGENCY_OVERRIDE_CATEGORIES: { value: string; label: string }[] = [
+  { value: "emergency_guest_arrival_imminent", label: "Emergency — guest arrival imminent" },
+  { value: "emergency_no_qualified_alternative", label: "Emergency — no qualified alternative reachable" },
+  { value: "emergency_health_safety", label: "Emergency — health or safety" },
+  { value: "emergency_property_damage", label: "Emergency — property damage response" },
+];
+
+export const OVERRIDE_CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
+  [...MANAGER_OVERRIDE_CATEGORIES, ...EMERGENCY_OVERRIDE_CATEGORIES].map((c) => [c.value, c.label]),
+);
+
+/** Phrases this feature must never display. */
+export const PROHIBITED_PHRASES = [
+  "owner qualifies",
+  "owner fails",
+  "meets irs test",
+  "safe for tax purposes",
+  "tax risk confirmed",
+  "material participation disqualified",
+];
+
+export type Evaluation = {
+  enrolled: boolean;
+  state: SafeguardState;
+  year?: number;
+  worker_name?: string;
+  worker_type?: string;
+  current_hours?: number;
+  projected_clean_hours?: number;
+  projected_total_hours?: number;
+  estimate_source?: string;
+  owner_hours?: number;
+  owner_zero?: boolean;
+  buffer_hours?: number | null;
+  inversion?: boolean;
+  segment_start?: string;
+  owner_name?: string | null;
+  can_override?: boolean;
+  override?: { id: string; kind: "manager" | "emergency"; at: string; by: string } | null;
+  worker_id?: string;
+};
+
+export function hours(h: number | string | null | undefined): string {
+  if (h == null || h === "") return "—";
+  const n = Number(h);
+  return Number.isFinite(n) ? `${n.toFixed(1)} h` : "—";
+}
+
+/** Share of the 75-hour Restricted bar, clamped 0–100 for progress bars. */
+export function pctOfRestricted(h: number | string | null | undefined): number {
+  const n = Number(h ?? 0);
+  return Math.max(0, Math.min(100, Math.round((n / 75) * 100)));
+}
+
+const STATE_ORDER: SafeguardState[] = ["not_tracked", "normal", "monitor", "warning", "identity_required", "restricted", "hard_block"];
+export function worstState(states: SafeguardState[]): SafeguardState {
+  return states.reduce<SafeguardState>((w, s) => (STATE_ORDER.indexOf(s) > STATE_ORDER.indexOf(w) ? s : w), "normal");
 }
