@@ -80,7 +80,6 @@ import { Route as AuthenticatedWorkOrdersIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedWorkOrdersCalendarRouteImport } from './routes/_authenticated/work-orders.calendar'
 import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_authenticated/work-orders.manager'
 import { Route as AuthenticatedWorkOrdersMyWorkOrdersRouteImport } from './routes/_authenticated/work-orders.my-work-orders'
-import { Route as ApiPublicBzProbeRouteImport } from './routes/api/public/bz-probe'
 import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
 import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
 import { Route as ApiPublicHooksOwnerNotificationEmailRouteImport } from './routes/api/public/hooks/owner-notification-email'
@@ -483,11 +482,6 @@ const AuthenticatedWorkOrdersMyWorkOrdersRoute =
     path: '/my-work-orders',
     getParentRoute: () => AuthenticatedWorkOrdersRoute,
   } as any)
-const ApiPublicBzProbeRoute = ApiPublicBzProbeRouteImport.update({
-  id: '/api/public/bz-probe',
-  path: '/api/public/bz-probe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OauthSharepointReturnRoute = OauthSharepointReturnRouteImport.update({
   id: '/oauth/sharepoint/return',
   path: '/oauth/sharepoint/return',
@@ -604,7 +598,6 @@ export interface FileRoutesByFullPath {
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
-  '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
@@ -681,7 +674,6 @@ export interface FileRoutesByTo {
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
-  '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
@@ -765,7 +757,6 @@ export interface FileRoutesById {
   '/_authenticated/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/_authenticated/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
-  '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
@@ -849,7 +840,6 @@ export interface FileRouteTypes {
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
-    | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/claims/'
     | '/leads/'
@@ -926,7 +916,6 @@ export interface FileRouteTypes {
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
-    | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/claims'
     | '/leads'
@@ -1009,7 +998,6 @@ export interface FileRouteTypes {
     | '/_authenticated/work-orders/calendar'
     | '/_authenticated/work-orders/manager'
     | '/_authenticated/work-orders/my-work-orders'
-    | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/_authenticated/claims/'
     | '/_authenticated/leads/'
@@ -1034,7 +1022,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AwaitingAccessRoute: typeof AwaitingAccessRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  ApiPublicBzProbeRoute: typeof ApiPublicBzProbeRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
   ApiPublicHooksOwnerNotificationEmailRoute: typeof ApiPublicHooksOwnerNotificationEmailRoute
@@ -1545,13 +1532,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkOrdersMyWorkOrdersRouteImport
       parentRoute: typeof AuthenticatedWorkOrdersRoute
     }
-    '/api/public/bz-probe': {
-      id: '/api/public/bz-probe'
-      path: '/api/public/bz-probe'
-      fullPath: '/api/public/bz-probe'
-      preLoaderRoute: typeof ApiPublicBzProbeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/oauth/sharepoint/return': {
       id: '/oauth/sharepoint/return'
       path: '/oauth/sharepoint/return'
@@ -1825,7 +1805,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AwaitingAccessRoute: AwaitingAccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  ApiPublicBzProbeRoute: ApiPublicBzProbeRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,
   ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,
   ApiPublicHooksOwnerNotificationEmailRoute:

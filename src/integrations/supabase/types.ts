@@ -1117,6 +1117,640 @@ export type Database = {
           },
         ]
       }
+      cleaner_account_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          breezeway_person_id: number
+          created_at: string
+          from_classification: string | null
+          from_worker_id: string | null
+          id: string
+          note: string | null
+          to_classification: string
+          to_worker_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          breezeway_person_id: number
+          created_at?: string
+          from_classification?: string | null
+          from_worker_id?: string | null
+          id?: string
+          note?: string | null
+          to_classification: string
+          to_worker_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          breezeway_person_id?: number
+          created_at?: string
+          from_classification?: string | null
+          from_worker_id?: string | null
+          id?: string
+          note?: string | null
+          to_classification?: string
+          to_worker_id?: string | null
+        }
+        Relationships: []
+      }
+      cleaner_breezeway_accounts: {
+        Row: {
+          breezeway_person_id: number
+          classification: string
+          classification_note: string | null
+          classified_at: string | null
+          classified_by: string | null
+          created_at: string
+          first_seen_at: string
+          last_seen_at: string
+          last_seen_name: string | null
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          breezeway_person_id: number
+          classification?: string
+          classification_note?: string | null
+          classified_at?: string | null
+          classified_by?: string | null
+          created_at?: string
+          first_seen_at?: string
+          last_seen_at?: string
+          last_seen_name?: string | null
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          breezeway_person_id?: number
+          classification?: string
+          classification_note?: string | null
+          classified_at?: string | null
+          classified_by?: string | null
+          created_at?: string
+          first_seen_at?: string
+          last_seen_at?: string
+          last_seen_name?: string | null
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_breezeway_accounts_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_exposure_ledger: {
+        Row: {
+          assignee_count: number | null
+          attributed_minutes: number | null
+          attribution_method: string
+          author_id: string | null
+          author_name: string | null
+          breezeway_person_id: number | null
+          breezeway_person_name: string | null
+          breezeway_task_id: number | null
+          completion_date: string
+          confidence: string
+          counted: boolean
+          created_at: string
+          entry_key: string
+          id: string
+          is_fixture: boolean
+          original_minutes: number | null
+          property_id: string | null
+          raw_elapsed_seconds: number | null
+          reason: string | null
+          review_state: string
+          snapshot_id: string | null
+          source_revision: string | null
+          superseded_at: string | null
+          superseded_reason: string | null
+          supersedes_id: string | null
+          synced_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          assignee_count?: number | null
+          attributed_minutes?: number | null
+          attribution_method: string
+          author_id?: string | null
+          author_name?: string | null
+          breezeway_person_id?: number | null
+          breezeway_person_name?: string | null
+          breezeway_task_id?: number | null
+          completion_date: string
+          confidence: string
+          counted: boolean
+          created_at?: string
+          entry_key: string
+          id?: string
+          is_fixture?: boolean
+          original_minutes?: number | null
+          property_id?: string | null
+          raw_elapsed_seconds?: number | null
+          reason?: string | null
+          review_state: string
+          snapshot_id?: string | null
+          source_revision?: string | null
+          superseded_at?: string | null
+          superseded_reason?: string | null
+          supersedes_id?: string | null
+          synced_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          assignee_count?: number | null
+          attributed_minutes?: number | null
+          attribution_method?: string
+          author_id?: string | null
+          author_name?: string | null
+          breezeway_person_id?: number | null
+          breezeway_person_name?: string | null
+          breezeway_task_id?: number | null
+          completion_date?: string
+          confidence?: string
+          counted?: boolean
+          created_at?: string
+          entry_key?: string
+          id?: string
+          is_fixture?: boolean
+          original_minutes?: number | null
+          property_id?: string | null
+          raw_elapsed_seconds?: number | null
+          reason?: string | null
+          review_state?: string
+          snapshot_id?: string | null
+          source_revision?: string | null
+          superseded_at?: string | null
+          superseded_reason?: string | null
+          supersedes_id?: string | null
+          synced_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_exposure_ledger_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_exposure_ledger_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_exposure_ledger_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_task_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_exposure_ledger_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_exposure_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_exposure_ledger_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_hours_properties: {
+        Row: {
+          active: boolean
+          designated_at: string
+          designated_by: string | null
+          ended_at: string | null
+          is_fixture: boolean
+          note: string | null
+          property_id: string
+          tracking_from: string
+        }
+        Insert: {
+          active?: boolean
+          designated_at?: string
+          designated_by?: string | null
+          ended_at?: string | null
+          is_fixture?: boolean
+          note?: string | null
+          property_id: string
+          tracking_from: string
+        }
+        Update: {
+          active?: boolean
+          designated_at?: string
+          designated_by?: string | null
+          ended_at?: string | null
+          is_fixture?: boolean
+          note?: string | null
+          property_id?: string
+          tracking_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_hours_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_hours_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_hours_property_events: {
+        Row: {
+          active: boolean
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          id: string
+          note: string | null
+          property_id: string
+          tracking_from: string | null
+        }
+        Insert: {
+          active: boolean
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          property_id: string
+          tracking_from?: string | null
+        }
+        Update: {
+          active?: boolean
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          property_id?: string
+          tracking_from?: string | null
+        }
+        Relationships: []
+      }
+      cleaner_review_items: {
+        Row: {
+          breezeway_home_id: number | null
+          breezeway_person_id: number | null
+          breezeway_task_id: number | null
+          created_at: string
+          dedupe_key: string
+          detail: Json
+          id: string
+          is_fixture: boolean
+          kind: string
+          ledger_entry_id: string | null
+          property_id: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          source_revision: string | null
+          status: string
+        }
+        Insert: {
+          breezeway_home_id?: number | null
+          breezeway_person_id?: number | null
+          breezeway_task_id?: number | null
+          created_at?: string
+          dedupe_key: string
+          detail?: Json
+          id?: string
+          is_fixture?: boolean
+          kind: string
+          ledger_entry_id?: string | null
+          property_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          source_revision?: string | null
+          status?: string
+        }
+        Update: {
+          breezeway_home_id?: number | null
+          breezeway_person_id?: number | null
+          breezeway_task_id?: number | null
+          created_at?: string
+          dedupe_key?: string
+          detail?: Json
+          id?: string
+          is_fixture?: boolean
+          kind?: string
+          ledger_entry_id?: string | null
+          property_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          source_revision?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_review_items_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_exposure_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_review_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_review_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_sync_runs: {
+        Row: {
+          completed_at: string | null
+          cursor: number
+          errors: Json
+          home_queue: Json
+          id: string
+          kind: string
+          last_error: string | null
+          people_refreshed_at: string | null
+          snapshots_created: number
+          started_at: string
+          status: string
+          tasks_seen: number
+          updated_at: string
+          window_from: string
+          window_to: string
+        }
+        Insert: {
+          completed_at?: string | null
+          cursor?: number
+          errors?: Json
+          home_queue?: Json
+          id?: string
+          kind: string
+          last_error?: string | null
+          people_refreshed_at?: string | null
+          snapshots_created?: number
+          started_at?: string
+          status?: string
+          tasks_seen?: number
+          updated_at?: string
+          window_from: string
+          window_to: string
+        }
+        Update: {
+          completed_at?: string | null
+          cursor?: number
+          errors?: Json
+          home_queue?: Json
+          id?: string
+          kind?: string
+          last_error?: string | null
+          people_refreshed_at?: string | null
+          snapshots_created?: number
+          started_at?: string
+          status?: string
+          tasks_seen?: number
+          updated_at?: string
+          window_from?: string
+          window_to?: string
+        }
+        Relationships: []
+      }
+      cleaner_task_snapshots: {
+        Row: {
+          assignees: Json
+          breezeway_home_id: number | null
+          breezeway_task_id: number
+          department: string | null
+          elapsed_seconds: number | null
+          finished_at: string | null
+          finished_by_id: number | null
+          finished_by_name: string | null
+          id: string
+          is_fixture: boolean
+          linked_reservation: Json | null
+          payload: Json
+          payload_hash: string
+          property_id: string | null
+          scheduled_date: string | null
+          source: string
+          source_updated_at: string | null
+          started_at: string | null
+          status_code: string | null
+          status_stage: string | null
+          synced_at: string
+          task_name: string | null
+          template_id: number | null
+          total_time: string | null
+        }
+        Insert: {
+          assignees?: Json
+          breezeway_home_id?: number | null
+          breezeway_task_id: number
+          department?: string | null
+          elapsed_seconds?: number | null
+          finished_at?: string | null
+          finished_by_id?: number | null
+          finished_by_name?: string | null
+          id?: string
+          is_fixture?: boolean
+          linked_reservation?: Json | null
+          payload: Json
+          payload_hash: string
+          property_id?: string | null
+          scheduled_date?: string | null
+          source: string
+          source_updated_at?: string | null
+          started_at?: string | null
+          status_code?: string | null
+          status_stage?: string | null
+          synced_at?: string
+          task_name?: string | null
+          template_id?: number | null
+          total_time?: string | null
+        }
+        Update: {
+          assignees?: Json
+          breezeway_home_id?: number | null
+          breezeway_task_id?: number
+          department?: string | null
+          elapsed_seconds?: number | null
+          finished_at?: string | null
+          finished_by_id?: number | null
+          finished_by_name?: string | null
+          id?: string
+          is_fixture?: boolean
+          linked_reservation?: Json | null
+          payload?: Json
+          payload_hash?: string
+          property_id?: string | null
+          scheduled_date?: string | null
+          source?: string
+          source_updated_at?: string | null
+          started_at?: string | null
+          status_code?: string | null
+          status_stage?: string | null
+          synced_at?: string
+          task_name?: string | null
+          template_id?: number | null
+          total_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_task_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_task_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_task_state: {
+        Row: {
+          breezeway_task_id: number
+          is_fixture: boolean
+          last_source: string | null
+          last_synced_at: string
+          latest_snapshot_id: string | null
+          property_id: string | null
+        }
+        Insert: {
+          breezeway_task_id: number
+          is_fixture?: boolean
+          last_source?: string | null
+          last_synced_at?: string
+          latest_snapshot_id?: string | null
+          property_id?: string | null
+        }
+        Update: {
+          breezeway_task_id?: number
+          is_fixture?: boolean
+          last_source?: string | null
+          last_synced_at?: string
+          latest_snapshot_id?: string | null
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_task_state_latest_snapshot_id_fkey"
+            columns: ["latest_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_task_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_task_state_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_task_state_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_workers: {
+        Row: {
+          account_type: string
+          active: boolean
+          company_worker_id: string | null
+          created_at: string
+          created_by: string | null
+          display_name: string
+          id: string
+          notes: string | null
+          updated_at: string
+          updated_by: string | null
+          vendor_org_id: string | null
+        }
+        Insert: {
+          account_type: string
+          active?: boolean
+          company_worker_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_org_id?: string | null
+        }
+        Update: {
+          account_type?: string
+          active?: boolean
+          company_worker_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vendor_org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_workers_company_worker_id_fkey"
+            columns: ["company_worker_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_workers_vendor_org_id_fkey"
+            columns: ["vendor_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaning_regions: {
         Row: {
           created_at: string
@@ -10096,6 +10730,70 @@ export type Database = {
       }
     }
     Views: {
+      cleaner_exposure_summary: {
+        Row: {
+          attributed_minutes: number | null
+          cleans: number | null
+          last_clean: string | null
+          lowest_confidence: string | null
+          property_id: string | null
+          reviewed_entries: number | null
+          unknown_time_entries: number | null
+          unlinked_person_id: number | null
+          unreviewed_entries: number | null
+          worker_id: string | null
+          worker_name: string | null
+          worker_type: string | null
+          year: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_exposure_ledger_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_exposure_ledger_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_exposure_ledger_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_owner_hours_by_property: {
+        Row: {
+          entries: number | null
+          owner_minutes: number | null
+          property_id: string | null
+          year: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_time_entry_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_time_entry_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_recovery_ledger: {
         Row: {
           approval_status: string | null
@@ -10184,6 +10882,16 @@ export type Database = {
         }
         Returns: string
       }
+      add_manual_cleaner_clean: {
+        Args: {
+          _date: string
+          _minutes: number
+          _property_id: string
+          _reason: string
+          _worker_id: string
+        }
+        Returns: string
+      }
       archive_attachment: {
         Args: { _actor_id: string; _document_id: string; _reason?: string }
         Returns: string
@@ -10221,6 +10929,26 @@ export type Database = {
         }
         Returns: Json
       }
+      classify_cleaner_account: {
+        Args: {
+          _classification: string
+          _new_worker_name?: string
+          _note?: string
+          _person: number
+          _worker_id?: string
+        }
+        Returns: Json
+      }
+      cleaner_ingest_task: {
+        Args: {
+          _fixture?: boolean
+          _payload: Json
+          _property_id: string
+          _source: string
+        }
+        Returns: Json
+      }
+      cleaner_recalculate_task: { Args: { _task: number }; Returns: Json }
       close_owner_opportunity: {
         Args: {
           _expected_updated_at: string
@@ -10245,6 +10973,15 @@ export type Database = {
           _expected_version: string
           _program_id: string
           _report: Json
+        }
+        Returns: string
+      }
+      correct_cleaner_exposure: {
+        Args: {
+          _entry: string
+          _minutes: number
+          _reason: string
+          _worker_id: string
         }
         Returns: string
       }
@@ -10721,6 +11458,10 @@ export type Database = {
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
+      resolve_cleaner_review: {
+        Args: { _id: string; _note: string; _status: string }
+        Returns: undefined
+      }
       resolve_owner_request: { Args: { _id: string }; Returns: undefined }
       respond_owner_approval: {
         Args: {
@@ -10872,6 +11613,15 @@ export type Database = {
       set_attachment_visibility: {
         Args: { _actor_id: string; _document_id: string; _visibility: string }
         Returns: string
+      }
+      set_cleaner_hours_participation: {
+        Args: {
+          _active: boolean
+          _note: string
+          _property: string
+          _tracking_from: string
+        }
+        Returns: undefined
       }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }
       start_optional_opportunity: {
