@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -24,7 +25,7 @@ export const strReportContext = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ propertyId: id }).parse(d))
   .middleware([requireSupabaseAuth])
   .handler(({ data, context }) =>
-    call<Record<string, unknown>>(context.supabase, "str_report_context", { _property: data.propertyId }),
+    call<{ [k: string]: Json }>(context.supabase, "str_report_context", { _property: data.propertyId }),
   );
 
 const previewInput = z.object({
@@ -55,7 +56,7 @@ export const strReportVersion = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ reportId: id }).parse(d))
   .middleware([requireSupabaseAuth])
   .handler(({ data, context }) =>
-    call<StrReport & { sourceRefs: unknown[]; status: string }>(context.supabase, "str_report_version", {
+    call<StrReport & { sourceRefs: Json[]; status: string }>(context.supabase, "str_report_version", {
       _report: data.reportId,
     }),
   );

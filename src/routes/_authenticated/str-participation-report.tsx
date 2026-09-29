@@ -98,7 +98,7 @@ function ReportPage() {
 function PropertyReport({ propertyId }: { propertyId: string }) {
   const qc = useQueryClient();
   const getCtx = useServerFn(strReportContext);
-  const ctx = useQuery({ queryKey: ["str-report", "ctx", propertyId], queryFn: () => getCtx({ data: { propertyId } }) as Promise<Ctx> });
+  const ctx = useQuery({ queryKey: ["str-report", "ctx", propertyId], queryFn: () => getCtx({ data: { propertyId } }) as unknown as Promise<Ctx> });
   const [programId, setProgramId] = useState<string>("");
   const [mode, setMode] = useState<"program" | "year" | "custom">("program");
   const [year, setYear] = useState(String(new Date().getFullYear()));
@@ -266,7 +266,7 @@ export function ReportView({ report: r, appendix, internal, banner, actions }: {
   );
 }
 
-function internalRef(i: Record<string, unknown> | undefined) {
+function internalRef(i: Record<string, string | number | boolean | null> | undefined) {
   if (!i) return "";
   if (i["kind"] === "cleaner_ledger") return i["breezewayTaskId"] ? `Breezeway Task ${String(i["breezewayTaskId"])}` : `Ledger ${String(i["id"]).slice(0, 8)}`;
   if (i["kind"] === "owner_time_entry") return `Owner entry ${String(i["id"]).slice(0, 8)}`;

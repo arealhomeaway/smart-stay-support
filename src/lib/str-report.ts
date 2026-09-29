@@ -18,7 +18,7 @@ export type ReportRow = {
   minutes: number | null;
   status: "final" | "provisional";
   correction: boolean;
-  internal?: Record<string, unknown>;
+  internal?: Record<string, string | number | boolean | null>;
 };
 
 export type SummaryRow = {
