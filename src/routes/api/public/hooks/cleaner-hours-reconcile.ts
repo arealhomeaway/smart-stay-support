@@ -10,9 +10,13 @@ export const Route = createFileRoute("/api/public/hooks/cleaner-hours-reconcile"
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const token = request.headers.get("apikey") ?? "";
-        const expected = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-        if (!expected || token !== expected) {
+        // Only the private scheduler secret is accepted — never the public app key.
+        const expected = process.env["LOVABLE_CRON_SECRET"] ?? "";
+        const provided = request.headers.get("x-cron-secret") ?? "";
+        const { timingSafeEqual } = await import("crypto");
+        const a = Buffer.from(provided);
+        const b = Buffer.from(expected);
+        if (!expected || a.length !== b.length || !timingSafeEqual(a, b)) {
           return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
         }
         try {
