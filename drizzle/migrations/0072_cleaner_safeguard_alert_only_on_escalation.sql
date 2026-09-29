@@ -1,0 +1,60 @@
+-- Lowering a state (e.g. Hard Block -> Restricted) records the transition but never alerts.
+CREATE OR REPLACE FUNCTION private.cleaner_safeguard_thresholds(_property uuid, _fixture boolean)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE d date := (now() AT TIME ZONE 'America/Chicago')::date; y int := extract(year FROM (now() AT TIME ZONE 'America/Chicago'))::int;
+  w uuid; ev jsonb; st text; lbl text; key text; rid uuid; nm text; pname text; it record; cur_key text;
+  prior jsonb := '{}'::jsonb; prior_lbl text;
+BEGIN
+  IF private.cleaner_tracking_from(_property) IS NULL THEN RETURN; END IF;
+  SELECT name INTO pname FROM properties WHERE id=_property;
+
+  FOR it IN SELECT * FROM cleaner_review_items WHERE kind='threshold_reached' AND status='open' AND property_id=_property
+              AND dedupe_key LIKE 'thr:'||_property||':%:'||y||':%' LOOP
+    w := nullif(it.detail->>'worker_id','')::uuid;
+    IF w IS NULL THEN CONTINUE; END IF;
+    ev := private.cleaner_safeguard_eval(_property, w, d, 0);
+    st := ev->>'state';
+    cur_key := CASE WHEN st IN ('warning','restricted','hard_block') OR (ev->>'inversion')::boolean
+      THEN 'thr:'||_property||':'||w||':'||y||':'||CASE WHEN (ev->>'inversion')::boolean AND st <> 'hard_block' THEN 'inversion' ELSE st END END;
+    IF cur_key IS DISTINCT FROM it.dedupe_key THEN
+      prior := prior || jsonb_build_object(w::text, split_part(it.dedupe_key, ':', 5));
+      UPDATE cleaner_review_items SET status='resolved', resolved_at=now(),
+        resolution_note='Recalculated: now '||replace(initcap(st),'_',' ')||' at '||(ev->>'current_hours')||' h Attributed Cleaner Time'
+          ||CASE WHEN (ev->>'inversion')::boolean THEN ' (inversion)' ELSE '' END,
+        detail = it.detail || jsonb_build_object('transition_to', st, 'transition_hours', ev->>'current_hours', 'transition_at', now())
+       WHERE id=it.id;
+    END IF;
+  END LOOP;
+
+  FOR w IN SELECT DISTINCT l.worker_id FROM cleaner_exposure_ledger l JOIN cleaner_workers cw ON cw.id=l.worker_id AND cw.account_type='individual'
+            WHERE l.property_id=_property AND l.superseded_at IS NULL AND extract(year FROM l.completion_date)::int = y LOOP
+    ev := private.cleaner_safeguard_eval(_property, w, d, 0);
+    st := ev->>'state'; nm := ev->>'worker_name';
+    IF st IN ('warning','restricted','hard_block') OR (ev->>'inversion')::boolean THEN
+      lbl := CASE WHEN (ev->>'inversion')::boolean AND st <> 'hard_block' THEN 'inversion' ELSE st END;
+      key := 'thr:'||_property||':'||w||':'||y||':'||lbl;
+      prior_lbl := prior->>(w::text);
+      rid := NULL;
+      INSERT INTO cleaner_review_items(kind, dedupe_key, property_id, detail, is_fixture)
+      VALUES ('threshold_reached', key, _property, ev || jsonb_build_object('worker_id', w, 'transition_from', coalesce(prior_lbl,'below_warning')), _fixture)
+      ON CONFLICT (dedupe_key) WHERE status='open' DO NOTHING RETURNING id INTO rid;
+      IF rid IS NOT NULL AND (
+           prior_lbl IS NULL
+        OR private.cleaner_state_rank(lbl) > private.cleaner_state_rank(prior_lbl)
+        OR (lbl = 'inversion' AND prior_lbl <> 'inversion')) THEN
+        IF lbl = 'warning' THEN
+          PERFORM private.cleaner_alert('pc', 'Cleaner in Warning at '||coalesce(pname,'an STR home'),
+            nm||' has '||(ev->>'current_hours')||' h Attributed Cleaner Time here. Consider rotating cleaner before the next clean.', 'high', rid, NULL, _fixture);
+        ELSE
+          PERFORM private.cleaner_alert('leadership',
+            CASE WHEN lbl = 'inversion' THEN 'Hours inversion at ' ELSE replace(initcap(st),'_',' ')||' state at ' END||coalesce(pname,'an STR home'),
+            nm||': '||(ev->>'current_hours')||' h Attributed Cleaner Time; owner hours '||(ev->>'owner_hours')||' h. Leadership review required.', 'urgent', rid, NULL, _fixture);
+        END IF;
+      END IF;
+    END IF;
+  END LOOP;
+END $$;
+
+CREATE OR REPLACE FUNCTION private.cleaner_state_rank(_s text) RETURNS int LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE _s WHEN 'warning' THEN 1 WHEN 'restricted' THEN 2 WHEN 'inversion' THEN 2 WHEN 'hard_block' THEN 3 ELSE 0 END
+$$;

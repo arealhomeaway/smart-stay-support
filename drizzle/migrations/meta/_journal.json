@@ -505,6 +505,13 @@
       "when": 1790646877436,
       "tag": "0071_cleaner_safeguard_reevaluate_deferred",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790646953342,
+      "tag": "0072_cleaner_safeguard_alert_only_on_escalation",
+      "breakpoints": true
     }
   ]
 }
