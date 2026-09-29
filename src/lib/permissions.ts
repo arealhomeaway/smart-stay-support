@@ -100,6 +100,8 @@ export type Capability =
   | "cleaner_hours"
   // STR cleaner safeguard check before dispatch: Operations coordinators and leadership.
   | "cleaner_dispatch_check"
+  // STR Participation & Work Activity Report: Admin + Director of Operations only.
+  | "str_participation_report"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -155,6 +157,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "integrations",
     "handoff_request",
     "view_as",
+    "str_participation_report",
   ],
   manager: SUPERVISOR_CAPS,
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
@@ -172,7 +175,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
  * department without needing the leadership (`manager`) role, which would also
  * open Operations.
  */
-export type AccessSeats = { onboardingDirector?: boolean };
+export type AccessSeats = { onboardingDirector?: boolean; opsDirector?: boolean };
 
 export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "onboarding_workspace",
@@ -190,6 +193,7 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
   const set = new Set<Capability>();
   for (const role of roles) for (const cap of ROLE_CAPABILITIES[role] ?? []) set.add(cap);
   if (seats.onboardingDirector) for (const cap of ONBOARDING_DIRECTOR_CAPS) set.add(cap);
+  if (seats.opsDirector) set.add("str_participation_report");
   return set;
 }
 

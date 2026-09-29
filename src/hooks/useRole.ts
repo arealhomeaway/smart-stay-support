@@ -28,10 +28,16 @@ export function useMyRoles() {
     queryFn: async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user)
-        return { userId: null as string | null, roles: [] as AppRole[], onboardingDirector: false };
-      const [{ data, error }, director] = await Promise.all([
+        return {
+          userId: null as string | null,
+          roles: [] as AppRole[],
+          onboardingDirector: false,
+          opsDirector: false,
+        };
+      const [{ data, error }, director, ops] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", auth.user.id),
         supabase.rpc("is_onboarding_director", { _user_id: auth.user.id }),
+        supabase.rpc("is_director", { _user_id: auth.user.id }),
       ]);
       if (error) throw error;
       return {
@@ -40,6 +46,8 @@ export function useMyRoles() {
         // The Onboarding Director seat carries department-wide Onboarding
         // authority on its own — never via the broad leadership role.
         onboardingDirector: director.data === true,
+        // Admin or whoever holds the Director of Operations seat.
+        opsDirector: ops.data === true,
       };
     },
   });
@@ -69,6 +77,7 @@ export function useRole() {
   // A role preview shows the previewed role only, never the viewer's own seat.
   const seats: AccessSeats = {
     onboardingDirector: !previewing && Boolean(query.data?.onboardingDirector),
+    opsDirector: !previewing && Boolean(query.data?.opsDirector),
   };
   const access = { roles, seats };
 
