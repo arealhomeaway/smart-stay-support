@@ -736,3 +736,5 @@ Batch B (work surface)
 - [ ] Webhook ingestion + nightly reconcile (participating homes only) + people refresh
 - [ ] Internal dashboard / review / classification / manual entry screens
 - [ ] Synthetic STR QA + tests
+- [x] Cleaner Hours Phase 1 foundation: schema, forward-only STR scope, webhook ingest, nightly slice route (private-secret auth), internal page /cleaner-hours
+- [ ] Cleaner Hours: schedule nightly check (awaiting go-ahead); decide whether operations staff beyond admin/manager need access; thresholds/alerts/dispatch rules (future phase)
