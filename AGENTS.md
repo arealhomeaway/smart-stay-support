@@ -15,3 +15,4 @@ Department menus, breadcrumbs and Back come from the app shell (`src/lib/shell-n
 
 ## Help & Feedback rule (Resolve standing rule)
 Every current and future Resolve page inherits the global ? Help & Feedback control from the shared app shell (`src/components/HelpFeedback.tsx`, rendered once in `AppShell`). Never add it per page. It files Resolve Help Tickets (`help_tickets`), never Operations tickets.
+- Homeowner⇄ARHA conversations live in append-only `owner_request_messages` (one thread per owner-facing request, written only via post/resolve/reopen RPCs); status is derived from the last speaker — never store it twice.
