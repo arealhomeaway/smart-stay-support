@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS first_name text, ADD COLUMN IF NOT EXISTS last_name text;
+COMMENT ON COLUMN public.profiles.full_name IS 'Display name shown across Resolve; edited by admins via People & access.';

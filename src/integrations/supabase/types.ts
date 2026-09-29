@@ -7332,9 +7332,11 @@ export type Database = {
           created_at: string
           email: string | null
           email_signature: string | null
+          first_name: string | null
           full_name: string | null
           id: string
           job_title: string | null
+          last_name: string | null
           oncall_eligible: boolean
           phone: string | null
           updated_at: string
@@ -7344,9 +7346,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           email_signature?: string | null
+          first_name?: string | null
           full_name?: string | null
           id: string
           job_title?: string | null
+          last_name?: string | null
           oncall_eligible?: boolean
           phone?: string | null
           updated_at?: string
@@ -7356,9 +7360,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           email_signature?: string | null
+          first_name?: string | null
           full_name?: string | null
           id?: string
           job_title?: string | null
+          last_name?: string | null
           oncall_eligible?: boolean
           phone?: string | null
           updated_at?: string
