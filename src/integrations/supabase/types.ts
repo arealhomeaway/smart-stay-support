@@ -1509,6 +1509,54 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaner_pending_activations: {
+        Row: {
+          activated_at: string | null
+          activated_from: string | null
+          activated_task_id: number | null
+          breezeway_home_id: string
+          created_at: string
+          earliest_date: string
+          note: string | null
+          property_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_from?: string | null
+          activated_task_id?: number | null
+          breezeway_home_id: string
+          created_at?: string
+          earliest_date: string
+          note?: string | null
+          property_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          activated_from?: string | null
+          activated_task_id?: number | null
+          breezeway_home_id?: string
+          created_at?: string
+          earliest_date?: string
+          note?: string | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_pending_activations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaner_pending_activations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_review_items: {
         Row: {
           breezeway_home_id: number | null
@@ -11272,6 +11320,15 @@ export type Database = {
           _note?: string
           _person: number
           _worker_id?: string
+        }
+        Returns: Json
+      }
+      cleaner_activate_pending: {
+        Args: {
+          _department: string
+          _home_id: string
+          _scheduled_date: string
+          _task_id: number
         }
         Returns: Json
       }
