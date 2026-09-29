@@ -27,6 +27,7 @@ import {
   ReceiptText,
   Workflow,
   Timer,
+  ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -188,6 +189,13 @@ const frontlineGroup: NavGroup = {
       icon: Plus,
       tour: "report",
       capability: "ticket_create",
+    },
+    {
+      to: "/str-dispatch-check",
+      label: "STR cleaner check",
+      icon: ShieldCheck,
+      tour: "str-dispatch-check",
+      capability: "cleaner_dispatch_check",
     },
   ],
 };
