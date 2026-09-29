@@ -19,6 +19,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAvailabilityFinderRouteImport } from './routes/_authenticated/availability-finder'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
+import { Route as AuthenticatedCleanerHoursRouteImport } from './routes/_authenticated/cleaner-hours'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -80,9 +81,9 @@ import { Route as AuthenticatedWorkOrdersIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedWorkOrdersCalendarRouteImport } from './routes/_authenticated/work-orders.calendar'
 import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_authenticated/work-orders.manager'
 import { Route as AuthenticatedWorkOrdersMyWorkOrdersRouteImport } from './routes/_authenticated/work-orders.my-work-orders'
-import { Route as ApiPublicBzProbeRouteImport } from './routes/api/public/bz-probe'
 import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
 import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
+import { Route as ApiPublicHooksCleanerHoursReconcileRouteImport } from './routes/api/public/hooks/cleaner-hours-reconcile'
 import { Route as ApiPublicHooksOwnerNotificationEmailRouteImport } from './routes/api/public/hooks/owner-notification-email'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
@@ -141,6 +142,12 @@ const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
   path: '/claims',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCleanerHoursRoute =
+  AuthenticatedCleanerHoursRouteImport.update({
+    id: '/cleaner-hours',
+    path: '/cleaner-hours',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
   id: '/coach',
   path: '/coach',
@@ -483,11 +490,6 @@ const AuthenticatedWorkOrdersMyWorkOrdersRoute =
     path: '/my-work-orders',
     getParentRoute: () => AuthenticatedWorkOrdersRoute,
   } as any)
-const ApiPublicBzProbeRoute = ApiPublicBzProbeRouteImport.update({
-  id: '/api/public/bz-probe',
-  path: '/api/public/bz-probe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OauthSharepointReturnRoute = OauthSharepointReturnRouteImport.update({
   id: '/oauth/sharepoint/return',
   path: '/oauth/sharepoint/return',
@@ -497,6 +499,12 @@ const ApiPublicHooksBreezewayMirrorRoute =
   ApiPublicHooksBreezewayMirrorRouteImport.update({
     id: '/api/public/hooks/breezeway-mirror',
     path: '/api/public/hooks/breezeway-mirror',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCleanerHoursReconcileRoute =
+  ApiPublicHooksCleanerHoursReconcileRouteImport.update({
+    id: '/api/public/hooks/cleaner-hours-reconcile',
+    path: '/api/public/hooks/cleaner-hours-reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksOwnerNotificationEmailRoute =
@@ -550,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
+  '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -604,7 +613,6 @@ export interface FileRoutesByFullPath {
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
-  '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
@@ -614,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
+  '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -631,6 +640,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
+  '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -681,7 +691,6 @@ export interface FileRoutesByTo {
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
-  '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
@@ -691,6 +700,7 @@ export interface FileRoutesByTo {
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/work-orders': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
+  '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -711,6 +721,7 @@ export interface FileRoutesById {
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
+  '/_authenticated/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -765,7 +776,6 @@ export interface FileRoutesById {
   '/_authenticated/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/_authenticated/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
-  '/api/public/bz-probe': typeof ApiPublicBzProbeRoute
   '/oauth/sharepoint/return': typeof OauthSharepointReturnRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
@@ -775,6 +785,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/_authenticated/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
+  '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -795,6 +806,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/availability-finder'
     | '/claims'
+    | '/cleaner-hours'
     | '/coach'
     | '/command-center'
     | '/dashboard'
@@ -849,7 +861,6 @@ export interface FileRouteTypes {
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
-    | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/claims/'
     | '/leads/'
@@ -859,6 +870,7 @@ export interface FileRouteTypes {
     | '/vendor/'
     | '/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
+    | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -876,6 +888,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/audit'
     | '/availability-finder'
+    | '/cleaner-hours'
     | '/coach'
     | '/command-center'
     | '/dashboard'
@@ -926,7 +939,6 @@ export interface FileRouteTypes {
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
-    | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/claims'
     | '/leads'
@@ -936,6 +948,7 @@ export interface FileRouteTypes {
     | '/vendor'
     | '/work-orders'
     | '/api/public/hooks/breezeway-mirror'
+    | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -955,6 +968,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit'
     | '/_authenticated/availability-finder'
     | '/_authenticated/claims'
+    | '/_authenticated/cleaner-hours'
     | '/_authenticated/coach'
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
@@ -1009,7 +1023,6 @@ export interface FileRouteTypes {
     | '/_authenticated/work-orders/calendar'
     | '/_authenticated/work-orders/manager'
     | '/_authenticated/work-orders/my-work-orders'
-    | '/api/public/bz-probe'
     | '/oauth/sharepoint/return'
     | '/_authenticated/claims/'
     | '/_authenticated/leads/'
@@ -1019,6 +1032,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/'
     | '/_authenticated/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
+    | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -1034,9 +1048,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AwaitingAccessRoute: typeof AwaitingAccessRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  ApiPublicBzProbeRoute: typeof ApiPublicBzProbeRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
+  ApiPublicHooksCleanerHoursReconcileRoute: typeof ApiPublicHooksCleanerHoursReconcileRoute
   ApiPublicHooksOwnerNotificationEmailRoute: typeof ApiPublicHooksOwnerNotificationEmailRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -1116,6 +1130,13 @@ declare module '@tanstack/react-router' {
       path: '/claims'
       fullPath: '/claims'
       preLoaderRoute: typeof AuthenticatedClaimsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cleaner-hours': {
+      id: '/_authenticated/cleaner-hours'
+      path: '/cleaner-hours'
+      fullPath: '/cleaner-hours'
+      preLoaderRoute: typeof AuthenticatedCleanerHoursRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/coach': {
@@ -1545,13 +1566,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkOrdersMyWorkOrdersRouteImport
       parentRoute: typeof AuthenticatedWorkOrdersRoute
     }
-    '/api/public/bz-probe': {
-      id: '/api/public/bz-probe'
-      path: '/api/public/bz-probe'
-      fullPath: '/api/public/bz-probe'
-      preLoaderRoute: typeof ApiPublicBzProbeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/oauth/sharepoint/return': {
       id: '/oauth/sharepoint/return'
       path: '/oauth/sharepoint/return'
@@ -1564,6 +1578,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/breezeway-mirror'
       fullPath: '/api/public/hooks/breezeway-mirror'
       preLoaderRoute: typeof ApiPublicHooksBreezewayMirrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/cleaner-hours-reconcile': {
+      id: '/api/public/hooks/cleaner-hours-reconcile'
+      path: '/api/public/hooks/cleaner-hours-reconcile'
+      fullPath: '/api/public/hooks/cleaner-hours-reconcile'
+      preLoaderRoute: typeof ApiPublicHooksCleanerHoursReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/owner-notification-email': {
@@ -1730,6 +1751,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedAvailabilityFinderRoute: typeof AuthenticatedAvailabilityFinderRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
+  AuthenticatedCleanerHoursRoute: typeof AuthenticatedCleanerHoursRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1776,6 +1798,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedAvailabilityFinderRoute: AuthenticatedAvailabilityFinderRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
+  AuthenticatedCleanerHoursRoute: AuthenticatedCleanerHoursRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -1825,9 +1848,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AwaitingAccessRoute: AwaitingAccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  ApiPublicBzProbeRoute: ApiPublicBzProbeRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,
   ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,
+  ApiPublicHooksCleanerHoursReconcileRoute:
+    ApiPublicHooksCleanerHoursReconcileRoute,
   ApiPublicHooksOwnerNotificationEmailRoute:
     ApiPublicHooksOwnerNotificationEmailRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,

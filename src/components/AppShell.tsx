@@ -26,6 +26,7 @@ import {
   Wrench,
   ReceiptText,
   Workflow,
+  Timer,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -309,6 +310,13 @@ const navGroups: NavGroup[] = [
         icon: KeyRound,
         tour: "owner-analytics",
         capability: "owner_programs",
+      },
+      {
+        to: "/cleaner-hours",
+        label: "STR cleaner time",
+        icon: Timer,
+        tour: "cleaner-hours",
+        capability: "cleaner_hours",
       },
     ],
   },

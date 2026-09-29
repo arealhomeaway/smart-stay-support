@@ -728,3 +728,13 @@ Batch B (work surface)
 - [x] V2 two-step handoff (Ready for Operations → accept or deficiency Task)
 - [x] V2 clean restart of Foxtail, Buckland, 3915 W 104th, Fitzgerald
 - [ ] Fitzgerald has no access date — V2 Tasks have no due dates until one is set (needs date from team)
+
+## STR Cleaner Hours Safeguard — Phase 1 (forward-only)
+- [x] Remove /api/public/bz-probe
+- [x] Schema: workers, account mapping, snapshots, ledger, review queue, RPCs, views
+- [ ] Scope to properties designated STR cleaner-hours participating (with start date); no historical backfill
+- [ ] Webhook ingestion + nightly reconcile (participating homes only) + people refresh
+- [ ] Internal dashboard / review / classification / manual entry screens
+- [ ] Synthetic STR QA + tests
+- [x] Cleaner Hours Phase 1 foundation: schema, forward-only STR scope, webhook ingest, nightly slice route (private-secret auth), internal page /cleaner-hours
+- [ ] Cleaner Hours: schedule nightly check (awaiting go-ahead); decide whether operations staff beyond admin/manager need access; thresholds/alerts/dispatch rules (future phase)
