@@ -220,7 +220,10 @@ export function ReportView({ report: r, appendix, internal, banner, actions }: {
       <div className="space-y-5">
         {banner ? <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm font-semibold text-destructive">{banner}</p> : null}
         <div className="grid gap-3 sm:grid-cols-3">
-          {r.include.owner ? <StatTile label="Recorded owner participation" value={`${hrs(r.totals.ownerMinutes)?.toFixed(2)} hrs`} hint={`${r.totals.ownerEntries} entries`} /> : null}
+          {r.include.owner ? ownerBreakdown(r).map(([k, v]) => <StatTile key={k} label={k} value={v} />) : null}
+        </div>
+        {r.include.owner ? <p className="text-xs text-muted-foreground">{r.programLevelNote ?? PROGRAM_LEVEL_NOTE}</p> : null}
+        <div className="grid gap-3 sm:grid-cols-3">
           {r.include.nonOwner ? <StatTile label="Non-owner supported time" value={`${hrs(r.totals.nonOwnerSupportedMinutes)?.toFixed(2)} hrs`} hint="Individuals only" /> : null}
           {internal ? <StatTile label="Under review" value={r.totals.underReview} tone={r.totals.underReview ? "attention" : "neutral"} hint="Not in finalized totals" /> : null}
         </div>

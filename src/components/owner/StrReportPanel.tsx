@@ -53,7 +53,12 @@ export function StrReportPanel() {
             {current.propertyName} · Program period {current.periodStart} to {current.periodEnd} · Version {current.version}
             {current.revised ? " (latest revision)" : ""} · generated {current.releasedAt?.slice(0, 10) ?? current.generatedAt.slice(0, 10)}
           </p>
-          <p className="text-sm">Recorded owner participation: <strong>{hrs(current.snapshot.totals.ownerMinutes)?.toFixed(2)} hrs</strong> across {current.snapshot.totals.ownerEntries} entries</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {ownerBreakdown(current.snapshot).map(([k, v]) => (
+              <div key={k}><p className="text-xs text-muted-foreground">{k}</p><p className="text-sm font-semibold">{v}</p></div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">{current.snapshot.programLevelNote ?? PROGRAM_LEVEL_NOTE}</p>
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-1.5">Person</th><th>Work type</th><th>Activities</th><th>Time type</th><th>Total</th></tr></thead>
             <tbody>

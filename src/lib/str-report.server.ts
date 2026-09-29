@@ -92,8 +92,14 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
   if (r.include.owner) {
     heading("Owner participation");
     const o = r.summary.filter((s) => s.personKind === "owner");
-    space(12);
-    text(`Total recorded owner participation: ${hrs(r.totals.ownerMinutes)!.toFixed(2)} hrs across ${r.totals.ownerEntries} entries`, { f: bold });
+    for (const [k, v] of ownerBreakdown(r)) {
+      space(12);
+      text(k, { f: bold });
+      text(v, { x: M + 260, f: bold });
+    }
+    space(4);
+    para(r.programLevelNote ?? PROGRAM_LEVEL_NOTE);
+    space(4);
     const byActivity = new Map<string, { n: number; m: number }>();
     for (const row of r.rows.filter((x) => x.personKind === "owner")) {
       const a = byActivity.get(row.description) ?? { n: 0, m: 0 };
