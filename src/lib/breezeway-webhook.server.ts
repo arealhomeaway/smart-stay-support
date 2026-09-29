@@ -246,6 +246,7 @@ export type VerifyTask = (taskId: number) => Promise<{
   homeId: number | null;
   companyId: number | null;
   updatedAt: string | null;
+  department?: string | null;
 } | null>;
 
 function defaultVerifyTask(): VerifyTask {
@@ -253,7 +254,7 @@ function defaultVerifyTask(): VerifyTask {
     const { getBreezewayTask } = await import("./breezeway.server");
     const t = await getBreezewayTask(id);
     return t
-      ? { id: t.id, homeId: t.homeId, companyId: t.companyId, updatedAt: t.updatedAt }
+      ? { id: t.id, homeId: t.homeId, companyId: t.companyId, updatedAt: t.updatedAt, department: t.department }
       : null;
   };
 }
@@ -423,7 +424,7 @@ export async function verifyAndFinalizeTask(
   // exits without a Breezeway call otherwise. Never fails the delivery.
   if (!isFixture) {
     const { ingestCleanerTaskFromWebhook } = await import("./cleaner-hours.server");
-    await ingestCleanerTaskFromWebhook(taskId, verified.homeId, verified.department);
+    await ingestCleanerTaskFromWebhook(taskId, verified.homeId, verified.department ?? null);
   }
 
   return { outcome: "processed", reason: "Verified pilot task update", taskId };
