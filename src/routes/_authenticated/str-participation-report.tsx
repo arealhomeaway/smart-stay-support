@@ -22,6 +22,8 @@ import {
   timeLabel,
   totalText,
   type StrReport,
+  PROGRAM_LEVEL_NOTE,
+  ownerBreakdown,
 } from "@/lib/str-report";
 import {
   strReportContext,

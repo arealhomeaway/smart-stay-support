@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { SectionCard } from "@/components/ui/page";
 import { Button } from "@/components/ui/button";
 import { saveOwnerReportFile } from "@/lib/owner-report-download";
-import { OWNER_WAITING_COPY, REPORT_DISCLAIMER, hrs, timeLabel, totalText } from "@/lib/str-report";
+import { OWNER_WAITING_COPY, PROGRAM_LEVEL_NOTE, ownerBreakdown, REPORT_DISCLAIMER, hrs, timeLabel, totalText } from "@/lib/str-report";
 import { ownerStrReportFile, ownerStrReports } from "@/lib/str-report.functions";
 
 /**
