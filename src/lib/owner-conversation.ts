@@ -67,7 +67,7 @@ export function buildThread(legacy: LegacyResponse[], messages: ConversationMess
       label: null,
       text: m.body,
       at: m.created_at,
-      event: m.event === "resolved" || m.event === "reopened" ? m.event : null,
+      event: (m.event === "resolved" || m.event === "reopened" ? m.event : null) as ThreadEntry["event"],
     })),
   ];
   return entries.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
