@@ -10949,6 +10949,7 @@ export type Database = {
         Returns: Json
       }
       cleaner_recalculate_task: { Args: { _task: number }; Returns: Json }
+      cleaner_verify_cron_token: { Args: { _token: string }; Returns: boolean }
       close_owner_opportunity: {
         Args: {
           _expected_updated_at: string

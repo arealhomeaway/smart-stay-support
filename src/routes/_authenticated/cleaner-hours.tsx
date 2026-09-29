@@ -406,6 +406,12 @@ function ReviewQueue({ propName, onChanged }: { propName: Map<string, string>; o
   });
   const [closing, setClosing] = useState<{ item: ReviewItem; to: "resolved" | "dismissed" } | null>(null);
   const [task, setTask] = useState<number | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
+  const openAccount = async (person: number) => {
+    const { data, error } = await db.from("cleaner_breezeway_accounts").select("*").eq("breezeway_person_id", person).maybeSingle();
+    if (error || !data) { toast.error("That Breezeway account could not be found."); return; }
+    setAccount(data as Account);
+  };
   return (
     <SectionCard
       title="Review queue"
@@ -432,6 +438,9 @@ function ReviewQueue({ propName, onChanged }: { propName: Map<string, string>; o
               {i.status === "open" ? (
                 <div className="flex gap-2">
                   {i.breezeway_task_id ? <Button size="sm" variant="ghost" onClick={() => setTask(i.breezeway_task_id)}>Entries</Button> : null}
+                  {(i.kind === "unclassified_assignee" || i.kind === "possible_duplicate_identity") && i.breezeway_person_id != null ? (
+                    <Button size="sm" onClick={() => openAccount(i.breezeway_person_id!)}>Classify account</Button>
+                  ) : null}
                   <Button size="sm" variant="outline" onClick={() => setClosing({ item: i, to: "resolved" })}>Mark reviewed</Button>
                   <Button size="sm" variant="ghost" onClick={() => setClosing({ item: i, to: "dismissed" })}>Dismiss</Button>
                 </div>
@@ -441,6 +450,7 @@ function ReviewQueue({ propName, onChanged }: { propName: Map<string, string>; o
         </ul>
       )}
       {closing ? <CloseReview {...closing} onClose={() => setClosing(null)} onDone={() => { setClosing(null); items.refetch(); onChanged(); }} /> : null}
+      {account ? <ClassifyDialog account={account} onClose={() => setAccount(null)} onDone={() => { setAccount(null); items.refetch(); onChanged(); }} /> : null}
       {task != null ? <EntriesDialog taskId={task} title={`Breezeway Task ${task}`} onClose={() => setTask(null)} onChanged={() => { items.refetch(); onChanged(); }} /> : null}
     </SectionCard>
   );
