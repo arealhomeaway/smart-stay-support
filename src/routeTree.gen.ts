@@ -19,6 +19,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAvailabilityFinderRouteImport } from './routes/_authenticated/availability-finder'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated/claims'
+import { Route as AuthenticatedCleanerHoursRouteImport } from './routes/_authenticated/cleaner-hours'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -141,6 +142,12 @@ const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
   path: '/claims',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCleanerHoursRoute =
+  AuthenticatedCleanerHoursRouteImport.update({
+    id: '/cleaner-hours',
+    path: '/cleaner-hours',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
   id: '/coach',
   path: '/coach',
@@ -551,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
+  '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -632,6 +640,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
+  '/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -712,6 +721,7 @@ export interface FileRoutesById {
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/availability-finder': typeof AuthenticatedAvailabilityFinderRoute
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
+  '/_authenticated/cleaner-hours': typeof AuthenticatedCleanerHoursRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -796,6 +806,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/availability-finder'
     | '/claims'
+    | '/cleaner-hours'
     | '/coach'
     | '/command-center'
     | '/dashboard'
@@ -877,6 +888,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/audit'
     | '/availability-finder'
+    | '/cleaner-hours'
     | '/coach'
     | '/command-center'
     | '/dashboard'
@@ -956,6 +968,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit'
     | '/_authenticated/availability-finder'
     | '/_authenticated/claims'
+    | '/_authenticated/cleaner-hours'
     | '/_authenticated/coach'
     | '/_authenticated/command-center'
     | '/_authenticated/dashboard'
@@ -1117,6 +1130,13 @@ declare module '@tanstack/react-router' {
       path: '/claims'
       fullPath: '/claims'
       preLoaderRoute: typeof AuthenticatedClaimsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cleaner-hours': {
+      id: '/_authenticated/cleaner-hours'
+      path: '/cleaner-hours'
+      fullPath: '/cleaner-hours'
+      preLoaderRoute: typeof AuthenticatedCleanerHoursRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/coach': {
@@ -1731,6 +1751,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedAvailabilityFinderRoute: typeof AuthenticatedAvailabilityFinderRoute
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
+  AuthenticatedCleanerHoursRoute: typeof AuthenticatedCleanerHoursRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1777,6 +1798,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedAvailabilityFinderRoute: AuthenticatedAvailabilityFinderRoute,
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
+  AuthenticatedCleanerHoursRoute: AuthenticatedCleanerHoursRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
