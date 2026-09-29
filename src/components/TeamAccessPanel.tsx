@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { KeyRound, Pencil, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { listTeamAccess, setTeamPassword, setTeamRole } from "@/lib/access.functions";
+import { useState } from "react";
+import { listTeamAccessDetailed, setTeamPassword, setTeamRole } from "@/lib/access.functions";
+import { EditTeammateDialog, type TeammateRow } from "@/components/EditTeammateDialog";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,10 +28,11 @@ const ROLE_LABEL: Record<string, string> = Object.fromEntries(
 export function TeamAccessPanel() {
   const { isAdmin, isLoading: roleLoading } = useRole();
   const qc = useQueryClient();
-  const listFn = useServerFn(listTeamAccess);
+  const listFn = useServerFn(listTeamAccessDetailed);
   const setFn = useServerFn(setTeamRole);
   const pwFn = useServerFn(setTeamPassword);
 
+  const [editing, setEditing] = useState<TeammateRow | null>(null);
   const access = useQuery({
     queryKey: ["team-access"],
     enabled: isAdmin,
@@ -66,6 +69,7 @@ export function TeamAccessPanel() {
   });
 
   if (roleLoading || !isAdmin) return null;
+  const STATE: Record<string, string> = { invited: "Invited", redeemed: "Redeemed", active: "Active", disabled: "Disabled" };
 
   return (
     <Card>
@@ -95,45 +99,34 @@ export function TeamAccessPanel() {
                 <Badge variant="outline" className="uppercase">
                   {ROLE_LABELS[current]}
                 </Badge>
+                <Badge variant={p.state === "disabled" ? "destructive" : "secondary"} title={p.reason ?? undefined}>
+                  {STATE[p.state]}
+                </Badge>
+                {p.reason && <span className="text-xs text-muted-foreground">{p.reason}</span>}
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   className="ml-auto"
+                  onClick={() => setEditing(p as TeammateRow)}
+                >
+                  <Pencil className="size-3.5" /> Edit
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
                   disabled={resetPassword.isPending}
                   onClick={() => resetPassword.mutate(p.id)}
                 >
                   <KeyRound className="size-3.5" /> Temporary password
                 </Button>
-                <div className="w-56">
-                  <Select
-                    value={current}
-                    disabled={update.isPending}
-                    onValueChange={(role) =>
-                      update.mutate({
-                        userId: p.id,
-                        role: role as
-                          "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner",
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(ROLE_LABEL).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             );
           })
         )}
       </CardContent>
+      {editing && <EditTeammateDialog person={editing} onClose={() => setEditing(null)} />}
     </Card>
   );
 }
