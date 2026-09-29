@@ -82,6 +82,7 @@ import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_au
 import { Route as AuthenticatedWorkOrdersMyWorkOrdersRouteImport } from './routes/_authenticated/work-orders.my-work-orders'
 import { Route as OauthSharepointReturnRouteImport } from './routes/oauth/sharepoint/return'
 import { Route as ApiPublicHooksBreezewayMirrorRouteImport } from './routes/api/public/hooks/breezeway-mirror'
+import { Route as ApiPublicHooksCleanerHoursReconcileRouteImport } from './routes/api/public/hooks/cleaner-hours-reconcile'
 import { Route as ApiPublicHooksOwnerNotificationEmailRouteImport } from './routes/api/public/hooks/owner-notification-email'
 import { Route as ApiPublicHooksOwnerNotifyRouteImport } from './routes/api/public/hooks/owner-notify'
 import { Route as ApiPublicHooksQuarterlySchedulerRouteImport } from './routes/api/public/hooks/quarterly-scheduler'
@@ -493,6 +494,12 @@ const ApiPublicHooksBreezewayMirrorRoute =
     path: '/api/public/hooks/breezeway-mirror',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksCleanerHoursReconcileRoute =
+  ApiPublicHooksCleanerHoursReconcileRouteImport.update({
+    id: '/api/public/hooks/cleaner-hours-reconcile',
+    path: '/api/public/hooks/cleaner-hours-reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOwnerNotificationEmailRoute =
   ApiPublicHooksOwnerNotificationEmailRouteImport.update({
     id: '/api/public/hooks/owner-notification-email',
@@ -607,6 +614,7 @@ export interface FileRoutesByFullPath {
   '/vendor/': typeof AuthenticatedVendorIndexRoute
   '/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
+  '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -683,6 +691,7 @@ export interface FileRoutesByTo {
   '/vendor': typeof AuthenticatedVendorIndexRoute
   '/work-orders': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
+  '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -766,6 +775,7 @@ export interface FileRoutesById {
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
   '/_authenticated/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
+  '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
   '/api/public/hooks/owner-notification-email': typeof ApiPublicHooksOwnerNotificationEmailRoute
   '/api/public/hooks/owner-notify': typeof ApiPublicHooksOwnerNotifyRoute
   '/api/public/hooks/quarterly-scheduler': typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -849,6 +859,7 @@ export interface FileRouteTypes {
     | '/vendor/'
     | '/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
+    | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -925,6 +936,7 @@ export interface FileRouteTypes {
     | '/vendor'
     | '/work-orders'
     | '/api/public/hooks/breezeway-mirror'
+    | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -1007,6 +1019,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendor/'
     | '/_authenticated/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
+    | '/api/public/hooks/cleaner-hours-reconcile'
     | '/api/public/hooks/owner-notification-email'
     | '/api/public/hooks/owner-notify'
     | '/api/public/hooks/quarterly-scheduler'
@@ -1024,6 +1037,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
+  ApiPublicHooksCleanerHoursReconcileRoute: typeof ApiPublicHooksCleanerHoursReconcileRoute
   ApiPublicHooksOwnerNotificationEmailRoute: typeof ApiPublicHooksOwnerNotificationEmailRoute
   ApiPublicHooksOwnerNotifyRoute: typeof ApiPublicHooksOwnerNotifyRoute
   ApiPublicHooksQuarterlySchedulerRoute: typeof ApiPublicHooksQuarterlySchedulerRoute
@@ -1546,6 +1560,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBreezewayMirrorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/cleaner-hours-reconcile': {
+      id: '/api/public/hooks/cleaner-hours-reconcile'
+      path: '/api/public/hooks/cleaner-hours-reconcile'
+      fullPath: '/api/public/hooks/cleaner-hours-reconcile'
+      preLoaderRoute: typeof ApiPublicHooksCleanerHoursReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/owner-notification-email': {
       id: '/api/public/hooks/owner-notification-email'
       path: '/api/public/hooks/owner-notification-email'
@@ -1807,6 +1828,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,
   ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,
+  ApiPublicHooksCleanerHoursReconcileRoute:
+    ApiPublicHooksCleanerHoursReconcileRoute,
   ApiPublicHooksOwnerNotificationEmailRoute:
     ApiPublicHooksOwnerNotificationEmailRoute,
   ApiPublicHooksOwnerNotifyRoute: ApiPublicHooksOwnerNotifyRoute,
