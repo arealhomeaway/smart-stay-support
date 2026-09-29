@@ -421,6 +421,13 @@
       "when": 1790641776133,
       "tag": "0059_owner_request_conversation",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790642200305,
+      "tag": "0060_owner_request_conversation_audit_fix",
+      "breakpoints": true
     }
   ]
 }
