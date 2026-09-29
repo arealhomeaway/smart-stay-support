@@ -519,6 +519,13 @@
       "when": 1790647035766,
       "tag": "0073_str_property_work_reporting_layer",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790692438533,
+      "tag": "0074_cleaner_first_live_record_check",
+      "breakpoints": true
     }
   ]
 }

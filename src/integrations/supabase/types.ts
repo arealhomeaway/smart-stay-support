@@ -11276,6 +11276,33 @@ export type Database = {
         Returns: Json
       }
       cleaner_dispatch_options: { Args: never; Returns: Json }
+      cleaner_first_live_record_check: {
+        Args: never
+        Returns: {
+          attributed_minutes: number
+          attribution_method: string
+          before_tracking_start: boolean
+          breezeway_home_id: string
+          breezeway_person_id: number
+          breezeway_task_id: number
+          calendar_year: number
+          completion_date: string
+          counted: boolean
+          first_ledger_id: string
+          mapping_state: string
+          open_review_items: number
+          original_minutes: number
+          property_id: string
+          property_name: string
+          raw_elapsed_minutes: number
+          review_state: string
+          safeguard: Json
+          tracking_from: string
+          worker_classification: string
+          worker_id: string
+          worker_name: string
+        }[]
+      }
       cleaner_ingest_task: {
         Args: {
           _fixture?: boolean
