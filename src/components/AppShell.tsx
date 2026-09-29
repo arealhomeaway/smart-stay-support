@@ -310,6 +310,13 @@ const navGroups: NavGroup[] = [
         tour: "owner-analytics",
         capability: "owner_programs",
       },
+      {
+        to: "/cleaner-hours",
+        label: "STR cleaner time",
+        icon: Timer,
+        tour: "cleaner-hours",
+        capability: "cleaner_hours",
+      },
     ],
   },
   {

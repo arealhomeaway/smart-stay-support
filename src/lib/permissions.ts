@@ -96,6 +96,8 @@ export type Capability =
   // leadership only (kept apart from owner_programs so the Onboarding
   // Director's Active Owner access does not widen into executive tools).
   | "owner_program_admin"
+  // STR Cleaner Hours Safeguard monitoring: Operations leadership only.
+  | "cleaner_hours"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -138,6 +140,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   // Supervisors carry vendor work end to end, so the Work Orders workspace is
   // part of the job — not a platform-owner tool.
   "work_orders_internal",
+  "cleaner_hours",
 ];
 
 export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {

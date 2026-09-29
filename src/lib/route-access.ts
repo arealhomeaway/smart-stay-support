@@ -49,6 +49,7 @@ const RULES: Rule[] = [
   { prefix: "/audit", capability: "audit_history" },
   { prefix: "/oversight-access-log", capability: "audit_history" },
   { prefix: "/integrations", capability: "integrations" },
+  { prefix: "/cleaner-hours", capability: "cleaner_hours" },
 ];
 
 function ruleFor(pathname: string): Rule {
