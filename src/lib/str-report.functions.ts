@@ -65,7 +65,7 @@ export const strReportRelease = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ reportId: id, exclusionNote: z.string().max(2000).optional() }).parse(d))
   .middleware([requireSupabaseAuth])
   .handler(({ data, context }) =>
-    call(context.supabase, "str_report_release", { _report: data.reportId, _exclusion_note: data.exclusionNote ?? null }),
+    call<{ [k: string]: Json }>(context.supabase, "str_report_release", { _report: data.reportId, _exclusion_note: data.exclusionNote ?? null }),
   );
 
 export const strReportRevise = createServerFn({ method: "POST" })
