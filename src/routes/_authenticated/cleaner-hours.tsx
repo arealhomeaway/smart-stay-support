@@ -317,7 +317,7 @@ function CorrectDialog({ entry, onClose, onDone }: { entry: Entry; onClose: () =
     setBusy(true);
     const { error } = await db.rpc("correct_cleaner_exposure", { _entry: entry.id, _minutes: Number(minutes), _worker_id: worker || null, _reason: reason });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Correction saved; the original entry is kept in history.");
     onDone();
   };
@@ -356,7 +356,7 @@ function ManualEntryButton({ propName, onDone }: { propName: Map<string, string>
   });
   const save = async () => {
     const { error } = await db.rpc("add_manual_cleaner_clean", { _worker_id: worker, _property_id: property, _date: date, _minutes: Number(minutes), _reason: reason });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Off-Breezeway clean added and sent to the review queue.");
     setOpen(false); setWorker(""); setProperty(""); setDate(""); setMinutes(""); setReason("");
     onDone();
@@ -450,7 +450,7 @@ function CloseReview({ item, to, onClose, onDone }: { item: ReviewItem; to: "res
   const [note, setNote] = useState("");
   const save = async () => {
     const { error } = await db.rpc("resolve_cleaner_review", { _id: item.id, _status: to, _note: note });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     onDone();
   };
   return (
@@ -524,7 +524,7 @@ function ClassifyDialog({ account, onClose, onDone }: { account: Account; onClos
       _worker_id: needsWorker && useExisting ? worker || null : null,
       _new_worker_name: needsWorker && !useExisting ? name : null, _note: note || null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`Saved. ${(data as { tasks_recalculated?: number })?.tasks_recalculated ?? 0} clean(s) recalculated.`);
     onDone();
   };
@@ -569,7 +569,7 @@ function TrackedHomes({ propName, properties, onChanged }: {
   const [note, setNote] = useState("");
   const change = async (id: string, active: boolean, start: string | null, why: string) => {
     const { error } = await db.rpc("set_cleaner_hours_participation", { _property: id, _active: active, _tracking_from: start, _note: why });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(active ? "Home enrolled in STR cleaner-hours tracking." : "Tracking stopped; history is kept.");
     setProperty(""); setNote("");
     homes.refetch(); onChanged();
