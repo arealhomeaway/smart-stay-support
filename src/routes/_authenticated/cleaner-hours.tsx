@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useRole } from "@/hooks/useRole";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -298,6 +299,7 @@ function OverridesLog({ overrides }: { overrides: OverrideRow[] }) {
 }
 
 function EnrolledProperties({ props, onChanged }: { props: PortfolioProperty[]; onChanged: () => void }) {
+  const { can } = useRole();
   if (!props.length) return <EmptyState title="No homes enrolled yet" hint="Enroll the first STR home under Tracked homes before it goes live in Operations." />;
   return (
     <div className="space-y-4">
@@ -314,7 +316,16 @@ function EnrolledProperties({ props, onChanged }: { props: PortfolioProperty[]; 
                 {!p.segment_start.endsWith("-01-01") ? ` · Ownership period from ${usDate(p.segment_start)}` : ""}
               </span>
             }
-            actions={<StandardDuration property={p.property_id} minutes={p.standard_clean_minutes} onChanged={onChanged} />}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                {can("str_participation_report") ? (
+                  <Button size="sm" asChild>
+                    <Link to="/str-participation-report" search={{ property: p.property_id }}>Generate Property Participation Report</Link>
+                  </Button>
+                ) : null}
+                <StandardDuration property={p.property_id} minutes={p.standard_clean_minutes} onChanged={onChanged} />
+              </div>
+            }
           >
             {p.owner_zero ? <p className="mb-2 text-sm text-muted-foreground">{OWNER_ZERO_COPY}</p> : null}
             {top ? (
