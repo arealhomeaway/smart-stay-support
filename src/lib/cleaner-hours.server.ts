@@ -86,6 +86,46 @@ async function resolveVerifiedProperty(homeId: number) {
   return (await propertyForHomeId(homeId))?.id ?? null;
 }
 
+/* Pending activation: a mapped STR home waiting for its first qualifying clean. */
+async function pendingHomes(): Promise<string[]> {
+  const db = await admin();
+  const { data } = await db.from("cleaner_pending_activations").select("breezeway_home_id").is("activated_at", null);
+  return ((data ?? []) as { breezeway_home_id: string }[]).map((r) => r.breezeway_home_id);
+}
+
+/** The database verifies home, housekeeping and date; imports nothing. */
+async function tryActivatePending(t: RawTask) {
+  if (t.home_id == null || t.type_department !== "housekeeping" || !t.scheduled_date) return null;
+  const db = await admin();
+  const { data, error } = await db.rpc("cleaner_activate_pending", {
+    _home_id: String(t.home_id),
+    _task_id: t.id,
+    _department: t.type_department,
+    _scheduled_date: String(t.scheduled_date).slice(0, 10),
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Nightly: finds the earliest qualifying housekeeping clean for each pending home. */
+export async function checkPendingActivations() {
+  const db = await admin();
+  const { data } = await db
+    .from("cleaner_pending_activations")
+    .select("breezeway_home_id, earliest_date")
+    .is("activated_at", null);
+  for (const p of (data ?? []) as { breezeway_home_id: string; earliest_date: string }[]) {
+    const res = await breezewayRequest<{ results?: RawTask[] }>("/task/", {
+      params: { home_id: p.breezeway_home_id, type_department: "housekeeping", limit: 1000, page: 1 },
+    });
+    const first = (res.results ?? [])
+      .filter((t) => String(t.home_id) === p.breezeway_home_id && t.type_department === "housekeeping")
+      .filter((t) => t.scheduled_date && String(t.scheduled_date).slice(0, 10) >= p.earliest_date)
+      .sort((a, b) => String(a.scheduled_date).localeCompare(String(b.scheduled_date)))[0];
+    if (first) await tryActivatePending(first);
+  }
+}
+
 /**
  * Webhook hook. Called after the existing receiver has verified a task update.
  * Cheap exit for everything outside the STR safeguard, so MTR/standard homes
@@ -96,7 +136,13 @@ export async function ingestCleanerTaskFromWebhook(taskId: number, homeId: numbe
     const tracked = await isTracked(taskId);
     if (!tracked) {
       if (department !== "housekeeping") return { skipped: "not housekeeping" };
-      if (!(await participatingPropertyForHome(homeId))) return { skipped: "property not in STR tracking" };
+      if (!(await participatingPropertyForHome(homeId))) {
+        if (homeId != null && (await pendingHomes()).includes(String(homeId))) {
+          const raw = await breezewayRequest<RawTask>(`/task/${taskId}`);
+          await tryActivatePending(raw);
+        }
+        return { skipped: "property not in STR tracking" };
+      }
     }
     const raw = await breezewayRequest<RawTask>(`/task/${taskId}`);
     return await ingestRawTask(raw, "webhook");
@@ -161,6 +207,11 @@ type RunRow = {
 export async function runReconcileSlice(options: { homesPerCall?: number } = {}) {
   const db = await admin();
   const today = chicagoToday();
+  try {
+    await checkPendingActivations();
+  } catch (e) {
+    console.error("[cleaner-hours] pending activation check failed", e instanceof Error ? e.message : e);
+  }
   const perCall = options.homesPerCall ?? RECONCILE_HOMES_PER_CALL;
 
   let { data: run } = await db
