@@ -114,7 +114,7 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
   const cols = [M, M + 150, M + 270, M + 330, M + 430] as const;
   space(12);
   ["Person", "Work type", "Activities", "Time type", "Total"].forEach((h, i) =>
-    text(h, { size: 8, f: bold, x: cols[i] }),
+    text(h, { size: 8, f: bold, x: cols[i]! }),
   );
   for (const s of r.summary) {
     space(11);
@@ -135,7 +135,7 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
     const c = [M, M + 52, M + 150, M + 225, M + 370, M + 470] as const;
     space(12);
     ["Date", "Person", "Work type", "Reference", "Time type", "Duration"].forEach((h, i) =>
-      text(h, { size: 7.5, f: bold, x: c[i] }),
+      text(h, { size: 7.5, f: bold, x: c[i]! }),
     );
     for (const x of r.rows) {
       space(10);
