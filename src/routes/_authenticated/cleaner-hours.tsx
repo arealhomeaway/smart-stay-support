@@ -16,12 +16,19 @@ import {
   METHOD_LABEL,
   REVIEW_KIND_LABEL,
   REVIEW_STATE_LABEL,
+  OVERRIDE_CATEGORY_LABEL,
+  OWNER_ZERO_COPY,
+  STATE_LABEL,
   formatElapsed,
   formatMinutes,
-  groupSummary,
-  workerKey,
-  type SummaryRow,
+  hours,
+  pctOfRestricted,
+  worstState,
+  type Evaluation,
+  type SafeguardState,
 } from "@/lib/cleaner-hours";
+import { ExposureBar, StateBadge } from "@/components/cleaner-hours/Safeguard";
+import { RotationAid } from "./str-dispatch-check";
 import { usDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/cleaner-hours")({
@@ -46,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/cleaner-hours")({
   ),
 });
 
-type Tab = "property" | "worker" | "review" | "accounts" | "homes";
+type Tab = "attention" | "properties" | "roster" | "accounts" | "homes";
 const db = supabase as unknown as { from: (t: string) => any; rpc: (f: string, a: Record<string, unknown>) => any };
 
 async function fetchAll<T>(table: string, build: (q: any) => any): Promise<T[]> {
@@ -72,19 +79,19 @@ function useProperties() {
 }
 
 function CleanerHoursPage() {
-  const [tab, setTab] = useState<Tab>("property");
-  const year = new Date().getFullYear();
+  const thisYear = new Date().getFullYear();
+  const [tab, setTab] = useState<Tab>("attention");
+  const [year, setYear] = useState(thisYear);
   const qc = useQueryClient();
   const refresh = () => qc.invalidateQueries({ queryKey: ["cleaner-hours"] });
 
-  const summary = useQuery({
-    queryKey: ["cleaner-hours", "summary", year],
-    queryFn: () => fetchAll<SummaryRow>("cleaner_exposure_summary", (q) => q.select("*").eq("year", year)),
-  });
-  const homes = useQuery({
-    queryKey: ["cleaner-hours", "homes"],
-    queryFn: () => fetchAll<{ property_id: string; active: boolean; tracking_from: string; note: string | null; is_fixture: boolean }>(
-      "cleaner_hours_properties", (q) => q.select("*").eq("is_fixture", false)),
+  const portfolio = useQuery({
+    queryKey: ["cleaner-hours", "portfolio", year],
+    queryFn: async () => {
+      const { data, error } = await db.rpc("cleaner_safeguard_portfolio", { _year: year });
+      if (error) throw new Error(error.message);
+      return data as Portfolio;
+    },
   });
   const openItems = useQuery({
     queryKey: ["cleaner-hours", "review-count"],
@@ -96,30 +103,38 @@ function CleanerHoursPage() {
   const properties = useProperties();
   const propName = useMemo(() => new Map((properties.data ?? []).map((p) => [p.id, p.name ?? "Unnamed home"])), [properties.data]);
 
-  const rows = summary.data ?? [];
-  const activeHomes = (homes.data ?? []).filter((h) => h.active);
-  const totalMinutes = rows.reduce((s, r) => s + Number(r.attributed_minutes ?? 0), 0);
+  const props = portfolio.data?.properties ?? [];
+  const cells = props.flatMap((p) => p.cleaners.map((c) => ({ ...c, property_id: p.property_id, property_name: p.name })));
+  const flagged = cells.filter((c) => ["warning", "restricted", "hard_block"].includes(c.state) || c.inversion);
+  const totalHours = cells.reduce((s, c) => s + Number(c.current_hours ?? 0), 0);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Operations · Internal"
+        eyebrow="Insight · Operations leadership"
         title="STR cleaner time"
         description={
           <>
-            {ATTRIBUTED_TIME_LABEL} at homes enrolled in the STR cleaner-hours safeguard. Each cleaner on a Breezeway clean
-            is attributed the full elapsed Task time — a conservative exposure figure, not hours worked. No tax or
-            qualification conclusions are made here.
+            {ATTRIBUTED_TIME_LABEL} at homes enrolled in the STR cleaner-hours safeguard, measured against operational safeguard thresholds.
+            Each cleaner on a Breezeway clean is attributed the full elapsed Task time — a conservative exposure figure, not hours worked.
+            This is an operational safeguard only; Resolve makes no tax or participation determinations.
           </>
         }
-        actions={<ManualEntryButton propName={propName} onDone={refresh} />}
+        actions={
+          <div className="flex gap-2">
+            <select aria-label="Year" className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={year} onChange={(e) => setYear(Number(e.target.value))}>
+              {[thisYear, thisYear - 1, thisYear - 2].map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <ManualEntryButton propName={propName} onDone={refresh} />
+          </div>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <StatTile label="Homes tracked" value={activeHomes.length} hint={activeHomes.length ? undefined : "No STR home enrolled yet"} />
-        <StatTile label={`${ATTRIBUTED_TIME_LABEL} ${year}`} value={formatMinutes(totalMinutes)} />
-        <StatTile label="Cleaners with exposure" value={new Set(rows.map(workerKey)).size} />
-        <StatTile label="Open review items" value={openItems.data ?? "—"} tone={(openItems.data ?? 0) > 0 ? "attention" : "neutral"} />
+        <StatTile label="Homes tracked" value={props.filter((p) => p.active).length} hint={props.length ? undefined : "No STR home enrolled yet"} />
+        <StatTile label={`${ATTRIBUTED_TIME_LABEL} ${year}`} value={hours(totalHours)} />
+        <StatTile label="Cleaners in Warning or above" value={flagged.length} tone={flagged.length ? "attention" : "neutral"} />
+        <StatTile label="Open Attention Queue items" value={openItems.data ?? "—"} tone={(openItems.data ?? 0) > 0 ? "attention" : "neutral"} />
       </div>
 
       <SegmentedControl<Tab>
@@ -127,94 +142,189 @@ function CleanerHoursPage() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: "property", label: "By home" },
-          { value: "worker", label: "By cleaner" },
-          { value: "review", label: "Review queue", count: openItems.data ?? 0 },
+          { value: "attention", label: "Attention Queue", count: (openItems.data ?? 0) },
+          { value: "properties", label: "Enrolled Properties" },
+          { value: "roster", label: "Cleaner Roster" },
           { value: "accounts", label: "Cleaner accounts" },
           { value: "homes", label: "Tracked homes" },
         ]}
       />
 
-      {tab === "property" || tab === "worker" ? (
-        summary.isLoading ? <LoadingRows /> : summary.error ? (
-          <EmptyState title="Could not load cleaner time" hint={(summary.error as Error).message} />
-        ) : (
-          <SummaryView rows={rows} by={tab} propName={propName} year={year} onChanged={refresh} />
-        )
+      {portfolio.error ? <EmptyState title="Could not load the safeguard" hint={(portfolio.error as Error).message} /> : null}
+      {tab === "attention" ? (
+        <div className="space-y-4">
+          <SectionCard title="Homes approaching operational safeguard thresholds" description="Cleaners in Warning, Restricted or Hard Block, and hours inversions / narrow owner participation buffers.">
+            {portfolio.isLoading ? <LoadingRows /> : !flagged.length ? <EmptyState title="No cleaner is in Warning or above" /> : (
+              <CellTable rows={flagged} showProperty />
+            )}
+          </SectionCard>
+          <ReviewQueue propName={propName} onChanged={refresh} />
+          <OverridesLog overrides={portfolio.data?.overrides ?? []} />
+        </div>
       ) : null}
-      {tab === "review" ? <ReviewQueue propName={propName} onChanged={refresh} /> : null}
+      {tab === "properties" ? (portfolio.isLoading ? <LoadingRows /> : <EnrolledProperties props={props} onChanged={refresh} />) : null}
+      {tab === "roster" ? (portfolio.isLoading ? <LoadingRows /> : <CleanerRoster props={props} />) : null}
       {tab === "accounts" ? <AccountsView onChanged={refresh} /> : null}
       {tab === "homes" ? <TrackedHomes propName={propName} properties={properties.data ?? []} onChanged={refresh} /> : null}
     </div>
   );
 }
 
-function SummaryView({ rows, by, propName, year, onChanged }: {
-  rows: SummaryRow[]; by: "property" | "worker"; propName: Map<string, string>; year: number; onChanged: () => void;
-}) {
-  const owner = useQuery({
-    queryKey: ["cleaner-hours", "owner", year],
-    enabled: by === "property",
-    queryFn: () => fetchAll<{ property_id: string; owner_minutes: number }>("cleaner_owner_hours_by_property", (q) => q.select("*").eq("year", year)),
-  });
-  const ownerBy = new Map((owner.data ?? []).map((o) => [o.property_id, Number(o.owner_minutes)]));
-  const [detail, setDetail] = useState<{ propertyId: string | null; workerKey: string | null; title: string } | null>(null);
-  const groups = groupSummary(rows, by);
-  if (!groups.length) {
-    return <EmptyState title="No cleaner time recorded yet" hint="Tracking starts when a home is enrolled under Tracked homes and its next Breezeway clean finishes." />;
-  }
+type Cell = Evaluation & { worker_id: string; property_id?: string; property_name?: string };
+type PortfolioProperty = {
+  property_id: string; name: string; active: boolean; tracking_from: string; standard_clean_minutes: number | null;
+  owner_name: string | null; segment_start: string; owner_hours: number; owner_zero: boolean; cleaners: Cell[];
+  needs_review_entries: number; next_clean: { task_id: number; date: string; name: string | null } | null;
+};
+type OverrideRow = {
+  id: string; kind: "manager" | "emergency"; property_name: string; worker_name: string; task_ref: string; scheduled_date: string | null;
+  current_hours: number; projected_clean_hours: number; projected_total_hours: number; owner_hours: number; buffer_hours: number | null;
+  state_at_approval: SafeguardState; reason_category: string; justification: string; approved_by_name: string; created_at: string;
+};
+type Portfolio = { year: number; as_of: string; properties: PortfolioProperty[]; overrides: OverrideRow[] };
+
+function CellTable({ rows, showProperty }: { rows: Cell[]; showProperty?: boolean }) {
+  const [detail, setDetail] = useState<Cell | null>(null);
+  return (
+    <>
+      <table className="w-full text-sm">
+        <thead className="text-left text-xs text-muted-foreground">
+          <tr>{showProperty ? <th className="py-1.5">Home</th> : null}<th className="py-1.5">Cleaner</th><th>{ATTRIBUTED_TIME_LABEL}</th><th>of 75 h</th><th>Owner hours</th><th>Buffer</th><th>State</th><th /></tr>
+        </thead>
+        <tbody>
+          {rows.map((c) => (
+            <tr key={`${c.property_id}-${c.worker_id}`} className="border-t border-border">
+              {showProperty ? <td className="py-1.5">{c.property_name}</td> : null}
+              <td className="py-1.5">{c.worker_name}</td>
+              <td>{hours(c.current_hours)}</td>
+              <td><ExposureBar hoursValue={c.current_hours} /></td>
+              <td>{hours(c.owner_hours)}</td>
+              <td>{c.owner_zero ? "—" : hours(c.buffer_hours)}{c.inversion ? <span className="ml-1 text-xs text-danger">inversion</span> : null}</td>
+              <td><StateBadge state={c.state} /></td>
+              <td className="text-right"><Button size="sm" variant="ghost" onClick={() => setDetail(c)}>Sources</Button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {detail ? <EntriesDialog propertyId={detail.property_id ?? null} workerKey={detail.worker_id} title={`${detail.worker_name} · ${detail.property_name ?? "Home"}`} onClose={() => setDetail(null)} onChanged={() => {}} /> : null}
+    </>
+  );
+}
+
+function OverridesLog({ overrides }: { overrides: OverrideRow[] }) {
+  return (
+    <SectionCard title="Recent overrides" description="Permanent safeguard audit history. Each override applies to one specific clean only.">
+      {!overrides.length ? <EmptyState title="No overrides this year" /> : (
+        <ul className="divide-y divide-border text-sm">
+          {overrides.map((o) => (
+            <li key={o.id} className="py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={o.kind === "emergency" ? "rounded bg-danger px-1.5 text-xs font-semibold text-danger-foreground" : "rounded border border-border px-1.5 text-xs"}>
+                  {o.kind === "emergency" ? "EMERGENCY" : "Leadership override"}
+                </span>
+                <span className="font-medium">{o.worker_name}</span> · {o.property_name} · clean {o.task_ref}{o.scheduled_date ? ` (${usDate(o.scheduled_date)})` : ""}
+              </div>
+              <div className="text-muted-foreground">
+                {OVERRIDE_CATEGORY_LABEL[o.reason_category] ?? o.reason_category}: “{o.justification}” — {o.approved_by_name}, {new Date(o.created_at).toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                At approval: {STATE_LABEL[o.state_at_approval]} · {hours(o.current_hours)} + {hours(o.projected_clean_hours)} = {hours(o.projected_total_hours)} · owner {hours(o.owner_hours)} · buffer {o.buffer_hours == null ? "—" : hours(o.buffer_hours)}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </SectionCard>
+  );
+}
+
+function EnrolledProperties({ props, onChanged }: { props: PortfolioProperty[]; onChanged: () => void }) {
+  if (!props.length) return <EmptyState title="No homes enrolled yet" hint="Enroll the first STR home under Tracked homes before it goes live in Operations." />;
   return (
     <div className="space-y-4">
-      {groups.map((g) => {
-        const title = by === "property" ? propName.get(g.key) ?? "Unmatched home" : g.rows[0]!.worker_name;
+      {props.map((p) => {
+        const top = p.cleaners[0];
+        const state = worstState(p.cleaners.map((c) => c.state));
         return (
-          <SectionCard
-            key={g.key}
-            title={title}
+          <SectionCard key={p.property_id}
+            title={<span className="flex items-center gap-2">{p.name} {p.cleaners.length ? <StateBadge state={state} /> : null}</span>}
             description={
               <span>
-                {ATTRIBUTED_TIME_LABEL}: <strong>{formatMinutes(g.minutes)}</strong> · {g.cleans} clean{g.cleans === 1 ? "" : "s"}
-                {g.unknown ? ` · ${g.unknown} with unknown time` : ""}
-                {by === "property" ? ` · Owner hours logged in Active Owner: ${ownerBy.has(g.key) ? formatMinutes(ownerBy.get(g.key)) : "none"}` : ""}
-                {by === "worker" && g.rows[0]!.worker_type !== "individual" ? ` · ${CLASSIFICATION_LABEL[g.rows[0]!.worker_type] ?? g.rows[0]!.worker_type}` : ""}
+                Active owner: {p.owner_name ?? "—"} · Owner hours {hours(p.owner_hours)} · {p.needs_review_entries ? `${p.needs_review_entries} entries need review (lower confidence)` : "Data confidence: reviewed"}
+                {" · "}Next clean: {p.next_clean ? `${usDate(p.next_clean.date)} (#${p.next_clean.task_id})` : "none scheduled"}
+                {!p.segment_start.endsWith("-01-01") ? ` · Ownership period from ${usDate(p.segment_start)}` : ""}
               </span>
             }
-            tone={g.unreviewed ? "attention" : "default"}
+            actions={<StandardDuration property={p.property_id} minutes={p.standard_clean_minutes} onChanged={onChanged} />}
           >
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-muted-foreground">
-                <tr>
-                  <th className="py-1.5">{by === "property" ? "Cleaner" : "Home"}</th>
-                  <th>{ATTRIBUTED_TIME_LABEL}</th>
-                  <th>Cleans</th>
-                  <th>Reviewed / needs review</th>
-                  <th>Most recent</th>
-                  <th>Confidence</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {g.rows.map((r) => (
-                  <tr key={`${r.property_id}-${workerKey(r)}`} className="border-t border-border">
-                    <td className="py-1.5">{by === "property" ? r.worker_name : propName.get(r.property_id ?? "") ?? "Unmatched home"}</td>
-                    <td>{formatMinutes(r.attributed_minutes)}</td>
-                    <td>{r.cleans}</td>
-                    <td>{r.reviewed_entries} / {r.unreviewed_entries ? <Badge variant="outline">{r.unreviewed_entries} needs review</Badge> : 0}</td>
-                    <td>{r.last_clean ? usDate(r.last_clean) : "—"}</td>
-                    <td className="capitalize">{r.lowest_confidence}</td>
-                    <td className="text-right">
-                      <Button size="sm" variant="ghost" onClick={() => setDetail({ propertyId: r.property_id, workerKey: workerKey(r), title: `${r.worker_name} · ${propName.get(r.property_id ?? "") ?? "Home"}` })}>
-                        Sources
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {p.owner_zero ? <p className="mb-2 text-sm text-muted-foreground">{OWNER_ZERO_COPY}</p> : null}
+            {top ? (
+              <p className="mb-2 text-sm">Top cleaner: <strong>{top.worker_name}</strong> · {hours(top.current_hours)} ({pctOfRestricted(top.current_hours)}% of the 75 h bar){p.owner_zero ? "" : ` · buffer ${hours(top.buffer_hours)}`}</p>
+            ) : null}
+            {p.cleaners.length ? <CellTable rows={p.cleaners.map((c) => ({ ...c, property_id: p.property_id, property_name: p.name }))} /> : <EmptyState title="No cleaner time recorded yet this year" />}
           </SectionCard>
         );
       })}
-      {detail ? <EntriesDialog {...detail} onClose={() => setDetail(null)} onChanged={onChanged} /> : null}
+    </div>
+  );
+}
+
+function StandardDuration({ property, minutes, onChanged }: { property: string; minutes: number | null; onChanged: () => void }) {
+  const [edit, setEdit] = useState(false);
+  const [val, setVal] = useState(minutes ? String(minutes / 60) : "");
+  const save = async () => {
+    const { error } = await db.rpc("cleaner_set_standard_duration", { _property: property, _minutes: val ? Math.round(Number(val) * 60) : null });
+    if (error) { toast.error(error.message); return; }
+    setEdit(false); onChanged();
+  };
+  if (!edit) return <Button size="sm" variant="outline" onClick={() => setEdit(true)}>Standard clean: {minutes ? hours(minutes / 60) : "not set (4.0 h default)"}</Button>;
+  return (
+    <div className="flex items-center gap-2">
+      <Input className="h-8 w-20" type="number" step="0.25" min={0.5} max={12} value={val} onChange={(e) => setVal(e.target.value)} placeholder="hours" />
+      <Button size="sm" onClick={save}>Save</Button>
+      <Button size="sm" variant="ghost" onClick={() => setEdit(false)}>Cancel</Button>
+    </div>
+  );
+}
+
+function CleanerRoster({ props }: { props: PortfolioProperty[] }) {
+  const [rotationHome, setRotationHome] = useState("");
+  const byWorker = new Map<string, { name: string; homes: number; total: number; max?: Cell & { property_name: string } }>();
+  for (const p of props) for (const c of p.cleaners) {
+    const r = byWorker.get(c.worker_id) ?? { name: c.worker_name ?? "Cleaner", homes: 0, total: 0 };
+    r.homes += 1; r.total += Number(c.current_hours ?? 0);
+    if (!r.max || Number(c.current_hours) > Number(r.max.current_hours)) r.max = { ...c, property_name: p.name };
+    byWorker.set(c.worker_id, r);
+  }
+  const rows = [...byWorker.entries()].sort((a, b) => b[1].total - a[1].total);
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Cleaner roster" description="Individual cleaners (classification: Individual) with Attributed Cleaner Time at enrolled STR homes.">
+        {!rows.length ? <EmptyState title="No individual cleaner time recorded yet" /> : (
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-1.5">Cleaner</th><th>Classification</th><th>STR homes worked</th><th>Highest home</th><th>Status there</th><th>Portfolio {ATTRIBUTED_TIME_LABEL}</th></tr></thead>
+            <tbody>
+              {rows.map(([id, r]) => (
+                <tr key={id} className="border-t border-border">
+                  <td className="py-1.5">{r.name}</td><td>Individual</td><td>{r.homes}</td>
+                  <td>{r.max?.property_name} · {hours(r.max?.current_hours)}</td>
+                  <td>{r.max ? <StateBadge state={r.max.state} /> : null}</td>
+                  <td>{hours(r.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </SectionCard>
+      <SectionCard title="Cleaner rotation aid" description="Pick a home to see cleaners sorted by lowest exposure there first."
+        actions={
+          <select className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={rotationHome} onChange={(e) => setRotationHome(e.target.value)}>
+            <option value="">Choose a home…</option>
+            {props.filter((p) => p.active).map((p) => <option key={p.property_id} value={p.property_id}>{p.name}</option>)}
+          </select>
+        }>
+        {rotationHome ? <RotationAid property={rotationHome} date={null} /> : <p className="text-sm text-muted-foreground">Choose a home.</p>}
+      </SectionCard>
     </div>
   );
 }
