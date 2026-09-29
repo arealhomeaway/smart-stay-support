@@ -19,7 +19,11 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
   const W = 612, H = 792, M = 44;
   let page = doc.addPage([W, H]);
   let y = H - M;
-  const clean = (s: string) => s.replace(/[^\x20-\x7E]/g, (c) => (c === "—" || c === "–" ? "-" : ""));
+  // Helvetica (WinAnsi) covers Latin-1, so accented names print as written.
+  const clean = (s: string) =>
+    s
+      .replace(/[—–]/g, "-")
+      .replace(/[^\x20-\x7E\xA0-\xFF]/g, (c) => c.normalize("NFD").replace(/[^\x20-\x7E]/g, ""));
   const newPage = () => {
     page = doc.addPage([W, H]);
     y = H - M;
@@ -36,6 +40,34 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
     if (font.widthOfTextAtSize(s, size) <= w) return s;
     while (s.length > 1 && font.widthOfTextAtSize(`${s}...`, size) > w) s = s.slice(0, -1);
     return `${s}...`;
+  };
+  const wrap = (s: string, w: number, size: number, f = font) => {
+    const out: string[] = [];
+    let line = "";
+    for (const word of clean(s).split(/\s+/).filter(Boolean)) {
+      const next = line ? `${line} ${word}` : word;
+      if (f.widthOfTextAtSize(next, size) > w && line) {
+        out.push(line);
+        line = word;
+      } else line = next;
+    }
+    if (line) out.push(line);
+    return out.length ? out : [""];
+  };
+  /** A table row whose cells wrap instead of truncating. */
+  const row = (cells: { s: string; x: number; w: number; f?: typeof font; color?: typeof INK }[], size: number) => {
+    const lines = cells.map((c) => wrap(c.s, c.w, size, c.f));
+    const n = Math.max(...lines.map((l) => l.length));
+    const lh = size + 2.5;
+    if (y - (n * lh + 2) < M + 20) newPage();
+    y -= 2;
+    for (let i = 0; i < n; i++) {
+      y -= lh;
+      cells.forEach((c, k) => {
+        const t = lines[k]![i];
+        if (t) page.drawText(t, { x: c.x, y, size, font: c.f ?? font, color: c.color ?? INK });
+      });
+    }
   };
   const para = (s: string, size = 8.5, color = MUTED) => {
     let line = "";
@@ -107,12 +139,15 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
       a.m += Number(row.minutes ?? 0);
       byActivity.set(row.description, a);
     }
-    for (const [k, v] of byActivity) {
-      space(11);
-      text(fit(k, 330, 8.5), { size: 8.5, x: M + 10 });
-      text(`${v.n} entries`, { size: 8.5, x: M + 360 });
-      text(`${hrs(v.m)!.toFixed(2)} hrs`, { size: 8.5, x: M + 440 });
-    }
+    for (const [k, v] of byActivity)
+      row(
+        [
+          { s: k, x: M + 10, w: 340 },
+          { s: `${v.n} ${v.n === 1 ? "entry" : "entries"}`, x: M + 360, w: 70 },
+          { s: `${hrs(v.m)!.toFixed(2)} hrs`, x: M + 440, w: 80 },
+        ],
+        8.5,
+      );
     if (o.length === 0) para("No owner participation entries in this period.");
   }
 
@@ -122,14 +157,17 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
   ["Person", "Work type", "Activities", "Time type", "Total"].forEach((h, i) =>
     text(h, { size: 8, f: bold, x: cols[i]! }),
   );
-  for (const s of r.summary) {
-    space(11);
-    text(fit(s.person, 145), { size: 7.5, x: cols[0] });
-    text(fit(s.workType, 115), { size: 7.5, x: cols[1] });
-    text(String(s.activities) + (s.underReview ? ` (+${s.underReview} under review)` : ""), { size: 7.5, x: cols[2] });
-    text(fit(timeLabel(s), 98), { size: 7.5, x: cols[3] });
-    text(fit(totalText(s), 110), { size: 7.5, x: cols[4] });
-  }
+  for (const s of r.summary)
+    row(
+      [
+        { s: s.person, x: cols[0], w: 140 },
+        { s: s.workType, x: cols[1], w: 112 },
+        { s: String(s.activities) + (s.underReview ? ` (+${s.underReview} under review)` : ""), x: cols[2], w: 55 },
+        { s: timeLabel(s), x: cols[3], w: 95 },
+        { s: totalText(s), x: cols[4], w: W - M - cols[4] },
+      ],
+      7.5,
+    );
   if (r.summary.length === 0) para("No activity recorded in this period.");
   if (r.underReviewNote) {
     space(6);
@@ -143,18 +181,23 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
     ["Date", "Person", "Work type", "Reference", "Time type", "Duration"].forEach((h, i) =>
       text(h, { size: 7.5, f: bold, x: c[i]! }),
     );
-    for (const x of r.rows) {
-      space(10);
-      text(x.date, { size: 7, x: c[0] });
-      text(fit(x.person, 94, 7), { size: 7, x: c[1] });
-      text(fit(x.workType, 72, 7), { size: 7, x: c[2] });
-      text(fit(x.reference + (x.correction ? " (corrected)" : ""), 140, 7), { size: 7, x: c[3] });
-      text(fit(timeLabel(x), 96, 7), { size: 7, x: c[4] });
-      text(
-        x.status === "provisional" ? "Under review" : x.minutes == null ? "-" : `${hrs(x.minutes)!.toFixed(2)} h`,
-        { size: 7, x: c[5], color: x.status === "provisional" ? MUTED : INK },
+    for (const x of r.rows)
+      row(
+        [
+          { s: x.date, x: c[0], w: 48 },
+          { s: x.person, x: c[1], w: 92 },
+          { s: x.workType, x: c[2], w: 70 },
+          { s: x.reference + (x.correction ? " (corrected)" : ""), x: c[3], w: 140 },
+          { s: timeLabel(x), x: c[4], w: 95 },
+          {
+            s: x.status === "provisional" ? "Under review" : x.minutes == null ? "-" : `${hrs(x.minutes)!.toFixed(2)} h`,
+            x: c[5],
+            w: W - M - c[5],
+            color: x.status === "provisional" ? MUTED : INK,
+          },
+        ],
+        7,
       );
-    }
   }
 
   heading("Disclaimer");
