@@ -164,8 +164,68 @@ function CleanerHoursPage() {
       {tab === "properties" ? (portfolio.isLoading ? <LoadingRows /> : <EnrolledProperties props={props} onChanged={refresh} />) : null}
       {tab === "roster" ? (portfolio.isLoading ? <LoadingRows /> : <CleanerRoster props={props} />) : null}
       {tab === "accounts" ? <AccountsView onChanged={refresh} /> : null}
-      {tab === "homes" ? <TrackedHomes propName={propName} properties={properties.data ?? []} onChanged={refresh} /> : null}
+      {tab === "homes" ? (
+        <div className="space-y-4">
+          <FirstLiveRecordCheck />
+          <TrackedHomes propName={propName} properties={properties.data ?? []} onChanged={refresh} />
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+type FirstLiveRow = {
+  property_id: string; property_name: string; tracking_from: string; breezeway_home_id: string | null; mapping_state: string | null;
+  first_ledger_id: string | null; breezeway_task_id: number | null; completion_date: string | null; calendar_year: number | null;
+  worker_id: string | null; breezeway_person_id: number | null; worker_name: string | null; worker_classification: string | null;
+  raw_elapsed_minutes: number | null; attributed_minutes: number | null; original_minutes: number | null;
+  attribution_method: string | null; review_state: string | null; counted: boolean | null; before_tracking_start: boolean | null;
+  open_review_items: number; safeguard: { state?: SafeguardState; owner_hours?: number; buffer_hours?: number | null; current_hours?: number } | null;
+};
+
+/** Temporary readiness check: the first real Breezeway cleaning record per tracked STR home. */
+function FirstLiveRecordCheck() {
+  const q = useQuery({
+    queryKey: ["cleaner-first-live-record"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("cleaner_first_live_record_check" as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as FirstLiveRow[];
+    },
+  });
+  return (
+    <SectionCard title="First live record check" description="Readiness check: the first real Breezeway cleaning record received for each tracked STR home. Verify each field before relying on the safeguard.">
+      {q.isLoading ? <LoadingRows /> : q.error ? <EmptyState title="Could not load the check" hint={(q.error as Error).message} /> : !q.data?.length ? <EmptyState title="No STR home is tracked" /> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-muted-foreground">
+              <tr><th className="py-2 pr-3">Home</th><th className="pr-3">Tracking from</th><th className="pr-3">Breezeway Task</th><th className="pr-3">Cleaner</th><th className="pr-3">Duration</th><th className="pr-3">Year</th><th className="pr-3">Owner hours</th><th className="pr-3">State</th><th>Review</th></tr>
+            </thead>
+            <tbody>
+              {q.data.map((r) => (
+                <tr key={r.property_id} className="border-t border-border align-top">
+                  <td className="py-2 pr-3 font-medium">{r.property_name}<div className="text-xs text-muted-foreground">Home {r.breezeway_home_id ?? "—"} · {r.mapping_state ?? "—"}</div></td>
+                  <td className="pr-3">{usDate(r.tracking_from)}</td>
+                  {!r.first_ledger_id ? (
+                    <td colSpan={7} className="text-muted-foreground">Waiting for the first real cleaning record.</td>
+                  ) : (
+                    <>
+                      <td className="pr-3">{r.breezeway_task_id}<div className="text-xs text-muted-foreground">{r.completion_date ? usDate(r.completion_date) : "—"}{r.before_tracking_start ? " · BEFORE START" : ""}</div></td>
+                      <td className="pr-3">{r.worker_name ?? "Unlinked"}<div className="text-xs text-muted-foreground">Person {r.breezeway_person_id ?? "—"} · {r.worker_classification ?? "unclassified"}</div></td>
+                      <td className="pr-3">Elapsed {r.raw_elapsed_minutes ?? "—"} min<div className="text-xs text-muted-foreground">Attributed {r.attributed_minutes ?? "—"} min · {r.attribution_method ?? "—"}{r.review_state ? ` · ${r.review_state}` : ""}</div></td>
+                      <td className="pr-3">{r.calendar_year}</td>
+                      <td className="pr-3">{r.safeguard?.owner_hours ?? "—"}</td>
+                      <td className="pr-3">{r.safeguard?.state ? <StateBadge state={r.safeguard.state} /> : "—"}</td>
+                      <td>{r.open_review_items ? <Badge variant="outline">{r.open_review_items} open</Badge> : "None"}</td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </SectionCard>
   );
 }
 
