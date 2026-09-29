@@ -491,6 +491,34 @@
       "when": 1790646044551,
       "tag": "0069_cleaner_safeguard_phase2",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1790646710305,
+      "tag": "0070_cleaner_safeguard_reevaluate_on_change",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1790646877436,
+      "tag": "0071_cleaner_safeguard_reevaluate_deferred",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790646953342,
+      "tag": "0072_cleaner_safeguard_alert_only_on_escalation",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1790647035766,
+      "tag": "0073_str_property_work_reporting_layer",
+      "breakpoints": true
     }
   ]
 }
