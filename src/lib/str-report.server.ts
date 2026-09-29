@@ -79,8 +79,9 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
     }
     if (line) flush();
   };
-  const heading = (s: string) => {
-    if (y - 50 < M + 20) newPage();
+  /** `keep` reserves room so a short section never splits from its heading. */
+  const heading = (s: string, keep = 0) => {
+    if (y - 50 - keep < M + 20) newPage();
     space(22);
     text(s, { size: 11.5, f: bold, color: TEAL });
     space(7);
@@ -194,7 +195,12 @@ export async function strReportPdf(r: StrReport, opts: { appendix: boolean }) {
       );
   }
 
-  heading("Disclaimer");
+  heading("Disclaimer", wrap(r.disclaimer, W - M * 2, 8.5).length * 11.5);
   para(r.disclaimer, 8.5, INK);
+  const pages = doc.getPages();
+  pages.forEach((p, i) => {
+    const label = `A Real Home Away  |  ${clean(r.property.name)}  |  Page ${i + 1} of ${pages.length}`;
+    p.drawText(label, { x: M, y: 24, size: 7, font, color: MUTED });
+  });
   return doc.save();
 }
