@@ -1,9 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { KeyRound, Pencil, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
+import { Pencil, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { listTeamAccessDetailed, setTeamPassword } from "@/lib/access.functions";
+import { listTeamAccessDetailed } from "@/lib/access.functions";
 import { EditTeammateDialog, type TeammateRow } from "@/components/EditTeammateDialog";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +19,7 @@ const ROLE_LABEL: Record<string, string> = Object.fromEntries(
 /** Admin-only: promote or demote teammates. Every change is enforced server side. */
 export function TeamAccessPanel() {
   const { isAdmin, isLoading: roleLoading } = useRole();
-  const qc = useQueryClient();
   const listFn = useServerFn(listTeamAccessDetailed);
-  const pwFn = useServerFn(setTeamPassword);
 
   const [editing, setEditing] = useState<TeammateRow | null>(null);
   const access = useQuery({
@@ -31,21 +28,7 @@ export function TeamAccessPanel() {
     queryFn: () => listFn(),
   });
 
-  const resetPassword = useMutation({
-    mutationFn: (userId: string) => pwFn({ data: { userId } }),
-    onSuccess: async (res) => {
-      const line = `Sign in at ${window.location.origin}/auth with ${res.email ?? "your email"} and this temporary password: ${res.password}`;
-      try {
-        await navigator.clipboard.writeText(line);
-        toast.success("Temporary password copied — paste it to them.", {
-          description: res.password,
-        });
-      } catch {
-        toast.success(`Temporary password: ${res.password}`);
-      }
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not reset the password"),
-  });
+
 
   if (roleLoading || !isAdmin) return null;
   const STATE: Record<string, string> = { invited: "Invited", redeemed: "Redeemed", active: "Active", disabled: "Disabled" };
@@ -90,15 +73,6 @@ export function TeamAccessPanel() {
                   onClick={() => setEditing(p as TeammateRow)}
                 >
                   <Pencil className="size-3.5" /> Edit
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={resetPassword.isPending}
-                  onClick={() => resetPassword.mutate(p.id)}
-                >
-                  <KeyRound className="size-3.5" /> Temporary password
                 </Button>
               </div>
             );

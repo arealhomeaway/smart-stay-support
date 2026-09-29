@@ -50,22 +50,6 @@ export async function assertNotSelfDemotion(callerId: string, targetUserId: stri
   }
 }
 
-/** Admin-only: assign a fresh temporary password so a teammate can sign in. */
-export async function resetTeammatePassword(targetUserId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const bytes = new Uint8Array(14);
-  crypto.getRandomValues(bytes);
-  const password = `${Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("")}!7`;
-
-  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
-    password,
-    email_confirm: true,
-  });
-  if (error) throw new Error(error.message);
-  return { password, email: data.user?.email ?? null };
-}
-
 export type AccountState = "invited" | "redeemed" | "active" | "disabled";
 
 /** Admin-only: team list enriched with names and real sign-in state. */
@@ -106,6 +90,7 @@ export async function loadTeamAccessDetailed() {
       state,
       reason,
       lastSignIn: u?.last_sign_in_at ?? null,
+      emailConfirmed: !!u?.email_confirmed_at,
     };
   });
 }
@@ -139,4 +124,59 @@ export async function setTeammateActive(targetUserId: string, active: boolean) {
   });
   if (error) throw new Error(error.message);
   return { ok: true as const };
+}
+
+export type AccountEmailKind = "reset" | "setup";
+export const ACCOUNT_EMAIL_COOLDOWN_MIN = 10;
+
+/**
+ * Admin-only: ask the auth provider to email a recovery or setup link to the
+ * account's own sign-in address. Never returns or logs tokens or links.
+ */
+export async function sendAccountEmail(targetUserId: string, kind: AccountEmailKind, origin: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
+  if (error || !data.user?.email) throw new Error("That person has no sign-in account.");
+  const u = data.user;
+  const email = u.email!;
+  const confirmed = !!u.email_confirmed_at;
+  const bannedUntil = (u as { banned_until?: string | null }).banned_until ?? null;
+  const disabled = !!bannedUntil && new Date(bannedUntil) > new Date();
+  if (kind === "setup" && u.last_sign_in_at && confirmed) {
+    throw new Error("This account is already active. Use Send password reset instead.");
+  }
+
+  // Cooldown: one send of the same kind per person per window (server-side, from the audit trail).
+  const action = kind === "reset" ? "user.password_reset_requested" : "user.setup_link_resent";
+  const since = new Date(Date.now() - ACCOUNT_EMAIL_COOLDOWN_MIN * 60_000).toISOString();
+  const recent = await supabaseAdmin
+    .from("audit_log")
+    .select("id, after_value")
+    .eq("entity_id", targetUserId)
+    .eq("action", action)
+    .gte("created_at", since)
+    .limit(5);
+  if ((recent.data ?? []).some((r) => (r.after_value as { status?: string } | null)?.status === "sent")) {
+    throw new Error(
+      kind === "reset"
+        ? "A reset email was recently sent. Please wait before sending another."
+        : "A setup email was recently sent. Please wait before sending another.",
+    );
+  }
+
+  const { createClient } = await import("@supabase/supabase-js");
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  const pub = createClient(process.env["SUPABASE_URL"]!, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const redirectTo = `${origin}/reset-password`;
+  let sendError: string | null = null;
+  if (kind === "setup" && !confirmed) {
+    const r = await pub.auth.resend({ type: "signup", email, options: { emailRedirectTo: origin } });
+    sendError = r.error?.message ?? null;
+  } else {
+    const r = await pub.auth.resetPasswordForEmail(email, { redirectTo });
+    sendError = r.error?.message ?? null;
+  }
+  return { action, email, disabled, method: kind === "setup" && !confirmed ? "confirmation" : "recovery", sendError };
 }

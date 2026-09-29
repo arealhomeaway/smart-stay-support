@@ -2,7 +2,18 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { updateTeammate } from "@/lib/access.functions";
+import { sendTeammateAccountEmail, updateTeammate } from "@/lib/access.functions";
+import { usDateTime } from "@/lib/dates";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, primaryRole, type AppRole } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +44,12 @@ export type TeammateRow = {
   last_name: string | null;
   roles: string[];
   state: "invited" | "redeemed" | "active" | "disabled";
+  reason?: string | null;
+  lastSignIn?: string | null;
+  emailConfirmed?: boolean;
 };
+
+const STATE_LABEL = { invited: "Invited", redeemed: "Redeemed", active: "Active", disabled: "Disabled" } as const;
 
 export function EditTeammateDialog({
   person,
@@ -52,6 +68,18 @@ export function EditTeammateDialog({
   const [active, setActive] = useState(person.state !== "disabled");
   const [confirm, setConfirm] = useState(false);
   const broadens = role !== current && (role === "admin" || role === "manager");
+
+  const sendFn = useServerFn(sendTeammateAccountEmail);
+  const [asking, setAsking] = useState<null | "reset" | "setup">(null);
+  const isDisabled = person.state === "disabled";
+  const setupEligible = !isDisabled && (person.state !== "active" || person.emailConfirmed === false);
+  const send = useMutation({
+    mutationFn: (kind: "reset" | "setup") => sendFn({ data: { userId: person.id, kind } }),
+    onSuccess: (_r, kind) =>
+      toast.success(kind === "reset" ? "Password reset instructions sent." : "Setup link sent."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not send"),
+    onSettled: () => setAsking(null),
+  });
 
   const m = useMutation({
     mutationFn: () =>
@@ -127,6 +155,32 @@ export function EditTeammateDialog({
               </span>
             </label>
           )}
+          <div className="space-y-2 rounded-md border border-border p-3">
+            <p className="text-sm font-medium">Account Access</p>
+            <dl className="grid grid-cols-3 gap-2 text-xs">
+              <div><dt className="text-muted-foreground">Status</dt><dd>{STATE_LABEL[person.state]}</dd></div>
+              <div><dt className="text-muted-foreground">Email confirmed</dt><dd>{person.emailConfirmed ? "Yes" : "No"}</dd></div>
+              <div><dt className="text-muted-foreground">Last sign-in</dt><dd>{person.lastSignIn ? usDateTime(person.lastSignIn) : "Never"}</dd></div>
+            </dl>
+            {isDisabled && (
+              <p className="text-xs text-destructive">
+                This account is currently disabled. Sending a password reset will not restore sign-in access.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" disabled={send.isPending || !person.email} onClick={() => setAsking("reset")}>
+                Send password reset
+              </Button>
+              {setupEligible && (
+                <Button type="button" size="sm" variant="outline" disabled={send.isPending || !person.email} onClick={() => setAsking("setup")}>
+                  Resend activation/setup link
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Links go only to this person's sign-in email. Admins never see or set passwords.
+            </p>
+          </div>
           <div className="flex items-center justify-between rounded-md border border-border p-3">
             <div>
               <p className="text-sm font-medium">Can sign in</p>
@@ -147,6 +201,28 @@ export function EditTeammateDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <AlertDialog open={asking !== null} onOpenChange={(o) => !o && setAsking(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {asking === "setup"
+                ? `Send an activation/setup link to ${person.email}?`
+                : `Send a password reset link to ${person.email}?`}
+            </AlertDialogTitle>
+            {isDisabled && (
+              <AlertDialogDescription>
+                This account is currently disabled. Sending a password reset will not restore sign-in access.
+              </AlertDialogDescription>
+            )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={send.isPending} onClick={() => asking && send.mutate(asking)}>
+              Send
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
