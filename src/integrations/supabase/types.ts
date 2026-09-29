@@ -1894,6 +1894,8 @@ export type Database = {
           display_name: string
           id: string
           notes: string | null
+          person_kinds: string[]
+          staff_user_id: string | null
           updated_at: string
           updated_by: string | null
           vendor_org_id: string | null
@@ -1907,6 +1909,8 @@ export type Database = {
           display_name: string
           id?: string
           notes?: string | null
+          person_kinds?: string[]
+          staff_user_id?: string | null
           updated_at?: string
           updated_by?: string | null
           vendor_org_id?: string | null
@@ -1920,6 +1924,8 @@ export type Database = {
           display_name?: string
           id?: string
           notes?: string | null
+          person_kinds?: string[]
+          staff_user_id?: string | null
           updated_at?: string
           updated_by?: string | null
           vendor_org_id?: string | null
@@ -8293,6 +8299,129 @@ export type Database = {
           },
         ]
       }
+      property_work_records: {
+        Row: {
+          confidence: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_fixture: boolean
+          method: string
+          minutes: number
+          person_id: string
+          property_id: string
+          reason: string | null
+          record_key: string
+          review_state: string
+          source_code: string
+          source_ref: string | null
+          superseded_at: string | null
+          supersedes_id: string | null
+          work_date: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_fixture?: boolean
+          method: string
+          minutes: number
+          person_id: string
+          property_id: string
+          reason?: string | null
+          record_key: string
+          review_state?: string
+          source_code: string
+          source_ref?: string | null
+          superseded_at?: string | null
+          supersedes_id?: string | null
+          work_date: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_fixture?: boolean
+          method?: string
+          minutes?: number
+          person_id?: string
+          property_id?: string
+          reason?: string | null
+          record_key?: string
+          review_state?: string
+          source_code?: string
+          source_ref?: string | null
+          superseded_at?: string | null
+          supersedes_id?: string | null
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_work_records_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_work_records_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_work_records_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_work_records_source_code_fkey"
+            columns: ["source_code"]
+            isOneToOne: false
+            referencedRelation: "property_work_sources"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "property_work_records_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "property_work_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_work_sources: {
+        Row: {
+          active: boolean
+          activity_category: string
+          code: string
+          counts_toward_cleaner_safeguard: boolean
+          created_at: string
+          label: string
+        }
+        Insert: {
+          active?: boolean
+          activity_category: string
+          code: string
+          counts_toward_cleaner_safeguard?: boolean
+          created_at?: string
+          label: string
+        }
+        Update: {
+          active?: boolean
+          activity_category?: string
+          code?: string
+          counts_toward_cleaner_safeguard?: boolean
+          created_at?: string
+          label?: string
+        }
+        Relationships: []
+      }
       routine_controls: {
         Row: {
           assigned_role_code: string | null
@@ -11057,6 +11186,23 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      property_person_activity: {
+        Row: {
+          activity_category: string | null
+          is_fixture: boolean | null
+          method: string | null
+          minutes: number | null
+          origin: string | null
+          person_id: string | null
+          property_id: string | null
+          record_id: string | null
+          review_state: string | null
+          source_code: string | null
+          source_ref: string | null
+          work_date: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {

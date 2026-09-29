@@ -512,6 +512,13 @@
       "when": 1790646953342,
       "tag": "0072_cleaner_safeguard_alert_only_on_escalation",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1790647035766,
+      "tag": "0073_str_property_work_reporting_layer",
+      "breakpoints": true
     }
   ]
 }
