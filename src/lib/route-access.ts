@@ -50,6 +50,7 @@ const RULES: Rule[] = [
   { prefix: "/oversight-access-log", capability: "audit_history" },
   { prefix: "/integrations", capability: "integrations" },
   { prefix: "/cleaner-hours", capability: "cleaner_hours" },
+  { prefix: "/str-participation-report", capability: "str_participation_report" },
   { prefix: "/str-dispatch-check", capability: "cleaner_dispatch_check" },
 ];
 

@@ -47,6 +47,7 @@ import { Route as AuthenticatedQuarterlyRouteImport } from './routes/_authentica
 import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticated/recovery'
 import { Route as AuthenticatedRoutinesRouteImport } from './routes/_authenticated/routines'
 import { Route as AuthenticatedStrDispatchCheckRouteImport } from './routes/_authenticated/str-dispatch-check'
+import { Route as AuthenticatedStrParticipationReportRouteImport } from './routes/_authenticated/str-participation-report'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authenticated/team-queue'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -293,6 +294,12 @@ const AuthenticatedStrDispatchCheckRoute =
   AuthenticatedStrDispatchCheckRouteImport.update({
     id: '/str-dispatch-check',
     path: '/str-dispatch-check',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedStrParticipationReportRoute =
+  AuthenticatedStrParticipationReportRouteImport.update({
+    id: '/str-participation-report',
+    path: '/str-participation-report',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
@@ -593,6 +600,7 @@ export interface FileRoutesByFullPath {
   '/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/routines': typeof AuthenticatedRoutinesRoute
   '/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
+  '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -673,6 +681,7 @@ export interface FileRoutesByTo {
   '/quarterly': typeof AuthenticatedQuarterlyRoute
   '/routines': typeof AuthenticatedRoutinesRoute
   '/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
+  '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -758,6 +767,7 @@ export interface FileRoutesById {
   '/_authenticated/recovery': typeof AuthenticatedRecoveryRouteWithChildren
   '/_authenticated/routines': typeof AuthenticatedRoutinesRoute
   '/_authenticated/str-dispatch-check': typeof AuthenticatedStrDispatchCheckRoute
+  '/_authenticated/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/team-queue': typeof AuthenticatedTeamQueueRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
@@ -844,6 +854,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/routines'
     | '/str-dispatch-check'
+    | '/str-participation-report'
     | '/team'
     | '/team-queue'
     | '/vendors'
@@ -924,6 +935,7 @@ export interface FileRouteTypes {
     | '/quarterly'
     | '/routines'
     | '/str-dispatch-check'
+    | '/str-participation-report'
     | '/team'
     | '/team-queue'
     | '/vendors'
@@ -1008,6 +1020,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recovery'
     | '/_authenticated/routines'
     | '/_authenticated/str-dispatch-check'
+    | '/_authenticated/str-participation-report'
     | '/_authenticated/team'
     | '/_authenticated/team-queue'
     | '/_authenticated/vendors'
@@ -1339,6 +1352,13 @@ declare module '@tanstack/react-router' {
       path: '/str-dispatch-check'
       fullPath: '/str-dispatch-check'
       preLoaderRoute: typeof AuthenticatedStrDispatchCheckRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/str-participation-report': {
+      id: '/_authenticated/str-participation-report'
+      path: '/str-participation-report'
+      fullPath: '/str-participation-report'
+      preLoaderRoute: typeof AuthenticatedStrParticipationReportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/team': {
@@ -1799,6 +1819,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecoveryRoute: typeof AuthenticatedRecoveryRouteWithChildren
   AuthenticatedRoutinesRoute: typeof AuthenticatedRoutinesRoute
   AuthenticatedStrDispatchCheckRoute: typeof AuthenticatedStrDispatchCheckRoute
+  AuthenticatedStrParticipationReportRoute: typeof AuthenticatedStrParticipationReportRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTeamQueueRoute: typeof AuthenticatedTeamQueueRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
@@ -1847,6 +1868,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecoveryRoute: AuthenticatedRecoveryRouteWithChildren,
   AuthenticatedRoutinesRoute: AuthenticatedRoutinesRoute,
   AuthenticatedStrDispatchCheckRoute: AuthenticatedStrDispatchCheckRoute,
+  AuthenticatedStrParticipationReportRoute:
+    AuthenticatedStrParticipationReportRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTeamQueueRoute: AuthenticatedTeamQueueRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,

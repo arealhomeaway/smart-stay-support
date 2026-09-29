@@ -37,6 +37,7 @@ import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner
 import { ownerTicketResponseGuidance } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
 import { OnboardingActions } from "@/components/owner/OnboardingActions";
+import { StrReportPanel } from "@/components/owner/StrReportPanel";
 import { OwnerTaskDialog, taskDeadlineLabel } from "@/components/owner/OwnerTaskDialog";
 import { ownerOnboardingActions } from "@/lib/owner-onboarding.functions";
 import type { OwnerOnboardingAction } from "@/lib/owner-onboarding.server";
@@ -616,6 +617,7 @@ function OwnerHubBody({
           </ul>
         )}
       </SectionCard>
+      <StrReportPanel />
         </>
       )}
     </div>

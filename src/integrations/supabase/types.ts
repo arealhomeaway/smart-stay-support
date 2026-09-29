@@ -8751,6 +8751,98 @@ export type Database = {
         }
         Relationships: []
       }
+      str_participation_reports: {
+        Row: {
+          blockers: Json
+          created_by: string | null
+          exclusion_note: string | null
+          generated_at: string
+          id: string
+          period_end: string
+          period_start: string
+          program_id: string
+          property_id: string
+          released_at: string | null
+          released_by: string | null
+          revision_reason: string | null
+          snapshot: Json
+          source_refs: Json
+          status: string
+          superseded_at: string | null
+          supersedes_id: string | null
+          version: number
+        }
+        Insert: {
+          blockers?: Json
+          created_by?: string | null
+          exclusion_note?: string | null
+          generated_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          program_id: string
+          property_id: string
+          released_at?: string | null
+          released_by?: string | null
+          revision_reason?: string | null
+          snapshot: Json
+          source_refs?: Json
+          status: string
+          superseded_at?: string | null
+          supersedes_id?: string | null
+          version: number
+        }
+        Update: {
+          blockers?: Json
+          created_by?: string | null
+          exclusion_note?: string | null
+          generated_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          program_id?: string
+          property_id?: string
+          released_at?: string | null
+          released_by?: string | null
+          revision_reason?: string | null
+          snapshot?: Json
+          source_refs?: Json
+          status?: string
+          superseded_at?: string | null
+          supersedes_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "str_participation_reports_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "owner_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "str_participation_reports_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "str_participation_reports_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "str_participation_reports_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "str_participation_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_invites: {
         Row: {
           code: string
@@ -11638,6 +11730,7 @@ export type Database = {
         Args: { _actor_id?: string; _property_id: string }
         Returns: boolean
       }
+      owner_str_reports: { Args: never; Returns: Json }
       post_owner_request_message: {
         Args: { _body: string; _id: string }
         Returns: string
@@ -12121,6 +12214,27 @@ export type Database = {
         Args: { _property_id: string; _template_id: string }
         Returns: string
       }
+      str_report_context: { Args: { _property: string }; Returns: Json }
+      str_report_preview: {
+        Args: {
+          _from: string
+          _include_nonowner: boolean
+          _include_owner: boolean
+          _program: string
+          _property: string
+          _to: string
+        }
+        Returns: Json
+      }
+      str_report_release: {
+        Args: { _exclusion_note?: string; _report: string }
+        Returns: Json
+      }
+      str_report_revise: {
+        Args: { _program: string; _property: string; _reason: string }
+        Returns: Json
+      }
+      str_report_version: { Args: { _report: string }; Returns: Json }
       sync_ticket_opportunities: {
         Args: { _property_id: string; _ticket_id?: string }
         Returns: undefined
