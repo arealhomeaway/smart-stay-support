@@ -61,6 +61,16 @@ export const DEPARTMENTS: Department[] = [
       { label: "Optional Opportunity Library", to: "/owner-library", capability: "owner_program_admin" },
     ],
   },
+  {
+    key: "str-cleaner-time",
+    label: "STR cleaner time",
+    home: "/cleaner-hours",
+    match: (p) => ["/cleaner-hours", "/str-participation-report"].some((r) => p === r || p.startsWith(r + "/")),
+    links: [
+      { label: "STR cleaner time", to: "/cleaner-hours", capability: "cleaner_hours" },
+      { label: "Participation reports", to: "/str-participation-report", capability: "str_participation_report" },
+    ],
+  },
 ];
 
 export function departmentFor(pathname: string): Department | null {
@@ -78,6 +88,7 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "/owner-analytics": "Participation insight",
   "/homeowners": "Homeowners",
   "/owner-library": "Optional Opportunity Library",
+  "/str-participation-report": "Participation report",
 };
 
 const ONBOARDING_TABS: Record<string, string> = {
