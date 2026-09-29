@@ -3,20 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { KeyRound, Pencil, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
-import { listTeamAccessDetailed, setTeamPassword, setTeamRole } from "@/lib/access.functions";
+import { listTeamAccessDetailed, setTeamPassword } from "@/lib/access.functions";
 import { EditTeammateDialog, type TeammateRow } from "@/components/EditTeammateDialog";
 import { useRole } from "@/hooks/useRole";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import { ROLE_BLURBS, ROLE_LABELS, ASSIGNABLE_ROLES, primaryRole } from "@/lib/permissions";
 
@@ -29,7 +22,6 @@ export function TeamAccessPanel() {
   const { isAdmin, isLoading: roleLoading } = useRole();
   const qc = useQueryClient();
   const listFn = useServerFn(listTeamAccessDetailed);
-  const setFn = useServerFn(setTeamRole);
   const pwFn = useServerFn(setTeamPassword);
 
   const [editing, setEditing] = useState<TeammateRow | null>(null);
@@ -37,19 +29,6 @@ export function TeamAccessPanel() {
     queryKey: ["team-access"],
     enabled: isAdmin,
     queryFn: () => listFn(),
-  });
-
-  const update = useMutation({
-    mutationFn: (vars: {
-      userId: string;
-      role: "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner";
-    }) => setFn({ data: vars }),
-    onSuccess: () => {
-      toast.success("Access updated.");
-      void qc.invalidateQueries({ queryKey: ["team-access"] });
-      void qc.invalidateQueries({ queryKey: ["my-roles"] });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update access"),
   });
 
   const resetPassword = useMutation({
