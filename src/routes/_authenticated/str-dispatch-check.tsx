@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,8 +7,8 @@ import { EmptyState, LoadingRows, PageHeader, SectionCard } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { EvaluationSummary, OverrideDialog, StateBadge, rpc } from "@/components/cleaner-hours/Safeguard";
-import { hours, worstState, type Evaluation, type SafeguardState } from "@/lib/cleaner-hours";
+import { EvaluationSummary, OverrideDialog, RotationAid, StateBadge, rpc } from "@/components/cleaner-hours/Safeguard";
+import { worstState, type Evaluation } from "@/lib/cleaner-hours";
 
 export const Route = createFileRoute("/_authenticated/str-dispatch-check")({
   head: () => ({
@@ -241,31 +241,3 @@ function RequestDialog({ property, ev, taskRef, date, onClose }: { property: str
   );
 }
 
-export function RotationAid({ property, date }: { property: string; date: string | null }) {
-  const q = useQuery({
-    queryKey: ["cleaner-dispatch", "rotation", property, date],
-    queryFn: async () => {
-      const { data, error } = await rpc.rpc("cleaner_rotation", { _property: property, _on: date });
-      if (error) throw new Error(error.message);
-      return data as Evaluation[];
-    },
-  });
-  const rows = useMemo(() => q.data ?? [], [q.data]);
-  return (
-    <SectionCard title="Cleaner rotation aid" description="Individual cleaners at this home, lowest projected Attributed Cleaner Time first.">
-      {q.isLoading ? <LoadingRows /> : !rows.length ? <EmptyState title="No individual cleaners on record yet" /> : (
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-1.5">Cleaner</th><th>Current</th><th>Projected with next clean</th><th>State</th></tr></thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.worker_id} className="border-t border-border">
-                <td className="py-1.5">{r.worker_name}</td><td>{hours(r.current_hours)}</td><td>{hours(r.projected_total_hours)}</td>
-                <td><StateBadge state={r.state as SafeguardState} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </SectionCard>
-  );
-}

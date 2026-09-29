@@ -27,8 +27,7 @@ import {
   type Evaluation,
   type SafeguardState,
 } from "@/lib/cleaner-hours";
-import { ExposureBar, StateBadge } from "@/components/cleaner-hours/Safeguard";
-import { RotationAid } from "./str-dispatch-check";
+import { ExposureBar, RotationAid, StateBadge } from "@/components/cleaner-hours/Safeguard";
 import { usDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/cleaner-hours")({
