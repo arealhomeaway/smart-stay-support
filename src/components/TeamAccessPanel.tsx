@@ -121,30 +121,6 @@ export function TeamAccessPanel() {
                 >
                   <KeyRound className="size-3.5" /> Temporary password
                 </Button>
-                <div className="w-56">
-                  <Select
-                    value={current}
-                    disabled={update.isPending}
-                    onValueChange={(role) =>
-                      update.mutate({
-                        userId: p.id,
-                        role: role as
-                          "admin" | "manager" | "onboarding" | "tech" | "vendor" | "owner",
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(ROLE_LABEL).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             );
           })
