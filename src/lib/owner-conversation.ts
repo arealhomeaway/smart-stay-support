@@ -79,3 +79,9 @@ export function conversationState(status: string, thread: ThreadEntry[]): Conver
   const last = [...thread].reverse().find((e) => e.author !== "system");
   return last?.author === "homeowner" ? "staff_action" : "waiting_on_homeowner";
 }
+
+/** The last non-system author on a thread, or null when nobody has spoken yet. */
+export function lastSpeaker(thread: ThreadEntry[]): "homeowner" | "staff" | null {
+  const last = [...thread].reverse().find((e) => e.author !== "system");
+  return last ? (last.author as "homeowner" | "staff") : null;
+}

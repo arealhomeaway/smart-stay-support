@@ -554,6 +554,20 @@
       "when": 1790716451632,
       "tag": "0078_profiles_first_last_name",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1790719290890,
+      "tag": "0079_owner_attention_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1790720312924,
+      "tag": "0080_fix_resolve_owner_request_unlinked",
+      "breakpoints": true
     }
   ]
 }

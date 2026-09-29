@@ -379,11 +379,12 @@ export type OwnerResponse = {
 };
 
 const COLLAB_COLUMNS =
-  "id, title, owner_content, status, linked_task_id, source, source_department, library_template_id, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id, owner_priority";
+  "id, title, owner_content, status, linked_task_id, source, source_department, library_template_id, source_task_id, response_types, sent_at, viewed_at, responded_at, completed_at, owner_response, created_at, program_id, property_id, owner_priority, needs_owner_attention";
 
 type CollabRow = {
   id: string;
   owner_priority: number | null;
+  needs_owner_attention: boolean;
   title: string;
   owner_content: unknown;
   status: string;
@@ -551,7 +552,30 @@ export const listMyCollaboration = createServerFn({ method: "GET" })
     fail(error);
     const rows = (data ?? []) as unknown as (CollabRow & { due_on: string | null })[];
     const withRes = await withResources(context.supabase, rows);
-    return withRes.map((r, i) => ({ ...r, due_on: rows[i]!.due_on }));
+    // Who spoke last on each thread (derived, never stored) drives the owner's workflow filters.
+    const ids = rows.map((r) => r.id);
+    const msgs = ids.length
+      ? await context.supabase
+          .from("owner_request_messages")
+          .select("id, work_item_id, author_type, author_name, body, event, created_at")
+          .in("work_item_id", ids)
+      : { data: [], error: null };
+    fail(msgs.error);
+    const { buildThread, lastSpeaker } = await import("./owner-conversation");
+    return withRes.map((r, i) => {
+      const mine = (msgs.data ?? []).filter((m) => m.work_item_id === r.id);
+      const legacy = (Array.isArray(r.owner_response) ? r.owner_response : []) as never[];
+      return { ...r, due_on: rows[i]!.due_on, last_speaker: lastSpeaker(buildThread(legacy, mine as never)) };
+    });
+  });
+
+/** Staff only: flag or clear the owner-priority "Needs Your Attention" marker. Never changes workflow status. */
+export const setOwnerAttention = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), on: z.boolean() }).parse(d))
+  .handler(async ({ context, data }) => {
+    fail((await context.supabase.rpc("set_owner_attention", { _id: data.id, _on: data.on })).error);
+    return { ok: true as const };
   });
 
 export const markOpportunityViewed = createServerFn({ method: "POST" })

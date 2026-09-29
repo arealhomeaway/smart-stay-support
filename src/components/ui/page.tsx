@@ -169,8 +169,11 @@ export function PageHero({
   title,
   description,
   actions,
+  aside,
   className,
 }: {
+  /** Optional right-hand panel; stacks below the text on smaller screens. */
+  aside?: ReactNode | undefined;
   /** A real ARHA property photograph. */
   image?: string | undefined;
   eyebrow?: string | undefined;
@@ -196,8 +199,10 @@ export function PageHero({
         className={cn(
           "relative px-6 py-8 md:px-9 md:py-11",
           image ? "text-white" : "text-foreground",
+          aside && "grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-center",
         )}
       >
+        <div className="min-w-0">
         {eyebrow ? <p className={cn("eyebrow mb-2", image && "text-white/70")}>{eyebrow}</p> : null}
         <h1 className="max-w-2xl font-display text-[2.25rem] font-normal leading-[1.1] tracking-tight md:text-[2.875rem]">
           {title}
@@ -213,6 +218,8 @@ export function PageHero({
           </p>
         ) : null}
         {actions ? <div className="mt-6 flex flex-wrap items-center gap-2.5">{actions}</div> : null}
+        </div>
+        {aside ? <div className="min-w-0 text-foreground">{aside}</div> : null}
       </div>
     </section>
   );
