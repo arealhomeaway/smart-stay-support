@@ -58,7 +58,6 @@ export function ownerState(o: CollabOpp) {
   return "Sent · awaiting homeowner"; // older records have no send time
 }
 
-const DECISION_LABEL: Record<string, string> = { authorize: "Authorized", changes: "Requested changes" };
 
 export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabData["files"] }) {
   const openRes = useServerFn(opportunityResourceUrl);
