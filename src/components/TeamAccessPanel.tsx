@@ -1,7 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Pencil, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
 import { useState } from "react";
 import { listTeamAccessDetailed } from "@/lib/access.functions";
 import { EditTeammateDialog, type TeammateRow } from "@/components/EditTeammateDialog";
@@ -20,7 +19,6 @@ const ROLE_LABEL: Record<string, string> = Object.fromEntries(
 /** Admin-only: promote or demote teammates. Every change is enforced server side. */
 export function TeamAccessPanel() {
   const { isAdmin, isLoading: roleLoading } = useRole();
-  const qc = useQueryClient();
   const listFn = useServerFn(listTeamAccessDetailed);
 
   const [editing, setEditing] = useState<TeammateRow | null>(null);

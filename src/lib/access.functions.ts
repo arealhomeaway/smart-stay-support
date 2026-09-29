@@ -94,3 +94,33 @@ export const updateTeammate = createServerFn({ method: "POST" })
     }
     return { ok: true as const, changes };
   });
+
+/** Admin-only: email a password reset or setup link to the account's own sign-in address. */
+export const sendTeammateAccountEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ userId: z.string().uuid(), kind: z.enum(["reset", "setup"]) }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const req = getRequest();
+    const origin = req?.headers.get("origin") || (req ? new URL(req.url).origin : "");
+    const { sendAccountEmail } = await import("./access.server");
+    const { writeAudit } = await import("./audit.server");
+    const r = await sendAccountEmail(data.userId, data.kind, origin);
+    const label = await actorLabel(context.supabase, context.userId);
+    const status = r.sendError ? "failed" : "sent";
+    await writeAudit({
+      actorId: context.userId, actorLabel: label, action: r.action,
+      entityType: "user", entityId: data.userId, entityLabel: r.email,
+      after: { status, method: r.method, account_disabled: r.disabled },
+    });
+    if (r.sendError) {
+      console.error("[account-email] provider refused", r.action, r.sendError);
+      if (/rate|seconds|too many/i.test(r.sendError))
+        throw new Error("A reset email was recently sent. Please wait before sending another.");
+      throw new Error("The email could not be sent. Please try again later.");
+    }
+    return { ok: true as const, disabled: r.disabled };
+  });
