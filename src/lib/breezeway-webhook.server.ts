@@ -419,6 +419,13 @@ export async function verifyAndFinalizeTask(
   // Mirror only: it never rewrites a Resolve Ticket or its status.
   if (!isFixture) await refreshMirroredWorkOrder(taskId);
 
+  // STR cleaner-hours safeguard: only acts on homes designated for tracking;
+  // exits without a Breezeway call otherwise. Never fails the delivery.
+  if (!isFixture) {
+    const { ingestCleanerTaskFromWebhook } = await import("./cleaner-hours.server");
+    await ingestCleanerTaskFromWebhook(taskId, verified.homeId, verified.department);
+  }
+
   return { outcome: "processed", reason: "Verified pilot task update", taskId };
 }
 
