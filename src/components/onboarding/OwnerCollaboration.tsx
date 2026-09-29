@@ -33,6 +33,7 @@ const LINK_TYPES = { video: "Video", document: "Document", reference: "Reference
 
 import { ExistingFilePicker, SortableResourceList, ViewPropertyFilesLink } from "@/components/onboarding/ResourceControls";
 import { ownerPrograms } from "@/lib/owner-program.functions";
+import { OwnerConversation } from "@/components/OwnerConversation";
 
 export type CollabData = Awaited<ReturnType<typeof readOwnerCollaboration>>;
 export type CollabOpp = CollabData["opportunities"][number];
@@ -57,7 +58,6 @@ export function ownerState(o: CollabOpp) {
   return "Sent · awaiting homeowner"; // older records have no send time
 }
 
-const DECISION_LABEL: Record<string, string> = { authorize: "Authorized", changes: "Requested changes" };
 
 export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabData["files"] }) {
   const openRes = useServerFn(opportunityResourceUrl);
@@ -103,30 +103,22 @@ export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabDat
           </ul>
         </div>
       ) : null}
-      {o.owner_response.length ? (
-        <div>
-          <p className="text-xs font-medium">Homeowner responses</p>
-          <ul className="mt-1 space-y-1">
-            {o.owner_response.map((r, i) => (
-              <li key={i} className="rounded-md bg-muted/50 p-2">
-                <p className="text-xs text-muted-foreground">
-                  {r.kind === "decision"
-                    ? `${r.by ?? "The homeowner"} ${r.decision === "authorize" ? "authorized this work" : r.decision === "changes" ? "requested changes" : DECISION_LABEL[r.decision ?? ""] ?? "decided"}`
-                    : r.kind === "acknowledge" ? "Acknowledged" : "Feedback"} · {when(r.at)}
-                </p>
-                {r.text ? <p className="whitespace-pre-wrap">{r.text}</p> : null}
-                {r.task_approval ? (
-                  <p className="mt-1 text-xs font-medium">
-                    {r.task_approval === "approved"
-                      ? "Owner approval on this Task: approved — the Task can proceed."
-                      : "Owner approval on this Task: still waiting for the homeowner's authorization."}
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {o.status !== "draft" ? (
+        <OwnerConversation
+          workItemId={o.id}
+          status={o.status}
+          legacy={o.owner_response}
+          viewer="staff"
+          refreshKeys={[["owner-collaboration", o.property_id], ["onboarding"]]}
+        />
       ) : null}
+      {o.owner_response.filter((r) => r.task_approval).slice(-1).map((r, i) => (
+        <p key={i} className="text-xs font-medium">
+          {r.task_approval === "approved"
+            ? "Owner approval on this Task: approved — the Task can proceed."
+            : "Owner approval on this Task: still waiting for the homeowner's authorization."}
+        </p>
+      ))}
       {ownerDocs.length ? (
         <div>
           <p className="text-xs font-medium">Homeowner documentation</p>

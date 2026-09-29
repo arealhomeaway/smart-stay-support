@@ -5751,6 +5751,59 @@ export type Database = {
           },
         ]
       }
+      owner_request_messages: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          author_type: string
+          body: string
+          created_at: string
+          event: string | null
+          id: string
+          is_demo: boolean
+          program_id: string | null
+          property_id: string | null
+          task_id: string | null
+          work_item_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name: string
+          author_type: string
+          body: string
+          created_at?: string
+          event?: string | null
+          id?: string
+          is_demo?: boolean
+          program_id?: string | null
+          property_id?: string | null
+          task_id?: string | null
+          work_item_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string
+          author_type?: string
+          body?: string
+          created_at?: string
+          event?: string | null
+          id?: string
+          is_demo?: boolean
+          program_id?: string | null
+          property_id?: string | null
+          task_id?: string | null
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_request_messages_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_review_properties: {
         Row: {
           created_at: string
@@ -10355,6 +10408,10 @@ export type Database = {
         Args: { _actor_id?: string; _property_id: string }
         Returns: boolean
       }
+      post_owner_request_message: {
+        Args: { _body: string; _id: string }
+        Returns: string
+      }
       prepare_onboarding_financial_approval: {
         Args: {
           _expected_amount: number
@@ -10652,6 +10709,7 @@ export type Database = {
         }
         Returns: Json
       }
+      reopen_owner_request: { Args: { _id: string }; Returns: undefined }
       reorder_arha_opportunities: {
         Args: { _ids: string[]; _property_id: string }
         Returns: undefined
@@ -10663,6 +10721,7 @@ export type Database = {
       reset_demo_environment:
         | { Args: never; Returns: undefined }
         | { Args: { _actor?: string }; Returns: undefined }
+      resolve_owner_request: { Args: { _id: string }; Returns: undefined }
       respond_owner_approval: {
         Args: {
           _approval_id: string

@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { OwnerConversation } from "@/components/OwnerConversation";
 import { CheckCircle2, Clock, FileText, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -557,28 +558,25 @@ function OpportunityDetail({
             </div>
           ) : null}
 
-          {item.responses.length ? (
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Your responses</p>
-              {item.responses.map((r, i) => (
-                <p key={i} className="rounded-md bg-muted/50 p-2 text-sm">
-                  <span className="text-xs text-muted-foreground">
-                    {r.kind === "decision" ? (r.decision === "authorize" ? "You authorized this" : "You requested changes") : r.kind === "acknowledge" ? "You acknowledged this" : "Your feedback"} · {new Date(r.at).toLocaleDateString()}
-                  </span>
-                  {r.text ? <span className="block whitespace-pre-wrap">{r.text}</span> : null}
-                </p>
-              ))}
-            </div>
+          {arha && (item.responses.length || item.finished) ? (
+            <OwnerConversation
+              workItemId={item.id}
+              status={item.finished ? "complete" : "open"}
+              legacy={item.responses}
+              viewer="homeowner"
+              readOnly={readOnly}
+              refreshKeys={[["owner-opportunities"]]}
+            />
           ) : null}
 
           {canRespond ? (
             <div className="space-y-2">
-              {t.includes("feedback") || t.includes("decision") ? (
+              {(t.includes("feedback") || t.includes("decision")) && !item.responses.length ? (
                 <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Share your thoughts or the changes you'd like…" aria-label="Your response" />
               ) : null}
               <div className="flex flex-wrap gap-2">
-                {t.includes("acknowledge") ? <Button size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "acknowledge" })}>I&apos;ve reviewed this</Button> : null}
-                {t.includes("feedback") ? <Button size="sm" disabled={send.isPending || !text.trim()} onClick={() => send.mutate({ kind: "feedback" })}>Send feedback</Button> : null}
+                {t.includes("acknowledge") && !item.responses.length ? <Button size="sm" variant="outline" disabled={send.isPending} onClick={() => send.mutate({ kind: "acknowledge" })}>I&apos;ve reviewed this</Button> : null}
+                {t.includes("feedback") && !item.responses.length ? <Button size="sm" disabled={send.isPending || !text.trim()} onClick={() => send.mutate({ kind: "feedback" })}>Send feedback</Button> : null}
                 {t.includes("decision") ? (
                   <>
                     <Button size="sm" disabled={send.isPending} onClick={() => send.mutate({ kind: "decision", decision: "authorize" })}>Authorize</Button>
