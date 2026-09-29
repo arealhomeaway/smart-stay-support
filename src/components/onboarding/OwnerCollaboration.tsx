@@ -22,6 +22,7 @@ import {
   opportunityResourceUrl,
   readOwnerCollaboration,
   saveArhaOpportunity,
+  setOwnerAttention,
   type OpportunityContent,
   type ResourceInput,
   type ResponseType,
@@ -58,6 +59,41 @@ export function ownerState(o: CollabOpp) {
   return "Sent · awaiting homeowner"; // older records have no send time
 }
 
+
+/** Staff-only owner-priority flag. Separate from workflow status. */
+function OwnerPriorityControl({ o }: { o: CollabOpp }) {
+  const qc = useQueryClient();
+  const setFn = useServerFn(setOwnerAttention);
+  const m = useMutation({
+    mutationFn: (on: boolean) => setFn({ data: { id: o.id, on } }),
+    onSuccess: (_r, on) => {
+      toast.success(on ? "Added to the owner's Needs Your Attention queue." : "Removed from Needs Your Attention.");
+      void qc.invalidateQueries({ queryKey: ["owner-collaboration", o.property_id] });
+      void qc.invalidateQueries({ queryKey: ["owner-opportunities"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not change owner priority"),
+  });
+  if (o.status === "draft" || o.status === "complete") return null;
+  return (
+    <div className="rounded-md border border-border p-3">
+      <p className="text-xs font-medium">Owner Priority</p>
+      <label className="mt-1 flex items-start gap-2 text-sm">
+        <Checkbox
+          checked={Boolean(o.needs_owner_attention)}
+          disabled={m.isPending}
+          onCheckedChange={(c) => m.mutate(c === true)}
+          aria-label="Needs Owner Attention"
+        />
+        <span>
+          Needs Owner Attention
+          <span className="block text-xs text-muted-foreground">
+            Adds this Opportunity to the owner&apos;s Needs Your Attention queue. This does not change the Opportunity&apos;s workflow status.
+          </span>
+        </span>
+      </label>
+    </div>
+  );
+}
 
 export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabData["files"] }) {
   const openRes = useServerFn(opportunityResourceUrl);
@@ -103,6 +139,7 @@ export function OpportunityDetail({ o, files }: { o: CollabOpp; files: CollabDat
           </ul>
         </div>
       ) : null}
+      <OwnerPriorityControl o={o} />
       {o.status !== "draft" ? (
         <OwnerConversation
           workItemId={o.id}

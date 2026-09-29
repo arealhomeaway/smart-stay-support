@@ -33,6 +33,8 @@ import { answerOwnerReview, ownerHome, ownerHomePreview } from "@/lib/owner-port
 import { OWNER_GOAL_LABEL } from "@/lib/owner-participation";
 import { LogTimeContext, LogTimeDialog, useOpenLogTime, type LogTimeAnchor } from "@/components/owner/LogTimeDialog";
 import { OwnerOpportunities } from "@/components/owner/OwnerOpportunities";
+import { OwnerQueueCards } from "@/components/owner/OwnerQueueCards";
+import { isOwnerQueue, type OwnerQueue } from "@/lib/owner-opportunity-filters";
 import { captureReviewedOpportunity, captureReviewedResponse } from "@/lib/owner-reviewed-update";
 import { ownerTicketResponseGuidance } from "@/lib/owner-ticket-intent";
 import { OwnerApprovalPanel } from "@/components/OwnerApprovalPanel";
@@ -60,7 +62,8 @@ export const Route = createFileRoute("/_authenticated/owner")({
   // home lives in the URL and stays shareable and bookmarkable.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { home?: string; view?: "documents" | "team" | "opportunities"; opportunity?: string } => ({
+  ): { home?: string; view?: "documents" | "team" | "opportunities"; opportunity?: string; queue?: OwnerQueue } => ({
+    ...(isOwnerQueue(search["queue"]) ? { queue: search["queue"] } : {}),
     ...(typeof search["home"] === "string" ? { home: search["home"] as string } : {}),
     ...(search["view"] === "documents" || search["view"] === "team" || search["view"] === "opportunities" ? { view: search["view"] } : {}),
     ...(typeof search["opportunity"] === "string" ? { opportunity: search["opportunity"] as string } : {}),
@@ -402,6 +405,24 @@ function OwnerHubBody({
         eyebrow="Active Owner"
         title={`Welcome back, ${firstName(signedInName, program.ownerName)}`}
         description="Here is where things stand across your homes, and anything that needs your attention."
+        aside={
+          <div className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
+            <p className="eyebrow mb-3">Active Owner Participation</p>
+            <div className="flex items-center gap-4">
+              <ProgressRing value={percent} tone="owner" label="of target" />
+              <div className="min-w-0">
+                <p className="text-2xl font-semibold leading-none">{snapshot.reportedHours} hrs</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  reported toward {OWNER_GOAL_LABEL.toLowerCase()}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Program period ends {snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
+                </p>
+                {preview ? null : <ReportDownloads />}
+              </div>
+            </div>
+          </div>
+        }
         actions={
           preview || !canLogHours ? null : (
             <Button onClick={() => openManualLog("")}>
@@ -449,20 +470,7 @@ function OwnerHubBody({
         </Celebrate>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
-          <ProgressRing value={percent} tone="owner" label="of target" />
-          <div>
-            <p className="text-2xl font-semibold leading-none">{snapshot.reportedHours} hrs</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              reported toward {OWNER_GOAL_LABEL.toLowerCase()}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Program period ends {snapshot.endsOn ? usDate(snapshot.endsOn) : "December 31"}
-            </p>
-            {preview ? null : <ReportDownloads />}
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-4">
         {properties.length > 1 ? (
           <div className="flex items-center gap-2">
             <Label htmlFor="owner-home-filter" className="text-sm text-muted-foreground">Viewing:</Label>
@@ -491,6 +499,9 @@ function OwnerHubBody({
       ) : view === "opportunities" ? (
         <OwnerOpportunities
           variant="full"
+          queue={search.queue ?? null}
+          onQueueChange={(q) => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return q ? { ...rest, queue: q } : rest; } })}
+          onBackToDashboard={() => void navigate({ search: (prev) => { const { queue: _q, view: _v, opportunity: _o, ...rest } = prev; return rest; } })}
           focusId={search.opportunity ?? null}
           homes={ownerHomes}
           selectedHomeId={selectedHomeId}
@@ -505,10 +516,16 @@ function OwnerHubBody({
         />
       ) : (
         <>
+      <OwnerQueueCards
+        homes={ownerHomes}
+        selectedHomeId={selectedHomeId}
+        onOpen={(q) => void navigate({ search: (prev) => { const { opportunity: _o, ...rest } = prev; return { ...rest, view: "opportunities" as const, queue: q }; } })}
+      />
+
       <div id="owner-decisions" className="scroll-mt-24">
       <SectionCard
-        title="Needs your attention"
-        description="Specific questions, decisions and actions your ARHA team has sent you."
+        title="Decisions & approvals"
+        description="Approvals and property decisions your ARHA team has sent you."
       >
         <div className="space-y-5">
         {openReviews.length > 0 && (
@@ -546,7 +563,7 @@ function OwnerHubBody({
 
       <OwnerOpportunities
         variant="preview"
-        onViewAll={() => void navigate({ search: (prev) => ({ ...prev, view: "opportunities" as const }) })}
+        onViewAll={() => void navigate({ search: (prev) => { const { queue: _q, ...rest } = prev; return { ...rest, view: "opportunities" as const }; } })}
         focusId={search.opportunity ?? null}
         homes={ownerHomes}
         selectedHomeId={selectedHomeId}

@@ -10556,6 +10556,9 @@ export type Database = {
           kind: string
           library_template_id: string | null
           linked_task_id: string | null
+          needs_owner_attention: boolean
+          owner_attention_set_at: string | null
+          owner_attention_set_by: string | null
           owner_content: Json | null
           owner_priority: number | null
           owner_response: Json
@@ -10591,6 +10594,9 @@ export type Database = {
           kind: string
           library_template_id?: string | null
           linked_task_id?: string | null
+          needs_owner_attention?: boolean
+          owner_attention_set_at?: string | null
+          owner_attention_set_by?: string | null
           owner_content?: Json | null
           owner_priority?: number | null
           owner_response?: Json
@@ -10626,6 +10632,9 @@ export type Database = {
           kind?: string
           library_template_id?: string | null
           linked_task_id?: string | null
+          needs_owner_attention?: boolean
+          owner_attention_set_at?: string | null
+          owner_attention_set_by?: string | null
           owner_content?: Json | null
           owner_priority?: number | null
           owner_response?: Json
@@ -12213,6 +12222,10 @@ export type Database = {
           _property: string
           _tracking_from: string
         }
+        Returns: undefined
+      }
+      set_owner_attention: {
+        Args: { _id: string; _on: boolean }
         Returns: undefined
       }
       staff_assignable: { Args: { _user_id: string }; Returns: boolean }

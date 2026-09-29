@@ -15,7 +15,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { OwnerConversation } from "@/components/OwnerConversation";
-import { CheckCircle2, Clock, FileText, Link2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, FileText, Link2 } from "lucide-react";
+import { OWNER_QUEUES, inQueue, queueCounts, type OwnerQueue, type QueueInput } from "@/lib/owner-opportunity-filters";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,6 +69,7 @@ type Live = {
   responded: boolean;
   finished: boolean;
   templateId: string | null;
+  queue: QueueInput;
 };
 
 type Content = {
@@ -80,11 +82,12 @@ function oneLine(text: string | null | undefined) {
   return t.length > 150 ? `${t.slice(0, 147)}…` : t;
 }
 
-export function arhaStatus(o: Pick<Live, "finished" | "responded" | "viewed" | "responseTypes">) {
+export function arhaStatus(o: Pick<Live, "finished" | "queue">) {
   if (o.finished) return "Completed";
-  if (o.responded) return "Feedback Sent";
-  if (!o.viewed) return "New";
-  return "Awaiting Your Response";
+  if (inQueue(o.queue, "new")) return "New";
+  if (inQueue(o.queue, "feedback")) return "Feedback Sent";
+  if (inQueue(o.queue, "awaiting")) return "Awaiting Your Response";
+  return "Open";
 }
 
 function minutesLabel(m: number | null | undefined) {
@@ -106,6 +109,8 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
     const rows: Live[] = (live.data ?? [])
       .filter((o) => o.source === "arha" || o.source === "optional_library")
       .filter((o) => !selectedHomeId || o.property_id === selectedHomeId)
+      // Only this portal's homes (keeps a staff preview scoped to the previewed program).
+      .filter((o) => homes.length === 0 || homes.some((h) => h.propertyId === o.property_id))
       .map((o) => {
         const c = (o.owner_content ?? {}) as Content;
         const arha = o.source === "arha";
@@ -137,6 +142,13 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
           responded: Boolean(o.responded_at) || o.owner_response.length > 0,
           finished: o.status === "complete",
           templateId: o.library_template_id,
+          queue: {
+            status: o.status,
+            viewed: Boolean(o.viewed_at),
+            needsOwnerAttention: Boolean(o.needs_owner_attention),
+            lastSpeaker: o.last_speaker,
+            responseTypes: o.response_types,
+          },
         } satisfies Live;
       });
     // Each home keeps its own ARHA order (set by staff); All Homes keeps homes grouped.
@@ -169,7 +181,8 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
       optional,
       templates,
       startableHomes,
-      needsAttention: arha.filter((a) => !a.finished && !a.responded && a.responseTypes.some((t) => t !== "documentation")),
+      needsAttention: arha.filter((a) => inQueue(a.queue, "attention")),
+      counts: queueCounts(arha.map((a) => a.queue)),
     };
   }, [live.data, library.data, homes, selectedHomeId, live.isLoading, library.isLoading]);
 }
@@ -184,7 +197,14 @@ export function OwnerOpportunities({
   variant = "full",
   onViewAll,
   arhaExtra,
+  queue = null,
+  onQueueChange,
+  onBackToDashboard,
 }: {
+  /** Dashboard card filter applied to the ARHA Opportunities (full page only). */
+  queue?: OwnerQueue | null;
+  onQueueChange?: (q: OwnerQueue | null) => void;
+  onBackToDashboard?: () => void;
   focusId?: string | null;
   onLogHours?: (activity: string, propertyId: string | null) => void;
   readOnly?: boolean;
@@ -207,9 +227,11 @@ export function OwnerOpportunities({
   const limit = preview ? 3 : Infinity;
   const pick = (rows: Live[]) =>
     preview ? rows.filter((r) => !r.finished) : rows.filter((r) => (statusFilter === "open" ? !r.finished : r.finished));
-  const arha = pick(data.arha);
-  const optionalLive = pick(data.optional);
-  const templates = statusFilter === "open" || preview ? data.templates : [];
+  const queued = !preview && queue;
+  const arha = queued ? data.arha.filter((r) => inQueue(r.queue, queue)) : pick(data.arha);
+  const optionalLive = queued ? [] : pick(data.optional);
+  const templates = queued ? [] : statusFilter === "open" || preview ? data.templates : [];
+  const queueLabel = queue ? OWNER_QUEUES.find((q) => q.key === queue)?.label ?? null : null;
   const all = [...data.arha, ...data.optional];
   const opened = all.find((o) => o.id === openId) ?? null;
   const multi = homes.length > 1;
@@ -247,7 +269,7 @@ export function OwnerOpportunities({
         </div>
         {preview ? (
           onViewAll ? <Button variant="outline" size="sm" onClick={onViewAll}>View all Opportunities</Button> : null
-        ) : (
+        ) : queue ? null : (
           <div className="flex gap-1.5" role="tablist" aria-label="Show">
             {(["open", "completed"] as const).map((k) => (
               <Button key={k} size="sm" role="tab" aria-selected={statusFilter === k} variant={statusFilter === k ? "default" : "outline"} onClick={() => setStatusFilter(k)}>
@@ -257,6 +279,27 @@ export function OwnerOpportunities({
           </div>
         )}
       </div>
+      {!preview ? (
+        <div className="space-y-2">
+          {queueLabel ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3">
+              <p className="text-sm">Showing: <span className="font-semibold">{queueLabel}</span></p>
+              <div className="flex flex-wrap gap-2">
+                {onBackToDashboard ? <Button size="sm" variant="outline" onClick={onBackToDashboard}>Back to Dashboard</Button> : null}
+                <Button size="sm" variant="outline" onClick={() => onQueueChange?.(null)}>View All Opportunities</Button>
+              </div>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter Opportunities">
+            <Button size="sm" role="tab" aria-selected={!queue} variant={!queue ? "default" : "outline"} onClick={() => onQueueChange?.(null)}>All</Button>
+            {OWNER_QUEUES.map((q) => (
+              <Button key={q.key} size="sm" role="tab" aria-selected={queue === q.key} variant={queue === q.key ? "default" : "outline"} onClick={() => onQueueChange?.(q.key)}>
+                {q.label} <span className="numeric ml-1 opacity-70">{data.counts[q.key]}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {blockedReason ? (
         <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">{blockedReason}</p>
       ) : null}
@@ -279,6 +322,7 @@ export function OwnerOpportunities({
                 label={o.team}
                 summary={o.summary}
                 status={arhaStatus(o)}
+                priority={inQueue(o.queue, "attention")}
                 action={<Button size="sm" onClick={() => setOpenId(o.id)}>Open Opportunity</Button>}
               />
             ))}
@@ -287,7 +331,9 @@ export function OwnerOpportunities({
             <p className="mt-2 text-sm text-muted-foreground">
               {statusFilter === "completed" && !preview
                 ? "No completed Opportunities from your ARHA team yet."
-                : "Nothing needs your attention from the ARHA team right now."}
+                : queueLabel
+                  ? `Nothing in ${queueLabel} right now.`
+                  : "Nothing needs your attention from the ARHA team right now."}
             </p>
           ) : null}
           {preview && arha.length > limit ? (
@@ -371,8 +417,9 @@ export function OwnerOpportunities({
 }
 
 function OppCard({
-  tone, cover, title, property, propertyHint = null, label, summary, status = null, meta = null, action,
+  tone, cover, title, property, propertyHint = null, label, summary, status = null, meta = null, action, priority = false,
 }: {
+  priority?: boolean;
   tone: "arha" | "optional";
   cover: string;
   title: string;
@@ -399,6 +446,11 @@ function OppCard({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-start justify-between gap-x-2">
           <p className="font-semibold leading-snug">{title}</p>
+          {priority ? (
+            <span className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+              <AlertCircle className="size-3.5" aria-hidden="true" /> Needs your attention
+            </span>
+          ) : null}
           {status ? (
             <span className={`flex items-center gap-1 text-xs font-medium ${statusClass}`}>
               {status === "Completed" ? <CheckCircle2 className="size-3.5" aria-hidden="true" /> : null}
@@ -501,7 +553,7 @@ function OpportunityDetail({
 
   useEffect(() => {
     setText("");
-    if (item && !readOnly && !item.viewed) void markViewed({ data: { id: item.id } }).catch(() => undefined);
+    if (item && !readOnly && !item.viewed) void markViewed({ data: { id: item.id } }).then(() => qc.invalidateQueries({ queryKey: ["owner-opportunities"] })).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id]);
 
