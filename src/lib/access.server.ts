@@ -50,22 +50,6 @@ export async function assertNotSelfDemotion(callerId: string, targetUserId: stri
   }
 }
 
-/** Admin-only: assign a fresh temporary password so a teammate can sign in. */
-export async function resetTeammatePassword(targetUserId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  const bytes = new Uint8Array(14);
-  crypto.getRandomValues(bytes);
-  const password = `${Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("")}!7`;
-
-  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
-    password,
-    email_confirm: true,
-  });
-  if (error) throw new Error(error.message);
-  return { password, email: data.user?.email ?? null };
-}
-
 export type AccountState = "invited" | "redeemed" | "active" | "disabled";
 
 /** Admin-only: team list enriched with names and real sign-in state. */
@@ -106,6 +90,7 @@ export async function loadTeamAccessDetailed() {
       state,
       reason,
       lastSignIn: u?.last_sign_in_at ?? null,
+      emailConfirmed: !!u?.email_confirmed_at,
     };
   });
 }

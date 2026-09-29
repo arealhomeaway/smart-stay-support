@@ -6,7 +6,6 @@ import {
   assertAdmin,
   assertNotSelfDemotion,
   loadTeamAccess,
-  resetTeammatePassword,
 } from "./access.server";
 
 export const listTeamAccess = createServerFn({ method: "GET" })
@@ -14,14 +13,6 @@ export const listTeamAccess = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
     return { people: await loadTeamAccess() };
-  });
-
-export const setTeamPassword = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ userId: z.string().uuid() }).parse(data))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.supabase, context.userId);
-    return resetTeammatePassword(data.userId);
   });
 
 const ROLE_ENUM = z.enum(["admin", "manager", "onboarding", "tech", "vendor", "owner"]);
