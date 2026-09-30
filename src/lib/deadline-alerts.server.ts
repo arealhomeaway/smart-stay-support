@@ -29,6 +29,9 @@ type Client = SupabaseClient<Database>;
 const DEDUPE_DAYS = 30;
 
 export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
+  // Vendor credential expiry reminders: database-owned, one per stage, never repeated.
+  const compliance = await supabase.rpc("vendor_compliance_sweep", {});
+  if (compliance.error) throw new Error(compliance.error.message);
   const since = new Date(now.getTime() - DEDUPE_DAYS * 86_400_000).toISOString();
 
   const [tickets, workOrders, claims] = await Promise.all([

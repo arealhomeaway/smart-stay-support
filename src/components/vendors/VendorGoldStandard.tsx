@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { EmptyState, LoadingRows } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
-import { COMPLIANCE_LABELS, PILOT_THRESHOLD } from "@/lib/vendor-gold";
+import { PILOT_THRESHOLD } from "@/lib/vendor-gold";
 import { usDate } from "@/lib/dates";
 import { STATUS_TONE } from "./VendorDirectory";
 import { useVendorWorkspace } from "./useVendorWorkspace";

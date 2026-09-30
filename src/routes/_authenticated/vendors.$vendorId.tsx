@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
+import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
@@ -9,7 +11,7 @@ import { Chip, EmptyState, LoadingRows, PageHeader, SectionBand } from "@/compon
 import { StatusBadge } from "@/components/ui/status";
 import { VendorOrgSheet } from "@/components/VendorOrgSheet";
 import { VENDOR_STATUS_BLURBS, VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
-import { COMPLIANCE_LABELS, DISPATCH_METHOD_LABELS, type DispatchMethod } from "@/lib/vendor-gold";
+import { DISPATCH_METHOD_LABELS, type DispatchMethod } from "@/lib/vendor-gold";
 import { usDate } from "@/lib/dates";
 import { STATUS_TONE } from "@/components/vendors/VendorDirectory";
 import { coverageFor, useVendorWorkspace } from "@/components/vendors/useVendorWorkspace";
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/vendors/$vendorId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: z.object({ gate: z.string().uuid().optional() }),
   component: VendorProfile,
 });
 
@@ -33,7 +36,8 @@ function VendorProfile() {
   const { can, readOnly } = useRole();
   const canManage = can("vendor_admin") && !readOnly;
   const ws = useVendorWorkspace();
-  const [sheet, setSheet] = useState(false);
+  const { gate } = Route.useSearch();
+  const [sheet, setSheet] = useState(Boolean(gate));
   const v = ws.data?.vendors.find((x) => x.id === vendorId);
   useShellPageLabel(v?.display_name ?? null);
   const properties = useQuery({
@@ -68,7 +72,7 @@ function VendorProfile() {
       <div className="flex flex-wrap gap-2">
         <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>{VENDOR_STATUS_LABELS[v.status as VendorStatus]}</StatusBadge>
         <Chip>{DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod] ?? v.dispatch_method}</Chip>
-        <Chip>{COMPLIANCE_LABELS[v.compliance_status] ?? v.compliance_status}</Chip>
+        <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />
         {g && <Chip>{g.passed}/{g.total} gates</Chip>}
         {!v.is_active && <Chip>Inactive</Chip>}
       </div>
@@ -84,6 +88,24 @@ function VendorProfile() {
           <Field k="Payment" v={v.payment_terms} />
         </dl>
       </section>
+
+      {(ws.data!.compliance.get(v.id)?.items.length ?? 0) > 0 && (
+        <section className="space-y-2">
+          <SectionBand title="Expiring credentials" hint="Usable through the expiration date; On Hold from the day after until renewed proof is recorded." />
+          <ul className="space-y-1.5">
+            {ws.data!.compliance.get(v.id)!.items.map((i) => (
+              <li key={i.requirementId} className="surface-row flex flex-wrap items-center gap-2 py-2 pl-4 pr-3 text-sm">
+                <span className="font-medium">{i.label}</span>
+                <ComplianceBadge state={i.state} />
+                <span className="text-muted-foreground">Expires {usDate(i.expiresOn)}</span>
+                <Button size="sm" variant="outline" className="ml-auto" asChild>
+                  <Link to="/vendors/$vendorId" params={{ vendorId: v.id }} search={{ gate: i.requirementId }} onClick={() => setSheet(true)}>Open check</Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="space-y-2">
         <SectionBand title="Market coverage" />
@@ -124,6 +146,7 @@ function VendorProfile() {
         onOpenChange={(o) => setSheet(o)}
         properties={properties.data ?? []}
         canManage={canManage}
+        focusRequirementId={gate ?? null}
       />
     </div>
   );
