@@ -32,6 +32,7 @@ import {
 export type GuidedTicket = {
   id: string;
   status: string;
+  priority?: string | null;
   category: string | null;
   acknowledged_at: string | null;
   guest_in_residence: boolean | null;
