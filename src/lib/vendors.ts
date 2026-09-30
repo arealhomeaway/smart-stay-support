@@ -85,6 +85,7 @@ export const GATEKEEPER_RESULTS = [
   "verified_meets",
   "verified_does_not_meet",
   "not_applicable",
+  "equivalent_verified",
 ] as const;
 export type GatekeeperResult = (typeof GATEKEEPER_RESULTS)[number];
 
@@ -93,6 +94,7 @@ export const GATEKEEPER_RESULT_LABELS: Record<GatekeeperResult, string> = {
   verified_meets: "Verified & meets",
   verified_does_not_meet: "Verified & does not meet",
   not_applicable: "Not applicable",
+  equivalent_verified: "Equivalent verified",
 };
 
 export const REQUIREMENT_LEVELS = ["blocking", "required", "optional", "not_applicable"] as const;
@@ -115,11 +117,33 @@ export type GatekeeperLine = {
   note: string | null;
   verifiedAt: string | null;
   expiresOn: string | null;
+  /** Only gates the Gold Standard explicitly permits may use these. */
+  allowsNotApplicable?: boolean;
+  allowsEquivalent?: boolean;
+  exceptionRule?: string | null;
 };
+
+/** Which results staff may pick for this gate. Mandatory gates never offer N/A. */
+export function allowedResults(line: Pick<GatekeeperLine, "allowsNotApplicable" | "allowsEquivalent">): GatekeeperResult[] {
+  return GATEKEEPER_RESULTS.filter(
+    (r) =>
+      (r !== "not_applicable" || !!line.allowsNotApplicable) &&
+      (r !== "equivalent_verified" || !!line.allowsEquivalent),
+  );
+}
+
+/** Does this line count as passed? Exceptions only count where permitted. */
+export function linePasses(line: GatekeeperLine, today = new Date()): boolean {
+  const r = effectiveResult(line, today);
+  if (r === "verified_meets") return true;
+  if (r === "not_applicable") return !!line.allowsNotApplicable;
+  if (r === "equivalent_verified") return !!line.allowsEquivalent;
+  return false;
+}
 
 /** Expiry is a fail, not a footnote: an expired item reads as not verified. */
 export function effectiveResult(line: GatekeeperLine, today = new Date()): GatekeeperResult {
-  if (line.result !== "verified_meets") return line.result;
+  if (line.result !== "verified_meets" && line.result !== "equivalent_verified") return line.result;
   if (!line.expiresOn) return line.result;
   return new Date(`${line.expiresOn}T23:59:59Z`) < today ? "not_verified" : line.result;
 }
@@ -127,14 +151,14 @@ export function effectiveResult(line: GatekeeperLine, today = new Date()): Gatek
 /** Can this company be approved? Every blocking line must be verified & meets. */
 export function gatekeeperReadiness(lines: GatekeeperLine[], today = new Date()) {
   const blockers = lines.filter((l) => l.level === "blocking");
-  const failing = blockers.filter((l) => effectiveResult(l, today) !== "verified_meets");
+  const failing = blockers.filter((l) => !linePasses(l, today));
   const required = lines.filter((l) => l.level === "required");
   const requiredOpen = required.filter((l) => effectiveResult(l, today) === "not_verified");
   return {
     clear: failing.length === 0,
     blockersFailing: failing,
     requiredOpen,
-    passed: lines.filter((l) => effectiveResult(l, today) === "verified_meets").length,
+    passed: lines.filter((l) => linePasses(l, today)).length,
     total: lines.length,
   };
 }
