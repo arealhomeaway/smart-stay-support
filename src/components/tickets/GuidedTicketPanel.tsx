@@ -87,6 +87,8 @@ export function GuidedTicketPanel({
   workOrderPanel,
   children,
   onLeadChange,
+  vendorFollowUp = null,
+  openWorkOrderPanel,
 }: {
   ticket: GuidedTicket;
   closed: boolean;
@@ -104,6 +106,10 @@ export function GuidedTicketPanel({
   children?: ReactNode;
   /** Tells the page when a guided step leads, so older stage blocks step aside. */
   onLeadChange?: (leads: boolean) => void;
+  /** A genuine vendor commitment miss from the Work Order rules, if any. */
+  vendorFollowUp?: string | null;
+  /** The existing Work Order list, shown inside the one Waiting on Vendor state. */
+  openWorkOrderPanel?: ReactNode;
 }) {
   const qc = useQueryClient();
   const [note, setNote] = useState("");
@@ -228,7 +234,8 @@ export function GuidedTicketPanel({
 
   const guidedStep = changingVendor ? "choose_vendor" : g.step;
   const nextStep = ts?.steps.find((s) => !answered.has(s.id)) ?? null;
-  const leads = !closed && !readOnly && Boolean(guidedStep || needsWorkOrder);
+  const waitingOnVendor = !closed && !guidedStep && !needsWorkOrder && openWorkOrders > 0 && !ticket.waiting_on;
+  const leads = (!closed && !readOnly && Boolean(guidedStep || needsWorkOrder)) || waitingOnVendor;
   useEffect(() => onLeadChange?.(leads), [leads, onLeadChange]);
 
   return (
@@ -260,8 +267,14 @@ export function GuidedTicketPanel({
         <div className="flex flex-wrap items-center gap-2">
           {/* Once the page's own closure list is in charge, its count is the one shown. */}
           {g.stage !== "ready_to_close" && (
-            <StatusBadge tone={g.stage === "waiting" ? "waiting" : "progress"}>
-              {g.step === "guest_update" ? "Guest Update Due" : GUIDANCE_STAGE_LABELS[g.stage]}
+            <StatusBadge tone={waitingOnVendor && vendorFollowUp ? "escalated" : g.stage === "waiting" ? "waiting" : "progress"}>
+              {waitingOnVendor
+                ? vendorFollowUp
+                  ? "Follow up with vendor"
+                  : "Waiting on Vendor"
+                : g.step === "guest_update"
+                  ? "Guest Update Due"
+                  : GUIDANCE_STAGE_LABELS[g.stage]}
             </StatusBadge>
           )}
           {ticket.guest_update_at && (
@@ -340,7 +353,7 @@ export function GuidedTicketPanel({
               <h3 className="text-lg font-semibold">{g.title}</h3>
               {!ts?.guide ? (
                 <p className="text-sm text-muted-foreground">
-                  There are no approved troubleshooting steps for this issue type yet. Talk it through with the guest; if that does not fix it, send someone.
+                  No guided troubleshooting is available for this issue yet.
                 </p>
               ) : nextStep ? (
                 <div className="rounded-lg border border-border p-3">
@@ -359,8 +372,13 @@ export function GuidedTicketPanel({
                 <p className="text-sm text-muted-foreground">All troubleshooting steps are done. If it is still not working, send someone.</p>
               )}
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={sendSomeone} disabled={save.isPending}>Still not fixed — send someone</Button>
-                {(!ts?.guide || !nextStep) && (
+                <Button variant="outline" onClick={sendSomeone} disabled={save.isPending}>
+                  {ts?.guide ? "Still not fixed — send someone" : "Send someone"}
+                </Button>
+                {!ts?.guide && (
+                  <Button variant="outline" onClick={() => choosePath("escalate")} disabled={save.isPending}>Escalate</Button>
+                )}
+                {ts?.guide && !nextStep && (
                   <Button variant="ghost" onClick={() => choosePath("already_resolved")} disabled={save.isPending}>It's fixed</Button>
                 )}
               </div>
@@ -440,6 +458,31 @@ export function GuidedTicketPanel({
               {changingVendor && <Button variant="ghost" size="sm" onClick={() => setChangingVendor(false)}>Keep the current vendor</Button>}
             </div>
           )}
+        </section>
+      ) : waitingOnVendor ? (
+        <section className="space-y-3 rounded-xl border border-border bg-card p-4" aria-label="Waiting on Vendor">
+          <h3 className="text-lg font-semibold">Waiting on Vendor</h3>
+          <dl className="grid gap-2 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-xs text-muted-foreground">What we are waiting for</dt>
+              <dd>{vendor.data?.name ?? "The vendor"} to finish the repair on the open Work Order.</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Next expected action</dt>
+              <dd>{vendorFollowUp ?? "When the vendor reports it done, confirm the fix with the guest."}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Next guest update due</dt>
+              <dd>
+                {!stay
+                  ? "No guest in the home"
+                  : ticket.next_guest_update_at
+                    ? usDateTime(ticket.next_guest_update_at)
+                    : "Not scheduled"}
+              </dd>
+            </div>
+          </dl>
+          {openWorkOrderPanel}
         </section>
       ) : (
         children
