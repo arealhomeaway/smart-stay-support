@@ -256,7 +256,7 @@ export function validateTicketTransition(
           "Required steps on this ticket are still open.",
           "closure_requirements",
         );
-      if (facts.requiresClosureEvidence && !String(facts.closureEvidenceText ?? "").trim())
+      if (facts.requiresClosureEvidence && !facts.requiresClosureFile && !String(facts.closureEvidenceText ?? "").trim())
         return fail(
           "closure_no_evidence",
           "This work type needs closure evidence before it can be resolved.",
