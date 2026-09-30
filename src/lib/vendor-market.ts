@@ -16,6 +16,7 @@ const ALIASES: Record<string, string> = {
   indianapolis: "Indy",
   houston: "Houston",
   eufaula: "Eufaula",
+  "carlton landing": "Eufaula",
 };
 
 export function vendorMarketFor(propertyMarket: string | null | undefined): string | null {

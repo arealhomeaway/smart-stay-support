@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
-import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
+import { commitmentStatus } from "@/lib/work-orders";
 import { GuidanceCard } from "@/components/GuidanceCard";
 import { CurrentActionCard } from "@/components/CurrentActionCard";
 import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/GuidedTicketPanel";
@@ -921,20 +921,8 @@ function TicketDetail() {
     </details>
   );
 
-  const repairPanel = (
-    <BreezewayTaskPanel
-      sourceType="ticket"
-      sourceId={ticketId}
-      defaultTitle={ticket.title}
-      defaultDescription={ticket.description}
-      propertyId={ticket.property_id}
-      authorityNote={
-        ticket.guest_in_residence
-          ? "A guest is in the home. Emergency mitigation comes before the permanent repair, and owner approval follows the maintenance authority policy."
-          : "Owner approval follows the maintenance authority policy — Resolve applies the threshold, you do not have to remember it."
-      }
-    />
-  );
+  // Breezeway dispatch is hidden from the Coordinator flow while live Breezeway
+  // dispatch is disabled; Work Orders are the repair path.
 
   const closureBlock = (
     <div className="space-y-4">
@@ -1143,6 +1131,22 @@ function TicketDetail() {
                       null,
                   }}
                   onLeadChange={setGuidedLeads}
+                  vendorFollowUp={
+                    liveOrders
+                      .filter((o) => !o.closed_at)
+                      .map((o) => commitmentStatus(o as never).action)
+                      .find(Boolean) ?? null
+                  }
+                  openWorkOrderPanel={
+                    role.can("work_orders_internal") ? (
+                      <TicketWorkOrderPanel
+                        ticket={ticket}
+                        propertyName={propertyName}
+                        openWorkOrderId={openWorkOrderId}
+                        onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                      />
+                    ) : null
+                  }
                   closed={closed}
                   market={(ticket.properties as { market?: string | null } | null)?.market ?? null}
                   openWorkOrders={liveOrders.filter((o) => !o.closed_at).length}
@@ -1219,7 +1223,6 @@ function TicketDetail() {
                       onOpenWorkOrderIdChange={setOpenWorkOrderId}
                     />
                   ) : null}
-                  {repairPanel}
                 </div>
               )}
 
@@ -1324,10 +1327,9 @@ function TicketDetail() {
                         openWorkOrderId={openWorkOrderId}
                         onOpenWorkOrderIdChange={setOpenWorkOrderId}
                       />
-                      {repairPanel}
                     </>
                   ) : (
-                    repairPanel
+                    <p className="text-sm text-muted-foreground">Ask a coordinator with Work Order access to open it.</p>
                   )}
                   <Button variant="ghost" size="sm" onClick={() => setCloseOpen(true)}>
                     No repair needed — finish this ticket
