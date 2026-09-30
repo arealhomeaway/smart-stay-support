@@ -9,7 +9,11 @@ import { TRADES } from "@/lib/taxonomy";
  * shared labels and pure helpers the UI and the server both read from.
  */
 
-/** ARHA Vendor Gold Standard lifecycle (plus Inactive for retired vendors). */
+/**
+ * Gold Standard / Qualification Status. Operational Active/Inactive is a
+ * separate flag (vendor_orgs.is_active) so qualification history survives
+ * when ARHA stops using a vendor.
+ */
 export const VENDOR_STATUSES = [
   "candidate",
   "pilot",
@@ -17,7 +21,6 @@ export const VENDOR_STATUSES = [
   "gold",
   "corrective_action",
   "suspended",
-  "inactive",
 ] as const;
 export type VendorStatus = (typeof VENDOR_STATUSES)[number];
 
@@ -28,7 +31,6 @@ export const VENDOR_STATUS_LABELS: Record<VendorStatus, string> = {
   gold: "Gold",
   corrective_action: "Corrective Action",
   suspended: "Suspended",
-  inactive: "Inactive",
 };
 
 export const VENDOR_STATUS_BLURBS: Record<VendorStatus, string> = {
@@ -38,10 +40,11 @@ export const VENDOR_STATUS_BLURBS: Record<VendorStatus, string> = {
   gold: "Top-performing approved vendor. Preferred for dispatch.",
   corrective_action: "Dispatch only with supervisor sign-off while a corrective action is open.",
   suspended: "Out of rotation. Existing work stands; history is kept.",
-  inactive: "No longer used. History is kept for the record.",
 };
 
 /** Only these can be sent work; Corrective Action needs supervisor sign-off. */
+export const OPERATIONAL_STATUS_LABELS = { active: "Active", inactive: "Inactive" } as const;
+
 export const DISPATCHABLE_STATUSES: VendorStatus[] = ["pilot", "approved", "gold", "corrective_action"];
 
 export const VENDOR_CLASSES = ["company", "sole_operator", "internal_team"] as const;

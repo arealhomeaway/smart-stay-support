@@ -12,7 +12,7 @@ export function VendorGoldStandard() {
   const ws = useVendorWorkspace();
   if (ws.isLoading) return <LoadingRows rows={5} />;
   if (!ws.data) return <EmptyState title="Could not load vendors" hint="Refresh to try again." />;
-  const list = ws.data.vendors.filter((v) => v.status !== "inactive");
+  const list = ws.data.vendors;
   if (!list.length) return <EmptyState title="No vendors yet" hint="Add a vendor or finish the Notion migration." />;
   return (
     <div className="space-y-2">
