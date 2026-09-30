@@ -472,10 +472,13 @@ export const CHECKPOINT_LABELS: Record<Checkpoint, string> = {
 export function nextCheckpoint(wo: WorkOrderLike, now = new Date()): Checkpoint {
   if (wo.closed_at) return "none";
   if (!wo.vendor_org_id && !wo.vendor_name) return "contact_vendor";
-  if (!wo.vendor_contacted_at) return "contact_vendor";
-  if (!wo.vendor_acknowledged_at) return "await_acknowledgment";
-  if (!wo.scheduled_for && !wo.vendor_eta_at) return "confirm_eta";
-  if (!wo.vendor_arrived_at) {
+  // A later milestone implies the earlier ones: never ask for an acknowledgment
+  // or ETA once the vendor has already arrived or reported the job done.
+  const onSite = Boolean(wo.vendor_arrived_at || wo.vendor_completed_at);
+  if (!onSite && !wo.vendor_contacted_at) return "contact_vendor";
+  if (!onSite && !wo.vendor_acknowledged_at) return "await_acknowledgment";
+  if (!onSite && !wo.scheduled_for && !wo.vendor_eta_at) return "confirm_eta";
+  if (!wo.vendor_arrived_at && !wo.vendor_completed_at) {
     return commitmentStatus(wo, now).etaMissed ? "missed_eta" : "await_arrival";
   }
   if (!wo.vendor_completed_at) return "await_completion";

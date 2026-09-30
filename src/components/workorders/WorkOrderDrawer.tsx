@@ -1098,7 +1098,7 @@ export function WorkOrderDrawer({
             // Same rule the Complete button uses (closureBlockers): never claim
             // nothing is needed while completion evidence is still missing.
             workOrder.evidence_complete ? (
-              <p className="text-xs text-muted-foreground">Nothing required on this job.</p>
+              <p className="text-xs text-muted-foreground">Completion evidence confirmed.</p>
             ) : (
               <div className="text-xs">
                 <p className="font-medium">Still needed before completion</p>

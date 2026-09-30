@@ -34,6 +34,8 @@ export type DemoStatus = {
 type DemoContextValue = {
   /** Whether the demo lens is currently on (admin + preview persona set). */
   demoMode: boolean;
+  /** False until the viewer's roles have loaded, so demoMode is settled. */
+  demoReady: boolean;
   /** Raw environment state (seeded, scenario count). */
   status: DemoStatus | undefined;
   /** Whether the current user may operate the demo environment. */
@@ -86,6 +88,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   });
 
   const demoMode = resolveDemoMode({ canDemo, flag });
+  const demoReady = !flag || !rolesQuery.isLoading;
 
   const seedFn = useServerFn(seedDemoEnvironment);
   const resetFn = useServerFn(resetDemoEnvironment);
@@ -131,6 +134,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<DemoContextValue>(
     () => ({
       demoMode,
+      demoReady,
       status: statusQuery.data,
       canDemo,
       enterDemo,
@@ -140,7 +144,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
       seeding,
       resetting,
     }),
-    [demoMode, statusQuery.data, canDemo, enterDemo, exitDemo, seed, reset, seeding, resetting],
+    [demoMode, demoReady, statusQuery.data, canDemo, enterDemo, exitDemo, seed, reset, seeding, resetting],
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
