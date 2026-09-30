@@ -282,8 +282,7 @@ const navGroups: NavGroup[] = [
         label: "Vendor Hub",
         icon: Handshake,
         tour: "vendors",
-        capability: "vendor_admin",
-        flag: "vendor_portal",
+        capability: "vendor_directory",
       },
       {
         to: "/quarterly",

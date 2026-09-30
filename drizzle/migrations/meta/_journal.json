@@ -575,6 +575,13 @@
       "when": 1790720427994,
       "tag": "0081_fix_resolve_owner_request_unlinked_2",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1790783825239,
+      "tag": "0082_vendor_canonical_foundation",
+      "breakpoints": true
     }
   ]
 }

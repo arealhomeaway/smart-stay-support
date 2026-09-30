@@ -509,7 +509,7 @@ export async function decideImportRow(
       .insert({
         display_name: row.display_name,
         legal_name: row.display_name,
-        status: "legacy",
+        status: "candidate",
         service_categories: profile?.specialties?.length
           ? profile.specialties
           : (row.departments ?? []),
@@ -537,7 +537,7 @@ export async function decideImportRow(
 
     await db.from("vendor_status_events").insert({
       org_id: data.id,
-      to_status: "legacy",
+      to_status: "candidate",
       reason: `Imported from ${row.source_role === "service_provider" ? "legacy service provider list" : "legacy list"}. Not verified.`,
       actor_id: userId,
     });

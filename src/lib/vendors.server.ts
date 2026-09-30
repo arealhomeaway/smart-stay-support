@@ -283,7 +283,7 @@ export async function createVendorOrg(
       display_name: input.displayName,
       legal_name: input.legalName || input.displayName,
       vendor_class: input.vendorClass,
-      status: "potential",
+      status: "candidate",
       service_categories: input.serviceCategories,
       markets: input.markets,
       primary_contact_name: input.primaryContactName || null,
@@ -301,7 +301,7 @@ export async function createVendorOrg(
   await db.from("vendor_status_events").insert({
     org_id: data.id,
     from_status: null,
-    to_status: "potential",
+    to_status: "candidate",
     reason: "Vendor record created.",
     actor_id: userId,
     actor_label: await actorLabel(db, userId),
@@ -329,7 +329,7 @@ export async function setVendorStatus(
   if (!org) throw new Error("That vendor company no longer exists.");
 
   // Approval is gated on the blocking screening items, not on judgement.
-  if (input.status === "approved") {
+  if (input.status === "approved" || input.status === "gold") {
     const [{ data: reqs }, { data: results }] = await Promise.all([
       db.from("gatekeeper_requirements").select("id, label, requirement_level").eq("active", true),
       db
@@ -432,9 +432,9 @@ export async function addCoverage(
     .select("status")
     .eq("id", input.orgId)
     .maybeSingle();
-  if (org && ["removed", "potential", "screening"].includes(org.status)) {
+  if (org && ["inactive", "candidate"].includes(org.status)) {
     throw new Error(
-      "Only a trial, approved, restricted or paused vendor can be put on a coverage map.",
+      "Only a pilot, approved, gold, corrective-action or suspended vendor can be put on a coverage map.",
     );
   }
   const { error } = await db.from("property_vendor_coverage").insert({
@@ -550,8 +550,8 @@ export async function addServiceArea(
     .select("status")
     .eq("id", input.orgId)
     .maybeSingle();
-  if (org && ["removed", "potential", "screening"].includes(org.status)) {
-    throw new Error("Only a trial, approved, restricted or paused vendor can hold a territory.");
+  if (org && ["inactive", "candidate"].includes(org.status)) {
+    throw new Error("Only a pilot, approved, gold, corrective-action or suspended vendor can hold a territory.");
   }
 
   const { error } = await db.from("vendor_service_areas").upsert(

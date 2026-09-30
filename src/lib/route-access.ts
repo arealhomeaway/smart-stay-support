@@ -42,7 +42,7 @@ const RULES: Rule[] = [
   { prefix: "/owner-library", capability: "owner_program_admin" },
   { prefix: "/homeowners", capability: "homeowner_directory" },
   { prefix: "/owner", portal: "homeowner", orCapability: "owner_programs" },
-  { prefix: "/vendors", capability: "vendor_admin" },
+  { prefix: "/vendors", capability: "vendor_directory" },
   { prefix: "/vendor", portal: "vendor" },
   { prefix: "/command-center", capability: "command_center" },
   { prefix: "/help-tickets", capability: "audit_history" },

@@ -9113,6 +9113,58 @@ export type Database = {
           },
         ]
       }
+      ticket_troubleshooting_answers: {
+        Row: {
+          answered_at: string
+          answered_by: string
+          id: string
+          note: string | null
+          outcome: string
+          step_id: string
+          ticket_id: string
+        }
+        Insert: {
+          answered_at?: string
+          answered_by?: string
+          id?: string
+          note?: string | null
+          outcome: string
+          step_id: string
+          ticket_id: string
+        }
+        Update: {
+          answered_at?: string
+          answered_by?: string
+          id?: string
+          note?: string | null
+          outcome?: string
+          step_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_troubleshooting_answers_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "troubleshooting_guide_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_troubleshooting_answers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "ticket_troubleshooting_answers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_visits: {
         Row: {
           check_in_accuracy_m: number | null
@@ -9267,6 +9319,8 @@ export type Database = {
           guest_recovery_flagged_at: string | null
           guest_recovery_flagged_by: string | null
           guest_recovery_needed: boolean
+          guest_update_at: string | null
+          guest_update_note: string | null
           handoff_note: string | null
           handoff_status: string
           handoff_type: string | null
@@ -9277,6 +9331,7 @@ export type Database = {
           late_reason: string | null
           next_action: string | null
           next_action_due_at: string | null
+          next_guest_update_at: string | null
           next_review_at: string | null
           occupancy_status: string
           outcome_type: string | null
@@ -9307,8 +9362,12 @@ export type Database = {
           reservation_snapshot_at: string | null
           reservation_url: string | null
           resolution_notes: string | null
+          resolution_path: string | null
+          resolution_path_at: string | null
+          resolution_path_by: string | null
           resolved_at: string | null
           response_due_at: string | null
+          selected_vendor_org_id: string | null
           source_channel: string
           source_reference: string | null
           status: string
@@ -9379,6 +9438,8 @@ export type Database = {
           guest_recovery_flagged_at?: string | null
           guest_recovery_flagged_by?: string | null
           guest_recovery_needed?: boolean
+          guest_update_at?: string | null
+          guest_update_note?: string | null
           handoff_note?: string | null
           handoff_status?: string
           handoff_type?: string | null
@@ -9389,6 +9450,7 @@ export type Database = {
           late_reason?: string | null
           next_action?: string | null
           next_action_due_at?: string | null
+          next_guest_update_at?: string | null
           next_review_at?: string | null
           occupancy_status?: string
           outcome_type?: string | null
@@ -9419,8 +9481,12 @@ export type Database = {
           reservation_snapshot_at?: string | null
           reservation_url?: string | null
           resolution_notes?: string | null
+          resolution_path?: string | null
+          resolution_path_at?: string | null
+          resolution_path_by?: string | null
           resolved_at?: string | null
           response_due_at?: string | null
+          selected_vendor_org_id?: string | null
           source_channel?: string
           source_reference?: string | null
           status?: string
@@ -9491,6 +9557,8 @@ export type Database = {
           guest_recovery_flagged_at?: string | null
           guest_recovery_flagged_by?: string | null
           guest_recovery_needed?: boolean
+          guest_update_at?: string | null
+          guest_update_note?: string | null
           handoff_note?: string | null
           handoff_status?: string
           handoff_type?: string | null
@@ -9501,6 +9569,7 @@ export type Database = {
           late_reason?: string | null
           next_action?: string | null
           next_action_due_at?: string | null
+          next_guest_update_at?: string | null
           next_review_at?: string | null
           occupancy_status?: string
           outcome_type?: string | null
@@ -9531,8 +9600,12 @@ export type Database = {
           reservation_snapshot_at?: string | null
           reservation_url?: string | null
           resolution_notes?: string | null
+          resolution_path?: string | null
+          resolution_path_at?: string | null
+          resolution_path_by?: string | null
           resolved_at?: string | null
           response_due_at?: string | null
+          selected_vendor_org_id?: string | null
           source_channel?: string
           source_reference?: string | null
           status?: string
@@ -9581,6 +9654,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_selected_vendor_org_id_fkey"
+            columns: ["selected_vendor_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_work_type_id_fkey"
             columns: ["work_type_id"]
             isOneToOne: false
@@ -9588,6 +9668,65 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      troubleshooting_guide_steps: {
+        Row: {
+          guide_id: string
+          help: string | null
+          id: string
+          position: number
+          prompt: string
+        }
+        Insert: {
+          guide_id: string
+          help?: string | null
+          id?: string
+          position: number
+          prompt: string
+        }
+        Update: {
+          guide_id?: string
+          help?: string | null
+          id?: string
+          position?: number
+          prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "troubleshooting_guide_steps_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "troubleshooting_guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      troubleshooting_guides: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
       }
       user_notification_preferences: {
         Row: {
@@ -9902,6 +10041,45 @@ export type Database = {
           },
         ]
       }
+      vendor_custom_fields: {
+        Row: {
+          archived_at: string | null
+          archived_by: string | null
+          created_at: string
+          created_by: string | null
+          field_type: string
+          id: string
+          key: string
+          label: string
+          options: string[]
+          sort_order: number
+        }
+        Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          field_type: string
+          id?: string
+          key: string
+          label: string
+          options?: string[]
+          sort_order?: number
+        }
+        Update: {
+          archived_at?: string | null
+          archived_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          field_type?: string
+          id?: string
+          key?: string
+          label?: string
+          options?: string[]
+          sort_order?: number
+        }
+        Relationships: []
+      }
       vendor_documents: {
         Row: {
           created_at: string
@@ -9957,6 +10135,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "vendor_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_field_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          field: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          org_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          field: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          org_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          field?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_field_audit_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "vendor_orgs"
@@ -10057,6 +10273,10 @@ export type Database = {
       vendor_import_rows: {
         Row: {
           batch_id: string
+          breezeway_hint: boolean | null
+          comments: string | null
+          company: string | null
+          contact_person: string | null
           created_at: string
           created_contact_id: string | null
           created_org_id: string | null
@@ -10066,20 +10286,37 @@ export type Database = {
           decision_note: string | null
           departments: string[]
           display_name: string
+          duplicate_candidates: string[]
           email: string | null
           groups: string[]
           id: string
+          legacy_fields: Json
+          legacy_notion_id: string | null
+          legacy_status: string | null
+          markets: string[]
           match_confidence: number | null
           match_org_id: string | null
           match_reasons: string[]
+          payment_type: string | null
           phone: string | null
+          preference: string | null
+          pricing: string | null
           proposed_action: string
           raw: Json
+          review_states: string[]
           source_role: string
+          source_system: string
+          specialties: string[]
+          tags: string[]
           updated_at: string
+          website: string | null
         }
         Insert: {
           batch_id: string
+          breezeway_hint?: boolean | null
+          comments?: string | null
+          company?: string | null
+          contact_person?: string | null
           created_at?: string
           created_contact_id?: string | null
           created_org_id?: string | null
@@ -10089,20 +10326,37 @@ export type Database = {
           decision_note?: string | null
           departments?: string[]
           display_name: string
+          duplicate_candidates?: string[]
           email?: string | null
           groups?: string[]
           id?: string
+          legacy_fields?: Json
+          legacy_notion_id?: string | null
+          legacy_status?: string | null
+          markets?: string[]
           match_confidence?: number | null
           match_org_id?: string | null
           match_reasons?: string[]
+          payment_type?: string | null
           phone?: string | null
+          preference?: string | null
+          pricing?: string | null
           proposed_action?: string
           raw?: Json
+          review_states?: string[]
           source_role?: string
+          source_system?: string
+          specialties?: string[]
+          tags?: string[]
           updated_at?: string
+          website?: string | null
         }
         Update: {
           batch_id?: string
+          breezeway_hint?: boolean | null
+          comments?: string | null
+          company?: string | null
+          contact_person?: string | null
           created_at?: string
           created_contact_id?: string | null
           created_org_id?: string | null
@@ -10112,17 +10366,30 @@ export type Database = {
           decision_note?: string | null
           departments?: string[]
           display_name?: string
+          duplicate_candidates?: string[]
           email?: string | null
           groups?: string[]
           id?: string
+          legacy_fields?: Json
+          legacy_notion_id?: string | null
+          legacy_status?: string | null
+          markets?: string[]
           match_confidence?: number | null
           match_org_id?: string | null
           match_reasons?: string[]
+          payment_type?: string | null
           phone?: string | null
+          preference?: string | null
+          pricing?: string | null
           proposed_action?: string
           raw?: Json
+          review_states?: string[]
           source_role?: string
+          source_system?: string
+          specialties?: string[]
+          tags?: string[]
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -10221,6 +10488,79 @@ export type Database = {
           },
         ]
       }
+      vendor_market_coverage: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          market: string
+          org_id: string
+          preference: string
+          service_category: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          market: string
+          org_id: string
+          preference?: string
+          service_category: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          market?: string
+          org_id?: string
+          preference?: string
+          service_category?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_market_coverage_market_fkey"
+            columns: ["market"]
+            isOneToOne: false
+            referencedRelation: "vendor_markets"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "vendor_market_coverage_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_market_coverage_service_category_fkey"
+            columns: ["service_category"]
+            isOneToOne: false
+            referencedRelation: "vendor_service_categories"
+            referencedColumns: ["label"]
+          },
+        ]
+      }
+      vendor_markets: {
+        Row: {
+          active: boolean
+          code: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       vendor_org_members: {
         Row: {
           active: boolean
@@ -10271,9 +10611,16 @@ export type Database = {
       vendor_orgs: {
         Row: {
           approval_limit: number | null
+          attachments: Json
+          breezeway_person_id: string | null
           capacity_note: string | null
+          compliance_status: string
+          corrective_action_due: string | null
           created_at: string
           created_by: string | null
+          critical_failure: boolean
+          custom_fields: Json
+          dispatch_method: string
           display_name: string
           emergency_available: boolean
           google_place_id: string | null
@@ -10283,23 +10630,43 @@ export type Database = {
           id: string
           insurance_expires_on: string | null
           insurance_status: string
+          is_active: boolean
           is_demo: boolean
+          jobs_90d: number
+          last_review_on: string | null
           last_verified_at: string | null
           legacy_all_groups: boolean
+          legacy_fields: Json
           legacy_market_hints: string[]
+          legacy_notion_id: string | null
           legal_name: string
           license_expires_on: string | null
           license_status: string
           markets: string[]
+          migration_status: string | null
+          next_review_on: string | null
           notes: string | null
+          open_corrective_action: string | null
           payment_terms: string | null
+          performance_score: number | null
           pricing_note: string | null
           primary_contact_email: string | null
           primary_contact_name: string | null
           primary_contact_phone: string | null
+          program_owner: string | null
+          qualification_score: number | null
           response_time_note: string | null
+          score_capacity: number | null
+          score_communication: number | null
+          score_hospitality: number | null
+          score_pricing: number | null
+          score_quality: number | null
+          score_references: number | null
+          score_responsiveness: number | null
           service_categories: string[]
+          source_system: string
           status: string
+          tags: string[]
           tier: string | null
           trial_jobs_required: number
           trial_score: number | null
@@ -10307,12 +10674,20 @@ export type Database = {
           vendor_class: string
           w9_status: string
           website: string | null
+          work_order_email: string | null
         }
         Insert: {
           approval_limit?: number | null
+          attachments?: Json
+          breezeway_person_id?: string | null
           capacity_note?: string | null
+          compliance_status?: string
+          corrective_action_due?: string | null
           created_at?: string
           created_by?: string | null
+          critical_failure?: boolean
+          custom_fields?: Json
+          dispatch_method?: string
           display_name: string
           emergency_available?: boolean
           google_place_id?: string | null
@@ -10322,23 +10697,43 @@ export type Database = {
           id?: string
           insurance_expires_on?: string | null
           insurance_status?: string
+          is_active?: boolean
           is_demo?: boolean
+          jobs_90d?: number
+          last_review_on?: string | null
           last_verified_at?: string | null
           legacy_all_groups?: boolean
+          legacy_fields?: Json
           legacy_market_hints?: string[]
+          legacy_notion_id?: string | null
           legal_name: string
           license_expires_on?: string | null
           license_status?: string
           markets?: string[]
+          migration_status?: string | null
+          next_review_on?: string | null
           notes?: string | null
+          open_corrective_action?: string | null
           payment_terms?: string | null
+          performance_score?: number | null
           pricing_note?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          program_owner?: string | null
+          qualification_score?: number | null
           response_time_note?: string | null
+          score_capacity?: number | null
+          score_communication?: number | null
+          score_hospitality?: number | null
+          score_pricing?: number | null
+          score_quality?: number | null
+          score_references?: number | null
+          score_responsiveness?: number | null
           service_categories?: string[]
+          source_system?: string
           status?: string
+          tags?: string[]
           tier?: string | null
           trial_jobs_required?: number
           trial_score?: number | null
@@ -10346,12 +10741,20 @@ export type Database = {
           vendor_class?: string
           w9_status?: string
           website?: string | null
+          work_order_email?: string | null
         }
         Update: {
           approval_limit?: number | null
+          attachments?: Json
+          breezeway_person_id?: string | null
           capacity_note?: string | null
+          compliance_status?: string
+          corrective_action_due?: string | null
           created_at?: string
           created_by?: string | null
+          critical_failure?: boolean
+          custom_fields?: Json
+          dispatch_method?: string
           display_name?: string
           emergency_available?: boolean
           google_place_id?: string | null
@@ -10361,23 +10764,43 @@ export type Database = {
           id?: string
           insurance_expires_on?: string | null
           insurance_status?: string
+          is_active?: boolean
           is_demo?: boolean
+          jobs_90d?: number
+          last_review_on?: string | null
           last_verified_at?: string | null
           legacy_all_groups?: boolean
+          legacy_fields?: Json
           legacy_market_hints?: string[]
+          legacy_notion_id?: string | null
           legal_name?: string
           license_expires_on?: string | null
           license_status?: string
           markets?: string[]
+          migration_status?: string | null
+          next_review_on?: string | null
           notes?: string | null
+          open_corrective_action?: string | null
           payment_terms?: string | null
+          performance_score?: number | null
           pricing_note?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          program_owner?: string | null
+          qualification_score?: number | null
           response_time_note?: string | null
+          score_capacity?: number | null
+          score_communication?: number | null
+          score_hospitality?: number | null
+          score_pricing?: number | null
+          score_quality?: number | null
+          score_references?: number | null
+          score_responsiveness?: number | null
           service_categories?: string[]
+          source_system?: string
           status?: string
+          tags?: string[]
           tier?: string | null
           trial_jobs_required?: number
           trial_score?: number | null
@@ -10385,6 +10808,37 @@ export type Database = {
           vendor_class?: string
           w9_status?: string
           website?: string | null
+          work_order_email?: string | null
+        }
+        Relationships: []
+      }
+      vendor_saved_views: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          shared: boolean
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string
+          shared?: boolean
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          shared?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
@@ -10440,6 +10894,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendor_service_categories: {
+        Row: {
+          active: boolean
+          label: string
+          sort_order: number
+          tier: string
+        }
+        Insert: {
+          active?: boolean
+          label: string
+          sort_order?: number
+          tier: string
+        }
+        Update: {
+          active?: boolean
+          label?: string
+          sort_order?: number
+          tier?: string
+        }
+        Relationships: []
       }
       vendor_status_events: {
         Row: {
@@ -12046,6 +12521,10 @@ export type Database = {
           _program_id: string
         }
         Returns: Json
+      }
+      remove_vendor_custom_field: {
+        Args: { _field_id: string }
+        Returns: string
       }
       reopen_owner_request: { Args: { _id: string }; Returns: undefined }
       reorder_arha_opportunities: {
