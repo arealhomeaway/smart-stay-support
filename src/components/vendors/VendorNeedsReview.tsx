@@ -242,9 +242,9 @@ function NotionStaging() {
                   </StatusBadge>
                 ))}
                 {r.transitional_eligible && <StatusBadge tone="waiting">Transitional Review on import</StatusBadge>}
-                {r.breezeway_match_state && r.breezeway_match_state !== "not_expected" && (
+                {r.breezeway_match_state && r.breezeway_match_state !== "not_found" && (
                   <Chip>
-                    Breezeway: {r.breezeway_match_state === "matched" ? `matched (ID ${r.breezeway_match_person_id})` : r.breezeway_match_state}
+                    Breezeway: {r.breezeway_match_state === "email" ? `exact email (ID ${r.breezeway_match_person_id})` : r.breezeway_match_state === "unique_name" ? `name only — confirm (ID ${r.breezeway_match_person_id})` : "ambiguous — manual review"}
                   </Chip>
                 )}
                 <span className="text-xs text-muted-foreground">

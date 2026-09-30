@@ -10,6 +10,7 @@ import {
   isTransitionalEligible,
   mapNotionCategory,
   mapNotionPreference,
+  parseLegacyPreference,
   reviewStatesFor,
   stageNotionCsv,
 } from "./vendor-gold";
@@ -22,25 +23,32 @@ const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().replace(/
  * person name (contact or company). Never fuzzy; ambiguity is flagged for review.
  * The Notion "in Breezeway" tick is only a hint.
  */
+export type BzMatchState = "email" | "unique_name" | "ambiguous" | "not_found";
+/** Deterministic only: exact email, else unique exact name (candidate — needs confirmation), else ambiguous/not found. */
 export function matchBreezeway(
   row: { email: string | null; contact_person: string | null; company: string | null; breezeway_hint: boolean | null },
   people: BzPerson[],
-): { state: "matched" | "ambiguous" | "unmatched" | "not_expected"; personId: number | null; note: string } {
+): { state: BzMatchState; personId: number | null; note: string } {
   const email = (row.email ?? "").trim().toLowerCase();
   if (email) {
     const hits = people.filter((p) => (p.email ?? "").trim().toLowerCase() === email);
-    if (hits.length === 1) return { state: "matched", personId: hits[0]!.breezeway_person_id, note: "Matched by email." };
+    if (hits.length === 1) return { state: "email", personId: hits[0]!.breezeway_person_id, note: "Exact email match." };
     if (hits.length > 1) return { state: "ambiguous", personId: null, note: `${hits.length} Breezeway people share this email.` };
   }
-  const names = [row.contact_person, row.company].map((n) => norm((n ?? "").split(",")[0])).filter((n) => n.length >= 5);
+  const names = [...new Set([row.contact_person, row.company].map((n) => norm((n ?? "").split(",")[0])).filter((n) => n.length >= 5))];
+  const found = new Map<number, BzPerson>();
+  let multi = false;
   for (const n of names) {
     const hits = people.filter((p) => norm(`${p.first_name ?? ""}${p.last_name ?? ""}`) === n);
-    if (hits.length === 1) return { state: "matched", personId: hits[0]!.breezeway_person_id, note: "Matched by exact name." };
-    if (hits.length > 1) return { state: "ambiguous", personId: null, note: `${hits.length} Breezeway people have this name.` };
+    if (hits.length > 1) multi = true;
+    hits.forEach((h) => found.set(h.breezeway_person_id, h));
   }
-  return row.breezeway_hint
-    ? { state: "unmatched", personId: null, note: "Notion says Breezeway, but no exact Breezeway match was found." }
-    : { state: "not_expected", personId: null, note: "Not marked as a Breezeway vendor in Notion." };
+  if (multi || found.size > 1) return { state: "ambiguous", personId: null, note: "More than one Breezeway person has this name — confirm manually." };
+  if (found.size === 1) {
+    const only = [...found.values()][0]!;
+    return { state: "unique_name", personId: only.breezeway_person_id, note: "Unique exact-name match — confirm before linking." };
+  }
+  return { state: "not_found", personId: null, note: row.breezeway_hint ? "Notion says Breezeway, but no exact match was found." : "No Breezeway match." };
 }
 
 type Client = SupabaseClient<Database>;
@@ -98,7 +106,7 @@ export async function stageNotion(db: Client, userId: string, input: { label: st
     });
     const bzMatch = matchBreezeway(s, people);
     return {
-      transitional_eligible: isTransitionalEligible(s.legacy_status),
+      transitional_eligible: isTransitionalEligible(s.legacy_status, s.preference),
       breezeway_match_state: bzMatch.state,
       breezeway_match_person_id: bzMatch.personId,
       breezeway_match_note: bzMatch.note,
@@ -185,6 +193,15 @@ export async function decideNotionRow(
     ...(row.specialties.length ? { "Notion: specialty": row.specialties.join(", ") } : {}),
     ...(unmappedSpecialties.length ? { "Notion: specialty (unmapped)": unmappedSpecialties.join(", ") } : {}),
     ...(row.preference ? { "Notion: preference": row.preference } : {}),
+    ...(() => {
+      const lp = parseLegacyPreference(row.preference);
+      return {
+        ...(lp.rank != null ? { "Legacy preference rank": String(lp.rank) } : {}),
+        ...(lp.emergencyOnly ? { "Restriction: Emergency only": "yes" } : {}),
+        ...(lp.homeOwnersVendor ? { "Restriction: Home Owner's Vendor": "yes" } : {}),
+        ...(lp.headCleaner ? { "Designation: Head Cleaner": "yes" } : {}),
+      };
+    })(),
   };
 
   const { data: org, error: orgErr } = await db
@@ -195,9 +212,10 @@ export async function decideNotionRow(
       vendor_class: "company",
       status: "candidate",
       // Temporary migration flag only — never a lifecycle status. The database re-checks eligibility.
-      transitional_review: row.transitional_eligible && isTransitionalEligible(row.legacy_status),
-      breezeway_person_id: row.breezeway_match_state === "matched" && row.breezeway_match_person_id ? String(row.breezeway_match_person_id) : null,
-      dispatch_method: row.breezeway_match_state === "matched" && row.breezeway_match_person_id ? "breezeway" : "setup_incomplete",
+      transitional_review: row.transitional_eligible && isTransitionalEligible(row.legacy_status, row.preference),
+      // Only an exact-email match links automatically; unique-name matches need a person to confirm.
+      breezeway_person_id: row.breezeway_match_state === "email" && row.breezeway_match_person_id ? String(row.breezeway_match_person_id) : null,
+      dispatch_method: row.breezeway_match_state === "email" && row.breezeway_match_person_id ? "breezeway" : "setup_incomplete",
       primary_contact_name: row.contact_person,
       primary_contact_email: row.email,
       primary_contact_phone: row.phone,

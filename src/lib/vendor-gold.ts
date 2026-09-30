@@ -351,8 +351,34 @@ const NOTION_MAP: Record<string, string> = {
 /** Notion "Vendor Status" values that mean ARHA currently uses the vendor (Transitional Review eligible). */
 export const TRANSITIONAL_LEGACY_STATUSES = ["Active", "Last Resort"] as const;
 export const TRANSITIONAL_DAYS = 60;
-export function isTransitionalEligible(legacyStatus: string | null | undefined) {
-  return (TRANSITIONAL_LEGACY_STATUSES as readonly string[]).includes((legacyStatus ?? "").trim());
+/** Legacy Notion Preference, parsed literally. "Option N" is a legacy preference rank, NOT a formal Primary/Backup assignment. */
+export type LegacyPreference = {
+  rank: number | null;
+  backUpOption: boolean;
+  emergencyOnly: boolean;
+  homeOwnersVendor: boolean;
+  headCleaner: boolean;
+  doNotUse: boolean;
+  noLongerUsing: boolean;
+};
+export function parseLegacyPreference(pref: string | null | undefined): LegacyPreference {
+  const p = pref ?? "";
+  const ranks = [...p.matchAll(/option\s*(\d+)/gi)].map((m) => Number(m[1]));
+  return {
+    rank: ranks.length ? Math.min(...ranks) : null,
+    backUpOption: /back\s*up option/i.test(p),
+    emergencyOnly: /emergency only/i.test(p),
+    homeOwnersVendor: /home\s*owner'?s vendor/i.test(p),
+    headCleaner: /head cleaner/i.test(p),
+    doNotUse: /do not use/i.test(p),
+    noLongerUsing: /no longer using/i.test(p),
+  };
+}
+/** Status Active/Last Resort AND Preference not Do Not Use / No Longer Using / Home Owner's Vendor (owner-restricted, not general dispatch). */
+export function isTransitionalEligible(legacyStatus: string | null | undefined, preference?: string | null) {
+  if (!(TRANSITIONAL_LEGACY_STATUSES as readonly string[]).includes((legacyStatus ?? "").trim())) return false;
+  const lp = parseLegacyPreference(preference);
+  return !lp.doNotUse && !lp.noLongerUsing && !lp.homeOwnersVendor;
 }
 
 /** Notion specialty names → Resolve service categories. Unlisted specialties stay as legacy fields. */
@@ -373,10 +399,8 @@ export function mapNotionCategory(specialty: string, known: Map<string, string>)
 }
 
 /** Notion preference → coverage preference. "Option 1" is the first call = Primary. */
-export function mapNotionPreference(pref: string | null | undefined): "primary" | "backup" | "other" {
-  const p = pref ?? "";
-  if (/option 1\b|primary/i.test(p)) return "primary";
-  if (/option [2-9]|back ?up/i.test(p)) return "backup";
+/** Legacy Preference never implies formal Market Coverage; ARHA assigns Primary/Backup explicitly. */
+export function mapNotionPreference(_pref: string | null | undefined): "primary" | "backup" | "other" {
   return "other";
 }
 
