@@ -645,6 +645,13 @@
       "when": 1790799551763,
       "tag": "0091_vendor_transitional_guard_restore_outcome_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1790800030629,
+      "tag": "0092_vendor_emergency_only_selection",
+      "breakpoints": true
     }
   ]
 }

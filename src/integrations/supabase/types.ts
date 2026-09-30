@@ -9313,6 +9313,10 @@ export type Database = {
           department_code: string | null
           description: string | null
           due_at: string | null
+          emergency_vendor_authorized_at: string | null
+          emergency_vendor_authorized_by: string | null
+          emergency_vendor_basis: string | null
+          emergency_vendor_reason: string | null
           escalated_at: string | null
           escalation_level: string
           external_id: string | null
@@ -9432,6 +9436,10 @@ export type Database = {
           department_code?: string | null
           description?: string | null
           due_at?: string | null
+          emergency_vendor_authorized_at?: string | null
+          emergency_vendor_authorized_by?: string | null
+          emergency_vendor_basis?: string | null
+          emergency_vendor_reason?: string | null
           escalated_at?: string | null
           escalation_level?: string
           external_id?: string | null
@@ -9551,6 +9559,10 @@ export type Database = {
           department_code?: string | null
           description?: string | null
           due_at?: string | null
+          emergency_vendor_authorized_at?: string | null
+          emergency_vendor_authorized_by?: string | null
+          emergency_vendor_basis?: string | null
+          emergency_vendor_reason?: string | null
           escalated_at?: string | null
           escalation_level?: string
           external_id?: string | null
@@ -10723,6 +10735,7 @@ export type Database = {
           dispatch_method: string
           display_name: string
           emergency_available: boolean
+          emergency_only: boolean
           google_place_id: string | null
           google_rating: number | null
           google_refreshed_at: string | null
@@ -10795,6 +10808,7 @@ export type Database = {
           dispatch_method?: string
           display_name: string
           emergency_available?: boolean
+          emergency_only?: boolean
           google_place_id?: string | null
           google_rating?: number | null
           google_refreshed_at?: string | null
@@ -10867,6 +10881,7 @@ export type Database = {
           dispatch_method?: string
           display_name?: string
           emergency_available?: boolean
+          emergency_only?: boolean
           google_place_id?: string | null
           google_rating?: number | null
           google_refreshed_at?: string | null
