@@ -15,3 +15,4 @@
 - User identity/access edits only via audited admin `updateTeammate` (src/lib/access.functions.ts). Why: one guarded path, no duplicate accounts.
 - Vendor expiry reminders: DB `vendor_compliance_sweep` (deduped in `vendor_compliance_reminders`) on the 5-minute notify pass; UI state from `src/lib/vendor-compliance.ts`. Why: one rule, no new cron.
 - STR cleaner safeguard rules: see `drizzle/AGENTS.md`.
+- Guided Ticket = `GuidedTicketPanel` over pure `ticketGuidance`; records only guest update/path/troubleshooting/vendor; statuses, SLA, closure gates, Work Order engine unchanged. Vendor pick re-checked by DB `vendor_dispatch_eligible`. Why: one rule, no second workflow.

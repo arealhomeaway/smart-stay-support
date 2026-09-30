@@ -12839,6 +12839,13 @@ export type Database = {
         Returns: string
       }
       vendor_dispatch_eligible: { Args: { _org: string }; Returns: boolean }
+      vendor_program_owner_choices: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"

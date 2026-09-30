@@ -2,7 +2,7 @@
  * Frontline Vendor Directory. Find the right vendor without touching the
  * database table. Also used inside a Ticket to choose who should handle it.
  */
-import { qualificationHold } from "@/components/vendors/useVendorWorkspace";
+import { canTakeWork, qualificationHold } from "@/components/vendors/useVendorWorkspace";
 import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -174,7 +174,8 @@ export function VendorDirectory({
                 </div>
                 <div className="flex gap-2">
                   {onSelect && (
-                    <Button size="sm" onClick={() => onSelect(v)} disabled={!v.is_active || qualificationHold(v, ws.data!.gateStatus)}>
+                    <Button size="sm" onClick={() => onSelect(v)} disabled={!canTakeWork(v, ws.data!.gateStatus, ws.data!.compliance)}
+                      title={canTakeWork(v, ws.data!.gateStatus, ws.data!.compliance) ? undefined : "Not available for new work (inactive, not yet qualified, on hold or a credential expired)"}>
                       {selectedId === v.id ? "Selected" : "Choose"}
                     </Button>
                   )}

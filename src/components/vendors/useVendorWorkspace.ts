@@ -102,3 +102,18 @@ export function errorText(e: unknown) {
 export function qualificationHold(v: Pick<VendorRecord, "id" | "status">, gateStatus: Map<string, { blockingClear: boolean }>) {
   return (v.status === "approved" || v.status === "gold") && !gateStatus.get(v.id)?.blockingClear;
 }
+
+/**
+ * Can this vendor be picked for new Ticket/Work Order work right now?
+ * Mirrors public.vendor_dispatch_eligible (the database re-checks on save).
+ */
+export function canTakeWork(
+  v: Pick<VendorRecord, "id" | "status" | "is_active" | "critical_failure">,
+  gateStatus: Map<string, { blockingClear: boolean }>,
+  compliance: Map<string, { state: string }>,
+) {
+  if (!v.is_active) return false;
+  if (!["pilot", "approved", "gold", "corrective_action"].includes(v.status)) return false;
+  if ((v.status === "approved" || v.status === "gold") && (!gateStatus.get(v.id)?.blockingClear || v.critical_failure)) return false;
+  return compliance.get(v.id)?.state !== "expired";
+}
