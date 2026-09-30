@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/ui/status";
 import { VendorDirectory } from "@/components/vendors/VendorDirectory";
 import { NoEligibleVendor } from "@/components/tickets/NoEligibleVendor";
 import { useRole } from "@/hooks/useRole";
+import { vendorMarketFor } from "@/lib/vendor-market";
 import { allowedEmergencyBases, EMERGENCY_BASIS_LABELS, type EmergencyBasis } from "@/lib/emergency-vendor";
 import { errorText } from "@/components/vendors/useVendorWorkspace";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -373,7 +374,7 @@ export function GuidedTicketPanel({
                 Showing vendors for this property's market. Only vendors who can take new work can be chosen.
               </p>
               <VendorDirectory
-                initialMarket={market}
+                initialMarket={vendorMarketFor(market)}
                 selectedId={ticket.selected_vendor_org_id}
                 noEligible={(ctx) => (
                   <NoEligibleVendor
