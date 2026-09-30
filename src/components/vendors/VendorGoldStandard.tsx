@@ -3,6 +3,7 @@ import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
 import { EmptyState, LoadingRows } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
+import { inTransitionalReview, transitionalDaysLeft } from "@/components/vendors/useVendorWorkspace";
 import { VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
 import { PILOT_THRESHOLD } from "@/lib/vendor-gold";
 import { usDate } from "@/lib/dates";
@@ -41,6 +42,7 @@ export function VendorGoldStandard() {
                   </td>
                   <td className="p-2">
                     <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>{VENDOR_STATUS_LABELS[v.status as VendorStatus]}</StatusBadge>
+                    {inTransitionalReview(v) && (<><StatusBadge tone="waiting">Transitional Review</StatusBadge><span className="text-xs text-muted-foreground">Gold Standard verification incomplete · {transitionalDaysLeft(v)} days left</span></>)}
                   </td>
                   <td className="p-2">
                     <StatusBadge tone={g?.blockingClear ? "resolved" : "waiting"}>{g ? `${g.passed}/${g.total}` : "—"}</StatusBadge>

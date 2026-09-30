@@ -5,7 +5,43 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-import { duplicateMatches, reviewStatesFor, stageNotionCsv } from "./vendor-gold";
+import {
+  duplicateMatches,
+  isTransitionalEligible,
+  mapNotionCategory,
+  mapNotionPreference,
+  reviewStatesFor,
+  stageNotionCsv,
+} from "./vendor-gold";
+
+type BzPerson = { breezeway_person_id: number; first_name: string | null; last_name: string | null; email: string | null };
+const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * Deterministic Breezeway reconciliation: exact email, then exact normalized
+ * person name (contact or company). Never fuzzy; ambiguity is flagged for review.
+ * The Notion "in Breezeway" tick is only a hint.
+ */
+export function matchBreezeway(
+  row: { email: string | null; contact_person: string | null; company: string | null; breezeway_hint: boolean | null },
+  people: BzPerson[],
+): { state: "matched" | "ambiguous" | "unmatched" | "not_expected"; personId: number | null; note: string } {
+  const email = (row.email ?? "").trim().toLowerCase();
+  if (email) {
+    const hits = people.filter((p) => (p.email ?? "").trim().toLowerCase() === email);
+    if (hits.length === 1) return { state: "matched", personId: hits[0]!.breezeway_person_id, note: "Matched by email." };
+    if (hits.length > 1) return { state: "ambiguous", personId: null, note: `${hits.length} Breezeway people share this email.` };
+  }
+  const names = [row.contact_person, row.company].map((n) => norm((n ?? "").split(",")[0])).filter((n) => n.length >= 5);
+  for (const n of names) {
+    const hits = people.filter((p) => norm(`${p.first_name ?? ""}${p.last_name ?? ""}`) === n);
+    if (hits.length === 1) return { state: "matched", personId: hits[0]!.breezeway_person_id, note: "Matched by exact name." };
+    if (hits.length > 1) return { state: "ambiguous", personId: null, note: `${hits.length} Breezeway people have this name.` };
+  }
+  return row.breezeway_hint
+    ? { state: "unmatched", personId: null, note: "Notion says Breezeway, but no exact Breezeway match was found." }
+    : { state: "not_expected", personId: null, note: "Not marked as a Breezeway vendor in Notion." };
+}
 
 type Client = SupabaseClient<Database>;
 
@@ -31,6 +67,9 @@ export async function stageNotion(db: Client, userId: string, input: { label: st
     website: v.website,
   }));
 
+  const { data: bz } = await db.from("breezeway_people").select("breezeway_person_id, first_name, last_name, email");
+  const people = (bz ?? []) as BzPerson[];
+
   const { data: batch, error: batchErr } = await db
     .from("vendor_import_batches")
     .insert({ source_system: "notion", label: input.label, status: "staged", created_by: userId })
@@ -54,9 +93,15 @@ export async function stageNotion(db: Client, userId: string, input: { label: st
       specialties: s.specialties,
       breezewayPersonId: null,
       legacyStatus: s.legacy_status,
+      preference: s.preference,
       duplicates: inFile ? [...dupes, "in-file"] : dupes,
     });
+    const bzMatch = matchBreezeway(s, people);
     return {
+      transitional_eligible: isTransitionalEligible(s.legacy_status),
+      breezeway_match_state: bzMatch.state,
+      breezeway_match_person_id: bzMatch.personId,
+      breezeway_match_note: bzMatch.note,
       batch_id: batch.id,
       source_system: "notion",
       source_role: "vendor",
@@ -94,7 +139,7 @@ export async function loadNotionStaging(db: Client, userId: string) {
   const { data, error } = await db
     .from("vendor_import_rows")
     .select(
-      "id, batch_id, company, contact_person, email, phone, markets, specialties, preference, website, legacy_status, breezeway_hint, review_states, duplicate_candidates, legacy_fields, decision, created_org_id, created_at",
+      "id, batch_id, transitional_eligible, breezeway_match_state, breezeway_match_person_id, breezeway_match_note, company, contact_person, email, phone, markets, specialties, preference, website, legacy_status, breezeway_hint, review_states, duplicate_candidates, legacy_fields, decision, created_org_id, created_at",
     )
     .eq("source_system", "notion")
     .order("created_at", { ascending: false })
@@ -129,13 +174,16 @@ export async function decideNotionRow(
   const marketSet = new Set((markets ?? []).map((m) => m.code.toLowerCase()));
   const catSet = new Map((cats ?? []).map((c) => [c.label.toLowerCase(), c.label]));
   const knownMarkets = row.markets.filter((m) => marketSet.has(m.toLowerCase()));
-  const knownCats = row.specialties.map((s) => catSet.get(s.toLowerCase())).filter(Boolean) as string[];
+  const mapped = row.specialties.map((s) => mapNotionCategory(s, catSet));
+  const knownCats = [...new Set(mapped.filter(Boolean) as string[])];
+  const unmappedSpecialties = row.specialties.filter((_, i) => !mapped[i]);
   const legacy = {
     ...((row.legacy_fields as Record<string, unknown>) ?? {}),
     ...(row.breezeway_hint != null ? { "Notion: in Breezeway (unverified)": row.breezeway_hint } : {}),
     ...(row.legacy_status ? { "Notion: vendor status": row.legacy_status } : {}),
     ...(row.markets.length !== knownMarkets.length ? { "Notion: market (unmapped)": row.markets.join(", ") } : {}),
-    ...(row.specialties.length !== knownCats.length ? { "Notion: specialty (unmapped)": row.specialties.join(", ") } : {}),
+    ...(row.specialties.length ? { "Notion: specialty": row.specialties.join(", ") } : {}),
+    ...(unmappedSpecialties.length ? { "Notion: specialty (unmapped)": unmappedSpecialties.join(", ") } : {}),
     ...(row.preference ? { "Notion: preference": row.preference } : {}),
   };
 
@@ -146,6 +194,10 @@ export async function decideNotionRow(
       legal_name: row.company.trim(),
       vendor_class: "company",
       status: "candidate",
+      // Temporary migration flag only — never a lifecycle status. The database re-checks eligibility.
+      transitional_review: row.transitional_eligible && isTransitionalEligible(row.legacy_status),
+      breezeway_person_id: row.breezeway_match_state === "matched" && row.breezeway_match_person_id ? String(row.breezeway_match_person_id) : null,
+      dispatch_method: row.breezeway_match_state === "matched" && row.breezeway_match_person_id ? "breezeway" : "setup_incomplete",
       primary_contact_name: row.contact_person,
       primary_contact_email: row.email,
       primary_contact_phone: row.phone,
@@ -166,7 +218,7 @@ export async function decideNotionRow(
     .single();
   if (orgErr) throw new Error(orgErr.message);
 
-  const pref = /primary/i.test(row.preference ?? "") ? "primary" : /backup/i.test(row.preference ?? "") ? "backup" : "other";
+  const pref = mapNotionPreference(row.preference);
   const coverage = knownMarkets.flatMap((m) =>
     knownCats.map((c) => ({ org_id: org.id, market: [...(markets ?? [])].find((x) => x.code.toLowerCase() === m.toLowerCase())!.code, service_category: c, preference: pref })),
   );

@@ -624,6 +624,13 @@
       "when": 1790790913222,
       "tag": "0088_ticket_selected_vendor_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1790798520184,
+      "tag": "0089_vendor_transitional_review_and_sourcing",
+      "breakpoints": true
     }
   ]
 }

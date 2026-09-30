@@ -16,7 +16,8 @@ import { Chip, EmptyState, LoadingRows, SectionBand } from "@/components/ui/page
 import { StatusBadge } from "@/components/ui/status";
 import { usDate } from "@/lib/dates";
 import { VendorImportPanel } from "@/components/VendorImportPanel";
-import { useInvalidateVendors, useVendorWorkspace } from "./useVendorWorkspace";
+import { inTransitionalReview, transitionalDaysLeft, useInvalidateVendors, useVendorWorkspace } from "./useVendorWorkspace";
+import { supabase } from "@/integrations/supabase/client";
 
 export function VendorNeedsReview({ canManage }: { canManage: boolean }) {
   const ws = useVendorWorkspace();
@@ -35,12 +36,61 @@ export function VendorNeedsReview({ canManage }: { canManage: boolean }) {
     })
     .filter((x) => x.issues.length);
 
+  const transitional = (ws.data?.vendors ?? []).filter((v) => inTransitionalReview(v) || v.transitional_outcome === "leadership_review");
+  const ownerIds = [...new Set(transitional.map((v) => v.program_owner).filter(Boolean))] as string[];
+  const owners = useQuery({
+    queryKey: ["vendor-program-owner-names", ownerIds],
+    enabled: ownerIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id, full_name, email").in("id", ownerIds);
+      return new Map((data ?? []).map((p) => [p.id, p.full_name || p.email || "Unknown"]));
+    },
+  });
+
   const expiring = (ws.data?.vendors ?? []).flatMap((v) =>
     (ws.data?.compliance.get(v.id)?.attention ?? []).map((i) => ({ v, i })),
   );
 
   return (
     <div className="space-y-6">
+      <section className="space-y-2">
+        <SectionBand
+          title="Transitional Review"
+          hint="Existing ARHA vendors migrated from Notion. Usable for work until the deadline while their Must Pass checks are completed. Not Approved or Gold."
+        />
+        {ws.isLoading ? (
+          <LoadingRows rows={2} />
+        ) : transitional.length === 0 ? (
+          <EmptyState title="No vendors in Transitional Review" hint="Imported existing vendors appear here." />
+        ) : (
+          <ul className="space-y-1.5">
+            {transitional
+              .sort((a, b) => (a.transitional_deadline ?? "").localeCompare(b.transitional_deadline ?? ""))
+              .map((v) => {
+                const gs = ws.data?.gateStatus.get(v.id);
+                const missing = gs ? gs.total - gs.passed : 0;
+                const days = transitionalDaysLeft(v);
+                return (
+                  <li key={v.id} className="surface-row flex flex-wrap items-center gap-2 py-2.5 pl-4 pr-3 text-sm">
+                    <Link to="/vendors/$vendorId" params={{ vendorId: v.id }} className="font-medium hover:underline">
+                      {v.display_name}
+                    </Link>
+                    {v.transitional_outcome === "leadership_review" ? (
+                      <StatusBadge tone="escalated">Window ended — leadership review</StatusBadge>
+                    ) : (
+                      <StatusBadge tone={days !== null && days <= 7 ? "escalated" : "waiting"}>{days} days remaining</StatusBadge>
+                    )}
+                    <Chip>{missing} Must Pass check{missing === 1 ? "" : "s"} missing</Chip>
+                    <span className="text-muted-foreground">
+                      Program Owner: {v.program_owner ? (owners.data?.get(v.program_owner) ?? "…") : "Not assigned (Director of Operations)"}
+                    </span>
+                  </li>
+                );
+              })}
+          </ul>
+        )}
+      </section>
+
       <section className="space-y-2">
         <SectionBand title="Expiring and expired credentials" hint="Insurance and licences within 30 days of expiry, or past it. Vendors stay usable until the day after expiry." />
         {ws.isLoading ? (
@@ -191,6 +241,12 @@ function NotionStaging() {
                     {REVIEW_STATE_LABELS[s as ReviewState] ?? s}
                   </StatusBadge>
                 ))}
+                {r.transitional_eligible && <StatusBadge tone="waiting">Transitional Review on import</StatusBadge>}
+                {r.breezeway_match_state && r.breezeway_match_state !== "not_expected" && (
+                  <Chip>
+                    Breezeway: {r.breezeway_match_state === "matched" ? `matched (ID ${r.breezeway_match_person_id})` : r.breezeway_match_state}
+                  </Chip>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {r.markets.join(", ") || "no market"} · {r.specialties.join(", ") || "no specialty"}
                   {r.breezeway_hint ? " · Notion says in Breezeway (unverified)" : ""}

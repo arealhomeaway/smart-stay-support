@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Chip } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { VendorDirectory } from "@/components/vendors/VendorDirectory";
+import { NoEligibleVendor } from "@/components/tickets/NoEligibleVendor";
 import { errorText } from "@/components/vendors/useVendorWorkspace";
 import { usDate, usDateTime } from "@/lib/dates";
 import {
@@ -362,6 +363,15 @@ export function GuidedTicketPanel({
               <VendorDirectory
                 initialMarket={market}
                 selectedId={ticket.selected_vendor_org_id}
+                noEligible={(ctx) => (
+                  <NoEligibleVendor
+                    ticketId={ticket.id}
+                    market={ctx.market}
+                    category={ctx.category}
+                    onEscalate={() => choosePath("escalate")}
+                    escalating={save.isPending}
+                  />
+                )}
                 onSelect={(v) =>
                   save.mutate({ patch: { selected_vendor_org_id: v.id }, history: `Vendor chosen from the Directory: ${v.display_name}.` })
                 }

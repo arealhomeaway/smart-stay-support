@@ -10362,6 +10362,9 @@ export type Database = {
         Row: {
           batch_id: string
           breezeway_hint: boolean | null
+          breezeway_match_note: string | null
+          breezeway_match_person_id: number | null
+          breezeway_match_state: string | null
           comments: string | null
           company: string | null
           contact_person: string | null
@@ -10396,12 +10399,16 @@ export type Database = {
           source_system: string
           specialties: string[]
           tags: string[]
+          transitional_eligible: boolean
           updated_at: string
           website: string | null
         }
         Insert: {
           batch_id: string
           breezeway_hint?: boolean | null
+          breezeway_match_note?: string | null
+          breezeway_match_person_id?: number | null
+          breezeway_match_state?: string | null
           comments?: string | null
           company?: string | null
           contact_person?: string | null
@@ -10436,12 +10443,16 @@ export type Database = {
           source_system?: string
           specialties?: string[]
           tags?: string[]
+          transitional_eligible?: boolean
           updated_at?: string
           website?: string | null
         }
         Update: {
           batch_id?: string
           breezeway_hint?: boolean | null
+          breezeway_match_note?: string | null
+          breezeway_match_person_id?: number | null
+          breezeway_match_state?: string | null
           comments?: string | null
           company?: string | null
           contact_person?: string | null
@@ -10476,6 +10487,7 @@ export type Database = {
           source_system?: string
           specialties?: string[]
           tags?: string[]
+          transitional_eligible?: boolean
           updated_at?: string
           website?: string | null
         }
@@ -10756,6 +10768,11 @@ export type Database = {
           status: string
           tags: string[]
           tier: string | null
+          transitional_deadline: string | null
+          transitional_ended_at: string | null
+          transitional_outcome: string | null
+          transitional_review: boolean
+          transitional_started_on: string | null
           trial_jobs_required: number
           trial_score: number | null
           updated_at: string
@@ -10823,6 +10840,11 @@ export type Database = {
           status?: string
           tags?: string[]
           tier?: string | null
+          transitional_deadline?: string | null
+          transitional_ended_at?: string | null
+          transitional_outcome?: string | null
+          transitional_review?: boolean
+          transitional_started_on?: string | null
           trial_jobs_required?: number
           trial_score?: number | null
           updated_at?: string
@@ -10890,6 +10912,11 @@ export type Database = {
           status?: string
           tags?: string[]
           tier?: string | null
+          transitional_deadline?: string | null
+          transitional_ended_at?: string | null
+          transitional_outcome?: string | null
+          transitional_review?: boolean
+          transitional_started_on?: string | null
           trial_jobs_required?: number
           trial_score?: number | null
           updated_at?: string
@@ -11004,6 +11031,76 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_sourcing_requests: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          market: string
+          note: string | null
+          owner_id: string | null
+          requested_by: string | null
+          resolved_vendor_org_id: string | null
+          service_category: string
+          state: string
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          market: string
+          note?: string | null
+          owner_id?: string | null
+          requested_by?: string | null
+          resolved_vendor_org_id?: string | null
+          service_category: string
+          state?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          market?: string
+          note?: string | null
+          owner_id?: string | null
+          requested_by?: string | null
+          resolved_vendor_org_id?: string | null
+          service_category?: string
+          state?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_sourcing_requests_resolved_vendor_org_id_fkey"
+            columns: ["resolved_vendor_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_sourcing_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "vendor_sourcing_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_status_events: {
         Row: {
           actor_id: string | null
@@ -11038,6 +11135,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "vendor_status_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_transitional_reminders: {
+        Row: {
+          deadline: string
+          id: string
+          notified_at: string
+          org_id: string
+          recipients: string[]
+          threshold: string
+        }
+        Insert: {
+          deadline: string
+          id?: string
+          notified_at?: string
+          org_id: string
+          recipients?: string[]
+          threshold: string
+        }
+        Update: {
+          deadline?: string
+          id?: string
+          notified_at?: string
+          org_id?: string
+          recipients?: string[]
+          threshold?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_transitional_reminders_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "vendor_orgs"
@@ -12619,6 +12751,15 @@ export type Database = {
         Args: { _ids: string[]; _property_id: string }
         Returns: undefined
       }
+      request_new_vendor: {
+        Args: {
+          _category: string
+          _market: string
+          _note?: string
+          _ticket: string
+        }
+        Returns: string
+      }
       request_owner_document: {
         Args: { _actor_id: string; _input: Json }
         Returns: string
@@ -12846,6 +12987,7 @@ export type Database = {
           id: string
         }[]
       }
+      vendor_transitional_sweep: { Args: { _today?: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"

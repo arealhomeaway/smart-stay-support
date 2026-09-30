@@ -1,4 +1,7 @@
-import { qualificationHold } from "@/components/vendors/useVendorWorkspace";
+import { inTransitionalReview, qualificationHold } from "@/components/vendors/useVendorWorkspace";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { SOURCING_STATE_LABELS } from "@/components/tickets/NoEligibleVendor";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { EmptyState, LoadingRows, SegmentedControl } from "@/components/ui/page";
@@ -18,13 +21,26 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
     const rows = ws.data.coverage.flatMap((c) => {
       const v = nameById.get(c.org_id);
       return v
-        ? [{ orgId: v.id, orgName: v.display_name, market: c.market, category: c.service_category, preference: c.preference as Preference, status: v.status, isActive: v.is_active && !qualificationHold(v, ws.data!.gateStatus) && ws.data!.compliance.get(v.id)?.state !== "expired" }]
+        ? [{ orgId: v.id, orgName: v.display_name, market: c.market, category: c.service_category, preference: c.preference as Preference, status: inTransitionalReview(v) ? "pilot" : v.status, isActive: v.is_active && !qualificationHold(v, ws.data!.gateStatus) && ws.data!.compliance.get(v.id)?.state !== "expired" }]
         : [];
     });
     const cats = ws.data.categories.filter((c) => tier === "all" || c.tier === tier);
     const markets = focusMarket ? ws.data.markets.filter((m) => m === focusMarket) : ws.data.markets;
     return coverageMatrix(markets, cats, rows).filter((c) => !gapsOnly || c.status !== "complete");
   }, [ws.data, tier, gapsOnly, focusMarket]);
+
+  const sourcing = useQuery({
+    queryKey: ["vendor-sourcing-open"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_sourcing_requests")
+        .select("id, market, service_category, state, created_at")
+        .not("state", "in", "(ready,closed)")
+        .order("created_at");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   if (ws.isLoading) return <LoadingRows rows={6} />;
   if (!ws.data) return <EmptyState title="Could not load coverage" hint="Refresh to try again." />;
@@ -49,8 +65,18 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
         </label>
         <span className="text-sm text-muted-foreground">{gaps} gap{gaps === 1 ? "" : "s"}</span>
       </div>
+      {(sourcing.data ?? []).length > 0 && (
+        <div className="rounded-md border border-border p-3 text-sm">
+          <p className="font-semibold">Vendor Coverage Gaps requested from Tickets</p>
+          <ul className="mt-1 space-y-0.5">
+            {sourcing.data!.map((r) => (
+              <li key={r.id}>{r.service_category} in {r.market} — {SOURCING_STATE_LABELS[r.state] ?? r.state}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <p className="text-xs text-muted-foreground">
-        Critical categories need a qualified Primary and Backup in every market. Only Pilot, Approved, Gold and
+        Existing vendors in Transitional Review count while their review window is open. Critical categories need a qualified Primary and Backup in every market. Only Pilot, Approved, Gold and
         Corrective Action vendors count as qualified. Vendors with an expired insurance or licence are left out until it is renewed.
       </p>
       <div className="overflow-x-auto rounded-md border border-border">

@@ -32,6 +32,9 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
   // Vendor credential expiry reminders: database-owned, one per stage, never repeated.
   const compliance = await supabase.rpc("vendor_compliance_sweep", {});
   if (compliance.error) throw new Error(compliance.error.message);
+  // Transitional Review deadlines for migrated vendors (14/7/1-day reminders, end-of-window review).
+  const transitional = await supabase.rpc("vendor_transitional_sweep", {});
+  if (transitional.error) throw new Error(transitional.error.message);
   const since = new Date(now.getTime() - DEDUPE_DAYS * 86_400_000).toISOString();
 
   const [tickets, workOrders, claims] = await Promise.all([

@@ -2,10 +2,10 @@
  * Frontline Vendor Directory. Find the right vendor without touching the
  * database table. Also used inside a Ticket to choose who should handle it.
  */
-import { canTakeWork, qualificationHold } from "@/components/vendors/useVendorWorkspace";
+import { canTakeWork, inTransitionalReview, qualificationHold, transitionalDaysLeft } from "@/components/vendors/useVendorWorkspace";
 import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,11 +43,14 @@ export function VendorDirectory({
   initialCategory,
   onSelect,
   selectedId,
+  noEligible,
 }: {
   initialMarket?: string | null;
   initialCategory?: string | null;
   onSelect?: (vendor: VendorRecord) => void;
   selectedId?: string | null;
+  /** Picker mode: shown when no vendor in the current results can take work (never a dead end). */
+  noEligible?: (ctx: { market: string | null; category: string | null }) => ReactNode;
 }) {
   const ws = useVendorWorkspace();
   const [q, setQ] = useState("");
@@ -98,6 +101,11 @@ export function VendorDirectory({
   if (ws.isLoading) return <LoadingRows rows={4} />;
   if (ws.error) return <EmptyState title="Could not load vendors" hint="Refresh the page to try again." />;
   const data = ws.data!;
+  const eligibleCount = results.filter(({ v }) => canTakeWork(v, data.gateStatus, data.compliance)).length;
+  const fallback =
+    onSelect && noEligible && eligibleCount === 0
+      ? noEligible({ market: market === ALL ? null : market, category: category === ALL ? null : category })
+      : null;
 
   return (
     <div className="space-y-3">
@@ -133,6 +141,7 @@ export function VendorDirectory({
         <Filter label="Dispatch" value={dispatch} onChange={setDispatch} options={Object.entries(DISPATCH_METHOD_LABELS)} />
       </div>
 
+      {fallback}
       {results.length === 0 ? (
         <EmptyState
           title="No vendors match"
@@ -165,6 +174,12 @@ export function VendorDirectory({
                     <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>
                       {VENDOR_STATUS_LABELS[v.status as VendorStatus] ?? v.status}
                     </StatusBadge>
+                    {inTransitionalReview(v) && (
+                      <>
+                        <StatusBadge tone="waiting">Transitional Review</StatusBadge>
+                        <Chip>Gold Standard verification incomplete · {transitionalDaysLeft(v)} days left</Chip>
+                      </>
+                    )}
                     {topPref && <Chip>{PREFERENCE_LABELS[topPref as Preference]}</Chip>}
                     <Chip>Dispatch: {DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod]}</Chip>
                     <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />
