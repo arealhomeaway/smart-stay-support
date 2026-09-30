@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { daysUntil, itemState, reminderThreshold, vendorCompliance } from "../vendor-compliance";
 
 const gates = [
