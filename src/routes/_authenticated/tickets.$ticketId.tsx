@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
-import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
+import { commitmentStatus } from "@/lib/work-orders";
 import { GuidanceCard } from "@/components/GuidanceCard";
 import { CurrentActionCard } from "@/components/CurrentActionCard";
 import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/GuidedTicketPanel";
@@ -921,20 +921,8 @@ function TicketDetail() {
     </details>
   );
 
-  const repairPanel = (
-    <BreezewayTaskPanel
-      sourceType="ticket"
-      sourceId={ticketId}
-      defaultTitle={ticket.title}
-      defaultDescription={ticket.description}
-      propertyId={ticket.property_id}
-      authorityNote={
-        ticket.guest_in_residence
-          ? "A guest is in the home. Emergency mitigation comes before the permanent repair, and owner approval follows the maintenance authority policy."
-          : "Owner approval follows the maintenance authority policy — Resolve applies the threshold, you do not have to remember it."
-      }
-    />
-  );
+  // Breezeway dispatch is hidden from the Coordinator flow while live Breezeway
+  // dispatch is disabled; Work Orders are the repair path.
 
   const closureBlock = (
     <div className="space-y-4">
