@@ -1016,7 +1016,7 @@ function TicketDetail() {
             />
           )}
 
-          {ticket.guest_in_residence && (
+          {ticket.guest_in_residence && !ticket.guest_confirmed && (
             <ToggleRow
               title="Guest confirmed the issue is fully resolved"
               hint="Get it in writing before you check this."
