@@ -3646,8 +3646,10 @@ export type Database = {
           code: string
           created_at: string
           detail: string | null
+          evidence_required: boolean
           exception_rule: string | null
           expires_after_days: number | null
+          expiry_required: boolean
           id: string
           label: string
           requirement_level: string
@@ -3666,8 +3668,10 @@ export type Database = {
           code: string
           created_at?: string
           detail?: string | null
+          evidence_required?: boolean
           exception_rule?: string | null
           expires_after_days?: number | null
+          expiry_required?: boolean
           id?: string
           label: string
           requirement_level?: string
@@ -3686,8 +3690,10 @@ export type Database = {
           code?: string
           created_at?: string
           detail?: string | null
+          evidence_required?: boolean
           exception_rule?: string | null
           expires_after_days?: number | null
+          expiry_required?: boolean
           id?: string
           label?: string
           requirement_level?: string
@@ -10192,6 +10198,9 @@ export type Database = {
       vendor_gatekeeper_results: {
         Row: {
           created_at: string
+          document_id: string | null
+          evidence_reference: string | null
+          exception_reason: string | null
           expires_on: string | null
           id: string
           note: string | null
@@ -10205,6 +10214,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          document_id?: string | null
+          evidence_reference?: string | null
+          exception_reason?: string | null
           expires_on?: string | null
           id?: string
           note?: string | null
@@ -10218,6 +10230,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          document_id?: string | null
+          evidence_reference?: string | null
+          exception_reason?: string | null
           expires_on?: string | null
           id?: string
           note?: string | null
@@ -10230,6 +10245,13 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "vendor_gatekeeper_results_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vendor_gatekeeper_results_org_id_fkey"
             columns: ["org_id"]
@@ -12754,6 +12776,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      vendor_dispatch_eligible: { Args: { _org: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "manager" | "tech" | "vendor" | "owner" | "onboarding"
