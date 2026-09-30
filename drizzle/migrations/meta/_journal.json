@@ -582,6 +582,13 @@
       "when": 1790783825239,
       "tag": "0082_vendor_canonical_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1790786932530,
+      "tag": "0083_vendor_status_separate_active",
+      "breakpoints": true
     }
   ]
 }
