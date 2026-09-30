@@ -44,7 +44,12 @@ export function VendorDirectory({
   onSelect,
   selectedId,
   noEligible,
+  ticketPriority,
+  canOverrideEmergency = false,
 }: {
+  /** Picker mode on a Ticket: controls Emergency Only visibility (P1 shown; P2 when needed; P3 Supervisor only). */
+  ticketPriority?: string | null;
+  canOverrideEmergency?: boolean;
   initialMarket?: string | null;
   initialCategory?: string | null;
   onSelect?: (vendor: VendorRecord) => void;
@@ -60,6 +65,7 @@ export function VendorDirectory({
   const [status, setStatus] = useState(ALL);
   const [active, setActive] = useState("active");
   const [dispatch, setDispatch] = useState(ALL);
+  const [showEmergency, setShowEmergency] = useState(false);
 
   const results = useMemo(() => {
     if (!ws.data) return [];
@@ -101,7 +107,12 @@ export function VendorDirectory({
   if (ws.isLoading) return <LoadingRows rows={4} />;
   if (ws.error) return <EmptyState title="Could not load vendors" hint="Refresh the page to try again." />;
   const data = ws.data!;
-  const eligibleCount = results.filter(({ v }) => canTakeWork(v, data.gateStatus, data.compliance)).length;
+  const picker = !!onSelect && ticketPriority !== undefined;
+  const routineCount = results.filter(({ v }) => !v.emergency_only && canTakeWork(v, data.gateStatus, data.compliance)).length;
+  const emergencyShown = !picker || showEmergency || emergencyVisibleByDefault(ticketPriority, routineCount);
+  const emergencyHidden = picker && !emergencyShown ? results.filter(({ v }) => v.emergency_only).length : 0;
+  const shownResults = emergencyShown ? results : results.filter(({ v }) => !v.emergency_only);
+  const eligibleCount = shownResults.filter(({ v }) => canTakeWork(v, data.gateStatus, data.compliance)).length;
   const fallback =
     onSelect && noEligible && eligibleCount === 0
       ? noEligible({ market: market === ALL ? null : market, category: category === ALL ? null : category })
