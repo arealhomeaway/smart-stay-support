@@ -984,8 +984,8 @@ function TicketDetail() {
           </div>
 
           <div className="space-y-2">
-            <Label>What was wrong and what was done</Label>
-            <Textarea rows={3} value={resolution} onChange={(e) => setResolution(e.target.value)} />
+            <Label htmlFor="closing-summary">What was wrong and what was done</Label>
+            <Textarea id="closing-summary" rows={3} value={resolution} onChange={(e) => setResolution(e.target.value)} />
           </div>
 
           {requiredEvidence && (
