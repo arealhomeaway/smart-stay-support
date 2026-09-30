@@ -1171,7 +1171,7 @@ function TicketDetail() {
                     )
                   }
                 >
-                  {currentAction ? (
+                  {currentAction && !(stage === "verify" && currentAction.id === "guest_update") ? (
                 <div className="mt-2">
                   <CurrentActionCard
                     ticketId={ticketId}
