@@ -1,3 +1,4 @@
+import { qualificationHold } from "@/components/vendors/useVendorWorkspace";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { EmptyState, LoadingRows, SegmentedControl } from "@/components/ui/page";
@@ -17,7 +18,7 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
     const rows = ws.data.coverage.flatMap((c) => {
       const v = nameById.get(c.org_id);
       return v
-        ? [{ orgId: v.id, orgName: v.display_name, market: c.market, category: c.service_category, preference: c.preference as Preference, status: v.status, isActive: v.is_active }]
+        ? [{ orgId: v.id, orgName: v.display_name, market: c.market, category: c.service_category, preference: c.preference as Preference, status: v.status, isActive: v.is_active && !qualificationHold(v, ws.data!.gateStatus) }]
         : [];
     });
     const cats = ws.data.categories.filter((c) => tier === "all" || c.tier === tier);

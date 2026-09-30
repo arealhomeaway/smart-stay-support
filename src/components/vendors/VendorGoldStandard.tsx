@@ -1,3 +1,4 @@
+import { qualificationHold } from "@/components/vendors/useVendorWorkspace";
 import { Link } from "@tanstack/react-router";
 import { EmptyState, LoadingRows } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
@@ -42,6 +43,8 @@ export function VendorGoldStandard() {
                   </td>
                   <td className="p-2">
                     <StatusBadge tone={g?.blockingClear ? "resolved" : "waiting"}>{g ? `${g.passed}/${g.total}` : "—"}</StatusBadge>
+                    {g && g.expired > 0 && <span className="ml-1 text-xs text-destructive">{g.expired} expired</span>}
+                    {qualificationHold(v, ws.data!.gateStatus) && <span className="ml-1 text-xs text-destructive">On hold</span>}
                   </td>
                   <td className="p-2">{COMPLIANCE_LABELS[v.compliance_status] ?? v.compliance_status}</td>
                   <td className="p-2 numeric">
