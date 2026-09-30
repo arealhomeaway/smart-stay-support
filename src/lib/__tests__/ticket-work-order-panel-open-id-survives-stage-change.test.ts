@@ -52,8 +52,8 @@ describe("TicketWorkOrderPanel's open Work Order id survives a ticket stage chan
   it("every TicketWorkOrderPanel instance on the ticket page is wired to that single, page-level state", () => {
     const instances = ticketPageSrc.match(/<TicketWorkOrderPanel\b[\s\S]*?\/>/g) ?? [];
     // Four stage branches (repair, repair_active, verify, reference-only) plus the guided vendor step
-    // each render the panel — every one must share the lifted state.
-    expect(instances.length).toBe(5);
+    // and the guided Waiting on Vendor state each render the panel — every one must share the lifted state.
+    expect(instances.length).toBe(6);
     for (const instance of instances) {
       expect(instance).toContain("openWorkOrderId={openWorkOrderId}");
       expect(instance).toContain("onOpenWorkOrderIdChange={setOpenWorkOrderId}");
