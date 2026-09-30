@@ -53,7 +53,7 @@ import {
 } from "@/lib/work-orders";
 import { ticketWorkOrdersQueryKey, type WorkOrderRow } from "@/lib/work-order-types";
 import { FieldHint } from "@/components/FieldHint";
-import { TRADES, categoryForTrade, categoryLabel, tradeLabel } from "@/lib/taxonomy";
+import { TRADES, categoryForTrade, categoryLabel, normalizeTrade, tradeLabel } from "@/lib/taxonomy";
 
 type TicketContext = {
   id: string;
