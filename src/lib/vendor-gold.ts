@@ -262,6 +262,7 @@ export function reviewStatesFor(row: {
   specialties: string[];
   breezewayPersonId?: string | null;
   legacyStatus: string | null;
+  preference?: string | null;
   duplicates: string[];
 }): ReviewState[] {
   const s: ReviewState[] = [];
@@ -271,7 +272,10 @@ export function reviewStatesFor(row: {
   if (!row.specialties.length) s.push("missing_category");
   // A Notion "in Breezeway" tick is only a hint; a real person ID is required.
   if (!row.breezewayPersonId) s.push("needs_dispatch_setup");
-  if (row.legacyStatus && /inactive|archive|do not use|dnu|former/i.test(row.legacyStatus)) {
+  if (
+    (row.legacyStatus && /inactive|archive|do not use|dnu|former|old vendor/i.test(row.legacyStatus)) ||
+    (row.preference && /no longer using|do not use/i.test(row.preference))
+  ) {
     s.push("archive_candidate");
   }
   // Dispatch setup alone does not block import; it is finished after import.
@@ -340,7 +344,41 @@ const NOTION_MAP: Record<string, string> = {
   tags: "tags",
   id: "legacy_notion_id",
   "notion id": "legacy_notion_id",
+  "notion url": "legacy_notion_id",
+  "notion vendor status": "legacy_status",
 };
+
+/** Notion "Vendor Status" values that mean ARHA currently uses the vendor (Transitional Review eligible). */
+export const TRANSITIONAL_LEGACY_STATUSES = ["Active", "Last Resort"] as const;
+export const TRANSITIONAL_DAYS = 60;
+export function isTransitionalEligible(legacyStatus: string | null | undefined) {
+  return (TRANSITIONAL_LEGACY_STATUSES as readonly string[]).includes((legacyStatus ?? "").trim());
+}
+
+/** Notion specialty names → Resolve service categories. Unlisted specialties stay as legacy fields. */
+export const NOTION_CATEGORY_ALIASES: Record<string, string> = {
+  "general handyman": "Handyman",
+  handyman: "Handyman",
+  appliance: "Appliance Repair",
+  "lawn care": "Landscaping",
+  "outdoor maintenance": "Landscaping",
+  housekeeping: "Turnover Cleaning",
+  pool: "Pool / Hot Tub",
+  roof: "Roofing",
+  "carpet/flooring repair and replacement": "Flooring",
+};
+export function mapNotionCategory(specialty: string, known: Map<string, string>): string | null {
+  const k = specialty.trim().toLowerCase();
+  return known.get(k) ?? (NOTION_CATEGORY_ALIASES[k] ? known.get(NOTION_CATEGORY_ALIASES[k]!.toLowerCase()) ?? null : null);
+}
+
+/** Notion preference → coverage preference. "Option 1" is the first call = Primary. */
+export function mapNotionPreference(pref: string | null | undefined): "primary" | "backup" | "other" {
+  const p = pref ?? "";
+  if (/option 1\b|primary/i.test(p)) return "primary";
+  if (/option [2-9]|back ?up/i.test(p)) return "backup";
+  return "other";
+}
 
 export type StagedVendor = {
   company: string | null;
