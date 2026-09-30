@@ -1143,6 +1143,22 @@ function TicketDetail() {
                       null,
                   }}
                   onLeadChange={setGuidedLeads}
+                  vendorFollowUp={
+                    liveOrders
+                      .filter((o) => !o.closed_at)
+                      .map((o) => commitmentStatus(o as never).action)
+                      .find(Boolean) ?? null
+                  }
+                  openWorkOrderPanel={
+                    role.can("work_orders_internal") ? (
+                      <TicketWorkOrderPanel
+                        ticket={ticket}
+                        propertyName={propertyName}
+                        openWorkOrderId={openWorkOrderId}
+                        onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                      />
+                    ) : null
+                  }
                   closed={closed}
                   market={(ticket.properties as { market?: string | null } | null)?.market ?? null}
                   openWorkOrders={liveOrders.filter((o) => !o.closed_at).length}
@@ -1219,7 +1235,6 @@ function TicketDetail() {
                       onOpenWorkOrderIdChange={setOpenWorkOrderId}
                     />
                   ) : null}
-                  {repairPanel}
                 </div>
               )}
 
@@ -1324,10 +1339,9 @@ function TicketDetail() {
                         openWorkOrderId={openWorkOrderId}
                         onOpenWorkOrderIdChange={setOpenWorkOrderId}
                       />
-                      {repairPanel}
                     </>
                   ) : (
-                    repairPanel
+                    <p className="text-sm text-muted-foreground">Ask a coordinator with Work Order access to open it.</p>
                   )}
                   <Button variant="ghost" size="sm" onClick={() => setCloseOpen(true)}>
                     No repair needed — finish this ticket

@@ -9,7 +9,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BedDouble } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -244,29 +243,6 @@ export function GuidedTicketPanel({
 
   return (
     <div className="space-y-3">
-      {hasReservation && (
-        <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <BedDouble className="size-4 text-muted-foreground" />
-            <span className="font-medium">{ticket.reservation_guest_name ?? "Guest"}</span>
-            {stay ? <StatusBadge tone="escalated">Guest in the home now</StatusBadge> : <Chip>Not in residence</Chip>}
-          </div>
-          <p className="mt-1 text-muted-foreground">
-            {[
-              ticket.reservation_arrival && ticket.reservation_departure
-                ? `${usDate(ticket.reservation_arrival)} – ${usDate(ticket.reservation_departure)}`
-                : null,
-              ticket.reservation_channel,
-              ticket.reservation_guest_count ? `${ticket.reservation_guest_count} guests` : null,
-              ticket.reservation_confirmation ? `Conf. ${ticket.reservation_confirmation}` : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">From OwnerRez — filled in automatically.</p>
-        </div>
-      )}
-
       {!closed && (
         <div className="flex flex-wrap items-center gap-2">
           {/* Once the page's own closure list is in charge, its count is the one shown. */}
@@ -281,6 +257,8 @@ export function GuidedTicketPanel({
                   : GUIDANCE_STAGE_LABELS[g.stage]}
             </StatusBadge>
           )}
+          {/* Guest details live once, in the Current guest / reservation card. */}
+          {hasReservation && stay && <StatusBadge tone="escalated">Guest in the home now</StatusBadge>}
           {ticket.guest_update_at && (
             <span className="text-xs text-muted-foreground">
               Guest last updated {usDateTime(ticket.guest_update_at)}
