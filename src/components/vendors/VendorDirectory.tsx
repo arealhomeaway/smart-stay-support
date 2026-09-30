@@ -39,6 +39,19 @@ export const STATUS_TONE: Record<string, StatusTone> = {
 
 const ALL = "__all";
 
+/** The one plain question asked on a Ticket when the trade is not known. */
+export const HELP_KINDS: [string, string | null][] = [
+  ["HVAC", "HVAC"],
+  ["Plumbing", "Plumbing"],
+  ["Electrical", "Electrical"],
+  ["Appliance", "Appliance Repair"],
+  ["Handyman", "Handyman"],
+  ["Cleaning", "Turnover Cleaning"],
+  ["Locksmith / Access", "Locksmith / Access"],
+  ["Pest", "Pest Control"],
+  ["Other", null],
+];
+
 export function VendorDirectory({
   initialMarket,
   initialCategory,
@@ -67,6 +80,7 @@ export function VendorDirectory({
   const [active, setActive] = useState("active");
   const [dispatch, setDispatch] = useState(ALL);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [helpKind, setHelpKind] = useState<string | null>(null);
 
   const results = useMemo(() => {
     if (!ws.data) return [];
@@ -132,14 +146,41 @@ export function VendorDirectory({
         />
       </div>
       {/* On a Ticket only market and trade matter; eligibility is already applied. */}
-      <div className={onSelect ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"}>
+      {onSelect && (
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium">What kind of help does this need?</p>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="What kind of help does this need?">
+            {HELP_KINDS.map(([label, cat]) => {
+              const value = cat ?? ALL;
+              const on = helpKind === label || (!helpKind && cat !== null && category === cat);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => {
+                    setHelpKind(label);
+                    setCategory(value);
+                  }}
+                >
+                  <Chip className={on ? "border-primary" : undefined}>{label}</Chip>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <div className={onSelect ? "grid grid-cols-1 gap-2 sm:grid-cols-2" : "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"}>
         <Filter label="Market" value={market} onChange={setMarket} options={data.markets.map((m) => [m, m])} />
-        <Filter
-          label="Service category"
-          value={category}
-          onChange={setCategory}
-          options={data.categories.map((c) => [c.label, c.label])}
-        />
+        {!onSelect && (
+          <Filter
+            label="Service category"
+            value={category}
+            onChange={setCategory}
+            options={data.categories.map((c) => [c.label, c.label])}
+          />
+        )}
         {!onSelect && (
           <>
             <Filter label="Preference" value={pref} onChange={setPref} options={Object.entries(PREFERENCE_LABELS)} />
@@ -157,9 +198,6 @@ export function VendorDirectory({
           </>
         )}
       </div>
-      {onSelect && category === ALL && (
-        <p className="text-xs text-muted-foreground">Pick the trade this issue needs to narrow the list.</p>
-      )}
 
       {fallback}
       {emergencyHidden > 0 && canRevealEmergency(ticketPriority, canOverrideEmergency) && (
@@ -199,6 +237,9 @@ export function VendorDirectory({
                   <p className="text-sm text-muted-foreground">
                     {catLine} | {mktLine}
                   </p>
+                  {onSelect ? (
+                    <PickerDetails v={v} topPref={topPref} selectable={canTakeWork(v, ws.data!.gateStatus, ws.data!.compliance)} />
+                  ) : (
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>
                       {VENDOR_STATUS_LABELS[v.status as VendorStatus] ?? v.status}
@@ -216,6 +257,7 @@ export function VendorDirectory({
                     {!v.is_active && <Chip>Inactive</Chip>}
                     {qualificationHold(v, ws.data!.gateStatus) && <Chip>On hold — a qualification check expired</Chip>}
                   </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   {onSelect && (
@@ -264,5 +306,35 @@ function Filter({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+/**
+ * Ticket-mode vendor card detail: only what helps a Coordinator choose.
+ * Lifecycle, Transitional Review and compliance labels stay on Vendor screens.
+ */
+function PickerDetails({ v, topPref, selectable }: { v: VendorRecord; topPref: string | null; selectable: boolean }) {
+  const legacy = (v.legacy_fields ?? {}) as Record<string, unknown>;
+  const legacyPref = typeof legacy["Notion: preference"] === "string" ? (legacy["Notion: preference"] as string) : null;
+  const contact = [v.primary_contact_name, v.primary_contact_phone, v.primary_contact_email].filter(Boolean).join(" · ");
+  const dispatchRelevant = v.dispatch_method && v.dispatch_method !== "phone" && v.dispatch_method !== "manual";
+  return (
+    <div className="mt-1 space-y-1 text-sm">
+      <p className="text-muted-foreground">{contact || "No contact on file"}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {v.emergency_only && <StatusBadge tone="escalated">Emergency Only</StatusBadge>}
+        {v.response_time_note && <Chip>{v.response_time_note}</Chip>}
+        {v.emergency_available && !v.emergency_only && <Chip>After-hours available</Chip>}
+        {topPref ? (
+          <Chip>{PREFERENCE_LABELS[topPref as Preference]}</Chip>
+        ) : legacyPref ? (
+          <Chip>Past preference: {legacyPref}</Chip>
+        ) : null}
+        {selectable && dispatchRelevant && (
+          <Chip>Dispatch: {DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod] ?? v.dispatch_method}</Chip>
+        )}
+        {!selectable && <Chip>Not available for new work</Chip>}
+      </div>
+    </div>
   );
 }
