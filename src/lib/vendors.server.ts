@@ -58,7 +58,7 @@ export async function loadVendorDirectory(db: Client): Promise<{
       db.from("vendor_orgs").select("*").order("display_name"),
       db.from("vendor_org_members").select("org_id").eq("active", true),
       db.from("property_vendor_coverage").select("org_id"),
-      db.from("gatekeeper_requirements").select("id, requirement_level").eq("active", true),
+      db.from("gatekeeper_requirements").select("id, requirement_level, allows_not_applicable, allows_equivalent").eq("active", true),
       db.from("vendor_gatekeeper_results").select("org_id, requirement_id, result, expires_on"),
       db
         .from("vendor_contacts")
@@ -101,6 +101,8 @@ export async function loadVendorDirectory(db: Client): Promise<{
       note: null,
       verifiedAt: null,
       expiresOn: results.get(req.id)?.expires_on ?? null,
+      allowsNotApplicable: req.allows_not_applicable,
+      allowsEquivalent: req.allows_equivalent,
     }));
     const readiness = gatekeeperReadiness(lines);
     return {
@@ -180,6 +182,9 @@ export async function loadVendorOrg(db: Client, orgId: string, viewerIsSuperviso
       note: hit?.note ?? null,
       verifiedAt: hit?.verified_at ?? null,
       expiresOn: hit?.expires_on ?? null,
+      allowsNotApplicable: req.allows_not_applicable,
+      allowsEquivalent: req.allows_equivalent,
+      exceptionRule: req.exception_rule,
     };
   });
 
@@ -331,7 +336,7 @@ export async function setVendorStatus(
   // Approval is gated on the blocking screening items, not on judgement.
   if (input.status === "approved" || input.status === "gold") {
     const [{ data: reqs }, { data: results }] = await Promise.all([
-      db.from("gatekeeper_requirements").select("id, label, requirement_level").eq("active", true),
+      db.from("gatekeeper_requirements").select("id, label, requirement_level, allows_not_applicable, allows_equivalent").eq("active", true),
       db
         .from("vendor_gatekeeper_results")
         .select("requirement_id, result, expires_on")
@@ -348,6 +353,8 @@ export async function setVendorStatus(
       note: null,
       verifiedAt: null,
       expiresOn: map.get(r.id)?.expires_on ?? null,
+      allowsNotApplicable: r.allows_not_applicable,
+      allowsEquivalent: r.allows_equivalent,
     }));
     const readiness = gatekeeperReadiness(lines);
     if (!readiness.clear) {
@@ -397,6 +404,16 @@ export async function setGatekeeperResult(
   },
 ) {
   await assertSupervisor(db, userId);
+  if (
+    (input.result === "not_applicable" || input.result === "equivalent_verified") &&
+    (input.note ?? "").trim().length < 10
+  ) {
+    throw new Error(
+      input.result === "not_applicable"
+        ? "Not Applicable needs a written reason."
+        : "Equivalent Verified needs documentation of the equivalent.",
+    );
+  }
   const verified = input.result !== "not_verified";
   const { error } = await db.from("vendor_gatekeeper_results").upsert(
     {

@@ -27,7 +27,7 @@ export function useVendorWorkspace() {
         supabase.from("vendor_saved_views").select("*").order("name"),
         supabase
           .from("gatekeeper_requirements")
-          .select("id, code, label, requirement_level")
+          .select("id, code, label, requirement_level, allows_not_applicable, allows_equivalent")
           .eq("active", true)
           .order("sort_order"),
         supabase.from("vendor_gatekeeper_results").select("org_id, requirement_id, result, expires_on"),
@@ -42,9 +42,12 @@ export function useVendorWorkspace() {
         const mine = (results.data ?? []).filter((r) => r.org_id === v.id);
         const ok = (reqId: string) => {
           const r = mine.find((x) => x.requirement_id === reqId);
-          if (!r) return false;
-          if (r.result === "not_applicable") return true;
-          return r.result === "verified_meets" && (!r.expires_on || r.expires_on >= today);
+          const g = gateList.find((x) => x.id === reqId);
+          if (!r || !g) return false;
+          if (r.result === "not_applicable") return g.allows_not_applicable;
+          const fresh = !r.expires_on || r.expires_on >= today;
+          if (r.result === "equivalent_verified") return g.allows_equivalent && fresh;
+          return r.result === "verified_meets" && fresh;
         };
         gateStatus.set(v.id, {
           passed: gateList.filter((g) => ok(g.id)).length,
