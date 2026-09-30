@@ -270,7 +270,7 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
     because:
       t.resolved_at || status === "resolved"
         ? "The work is done and signed off."
-        : "The work is done and nothing is blocking closure.",
+        : "The work is done. Add the closing summary and final guest message, then close.",
     completeLabel: "Go to closure",
     fields: [],
     handoff: { label: "Go to closure", target: "closure" },
