@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, CheckCircle2, CircleSlash, ShieldCheck, Trash2 } from "lucide-react";
+import { ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   addVendorCoverage,
@@ -20,20 +20,15 @@ import {
 import {
   COVERAGE_PRIORITIES,
   COVERAGE_PRIORITY_LABELS,
-  allowedResults,
-  linePasses,
-  GATEKEEPER_RESULT_LABELS,
-  REQUIREMENT_LEVEL_LABELS,
   SERVICE_CATEGORIES,
   VENDOR_STATUSES,
   VENDOR_STATUS_BLURBS,
   VENDOR_STATUS_LABELS,
-  effectiveResult,
   reputationGate,
   type CoveragePriority,
-  type GatekeeperResult,
   type VendorStatus,
 } from "@/lib/vendors";
+import { GateRow, type GateSave } from "@/components/vendors/GateRow";
 import { VendorDocumentsPanel } from "@/components/VendorDocumentsPanel";
 import { VendorTerritoryPanel } from "@/components/VendorTerritoryPanel";
 import { Badge } from "@/components/ui/badge";
@@ -115,10 +110,7 @@ export function VendorOrgSheet({
   });
 
   const resultMutation = useMutation({
-    mutationFn: (input: { requirementId: string; result: GatekeeperResult; note?: string | undefined }) =>
-      setResult({
-        data: { orgId: orgId!, requirementId: input.requirementId, result: input.result, note: input.note ?? null },
-      }),
+    mutationFn: (input: GateSave) => setResult({ data: { orgId: orgId!, ...input } }),
     onSuccess: () => {
       toast.success("Screening item updated.");
       refresh();
@@ -215,87 +207,16 @@ export function VendorOrgSheet({
                 )}
 
                 <div className="space-y-2">
-                  {data.gatekeeper.map((line) => {
-                    const shown = effectiveResult(line);
-                    const good = linePasses(line);
-                    const bad = shown === "verified_does_not_meet";
-                    return (
-                      <div key={line.requirementId} className="rounded-lg border p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {good ? (
-                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                              ) : bad ? (
-                                <CircleSlash className="h-4 w-4 text-destructive" />
-                              ) : (
-                                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                              )}
-                              <span className="text-sm font-medium">{line.label}</span>
-                              <Badge
-                                variant={line.level === "blocking" ? "destructive" : "secondary"}
-                              >
-                                {REQUIREMENT_LEVEL_LABELS[line.level]}
-                              </Badge>
-                            </div>
-                            {line.detail && (
-                              <p className="mt-1 text-xs text-muted-foreground">{line.detail}</p>
-                            )}
-                            {line.exceptionRule && (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Exception: {line.exceptionRule}
-                              </p>
-                            )}
-                            {line.note && (line.result === "not_applicable" || line.result === "equivalent_verified") && (
-                              <p className="mt-1 text-xs">Reason: {line.note}</p>
-                            )}
-                            {line.expiresOn && (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Expires {line.expiresOn}
-                              </p>
-                            )}
-                          </div>
-                          {canManage && (
-                            <Select
-                              value={shown}
-                              onValueChange={(v) => {
-                                const result = v as GatekeeperResult;
-                                let note: string | undefined;
-                                if (result === "not_applicable" || result === "equivalent_verified") {
-                                  const answer = window.prompt(
-                                    result === "not_applicable"
-                                      ? "Why does this gate not apply? (required)"
-                                      : "Describe the documented equivalent. (required)",
-                                  );
-                                  if (!answer || answer.trim().length < 10) {
-                                    toast.error("A written reason of at least 10 characters is required.");
-                                    return;
-                                  }
-                                  note = answer.trim();
-                                }
-                                resultMutation.mutate({
-                                  requirementId: line.requirementId,
-                                  result,
-                                  note,
-                                });
-                              }}
-                            >
-                              <SelectTrigger className="w-52 shrink-0">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {allowedResults(line).map((r) => (
-                                  <SelectItem key={r} value={r}>
-                                    {GATEKEEPER_RESULT_LABELS[r]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {data.gatekeeper.map((line) => (
+                    <GateRow
+                      key={`${line.requirementId}-${line.verifiedAt ?? ""}-${line.result}`}
+                      line={line}
+                      documents={data.documents.map((d) => ({ id: d.id, title: d.title, docType: d.docType }))}
+                      canManage={canManage}
+                      saving={resultMutation.isPending}
+                      onSave={(v) => resultMutation.mutate(v)}
+                    />
+                  ))}
                 </div>
 
                 {canManage && (

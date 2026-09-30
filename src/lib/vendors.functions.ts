@@ -83,7 +83,10 @@ export const recordGatekeeperResult = createServerFn({ method: "POST" })
         requirementId: z.string().uuid(),
         result: z.enum(GATEKEEPER_RESULTS),
         note: z.string().trim().max(600).optional().nullable(),
-        expiresOn: z.string().trim().max(10).optional().nullable(),
+        expiresOn: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable().or(z.literal("")),
+        documentId: z.string().uuid().optional().nullable(),
+        evidenceReference: z.string().trim().max(300).optional().nullable(),
+        exceptionReason: z.string().trim().max(1000).optional().nullable(),
       })
       .parse(data),
   )

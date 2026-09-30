@@ -27,7 +27,7 @@ export function useVendorWorkspace() {
         supabase.from("vendor_saved_views").select("*").order("name"),
         supabase
           .from("gatekeeper_requirements")
-          .select("id, code, label, requirement_level, allows_not_applicable, allows_equivalent")
+          .select("id, code, label, requirement_level, allows_not_applicable, allows_equivalent, expiry_required")
           .eq("active", true)
           .order("sort_order"),
         supabase.from("vendor_gatekeeper_results").select("org_id, requirement_id, result, expires_on"),
@@ -37,7 +37,7 @@ export function useVendorWorkspace() {
       }
       const today = new Date().toISOString().slice(0, 10);
       const gateList = gates.data ?? [];
-      const gateStatus = new Map<string, { passed: number; total: number; blockingClear: boolean }>();
+      const gateStatus = new Map<string, { passed: number; total: number; blockingClear: boolean; expired: number }>();
       for (const v of vendors.data ?? []) {
         const mine = (results.data ?? []).filter((r) => r.org_id === v.id);
         const ok = (reqId: string) => {
@@ -45,6 +45,7 @@ export function useVendorWorkspace() {
           const g = gateList.find((x) => x.id === reqId);
           if (!r || !g) return false;
           if (r.result === "not_applicable") return g.allows_not_applicable;
+          if (g.expiry_required && !r.expires_on) return false;
           const fresh = !r.expires_on || r.expires_on >= today;
           if (r.result === "equivalent_verified") return g.allows_equivalent && fresh;
           return r.result === "verified_meets" && fresh;
@@ -52,6 +53,10 @@ export function useVendorWorkspace() {
         gateStatus.set(v.id, {
           passed: gateList.filter((g) => ok(g.id)).length,
           total: gateList.length,
+          expired: gateList.filter((g) => {
+            const r = mine.find((x) => x.requirement_id === g.id);
+            return !!r && (r.result === "verified_meets" || r.result === "equivalent_verified") && !!r.expires_on && r.expires_on < today;
+          }).length,
           blockingClear: gateList.filter((g) => g.requirement_level === "blocking").every((g) => ok(g.id)),
         });
       }
@@ -81,4 +86,13 @@ export function coverageFor(vendorId: string, coverage: CoverageRecord[]) {
 export function errorText(e: unknown) {
   if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
   return "Something went wrong.";
+}
+
+/**
+ * Approved/Gold only count while every Must Pass gate currently passes —
+ * an expired insurance or licence puts the vendor on hold until corrected.
+ * Mirrors public.vendor_dispatch_eligible in the database.
+ */
+export function qualificationHold(v: Pick<VendorRecord, "id" | "status">, gateStatus: Map<string, { blockingClear: boolean }>) {
+  return (v.status === "approved" || v.status === "gold") && !gateStatus.get(v.id)?.blockingClear;
 }
