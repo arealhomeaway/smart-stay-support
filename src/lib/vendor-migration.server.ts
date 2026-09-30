@@ -227,6 +227,7 @@ export async function decideNotionRow(
       markets: knownMarkets,
       service_categories: knownCats,
       source_system: "notion",
+      emergency_only: parseLegacyPreference(row.preference).emergencyOnly,
       legacy_notion_id: row.legacy_notion_id,
       migration_status: "imported_needs_review",
       legacy_fields: legacy as Json,

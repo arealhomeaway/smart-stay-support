@@ -73,6 +73,7 @@ function VendorProfile() {
       />
       <div className="flex flex-wrap gap-2">
         <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>{VENDOR_STATUS_LABELS[v.status as VendorStatus]}</StatusBadge>
+        {v.emergency_only && <StatusBadge tone="escalated">Emergency Only — not routine coverage</StatusBadge>}
         {inTransitionalReview(v) && (<><StatusBadge tone="waiting">Transitional Review</StatusBadge><span className="text-xs text-muted-foreground">Gold Standard verification incomplete · {transitionalDaysLeft(v)} days left</span></>)}
         <Chip>{DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod] ?? v.dispatch_method}</Chip>
         <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />

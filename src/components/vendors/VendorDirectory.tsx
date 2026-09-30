@@ -2,6 +2,7 @@
  * Frontline Vendor Directory. Find the right vendor without touching the
  * database table. Also used inside a Ticket to choose who should handle it.
  */
+import { canRevealEmergency, emergencyVisibleByDefault } from "@/lib/emergency-vendor";
 import { canTakeWork, inTransitionalReview, qualificationHold, transitionalDaysLeft } from "@/components/vendors/useVendorWorkspace";
 import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
@@ -44,7 +45,12 @@ export function VendorDirectory({
   onSelect,
   selectedId,
   noEligible,
+  ticketPriority,
+  canOverrideEmergency = false,
 }: {
+  /** Picker mode on a Ticket: controls Emergency Only visibility (P1 shown; P2 when needed; P3 Supervisor only). */
+  ticketPriority?: string | null;
+  canOverrideEmergency?: boolean;
   initialMarket?: string | null;
   initialCategory?: string | null;
   onSelect?: (vendor: VendorRecord) => void;
@@ -60,6 +66,7 @@ export function VendorDirectory({
   const [status, setStatus] = useState(ALL);
   const [active, setActive] = useState("active");
   const [dispatch, setDispatch] = useState(ALL);
+  const [showEmergency, setShowEmergency] = useState(false);
 
   const results = useMemo(() => {
     if (!ws.data) return [];
@@ -101,7 +108,12 @@ export function VendorDirectory({
   if (ws.isLoading) return <LoadingRows rows={4} />;
   if (ws.error) return <EmptyState title="Could not load vendors" hint="Refresh the page to try again." />;
   const data = ws.data!;
-  const eligibleCount = results.filter(({ v }) => canTakeWork(v, data.gateStatus, data.compliance)).length;
+  const picker = !!onSelect && ticketPriority !== undefined;
+  const routineCount = results.filter(({ v }) => !v.emergency_only && canTakeWork(v, data.gateStatus, data.compliance)).length;
+  const emergencyShown = !picker || showEmergency || emergencyVisibleByDefault(ticketPriority, routineCount);
+  const emergencyHidden = picker && !emergencyShown ? results.filter(({ v }) => v.emergency_only).length : 0;
+  const shownResults = emergencyShown ? results : results.filter(({ v }) => !v.emergency_only);
+  const eligibleCount = shownResults.filter(({ v }) => canTakeWork(v, data.gateStatus, data.compliance)).length;
   const fallback =
     onSelect && noEligible && eligibleCount === 0
       ? noEligible({ market: market === ALL ? null : market, category: category === ALL ? null : category })
@@ -142,14 +154,23 @@ export function VendorDirectory({
       </div>
 
       {fallback}
-      {results.length === 0 ? (
+      {emergencyHidden > 0 && canRevealEmergency(ticketPriority, canOverrideEmergency) && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2 text-sm">
+          <span className="text-muted-foreground">
+            {emergencyHidden} Emergency Only vendor{emergencyHidden === 1 ? "" : "s"} hidden for a {String(ticketPriority).toUpperCase()} Ticket.
+            {ticketPriority === "p2" ? " Use only when no routine vendor is available, after hours, or with Supervisor approval." : " A Supervisor override is required."}
+          </span>
+          <Button size="sm" variant="outline" onClick={() => setShowEmergency(true)}>Show Emergency Only vendors</Button>
+        </div>
+      )}
+      {shownResults.length === 0 ? (
         <EmptyState
           title="No vendors match"
           hint={data.vendors.length === 0 ? "No vendors are in Resolve yet." : "Loosen a filter to see more."}
         />
       ) : (
         <ul className="space-y-2">
-          {results.map(({ v, cov }) => {
+          {shownResults.map(({ v, cov }) => {
             const shown = cov.length ? cov : [];
             const topPref = shown.find((c) => c.preference === "primary")
               ? "primary"
@@ -174,6 +195,7 @@ export function VendorDirectory({
                     <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>
                       {VENDOR_STATUS_LABELS[v.status as VendorStatus] ?? v.status}
                     </StatusBadge>
+                    {v.emergency_only && <StatusBadge tone="escalated">Emergency Only</StatusBadge>}
                     {inTransitionalReview(v) && (
                       <>
                         <StatusBadge tone="waiting">Transitional Review</StatusBadge>

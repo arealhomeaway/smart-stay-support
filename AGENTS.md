@@ -17,3 +17,4 @@
 - STR cleaner safeguard rules: see `drizzle/AGENTS.md`.
 - Guided Ticket = `GuidedTicketPanel` over pure `ticketGuidance`; records only guest update/path/troubleshooting/vendor; statuses, SLA, closure gates, Work Order engine unchanged. Vendor pick re-checked by DB `vendor_dispatch_eligible`. Why: one rule, no second workflow.
 - Vendor Transitional Review: temporary migration flag on `vendor_orgs` (never a lifecycle status), granted only at Notion import for Active/Last Resort, fixed 60-day window enforced by DB trigger; eligibility lives only in `vendor_dispatch_eligible`. Why: one rule, no silent Approved.
+- Emergency Only vendors: `vendor_orgs.emergency_only`; picker visibility in `src/lib/emergency-vendor.ts`, enforced by DB `ticket_selected_vendor_guard` (P1 free, P2 basis, P3 Supervisor override; reason/authorizer stamped). Never coverage. Why: one rule.
