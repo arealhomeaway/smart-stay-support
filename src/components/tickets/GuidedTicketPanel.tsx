@@ -19,6 +19,7 @@ import { VendorDirectory } from "@/components/vendors/VendorDirectory";
 import { NoEligibleVendor } from "@/components/tickets/NoEligibleVendor";
 import { useRole } from "@/hooks/useRole";
 import { vendorMarketFor } from "@/lib/vendor-market";
+import { guideKeyFor } from "@/lib/troubleshooting-match";
 import { allowedEmergencyBases, EMERGENCY_BASIS_LABELS, type EmergencyBasis } from "@/lib/emergency-vendor";
 import { errorText } from "@/components/vendors/useVendorWorkspace";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -35,6 +36,8 @@ export type GuidedTicket = {
   status: string;
   priority?: string | null;
   category: string | null;
+  title?: string | null;
+  description?: string | null;
   acknowledged_at: string | null;
   guest_in_residence: boolean | null;
   reservation_guest_name: string | null;
@@ -116,14 +119,15 @@ export function GuidedTicketPanel({
   const [nextHours, setNextHours] = useState(2);
   const [changingVendor, setChangingVendor] = useState(false);
 
+  const guideKey = guideKeyFor(`${ticket.title ?? ""} ${ticket.description ?? ""}`, ticket.category);
   const guide = useQuery({
-    queryKey: ["ticket-troubleshooting", ticket.id, ticket.category],
+    queryKey: ["ticket-troubleshooting", ticket.id, guideKey],
     enabled: ticket.resolution_path === "guest",
     queryFn: async () => {
       const g = await supabase
         .from("troubleshooting_guides")
         .select("id, title")
-        .eq("category", ticket.category ?? "")
+        .eq("category", guideKey ?? "__none")
         .eq("active", true)
         .limit(1)
         .maybeSingle();
@@ -393,6 +397,7 @@ export function GuidedTicketPanel({
               </p>
               <VendorDirectory
                 initialMarket={vendorMarketFor(market)}
+                initialCategory={ticket.category === "access" ? "Locksmith / Access" : null}
                 selectedId={ticket.selected_vendor_org_id}
                 noEligible={(ctx) => (
                   <NoEligibleVendor
