@@ -115,9 +115,9 @@ export function VendorOrgSheet({
   });
 
   const resultMutation = useMutation({
-    mutationFn: (input: { requirementId: string; result: GatekeeperResult }) =>
+    mutationFn: (input: { requirementId: string; result: GatekeeperResult; note?: string | undefined }) =>
       setResult({
-        data: { orgId: orgId!, requirementId: input.requirementId, result: input.result },
+        data: { orgId: orgId!, requirementId: input.requirementId, result: input.result, note: input.note ?? null },
       }),
     onSuccess: () => {
       toast.success("Screening item updated.");
