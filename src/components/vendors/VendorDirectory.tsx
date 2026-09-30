@@ -32,7 +32,6 @@ export const STATUS_TONE: Record<string, StatusTone> = {
   gold: "brand",
   corrective_action: "escalated",
   suspended: "waiting",
-  inactive: "closed",
 };
 
 const ALL = "__all";

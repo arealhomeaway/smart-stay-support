@@ -429,12 +429,12 @@ export async function addCoverage(
   await assertSupervisor(db, userId);
   const { data: org } = await db
     .from("vendor_orgs")
-    .select("status")
+    .select("status, is_active")
     .eq("id", input.orgId)
     .maybeSingle();
-  if (org && ["inactive", "candidate"].includes(org.status)) {
+  if (org && (!org.is_active || org.status === "candidate")) {
     throw new Error(
-      "Only a pilot, approved, gold, corrective-action or suspended vendor can be put on a coverage map.",
+      "Only an active pilot, approved, gold, corrective-action or suspended vendor can be put on a coverage map.",
     );
   }
   const { error } = await db.from("property_vendor_coverage").insert({
@@ -547,11 +547,11 @@ export async function addServiceArea(
   }
   const { data: org } = await db
     .from("vendor_orgs")
-    .select("status")
+    .select("status, is_active")
     .eq("id", input.orgId)
     .maybeSingle();
-  if (org && ["inactive", "candidate"].includes(org.status)) {
-    throw new Error("Only a pilot, approved, gold, corrective-action or suspended vendor can hold a territory.");
+  if (org && (!org.is_active || org.status === "candidate")) {
+    throw new Error("Only an active pilot, approved, gold, corrective-action or suspended vendor can hold a territory.");
   }
 
   const { error } = await db.from("vendor_service_areas").upsert(
