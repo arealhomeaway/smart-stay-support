@@ -1,6 +1,6 @@
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
