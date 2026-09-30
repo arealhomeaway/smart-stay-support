@@ -185,8 +185,21 @@ function Hub() {
   }, [data]);
 
   if (isLoading || !data) return <LoadingPage />;
+  // Staff who only hold assigned Tasks get a scoped Dashboard / Properties view
+  // (their own homes only) instead of a redirect — redirecting trapped them on
+  // My Work whenever they used the Onboarding menu (Help Ticket #17).
   if (data.workspaceMode === "assigned")
-    return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
+    return (
+      <AssignedOverview
+        lens={lens === "all" ? "all" : "dashboard"}
+        firstName={firstName}
+        homes={data.properties.map((p) => ({
+          id: p.id,
+          name: (p as { name?: string | null }).name ?? "Home",
+          open: data.tasks.filter((t) => t.property_id === p.id && t.status !== "complete").length,
+        }))}
+      />
+    );
 
   const pendingReviews = data.handoffs.filter(
     (h) =>
