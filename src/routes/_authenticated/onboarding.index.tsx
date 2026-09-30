@@ -1,6 +1,6 @@
 import { canReviewOnboardingGate } from "@/lib/onboarding-review-capabilities";
 import { onboardingWorkspaceKey } from "@/lib/onboarding-workspace-view";
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -185,8 +185,21 @@ function Hub() {
   }, [data]);
 
   if (isLoading || !data) return <LoadingPage />;
+  // Staff who only hold assigned Tasks get a scoped Dashboard / Properties view
+  // (their own homes only) instead of a redirect — redirecting trapped them on
+  // My Work whenever they used the Onboarding menu (Help Ticket #17).
   if (data.workspaceMode === "assigned")
-    return <Navigate to="/onboarding/my-work" search={{ who: "me" }} replace />;
+    return (
+      <AssignedOverview
+        lens={lens === "all" ? "all" : "dashboard"}
+        firstName={firstName}
+        homes={data.properties.map((p) => ({
+          id: p.id,
+          name: (p as { name?: string | null }).name ?? "Home",
+          open: data.tasks.filter((t) => t.property_id === p.id && t.status !== "complete").length,
+        }))}
+      />
+    );
 
   const pendingReviews = data.handoffs.filter(
     (h) =>
@@ -574,5 +587,63 @@ function DecisionRow({
       </span>
       <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
     </Link>
+  );
+}
+
+/** Dashboard / Properties for Onboarding staff who only work assigned Tasks. */
+function AssignedOverview({
+  lens,
+  firstName,
+  homes,
+}: {
+  lens: "all" | "dashboard";
+  firstName: string | null | undefined;
+  homes: { id: string; name: string; open: number }[];
+}) {
+  const open = homes.reduce((n, h) => n + h.open, 0);
+  return (
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <p className="eyebrow">Onboarding</p>
+        <h1 className="text-2xl font-semibold">
+          {lens === "all" ? "Properties" : `${greeting()}${firstName ? `, ${firstName}` : ""}.`}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {lens === "all"
+            ? "The onboarding homes where you have Tasks. Open one to work its Tasks."
+            : `You have ${open} open Task${open === 1 ? "" : "s"} across ${homes.length} home${homes.length === 1 ? "" : "s"}.`}
+        </p>
+      </header>
+      <SectionCard title={lens === "all" ? "My homes" : "Where you have work"}>
+        {homes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            You have no onboarding Tasks assigned right now. New assignments will appear here and in
+            My Work.
+          </p>
+        ) : (
+          <ul className="divide-y">
+            {homes.map((h) => (
+              <li key={h.id} className="flex items-center justify-between gap-3 py-2">
+                <span className="font-medium">{h.name}</span>
+                <Link
+                  to="/onboarding/my-work"
+                  search={{ who: "me", home: h.id } as never}
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  {h.open} open Task{h.open === 1 ? "" : "s"}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+      <Link
+        to="/onboarding/my-work"
+        search={{ who: "me" } as never}
+        className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+      >
+        Go to My Work
+      </Link>
+    </div>
   );
 }
