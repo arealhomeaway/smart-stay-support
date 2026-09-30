@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 /**
  * One vendor company: screening, coverage, team and status history.
  *
@@ -6,7 +5,7 @@ import { useEffect } from "react";
  * where?" — and nothing a vendor should ever see about another vendor.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck, Trash2 } from "lucide-react";
