@@ -241,3 +241,38 @@ export const verifyVendorIdentity = createServerFn({ method: "POST" })
     const { recordIdentityCheck } = await import("./vendors.server");
     return recordIdentityCheck(context.supabase, context.userId, data);
   });
+
+/* --------------------------- Notion migration staging --------------------------- */
+
+export const stageNotionVendors = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ label: z.string().trim().min(2).max(120), csv: z.string().min(3).max(2_000_000) }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { stageNotion } = await import("./vendor-migration.server");
+    return stageNotion(context.supabase, context.userId, data);
+  });
+
+export const notionStaging = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { loadNotionStaging } = await import("./vendor-migration.server");
+    return loadNotionStaging(context.supabase, context.userId);
+  });
+
+export const decideNotionVendorRow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        rowId: z.string().uuid(),
+        action: z.enum(["import", "skip"]),
+        note: z.string().trim().max(600).optional().nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { decideNotionRow } = await import("./vendor-migration.server");
+    return decideNotionRow(context.supabase, context.userId, data);
+  });
