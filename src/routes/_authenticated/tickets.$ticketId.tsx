@@ -146,7 +146,7 @@ function TicketDetail() {
   const qc = useQueryClient();
   const role = useRole();
   const navigate = useNavigate();
-  const { demoMode } = useDemo();
+  const { demoMode, demoReady } = useDemo();
   const [note, setNote] = useState("");
   const [resolution, setResolution] = useState("");
   const [outcome, setOutcome] = useState("resolved");
@@ -353,7 +353,7 @@ function TicketDetail() {
   const loadedTicketIsDemo = data?.ticket?.is_demo ?? null;
   const demoMismatch = ticketDemoMismatch(loadedTicketIsDemo, demoMode);
   useEffect(() => {
-    if (isLoading || !data) return;
+    if (!demoReady || isLoading || !data) return;
     // Fires when the filtered query already came back empty (a mismatched
     // ticket reached fresh), or when a ticket already in memory no longer
     // matches demoMode (toggled while this exact ticket stayed open).
@@ -364,7 +364,7 @@ function TicketDetail() {
         : "That ticket isn't available outside demo mode.",
     );
     navigate({ to: "/tickets", replace: true });
-  }, [isLoading, data, demoMode, demoMismatch, navigate]);
+  }, [demoReady, isLoading, data, demoMode, demoMismatch, navigate]);
 
   if (isLoading || !data || !data.ticket || demoMismatch)
     return <Skeleton className="h-96 w-full" />;
@@ -821,6 +821,7 @@ function TicketDetail() {
 
   // The one Current Action: what to do now, what has to be written down, and
   // what happens the moment it is completed. Derived, never stored.
+  // Acknowledge / Start are the one next action; hide the repair prompt until they are done.
   const currentAction = ticketCurrentAction({
     status: ticket.status,
     resolved_at: ticket.resolved_at,
@@ -838,6 +839,7 @@ function TicketDetail() {
     requiredOpenSteps: requiredOpen.length,
     missingClosureEvidence: Boolean(requiredEvidence) && !evidenceSatisfied,
   });
+  const firstActionLeads = currentAction?.id === "acknowledge" || currentAction?.id === "start_work";
 
   // One plain-language sentence: what is happening and what comes next. No stat wall.
   const nextStepLine = closed
@@ -1088,7 +1090,7 @@ function TicketDetail() {
                 )}
               </div>
               {/* When a guided step leads, its Next action box is the one instruction — no competing hint. */}
-              {!guidedLeads && <p className="mt-2 text-sm font-medium text-muted-foreground">{nextStepLine}</p>}
+              {!guidedLeads && !firstActionLeads && <p className="mt-2 text-sm font-medium text-muted-foreground">{nextStepLine}</p>}
             </div>
           </div>
           <MoreActions
@@ -1189,7 +1191,7 @@ function TicketDetail() {
               </div>
 
               <div id="current-work-detail" />
-              {guidedLeads ? null : (<>
+              {guidedLeads || firstActionLeads ? null : (<>
 
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">
