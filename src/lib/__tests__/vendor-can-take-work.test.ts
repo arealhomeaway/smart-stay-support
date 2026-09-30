@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { canTakeWork, inTransitionalReview, transitionalDaysLeft } from "@/components/vendors/useVendorWorkspace";
-import { isTransitionalEligible, mapNotionCategory, mapNotionPreference } from "@/lib/vendor-gold";
+import { isTransitionalEligible, parseLegacyPreference, mapNotionCategory, mapNotionPreference } from "@/lib/vendor-gold";
 
 const g = (clear: boolean) => new Map([["v", { blockingClear: clear }]]);
 const c = (state: string) => new Map([["v", { state }]]);
@@ -54,8 +54,13 @@ describe("Transitional Review", () => {
     expect(mapNotionCategory("HVAC", known)).toBe("HVAC");
     expect(mapNotionCategory("Housekeeping", known)).toBe("Turnover Cleaning");
     expect(mapNotionCategory("Photography", known)).toBeNull();
-    expect(mapNotionPreference("Option 1")).toBe("primary");
-    expect(mapNotionPreference("Back Up Option")).toBe("backup");
+    expect(mapNotionPreference("Option 1")).toBe("other");
+    expect(mapNotionPreference("Back Up Option")).toBe("other");
+    expect(isTransitionalEligible("Active", "Option 2; No Longer Using")).toBe(false);
+    expect(isTransitionalEligible("Active", "Do Not Use")).toBe(false);
+    expect(isTransitionalEligible("Active", "Home Owner's Vendor")).toBe(false);
+    expect(isTransitionalEligible("Last Resort", "Option 5; EMERGENCY ONLY")).toBe(true);
+    expect(parseLegacyPreference("Head Cleaner; Option 1")).toMatchObject({ rank: 1, headCleaner: true });
     expect(mapNotionPreference("EMERGENCY ONLY")).toBe("other");
   });
 });
