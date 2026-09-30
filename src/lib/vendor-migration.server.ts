@@ -106,7 +106,7 @@ export async function loadNotionStaging(db: Client, userId: string) {
 export async function decideNotionRow(
   db: Client,
   userId: string,
-  input: { rowId: string; action: "import" | "skip"; note?: string | null },
+  input: { rowId: string; action: "import" | "skip"; note?: string | null | undefined },
 ) {
   await assertSupervisor(db, userId);
   const { data: row, error } = await db.from("vendor_import_rows").select("*").eq("id", input.rowId).single();

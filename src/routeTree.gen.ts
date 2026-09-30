@@ -80,6 +80,7 @@ import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
 import { Route as AuthenticatedVendorsIndexRouteImport } from './routes/_authenticated/vendors.index'
+import { Route as AuthenticatedVendorsVendorIdRouteImport } from './routes/_authenticated/vendors.$vendorId'
 import { Route as AuthenticatedWorkOrdersIndexRouteImport } from './routes/_authenticated/work-orders.index'
 import { Route as AuthenticatedWorkOrdersCalendarRouteImport } from './routes/_authenticated/work-orders.calendar'
 import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_authenticated/work-orders.manager'
@@ -487,6 +488,12 @@ const AuthenticatedVendorsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedVendorsRoute,
   } as any)
+const AuthenticatedVendorsVendorIdRoute =
+  AuthenticatedVendorsVendorIdRouteImport.update({
+    id: '/$vendorId',
+    path: '/$vendorId',
+    getParentRoute: () => AuthenticatedVendorsRoute,
+  } as any)
 const AuthenticatedWorkOrdersIndexRoute =
   AuthenticatedWorkOrdersIndexRouteImport.update({
     id: '/',
@@ -633,6 +640,7 @@ export interface FileRoutesByFullPath {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/vendors/$vendorId': typeof AuthenticatedVendorsVendorIdRoute
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
@@ -713,6 +721,7 @@ export interface FileRoutesByTo {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/vendors/$vendorId': typeof AuthenticatedVendorsVendorIdRoute
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
@@ -801,6 +810,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/_authenticated/vendors/$vendorId': typeof AuthenticatedVendorsVendorIdRoute
   '/_authenticated/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/_authenticated/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
@@ -889,6 +899,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/vendors/$vendorId'
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
@@ -969,6 +980,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/vendors/$vendorId'
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
@@ -1056,6 +1068,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/new'
     | '/_authenticated/vendor/$ticketId'
     | '/_authenticated/vendor/scorecard'
+    | '/_authenticated/vendors/$vendorId'
     | '/_authenticated/work-orders/calendar'
     | '/_authenticated/work-orders/manager'
     | '/_authenticated/work-orders/my-work-orders'
@@ -1596,6 +1609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorsIndexRouteImport
       parentRoute: typeof AuthenticatedVendorsRoute
     }
+    '/_authenticated/vendors/$vendorId': {
+      id: '/_authenticated/vendors/$vendorId'
+      path: '/$vendorId'
+      fullPath: '/vendors/$vendorId'
+      preLoaderRoute: typeof AuthenticatedVendorsVendorIdRouteImport
+      parentRoute: typeof AuthenticatedVendorsRoute
+    }
     '/_authenticated/work-orders/': {
       id: '/_authenticated/work-orders/'
       path: '/'
@@ -1783,10 +1803,12 @@ const AuthenticatedRecoveryRouteWithChildren =
   )
 
 interface AuthenticatedVendorsRouteChildren {
+  AuthenticatedVendorsVendorIdRoute: typeof AuthenticatedVendorsVendorIdRoute
   AuthenticatedVendorsIndexRoute: typeof AuthenticatedVendorsIndexRoute
 }
 
 const AuthenticatedVendorsRouteChildren: AuthenticatedVendorsRouteChildren = {
+  AuthenticatedVendorsVendorIdRoute: AuthenticatedVendorsVendorIdRoute,
   AuthenticatedVendorsIndexRoute: AuthenticatedVendorsIndexRoute,
 }
 

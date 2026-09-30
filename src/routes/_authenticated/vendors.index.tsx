@@ -151,7 +151,7 @@ function CreateVendorDialog() {
             <Label>Primary service</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger><SelectValue placeholder="Pick a service" /></SelectTrigger>
-              <SelectContent>{(ws.data?.categories ?? []).map((c) => <SelectItem key={c.id} value={c.label}>{c.label}</SelectItem>)}</SelectContent>
+              <SelectContent>{(ws.data?.categories ?? []).map((c) => <SelectItem key={c.label} value={c.label}>{c.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
