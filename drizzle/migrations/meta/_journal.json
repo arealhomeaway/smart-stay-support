@@ -589,6 +589,13 @@
       "when": 1790786932530,
       "tag": "0083_vendor_status_separate_active",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1790787424665,
+      "tag": "0084_vendor_gates_all_must_pass",
+      "breakpoints": true
     }
   ]
 }

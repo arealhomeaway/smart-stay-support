@@ -3637,6 +3637,8 @@ export type Database = {
       gatekeeper_requirements: {
         Row: {
           active: boolean
+          allows_equivalent: boolean
+          allows_not_applicable: boolean
           applies_to_category: string | null
           applies_to_class: string
           applies_to_market: string | null
@@ -3644,6 +3646,7 @@ export type Database = {
           code: string
           created_at: string
           detail: string | null
+          exception_rule: string | null
           expires_after_days: number | null
           id: string
           label: string
@@ -3654,6 +3657,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          allows_equivalent?: boolean
+          allows_not_applicable?: boolean
           applies_to_category?: string | null
           applies_to_class?: string
           applies_to_market?: string | null
@@ -3661,6 +3666,7 @@ export type Database = {
           code: string
           created_at?: string
           detail?: string | null
+          exception_rule?: string | null
           expires_after_days?: number | null
           id?: string
           label: string
@@ -3671,6 +3677,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          allows_equivalent?: boolean
+          allows_not_applicable?: boolean
           applies_to_category?: string | null
           applies_to_class?: string
           applies_to_market?: string | null
@@ -3678,6 +3686,7 @@ export type Database = {
           code?: string
           created_at?: string
           detail?: string | null
+          exception_rule?: string | null
           expires_after_days?: number | null
           id?: string
           label?: string
