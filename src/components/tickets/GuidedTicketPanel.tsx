@@ -9,7 +9,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BedDouble, CheckCircle2, Circle, PauseCircle } from "lucide-react";
+import { BedDouble } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -98,7 +98,7 @@ export function GuidedTicketPanel({
   log: (kind: string, body: string, eventType?: string) => Promise<void>;
   onChanged: () => void | Promise<void>;
   /** Existing Work Order create panel, pre-filled with the chosen vendor. */
-  workOrderPanel: (vendor: { id: string; name: string }) => ReactNode;
+  workOrderPanel: (vendor: { id: string; name: string; categories?: string[] }) => ReactNode;
   /** The existing Current Action card — shown when no guided step leads. */
   children?: ReactNode;
   /** Tells the page when a guided step leads, so older stage blocks step aside. */
