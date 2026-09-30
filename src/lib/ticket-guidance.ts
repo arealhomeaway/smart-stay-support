@@ -205,7 +205,9 @@ export function ticketGuidance(t: GuidanceInput): Guidance {
 
   if (t.resolution_path === "guest" && !hasRepair) {
     const ts = t.troubleshooting;
-    if (ts && !ts.fixed && (ts.answered < ts.total || ts.total === 0) && !ts.notFixed) {
+    // Stay on this step until it is fixed or someone is sent — even after every
+    // step is answered, so the Coordinator is never left without a next action.
+    if (ts && !ts.fixed) {
       return {
         ...base,
         stage: "needs_action",

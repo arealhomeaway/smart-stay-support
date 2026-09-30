@@ -9,7 +9,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BedDouble, CheckCircle2, Circle, PauseCircle } from "lucide-react";
+import { BedDouble } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/ui/status";
 import { VendorDirectory } from "@/components/vendors/VendorDirectory";
 import { NoEligibleVendor } from "@/components/tickets/NoEligibleVendor";
 import { useRole } from "@/hooks/useRole";
+import { vendorMarketFor } from "@/lib/vendor-market";
 import { allowedEmergencyBases, EMERGENCY_BASIS_LABELS, type EmergencyBasis } from "@/lib/emergency-vendor";
 import { errorText } from "@/components/vendors/useVendorWorkspace";
 import { usDate, usDateTime } from "@/lib/dates";
@@ -98,7 +99,7 @@ export function GuidedTicketPanel({
   log: (kind: string, body: string, eventType?: string) => Promise<void>;
   onChanged: () => void | Promise<void>;
   /** Existing Work Order create panel, pre-filled with the chosen vendor. */
-  workOrderPanel: (vendor: { id: string; name: string }) => ReactNode;
+  workOrderPanel: (vendor: { id: string; name: string; categories?: string[] }) => ReactNode;
   /** The existing Current Action card — shown when no guided step leads. */
   children?: ReactNode;
   /** Tells the page when a guided step leads, so older stage blocks step aside. */
@@ -138,10 +139,10 @@ export function GuidedTicketPanel({
     queryFn: async () => {
       const { data } = await supabase
         .from("vendor_orgs")
-        .select("id, display_name")
+        .select("id, display_name, service_categories")
         .eq("id", ticket.selected_vendor_org_id!)
         .maybeSingle();
-      return data ? { id: data.id, name: data.display_name } : null;
+      return data ? { id: data.id, name: data.display_name, categories: (data.service_categories ?? []) as string[] } : null;
     },
   });
 
@@ -257,9 +258,12 @@ export function GuidedTicketPanel({
 
       {!closed && (
         <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge tone={g.stage === "ready_to_close" ? "resolved" : g.stage === "waiting" ? "waiting" : "progress"}>
-            {GUIDANCE_STAGE_LABELS[g.stage]}
-          </StatusBadge>
+          {/* Once the page's own closure list is in charge, its count is the one shown. */}
+          {g.stage !== "ready_to_close" && (
+            <StatusBadge tone={g.stage === "waiting" ? "waiting" : "progress"}>
+              {g.step === "guest_update" ? "Guest Update Due" : GUIDANCE_STAGE_LABELS[g.stage]}
+            </StatusBadge>
+          )}
           {ticket.guest_update_at && (
             <span className="text-xs text-muted-foreground">
               Guest last updated {usDateTime(ticket.guest_update_at)}
@@ -351,10 +355,12 @@ export function GuidedTicketPanel({
                     <Button size="sm" variant="ghost" disabled={answer.isPending} onClick={() => answer.mutate({ stepId: nextStep.id, outcome: "skipped", prompt: nextStep.prompt })}>Skip</Button>
                   </div>
                 </div>
-              ) : null}
+              ) : (
+                <p className="text-sm text-muted-foreground">All troubleshooting steps are done. If it is still not working, send someone.</p>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={sendSomeone} disabled={save.isPending}>Still not fixed — send someone</Button>
-                {!ts?.guide && (
+                {(!ts?.guide || !nextStep) && (
                   <Button variant="ghost" onClick={() => choosePath("already_resolved")} disabled={save.isPending}>It's fixed</Button>
                 )}
               </div>
@@ -368,7 +374,7 @@ export function GuidedTicketPanel({
                 Showing vendors for this property's market. Only vendors who can take new work can be chosen.
               </p>
               <VendorDirectory
-                initialMarket={market}
+                initialMarket={vendorMarketFor(market)}
                 selectedId={ticket.selected_vendor_org_id}
                 noEligible={(ctx) => (
                   <NoEligibleVendor
@@ -439,33 +445,10 @@ export function GuidedTicketPanel({
         children
       )}
 
-      {!closed && g.waiting && (!ticket.waiting_on || g.waiting.guestUpdateDue) && (
-        <div className="rounded-lg border border-border p-3 text-sm">
-          {/* The page's own Waiting block already names who and offers "Pick it back up". */}
-          {!ticket.waiting_on && (
-            <>
-              <p className="flex items-center gap-2 font-medium"><PauseCircle className="size-4" /> Waiting on {g.waiting.on}</p>
-              <p className="text-muted-foreground">What happens next: {g.waiting.next}</p>
-            </>
-          )}
-          {g.waiting.guestUpdateDue && <p className="text-muted-foreground">Next guest update due {usDateTime(g.waiting.guestUpdateDue)}</p>}
-        </div>
-      )}
-
-      {!closed && (g.stage === "ready_to_close" || g.stage === "needs_action") && (
-        <div className="rounded-lg border border-border p-3 text-sm">
-          <p className="font-medium">
-            {g.remaining === 0 ? "Ready to Close" : `Ready to Close — ${g.remaining} item${g.remaining === 1 ? "" : "s"} remaining`}
-          </p>
-          <ul className="mt-1 space-y-0.5">
-            {g.closeItems.map((i) => (
-              <li key={i.label} className="flex items-center gap-2">
-                {i.done ? <CheckCircle2 className="size-4 text-success" /> : <Circle className="size-4 text-muted-foreground" />}
-                <span className={i.done ? "text-muted-foreground" : undefined}>{i.label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Waiting and closing are shown once, by the page's own Current Action and
+          "Before this ticket can close" list — never repeated here with different counts. */}
+      {!closed && g.waiting?.guestUpdateDue && !ticket.guest_update_at && (
+        <p className="text-sm text-muted-foreground">Next guest update due {usDateTime(g.waiting.guestUpdateDue)}</p>
       )}
     </div>
   );

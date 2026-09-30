@@ -53,7 +53,7 @@ import {
 } from "@/lib/work-orders";
 import { ticketWorkOrdersQueryKey, type WorkOrderRow } from "@/lib/work-order-types";
 import { FieldHint } from "@/components/FieldHint";
-import { TRADES, categoryForTrade, categoryLabel, tradeLabel } from "@/lib/taxonomy";
+import { TRADES, categoryForTrade, categoryLabel, normalizeTrade, tradeLabel } from "@/lib/taxonomy";
 
 type TicketContext = {
   id: string;
@@ -64,7 +64,8 @@ type TicketContext = {
   work_type?: string | null;
   is_demo?: boolean | null;
   /** Vendor chosen on the Ticket from the Vendor Directory; recorded on the new Work Order (no dispatch). */
-  selected_vendor?: { id: string; name: string } | null;
+  /** Chosen in the guided Ticket; its trades pre-fill the form so nothing known is asked again. */
+  selected_vendor?: { id: string; name: string; categories?: string[] } | null;
 };
 
 /**
@@ -137,10 +138,15 @@ export function TicketWorkOrderPanel({
   const { can, readOnly: roleReadOnly } = useRole();
   const readOnly = roleReadOnly || forceReadOnly;
   const canEdit = !readOnly;
-  const [open, setOpen] = useState(false);
+  // From the guided Ticket the form opens straight away, with the trade filled in
+  // when the chosen vendor has exactly one, and the ticket description as scope.
+  const vendorTrades = [
+    ...new Set((ticket.selected_vendor?.categories ?? []).map((c) => normalizeTrade(c)?.value).filter(Boolean) as string[]),
+  ];
+  const [open, setOpen] = useState(Boolean(ticket.selected_vendor));
   const [phase, setPhase] = useState<WorkOrderPhase>("permanent");
-  const [category, setCategory] = useState("");
-  const [scope, setScope] = useState("");
+  const [category, setCategory] = useState(vendorTrades.length === 1 ? vendorTrades[0]! : "");
+  const [scope, setScope] = useState(ticket.selected_vendor ? (ticket.description ?? "") : "");
   const [emergency, setEmergency] = useState<EmergencyReason | "">("");
   const [quote, setQuote] = useState("");
   const people = useStaffDirectory().data ?? [];
