@@ -17,6 +17,8 @@ import { Chip } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { VendorDirectory } from "@/components/vendors/VendorDirectory";
 import { NoEligibleVendor } from "@/components/tickets/NoEligibleVendor";
+import { useRole } from "@/hooks/useRole";
+import { allowedEmergencyBases, EMERGENCY_BASIS_LABELS, type EmergencyBasis } from "@/lib/emergency-vendor";
 import { errorText } from "@/components/vendors/useVendorWorkspace";
 import { usDate, usDateTime } from "@/lib/dates";
 import {
@@ -165,6 +167,10 @@ export function GuidedTicketPanel({
   const stay = activeGuestStay(ticket);
   const hasReservation = Boolean(ticket.reservation_arrival || ticket.reservation_guest_name);
 
+  const { isSupervisor } = useRole();
+  const [emergencyPick, setEmergencyPick] = useState<{ id: string; name: string } | null>(null);
+  const [emergencyBasis, setEmergencyBasis] = useState<EmergencyBasis | null>(null);
+  const [emergencyReason, setEmergencyReason] = useState("");
   const save = useMutation({
     mutationFn: async ({ patch, history, guestUpdate }: { patch: Record<string, unknown>; history: string; guestUpdate?: boolean }) => {
       const { error } = await supabase.from("tickets").update(patch as never).eq("id", ticket.id);
@@ -372,10 +378,58 @@ export function GuidedTicketPanel({
                     escalating={save.isPending}
                   />
                 )}
-                onSelect={(v) =>
-                  save.mutate({ patch: { selected_vendor_org_id: v.id }, history: `Vendor chosen from the Directory: ${v.display_name}.` })
-                }
+                ticketPriority={ticket.priority ?? null}
+                canOverrideEmergency={isSupervisor}
+                onSelect={(v) => {
+                  if (v.emergency_only && ticket.priority !== "p1") {
+                    setEmergencyPick({ id: v.id, name: v.display_name });
+                    setEmergencyBasis(allowedEmergencyBases(ticket.priority, isSupervisor)[0] ?? null);
+                    setEmergencyReason("");
+                    return;
+                  }
+                  save.mutate({
+                    patch: { selected_vendor_org_id: v.id },
+                    history: v.emergency_only
+                      ? `Emergency Only vendor chosen on a P1 Ticket: ${v.display_name}.`
+                      : `Vendor chosen from the Directory: ${v.display_name}.`,
+                  });
+                }}
               />
+              {emergencyPick && (
+                <div className="space-y-2 rounded-md border border-border p-3 text-sm">
+                  <p className="font-semibold">Use Emergency Only vendor {emergencyPick.name}?</p>
+                  {allowedEmergencyBases(ticket.priority, isSupervisor).length === 0 ? (
+                    <p className="text-muted-foreground">A Supervisor override is required to use an Emergency Only vendor on this Ticket.</p>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {allowedEmergencyBases(ticket.priority, isSupervisor).map((b) => (
+                          <Button key={b} size="sm" variant={emergencyBasis === b ? "default" : "outline"} onClick={() => setEmergencyBasis(b)}>
+                            {EMERGENCY_BASIS_LABELS[b]}
+                          </Button>
+                        ))}
+                      </div>
+                      <Textarea value={emergencyReason} onChange={(e) => setEmergencyReason(e.target.value)} placeholder="Why is an Emergency Only vendor needed? (at least 10 characters)" aria-label="Reason for Emergency Only vendor" />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          disabled={!emergencyBasis || emergencyReason.trim().length < 10 || save.isPending}
+                          onClick={() => {
+                            save.mutate({
+                              patch: { selected_vendor_org_id: emergencyPick.id, emergency_vendor_basis: emergencyBasis, emergency_vendor_reason: emergencyReason.trim() },
+                              history: `Emergency Only vendor chosen: ${emergencyPick.name}. Basis: ${EMERGENCY_BASIS_LABELS[emergencyBasis!]}. Reason: ${emergencyReason.trim()}`,
+                            });
+                            setEmergencyPick(null);
+                          }}
+                        >
+                          Use this vendor
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={() => setEmergencyPick(null)}>Cancel</Button>
+                </div>
+              )}
               {changingVendor && <Button variant="ghost" size="sm" onClick={() => setChangingVendor(false)}>Keep the current vendor</Button>}
             </div>
           )}
