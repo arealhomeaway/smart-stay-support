@@ -3,7 +3,7 @@
 - [x] Emergency Only behavior — frozen for this release
 - [x] Import clean vendor subset (76) for Ticket QA; 192 remain in Needs Review
 - [x] End-to-end guided Ticket QA + fixes for dead ends and repeated prompts
-- [ ] Decide on remaining QA findings (see last report) — waiting on user
+- [x] Final Ticket UX cleanup pass (Carlton Landing, help question, vendor cards, Waiting on Vendor, WO evidence, one guest card, 10 guides)
 - [ ] Publish guided Tickets + vendor rules — waiting on user review
 - [ ] Leadership Import/Skip of the remaining 192 staged vendors — after launch
 - [ ] Buckland pending-activation race (webhook vs nightly scan)
