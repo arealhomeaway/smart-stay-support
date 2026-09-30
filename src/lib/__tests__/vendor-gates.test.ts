@@ -31,3 +31,18 @@ describe("Must Pass gates", () => {
     expect(gatekeeperReadiness([line("x", "not_verified")]).clear).toBe(false);
   });
 });
+
+describe("gate evidence and expiry", () => {
+  it("insurance/licence without an expiration date does not pass", async () => {
+    const { gateState } = await import("@/lib/vendors");
+    const l = line("insurance", "verified_meets", { expiryRequired: true });
+    expect(gatekeeperReadiness([l]).clear).toBe(false);
+    expect(gateState(l)).toBe("missing_expiry");
+  });
+  it("expired insurance automatically leaves Passed", async () => {
+    const { gateState } = await import("@/lib/vendors");
+    const l = line("insurance", "verified_meets", { expiryRequired: true, expiresOn: "2026-01-01" });
+    expect(gateState(l, new Date("2026-06-01"))).toBe("expired");
+    expect(gateState(l, new Date("2025-06-01"))).toBe("passed");
+  });
+});
