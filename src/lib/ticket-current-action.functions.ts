@@ -182,6 +182,12 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
       kind = "communication";
       eventType = "guest_update";
       body = `Guest updated — ${v["update"]?.trim() ?? ""}`;
+      // Same fields the guided Ticket reads, so the update counts everywhere.
+      const { error: stampError } = await supabase
+        .from("tickets")
+        .update({ guest_update_at: new Date().toISOString(), guest_update_note: v["update"]?.trim() ?? null })
+        .eq("id", data.ticketId);
+      if (stampError) return { ok: false, message: stampError.message };
     }
 
     await supabase.from("ticket_activity").insert({

@@ -63,6 +63,8 @@ type TicketContext = {
   priority?: string | null;
   work_type?: string | null;
   is_demo?: boolean | null;
+  /** Vendor chosen on the Ticket from the Vendor Directory; recorded on the new Work Order (no dispatch). */
+  selected_vendor?: { id: string; name: string } | null;
 };
 
 /**
@@ -193,6 +195,8 @@ export function TicketWorkOrderPanel({
           warranty_contact: draftHint.contact,
           permanent_repair_needed: phase === "mitigation",
           policy_version: MAINTENANCE_POLICY_VERSION,
+          vendor_org_id: ticket.selected_vendor?.id ?? null,
+          vendor_name: ticket.selected_vendor?.name ?? null,
           assigned_to: userId,
           created_by: userId,
           is_demo: ticket.is_demo ?? false,

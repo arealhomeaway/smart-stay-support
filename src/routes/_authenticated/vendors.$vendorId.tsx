@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
+import { ProgramOwnerField } from "@/components/vendors/ProgramOwnerField";
 import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,6 +121,7 @@ function VendorProfile() {
 
       <section className="space-y-2">
         <SectionBand title="Gold Standard" />
+        <ProgramOwnerField orgId={v.id} value={v.program_owner} canManage={canManage} />
         <dl className="grid gap-2 text-sm sm:grid-cols-3">
           <Field k="Qualification score" v={String(v.qualification_score ?? 0)} />
           <Field k="Performance score" v={v.performance_score == null ? null : String(v.performance_score)} />

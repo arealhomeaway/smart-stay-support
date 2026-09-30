@@ -610,6 +610,20 @@
       "when": 1790789955248,
       "tag": "0086_vendor_compliance_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1790790711977,
+      "tag": "0087_vendor_program_owner_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1790790913222,
+      "tag": "0088_ticket_selected_vendor_guard",
+      "breakpoints": true
     }
   ]
 }

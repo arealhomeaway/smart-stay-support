@@ -31,6 +31,7 @@ import { AttachmentsPanel } from "@/components/AttachmentsPanel";
 import { BreezewayTaskPanel } from "@/components/BreezewayTaskPanel";
 import { GuidanceCard } from "@/components/GuidanceCard";
 import { CurrentActionCard } from "@/components/CurrentActionCard";
+import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/GuidedTicketPanel";
 import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
@@ -154,6 +155,7 @@ function TicketDetail() {
   const [finalComms, setFinalComms] = useState(false);
   // Closure stays compact until the coordinator is actually closing the ticket.
   const [closeOpen, setCloseOpen] = useState(false);
+  const [guidedLeads, setGuidedLeads] = useState(false);
   const [waitOn, setWaitOn] = useState("vendor");
   const [waitReason, setWaitReason] = useState("");
   const [waitReview, setWaitReview] = useState("");
@@ -190,7 +192,7 @@ function TicketDetail() {
         supabase
           .from("tickets")
           .select(
-            "*, properties(id, name, nickname, address_line1, city, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
+            "*, properties(id, name, nickname, address_line1, city, market, access_notes, notes, ownerrez_property_id, primary_photo_url), work_types(name, response_minutes, action_start_minutes, completion_target, required_closure_evidence, guest_communication_required)",
           )
           .eq("id", ticketId)
           .eq("is_demo", demoMode)
@@ -1127,7 +1129,40 @@ function TicketDetail() {
             <section aria-label="Current work">
               <h2 className="eyebrow text-muted-foreground">Current work</h2>
 
-              {currentAction && (
+              <div className="mt-2">
+                <GuidedTicketPanel
+                  ticket={{
+                    ...(ticket as unknown as GuidedTicket),
+                    // Guest updates recorded before the guided fields existed still count.
+                    guest_update_at:
+                      ticket.guest_update_at ??
+                      data.activity.find((a) => a.event_type === "guest_update")?.event_at ??
+                      null,
+                  }}
+                  onLeadChange={setGuidedLeads}
+                  closed={closed}
+                  market={(ticket.properties as { market?: string | null } | null)?.market ?? null}
+                  openWorkOrders={liveOrders.filter((o) => !o.closed_at).length}
+                  completeWorkOrders={liveOrders.filter((o) => o.closed_at).length}
+                  requiredOpenSteps={requiredOpen.length}
+                  missingEvidence={Boolean(requiredEvidence) && !evidenceSatisfied}
+                  readOnly={role.readOnly}
+                  log={log}
+                  onChanged={refresh}
+                  workOrderPanel={(vendor) =>
+                    role.can("work_orders_internal") ? (
+                      <TicketWorkOrderPanel
+                        ticket={{ ...ticket, selected_vendor: vendor }}
+                        propertyName={propertyName}
+                        openWorkOrderId={openWorkOrderId}
+                        onOpenWorkOrderIdChange={setOpenWorkOrderId}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Ask a coordinator with Work Order access to open it.</p>
+                    )
+                  }
+                >
+                  {currentAction ? (
                 <div className="mt-2">
                   <CurrentActionCard
                     ticketId={ticketId}
@@ -1142,9 +1177,12 @@ function TicketDetail() {
                     }}
                   />
                 </div>
-              )}
+                  ) : null}
+                </GuidedTicketPanel>
+              </div>
 
               <div id="current-work-detail" />
+              {guidedLeads ? null : (<>
 
               {stage === "waiting" && (
                 <div className="mt-2 space-y-3">
@@ -1355,6 +1393,7 @@ function TicketDetail() {
                 </div>
               )}
 
+              </>)}
               {!closed && stage !== "waiting" && (
                 <div className="mt-3">
                   <WaitingControl
