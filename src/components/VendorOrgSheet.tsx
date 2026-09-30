@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, CheckCircle2, CircleSlash, ShieldCheck, Trash2 } from "lucide-react";
+import { ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   addVendorCoverage,
@@ -20,18 +20,12 @@ import {
 import {
   COVERAGE_PRIORITIES,
   COVERAGE_PRIORITY_LABELS,
-  allowedResults,
-  linePasses,
-  GATEKEEPER_RESULT_LABELS,
-  REQUIREMENT_LEVEL_LABELS,
   SERVICE_CATEGORIES,
   VENDOR_STATUSES,
   VENDOR_STATUS_BLURBS,
   VENDOR_STATUS_LABELS,
-  effectiveResult,
   reputationGate,
   type CoveragePriority,
-  type GatekeeperResult,
   type VendorStatus,
 } from "@/lib/vendors";
 import { GateRow, type GateSave } from "@/components/vendors/GateRow";
