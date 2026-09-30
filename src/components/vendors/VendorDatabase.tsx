@@ -153,7 +153,7 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
         : { [col.key]: value };
     const { error } = await supabase.from("vendor_orgs").update(patch as never).eq("id", v.id);
     setEditing(null);
-    if (error) return toast.error(errorText(error));
+    if (error) { toast.error(errorText(error)); return; }
     toast.success("Saved");
     invalidate();
   }
@@ -166,7 +166,7 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
           ? { tags: [...new Set([...v.tags, bulkTag.trim()])] }
           : { is_active: patch === "activate" };
       const { error } = await supabase.from("vendor_orgs").update(update).eq("id", v.id);
-      if (error) return toast.error(errorText(error));
+      if (error) { toast.error(errorText(error)); return; }
     }
     toast.success(`Updated ${targets.length} vendor${targets.length === 1 ? "" : "s"}`);
     setSelected(new Set());
@@ -183,7 +183,7 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
       options: newCol.options.split(",").map((o) => o.trim()).filter(Boolean),
       sort_order: (ws.data?.customFields.length ?? 0) + 1,
     });
-    if (error) return toast.error(error.code === "23505" ? "A column with that name already exists." : errorText(error));
+    if (error) { toast.error(error.code === "23505" ? "A column with that name already exists." : errorText(error)); return; }
     setNewCol({ label: "", type: "text", options: "" });
     toast.success("Column added");
     invalidate();
@@ -193,14 +193,14 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
     const label = window.prompt("Rename column", f.label)?.trim();
     if (!label || label === f.label) return;
     const { error } = await supabase.from("vendor_custom_fields").update({ label }).eq("id", f.id);
-    if (error) return toast.error(errorText(error));
+    if (error) { toast.error(errorText(error)); return; }
     invalidate();
   }
 
   async function removeColumn(f: CustomField) {
     if (!window.confirm(`Remove the "${f.label}" column? If any vendor has a value it is archived, not deleted.`)) return;
     const { data, error } = await supabase.rpc("remove_vendor_custom_field", { _field_id: f.id });
-    if (error) return toast.error(errorText(error));
+    if (error) { toast.error(errorText(error)); return; }
     toast.success(data === "archived" ? "Column archived — its history is kept." : "Column removed");
     invalidate();
   }
@@ -219,7 +219,7 @@ export function VendorDatabase({ canManage, isLead }: { canManage: boolean; isLe
     if (!name) return;
     const shared = window.confirm("Share this view with the Operations team? (Cancel keeps it personal.)");
     const { error } = await supabase.from("vendor_saved_views").insert({ name, shared, config: view as unknown as Json });
-    if (error) return toast.error(errorText(error));
+    if (error) { toast.error(errorText(error)); return; }
     toast.success("View saved");
     invalidate();
   }
