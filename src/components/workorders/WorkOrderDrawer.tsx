@@ -1095,7 +1095,18 @@ export function WorkOrderDrawer({
         <section className="space-y-2">
           <h3 className="font-display text-sm font-semibold">Evidence</h3>
           {reqs.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nothing required on this job.</p>
+            // Same rule the Complete button uses (closureBlockers): never claim
+            // nothing is needed while completion evidence is still missing.
+            workOrder.evidence_complete ? (
+              <p className="text-xs text-muted-foreground">Nothing required on this job.</p>
+            ) : (
+              <div className="text-xs">
+                <p className="font-medium">Still needed before completion</p>
+                <ul className="mt-1 list-disc pl-5 text-muted-foreground">
+                  <li>Completion photo</li>
+                </ul>
+              </div>
+            )
           ) : (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {reqs.map((r) => {
