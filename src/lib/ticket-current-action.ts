@@ -264,13 +264,21 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
     };
   }
 
+  if (t.resolved_at || status === "resolved") {
+    return {
+      id: "close_out",
+      title: "Review and close",
+      because: "The work is finished. A reviewer approves it or sends it back for changes.",
+      completeLabel: "Go to review",
+      fields: [],
+      handoff: { label: "Go to review", target: "closure" },
+    };
+  }
+
   return {
     id: "close_out",
     title: "Close it out",
-    because:
-      t.resolved_at || status === "resolved"
-        ? "The work is done and signed off."
-        : "The work is done. Add the closing summary and final guest message, then close.",
+    because: "The work is done. Add the closing summary and final guest message, then close.",
     completeLabel: "Go to closure",
     fields: [],
     handoff: { label: "Go to closure", target: "closure" },
