@@ -33,6 +33,7 @@ export function VendorMarketCoverage({ focusMarket }: { focusMarket?: string }) 
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
         <SegmentedControl
+          ariaLabel="Category tier"
           value={tier}
           onChange={setTier}
           options={[
