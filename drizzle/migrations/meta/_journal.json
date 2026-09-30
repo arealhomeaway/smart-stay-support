@@ -638,6 +638,13 @@
       "when": 1790799513906,
       "tag": "0090_vendor_transitional_preference_and_dispatch_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1790799551763,
+      "tag": "0091_vendor_transitional_guard_restore_outcome_lock",
+      "breakpoints": true
     }
   ]
 }
