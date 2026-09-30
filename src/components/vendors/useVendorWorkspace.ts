@@ -6,6 +6,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { vendorCompliance } from "@/lib/vendor-compliance";
 
 export type VendorRecord = Database["public"]["Tables"]["vendor_orgs"]["Row"];
 export type CoverageRecord = Database["public"]["Tables"]["vendor_market_coverage"]["Row"];
@@ -60,7 +61,12 @@ export function useVendorWorkspace() {
           blockingClear: gateList.filter((g) => g.requirement_level === "blocking").every((g) => ok(g.id)),
         });
       }
+      const compliance = new Map<string, ReturnType<typeof vendorCompliance>>();
+      for (const v of vendors.data ?? []) {
+        compliance.set(v.id, vendorCompliance(gateList, (results.data ?? []).filter((r) => r.org_id === v.id), today));
+      }
       return {
+        compliance,
         vendors: vendors.data ?? [],
         markets: (markets.data ?? []).map((m) => m.code),
         categories: categories.data ?? [],
