@@ -101,6 +101,8 @@ export async function loadVendorDirectory(db: Client): Promise<{
       note: null,
       verifiedAt: null,
       expiresOn: results.get(req.id)?.expires_on ?? null,
+      allowsNotApplicable: req.allows_not_applicable,
+      allowsEquivalent: req.allows_equivalent,
     }));
     const readiness = gatekeeperReadiness(lines);
     return {
@@ -351,6 +353,8 @@ export async function setVendorStatus(
       note: null,
       verifiedAt: null,
       expiresOn: map.get(r.id)?.expires_on ?? null,
+      allowsNotApplicable: r.allows_not_applicable,
+      allowsEquivalent: r.allows_equivalent,
     }));
     const readiness = gatekeeperReadiness(lines);
     if (!readiness.clear) {

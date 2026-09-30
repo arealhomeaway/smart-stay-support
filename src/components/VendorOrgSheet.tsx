@@ -20,7 +20,8 @@ import {
 import {
   COVERAGE_PRIORITIES,
   COVERAGE_PRIORITY_LABELS,
-  GATEKEEPER_RESULTS,
+  allowedResults,
+  linePasses,
   GATEKEEPER_RESULT_LABELS,
   REQUIREMENT_LEVEL_LABELS,
   SERVICE_CATEGORIES,
@@ -216,7 +217,7 @@ export function VendorOrgSheet({
                 <div className="space-y-2">
                   {data.gatekeeper.map((line) => {
                     const shown = effectiveResult(line);
-                    const good = shown === "verified_meets";
+                    const good = linePasses(line);
                     const bad = shown === "verified_does_not_meet";
                     return (
                       <div key={line.requirementId} className="rounded-lg border p-3">
@@ -240,6 +241,14 @@ export function VendorOrgSheet({
                             {line.detail && (
                               <p className="mt-1 text-xs text-muted-foreground">{line.detail}</p>
                             )}
+                            {line.exceptionRule && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Exception: {line.exceptionRule}
+                              </p>
+                            )}
+                            {line.note && (line.result === "not_applicable" || line.result === "equivalent_verified") && (
+                              <p className="mt-1 text-xs">Reason: {line.note}</p>
+                            )}
                             {line.expiresOn && (
                               <p className="mt-1 text-xs text-muted-foreground">
                                 Expires {line.expiresOn}
@@ -249,18 +258,33 @@ export function VendorOrgSheet({
                           {canManage && (
                             <Select
                               value={shown}
-                              onValueChange={(v) =>
+                              onValueChange={(v) => {
+                                const result = v as GatekeeperResult;
+                                let note: string | undefined;
+                                if (result === "not_applicable" || result === "equivalent_verified") {
+                                  const answer = window.prompt(
+                                    result === "not_applicable"
+                                      ? "Why does this gate not apply? (required)"
+                                      : "Describe the documented equivalent. (required)",
+                                  );
+                                  if (!answer || answer.trim().length < 10) {
+                                    toast.error("A written reason of at least 10 characters is required.");
+                                    return;
+                                  }
+                                  note = answer.trim();
+                                }
                                 resultMutation.mutate({
                                   requirementId: line.requirementId,
-                                  result: v as GatekeeperResult,
-                                })
-                              }
+                                  result,
+                                  note,
+                                });
+                              }}
                             >
                               <SelectTrigger className="w-52 shrink-0">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {GATEKEEPER_RESULTS.map((r) => (
+                                {allowedResults(line).map((r) => (
                                   <SelectItem key={r} value={r}>
                                     {GATEKEEPER_RESULT_LABELS[r]}
                                   </SelectItem>
