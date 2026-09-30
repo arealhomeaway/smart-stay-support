@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { vendorMarketFor } from "./vendor-market";
 describe("vendorMarketFor", () => {
   it("maps Fort Worth homes to DFW vendors", () => expect(vendorMarketFor("Fort Worth")).toBe("DFW"));
