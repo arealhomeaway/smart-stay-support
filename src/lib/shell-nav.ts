@@ -71,6 +71,19 @@ export const DEPARTMENTS: Department[] = [
       { label: "Participation reports", to: "/str-participation-report", capability: "str_participation_report" },
     ],
   },
+  {
+    key: "vendors",
+    label: "Vendors",
+    home: "/vendors",
+    match: (p) => p === "/vendors" || p.startsWith("/vendors/"),
+    links: [
+      { label: "Directory", to: "/vendors", search: { tab: "directory" }, exact: true, capability: "vendor_directory" },
+      { label: "Database", to: "/vendors", search: { tab: "database" }, exact: true, capability: "vendor_admin" },
+      { label: "Gold Standard", to: "/vendors", search: { tab: "gold" }, exact: true, capability: "vendor_directory" },
+      { label: "Market Coverage", to: "/vendors", search: { tab: "coverage" }, exact: true, capability: "vendor_directory" },
+      { label: "Needs Review", to: "/vendors", search: { tab: "review" }, exact: true, capability: "vendor_directory" },
+    ],
+  },
 ];
 
 export function departmentFor(pathname: string): Department | null {

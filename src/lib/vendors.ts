@@ -9,42 +9,40 @@ import { TRADES } from "@/lib/taxonomy";
  * shared labels and pure helpers the UI and the server both read from.
  */
 
+/** ARHA Vendor Gold Standard lifecycle (plus Inactive for retired vendors). */
 export const VENDOR_STATUSES = [
-  "potential",
-  "screening",
-  "trial",
+  "candidate",
+  "pilot",
   "approved",
-  "restricted",
-  "paused",
-  "removed",
-  "legacy",
+  "gold",
+  "corrective_action",
+  "suspended",
+  "inactive",
 ] as const;
 export type VendorStatus = (typeof VENDOR_STATUSES)[number];
 
 export const VENDOR_STATUS_LABELS: Record<VendorStatus, string> = {
-  potential: "Potential",
-  screening: "Screening",
-  trial: "Trial",
+  candidate: "Candidate",
+  pilot: "Pilot",
   approved: "Approved",
-  restricted: "Restricted",
-  paused: "Paused",
-  removed: "Removed",
-  legacy: "Legacy (imported)",
+  gold: "Gold",
+  corrective_action: "Corrective Action",
+  suspended: "Suspended",
+  inactive: "Inactive",
 };
 
 export const VENDOR_STATUS_BLURBS: Record<VendorStatus, string> = {
-  potential: "Sourced but not contacted or screened. Cannot be dispatched.",
-  screening: "Gatekeeper items in progress. Cannot be dispatched.",
-  trial: "Cleared to take a limited number of scored trial jobs.",
-  approved: "Cleared for normal dispatch inside their approved markets.",
-  restricted: "Dispatch only with supervisor sign-off. Reason is on the record.",
-  paused: "Temporarily out of rotation. Existing work stands.",
-  removed: "No longer used. History is kept for the record.",
-  legacy: "Imported from a legacy system and not yet verified.",
+  candidate: "Sourced or in qualification. Cannot be dispatched yet.",
+  pilot: "Qualified (85+) and cleared for a limited paid pilot.",
+  approved: "Every required gate passed. Cleared for normal dispatch in their markets.",
+  gold: "Top-performing approved vendor. Preferred for dispatch.",
+  corrective_action: "Dispatch only with supervisor sign-off while a corrective action is open.",
+  suspended: "Out of rotation. Existing work stands; history is kept.",
+  inactive: "No longer used. History is kept for the record.",
 };
 
-/** Only these can be sent work, and trial only within its job budget. */
-export const DISPATCHABLE_STATUSES: VendorStatus[] = ["approved", "trial", "restricted"];
+/** Only these can be sent work; Corrective Action needs supervisor sign-off. */
+export const DISPATCHABLE_STATUSES: VendorStatus[] = ["pilot", "approved", "gold", "corrective_action"];
 
 export const VENDOR_CLASSES = ["company", "sole_operator", "internal_team"] as const;
 export type VendorClass = (typeof VENDOR_CLASSES)[number];

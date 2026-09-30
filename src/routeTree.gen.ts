@@ -79,6 +79,8 @@ import { Route as AuthenticatedTicketsNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedVendorIndexRouteImport } from './routes/_authenticated/vendor.index'
 import { Route as AuthenticatedVendorTicketIdRouteImport } from './routes/_authenticated/vendor.$ticketId'
 import { Route as AuthenticatedVendorScorecardRouteImport } from './routes/_authenticated/vendor.scorecard'
+import { Route as AuthenticatedVendorsIndexRouteImport } from './routes/_authenticated/vendors.index'
+import { Route as AuthenticatedVendorsVendorIdRouteImport } from './routes/_authenticated/vendors.$vendorId'
 import { Route as AuthenticatedWorkOrdersIndexRouteImport } from './routes/_authenticated/work-orders.index'
 import { Route as AuthenticatedWorkOrdersCalendarRouteImport } from './routes/_authenticated/work-orders.calendar'
 import { Route as AuthenticatedWorkOrdersManagerRouteImport } from './routes/_authenticated/work-orders.manager'
@@ -480,6 +482,18 @@ const AuthenticatedVendorScorecardRoute =
     path: '/vendor/scorecard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVendorsIndexRoute =
+  AuthenticatedVendorsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedVendorsRoute,
+  } as any)
+const AuthenticatedVendorsVendorIdRoute =
+  AuthenticatedVendorsVendorIdRouteImport.update({
+    id: '/$vendorId',
+    path: '/$vendorId',
+    getParentRoute: () => AuthenticatedVendorsRoute,
+  } as any)
 const AuthenticatedWorkOrdersIndexRoute =
   AuthenticatedWorkOrdersIndexRouteImport.update({
     id: '/',
@@ -603,7 +617,7 @@ export interface FileRoutesByFullPath {
   '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
-  '/vendors': typeof AuthenticatedVendorsRoute
+  '/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
@@ -626,6 +640,7 @@ export interface FileRoutesByFullPath {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/vendors/$vendorId': typeof AuthenticatedVendorsVendorIdRoute
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
@@ -636,6 +651,7 @@ export interface FileRoutesByFullPath {
   '/recovery/': typeof AuthenticatedRecoveryIndexRoute
   '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
@@ -684,7 +700,6 @@ export interface FileRoutesByTo {
   '/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
-  '/vendors': typeof AuthenticatedVendorsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
@@ -706,6 +721,7 @@ export interface FileRoutesByTo {
   '/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/vendors/$vendorId': typeof AuthenticatedVendorsVendorIdRoute
   '/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
@@ -716,6 +732,7 @@ export interface FileRoutesByTo {
   '/recovery': typeof AuthenticatedRecoveryIndexRoute
   '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/vendor': typeof AuthenticatedVendorIndexRoute
+  '/vendors': typeof AuthenticatedVendorsIndexRoute
   '/work-orders': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
@@ -770,7 +787,7 @@ export interface FileRoutesById {
   '/_authenticated/str-participation-report': typeof AuthenticatedStrParticipationReportRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/team-queue': typeof AuthenticatedTeamQueueRoute
-  '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
+  '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
@@ -793,6 +810,7 @@ export interface FileRoutesById {
   '/_authenticated/tickets/new': typeof AuthenticatedTicketsNewRoute
   '/_authenticated/vendor/$ticketId': typeof AuthenticatedVendorTicketIdRoute
   '/_authenticated/vendor/scorecard': typeof AuthenticatedVendorScorecardRoute
+  '/_authenticated/vendors/$vendorId': typeof AuthenticatedVendorsVendorIdRoute
   '/_authenticated/work-orders/calendar': typeof AuthenticatedWorkOrdersCalendarRoute
   '/_authenticated/work-orders/manager': typeof AuthenticatedWorkOrdersManagerRoute
   '/_authenticated/work-orders/my-work-orders': typeof AuthenticatedWorkOrdersMyWorkOrdersRoute
@@ -803,6 +821,7 @@ export interface FileRoutesById {
   '/_authenticated/recovery/': typeof AuthenticatedRecoveryIndexRoute
   '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/vendor/': typeof AuthenticatedVendorIndexRoute
+  '/_authenticated/vendors/': typeof AuthenticatedVendorsIndexRoute
   '/_authenticated/work-orders/': typeof AuthenticatedWorkOrdersIndexRoute
   '/api/public/hooks/breezeway-mirror': typeof ApiPublicHooksBreezewayMirrorRoute
   '/api/public/hooks/cleaner-hours-reconcile': typeof ApiPublicHooksCleanerHoursReconcileRoute
@@ -880,6 +899,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/vendors/$vendorId'
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
@@ -890,6 +910,7 @@ export interface FileRouteTypes {
     | '/recovery/'
     | '/tickets/'
     | '/vendor/'
+    | '/vendors/'
     | '/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
@@ -938,7 +959,6 @@ export interface FileRouteTypes {
     | '/str-participation-report'
     | '/team'
     | '/team-queue'
-    | '/vendors'
     | '/welcome'
     | '/claims/manager'
     | '/claims/my-claims'
@@ -960,6 +980,7 @@ export interface FileRouteTypes {
     | '/tickets/new'
     | '/vendor/$ticketId'
     | '/vendor/scorecard'
+    | '/vendors/$vendorId'
     | '/work-orders/calendar'
     | '/work-orders/manager'
     | '/work-orders/my-work-orders'
@@ -970,6 +991,7 @@ export interface FileRouteTypes {
     | '/recovery'
     | '/tickets'
     | '/vendor'
+    | '/vendors'
     | '/work-orders'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
@@ -1046,6 +1068,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tickets/new'
     | '/_authenticated/vendor/$ticketId'
     | '/_authenticated/vendor/scorecard'
+    | '/_authenticated/vendors/$vendorId'
     | '/_authenticated/work-orders/calendar'
     | '/_authenticated/work-orders/manager'
     | '/_authenticated/work-orders/my-work-orders'
@@ -1056,6 +1079,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recovery/'
     | '/_authenticated/tickets/'
     | '/_authenticated/vendor/'
+    | '/_authenticated/vendors/'
     | '/_authenticated/work-orders/'
     | '/api/public/hooks/breezeway-mirror'
     | '/api/public/hooks/cleaner-hours-reconcile'
@@ -1578,6 +1602,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendorScorecardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vendors/': {
+      id: '/_authenticated/vendors/'
+      path: '/'
+      fullPath: '/vendors/'
+      preLoaderRoute: typeof AuthenticatedVendorsIndexRouteImport
+      parentRoute: typeof AuthenticatedVendorsRoute
+    }
+    '/_authenticated/vendors/$vendorId': {
+      id: '/_authenticated/vendors/$vendorId'
+      path: '/$vendorId'
+      fullPath: '/vendors/$vendorId'
+      preLoaderRoute: typeof AuthenticatedVendorsVendorIdRouteImport
+      parentRoute: typeof AuthenticatedVendorsRoute
+    }
     '/_authenticated/work-orders/': {
       id: '/_authenticated/work-orders/'
       path: '/'
@@ -1764,6 +1802,19 @@ const AuthenticatedRecoveryRouteWithChildren =
     AuthenticatedRecoveryRouteChildren,
   )
 
+interface AuthenticatedVendorsRouteChildren {
+  AuthenticatedVendorsVendorIdRoute: typeof AuthenticatedVendorsVendorIdRoute
+  AuthenticatedVendorsIndexRoute: typeof AuthenticatedVendorsIndexRoute
+}
+
+const AuthenticatedVendorsRouteChildren: AuthenticatedVendorsRouteChildren = {
+  AuthenticatedVendorsVendorIdRoute: AuthenticatedVendorsVendorIdRoute,
+  AuthenticatedVendorsIndexRoute: AuthenticatedVendorsIndexRoute,
+}
+
+const AuthenticatedVendorsRouteWithChildren =
+  AuthenticatedVendorsRoute._addFileChildren(AuthenticatedVendorsRouteChildren)
+
 interface AuthenticatedWorkOrdersRouteChildren {
   AuthenticatedWorkOrdersCalendarRoute: typeof AuthenticatedWorkOrdersCalendarRoute
   AuthenticatedWorkOrdersManagerRoute: typeof AuthenticatedWorkOrdersManagerRoute
@@ -1822,7 +1873,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedStrParticipationReportRoute: typeof AuthenticatedStrParticipationReportRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTeamQueueRoute: typeof AuthenticatedTeamQueueRoute
-  AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
+  AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRouteWithChildren
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRouteWithChildren
   AuthenticatedPropertyPropertyIdRoute: typeof AuthenticatedPropertyPropertyIdRoute
@@ -1872,7 +1923,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedStrParticipationReportRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTeamQueueRoute: AuthenticatedTeamQueueRoute,
-  AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
+  AuthenticatedVendorsRoute: AuthenticatedVendorsRouteWithChildren,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRouteWithChildren,
   AuthenticatedPropertyPropertyIdRoute: AuthenticatedPropertyPropertyIdRoute,

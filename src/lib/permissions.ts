@@ -92,6 +92,8 @@ export type Capability =
   // the people who need the whole picture.
   | "homeowner_directory"
   | "vendor_admin"
+  // Vendor Directory + Profile read and vendor picker on Tickets: every Operations seat.
+  | "vendor_directory"
   // Optional Opportunity Library administration and participation analytics:
   // leadership only (kept apart from owner_programs so the Onboarding
   // Director's Active Owner access does not widen into executive tools).
@@ -139,6 +141,7 @@ const SUPERVISOR_CAPS: Capability[] = [
   "owner_oversight",
   "homeowner_directory",
   "vendor_admin",
+  "vendor_directory",
   "audit_history",
   "user_management",
   // Supervisors carry vendor work end to end, so the Work Orders workspace is
@@ -163,7 +166,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
   // Operations coordinators can see current guest/tenant contact details, the
   // shared Team Queue, and the work orders attached to what they are running.
-  tech: [...STAFF_BASE, "guest_contact", "work_orders_internal", "cleaner_dispatch_check"],
+  tech: [...STAFF_BASE, "guest_contact", "work_orders_internal", "cleaner_dispatch_check", "vendor_directory"],
 
   vendor: [],
   owner: [],
@@ -193,7 +196,10 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
   const set = new Set<Capability>();
   for (const role of roles) for (const cap of ROLE_CAPABILITIES[role] ?? []) set.add(cap);
   if (seats.onboardingDirector) for (const cap of ONBOARDING_DIRECTOR_CAPS) set.add(cap);
-  if (seats.opsDirector) set.add("str_participation_report");
+  if (seats.opsDirector) {
+    set.add("str_participation_report");
+    set.add("vendor_admin");
+  }
   return set;
 }
 
