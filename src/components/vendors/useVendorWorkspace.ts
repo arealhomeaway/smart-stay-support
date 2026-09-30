@@ -108,12 +108,30 @@ export function qualificationHold(v: Pick<VendorRecord, "id" | "status">, gateSt
  * Mirrors public.vendor_dispatch_eligible (the database re-checks on save).
  */
 export function canTakeWork(
-  v: Pick<VendorRecord, "id" | "status" | "is_active" | "critical_failure">,
+  v: Pick<VendorRecord, "id" | "status" | "is_active" | "critical_failure" | "transitional_review" | "transitional_deadline">,
   gateStatus: Map<string, { blockingClear: boolean }>,
   compliance: Map<string, { state: string }>,
+  today = new Date().toISOString().slice(0, 10),
 ) {
-  if (!v.is_active) return false;
+  if (!v.is_active || v.status === "suspended") return false;
+  if (compliance.get(v.id)?.state === "expired") return false;
+  if (inTransitionalReview(v, today) && !v.critical_failure) return true;
   if (!["pilot", "approved", "gold", "corrective_action"].includes(v.status)) return false;
   if ((v.status === "approved" || v.status === "gold") && (!gateStatus.get(v.id)?.blockingClear || v.critical_failure)) return false;
-  return compliance.get(v.id)?.state !== "expired";
+  return true;
+}
+
+/** Existing ARHA Vendor — Transitional Review, still inside its window. Not a lifecycle status. */
+export function inTransitionalReview(
+  v: Pick<VendorRecord, "transitional_review" | "transitional_deadline">,
+  today = new Date().toISOString().slice(0, 10),
+) {
+  return v.transitional_review && !!v.transitional_deadline && v.transitional_deadline >= today;
+}
+
+export function transitionalDaysLeft(v: Pick<VendorRecord, "transitional_deadline">, today = new Date()) {
+  if (!v.transitional_deadline) return null;
+  const d = new Date(v.transitional_deadline + "T00:00:00Z").getTime();
+  const t = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  return Math.round((d - t) / 86_400_000);
 }
