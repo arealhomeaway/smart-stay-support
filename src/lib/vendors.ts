@@ -121,6 +121,16 @@ export type GatekeeperLine = {
   allowsNotApplicable?: boolean;
   allowsEquivalent?: boolean;
   exceptionRule?: string | null;
+  /** Insurance/licences: an expiration date is required, and expiry fails the gate. */
+  expiryRequired?: boolean;
+  /** A supporting document or written reference is required to pass. */
+  evidenceRequired?: boolean;
+  verifiedByName?: string | null;
+  documentId?: string | null;
+  documentTitle?: string | null;
+  evidenceReference?: string | null;
+  /** Reason/documentation for Not Applicable or Equivalent Verified. */
+  exceptionReason?: string | null;
 };
 
 /** Which results staff may pick for this gate. Mandatory gates never offer N/A. */
@@ -144,9 +154,30 @@ export function linePasses(line: GatekeeperLine, today = new Date()): boolean {
 /** Expiry is a fail, not a footnote: an expired item reads as not verified. */
 export function effectiveResult(line: GatekeeperLine, today = new Date()): GatekeeperResult {
   if (line.result !== "verified_meets" && line.result !== "equivalent_verified") return line.result;
-  if (!line.expiresOn) return line.result;
+  if (!line.expiresOn) return line.expiryRequired ? "not_verified" : line.result;
   return new Date(`${line.expiresOn}T23:59:59Z`) < today ? "not_verified" : line.result;
 }
+
+export type GateState = "passed" | "expired" | "missing_expiry" | "failed" | "not_verified";
+
+/** The plain-language state a person sees for one gate. */
+export function gateState(line: GatekeeperLine, today = new Date()): GateState {
+  if (linePasses(line, today)) return "passed";
+  if ((line.result === "verified_meets" || line.result === "equivalent_verified")) {
+    if (!line.expiresOn && line.expiryRequired) return "missing_expiry";
+    if (line.expiresOn) return "expired";
+  }
+  if (line.result === "verified_does_not_meet") return "failed";
+  return "not_verified";
+}
+
+export const GATE_STATE_LABELS: Record<GateState, string> = {
+  passed: "Passed",
+  expired: "Expired — not passing",
+  missing_expiry: "Needs expiration date",
+  failed: "Does not meet",
+  not_verified: "Not verified",
+};
 
 /** Can this company be approved? Every blocking line must be verified & meets. */
 export function gatekeeperReadiness(lines: GatekeeperLine[], today = new Date()) {
