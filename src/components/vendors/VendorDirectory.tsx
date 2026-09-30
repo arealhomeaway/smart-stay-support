@@ -131,7 +131,8 @@ export function VendorDirectory({
           aria-label="Search vendors"
         />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      {/* On a Ticket only market and trade matter; eligibility is already applied. */}
+      <div className={onSelect ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"}>
         <Filter label="Market" value={market} onChange={setMarket} options={data.markets.map((m) => [m, m])} />
         <Filter
           label="Service category"
@@ -139,19 +140,26 @@ export function VendorDirectory({
           onChange={setCategory}
           options={data.categories.map((c) => [c.label, c.label])}
         />
-        <Filter label="Preference" value={pref} onChange={setPref} options={Object.entries(PREFERENCE_LABELS)} />
-        <Filter label="Gold Standard" value={status} onChange={setStatus} options={Object.entries(VENDOR_STATUS_LABELS)} />
-        <Filter
-          label="Active"
-          value={active}
-          onChange={setActive}
-          options={[
-            ["active", "Active"],
-            ["inactive", "Inactive"],
-          ]}
-        />
-        <Filter label="Dispatch" value={dispatch} onChange={setDispatch} options={Object.entries(DISPATCH_METHOD_LABELS)} />
+        {!onSelect && (
+          <>
+            <Filter label="Preference" value={pref} onChange={setPref} options={Object.entries(PREFERENCE_LABELS)} />
+            <Filter label="Gold Standard" value={status} onChange={setStatus} options={Object.entries(VENDOR_STATUS_LABELS)} />
+            <Filter
+              label="Active"
+              value={active}
+              onChange={setActive}
+              options={[
+                ["active", "Active"],
+                ["inactive", "Inactive"],
+              ]}
+            />
+            <Filter label="Dispatch" value={dispatch} onChange={setDispatch} options={Object.entries(DISPATCH_METHOD_LABELS)} />
+          </>
+        )}
       </div>
+      {onSelect && category === ALL && (
+        <p className="text-xs text-muted-foreground">Pick the trade this issue needs to narrow the list.</p>
+      )}
 
       {fallback}
       {emergencyHidden > 0 && canRevealEmergency(ticketPriority, canOverrideEmergency) && (
