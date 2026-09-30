@@ -10,6 +10,7 @@ import { useShellPageLabel } from "@/components/nav/ShellNav";
 import { Button } from "@/components/ui/button";
 import { Chip, EmptyState, LoadingRows, PageHeader, SectionBand } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
+import { inTransitionalReview, transitionalDaysLeft } from "@/components/vendors/useVendorWorkspace";
 import { VendorOrgSheet } from "@/components/VendorOrgSheet";
 import { VENDOR_STATUS_BLURBS, VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
 import { DISPATCH_METHOD_LABELS, type DispatchMethod } from "@/lib/vendor-gold";
@@ -72,6 +73,7 @@ function VendorProfile() {
       />
       <div className="flex flex-wrap gap-2">
         <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>{VENDOR_STATUS_LABELS[v.status as VendorStatus]}</StatusBadge>
+        {inTransitionalReview(v) && (<><StatusBadge tone="waiting">Transitional Review</StatusBadge><span className="text-xs text-muted-foreground">Gold Standard verification incomplete · {transitionalDaysLeft(v)} days left</span></>)}
         <Chip>{DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod] ?? v.dispatch_method}</Chip>
         <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />
         {g && <Chip>{g.passed}/{g.total} gates</Chip>}
