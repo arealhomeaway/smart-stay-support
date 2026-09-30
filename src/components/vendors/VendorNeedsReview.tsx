@@ -2,6 +2,7 @@
  * Needs Review: the Notion migration staging queue, plus canonical vendors
  * whose records are not finished (dispatch not set up, no market, etc.).
  */
+import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Chip, EmptyState, LoadingRows, SectionBand } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
+import { usDate } from "@/lib/dates";
 import { VendorImportPanel } from "@/components/VendorImportPanel";
 import { useInvalidateVendors, useVendorWorkspace } from "./useVendorWorkspace";
 
@@ -33,8 +35,38 @@ export function VendorNeedsReview({ canManage }: { canManage: boolean }) {
     })
     .filter((x) => x.issues.length);
 
+  const expiring = (ws.data?.vendors ?? []).flatMap((v) =>
+    (ws.data?.compliance.get(v.id)?.attention ?? []).map((i) => ({ v, i })),
+  );
+
   return (
     <div className="space-y-6">
+      <section className="space-y-2">
+        <SectionBand title="Expiring and expired credentials" hint="Insurance and licences within 30 days of expiry, or past it. Vendors stay usable until the day after expiry." />
+        {ws.isLoading ? (
+          <LoadingRows rows={2} />
+        ) : expiring.length === 0 ? (
+          <EmptyState title="No credentials expiring" hint="Nothing expires in the next 30 days." />
+        ) : (
+          <ul className="space-y-1.5">
+            {expiring.map(({ v, i }) => (
+              <li key={`${v.id}-${i.requirementId}`} className="surface-row flex flex-wrap items-center gap-2 py-2.5 pl-4 pr-3 text-sm">
+                <Link to="/vendors/$vendorId" params={{ vendorId: v.id }} className="font-medium hover:underline">
+                  {v.display_name}
+                </Link>
+                <span>{i.label}</span>
+                <ComplianceBadge state={i.state} />
+                <span className="text-muted-foreground">
+                  {i.days < 0 ? `expired ${usDate(i.expiresOn)}` : i.days === 0 ? "expires today" : `expires ${usDate(i.expiresOn)} (${i.days} day${i.days === 1 ? "" : "s"})`}
+                </span>
+                <Button size="sm" variant="outline" className="ml-auto" asChild>
+                  <Link to="/vendors/$vendorId" params={{ vendorId: v.id }} search={{ gate: i.requirementId }}>Open check</Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <section className="space-y-2">
         <SectionBand title="Vendor records to finish" hint="Canonical vendors missing something dispatch will need." />
         {ws.isLoading ? (
