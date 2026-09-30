@@ -317,7 +317,7 @@ function PickerDetails({ v, topPref, selectable }: { v: VendorRecord; topPref: s
   const legacy = (v.legacy_fields ?? {}) as Record<string, unknown>;
   const legacyPref = typeof legacy["Notion: preference"] === "string" ? (legacy["Notion: preference"] as string) : null;
   const contact = [v.primary_contact_name, v.primary_contact_phone, v.primary_contact_email].filter(Boolean).join(" · ");
-  const dispatchRelevant = v.dispatch_method && v.dispatch_method !== "phone" && v.dispatch_method !== "manual";
+  const dispatchRelevant = v.dispatch_method === "breezeway" || v.dispatch_method === "arha_staff";
   return (
     <div className="mt-1 space-y-1 text-sm">
       <p className="text-muted-foreground">{contact || "No contact on file"}</p>
