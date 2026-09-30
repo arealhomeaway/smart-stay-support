@@ -463,8 +463,9 @@ function TicketDetail() {
       ? [
           {
             label: "Guest confirmation",
-            done: guestConfirmed,
-            state: guestConfirmed ? ("complete" as const) : ("waiting" as const),
+            // A confirmation already recorded on the ticket counts — never ask again.
+            done: guestConfirmed || Boolean(ticket.guest_confirmed),
+            state: guestConfirmed || ticket.guest_confirmed ? ("complete" as const) : ("waiting" as const),
             waitingOn: "Waiting on guest",
             hint: "Resolve will mark this complete when confirmation is recorded.",
           },
@@ -664,7 +665,8 @@ function TicketDetail() {
       toast.error("Confirm the final message went to the guest.");
       return;
     }
-    if (ticket.guest_in_residence && !guestConfirmed && !waived) {
+    const confirmed = guestConfirmed || Boolean(ticket.guest_confirmed);
+    if (ticket.guest_in_residence && !confirmed && !waived) {
       toast.error("Confirm the guest verified the fix before resolving.");
       return;
     }
@@ -674,7 +676,7 @@ function TicketDetail() {
       resolution_notes: summary,
       closure_evidence: evidence.trim() || null,
       final_communication_sent: finalComms,
-      guest_confirmed: guestConfirmed,
+      guest_confirmed: confirmed,
       late_reason: sla.breached ? "SLA target missed" : null,
       // Finishing the work again puts it back in front of a reviewer; an
       // earlier "changes needed" answer is history, not a standing decision.
@@ -1097,7 +1099,8 @@ function TicketDetail() {
                   </button>
                 )}
               </div>
-              <p className="mt-2 text-sm font-medium text-muted-foreground">{nextStepLine}</p>
+              {/* When a guided step leads, its Next action box is the one instruction — no competing hint. */}
+              {!guidedLeads && <p className="mt-2 text-sm font-medium text-muted-foreground">{nextStepLine}</p>}
             </div>
           </div>
           <MoreActions
