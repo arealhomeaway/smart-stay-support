@@ -1,9 +1,10 @@
 import { qualificationHold } from "@/components/vendors/useVendorWorkspace";
+import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
 import { EmptyState, LoadingRows } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status";
 import { VENDOR_STATUS_LABELS, type VendorStatus } from "@/lib/vendors";
-import { COMPLIANCE_LABELS, PILOT_THRESHOLD } from "@/lib/vendor-gold";
+import { PILOT_THRESHOLD } from "@/lib/vendor-gold";
 import { usDate } from "@/lib/dates";
 import { STATUS_TONE } from "./VendorDirectory";
 import { useVendorWorkspace } from "./useVendorWorkspace";
@@ -46,7 +47,7 @@ export function VendorGoldStandard() {
                     {g && g.expired > 0 && <span className="ml-1 text-xs text-destructive">{g.expired} expired</span>}
                     {qualificationHold(v, ws.data!.gateStatus) && <span className="ml-1 text-xs text-destructive">On hold</span>}
                   </td>
-                  <td className="p-2">{COMPLIANCE_LABELS[v.compliance_status] ?? v.compliance_status}</td>
+                  <td className="p-2"><ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} /></td>
                   <td className="p-2 numeric">
                     {v.qualification_score ?? 0}
                     {(v.qualification_score ?? 0) >= PILOT_THRESHOLD && <span className="ml-1 text-xs text-success">pilot-eligible</span>}

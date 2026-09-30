@@ -10000,6 +10000,63 @@ export type Database = {
           },
         ]
       }
+      vendor_compliance_reminders: {
+        Row: {
+          compliance_item: string
+          expires_on: string
+          id: string
+          is_demo: boolean
+          notified_at: string
+          org_id: string
+          recipients: string[]
+          requirement_id: string
+          resolution: string | null
+          resolved_at: string | null
+          threshold: string
+        }
+        Insert: {
+          compliance_item: string
+          expires_on: string
+          id?: string
+          is_demo?: boolean
+          notified_at?: string
+          org_id: string
+          recipients?: string[]
+          requirement_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          threshold: string
+        }
+        Update: {
+          compliance_item?: string
+          expires_on?: string
+          id?: string
+          is_demo?: boolean
+          notified_at?: string
+          org_id?: string
+          recipients?: string[]
+          requirement_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          threshold?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_compliance_reminders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_compliance_reminders_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "gatekeeper_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_contacts: {
         Row: {
           created_at: string
@@ -12775,6 +12832,11 @@ export type Database = {
           _work_item_id: string
         }
         Returns: undefined
+      }
+      vendor_compliance_sweep: { Args: { _today?: string }; Returns: Json }
+      vendor_compliance_threshold: {
+        Args: { _expires: string; _today?: string }
+        Returns: string
       }
       vendor_dispatch_eligible: { Args: { _org: string }; Returns: boolean }
     }

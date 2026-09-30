@@ -5,7 +5,7 @@
  * where?" — and nothing a vendor should ever see about another vendor.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck, Trash2 } from "lucide-react";
@@ -63,12 +63,19 @@ export function VendorOrgSheet({
   onOpenChange,
   properties,
   canManage,
+  focusRequirementId,
 }: {
   orgId: string | null;
   onOpenChange: (open: boolean) => void;
   properties: PropertyOption[];
   canManage: boolean;
+  focusRequirementId?: string | null;
 }) {
+  useEffect(() => {
+    if (!orgId || !focusRequirementId) return;
+    const t = setTimeout(() => document.getElementById(`gate-${focusRequirementId}`)?.scrollIntoView({ block: "center" }), 400);
+    return () => clearTimeout(t);
+  }, [orgId, focusRequirementId]);
   const qc = useQueryClient();
   const load = useServerFn(vendorOrgDetail);
   const changeStatus = useServerFn(changeVendorStatus);
@@ -208,14 +215,19 @@ export function VendorOrgSheet({
 
                 <div className="space-y-2">
                   {data.gatekeeper.map((line) => (
-                    <GateRow
+                    <div
                       key={`${line.requirementId}-${line.verifiedAt ?? ""}-${line.result}`}
+                      id={`gate-${line.requirementId}`}
+                      className={focusRequirementId === line.requirementId ? "rounded-lg ring-2 ring-primary" : undefined}
+                    >
+                    <GateRow
                       line={line}
                       documents={data.documents.map((d) => ({ id: d.id, title: d.title, docType: d.docType }))}
                       canManage={canManage}
                       saving={resultMutation.isPending}
                       onSave={(v) => resultMutation.mutate(v)}
                     />
+                    </div>
                   ))}
                 </div>
 

@@ -3,6 +3,7 @@
  * database table. Also used inside a Ticket to choose who should handle it.
  */
 import { qualificationHold } from "@/components/vendors/useVendorWorkspace";
+import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
@@ -166,6 +167,7 @@ export function VendorDirectory({
                     </StatusBadge>
                     {topPref && <Chip>{PREFERENCE_LABELS[topPref as Preference]}</Chip>}
                     <Chip>Dispatch: {DISPATCH_METHOD_LABELS[v.dispatch_method as DispatchMethod]}</Chip>
+                    <ComplianceBadge state={ws.data!.compliance.get(v.id)?.state} />
                     {!v.is_active && <Chip>Inactive</Chip>}
                     {qualificationHold(v, ws.data!.gateStatus) && <Chip>On hold — a qualification check expired</Chip>}
                   </div>
