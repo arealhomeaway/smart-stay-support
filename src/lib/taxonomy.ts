@@ -140,7 +140,7 @@ export const TRADES: TradeDef[] = [
   { value: "plumbing", label: "Plumbing", category: "maintenance" },
   { value: "electrical", label: "Electrical", category: "maintenance" },
   { value: "hvac", label: "HVAC", category: "maintenance", aliases: ["heating", "cooling", "ac"] },
-  { value: "appliance", label: "Appliance", category: "maintenance" },
+  { value: "appliance", label: "Appliance", category: "maintenance", aliases: ["appliance repair"] },
   { value: "roofing", label: "Roofing", category: "maintenance", aliases: ["roof"] },
   { value: "structural", label: "Structural", category: "maintenance" },
   { value: "flooring", label: "Flooring", category: "maintenance" },
@@ -149,7 +149,7 @@ export const TRADES: TradeDef[] = [
   { value: "restoration", label: "Restoration", category: "maintenance", aliases: ["mitigation"] },
   { value: "pest_control", label: "Pest control", category: "maintenance", aliases: ["pest"] },
   { value: "landscaping", label: "Landscaping", category: "maintenance", aliases: ["lawn"] },
-  { value: "pool_spa", label: "Pool and spa", category: "maintenance", aliases: ["pool & spa"] },
+  { value: "pool_spa", label: "Pool and spa", category: "maintenance", aliases: ["pool & spa", "pool / hot tub"] },
   {
     value: "locks_access",
     label: "Locks and access",
