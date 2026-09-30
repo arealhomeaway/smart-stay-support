@@ -112,6 +112,7 @@ export async function stageNotion(db: Client, userId: string, input: { label: st
       breezeway_match_note: bzMatch.note,
       batch_id: batch.id,
       source_system: "notion",
+      emergency_only: parseLegacyPreference(row.preference).emergencyOnly,
       source_role: "vendor",
       raw: s.raw as unknown as Json,
       display_name: s.company ?? "(no company name)",

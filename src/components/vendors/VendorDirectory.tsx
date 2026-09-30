@@ -2,6 +2,7 @@
  * Frontline Vendor Directory. Find the right vendor without touching the
  * database table. Also used inside a Ticket to choose who should handle it.
  */
+import { canRevealEmergency, emergencyVisibleByDefault } from "@/lib/emergency-vendor";
 import { canTakeWork, inTransitionalReview, qualificationHold, transitionalDaysLeft } from "@/components/vendors/useVendorWorkspace";
 import { ComplianceBadge } from "@/components/vendors/ComplianceBadge";
 import { Link } from "@tanstack/react-router";
@@ -153,14 +154,23 @@ export function VendorDirectory({
       </div>
 
       {fallback}
-      {results.length === 0 ? (
+      {emergencyHidden > 0 && canRevealEmergency(ticketPriority, canOverrideEmergency) && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2 text-sm">
+          <span className="text-muted-foreground">
+            {emergencyHidden} Emergency Only vendor{emergencyHidden === 1 ? "" : "s"} hidden for a {String(ticketPriority).toUpperCase()} Ticket.
+            {ticketPriority === "p2" ? " Use only when no routine vendor is available, after hours, or with Supervisor approval." : " A Supervisor override is required."}
+          </span>
+          <Button size="sm" variant="outline" onClick={() => setShowEmergency(true)}>Show Emergency Only vendors</Button>
+        </div>
+      )}
+      {shownResults.length === 0 ? (
         <EmptyState
           title="No vendors match"
           hint={data.vendors.length === 0 ? "No vendors are in Resolve yet." : "Loosen a filter to see more."}
         />
       ) : (
         <ul className="space-y-2">
-          {results.map(({ v, cov }) => {
+          {shownResults.map(({ v, cov }) => {
             const shown = cov.length ? cov : [];
             const topPref = shown.find((c) => c.preference === "primary")
               ? "primary"
@@ -185,6 +195,7 @@ export function VendorDirectory({
                     <StatusBadge tone={STATUS_TONE[v.status] ?? "context"}>
                       {VENDOR_STATUS_LABELS[v.status as VendorStatus] ?? v.status}
                     </StatusBadge>
+                    {v.emergency_only && <StatusBadge tone="escalated">Emergency Only</StatusBadge>}
                     {inTransitionalReview(v) && (
                       <>
                         <StatusBadge tone="waiting">Transitional Review</StatusBadge>
