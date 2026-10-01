@@ -702,7 +702,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {!ownerMode && !vendorMode && (
                     <ShellNav pageLabel={pageLabel} hideDepartmentMenu={onboardingOnly && departmentFor(pathname)?.key !== "active-owner"} />
                   )}
-                  {children}
+                  <TicketDrawerHost>{children}</TicketDrawerHost>
                 </>
               )}
             </ShellNavProvider>
