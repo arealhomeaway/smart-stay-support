@@ -120,9 +120,12 @@ export type { NewTicketSearch };
 export function NewTicketForm({
   context,
   onCreated,
+  inPanel = false,
 }: {
   context: NewTicketSearch;
   onCreated: (ticketId: string) => void;
+  /** Rendered in the shell side panel: the panel's Close is the way back. */
+  inPanel?: boolean;
 }) {
   const { can, readOnly, isSupervisor, isLoading: rolesLoading } = useRole();
   // In the demo environment a new ticket is a demo ticket: it lands in the
@@ -549,7 +552,7 @@ export function NewTicketForm({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Logging work is a detour, never a destination — the way back is named. */}
-      <BackControl origin={resolveOrigin(context.origin, "ticket")} />
+      {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
       <div>
         <h1 className="text-3xl font-semibold">Report an issue</h1>
         <p className="mt-1 text-muted-foreground">
