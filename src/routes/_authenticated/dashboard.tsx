@@ -126,7 +126,7 @@ function Dashboard() {
 
   const dueBack = (t: Row) => Boolean(t.next_review_at && new Date(t.next_review_at) <= new Date());
 
-  // "Needs me now" is work that is actionable this minute: not started, past a
+  // Actionable-now work (sorted first in My open work) that is actionable this minute: not started, past a
   // clock, or a Waiting item whose follow-up time has arrived.
   const needsMe = mine
     .filter(
@@ -149,6 +149,8 @@ function Dashboard() {
   const inProgress = mine.filter(
     (t) => !needsMeIds.has(t.id) && t.status !== "waiting" && t.action_started_at,
   );
+  // One plain list on Home: not-started or overdue work first, then work in progress.
+  const openWork = [...needsMe, ...inProgress];
   const unclaimed = open.filter((t) => !t.current_action_owner && !t.assigned_to);
 
   // Home is a workspace too: a ticket opened from here comes back to here.
@@ -268,9 +270,8 @@ function Dashboard() {
       )}
 
       {/* Compact, colourful, meaningful. Only what is worth acting on. */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <DecisionTile value={needsMe.length} label="Needs me now" tone="critical" to="/tickets" />
-        <DecisionTile value={inProgress.length} label="In progress" tone="progress" to="/tickets" />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <DecisionTile value={openWork.length} label="My open work" tone="progress" to="/tickets" />
         <DecisionTile value={waiting.length} label="Waiting" tone="attention" to="/tickets" />
         <DecisionTile
           value={unclaimed.length}
@@ -281,31 +282,18 @@ function Dashboard() {
       </div>
 
       <SectionCard
-        tone={needsMe.length > 0 ? "critical" : "default"}
-        title="Needs me now"
-        description="Ready for you right now."
+        title="My open work"
+        description="Everything you own that is not parked, highest priority and soonest due first."
         bodyClassName="space-y-1.5"
       >
-        {needsMe.length === 0 ? (
+        {openWork.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             You are clear. Everything you own is moving or has a follow-up time.
           </p>
         ) : (
-          needsMe.map((t) => <WorkRow key={t.id} t={t} emphasis origin={originSearch} />)
+          openWork.map((t) => <WorkRow key={t.id} t={t} origin={originSearch} />)
         )}
       </SectionCard>
-
-      {inProgress.length > 0 && (
-        <SectionCard
-          title="In progress"
-          description="Started and moving."
-          bodyClassName="space-y-1.5"
-        >
-          {inProgress.map((t) => (
-            <WorkRow key={t.id} t={t} origin={originSearch} />
-          ))}
-        </SectionCard>
-      )}
 
       {waiting.length > 0 && (
         <SectionCard

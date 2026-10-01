@@ -1,3 +1,4 @@
+import { TicketDrawerHost } from "@/components/nav/TicketDrawer";
 import { Link, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -702,7 +703,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {!ownerMode && !vendorMode && (
                     <ShellNav pageLabel={pageLabel} hideDepartmentMenu={onboardingOnly && departmentFor(pathname)?.key !== "active-owner"} />
                   )}
-                  {children}
+                  <TicketDrawerHost>{children}</TicketDrawerHost>
                 </>
               )}
             </ShellNavProvider>
