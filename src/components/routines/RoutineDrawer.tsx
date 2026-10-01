@@ -5,6 +5,7 @@
  * the same job they already do — look at it, decide, say what you found — and
  * Resolve handles ownership, evidence, completion and the follow-up ticket.
  */
+import { useTicketDrawer } from "@/components/nav/TicketDrawer";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,6 +61,7 @@ export function RoutineDrawer({
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const drawer = useTicketDrawer();
   const config = row ? routineConfig(row.kind) : null;
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [outcome, setOutcome] = useState<RoutineOutcome | null>(null);
@@ -127,13 +129,18 @@ export function RoutineDrawer({
     } catch {
       return;
     }
-    void navigate({
-      to: "/tickets/new",
-      search: {
-        ...(row.property_id ? { property: row.property_id } : {}),
-        from: `routine:${row.id}`,
-      },
-    });
+    const followUp = {
+      ...(row.property_id ? { property: row.property_id } : {}),
+      from: `routine:${row.id}`,
+    };
+    // Follow-up opens in the shell side panel over the routine list, so
+    // closing it returns here; the full page is the fallback outside the shell.
+    if (drawer) {
+      onOpenChange(false);
+      drawer.openNewTicket(followUp);
+      return;
+    }
+    void navigate({ to: "/tickets/new", search: followUp });
   }
 
   if (!row || !config) return null;

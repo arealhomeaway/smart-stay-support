@@ -1,4 +1,16 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import type { NewTicketSearch } from "@/routes/_authenticated/tickets.new";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ExternalLink, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -8,6 +20,20 @@ import { Button } from "@/components/ui/button";
 const TicketWorkspace = lazy(() =>
   import("@/routes/_authenticated/tickets.$ticketId").then((m) => ({ default: m.TicketWorkspace })),
 );
+
+const NewTicketForm = lazy(() =>
+  import("@/routes/_authenticated/tickets.new").then((m) => ({ default: m.NewTicketForm })),
+);
+
+type DrawerApi = {
+  openTicket: (ticketId: string) => void;
+  /** Open the shared Report an issue form on top of the current page. */
+  openNewTicket: (context: NewTicketSearch) => void;
+};
+const DrawerCtx = createContext<DrawerApi | null>(null);
+export function useTicketDrawer(): DrawerApi | null {
+  return useContext(DrawerCtx);
+}
 
 const UUID = /^\/tickets\/([0-9a-f-]{36})\/?$/i;
 
@@ -31,7 +57,23 @@ export function drawerTicketId(href: string | null, origin: string): string | nu
  * direct URLs still reach the full Ticket page, which carries its own Back.
  */
 export function TicketDrawerHost({ children }: { children: ReactNode }) {
-  const [ticketId, setTicketId] = useState<string | null>(null);
+  const [ticketId, setTicketIdRaw] = useState<string | null>(null);
+  const [newCtx, setNewCtx] = useState<NewTicketSearch | null>(null);
+  const setTicketId = useCallback((id: string | null) => {
+    setNewCtx(null);
+    setTicketIdRaw(id);
+  }, []);
+  const api = useMemo<DrawerApi>(
+    () => ({
+      openTicket: (id) => setTicketId(id),
+      openNewTicket: (ctx) => {
+        setTicketIdRaw(null);
+        setNewCtx(ctx);
+      },
+    }),
+    [setTicketId],
+  );
+  const open = Boolean(ticketId) || Boolean(newCtx);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -51,10 +93,10 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
     }
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, []);
+  }, [setTicketId]);
 
   // Leaving the page (menu, breadcrumb, full page) closes the layer.
-  useEffect(() => setTicketId(null), [pathname]);
+  useEffect(() => setTicketId(null), [pathname, setTicketId]);
 
   const requestClose = useCallback(() => {
     const dirty = Array.from(
@@ -62,21 +104,20 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
         "textarea, input[type=text]",
       ) ?? [],
     ).some((el) => el.value.trim().length > 0 && el.defaultValue !== el.value);
-    if (dirty && !window.confirm("You have unsaved text in this Ticket. Close without saving it?"))
-      return;
+    if (dirty && !window.confirm("You have unsaved text here. Close without saving it?")) return;
     setTicketId(null);
-  }, []);
+  }, [setTicketId]);
 
   return (
-    <>
+    <DrawerCtx.Provider value={api}>
       {children}
-      <Sheet open={Boolean(ticketId)} onOpenChange={(o) => !o && requestClose()}>
+      <Sheet open={open} onOpenChange={(o) => !o && requestClose()}>
         <SheetContent
           side="right"
           className="flex w-full flex-col gap-0 p-0 sm:max-w-[min(1100px,92vw)] [&>button.absolute]:hidden"
         >
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-            <SheetTitle className="text-base">Ticket</SheetTitle>
+            <SheetTitle className="text-base">{newCtx ? "Report an issue" : "Ticket"}</SheetTitle>
             <SheetDescription className="sr-only">
               Work this Ticket without leaving the page you were on.
             </SheetDescription>
@@ -99,9 +140,14 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
                 <TicketWorkspace key={ticketId} ticketId={ticketId} onClose={() => setTicketId(null)} />
               </Suspense>
             )}
+            {newCtx && (
+              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                <NewTicketForm context={newCtx} onCreated={(id) => setTicketId(id)} />
+              </Suspense>
+            )}
           </div>
         </SheetContent>
       </Sheet>
-    </>
+    </DrawerCtx.Provider>
   );
 }
