@@ -95,14 +95,35 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: NewMatter,
+  component: NewMatterPage,
 });
+
+function NewMatterPage() {
+  const router = useRouter();
+  const context = Route.useSearch();
+  return (
+    <NewTicketForm
+      context={context}
+      onCreated={(id) => router.navigate({ to: "/tickets/$ticketId", params: { ticketId: id } })}
+    />
+  );
+}
 
 type Mode = "one_touch" | "ticket";
 
-function NewMatter() {
-  const router = useRouter();
-  const context = Route.useSearch();
+export type { NewTicketSearch };
+
+/**
+ * The one Report an issue form. The full page and the shell side panel both
+ * render it; only what happens after the record is created differs.
+ */
+export function NewTicketForm({
+  context,
+  onCreated,
+}: {
+  context: NewTicketSearch;
+  onCreated: (ticketId: string) => void;
+}) {
   const { can, readOnly, isSupervisor, isLoading: rolesLoading } = useRole();
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
@@ -498,13 +519,13 @@ function NewMatter() {
               ? "One-touch resolution logged and closed."
               : "One-touch resolution logged — it needs a supervisor's review before it can close.",
           );
-          router.navigate({ to: "/tickets/$ticketId", params: { ticketId: ticket.id } });
+          onCreated(ticket.id);
           return;
         }
       } else {
         toast.success("Ticket opened with its clocks running.");
       }
-      router.navigate({ to: "/tickets/$ticketId", params: { ticketId: ticket.id } });
+      onCreated(ticket.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save this record");
     } finally {
