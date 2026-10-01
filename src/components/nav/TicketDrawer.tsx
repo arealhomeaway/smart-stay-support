@@ -142,7 +142,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
             )}
             {newCtx && (
               <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                <NewTicketForm context={newCtx} onCreated={(id) => setTicketId(id)} />
+                <NewTicketForm context={newCtx} inPanel onCreated={(id) => setTicketId(id)} />
               </Suspense>
             )}
           </div>
