@@ -136,13 +136,22 @@ export const Route = createFileRoute("/_authenticated/tickets/$ticketId")({
   }),
   validateSearch: (raw: Record<string, unknown>): { from?: string | undefined } =>
     typeof raw["from"] === "string" && raw["from"] ? { from: raw["from"] } : {},
-  component: TicketDetail,
+  component: TicketDetailPage,
   errorComponent: () => <p className="text-muted-foreground">This ticket could not be loaded.</p>,
   notFoundComponent: () => <p className="text-muted-foreground">Ticket not found.</p>,
 });
 
-function TicketDetail() {
+function TicketDetailPage() {
   const { ticketId } = Route.useParams();
+  return <TicketWorkspace ticketId={ticketId} />;
+}
+
+/**
+ * The one Ticket workspace. Rendered full-page by this route and inside the
+ * shell's Ticket drawer (onClose set) — never a second implementation.
+ */
+export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClose?: () => void }) {
+  const inDrawer = Boolean(onClose);
   const qc = useQueryClient();
   const role = useRole();
   const navigate = useNavigate();
@@ -363,8 +372,9 @@ function TicketDetail() {
         ? "That ticket isn't a demo record — it isn't available here."
         : "That ticket isn't available outside demo mode.",
     );
-    navigate({ to: "/tickets", replace: true });
-  }, [demoReady, isLoading, data, demoMode, demoMismatch, navigate]);
+    if (onClose) onClose();
+    else navigate({ to: "/tickets", replace: true });
+  }, [onClose, demoReady, isLoading, data, demoMode, demoMismatch, navigate]);
 
   if (isLoading || !data || !data.ticket || demoMismatch)
     return <Skeleton className="h-96 w-full" />;
@@ -628,7 +638,8 @@ function TicketDetail() {
       return;
     }
     toast.success("Ticket deleted.");
-    void navigate({ to: "/tickets" });
+    if (onClose) onClose();
+    else void navigate({ to: "/tickets" });
   }
 
   async function addNote() {
@@ -1035,22 +1046,22 @@ function TicketDetail() {
 
   return (
     <div className="flex items-start gap-6">
-      <QueueRail
+      {!inDrawer && <QueueRail
         origin={origin}
         token={token}
         currentId={ticketId}
         to="/tickets/$ticketId"
         paramKey="ticketId"
-      />
+      />}
       <div className="min-w-0 flex-1 space-y-5">
-        <RecordHeaderNav
+        {inDrawer ? null : <RecordHeaderNav
           origin={origin}
           token={token}
           current={`Ticket #${ticket.ref}`}
           recordId={ticketId}
           to="/tickets/$ticketId"
           paramKey="ticketId"
-        />
+        />}
 
         {/* ---------------- A. identity & state ---------------- */}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
