@@ -193,10 +193,14 @@ function Hub() {
       <AssignedOverview
         lens={lens === "all" ? "all" : "dashboard"}
         firstName={firstName}
-        homes={data.properties.map((p) => ({
+        // Same scope as My Work: the viewer's own open Tasks, test homes hidden,
+        // so every count here opens to the same Tasks in My Work.
+        homes={applyTestDataFilter(data.properties, false, (p) => p).map((p) => ({
           id: p.id,
           name: (p as { name?: string | null }).name ?? "Home",
-          open: data.tasks.filter((t) => t.property_id === p.id && t.status !== "complete").length,
+          open: data.tasks.filter(
+            (t) => t.property_id === p.id && t.status !== "complete" && t.assigned_to === userId,
+          ).length,
         }))}
       />
     );
