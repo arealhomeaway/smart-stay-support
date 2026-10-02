@@ -77,6 +77,11 @@ export function insuranceFlagged(risk: string | null | undefined): boolean {
   return risk === "yes" || risk === "unsure";
 }
 
+/** Yes = possible insured loss; Unsure = needs review, never presented as confirmed. */
+export function insuranceRiskLabel(risk: string | null | undefined): string {
+  return risk === "yes" ? "Potential Insurance Event" : risk === "unsure" ? "Insurance Review Needed" : "";
+}
+
 export type OwnerRelevanceInput = {
   entry_kind?: string | null;
   insurance_risk?: string | null;

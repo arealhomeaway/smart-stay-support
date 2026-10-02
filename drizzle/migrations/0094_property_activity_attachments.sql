@@ -1,0 +1,2 @@
+ALTER TABLE public.property_activity_log ADD COLUMN IF NOT EXISTS attachment_document_ids uuid[] NOT NULL DEFAULT '{}';
+COMMENT ON COLUMN public.property_activity_log.attachment_document_ids IS 'Optional files (documents.id, property-level, category operations) uploaded with this activity entry.';

@@ -26,3 +26,12 @@ describe("work entry owner relevance", () => {
     expect(workTypeFitsKind("guest", "ops")).toBe(true);
   });
 });
+
+import { insuranceRiskLabel } from "@/lib/work-entry";
+describe("insurance labels", () => {
+  it("never presents Unsure as confirmed", () => {
+    expect(insuranceRiskLabel("yes")).toBe("Potential Insurance Event");
+    expect(insuranceRiskLabel("unsure")).toBe("Insurance Review Needed");
+    expect(insuranceRiskLabel("no")).toBe("");
+  });
+});

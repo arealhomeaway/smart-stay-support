@@ -36,7 +36,7 @@ import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { TicketOwnerBox } from "@/components/work-entry/TicketOwnerBox";
-import { MAINTENANCE_CATEGORIES, insuranceFlagged, labelOf, ownerSectionRelevant } from "@/lib/work-entry";
+import { MAINTENANCE_CATEGORIES, insuranceFlagged, insuranceRiskLabel, labelOf, ownerSectionRelevant } from "@/lib/work-entry";
 import { TicketOwnerUpdatePanel } from "@/components/TicketOwnerUpdatePanel";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { HandoffPanel } from "@/components/HandoffPanel";
@@ -1469,8 +1469,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   <Field label="Estimated cost" value={`$${Number(ticket.estimated_cost).toLocaleString("en-US")}`} />
                 )}
                 {insuranceFlagged(ticket.insurance_risk) && (
-                  <Chip className={stateChip("blocked")}>
-                    Insurance risk: {ticket.insurance_risk === "yes" ? "Yes" : "Unsure"} — supervisor visibility
+                  <Chip className={stateChip(ticket.insurance_risk === "yes" ? "blocked" : "waiting")}>
+                    {insuranceRiskLabel(ticket.insurance_risk)} — supervisor visibility
                   </Chip>
                 )}
                 <Field
