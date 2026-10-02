@@ -185,13 +185,13 @@ export function NewTicketForm({
   });
 
   const { data: properties } = useQuery({
-    queryKey: ["properties", demoMode],
+    queryKey: ["properties", demoMode, context.property ?? null],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
         .select("id, name, nickname")
         .eq("active", true)
-        .eq("is_demo", demoMode)
+        .or(`is_demo.eq.${demoMode}${context.property ? `,id.eq.${context.property}` : ""}`)
         .order("name");
       if (error) throw error;
       return data;
@@ -449,10 +449,14 @@ export function NewTicketForm({
       const oneTouch = false;
       const estimated = form.estimated_cost.trim() ? Number(form.estimated_cost) : null;
 
+      // A demo home only ever carries demo Tickets, whatever mode the viewer is in.
+      const { data: propRow } = form.property_id
+        ? await supabase.from("properties").select("is_demo").eq("id", form.property_id).maybeSingle()
+        : { data: null };
       const { data: ticket, error } = await supabase
         .from("tickets")
         .insert({
-          is_demo: demoMode,
+          is_demo: demoMode || Boolean(propRow?.is_demo),
           record_type: oneTouch
             ? "completed_interaction"
             : form.cross_team
@@ -566,7 +570,13 @@ export function NewTicketForm({
       toast.success(mode === "maintenance" ? "Maintenance reported with its clocks running." : "Ticket opened with its clocks running.");
       onCreated(ticket.id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save this record");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : err && typeof err === "object" && "message" in err
+            ? String((err as { message: unknown }).message)
+            : "Could not save this record",
+      );
     } finally {
       setSaving(false);
     }
