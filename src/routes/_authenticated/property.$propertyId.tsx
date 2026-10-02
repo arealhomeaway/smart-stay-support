@@ -26,6 +26,7 @@ import { usDate, usDateTime } from "@/lib/dates";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PropertyWorkHistory } from "@/components/work-entry/PropertyWorkHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
 import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
@@ -691,6 +692,8 @@ function OperationsTab({ hub }: { hub: Hub }) {
           )}
         </CardContent>
       </Card>
+
+      <PropertyWorkHistory propertyId={hub.property.id} />
 
       <Card>
         <CardHeader className="pb-2">

@@ -38,7 +38,14 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
+export function PropertyContactPanel({
+  propertyId,
+  showOwner = true,
+}: {
+  propertyId: string;
+  /** Owner contact is not generic filler on new Ops/Maintenance work. */
+  showOwner?: boolean;
+}) {
   const { can, isVendor, isOwner } = useRole();
   const { demoMode } = useDemo();
   const fetchContext = useServerFn(getPropertyContactContext);
@@ -68,7 +75,7 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <UserRound className="size-4" /> Owner &amp; guest context
+          <UserRound className="size-4" /> {showOwner ? "Owner & guest context" : "Guest context"}
         </CardTitle>
         <CardDescription>
           Guest detail is live from OwnerRez; the designated primary owner comes from the imported
@@ -76,6 +83,7 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        {showOwner && (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -126,8 +134,9 @@ export function PropertyContactPanel({ propertyId }: { propertyId: string }) {
             </p>
           )}
         </div>
+        )}
 
-        <div className="space-y-2 border-t border-border pt-3">
+        <div className={showOwner ? "space-y-2 border-t border-border pt-3" : "space-y-2"}>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Guest</p>
           {guest.status === "not_linked" && (
             <p className="text-muted-foreground">

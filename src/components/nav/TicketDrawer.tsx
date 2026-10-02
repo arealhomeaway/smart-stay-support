@@ -49,6 +49,25 @@ export function drawerTicketId(href: string | null, origin: string): string | nu
   }
 }
 
+/** Pure: a link to Record work opens the same form in the panel, keeping its context. */
+export function drawerNewTicketContext(href: string | null, origin: string): NewTicketSearch | null {
+  if (!href) return null;
+  try {
+    const url = new URL(href, origin);
+    if (url.origin !== origin || url.pathname.replace(/\/$/, "") !== "/tickets/new") return null;
+    const out: NewTicketSearch = {};
+    for (const k of ["property", "lead", "project", "from", "origin"] as const) {
+      const v = url.searchParams.get(k);
+      if (v) out[k] = v;
+    }
+    const kind = url.searchParams.get("kind");
+    if (kind === "activity" || kind === "ops" || kind === "maintenance") out.kind = kind;
+    return out;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Operations work opens on top of the page the person is already using.
  * Any in-app link to a Ticket (lists, queues, cards, property pages, routine
@@ -83,6 +102,14 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
         return;
       const a = (e.target as Element | null)?.closest?.("a");
       if (!a || a.target === "_blank" || a.hasAttribute("data-full-page")) return;
+      const newCtx = drawerNewTicketContext(a.getAttribute("href"), window.location.origin);
+      if (newCtx && window.location.pathname !== "/tickets/new") {
+        e.preventDefault();
+        e.stopPropagation();
+        setTicketIdRaw(null);
+        setNewCtx(newCtx);
+        return;
+      }
       const id = drawerTicketId(a.getAttribute("href"), window.location.origin);
       if (!id) return;
       // Already on that full Ticket page: nothing to layer.
@@ -117,7 +144,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
           className="flex w-full flex-col gap-0 p-0 sm:max-w-[min(1100px,92vw)] [&>button.absolute]:hidden"
         >
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-            <SheetTitle className="text-base">{newCtx ? "Report an issue" : "Ticket"}</SheetTitle>
+            <SheetTitle className="text-base">{newCtx ? "Record work" : "Ticket"}</SheetTitle>
             <SheetDescription className="sr-only">
               Work this Ticket without leaving the page you were on.
             </SheetDescription>
@@ -142,7 +169,12 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
             )}
             {newCtx && (
               <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                <NewTicketForm context={newCtx} inPanel onCreated={(id) => setTicketId(id)} />
+                <NewTicketForm
+                  context={newCtx}
+                  inPanel
+                  onCreated={(id) => setTicketId(id)}
+                  onActivityLogged={() => setNewCtx(null)}
+                />
               </Suspense>
             )}
           </div>

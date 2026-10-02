@@ -2,11 +2,21 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
-import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { PropertyContactPanel } from "@/components/PropertyContactPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Clock, Users, Zap } from "lucide-react";
+import { Clock, History, Users, Wrench } from "lucide-react";
+import { PropertyActivityForm } from "@/components/work-entry/PropertyActivityForm";
+import {
+  ENTRY_KINDS,
+  INSURANCE_RISK,
+  MAINTENANCE_CATEGORIES,
+  defaultMaintenanceWorkTypeName,
+  insuranceFlagged,
+  labelOf,
+  workTypeFitsKind,
+  type EntryKind,
+} from "@/lib/work-entry";
 import { supabase } from "@/integrations/supabase/client";
 import { usTime } from "@/lib/dates";
 import { useRole } from "@/hooks/useRole";
@@ -28,7 +38,6 @@ import {
 import {
   GUEST_IMPACT,
   OCCUPANCY_STATUS,
-  OUTCOME_TYPES,
   PRIORITIES,
   SOURCE_CHANNELS,
   labelFor,
@@ -60,6 +69,8 @@ type NewTicketSearch = {
   from?: string;
   /** Navigation-context token for the workspace this was launched from. */
   origin?: string;
+  /** Preselects one of the three entry paths. */
+  kind?: EntryKind;
 };
 
 export const Route = createFileRoute("/_authenticated/tickets/new")({
@@ -76,17 +87,19 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
     if (project) out.project = project;
     if (from) out.from = from;
     if (origin) out.origin = origin;
+    const kind = str(search["kind"]);
+    if (kind === "activity" || kind === "ops" || kind === "maintenance") out.kind = kind;
     return out;
   },
   head: () => ({
     meta: [
-      { title: "Report an issue — Resolve Operations" },
+      { title: "Record work — Resolve Operations" },
       {
         name: "description",
         content:
-          "Log a one-touch resolution in seconds or open a ticket with its owning role, response standard and playbook attached.",
+          "Log property activity, open an Ops Ticket or report maintenance — each with the right workflow attached.",
       },
-      { property: "og:title", content: "Report an issue — Resolve Operations" },
+      { property: "og:title", content: "Record work — Resolve Operations" },
       {
         property: "og:description",
         content: "Log a one-touch resolution or open a ticket with its response standard attached.",
@@ -105,11 +118,14 @@ function NewMatterPage() {
     <NewTicketForm
       context={context}
       onCreated={(id) => router.navigate({ to: "/tickets/$ticketId", params: { ticketId: id } })}
+      onActivityLogged={(pid) =>
+        router.navigate({ to: "/property/$propertyId", params: { propertyId: pid } })
+      }
     />
   );
 }
 
-type Mode = "one_touch" | "ticket";
+type Mode = EntryKind | null;
 
 export type { NewTicketSearch };
 
@@ -121,18 +137,21 @@ export function NewTicketForm({
   context,
   onCreated,
   inPanel = false,
+  onActivityLogged,
 }: {
   context: NewTicketSearch;
   onCreated: (ticketId: string) => void;
   /** Rendered in the shell side panel: the panel's Close is the way back. */
   inPanel?: boolean;
+  /** After a Property Activity entry is saved (no Ticket exists). */
+  onActivityLogged?: (propertyId: string) => void;
 }) {
   const { can, readOnly, isSupervisor, isLoading: rolesLoading } = useRole();
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
-  const setStatus = useServerFn(setTicketStatusFn);
-  const [mode, setMode] = useState<Mode>("ticket");
+  const [mode, setModeRaw] = useState<Mode>(context.kind ?? null);
+  const isTicket = mode === "ops" || mode === "maintenance";
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
@@ -159,19 +178,20 @@ export function NewTicketForm({
     guest_contact: "",
     guest_in_residence: false,
     playbook_id: "auto",
-    // one-touch only
-    outcome_type: "resolved",
-    resolution_notes: "",
+    // maintenance only
+    maintenance_category: "",
+    insurance_risk: "",
+    estimated_cost: "",
   });
 
   const { data: properties } = useQuery({
-    queryKey: ["properties", demoMode],
+    queryKey: ["properties", demoMode, context.property ?? null],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
         .select("id, name, nickname")
         .eq("active", true)
-        .eq("is_demo", demoMode)
+        .or(`is_demo.eq.${demoMode}${context.property ? `,id.eq.${context.property}` : ""}`)
         .order("name");
       if (error) throw error;
       return data;
@@ -248,9 +268,37 @@ export function NewTicketForm({
     },
   });
 
+  // Changing path drops a work type that belongs to the other path.
+  function setMode(next: Mode) {
+    setModeRaw(next);
+    setForm((f) => {
+      const wt = workTypes?.find((w) => w.id === f.work_type_id);
+      const keep = wt && (next === "ops" || next === "maintenance") && workTypeFitsKind(wt.category, next);
+      return keep ? f : { ...f, work_type_id: "", situation_id: "" };
+    });
+  }
+
+  const kindWorkTypes = useMemo(
+    () =>
+      (workTypes ?? []).filter((w) =>
+        mode === "ops" || mode === "maintenance" ? workTypeFitsKind(w.category, mode) : true,
+      ),
+    [workTypes, mode],
+  );
+
+  // Maintenance never stops on "pick a work type": with nothing recognised it
+  // falls back to the catalog's immediate/ongoing maintenance entry.
+  const effectiveWorkTypeId = useMemo(() => {
+    if (form.work_type_id) return form.work_type_id;
+    if (mode !== "maintenance") return "";
+    const affected = form.guest_in_residence || form.guest_impact === "active_guest_affected" || form.guest_impact === "safety_security";
+    const name = defaultMaintenanceWorkTypeName(affected);
+    return kindWorkTypes.find((w) => w.name === name)?.id ?? kindWorkTypes[0]?.id ?? "";
+  }, [form.work_type_id, form.guest_in_residence, form.guest_impact, mode, kindWorkTypes]);
+
   const workType = useMemo(
-    () => workTypes?.find((w) => w.id === form.work_type_id) ?? null,
-    [workTypes, form.work_type_id],
+    () => workTypes?.find((w) => w.id === effectiveWorkTypeId) ?? null,
+    [workTypes, effectiveWorkTypeId],
   );
 
   /**
@@ -283,8 +331,9 @@ export function NewTicketForm({
   );
 
   useEffect(() => {
-    if (!guess || situationTouched) return;
+    if (!guess || situationTouched || !isTicket) return;
     const resolved = resolveWorkType(guess.situation, workTypes);
+    if (!resolved || !workTypeFitsKind(resolved.category, mode)) return;
     setForm((f) =>
       f.situation_id === guess.situation.id
         ? f
@@ -295,7 +344,7 @@ export function NewTicketForm({
             guest_impact: guess.situation.guestImpact ?? f.guest_impact,
           },
     );
-  }, [guess, situationTouched, workTypes]);
+  }, [guess, situationTouched, workTypes, isTicket, mode]);
 
   const role = useMemo(
     () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
@@ -363,16 +412,21 @@ export function NewTicketForm({
       toast.error("Tell us what happened first.");
       return;
     }
-    if (!form.work_type_id) {
-      toast.error("Pick a work type — it sets the owning role and the response standard.");
+    if (!isTicket) return;
+    if (!effectiveWorkTypeId) {
+      toast.error("Pick what kind of Ops work this is.");
+      return;
+    }
+    if (mode === "maintenance" && !form.maintenance_category) {
+      toast.error("Pick the maintenance category.");
+      return;
+    }
+    if (mode === "maintenance" && !form.insurance_risk) {
+      toast.error("Answer whether this could be an insurance-related event (Yes / No / Unsure).");
       return;
     }
     if (overridden && !form.priority_override_reason.trim()) {
       toast.error(`The rubric says ${mechanical.toUpperCase()}. Document why you changed it.`);
-      return;
-    }
-    if (mode === "one_touch" && !form.resolution_notes.trim()) {
-      toast.error("Write what you did — that is the whole record.");
       return;
     }
 
@@ -392,12 +446,17 @@ export function NewTicketForm({
       const userId = userData.user?.id ?? null;
       const now = new Date();
       const { response_due_at, action_due_at } = slaDueDates(form.priority, now, workType);
-      const oneTouch = mode === "one_touch";
+      const oneTouch = false;
+      const estimated = form.estimated_cost.trim() ? Number(form.estimated_cost) : null;
 
+      // A demo home only ever carries demo Tickets, whatever mode the viewer is in.
+      const { data: propRow } = form.property_id
+        ? await supabase.from("properties").select("is_demo").eq("id", form.property_id).maybeSingle()
+        : { data: null };
       const { data: ticket, error } = await supabase
         .from("tickets")
         .insert({
-          is_demo: demoMode,
+          is_demo: demoMode || Boolean(propRow?.is_demo),
           record_type: oneTouch
             ? "completed_interaction"
             : form.cross_team
@@ -406,7 +465,11 @@ export function NewTicketForm({
           title: derivedTitle,
           description: form.description || null,
           property_id: form.property_id || null,
-          work_type_id: form.work_type_id,
+          work_type_id: effectiveWorkTypeId,
+          entry_kind: mode,
+          maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
+          insurance_risk: mode === "maintenance" ? form.insurance_risk : null,
+          estimated_cost: mode === "maintenance" && estimated !== null && Number.isFinite(estimated) ? estimated : null,
           functional_role_code: form.functional_role_code || null,
           cross_team: oneTouch ? false : form.cross_team,
           category: workType?.category ?? "other",
@@ -443,8 +506,8 @@ export function NewTicketForm({
           // evidence and Final Review rules apply here too instead of being
           // bypassed by inserting straight into a terminal status.
           status: "open",
-          outcome_type: oneTouch ? form.outcome_type : null,
-          resolution_notes: oneTouch ? form.resolution_notes.trim() : null,
+          outcome_type: null,
+          resolution_notes: null,
           resolved_at: null,
         })
         .select("id")
@@ -492,141 +555,34 @@ export function NewTicketForm({
         await supabase.from("ticket_activity").insert({
           ticket_id: ticket.id,
           author_id: userId,
-          kind: oneTouch ? "completed" : "created",
-          event_type: oneTouch ? "logged_completed" : "created",
+          kind: "created",
+          event_type: "created",
           channel: form.source_channel,
-          body: oneTouch
-            ? `Logged as a one-touch resolution. ${form.resolution_notes.trim()}`
-            : `Ticket opened at ${meta.short} (${labelFor(GUEST_IMPACT, form.guest_impact)} · ${labelFor(
+          body: `${mode === "maintenance" ? "Maintenance reported" : "Ops Ticket opened"}${
+            mode === "maintenance" ? ` (${labelOf(MAINTENANCE_CATEGORIES, form.maintenance_category)}${estimated !== null ? ` · est. $${estimated}` : ""})` : ""
+          }. Ticket opened at ${meta.short} (${labelFor(GUEST_IMPACT, form.guest_impact)} · ${labelFor(
                 OCCUPANCY_STATUS,
                 form.occupancy_status,
               )}). Acknowledge within ${workType?.response_minutes ?? meta.responseMinutes}m.`,
         });
       }
 
-      if (oneTouch) {
-        // Same gate every ticket closes through — a one-touch record only
-        // reaches "closed" if it genuinely qualifies (its evidence and
-        // review requirements, if any, are already satisfied). Resolving
-        // auto-closes it right there when no review is required; if it
-        // doesn't qualify, the record still exists — it just stops at "open"
-        // or "resolved" instead of silently claiming to be done.
-        const resolved = await setStatus({ data: { ticketId: ticket.id, status: "resolved" } });
-        if (!resolved.ok) {
-          toast.warning(
-            `Logged, but it could not be marked resolved yet: ${resolved.message} Finish it from the ticket.`,
-          );
-        } else {
-          toast.success(
-            resolved.autoClosed
-              ? "One-touch resolution logged and closed."
-              : "One-touch resolution logged — it needs a supervisor's review before it can close.",
-          );
-          onCreated(ticket.id);
-          return;
-        }
-      } else {
-        toast.success("Ticket opened with its clocks running.");
-      }
+      toast.success(mode === "maintenance" ? "Maintenance reported with its clocks running." : "Ticket opened with its clocks running.");
       onCreated(ticket.id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save this record");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : err && typeof err === "object" && "message" in err
+            ? String((err as { message: unknown }).message)
+            : "Could not save this record",
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  // The capability is enforced in the database too; this stops someone
-  // reaching the form by typing the URL.
-  if (!rolesLoading && (readOnly || !can("ticket_create"))) {
-    return (
-      <div className="mx-auto max-w-lg space-y-3 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Logging work is not part of your access</h1>
-        <p className="text-muted-foreground">
-          Ask a supervisor if you need to open tickets in Resolve.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      {/* Logging work is a detour, never a destination — the way back is named. */}
-      {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
-      <div>
-        <h1 className="text-3xl font-semibold">Report an issue</h1>
-        <p className="mt-1 text-muted-foreground">
-          Every meaningful operational interaction gets recorded. Already handled it? Log it and
-          move on.
-        </p>
-      </div>
-
-      {(leadContext || context.property || context.project || context.from) && (
-        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
-          <span className="font-medium">Started from </span>
-          {leadContext
-            ? `the lead ${leadContext.contact_name}`
-            : context.from === "onboarding"
-              ? "an onboarding workspace"
-              : context.from === "property_hub"
-                ? "a property hub"
-                : "another Resolve workspace"}
-          . We have filled in what we know — change anything that is not right.
-        </div>
-      )}
-
-      <Link
-        to="/coach"
-        className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
-      >
-        <span>
-          <span className="font-medium">Not sure how to handle it? </span>
-          Describe it to the Coach and it will set the priority, build the checklist and write the
-          vendor brief.
-        </span>
-        <span className="ml-3 whitespace-nowrap font-medium text-primary">Ask the Coach →</span>
-      </Link>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <ModeCard
-          active={mode === "one_touch"}
-          onClick={() => setMode("one_touch")}
-          icon={<Zap className="size-4" />}
-          title="One-touch resolution"
-          hint="Resolved in a single action. Kept in history, never hits the queue."
-        />
-        <ModeCard
-          active={mode === "ticket"}
-          onClick={() => setMode("ticket")}
-          icon={<Clock className="size-4" />}
-          title="Ticket"
-          hint="Needs follow-up or another touchpoint. Clocks start and you own it."
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{mode === "one_touch" ? "What you handled" : "What happened?"}</CardTitle>
-          <CardDescription>Write it the way it was reported to you.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="space-y-5">
-            {/* One question. Resolve works out the classification. */}
-            <div className="space-y-2">
-              <Label htmlFor="description">What happened?</Label>
-              <Textarea
-                id="description"
-                rows={3}
-                required
-                placeholder="Fridge is not cooling, guest reported it"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Plain words are fine. Resolve sets the work type, the priority and who owns it.
-              </p>
-            </div>
-
+  const propertyPicker = (
             <div className="space-y-2">
               <Label>Property</Label>
               <Select
@@ -677,10 +633,239 @@ export function NewTicketForm({
                 </p>
               )}
             </div>
+  );
 
-            {form.property_id && <PropertyContactPanel propertyId={form.property_id} />}
+  // The capability is enforced in the database too; this stops someone
+  // reaching the form by typing the URL.
+  if (!rolesLoading && (readOnly || !can("ticket_create"))) {
+    return (
+      <div className="mx-auto max-w-lg space-y-3 py-16 text-center">
+        <h1 className="text-2xl font-semibold">Logging work is not part of your access</h1>
+        <p className="text-muted-foreground">
+          Ask a supervisor if you need to open tickets in Resolve.
+        </p>
+      </div>
+    );
+  }
 
-            {workType && mode === "ticket" && (
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      {/* Logging work is a detour, never a destination — the way back is named. */}
+      {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
+      <div>
+        <h1 className="text-3xl font-semibold">Record work</h1>
+        <p className="mt-1 text-muted-foreground">
+          Choose what you are recording: something already handled, Ops work that needs an owner,
+          or a repair at the home.
+        </p>
+      </div>
+
+      {(leadContext || context.property || context.project || context.from) && (
+        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+          <span className="font-medium">Started from </span>
+          {leadContext
+            ? `the lead ${leadContext.contact_name}`
+            : context.from === "onboarding"
+              ? "an onboarding workspace"
+              : context.from === "property_hub"
+                ? "a property hub"
+                : "another Resolve workspace"}
+          . We have filled in what we know — change anything that is not right.
+        </div>
+      )}
+
+      <Link
+        to="/coach"
+        className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
+      >
+        <span>
+          <span className="font-medium">Not sure how to handle it? </span>
+          Describe it to the Coach and it will set the priority, build the checklist and write the
+          vendor brief.
+        </span>
+        <span className="ml-3 whitespace-nowrap font-medium text-primary">Ask the Coach →</span>
+      </Link>
+
+      <div className="grid gap-3 sm:grid-cols-3" role="group" aria-label="What are you recording?">
+        {ENTRY_KINDS.map((k) => (
+          <ModeCard
+            key={k.value}
+            active={mode === k.value}
+            onClick={() => setMode(k.value)}
+            icon={k.value === "activity" ? <History className="size-4" /> : k.value === "ops" ? <Clock className="size-4" /> : <Wrench className="size-4" />}
+            title={k.title}
+            hint={k.hint}
+          />
+        ))}
+      </div>
+
+      {mode === null && (
+        <p className="text-sm text-muted-foreground">Choose one to continue.</p>
+      )}
+
+      {mode === "activity" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Log Property Activity</CardTitle>
+            <CardDescription>Something already handled that belongs in the property's history.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PropertyActivityForm
+              propertyId={form.property_id}
+              propertyPicker={propertyPicker}
+              isDemo={demoMode}
+              onLogged={(pid) => (onActivityLogged ? onActivityLogged(pid) : undefined)}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {isTicket && (
+      <Card>
+        <CardHeader>
+          <CardTitle>{mode === "maintenance" ? "What is wrong?" : "What happened?"}</CardTitle>
+          <CardDescription>Write it the way it was reported to you.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-5">
+            {/* One question. Resolve works out the classification. */}
+            <div className="space-y-2">
+              <Label htmlFor="description">What happened?</Label>
+              <Textarea
+                id="description"
+                rows={3}
+                required
+                placeholder="Fridge is not cooling, guest reported it"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Plain words are fine. Resolve sets the work type, the priority and who owns it.
+              </p>
+            </div>
+
+            {propertyPicker}
+
+            {form.property_id && <PropertyContactPanel propertyId={form.property_id} showOwner={false} />}
+
+            {mode === "ops" && (
+              <div className="space-y-2">
+                <Label>Kind of Ops work</Label>
+                <Select
+                  value={form.work_type_id}
+                  onValueChange={(v) => {
+                    setSituationTouched(true);
+                    setForm({ ...form, work_type_id: v });
+                  }}
+                >
+                  <SelectTrigger aria-label="Kind of Ops work">
+                    <SelectValue placeholder="Pick the closest match" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kindWorkTypes.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {w.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Resolve suggests one from your description; you can always change it.
+                </p>
+              </div>
+            )}
+
+            {mode === "maintenance" && (
+              <div className="space-y-4 rounded-lg border border-border p-3">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Maintenance category</Label>
+                    <Select
+                      value={form.maintenance_category}
+                      onValueChange={(v) => setForm({ ...form, maintenance_category: v })}
+                    >
+                      <SelectTrigger aria-label="Maintenance category">
+                        <SelectValue placeholder="Pick a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MAINTENANCE_CATEGORIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="est-cost">Estimated cost, if known ($)</Label>
+                    <Input
+                      id="est-cost"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.estimated_cost}
+                      onChange={(e) => setForm({ ...form, estimated_cost: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Guest impact</Label>
+                  <Select
+                    value={form.guest_impact}
+                    onValueChange={(v) => setForm({ ...form, guest_impact: v })}
+                  >
+                    <SelectTrigger aria-label="Guest impact">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GUEST_IMPACT.map((g) => (
+                        <SelectItem key={g.value} value={g.value}>
+                          {g.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="guest-affected">A guest is currently affected</Label>
+                  <Switch
+                    id="guest-affected"
+                    checked={form.guest_in_residence}
+                    onCheckedChange={(v) => setForm({ ...form, guest_in_residence: v })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Potential insurance-related event?</Label>
+                  <div className="flex gap-2" role="radiogroup" aria-label="Potential insurance-related event">
+                    {INSURANCE_RISK.map((r) => (
+                      <Button
+                        key={r.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={form.insurance_risk === r.value}
+                        variant={form.insurance_risk === r.value ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setForm({ ...form, insurance_risk: r.value })}
+                      >
+                        {r.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Flooding, major leak, roof, fire/smoke, structural damage.
+                    {insuranceFlagged(form.insurance_risk)
+                      ? " This will be flagged for supervisors and show owner contact. Nothing is sent to insurance."
+                      : ""}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Add photos on the Ticket's Evidence tab once it opens.
+                </p>
+              </div>
+            )}
+
+
+            {workType && isTicket && (
               <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Looks like
@@ -815,7 +1000,7 @@ export function NewTicketForm({
               </div>
             )}
 
-            {workType && mode === "ticket" && (
+            {workType && isTicket && (
               <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
                 <p className="font-medium">Operating standard</p>
                 {advanced && (
@@ -900,7 +1085,7 @@ export function NewTicketForm({
                   </div>
                 </div>
 
-                {mode === "ticket" && (
+                {isTicket && (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Priority</Label>
@@ -954,7 +1139,7 @@ export function NewTicketForm({
                   </div>
                 )}
 
-                {mode === "ticket" && (
+                {isTicket && (
                   <div className="space-y-2">
                     <Label>Owning functional role</Label>
                     <Select
@@ -985,7 +1170,7 @@ export function NewTicketForm({
                   </div>
                 )}
 
-                {mode === "ticket" && overridden && (
+                {isTicket && overridden && (
                   <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
                     <Label htmlFor="override">
                       Why {form.priority.toUpperCase()} instead of {mechanical.toUpperCase()}?
@@ -1034,7 +1219,7 @@ export function NewTicketForm({
                   />
                 </div>
 
-                {mode === "ticket" && (
+                {isTicket && (
                   <div className="flex items-center justify-between rounded-lg border border-border p-3">
                     <div>
                       <p className="flex items-center gap-2 text-sm font-medium">
@@ -1053,41 +1238,7 @@ export function NewTicketForm({
               </>
             )}
 
-            {mode === "one_touch" && (
-              <>
-                <div className="space-y-2">
-                  <Label>Outcome</Label>
-                  <Select
-                    value={form.outcome_type}
-                    onValueChange={(v) => setForm({ ...form, outcome_type: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {OUTCOME_TYPES.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="resolution">What did you do?</Label>
-                  <Textarea
-                    id="resolution"
-                    rows={3}
-                    required
-                    placeholder="Sent the guest the parking instructions and confirmed they found the spot."
-                    value={form.resolution_notes}
-                    onChange={(e) => setForm({ ...form, resolution_notes: e.target.value })}
-                  />
-                </div>
-              </>
-            )}
-
-            {mode === "ticket" && (
+            {isTicket && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
                 <Badge variant="outline" className={priorityTone(form.priority)}>
                   {meta.short}
@@ -1104,11 +1255,12 @@ export function NewTicketForm({
             )}
 
             <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "Saving…" : mode === "one_touch" ? "Log resolution" : "Open ticket"}
+              {saving ? "Saving…" : mode === "maintenance" ? "Report maintenance" : "Open Ops Ticket"}
             </Button>
           </form>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
