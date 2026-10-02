@@ -729,6 +729,13 @@
       "when": 1790971977986,
       "tag": "0103_finance_expense_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1790972838052,
+      "tag": "0104_finance_acceptance_archive_guards",
+      "breakpoints": true
     }
   ]
 }

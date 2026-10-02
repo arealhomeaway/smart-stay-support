@@ -3704,6 +3704,9 @@ export type Database = {
         Row: {
           amount: number | null
           approval_id: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           authorization_note: string | null
           change_reason: string | null
           cost_responsibility: string
@@ -3752,6 +3755,9 @@ export type Database = {
         Insert: {
           amount?: number | null
           approval_id?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           authorization_note?: string | null
           change_reason?: string | null
           cost_responsibility?: string
@@ -3800,6 +3806,9 @@ export type Database = {
         Update: {
           amount?: number | null
           approval_id?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           authorization_note?: string | null
           change_reason?: string | null
           cost_responsibility?: string
@@ -13179,6 +13188,10 @@ export type Database = {
         Returns: undefined
       }
       archive_demo_work_order: { Args: { _actor?: string }; Returns: undefined }
+      archive_expense: {
+        Args: { _expense: string; _reason: string }
+        Returns: undefined
+      }
       archive_qa_work_order_fixture: {
         Args: { _actor?: string }
         Returns: undefined
