@@ -211,3 +211,38 @@ export const previewOwnerRezReviews = createServerFn({ method: "POST" })
     const items = await fetchOwnerRezReviews(supabaseAdmin);
     return previewReviewImport(supabaseAdmin, items);
   });
+
+/** The configured Review Follow-Up Automation Start Date (null = not set; all imports are history-only). */
+export const getReviewFollowUpStart = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { REVIEW_FOLLOWUP_START_KEY, readReviewFollowUpStart } = await import("./guest-feedback");
+    const { data } = await context.supabase.from("app_settings").select("value, updated_at").eq("key", REVIEW_FOLLOWUP_START_KEY).maybeSingle();
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    return { date: readReviewFollowUpStart(data?.value ?? null), updatedAt: data?.updated_at ?? null, canEdit: !!isAdmin };
+  });
+
+/** Admin-only, audited. Changing it never touches reviews already imported. */
+export const setReviewFollowUpStart = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { date: string }) => {
+    if (!input || !/^\d{4}-\d{2}-\d{2}$/.test(input.date) || Number.isNaN(Date.parse(input.date))) throw new Error("Pick a valid date");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Only admins can change the review follow-up start date.");
+    const { REVIEW_FOLLOWUP_START_KEY } = await import("./guest-feedback");
+    const prev = await context.supabase.from("app_settings").select("value").eq("key", REVIEW_FOLLOWUP_START_KEY).maybeSingle();
+    const { error } = await context.supabase.from("app_settings").upsert({
+      key: REVIEW_FOLLOWUP_START_KEY, value: { date: data.date }, updated_by: context.userId, updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    const { writeAudit } = await import("./audit.server");
+    await writeAudit({
+      actorId: context.userId, actorLabel: "admin", action: "review_followup_start_configured",
+      entityType: "app_setting", entityId: REVIEW_FOLLOWUP_START_KEY, entityLabel: "Review follow-up automation start date",
+      before: prev.data?.value ?? null, after: { date: data.date },
+    });
+    return { date: data.date };
+  });
