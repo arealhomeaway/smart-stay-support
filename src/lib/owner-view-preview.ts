@@ -17,12 +17,21 @@ export const INTERNAL_ONLY = [
 type Item = {
   id: string;
   title: string;
-  owner_content: string | null;
+  owner_content: unknown;
   status: string;
   source: string | null;
   source_task_id: string | null;
 };
 type Pub = { id: string; title: string; detail: string | null; entity_id: string | null };
+
+function text(v: unknown): string | null {
+  if (typeof v === "string") return v;
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    for (const k of ["summary", "body", "message", "description"]) if (typeof o[k] === "string") return o[k] as string;
+  }
+  return null;
+}
 
 export function ownerPreviewBuckets(items: Item[], pubs: Pub[]) {
   const drafts = items.filter((i) => i.status === "draft");
@@ -30,14 +39,14 @@ export function ownerPreviewBuckets(items: Item[], pubs: Pub[]) {
   const visible: PreviewItem[] = [
     ...items
       .filter((i) => i.status !== "draft")
-      .map((i) => ({ id: i.id, title: i.title, detail: i.owner_content, kind: "Opportunity" })),
+      .map((i) => ({ id: i.id, title: i.title, detail: text(i.owner_content), kind: "Opportunity" })),
     ...pubs
       .filter((p) => !p.entity_id || !draftTasks.has(p.entity_id))
       .map((p) => ({ id: p.id, title: p.title, detail: p.detail, kind: "Approval" })),
   ];
   return {
     visible,
-    draft: drafts.map((d) => ({ id: d.id, title: d.title, detail: d.owner_content, kind: "Draft Opportunity" })),
+    draft: drafts.map((d) => ({ id: d.id, title: d.title, detail: text(d.owner_content), kind: "Draft Opportunity" })),
     internalOnly: INTERNAL_ONLY,
   };
 }

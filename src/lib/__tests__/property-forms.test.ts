@@ -11,7 +11,7 @@ describe("property forms", () => {
   it("returns the same task ids it was given", () => {
     const f = propertyForms([t("a", "16. Conduct the Mid-Project Review", "complete")]);
     const mid = f.find((x) => x.key === "mid_project")!;
-    expect(mid.tasks[0].id).toBe("a");
+    expect(mid.tasks[0]!.id).toBe("a");
     expect(mid.status).toBe("complete");
   });
 });
