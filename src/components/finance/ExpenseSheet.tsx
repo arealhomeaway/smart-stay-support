@@ -130,7 +130,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
 
   async function update(patch: Record<string, unknown>, msg: string) {
     const { error } = await supabase.from("expenses").update(patch as never).eq("id", expenseId);
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     toast.success(msg);
     setDraft({});
     setReason("");
@@ -375,13 +375,13 @@ function LinksSection({ expenseId, propertyId, links, isDemo, onChanged, canEdit
   async function add() {
     if (!target) return;
     const { error } = await supabase.from("expense_links").insert({ expense_id: expenseId, link_type: type, target_id: target });
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     setTarget("");
     onChanged();
   }
   async function remove(id: string) {
     const { error } = await supabase.from("expense_links").delete().eq("id", id);
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     onChanged();
   }
   return (
@@ -430,7 +430,7 @@ function FinanceSection({ e, access, people, onDone }: { e: Full; access: Return
   const reviewed = e.finance_review === "reviewed";
   async function go(patch: Record<string, unknown>, msg: string) {
     const { error } = await supabase.from("expenses").update(patch as never).eq("id", e.id);
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     toast.success(msg);
     setReason("");
     onDone();
@@ -523,14 +523,14 @@ function ClarificationSection({ expenseId, items, events, people, access, review
   }
   async function ask() {
     const { error } = await supabase.rpc("request_expense_clarification", { _expense: expenseId, _question: question, _assignee: (assignee || null) as string, _due: (due || null) as string });
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     toast.success("Clarification requested. It appears as a follow-up for the assignee.");
     setQuestion(""); setAssignee(""); setDue("");
     onDone();
   }
   async function answer(id: string) {
     const { error } = await supabase.rpc("answer_expense_clarification", { _work_item: id, _answer: answers[id] ?? "" });
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     toast.success("Answer recorded.");
     onDone();
   }
@@ -581,7 +581,7 @@ function LeadershipSection({ e, access, people, onDone, name }: { e: Full; acces
   const [decision, setDecision] = useState("");
   async function go(patch: Record<string, unknown>, msg: string) {
     const { error } = await supabase.from("expenses").update(patch as never).eq("id", e.id);
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     toast.success(msg);
     onDone();
   }
@@ -627,13 +627,13 @@ function RecoveryForm({ expenseId, rows, canReceive, onDone }: { expenseId: stri
   const [received, setReceived] = useState<Record<string, string>>({});
   async function add() {
     const { error } = await supabase.from("expense_recoveries").insert({ expense_id: expenseId, party, expected_amount: Number(expected) });
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     setExpected("");
     onDone();
   }
   async function receive(id: string) {
     const { error } = await supabase.from("expense_recoveries").update({ received_amount: Number(received[id]), received_on: todayChicago() }).eq("id", id);
-    if (error) return toast.error(errText(error));
+    if (error) { toast.error(errText(error)); return; }
     onDone();
   }
   return (

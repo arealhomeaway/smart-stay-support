@@ -66,7 +66,7 @@ function FinancePage() {
 
   async function newUnmatched() {
     const { data, error } = await supabase.from("expenses").insert({ is_demo: demoMode, created_by: role.userId }).select("id").single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     void qc.invalidateQueries({ queryKey: ["expenses"] });
     setOpen(data.id);
   }

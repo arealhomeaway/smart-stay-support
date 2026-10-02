@@ -55,7 +55,7 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
       .insert({ property_id: propertyId, is_demo: demoMode, created_by: role.userId })
       .select("id")
       .single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (linkType && targetId) {
       const l = await supabase.from("expense_links").insert({ expense_id: data.id, link_type: linkType, target_id: targetId });
       if (l.error) toast.error(l.error.message);
@@ -66,7 +66,7 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
   async function linkExisting() {
     if (!linkType || !targetId || !linkId) return;
     const { error } = await supabase.from("expense_links").insert({ expense_id: linkId, link_type: linkType, target_id: targetId });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setLinkId("");
     void qc.invalidateQueries({ queryKey: ["expenses"] });
   }
