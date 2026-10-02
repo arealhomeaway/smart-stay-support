@@ -263,6 +263,7 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
         reservation_match: r.booking_id ? "matched" : "unmatched",
         guest_id: r.guest_id,
         guest_name: r.guest_name,
+        reviewer_display_name: r.guest_name,
         rating: r.stars && r.stars >= 1 && r.stars <= 5 ? Math.round(r.stars) : null,
         summary: r.body,
         response_text: r.response,
@@ -287,7 +288,55 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
     if (decision === "historical") historical++;
     else if (decision === "follow_up" && (await createFollowUpTicket(admin, data))) ticketsCreated++;
   }
+  await enrichReviewReservations(admin);
   return { imported, duplicates, ticketsCreated, historical, startDate };
+}
+
+/**
+ * Fills reservation context on reviews from their already-matched OwnerRez
+ * booking. Read-only upstream; never touches reviewer_display_name, rating,
+ * follow-up state or Tickets. Re-running refreshes the same fields.
+ */
+export async function enrichReviewReservations(admin: Admin, opts: { all?: boolean } = {}) {
+  const { ownerRezGet } = await import("./ownerrez.server");
+  let q = admin
+    .from("guest_feedback")
+    .select("id, ownerrez_booking_id")
+    .eq("feedback_type", "external_review")
+    .eq("source", "ownerrez")
+    .eq("is_demo", false)
+    .not("ownerrez_booking_id", "is", null);
+  if (!opts.all) q = q.is("reservation_enriched_at", null);
+  const { data: rows } = await q.limit(2000);
+  let enriched = 0;
+  const failed: string[] = [];
+  for (const r of rows ?? []) {
+    if (!/^\d+$/.test(r.ownerrez_booking_id ?? "")) { failed.push(r.id); continue; }
+    try {
+      const b = await ownerRezGet<OrBooking>(`/bookings/${r.ownerrez_booking_id}`);
+      const first = b.guest?.first_name?.trim() || null;
+      const last = b.guest?.last_name?.trim() || null;
+      const { error } = await admin
+        .from("guest_feedback")
+        .update({
+          stay_start: b.arrival?.slice(0, 10) ?? null,
+          stay_end: b.departure?.slice(0, 10) ?? null,
+          booking_platform: b.listing_site ?? undefined,
+          guest_id: b.guest_id == null ? undefined : String(b.guest_id),
+          reservation_confirmation: b.platform_reservation_number ?? null,
+          reservation_guest_first_name: first,
+          reservation_guest_last_name: last,
+          reservation_guest_name: [first, last].filter(Boolean).join(" ") || null,
+          reservation_enriched_at: new Date().toISOString(),
+        })
+        .eq("id", r.id);
+      if (error) failed.push(r.id);
+      else enriched++;
+    } catch {
+      failed.push(r.id);
+    }
+  }
+  return { checked: rows?.length ?? 0, enriched, failed };
 }
 
 /** Reads OwnerRez reviews for linked homes, newest first, and maps them. */
