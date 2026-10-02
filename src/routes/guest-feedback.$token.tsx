@@ -207,7 +207,7 @@ function SurveyPage() {
               </div>
             </Q>
             <Q label="Tell us what happened">
-              <Textarea value={d.issue_description ?? ""} onChange={(e) => set({ issue_description: e.target.value })} maxLength={4000} />
+              <Textarea aria-label="Tell us what happened" value={d.issue_description ?? ""} onChange={(e) => set({ issue_description: e.target.value })} maxLength={4000} />
             </Q>
             <Q label="Did you let us know during your stay?">
               <Choice
@@ -230,10 +230,10 @@ function SurveyPage() {
           </div>
         )}
         <Q label="Is there anything we could have done before checkout to make your stay better?">
-          <Textarea value={d.improve_before_checkout ?? ""} onChange={(e) => set({ improve_before_checkout: e.target.value })} maxLength={4000} />
+          <Textarea aria-label="What could we have done before checkout" value={d.improve_before_checkout ?? ""} onChange={(e) => set({ improve_before_checkout: e.target.value })} maxLength={4000} />
         </Q>
         <Q label="Anything else you'd like to share?">
-          <Textarea value={d.comments ?? ""} onChange={(e) => set({ comments: e.target.value })} maxLength={4000} />
+          <Textarea aria-label="Anything else" value={d.comments ?? ""} onChange={(e) => set({ comments: e.target.value })} maxLength={4000} />
         </Q>
         <Q label="May our team contact you about your feedback?">
           <Choice
