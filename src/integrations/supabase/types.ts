@@ -7672,6 +7672,7 @@ export type Database = {
       }
       property_activity_log: {
         Row: {
+          attachment_document_ids: string[]
           category: string
           created_at: string
           id: string
@@ -7684,6 +7685,7 @@ export type Database = {
           what_happened: string
         }
         Insert: {
+          attachment_document_ids?: string[]
           category: string
           created_at?: string
           id?: string
@@ -7696,6 +7698,7 @@ export type Database = {
           what_happened: string
         }
         Update: {
+          attachment_document_ids?: string[]
           category?: string
           created_at?: string
           id?: string
