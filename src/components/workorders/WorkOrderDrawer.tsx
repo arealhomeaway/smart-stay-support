@@ -1,3 +1,4 @@
+import { ExpensesCard } from "@/components/finance/ExpensesCard";
 /**
  * Work Order workspace.
  *
@@ -1281,6 +1282,7 @@ export function WorkOrderDrawer({
           ))}
         </section>
       </div>
+      <div className="p-4"><ExpensesCard propertyId={workOrder.property_id ?? null} linkType="work_order" targetId={workOrder.id} /></div>
     </TaskWorkspace>
   );
 }
