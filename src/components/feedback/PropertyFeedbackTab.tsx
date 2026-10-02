@@ -1,3 +1,4 @@
+import { ownerRezBookingUrl } from "@/lib/ownerrez-links";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -80,7 +81,7 @@ export function PropertyFeedbackTab({
                       <span className="text-muted-foreground">{formatDate(f.submitted_at)}</span>
                       <RatingStars rating={f.rating} />
                       {!isSurvey && <Badge variant="outline">{f.booking_platform ?? "Unknown source"}</Badge>}
-                      <span className="font-medium">{f.guest_name ?? "Guest not provided"}</span>
+                      <span className="font-medium">{isSurvey ? (f.guest_name ?? "Guest not provided") : (f.reviewer_display_name ?? (f.reservation_guest_name ? `Reservation guest: ${f.reservation_guest_name}` : "Reviewer name unavailable"))}</span>
                       <span className="text-muted-foreground">· {stayText(f)}</span>
                       <Badge variant={f.follow_up_status === "open" ? "default" : "secondary"} className="ml-auto">
                         {followUpLabel(f.follow_up_status)}
@@ -113,13 +114,31 @@ export function PropertyFeedbackTab({
                 </DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground">
-                {open.guest_name ?? "Guest not provided"} · {stayText(open)} · {formatDate(open.submitted_at)}
+                {isSurvey ? (open.guest_name ?? "Guest not provided") : (open.reviewer_display_name ? `Reviewer: ${open.reviewer_display_name}` : "Reviewer name unavailable")} · {stayText(open)} · {formatDate(open.submitted_at)}
               </p>
               {isSurvey ? (
                 <SurveyAnswersView feedbackId={open.id} />
               ) : (
                 <div className="space-y-2 text-sm">
-                  <p className="whitespace-pre-wrap">{open.summary ?? "No review text."}</p>
+                  <div className="rounded-md border border-border p-3" aria-label="Reservation context">
+                    <p className="mb-1 font-medium">Reservation Context</p>
+                    <dl className="grid grid-cols-[8rem_1fr] gap-x-2 gap-y-1">
+                      <dt className="text-muted-foreground">Guest</dt>
+                      <dd>{open.reservation_guest_name ? `Reservation guest: ${open.reservation_guest_name}` : "—"}</dd>
+                      <dt className="text-muted-foreground">Stay dates</dt>
+                      <dd>{stayText(open)}</dd>
+                      <dt className="text-muted-foreground">Reservation</dt>
+                      <dd>{open.reservation_confirmation ?? open.ownerrez_booking_id ?? "—"}</dd>
+                      <dt className="text-muted-foreground">Booking source</dt>
+                      <dd>{open.booking_platform ?? "—"}</dd>
+                    </dl>
+                    {open.reservation_match === "matched" && /^\d+$/.test(open.ownerrez_booking_id ?? "") && (
+                      <a href={ownerRezBookingUrl(open.ownerrez_booking_id) ?? undefined} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-primary">
+                        Open in OwnerRez <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                  <p className="whitespace-pre-wrap">{open.summary?.trim() ? open.summary : "No written review provided."}</p>
                   {open.response_text && <p className="text-muted-foreground">Our public reply: {open.response_text}</p>}
                   {open.source_url && (
                     <a href={open.source_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">
