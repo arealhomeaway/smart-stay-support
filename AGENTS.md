@@ -24,3 +24,4 @@
 
 - Review follow-up automation start date: `app_settings` key `review_followup_automation_start` read only via `reviewImportDecision` in `src/lib/guest-feedback.ts`; unset/missing publish date = history-only. Why: one rule, replays never create retroactive follow-ups.
 - Review identity: `guest_feedback.reviewer_display_name` (review source) never overwritten by `reservation_guest_name` (OwnerRez booking, filled by `enrichReviewReservations`). Why: public reviewer ≠ booking guest.
+- Departure Review: created only by DB `create_departure_review_from_clean` (Finished/Approved/Closed housekeeping clean + ended reservation, unique event_key); separate `cleaning_reviews` record; rules in `src/lib/departure-review.ts`; real homes gated by app_settings `departure_review_live_homes`. Why: one trigger, no duplicates, legacy routine generator retired.
