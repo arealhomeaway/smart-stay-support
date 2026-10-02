@@ -123,9 +123,10 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
   }, [setTicketId]);
 
   // Leaving the page (menu, breadcrumb, full page) closes the layer.
-  useEffect(() => setTicketId(null), [pathname, setTicketId]);
+  useEffect(() => { console.warn("DRAWER path reset", pathname); setTicketId(null); }, [pathname, setTicketId]);
 
   const requestClose = useCallback(() => {
+    console.warn("DRAWER requestClose", new Error().stack?.slice(0, 600));
     const dirty = Array.from(
       contentRef.current?.querySelectorAll<HTMLTextAreaElement | HTMLInputElement>(
         "textarea, input[type=text]",
