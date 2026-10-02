@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { authorizationState, breezewayPushEligibility, fourFacts, suspectedDuplicate, visitNeedsFollowUp, CONTACT_RESPONSES, VISIT_OUTCOMES } from "../vendor-sourcing";
 import { ownerAllocationBlocked, purchaseNeedsLeadership } from "../expenses";
 
