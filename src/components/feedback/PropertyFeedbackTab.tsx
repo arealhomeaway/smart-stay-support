@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useTicketDrawer } from "@/components/nav/TicketDrawer";
 import { addTestReview, createTestSurveyLink, syncOwnerRezReviews } from "@/lib/guest-feedback.functions";
 import { usDate as formatDate } from "@/lib/dates";
 import {
@@ -38,6 +39,7 @@ export function PropertyFeedbackTab({
   const q = usePropertyFeedback(propertyId);
   const rows = (q.data ?? []).filter((f) => f.feedback_type === kind);
   const [open, setOpen] = useState<FeedbackRow | null>(null);
+  const drawer = useTicketDrawer();
   const isSurvey = kind === "internal_survey";
 
   return (
@@ -116,7 +118,14 @@ export function PropertyFeedbackTab({
               )}
               <RepeatIssueNotes current={open} all={q.data ?? []} />
               {open.ticket_id ? (
-                <Link to="/tickets/$ticketId" params={{ ticketId: open.ticket_id }} onClick={() => setOpen(null)} className="text-sm text-primary hover:underline">
+                <Link to="/tickets/$ticketId" params={{ ticketId: open.ticket_id }} onClick={(e) => {
+                    const id = open.ticket_id!;
+                    setOpen(null);
+                    if (drawer && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+                      e.preventDefault();
+                      drawer.openTicket(id);
+                    }
+                  }} data-full-page="" className="text-sm text-primary hover:underline">
                   Open the follow-up Ticket
                 </Link>
               ) : (
