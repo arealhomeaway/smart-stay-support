@@ -35,6 +35,8 @@ import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/Guide
 import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
+import { TicketOwnerBox } from "@/components/work-entry/TicketOwnerBox";
+import { MAINTENANCE_CATEGORIES, insuranceFlagged, labelOf, ownerSectionRelevant } from "@/lib/work-entry";
 import { TicketOwnerUpdatePanel } from "@/components/TicketOwnerUpdatePanel";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { HandoffPanel } from "@/components/HandoffPanel";
@@ -1457,6 +1459,20 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   <PersonChip userId={ownerId} name={assigneeName} size="xs" />
                 </div>
                 <Field label="Priority" value={meta.short} />
+                {ticket.entry_kind && (
+                  <Field
+                    label="Recorded as"
+                    value={ticket.entry_kind === "maintenance" ? `Maintenance${ticket.maintenance_category ? ` · ${labelOf(MAINTENANCE_CATEGORIES, ticket.maintenance_category)}` : ""}` : "Ops Ticket"}
+                  />
+                )}
+                {ticket.entry_kind === "maintenance" && ticket.estimated_cost != null && (
+                  <Field label="Estimated cost" value={`$${Number(ticket.estimated_cost).toLocaleString("en-US")}`} />
+                )}
+                {insuranceFlagged(ticket.insurance_risk) && (
+                  <Chip className={stateChip("blocked")}>
+                    Insurance risk: {ticket.insurance_risk === "yes" ? "Yes" : "Unsure"} — supervisor visibility
+                  </Chip>
+                )}
                 <Field
                   label="Type"
                   value={workType?.name ?? labelFor(CATEGORIES, ticket.category)}
@@ -1476,6 +1492,10 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             </Card>
 
             <GuestContextPanel ticketId={ticketId} />
+            <TicketOwnerBox
+              ticket={ticket as Parameters<typeof TicketOwnerBox>[0]["ticket"]}
+              workOrderCosts={((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null; actual_cost?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount, o.actual_cost])}
+            />
           </aside>
         </div>
 
@@ -1536,7 +1556,9 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 pt-4">
-            {role.can("work_orders_internal") && (
+            {role.can("work_orders_internal") &&
+              (!ticket.entry_kind ||
+                ownerSectionRelevant(ticket, ((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount])).relevant) && (
               <TicketOwnerUpdatePanel key={ticket.id} ticketId={ticket.id} />
             )}
             <div className="space-y-3 text-sm">

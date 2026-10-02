@@ -272,7 +272,7 @@ export function TicketWorkOrderPanel({
   const blockedByEmergency = phase === "mitigation" && !emergency;
 
   return (
-    <Card>
+    <Card data-ticket-work-orders="">
       <CardHeader>
         <CardTitle>Work order</CardTitle>
         <CardDescription>Cost, approval and vendor tracking for this repair.</CardDescription>

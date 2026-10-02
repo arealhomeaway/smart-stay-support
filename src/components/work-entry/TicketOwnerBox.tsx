@@ -81,7 +81,7 @@ export function TicketOwnerBox({
             size="sm"
             variant="outline"
             onClick={() =>
-              document.getElementById("ticket-work-orders")?.scrollIntoView({ behavior: "smooth" })
+              (document.querySelector("[data-ticket-work-orders]") ?? document.querySelector("[data-current-work]"))?.scrollIntoView({ behavior: "smooth" })
             }
           >
             Request Owner Approval
