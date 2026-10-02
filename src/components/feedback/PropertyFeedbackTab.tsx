@@ -162,7 +162,7 @@ export function PropertyFeedbackTab({
                   Open the follow-up Ticket
                 </button>
               ) : (
-                <p className="text-sm text-muted-foreground">No follow-up work — 5-star feedback is kept for history only.</p>
+                <p className="text-sm text-muted-foreground">{open.rating === 5 ? "No follow-up work — 5-star feedback is kept for history only." : "No follow-up Ticket — this review is kept for history only."}</p>
               )}
             </>
           )}
