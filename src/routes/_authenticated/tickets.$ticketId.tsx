@@ -36,7 +36,7 @@ import { GuestContextPanel } from "@/components/GuestContextPanel";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { TicketOwnerBox } from "@/components/work-entry/TicketOwnerBox";
-import { MAINTENANCE_CATEGORIES, insuranceFlagged, labelOf, ownerSectionRelevant } from "@/lib/work-entry";
+import { MAINTENANCE_CATEGORIES, insuranceFlagged, insuranceRiskLabel, labelOf, ownerSectionRelevant } from "@/lib/work-entry";
 import { TicketOwnerUpdatePanel } from "@/components/TicketOwnerUpdatePanel";
 import { OwnerParticipationOffer } from "@/components/OwnerParticipationOffer";
 import { HandoffPanel } from "@/components/HandoffPanel";
