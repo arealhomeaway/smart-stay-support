@@ -45,7 +45,7 @@ function errText(e: unknown) {
   return e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : "Something went wrong.";
 }
 
-export type NewExpenseSpec = { propertyId: string | null; isDemo: boolean; linkType?: LinkType; targetId?: string };
+export type NewExpenseSpec = { propertyId: string | null; isDemo: boolean; linkType?: LinkType | undefined; targetId?: string | undefined };
 
 /** Draft form: nothing is saved until "Save expense" with minimum meaningful information. */
 export function NewExpenseSheet({ open, spec, onClose, onCreated }: { open: boolean; spec: NewExpenseSpec; onClose: () => void; onCreated: (id: string) => void }) {

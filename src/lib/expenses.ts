@@ -197,7 +197,7 @@ export type FinanceQueue = "unmatched" | "reservation_unresolved" | "needs_clari
 export function financeQueue(e: {
   links: number;
   reservation_link_state: ReservationLink;
-  ownerrez_booking_id?: string | null;
+  ownerrez_booking_id?: string | null | undefined;
   finance_review: FinanceReview;
   ops_completion: "open" | "done";
   ready: boolean;
