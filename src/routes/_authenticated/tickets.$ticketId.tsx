@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { ExpensesCard } from "@/components/finance/ExpensesCard";
 import { commitmentStatus } from "@/lib/work-orders";
 import { GuidanceCard } from "@/components/GuidanceCard";
 import { CurrentActionCard } from "@/components/CurrentActionCard";
@@ -1585,6 +1586,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 pt-4">
+            {role.isStaff && <ExpensesCard propertyId={ticket.property_id} linkType="ticket" targetId={ticketId} />}
             {role.can("work_orders_internal") &&
               (!ticket.entry_kind ||
                 ownerSectionRelevant(ticket, ((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount])).relevant) && (

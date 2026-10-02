@@ -329,7 +329,7 @@ const navGroups: NavGroup[] = [
       {
         to: "/finance",
         label: "Finance",
-        icon: Receipt,
+        icon: ReceiptText,
         tour: "finance",
         capability: "finance_workspace",
       },
