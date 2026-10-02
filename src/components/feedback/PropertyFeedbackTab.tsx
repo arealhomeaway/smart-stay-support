@@ -124,7 +124,7 @@ export function PropertyFeedbackTab({
                     if (drawer && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
                       e.preventDefault();
                       // Let the survey popup finish closing before layering the Ticket.
-                      window.setTimeout(() => drawer.openTicket(id), 50);
+                      window.setTimeout(() => drawer.openTicket(id), 350);
                     }
                   }} data-full-page="" className="text-sm text-primary hover:underline">
                   Open the follow-up Ticket
