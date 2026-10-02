@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTicketDrawer } from "@/components/nav/TicketDrawer";
-import { addTestReview, createTestSurveyLink, previewOwnerRezReviews } from "@/lib/guest-feedback.functions";
+import { addTestReview, createTestSurveyLink, getReviewFollowUpStart, previewOwnerRezReviews, setReviewFollowUpStart } from "@/lib/guest-feedback.functions";
 import { usDate as formatDate } from "@/lib/dates";
 import {
   RatingStars,
@@ -180,20 +180,53 @@ function SurveyLinkCard({ propertyId, isDemo }: { propertyId: string; isDemo: bo
   );
 }
 
+type PreviewResult = Awaited<ReturnType<typeof previewOwnerRezReviews>>;
+
+const PREVIEW_LABELS: Record<PreviewResult["rows"][number]["outcome"], string> = {
+  historical: "Historical import only",
+  no_follow_up: "New review — no follow-up",
+  follow_up: "New review — follow-up Ticket will be created",
+  duplicate: "Already imported — skipped",
+  unmatched_property: "No matching home — skipped",
+};
+
 function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: string; isDemo: boolean; isSupervisor: boolean }) {
   const qc = useQueryClient();
   const preview = useServerFn(previewOwnerRezReviews);
   const addTest = useServerFn(addTestReview);
+  const getStart = useServerFn(getReviewFollowUpStart);
+  const setStart = useServerFn(setReviewFollowUpStart);
+  const startQ = useQuery({ queryKey: ["review-followup-start"], queryFn: () => getStart(), enabled: isSupervisor || isDemo });
+  const [draft, setDraft] = useState("");
+  const [result, setResult] = useState<PreviewResult | null>(null);
   const [busy, setBusy] = useState(false);
   if (!isSupervisor && !isDemo) return null;
   const refresh = () => qc.invalidateQueries({ queryKey: ["guest-feedback"] });
+  const start = startQ.data?.date ?? null;
   return (
     <Card>
-      <CardContent className="flex flex-wrap items-center gap-2 pt-4 text-sm">
+      <CardContent className="space-y-3 pt-4 text-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium">Review follow-up automation starts:</span>
+          <span>{start ?? "Not set — every imported review is history only"}</span>
+          {startQ.data?.canEdit && (
+            <>
+              <Input type="date" aria-label="Review follow-up automation start date" className="h-8 w-40" value={draft || start || ""} onChange={(e) => setDraft(e.target.value)} />
+              <Button size="sm" variant="outline" disabled={busy || !draft || draft === start} onClick={async () => {
+                setBusy(true);
+                try { await setStart({ data: { date: draft } }); toast.success("Start date saved"); setDraft(""); setResult(null); await startQ.refetch(); }
+                catch (e) { toast.error(e instanceof Error ? e.message : "Could not save"); }
+                setBusy(false);
+              }}>Save date</Button>
+            </>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">Reviews published before this date (Central time) are imported for history and reporting only. From this date on, reviews under 5 stars open a follow-up Ticket in the Team Queue.</p>
+        <div className="flex flex-wrap items-center gap-2">
         {isSupervisor && !isDemo && (
           <Button size="sm" variant="outline" disabled={busy} onClick={async () => {
             setBusy(true);
-            try { const r = await preview(); toast.success(`Preview only — nothing saved: ${r.available} reviews, ${r.duplicates} already imported, ${r.wouldCreateFollowUp} would open a follow-up, ${r.wouldImportNoFollowUp} with no follow-up, ${r.unmatchedProperty} unmatched home`, { duration: 12000 }); }
+            try { setResult(await preview()); }
             catch (e) { toast.error(e instanceof Error ? e.message : "Preview failed"); }
             setBusy(false);
           }}>
@@ -216,6 +249,33 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
               </Button>
             ))}
           </>
+        )}
+        </div>
+        {result && (
+          <div className="space-y-2 rounded-md border p-3" data-testid="review-import-preview">
+            <p className="font-medium">Preview only — nothing saved, no Tickets created. {result.available} reviews from the last 60 days.</p>
+            <ul className="space-y-0.5">
+              {(["historical", "no_follow_up", "follow_up", "duplicate", "unmatched_property"] as const).map((o) => (
+                <li key={o}>{PREVIEW_LABELS[o]}: <strong>{result.rows.filter((r) => r.outcome === o).length}</strong></li>
+              ))}
+            </ul>
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Published</th><th>Home</th><th>Stars</th><th>Site</th><th>Result</th></tr></thead>
+                <tbody>
+                  {result.rows.map((r) => (
+                    <tr key={r.source_review_id} className="border-t">
+                      <td className="py-1">{r.date ? r.date.slice(0, 10) : "—"}</td>
+                      <td>{r.property_name ?? "—"}</td>
+                      <td>{r.rating ?? "—"}</td>
+                      <td>{r.platform ?? "—"}</td>
+                      <td>{PREVIEW_LABELS[r.outcome]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
