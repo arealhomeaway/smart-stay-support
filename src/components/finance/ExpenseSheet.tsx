@@ -177,6 +177,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
               {(Object.keys(EXPENSE_TYPE_LABEL) as ExpenseType[]).map((t) => <option key={t} value={t}>{EXPENSE_TYPE_LABEL[t]}</option>)}
             </select>
           </div>
+          <PropertyPicker isDemo={e.is_demo} value={v.property_id} onChange={(id) => set("property_id", id)} />
           <div><Label>Payee</Label><Input value={txt("payee")} onChange={(x) => set("payee", x.target.value)} /></div>
           <div><Label>Amount</Label><Input type="number" step="0.01" value={v.amount ?? ""} onChange={(x) => set("amount", x.target.value === "" ? null : Number(x.target.value))} /></div>
           <div><Label>Expense / service date</Label><Input type="date" value={txt("expense_date")} onChange={(x) => set("expense_date", x.target.value || null)} /></div>
@@ -656,6 +657,22 @@ function RecoveryForm({ expenseId, rows, canReceive, onDone }: { expenseId: stri
         <Input className="w-32" type="number" step="0.01" placeholder="Expected" value={expected} onChange={(x) => setExpected(x.target.value)} />
         <Button size="sm" variant="outline" disabled={!expected} onClick={() => void add()}>Add expected recovery</Button>
       </div>
+    </div>
+  );
+}
+
+function PropertyPicker({ isDemo, value, onChange }: { isDemo: boolean; value: string | null; onChange: (id: string | null) => void }) {
+  const q = useQuery({
+    queryKey: ["expense-properties", isDemo],
+    queryFn: async () => (await supabase.from("properties").select("id, name").eq("is_demo", isDemo).is("archived_at", null).order("name")).data ?? [],
+  });
+  return (
+    <div>
+      <Label>Property</Label>
+      <select className={sel} value={value ?? ""} onChange={(x) => onChange(x.target.value || null)}>
+        <option value="">Not identified yet</option>
+        {(q.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
     </div>
   );
 }
