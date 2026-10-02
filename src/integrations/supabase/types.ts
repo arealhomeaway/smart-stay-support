@@ -3577,6 +3577,305 @@ export type Database = {
           },
         ]
       }
+      expense_events: {
+        Row: {
+          actor_id: string | null
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          expense_id: string
+          id: string
+          kind: string
+          reason: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          expense_id: string
+          id?: string
+          kind: string
+          reason?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          expense_id?: string
+          id?: string
+          kind?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_events_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expense_id: string
+          id: string
+          link_type: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expense_id: string
+          id?: string
+          link_type: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expense_id?: string
+          id?: string
+          link_type?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_links_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_recoveries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expected_amount: number
+          expense_id: string
+          id: string
+          note: string | null
+          party: string
+          received_amount: number
+          received_on: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expected_amount?: number
+          expense_id: string
+          id?: string
+          note?: string | null
+          party: string
+          received_amount?: number
+          received_on?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expected_amount?: number
+          expense_id?: string
+          id?: string
+          note?: string | null
+          party?: string
+          received_amount?: number
+          received_on?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_recoveries_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number | null
+          approval_id: string | null
+          authorization_note: string | null
+          change_reason: string | null
+          cost_responsibility: string
+          created_at: string
+          created_by: string | null
+          dispatch_reason: string | null
+          expense_date: string | null
+          expense_type: string
+          finance_review: string
+          finance_treatment_note: string | null
+          financial_request_id: string | null
+          id: string
+          invoice_document_ids: string[]
+          is_demo: boolean
+          leadership_assignee: string | null
+          leadership_decided_at: string | null
+          leadership_decided_by: string | null
+          leadership_decision: string | null
+          leadership_reason: string | null
+          leadership_required: boolean
+          ops_completion: string
+          ops_recommendation_note: string | null
+          owner_notification_note: string | null
+          owner_notified_at: string | null
+          ownerrez_booking_id: string | null
+          payee: string | null
+          photo_document_ids: string[]
+          photos_required: boolean
+          property_id: string | null
+          proposed_statement_period: string | null
+          purchase_purpose: string | null
+          purchased_what: string | null
+          qb_reference_manual: string | null
+          reason: string | null
+          received_on: string
+          recommended_by: string | null
+          recommended_responsibility: string | null
+          reservation_link_state: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          split_allocations: Json
+          updated_at: string
+          vendor_invoice_ref: string | null
+          visit_outcome: string | null
+        }
+        Insert: {
+          amount?: number | null
+          approval_id?: string | null
+          authorization_note?: string | null
+          change_reason?: string | null
+          cost_responsibility?: string
+          created_at?: string
+          created_by?: string | null
+          dispatch_reason?: string | null
+          expense_date?: string | null
+          expense_type?: string
+          finance_review?: string
+          finance_treatment_note?: string | null
+          financial_request_id?: string | null
+          id?: string
+          invoice_document_ids?: string[]
+          is_demo?: boolean
+          leadership_assignee?: string | null
+          leadership_decided_at?: string | null
+          leadership_decided_by?: string | null
+          leadership_decision?: string | null
+          leadership_reason?: string | null
+          leadership_required?: boolean
+          ops_completion?: string
+          ops_recommendation_note?: string | null
+          owner_notification_note?: string | null
+          owner_notified_at?: string | null
+          ownerrez_booking_id?: string | null
+          payee?: string | null
+          photo_document_ids?: string[]
+          photos_required?: boolean
+          property_id?: string | null
+          proposed_statement_period?: string | null
+          purchase_purpose?: string | null
+          purchased_what?: string | null
+          qb_reference_manual?: string | null
+          reason?: string | null
+          received_on?: string
+          recommended_by?: string | null
+          recommended_responsibility?: string | null
+          reservation_link_state?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          split_allocations?: Json
+          updated_at?: string
+          vendor_invoice_ref?: string | null
+          visit_outcome?: string | null
+        }
+        Update: {
+          amount?: number | null
+          approval_id?: string | null
+          authorization_note?: string | null
+          change_reason?: string | null
+          cost_responsibility?: string
+          created_at?: string
+          created_by?: string | null
+          dispatch_reason?: string | null
+          expense_date?: string | null
+          expense_type?: string
+          finance_review?: string
+          finance_treatment_note?: string | null
+          financial_request_id?: string | null
+          id?: string
+          invoice_document_ids?: string[]
+          is_demo?: boolean
+          leadership_assignee?: string | null
+          leadership_decided_at?: string | null
+          leadership_decided_by?: string | null
+          leadership_decision?: string | null
+          leadership_reason?: string | null
+          leadership_required?: boolean
+          ops_completion?: string
+          ops_recommendation_note?: string | null
+          owner_notification_note?: string | null
+          owner_notified_at?: string | null
+          ownerrez_booking_id?: string | null
+          payee?: string | null
+          photo_document_ids?: string[]
+          photos_required?: boolean
+          property_id?: string | null
+          proposed_statement_period?: string | null
+          purchase_purpose?: string | null
+          purchased_what?: string | null
+          qb_reference_manual?: string | null
+          reason?: string | null
+          received_on?: string
+          recommended_by?: string | null
+          recommended_responsibility?: string | null
+          reservation_link_state?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          split_allocations?: Json
+          updated_at?: string
+          vendor_invoice_ref?: string | null
+          visit_outcome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_financial_request_id_fkey"
+            columns: ["financial_request_id"]
+            isOneToOne: false
+            referencedRelation: "financial_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_databases: {
         Row: {
           archived_at: string | null
@@ -12862,6 +13161,10 @@ export type Database = {
         }
         Returns: string
       }
+      answer_expense_clarification: {
+        Args: { _answer: string; _work_item: string }
+        Returns: undefined
+      }
       archive_attachment: {
         Args: { _actor_id: string; _document_id: string; _reason?: string }
         Returns: string
@@ -13152,7 +13455,9 @@ export type Database = {
         Args: { _project_id: string; _version_id: string }
         Returns: number
       }
+      is_accounting: { Args: { _user_id: string }; Returns: boolean }
       is_director: { Args: { _user_id: string }; Returns: boolean }
+      is_finance_lead: { Args: { _user_id: string }; Returns: boolean }
       is_internal_staff: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_director: { Args: { _user_id: string }; Returns: boolean }
       is_onboarding_leader: { Args: { _user_id: string }; Returns: boolean }
@@ -13538,6 +13843,15 @@ export type Database = {
       reorder_arha_opportunities: {
         Args: { _ids: string[]; _property_id: string }
         Returns: undefined
+      }
+      request_expense_clarification: {
+        Args: {
+          _assignee: string
+          _due: string
+          _expense: string
+          _question: string
+        }
+        Returns: string
       }
       request_new_vendor: {
         Args: {

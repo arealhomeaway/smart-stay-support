@@ -1,3 +1,4 @@
+import { ExpensesCard } from "@/components/finance/ExpensesCard";
 /**
  * Claim workspace.
  *
@@ -303,6 +304,8 @@ export function ClaimDrawer({
           </div>
         </section>
 
+        <Separator className="my-4" />
+        <ExpensesCard propertyId={claim.property_id ?? null} linkType="claim" targetId={claim.id} />
         <Separator className="my-4" />
 
         {/* Evidence */}

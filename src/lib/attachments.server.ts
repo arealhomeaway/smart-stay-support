@@ -146,6 +146,17 @@ async function loadRecord(
     // A home is never "closed" — property records stay open for the life of the home.
     return { propertyId: data.id, closed: false, label: data.name, isDemo: data.is_demo };
   }
+  if (entityType === "expense") {
+    // Finance files never reach homeowners or vendors.
+    if (!isStaff(viewer)) throw new Error(DENY_UNRELATED);
+    const { data, error } = await supabaseAdmin
+      .from("expenses")
+      .select("id, payee, property_id, is_demo")
+      .eq("id", entityId)
+      .maybeSingle();
+    if (error || !data) throw new Error("That expense could not be found.");
+    return { propertyId: data.property_id, closed: false, label: `Expense · ${data.payee ?? "No payee"}`, isDemo: data.is_demo };
+  }
   if (entityType === "ticket") {
     const { data, error } = await supabaseAdmin
       .from("tickets")

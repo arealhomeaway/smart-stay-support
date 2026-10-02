@@ -326,6 +326,13 @@ const navGroups: NavGroup[] = [
         tour: "cleaner-hours",
         capability: "cleaner_hours",
       },
+      {
+        to: "/finance",
+        label: "Finance",
+        icon: ReceiptText,
+        tour: "finance",
+        capability: "finance_workspace",
+      },
     ],
   },
   {

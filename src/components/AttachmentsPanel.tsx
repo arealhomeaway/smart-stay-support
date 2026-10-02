@@ -373,7 +373,7 @@ export function AttachmentsPanel({
                 {f.visibility === "owner_shared" && f.owner_recipient_id ? (
                   <Badge variant="outline">Shared with the homeowner</Badge>
                 ) : null}
-                {f.can_share ? (
+                {f.can_share && entityType !== "expense" ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <label className="flex items-center gap-2">
                       <Switch

@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PropertyFeedbackTab } from "@/components/feedback/PropertyFeedbackTab";
 import { PropertyWorkHistory } from "@/components/work-entry/PropertyWorkHistory";
 import { PropertyDepartureReviews } from "@/components/departure/DepartureReviewQueue";
+import { ExpensesCard } from "@/components/finance/ExpensesCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
 import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
@@ -708,6 +709,7 @@ function OperationsTab({ hub }: { hub: Hub }) {
       </Card>
 
       <PropertyDepartureReviews propertyId={hub.property.id} />
+      <ExpensesCard propertyId={hub.property.id} />
       <PropertyWorkHistory propertyId={hub.property.id} />
 
       <Card>

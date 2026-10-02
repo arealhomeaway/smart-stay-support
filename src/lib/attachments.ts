@@ -16,9 +16,10 @@ export const MAX_FILE_BYTES = 250 * 1024 * 1024;
 export const OVERSIZE_LINK_MESSAGE =
   "This file is larger than Resolve's 250 MB upload limit. Upload it to your approved file-sharing location and add the link here instead.";
 
-export type AttachmentEntity = "ticket" | "onboarding_task" | "property";
+export type AttachmentEntity = "ticket" | "onboarding_task" | "property" | "expense";
 
-export const ATTACHMENT_ENTITIES: AttachmentEntity[] = ["ticket", "onboarding_task", "property"];
+/** `expense` files are Finance files: internal staff only, never owner-shared (DB-enforced). */
+export const ATTACHMENT_ENTITIES: AttachmentEntity[] = ["ticket", "onboarding_task", "property", "expense"];
 
 /** Visibility of a stored file. */
 export type AttachmentVisibility = "internal" | "owner_shared";

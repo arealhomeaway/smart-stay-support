@@ -104,6 +104,8 @@ export type Capability =
   | "cleaner_dispatch_check"
   // STR Participation & Work Activity Report: Admin + Director of Operations only.
   | "str_participation_report"
+  // Finance workspace: Finance seats, Director of Operations and Platform Owners.
+  | "finance_workspace"
   | "view_as";
 
 // Creating a ticket is internal-staff work. Vendors and homeowners never get it.
@@ -161,6 +163,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
     "handoff_request",
     "view_as",
     "str_participation_report",
+    "finance_workspace",
   ],
   manager: SUPERVISOR_CAPS,
   onboarding: [...STAFF_BASE, "onboarding_workspace", "handoff_request"],
@@ -178,7 +181,7 @@ export const ROLE_CAPABILITIES: Record<AppRole, Capability[]> = {
  * department without needing the leadership (`manager`) role, which would also
  * open Operations.
  */
-export type AccessSeats = { onboardingDirector?: boolean; opsDirector?: boolean };
+export type AccessSeats = { onboardingDirector?: boolean; opsDirector?: boolean; finance?: boolean };
 
 export const ONBOARDING_DIRECTOR_CAPS: Capability[] = [
   "onboarding_workspace",
@@ -199,7 +202,9 @@ export function capabilitiesFor(roles: AppRole[], seats: AccessSeats = {}): Set<
   if (seats.opsDirector) {
     set.add("str_participation_report");
     set.add("vendor_admin");
+    set.add("finance_workspace");
   }
+  if (seats.finance) set.add("finance_workspace");
   return set;
 }
 
