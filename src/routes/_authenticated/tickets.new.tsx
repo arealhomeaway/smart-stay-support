@@ -78,6 +78,8 @@ type NewTicketSearch = {
   origin?: string;
   /** Preselects one of the three entry paths. */
   kind?: EntryKind;
+  /** Guest feedback record this new work follows up on (kept separate from it). */
+  feedback?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/tickets/new")({
@@ -94,6 +96,8 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
     if (project) out.project = project;
     if (from) out.from = from;
     if (origin) out.origin = origin;
+    const feedback = str(search["feedback"]);
+    if (feedback && /^[0-9a-f-]{36}$/i.test(feedback)) out.feedback = feedback;
     const kind = str(search["kind"]);
     if (kind === "activity" || kind === "ops" || kind === "maintenance") out.kind = kind;
     return out;
@@ -496,6 +500,7 @@ export function NewTicketForm({
           property_id: form.property_id || null,
           work_type_id: effectiveWorkTypeId,
           entry_kind: mode,
+          linked_feedback_id: context.feedback ?? null,
           maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
           insurance_risk: mode === "maintenance" ? form.insurance_risk : null,
           estimated_cost: mode === "maintenance" && estimated !== null && Number.isFinite(estimated) ? estimated : null,

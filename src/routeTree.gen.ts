@@ -53,6 +53,8 @@ import { Route as AuthenticatedTeamQueueRouteImport } from './routes/_authentica
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authenticated/work-orders'
+import { Route as GuestFeedbackIndexRouteImport } from './routes/guest-feedback.index'
+import { Route as GuestFeedbackTokenRouteImport } from './routes/guest-feedback.$token'
 import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated/claims.index'
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
@@ -328,6 +330,16 @@ const AuthenticatedWorkOrdersRoute = AuthenticatedWorkOrdersRouteImport.update({
   id: '/work-orders',
   path: '/work-orders',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const GuestFeedbackIndexRoute = GuestFeedbackIndexRouteImport.update({
+  id: '/guest-feedback/',
+  path: '/guest-feedback/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuestFeedbackTokenRoute = GuestFeedbackTokenRouteImport.update({
+  id: '/guest-feedback/$token',
+  path: '/guest-feedback/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedClaimsIndexRoute =
   AuthenticatedClaimsIndexRouteImport.update({
@@ -620,6 +632,8 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
+  '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
+  '/guest-feedback/': typeof GuestFeedbackIndexRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -701,6 +715,8 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/team-queue': typeof AuthenticatedTeamQueueRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
+  '/guest-feedback': typeof GuestFeedbackIndexRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -790,6 +806,8 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRouteWithChildren
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
+  '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
+  '/guest-feedback/': typeof GuestFeedbackIndexRoute
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -879,6 +897,8 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/welcome'
     | '/work-orders'
+    | '/guest-feedback/$token'
+    | '/guest-feedback/'
     | '/claims/manager'
     | '/claims/my-claims'
     | '/leads/manager'
@@ -960,6 +980,8 @@ export interface FileRouteTypes {
     | '/team'
     | '/team-queue'
     | '/welcome'
+    | '/guest-feedback/$token'
+    | '/guest-feedback'
     | '/claims/manager'
     | '/claims/my-claims'
     | '/leads/manager'
@@ -1048,6 +1070,8 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/welcome'
     | '/_authenticated/work-orders'
+    | '/guest-feedback/$token'
+    | '/guest-feedback/'
     | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
     | '/_authenticated/leads/manager'
@@ -1098,6 +1122,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AwaitingAccessRoute: typeof AwaitingAccessRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  GuestFeedbackTokenRoute: typeof GuestFeedbackTokenRoute
+  GuestFeedbackIndexRoute: typeof GuestFeedbackIndexRoute
   OauthSharepointReturnRoute: typeof OauthSharepointReturnRoute
   ApiPublicHooksBreezewayMirrorRoute: typeof ApiPublicHooksBreezewayMirrorRoute
   ApiPublicHooksCleanerHoursReconcileRoute: typeof ApiPublicHooksCleanerHoursReconcileRoute
@@ -1419,6 +1445,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/work-orders'
       preLoaderRoute: typeof AuthenticatedWorkOrdersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/guest-feedback/': {
+      id: '/guest-feedback/'
+      path: '/guest-feedback'
+      fullPath: '/guest-feedback/'
+      preLoaderRoute: typeof GuestFeedbackIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guest-feedback/$token': {
+      id: '/guest-feedback/$token'
+      path: '/guest-feedback/$token'
+      fullPath: '/guest-feedback/$token'
+      preLoaderRoute: typeof GuestFeedbackTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/claims/': {
       id: '/_authenticated/claims/'
@@ -1944,6 +1984,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AwaitingAccessRoute: AwaitingAccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  GuestFeedbackTokenRoute: GuestFeedbackTokenRoute,
+  GuestFeedbackIndexRoute: GuestFeedbackIndexRoute,
   OauthSharepointReturnRoute: OauthSharepointReturnRoute,
   ApiPublicHooksBreezewayMirrorRoute: ApiPublicHooksBreezewayMirrorRoute,
   ApiPublicHooksCleanerHoursReconcileRoute:

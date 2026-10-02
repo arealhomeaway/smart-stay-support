@@ -3703,6 +3703,166 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_feedback: {
+        Row: {
+          booking_platform: string | null
+          contact_notes: string | null
+          contact_outcome: string | null
+          created_at: string
+          feedback_type: string
+          follow_up_required: boolean
+          follow_up_status: string
+          followup_completed_at: string | null
+          followup_completed_by: string | null
+          followup_outcome: string | null
+          guest_id: string | null
+          guest_name: string | null
+          id: string
+          is_demo: boolean
+          issue_categories: string[]
+          ownerrez_booking_id: string | null
+          property_id: string | null
+          rating: number | null
+          reservation_match: string
+          response_text: string | null
+          source: string
+          source_review_id: string | null
+          source_url: string | null
+          stay_end: string | null
+          stay_start: string | null
+          submitted_at: string
+          summary: string | null
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_platform?: string | null
+          contact_notes?: string | null
+          contact_outcome?: string | null
+          created_at?: string
+          feedback_type: string
+          follow_up_required?: boolean
+          follow_up_status?: string
+          followup_completed_at?: string | null
+          followup_completed_by?: string | null
+          followup_outcome?: string | null
+          guest_id?: string | null
+          guest_name?: string | null
+          id?: string
+          is_demo?: boolean
+          issue_categories?: string[]
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          rating?: number | null
+          reservation_match?: string
+          response_text?: string | null
+          source: string
+          source_review_id?: string | null
+          source_url?: string | null
+          stay_end?: string | null
+          stay_start?: string | null
+          submitted_at?: string
+          summary?: string | null
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_platform?: string | null
+          contact_notes?: string | null
+          contact_outcome?: string | null
+          created_at?: string
+          feedback_type?: string
+          follow_up_required?: boolean
+          follow_up_status?: string
+          followup_completed_at?: string | null
+          followup_completed_by?: string | null
+          followup_outcome?: string | null
+          guest_id?: string | null
+          guest_name?: string | null
+          id?: string
+          is_demo?: boolean
+          issue_categories?: string[]
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          rating?: number | null
+          reservation_match?: string
+          response_text?: string | null
+          source?: string
+          source_review_id?: string | null
+          source_url?: string | null
+          stay_end?: string | null
+          stay_start?: string | null
+          submitted_at?: string
+          summary?: string | null
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_feedback_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "guest_feedback_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_feedback_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "guest_feedback_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_feedback_events: {
+        Row: {
+          actor_id: string | null
+          detail: string | null
+          event_at: string
+          feedback_id: string
+          id: string
+          kind: string
+        }
+        Insert: {
+          actor_id?: string | null
+          detail?: string | null
+          event_at?: string
+          feedback_id: string
+          id?: string
+          kind: string
+        }
+        Update: {
+          actor_id?: string | null
+          detail?: string | null
+          event_at?: string
+          feedback_id?: string
+          id?: string
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_feedback_events_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "guest_feedback"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_recovery: {
         Row: {
           approval_authority: string | null
@@ -4013,6 +4173,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "guest_recovery_ledger"
             referencedColumns: ["recovery_id"]
+          },
+        ]
+      }
+      guest_survey_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          feedback_id: string
+          follow_up_permission: boolean | null
+          had_issues: boolean | null
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          feedback_id: string
+          follow_up_permission?: boolean | null
+          had_issues?: boolean | null
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          feedback_id?: string
+          follow_up_permission?: boolean | null
+          had_issues?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_survey_responses_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: true
+            referencedRelation: "guest_feedback"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -9393,6 +9585,7 @@ export type Database = {
           guest_comm_required: string | null
           guest_confirmed: boolean
           guest_contact: string | null
+          guest_feedback_id: string | null
           guest_impact: string
           guest_in_residence: boolean
           guest_name: string | null
@@ -9411,6 +9604,7 @@ export type Database = {
           issue_reservation_relation: string | null
           last_reopened_at: string | null
           late_reason: string | null
+          linked_feedback_id: string | null
           maintenance_category: string | null
           next_action: string | null
           next_action_due_at: string | null
@@ -9523,6 +9717,7 @@ export type Database = {
           guest_comm_required?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
+          guest_feedback_id?: string | null
           guest_impact?: string
           guest_in_residence?: boolean
           guest_name?: string | null
@@ -9541,6 +9736,7 @@ export type Database = {
           issue_reservation_relation?: string | null
           last_reopened_at?: string | null
           late_reason?: string | null
+          linked_feedback_id?: string | null
           maintenance_category?: string | null
           next_action?: string | null
           next_action_due_at?: string | null
@@ -9653,6 +9849,7 @@ export type Database = {
           guest_comm_required?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
+          guest_feedback_id?: string | null
           guest_impact?: string
           guest_in_residence?: boolean
           guest_name?: string | null
@@ -9671,6 +9868,7 @@ export type Database = {
           issue_reservation_relation?: string | null
           last_reopened_at?: string | null
           late_reason?: string | null
+          linked_feedback_id?: string | null
           maintenance_category?: string | null
           next_action?: string | null
           next_action_due_at?: string | null
@@ -9730,6 +9928,20 @@ export type Database = {
           work_type_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_guest_feedback_id_fkey"
+            columns: ["guest_feedback_id"]
+            isOneToOne: false
+            referencedRelation: "guest_feedback"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_linked_feedback_id_fkey"
+            columns: ["linked_feedback_id"]
+            isOneToOne: false
+            referencedRelation: "guest_feedback"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tickets_playbook_id_fkey"
             columns: ["playbook_id"]
