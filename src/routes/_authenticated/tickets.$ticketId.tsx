@@ -1469,8 +1469,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                   <Field label="Estimated cost" value={`$${Number(ticket.estimated_cost).toLocaleString("en-US")}`} />
                 )}
                 {insuranceFlagged(ticket.insurance_risk) && (
-                  <Chip className={stateChip("blocked")}>
-                    Insurance risk: {ticket.insurance_risk === "yes" ? "Yes" : "Unsure"} — supervisor visibility
+                  <Chip className={stateChip(ticket.insurance_risk === "yes" ? "blocked" : "waiting")}>
+                    {insuranceRiskLabel(ticket.insurance_risk)} — supervisor visibility
                   </Chip>
                 )}
                 <Field
