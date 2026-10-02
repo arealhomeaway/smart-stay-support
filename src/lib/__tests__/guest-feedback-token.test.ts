@@ -1,8 +1,6 @@
-import { describe, expect, it, beforeAll } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
-beforeAll(() => {
-  process.env["GUEST_SURVEY_SECRET"] = "test-secret-for-unit-tests-only-0123456789";
-});
+process.env["GUEST_SURVEY_SECRET"] = "test-secret-for-unit-tests-only-0123456789";
 
 describe("survey tokens", () => {
   it("round-trips, rejects tampering and expiry", async () => {
