@@ -181,3 +181,36 @@ export function surveyWindowOpen(checkout: string, now = new Date()): boolean {
 export function normalizeName(s: string | null | undefined) {
   return (s ?? "").normalize("NFKD").replace(/[^a-z]/gi, "").toLowerCase();
 }
+
+/* ---------------- Review follow-up automation start date ---------------- */
+
+/** app_settings key holding { date: "YYYY-MM-DD" } (America/Chicago calendar day). */
+export const REVIEW_FOLLOWUP_START_KEY = "review_followup_automation_start";
+
+export type ReviewImportDecision = "historical" | "no_follow_up" | "follow_up";
+
+/** Reads the configured start date; anything invalid counts as not configured. */
+export function readReviewFollowUpStart(value: unknown): string | null {
+  const d = value && typeof value === "object" ? (value as { date?: unknown }).date : null;
+  return typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+}
+
+/** The America/Chicago calendar day an instant falls on, as YYYY-MM-DD. */
+export function chicagoDay(iso: string): string | null {
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return null;
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+}
+
+/**
+ * The one rule for whether an imported review opens follow-up work.
+ * Published before the start date (or no start date / no publish date) →
+ * historical: stored for history and reporting, never a Ticket.
+ * On or after → under 5 stars opens follow-up; 5 stars does not.
+ */
+export function reviewImportDecision(rating: number | null, publishedAt: string | null, startDate: string | null): ReviewImportDecision {
+  if (!startDate || !publishedAt) return "historical";
+  const day = chicagoDay(publishedAt);
+  if (!day || day < startDate) return "historical";
+  return needsFollowUp(rating) ? "follow_up" : "no_follow_up";
+}

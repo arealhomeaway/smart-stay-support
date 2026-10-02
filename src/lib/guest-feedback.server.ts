@@ -4,7 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { FEEDBACK_WORK_TYPE, SURVEY_VALID_DAYS, needsFollowUp, normalizeName, surveyWindowOpen } from "./guest-feedback";
+import { FEEDBACK_WORK_TYPE, REVIEW_FOLLOWUP_START_KEY, SURVEY_VALID_DAYS, needsFollowUp, normalizeName, readReviewFollowUpStart, reviewImportDecision, surveyWindowOpen } from "./guest-feedback";
 
 type Admin = SupabaseClient<Database>;
 
@@ -238,8 +238,15 @@ export type ReviewInput = {
  * Stores reviews once each (by source + review id). Only newly stored
  * sub-5-star reviews create follow-up work, so repeated syncs are silent.
  */
+export async function loadReviewFollowUpStart(admin: Admin): Promise<string | null> {
+  const { data } = await admin.from("app_settings").select("value").eq("key", REVIEW_FOLLOWUP_START_KEY).maybeSingle();
+  return readReviewFollowUpStart(data?.value ?? null);
+}
+
 export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
   const homes = await linkedHomes(admin);
+  const startDate = await loadReviewFollowUpStart(admin);
+  let historical = 0;
   let imported = 0;
   let duplicates = 0;
   let ticketsCreated = 0;
@@ -274,9 +281,13 @@ export async function ingestReviews(admin: Admin, items: ReviewInput[]) {
       continue;
     }
     imported++;
-    if (needsFollowUp(data.rating) && (await createFollowUpTicket(admin, data))) ticketsCreated++;
+    // Only reviews published on/after the start date can open follow-up work;
+    // replays of older reviews are always history-only.
+    const decision = reviewImportDecision(data.rating, data.submitted_at, startDate);
+    if (decision === "historical") historical++;
+    else if (decision === "follow_up" && (await createFollowUpTicket(admin, data))) ticketsCreated++;
   }
-  return { imported, duplicates, ticketsCreated };
+  return { imported, duplicates, ticketsCreated, historical, startDate };
 }
 
 /** Reads OwnerRez reviews for linked homes, newest first, and maps them. */
@@ -328,7 +339,7 @@ export type ReviewPreviewRow = {
   booking_id: string | null;
   guest_name: string | null;
   date: string | null;
-  outcome: "duplicate" | "follow_up" | "no_follow_up" | "unmatched_property";
+  outcome: "duplicate" | "historical" | "follow_up" | "no_follow_up" | "unmatched_property";
 };
 
 /**
@@ -337,6 +348,7 @@ export type ReviewPreviewRow = {
  */
 export async function previewReviewImport(admin: Admin, items: ReviewInput[]) {
   const homes = await linkedHomes(admin);
+  const startDate = await loadReviewFollowUpStart(admin);
   const ids = items.map((r) => r.source_review_id);
   const existing = new Set<string>();
   for (let i = 0; i < ids.length; i += 200) {
@@ -359,9 +371,7 @@ export async function previewReviewImport(admin: Admin, items: ReviewInput[]) {
       ? "duplicate"
       : !property_id
         ? "unmatched_property"
-        : needsFollowUp(rating)
-          ? "follow_up"
-          : "no_follow_up";
+        : reviewImportDecision(rating, r.date, startDate);
     return {
       source_review_id: r.source_review_id,
       platform: r.listing_site,
@@ -378,7 +388,9 @@ export async function previewReviewImport(admin: Admin, items: ReviewInput[]) {
   const count = (o: ReviewPreviewRow["outcome"]) => rows.filter((r) => r.outcome === o).length;
   return {
     available: rows.length,
+    startDate,
     duplicates: count("duplicate"),
+    historical: count("historical"),
     wouldCreateFollowUp: count("follow_up"),
     wouldImportNoFollowUp: count("no_follow_up"),
     unmatchedProperty: count("unmatched_property"),
