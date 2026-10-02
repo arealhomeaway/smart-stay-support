@@ -109,7 +109,7 @@ function NewMatterPage() {
   );
 }
 
-type Mode = "one_touch" | "ticket";
+type Mode = EntryKind | null;
 
 export type { NewTicketSearch };
 
@@ -132,7 +132,8 @@ export function NewTicketForm({
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
   const setStatus = useServerFn(setTicketStatusFn);
-  const [mode, setMode] = useState<Mode>("ticket");
+  const [mode, setModeRaw] = useState<Mode>(context.kind ?? null);
+  const isTicket = mode === "ops" || mode === "maintenance";
   const [saving, setSaving] = useState(false);
   const [priorityTouched, setPriorityTouched] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
@@ -159,9 +160,10 @@ export function NewTicketForm({
     guest_contact: "",
     guest_in_residence: false,
     playbook_id: "auto",
-    // one-touch only
-    outcome_type: "resolved",
-    resolution_notes: "",
+    // maintenance only
+    maintenance_category: "",
+    insurance_risk: "",
+    estimated_cost: "",
   });
 
   const { data: properties } = useQuery({
@@ -248,9 +250,37 @@ export function NewTicketForm({
     },
   });
 
+  // Changing path drops a work type that belongs to the other path.
+  function setMode(next: Mode) {
+    setModeRaw(next);
+    setForm((f) => {
+      const wt = workTypes?.find((w) => w.id === f.work_type_id);
+      const keep = wt && (next === "ops" || next === "maintenance") && workTypeFitsKind(wt.category, next);
+      return keep ? f : { ...f, work_type_id: "", situation_id: "" };
+    });
+  }
+
+  const kindWorkTypes = useMemo(
+    () =>
+      (workTypes ?? []).filter((w) =>
+        mode === "ops" || mode === "maintenance" ? workTypeFitsKind(w.category, mode) : true,
+      ),
+    [workTypes, mode],
+  );
+
+  // Maintenance never stops on "pick a work type": with nothing recognised it
+  // falls back to the catalog's immediate/ongoing maintenance entry.
+  const effectiveWorkTypeId = useMemo(() => {
+    if (form.work_type_id) return form.work_type_id;
+    if (mode !== "maintenance") return "";
+    const affected = form.guest_in_residence || form.guest_impact === "active_guest_affected" || form.guest_impact === "safety_security";
+    const name = defaultMaintenanceWorkTypeName(affected);
+    return kindWorkTypes.find((w) => w.name === name)?.id ?? kindWorkTypes[0]?.id ?? "";
+  }, [form.work_type_id, form.guest_in_residence, form.guest_impact, mode, kindWorkTypes]);
+
   const workType = useMemo(
-    () => workTypes?.find((w) => w.id === form.work_type_id) ?? null,
-    [workTypes, form.work_type_id],
+    () => workTypes?.find((w) => w.id === effectiveWorkTypeId) ?? null,
+    [workTypes, effectiveWorkTypeId],
   );
 
   /**
@@ -283,8 +313,9 @@ export function NewTicketForm({
   );
 
   useEffect(() => {
-    if (!guess || situationTouched) return;
+    if (!guess || situationTouched || !isTicket) return;
     const resolved = resolveWorkType(guess.situation, workTypes);
+    if (!resolved || !workTypeFitsKind(resolved.category, mode)) return;
     setForm((f) =>
       f.situation_id === guess.situation.id
         ? f
@@ -295,7 +326,7 @@ export function NewTicketForm({
             guest_impact: guess.situation.guestImpact ?? f.guest_impact,
           },
     );
-  }, [guess, situationTouched, workTypes]);
+  }, [guess, situationTouched, workTypes, isTicket, mode]);
 
   const role = useMemo(
     () => roles?.find((r) => r.code === form.functional_role_code) ?? null,
@@ -363,16 +394,21 @@ export function NewTicketForm({
       toast.error("Tell us what happened first.");
       return;
     }
-    if (!form.work_type_id) {
-      toast.error("Pick a work type — it sets the owning role and the response standard.");
+    if (!isTicket) return;
+    if (!effectiveWorkTypeId) {
+      toast.error("Pick what kind of Ops work this is.");
+      return;
+    }
+    if (mode === "maintenance" && !form.maintenance_category) {
+      toast.error("Pick the maintenance category.");
+      return;
+    }
+    if (mode === "maintenance" && !form.insurance_risk) {
+      toast.error("Answer whether this could be an insurance-related event (Yes / No / Unsure).");
       return;
     }
     if (overridden && !form.priority_override_reason.trim()) {
       toast.error(`The rubric says ${mechanical.toUpperCase()}. Document why you changed it.`);
-      return;
-    }
-    if (mode === "one_touch" && !form.resolution_notes.trim()) {
-      toast.error("Write what you did — that is the whole record.");
       return;
     }
 
@@ -392,7 +428,8 @@ export function NewTicketForm({
       const userId = userData.user?.id ?? null;
       const now = new Date();
       const { response_due_at, action_due_at } = slaDueDates(form.priority, now, workType);
-      const oneTouch = mode === "one_touch";
+      const oneTouch = false;
+      const estimated = form.estimated_cost.trim() ? Number(form.estimated_cost) : null;
 
       const { data: ticket, error } = await supabase
         .from("tickets")
@@ -406,7 +443,11 @@ export function NewTicketForm({
           title: derivedTitle,
           description: form.description || null,
           property_id: form.property_id || null,
-          work_type_id: form.work_type_id,
+          work_type_id: effectiveWorkTypeId,
+          entry_kind: mode,
+          maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
+          insurance_risk: mode === "maintenance" ? form.insurance_risk : null,
+          estimated_cost: mode === "maintenance" && estimated !== null && Number.isFinite(estimated) ? estimated : null,
           functional_role_code: form.functional_role_code || null,
           cross_team: oneTouch ? false : form.cross_team,
           category: workType?.category ?? "other",
@@ -443,8 +484,8 @@ export function NewTicketForm({
           // evidence and Final Review rules apply here too instead of being
           // bypassed by inserting straight into a terminal status.
           status: "open",
-          outcome_type: oneTouch ? form.outcome_type : null,
-          resolution_notes: oneTouch ? form.resolution_notes.trim() : null,
+          outcome_type: null,
+          resolution_notes: null,
           resolved_at: null,
         })
         .select("id")
@@ -596,7 +637,7 @@ export function NewTicketForm({
           hint="Resolved in a single action. Kept in history, never hits the queue."
         />
         <ModeCard
-          active={mode === "ticket"}
+          active={isTicket}
           onClick={() => setMode("ticket")}
           icon={<Clock className="size-4" />}
           title="Ticket"
@@ -680,7 +721,7 @@ export function NewTicketForm({
 
             {form.property_id && <PropertyContactPanel propertyId={form.property_id} />}
 
-            {workType && mode === "ticket" && (
+            {workType && isTicket && (
               <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Looks like
@@ -815,7 +856,7 @@ export function NewTicketForm({
               </div>
             )}
 
-            {workType && mode === "ticket" && (
+            {workType && isTicket && (
               <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
                 <p className="font-medium">Operating standard</p>
                 {advanced && (
@@ -900,7 +941,7 @@ export function NewTicketForm({
                   </div>
                 </div>
 
-                {mode === "ticket" && (
+                {isTicket && (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Priority</Label>
@@ -954,7 +995,7 @@ export function NewTicketForm({
                   </div>
                 )}
 
-                {mode === "ticket" && (
+                {isTicket && (
                   <div className="space-y-2">
                     <Label>Owning functional role</Label>
                     <Select
@@ -985,7 +1026,7 @@ export function NewTicketForm({
                   </div>
                 )}
 
-                {mode === "ticket" && overridden && (
+                {isTicket && overridden && (
                   <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
                     <Label htmlFor="override">
                       Why {form.priority.toUpperCase()} instead of {mechanical.toUpperCase()}?
@@ -1034,7 +1075,7 @@ export function NewTicketForm({
                   />
                 </div>
 
-                {mode === "ticket" && (
+                {isTicket && (
                   <div className="flex items-center justify-between rounded-lg border border-border p-3">
                     <div>
                       <p className="flex items-center gap-2 text-sm font-medium">
@@ -1087,7 +1128,7 @@ export function NewTicketForm({
               </>
             )}
 
-            {mode === "ticket" && (
+            {isTicket && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
                 <Badge variant="outline" className={priorityTone(form.priority)}>
                   {meta.short}
