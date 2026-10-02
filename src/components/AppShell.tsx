@@ -186,7 +186,7 @@ const frontlineGroup: NavGroup = {
     },
     {
       to: "/tickets/new",
-      label: "Report an issue",
+      label: "Record work",
       icon: Plus,
       tour: "report",
       capability: "ticket_create",
@@ -648,7 +648,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     className="min-h-11 md:min-h-9"
                   >
                     <Link to="/tickets/new" search={ticketContext}>
-                      <Plus className="size-4" aria-hidden="true" /> Report an issue
+                      <Plus className="size-4" aria-hidden="true" /> Record work
                     </Link>
                   </Button>
                 )}
