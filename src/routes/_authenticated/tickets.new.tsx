@@ -2,11 +2,21 @@ import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
-import { setTicketStatusFn } from "@/lib/ticket-lifecycle.functions";
 import { PropertyContactPanel } from "@/components/PropertyContactPanel";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Clock, Users, Zap } from "lucide-react";
+import { Clock, History, Users, Wrench } from "lucide-react";
+import { PropertyActivityForm } from "@/components/work-entry/PropertyActivityForm";
+import {
+  ENTRY_KINDS,
+  INSURANCE_RISK,
+  MAINTENANCE_CATEGORIES,
+  defaultMaintenanceWorkTypeName,
+  insuranceFlagged,
+  labelOf,
+  workTypeFitsKind,
+  type EntryKind,
+} from "@/lib/work-entry";
 import { supabase } from "@/integrations/supabase/client";
 import { usTime } from "@/lib/dates";
 import { useRole } from "@/hooks/useRole";
@@ -28,7 +38,6 @@ import {
 import {
   GUEST_IMPACT,
   OCCUPANCY_STATUS,
-  OUTCOME_TYPES,
   PRIORITIES,
   SOURCE_CHANNELS,
   labelFor,
@@ -121,17 +130,19 @@ export function NewTicketForm({
   context,
   onCreated,
   inPanel = false,
+  onActivityLogged,
 }: {
   context: NewTicketSearch;
   onCreated: (ticketId: string) => void;
   /** Rendered in the shell side panel: the panel's Close is the way back. */
   inPanel?: boolean;
+  /** After a Property Activity entry is saved (no Ticket exists). */
+  onActivityLogged?: (propertyId: string) => void;
 }) {
   const { can, readOnly, isSupervisor, isLoading: rolesLoading } = useRole();
   // In the demo environment a new ticket is a demo ticket: it lands in the
   // demo queues, never in the real counts, and reaches no guest or vendor.
   const { demoMode } = useDemo();
-  const setStatus = useServerFn(setTicketStatusFn);
   const [mode, setModeRaw] = useState<Mode>(context.kind ?? null);
   const isTicket = mode === "ops" || mode === "maintenance";
   const [saving, setSaving] = useState(false);
@@ -533,42 +544,19 @@ export function NewTicketForm({
         await supabase.from("ticket_activity").insert({
           ticket_id: ticket.id,
           author_id: userId,
-          kind: oneTouch ? "completed" : "created",
-          event_type: oneTouch ? "logged_completed" : "created",
+          kind: "created",
+          event_type: "created",
           channel: form.source_channel,
-          body: oneTouch
-            ? `Logged as a one-touch resolution. ${form.resolution_notes.trim()}`
-            : `Ticket opened at ${meta.short} (${labelFor(GUEST_IMPACT, form.guest_impact)} · ${labelFor(
+          body: `${mode === "maintenance" ? "Maintenance reported" : "Ops Ticket opened"}${
+            mode === "maintenance" ? ` (${labelOf(MAINTENANCE_CATEGORIES, form.maintenance_category)}${estimated !== null ? ` · est. $${estimated}` : ""})` : ""
+          }. Ticket opened at ${meta.short} (${labelFor(GUEST_IMPACT, form.guest_impact)} · ${labelFor(
                 OCCUPANCY_STATUS,
                 form.occupancy_status,
               )}). Acknowledge within ${workType?.response_minutes ?? meta.responseMinutes}m.`,
         });
       }
 
-      if (oneTouch) {
-        // Same gate every ticket closes through — a one-touch record only
-        // reaches "closed" if it genuinely qualifies (its evidence and
-        // review requirements, if any, are already satisfied). Resolving
-        // auto-closes it right there when no review is required; if it
-        // doesn't qualify, the record still exists — it just stops at "open"
-        // or "resolved" instead of silently claiming to be done.
-        const resolved = await setStatus({ data: { ticketId: ticket.id, status: "resolved" } });
-        if (!resolved.ok) {
-          toast.warning(
-            `Logged, but it could not be marked resolved yet: ${resolved.message} Finish it from the ticket.`,
-          );
-        } else {
-          toast.success(
-            resolved.autoClosed
-              ? "One-touch resolution logged and closed."
-              : "One-touch resolution logged — it needs a supervisor's review before it can close.",
-          );
-          onCreated(ticket.id);
-          return;
-        }
-      } else {
-        toast.success("Ticket opened with its clocks running.");
-      }
+      toast.success(mode === "maintenance" ? "Maintenance reported with its clocks running." : "Ticket opened with its clocks running.");
       onCreated(ticket.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save this record");
@@ -577,97 +565,7 @@ export function NewTicketForm({
     }
   }
 
-  // The capability is enforced in the database too; this stops someone
-  // reaching the form by typing the URL.
-  if (!rolesLoading && (readOnly || !can("ticket_create"))) {
-    return (
-      <div className="mx-auto max-w-lg space-y-3 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Logging work is not part of your access</h1>
-        <p className="text-muted-foreground">
-          Ask a supervisor if you need to open tickets in Resolve.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      {/* Logging work is a detour, never a destination — the way back is named. */}
-      {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
-      <div>
-        <h1 className="text-3xl font-semibold">Report an issue</h1>
-        <p className="mt-1 text-muted-foreground">
-          Every meaningful operational interaction gets recorded. Already handled it? Log it and
-          move on.
-        </p>
-      </div>
-
-      {(leadContext || context.property || context.project || context.from) && (
-        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
-          <span className="font-medium">Started from </span>
-          {leadContext
-            ? `the lead ${leadContext.contact_name}`
-            : context.from === "onboarding"
-              ? "an onboarding workspace"
-              : context.from === "property_hub"
-                ? "a property hub"
-                : "another Resolve workspace"}
-          . We have filled in what we know — change anything that is not right.
-        </div>
-      )}
-
-      <Link
-        to="/coach"
-        className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
-      >
-        <span>
-          <span className="font-medium">Not sure how to handle it? </span>
-          Describe it to the Coach and it will set the priority, build the checklist and write the
-          vendor brief.
-        </span>
-        <span className="ml-3 whitespace-nowrap font-medium text-primary">Ask the Coach →</span>
-      </Link>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <ModeCard
-          active={mode === "one_touch"}
-          onClick={() => setMode("one_touch")}
-          icon={<Zap className="size-4" />}
-          title="One-touch resolution"
-          hint="Resolved in a single action. Kept in history, never hits the queue."
-        />
-        <ModeCard
-          active={isTicket}
-          onClick={() => setMode("ticket")}
-          icon={<Clock className="size-4" />}
-          title="Ticket"
-          hint="Needs follow-up or another touchpoint. Clocks start and you own it."
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{mode === "one_touch" ? "What you handled" : "What happened?"}</CardTitle>
-          <CardDescription>Write it the way it was reported to you.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="space-y-5">
-            {/* One question. Resolve works out the classification. */}
-            <div className="space-y-2">
-              <Label htmlFor="description">What happened?</Label>
-              <Textarea
-                id="description"
-                rows={3}
-                required
-                placeholder="Fridge is not cooling, guest reported it"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Plain words are fine. Resolve sets the work type, the priority and who owns it.
-              </p>
-            </div>
-
+  const propertyPicker = (
             <div className="space-y-2">
               <Label>Property</Label>
               <Select
@@ -718,8 +616,120 @@ export function NewTicketForm({
                 </p>
               )}
             </div>
+  );
 
-            {form.property_id && <PropertyContactPanel propertyId={form.property_id} />}
+  // The capability is enforced in the database too; this stops someone
+  // reaching the form by typing the URL.
+  if (!rolesLoading && (readOnly || !can("ticket_create"))) {
+    return (
+      <div className="mx-auto max-w-lg space-y-3 py-16 text-center">
+        <h1 className="text-2xl font-semibold">Logging work is not part of your access</h1>
+        <p className="text-muted-foreground">
+          Ask a supervisor if you need to open tickets in Resolve.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      {/* Logging work is a detour, never a destination — the way back is named. */}
+      {!inPanel && <BackControl origin={resolveOrigin(context.origin, "ticket")} />}
+      <div>
+        <h1 className="text-3xl font-semibold">Record work</h1>
+        <p className="mt-1 text-muted-foreground">
+          Choose what you are recording: something already handled, Ops work that needs an owner,
+          or a repair at the home.
+        </p>
+      </div>
+
+      {(leadContext || context.property || context.project || context.from) && (
+        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+          <span className="font-medium">Started from </span>
+          {leadContext
+            ? `the lead ${leadContext.contact_name}`
+            : context.from === "onboarding"
+              ? "an onboarding workspace"
+              : context.from === "property_hub"
+                ? "a property hub"
+                : "another Resolve workspace"}
+          . We have filled in what we know — change anything that is not right.
+        </div>
+      )}
+
+      <Link
+        to="/coach"
+        className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm transition hover:bg-primary/10"
+      >
+        <span>
+          <span className="font-medium">Not sure how to handle it? </span>
+          Describe it to the Coach and it will set the priority, build the checklist and write the
+          vendor brief.
+        </span>
+        <span className="ml-3 whitespace-nowrap font-medium text-primary">Ask the Coach →</span>
+      </Link>
+
+      <div className="grid gap-3 sm:grid-cols-3" role="group" aria-label="What are you recording?">
+        {ENTRY_KINDS.map((k) => (
+          <ModeCard
+            key={k.value}
+            active={mode === k.value}
+            onClick={() => setMode(k.value)}
+            icon={k.value === "activity" ? <History className="size-4" /> : k.value === "ops" ? <Clock className="size-4" /> : <Wrench className="size-4" />}
+            title={k.title}
+            hint={k.hint}
+          />
+        ))}
+      </div>
+
+      {mode === null && (
+        <p className="text-sm text-muted-foreground">Choose one to continue.</p>
+      )}
+
+      {mode === "activity" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Log Property Activity</CardTitle>
+            <CardDescription>Something already handled that belongs in the property's history.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PropertyActivityForm
+              propertyId={form.property_id}
+              propertyPicker={propertyPicker}
+              isDemo={demoMode}
+              onLogged={(pid) => (onActivityLogged ? onActivityLogged(pid) : undefined)}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {isTicket && (
+      <Card>
+        <CardHeader>
+          <CardTitle>{mode === "maintenance" ? "What is wrong?" : "What happened?"}</CardTitle>
+          <CardDescription>Write it the way it was reported to you.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-5">
+            {/* One question. Resolve works out the classification. */}
+            <div className="space-y-2">
+              <Label htmlFor="description">What happened?</Label>
+              <Textarea
+                id="description"
+                rows={3}
+                required
+                placeholder="Fridge is not cooling, guest reported it"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Plain words are fine. Resolve sets the work type, the priority and who owns it.
+              </p>
+            </div>
+
+            {propertyPicker}
+
+            {form.property_id && <PropertyContactPanel propertyId={form.property_id} showOwner={false} />}
 
             {workType && isTicket && (
               <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
@@ -1094,40 +1104,6 @@ export function NewTicketForm({
               </>
             )}
 
-            {mode === "one_touch" && (
-              <>
-                <div className="space-y-2">
-                  <Label>Outcome</Label>
-                  <Select
-                    value={form.outcome_type}
-                    onValueChange={(v) => setForm({ ...form, outcome_type: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {OUTCOME_TYPES.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="resolution">What did you do?</Label>
-                  <Textarea
-                    id="resolution"
-                    rows={3}
-                    required
-                    placeholder="Sent the guest the parking instructions and confirmed they found the spot."
-                    value={form.resolution_notes}
-                    onChange={(e) => setForm({ ...form, resolution_notes: e.target.value })}
-                  />
-                </div>
-              </>
-            )}
-
             {isTicket && (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
                 <Badge variant="outline" className={priorityTone(form.priority)}>
@@ -1145,11 +1121,12 @@ export function NewTicketForm({
             )}
 
             <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "Saving…" : mode === "one_touch" ? "Log resolution" : "Open ticket"}
+              {saving ? "Saving…" : mode === "maintenance" ? "Report maintenance" : "Open Ops Ticket"}
             </Button>
           </form>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
