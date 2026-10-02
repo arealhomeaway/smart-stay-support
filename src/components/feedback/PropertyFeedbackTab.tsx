@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -40,6 +40,17 @@ export function PropertyFeedbackTab({
   const rows = (q.data ?? []).filter((f) => f.feedback_type === kind);
   const [open, setOpen] = useState<FeedbackRow | null>(null);
   const drawer = useTicketDrawer();
+  const navigate = useNavigate();
+  // The Ticket layers on top only after the survey popup has fully closed.
+  const [pendingTicket, setPendingTicket] = useState<string | null>(null);
+  useEffect(() => {
+    if (open || !pendingTicket || !drawer) return;
+    const t = window.setTimeout(() => {
+      drawer.openTicket(pendingTicket);
+      setPendingTicket(null);
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [open, pendingTicket, drawer]);
   const isSurvey = kind === "internal_survey";
 
   return (
@@ -118,17 +129,18 @@ export function PropertyFeedbackTab({
               )}
               <RepeatIssueNotes current={open} all={q.data ?? []} />
               {open.ticket_id ? (
-                <Link to="/tickets/$ticketId" params={{ ticketId: open.ticket_id }} onClick={(e) => {
+                <button
+                  type="button"
+                  onClick={() => {
                     const id = open.ticket_id!;
                     setOpen(null);
-                    if (drawer && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-                      e.preventDefault();
-                      // Let the survey popup finish closing before layering the Ticket.
-                      window.setTimeout(() => { console.warn("FB open", id); drawer.openTicket(id); }, 350);
-                    }
-                  }} data-full-page="" className="text-sm text-primary hover:underline">
+                    if (drawer) setPendingTicket(id);
+                    else void navigate({ to: "/tickets/$ticketId", params: { ticketId: id } });
+                  }}
+                  className="text-left text-sm text-primary hover:underline"
+                >
                   Open the follow-up Ticket
-                </Link>
+                </button>
               ) : (
                 <p className="text-sm text-muted-foreground">No follow-up work — 5-star feedback is kept for history only.</p>
               )}
