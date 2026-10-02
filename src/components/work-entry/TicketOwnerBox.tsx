@@ -84,11 +84,12 @@ export function TicketOwnerBox({
               (document.querySelector("[data-ticket-work-orders]") ?? document.querySelector("[data-current-work]"))?.scrollIntoView({ behavior: "smooth" })
             }
           >
-            Request Owner Approval
+            Review Owner Approval
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Owner approval is requested from the Work Order with its quote, under the maintenance
+        <p className="text-xs text-muted-foreground" data-testid="owner-approval-note">
+          Owner approval may be required. Nothing is sent from here — the approval request is sent
+          from the Work Order once a scope and cost (quote) are available, under the maintenance
           policy.
         </p>
       </CardContent>

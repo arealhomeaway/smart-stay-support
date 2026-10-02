@@ -40,6 +40,7 @@ import { OnCallNowCard } from "@/components/OnCallNowCard";
 import { OvernightHandoffPanel } from "@/components/OvernightHandoffPanel";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { useDemo } from "@/components/DemoProvider";
+import { InsuranceRiskCard } from "@/components/work-entry/InsuranceRiskCard";
 
 export const Route = createFileRoute("/_authenticated/oversight")({
   head: () => ({
@@ -474,6 +475,8 @@ function OversightBoard({ data, s }: { data: OversightTickets; s: OversightSuppo
         <OnCallNowCard />
         <OvernightHandoffPanel />
       </div>
+
+      <InsuranceRiskCard />
 
       {/* Compact exception strip: what needs judgment, at a glance. Each chip
           jumps straight to its section below. */}
