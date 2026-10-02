@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -241,7 +242,7 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
                 setBusy(true);
                 const id = crypto.randomUUID().slice(0, 8);
                 const r = await addTest({ data: { propertyId, reviewId: id, stars, body: stars === 5 ? "Test review: lovely stay, spotless home." : "Test review: the kitchen was not clean on arrival.", withBooking: stars !== 5 } });
-                toast.success(`${r.imported} imported, ${r.ticketsCreated} follow-up created`);
+                toast.success(`${r.imported} imported, ${r.ticketsCreated} follow-up created${r.historical ? " (historical — before the follow-up start date)" : ""}`);
                 await refresh();
                 setBusy(false);
               }}>
