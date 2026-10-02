@@ -20,8 +20,11 @@ import {
   RESPONSIBILITIES,
   RESPONSIBILITY_LABEL,
   SPLIT_PARTIES,
-  authorizationRequired,
+  authorizationNeed,
+  canCreateExpense,
   expenseAgeDays,
+  reservationBlocks,
+  type AuthorizationContext,
   missingDocumentation,
   money,
   recoverySummary,
@@ -40,6 +43,79 @@ const todayChicago = () => new Date().toLocaleDateString("en-CA", { timeZone: "A
 
 function errText(e: unknown) {
   return e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : "Something went wrong.";
+}
+
+export type NewExpenseSpec = { propertyId: string | null; isDemo: boolean; linkType?: LinkType; targetId?: string };
+
+/** Draft form: nothing is saved until "Save expense" with minimum meaningful information. */
+export function NewExpenseSheet({ open, spec, onClose, onCreated }: { open: boolean; spec: NewExpenseSpec; onClose: () => void; onCreated: (id: string) => void }) {
+  return (
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+        <SheetHeader>
+          <SheetTitle>New expense</SheetTitle>
+          <SheetDescription>Nothing is saved until you press Save expense. You can save an incomplete record and finish it later.</SheetDescription>
+        </SheetHeader>
+        <div className="mt-4">{open && <NewExpenseForm spec={spec} onCreated={onCreated} onCancel={onClose} />}</div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function NewExpenseForm({ spec, onCreated, onCancel }: { spec: NewExpenseSpec; onCreated: (id: string) => void; onCancel: () => void }) {
+  const access = useFinanceAccess();
+  const [type, setType] = useState<ExpenseType>("vendor_service");
+  const [propertyId, setPropertyId] = useState<string | null>(spec.propertyId);
+  const [payee, setPayee] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState("");
+  const [reason, setReason] = useState("");
+  const [invoiceRef, setInvoiceRef] = useState("");
+  const [saving, setSaving] = useState(false);
+  const amt = amount === "" ? null : Number(amount);
+  const ok = canCreateExpense({ payee, property_id: propertyId, amount: amt, reason });
+  async function save() {
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("expenses")
+      .insert({
+        expense_type: type, property_id: propertyId, payee: payee.trim() || null, amount: amt,
+        expense_date: date || null, reason: reason.trim() || null, vendor_invoice_ref: invoiceRef.trim() || null,
+        is_demo: spec.isDemo, created_by: access.userId,
+      })
+      .select("id")
+      .single();
+    if (error) { setSaving(false); toast.error(errText(error)); return; }
+    if (spec.linkType && spec.targetId) {
+      const l = await supabase.from("expense_links").insert({ expense_id: data.id, link_type: spec.linkType, target_id: spec.targetId });
+      if (l.error) toast.error(errText(l.error));
+    }
+    toast.success("Expense saved.");
+    onCreated(data.id);
+  }
+  return (
+    <div className="space-y-3 text-sm">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label>Type</Label>
+          <select className={sel} value={type} onChange={(x) => setType(x.target.value as ExpenseType)}>
+            {(Object.keys(EXPENSE_TYPE_LABEL) as ExpenseType[]).map((t) => <option key={t} value={t}>{EXPENSE_TYPE_LABEL[t]}</option>)}
+          </select>
+        </div>
+        <PropertyPicker isDemo={spec.isDemo} value={propertyId} onChange={setPropertyId} />
+        <div><Label htmlFor="new-payee">Payee</Label><Input id="new-payee" value={payee} onChange={(x) => setPayee(x.target.value)} /></div>
+        <div><Label htmlFor="new-amount">Amount</Label><Input id="new-amount" type="number" step="0.01" value={amount} onChange={(x) => setAmount(x.target.value)} /></div>
+        <div><Label htmlFor="new-date">Expense / service date</Label><Input id="new-date" type="date" value={date} onChange={(x) => setDate(x.target.value)} /></div>
+        <div><Label htmlFor="new-ref">Vendor invoice number</Label><Input id="new-ref" value={invoiceRef} onChange={(x) => setInvoiceRef(x.target.value)} /></div>
+      </div>
+      <div><Label htmlFor="new-reason">Reason</Label><Textarea id="new-reason" rows={2} value={reason} onChange={(x) => setReason(x.target.value)} /></div>
+      <p className="text-xs text-muted-foreground">To save, enter a payee or a home, and an amount or a reason. Files, links and the remaining details can be added after saving.</p>
+      <div className="flex gap-2">
+        <Button size="sm" disabled={!ok || saving} onClick={() => void save()}>Save expense</Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
+      </div>
+    </div>
+  );
 }
 
 export function ExpenseSheet({ expenseId, onClose }: { expenseId: string | null; onClose: () => void }) {
@@ -77,6 +153,10 @@ type Full = ExpenseRow & Record<string, unknown> & {
   leadership_decided_by: string | null;
   leadership_decided_at: string | null;
   is_demo: boolean;
+  archived_at: string | null;
+  archived_by: string | null;
+  archive_reason: string | null;
+  created_by: string | null;
 };
 
 export function ExpensePanel({ expenseId }: { expenseId: string }) {
@@ -85,15 +165,26 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
   const q = useQuery({
     queryKey: ["expense", expenseId],
     queryFn: async () => {
-      const [e, links, recs, events, clar, docs, staff] = await Promise.all([
+      const [e, links, recs, events, clar, docs, staff, dirSeat] = await Promise.all([
         supabase.from("expenses").select("*, properties(name)").eq("id", expenseId).maybeSingle(),
         supabase.from("expense_links").select("id, link_type, target_id").eq("expense_id", expenseId),
         supabase.from("expense_recoveries").select("*").eq("expense_id", expenseId).order("created_at"),
         supabase.from("expense_events").select("*").eq("expense_id", expenseId).order("created_at", { ascending: false }),
         supabase.from("work_items").select("id, title, status, assigned_to, due_on, created_at").eq("source_table", "expenses").eq("source_id", expenseId).order("created_at"),
         supabase.from("documents").select("id, title, kind, upload_status").eq("entity_type", "expense").eq("entity_id", expenseId).is("deleted_at", null).is("archived_at", null),
-        supabase.from("user_roles").select("user_id, profiles:user_id(full_name)").in("role", ["admin", "manager", "tech"]),
+        supabase.from("user_roles").select("user_id, role, profiles:user_id(full_name)").in("role", ["admin", "manager", "tech"]),
+        supabase.from("functional_roles").select("current_seat_holder").eq("code", "director_ops").maybeSingle(),
       ]);
+      // Leadership who can record a decision: administrators and the Director of Operations seat (mirrors is_director).
+      const leaders = new Set<string>();
+      for (const r of (staff.data ?? []) as unknown as { user_id: string; role: string }[]) if (r.role === "admin") leaders.add(r.user_id);
+      if (dirSeat.data?.current_seat_holder) leaders.add(dirSeat.data.current_seat_holder);
+      const woIds = (links.data ?? []).filter((l) => l.link_type === "work_order").map((l) => l.target_id);
+      let wo: AuthorizationContext = null;
+      if (woIds.length) {
+        const { data: w } = await supabase.from("work_orders").select("phase, emergency_reason, contractual_exception, approval_status, supervisor_approval_status").in("id", woIds).limit(1);
+        wo = ((w ?? [])[0] as AuthorizationContext) ?? null;
+      }
       if (e.error) throw e.error;
       const people = new Map<string, string>();
       for (const r of (staff.data ?? []) as unknown as { user_id: string; profiles: { full_name: string | null } | null }[])
@@ -106,6 +197,8 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         clar: clar.data ?? [],
         docs: docs.data ?? [],
         people,
+        leaders,
+        wo,
       };
     },
   });
@@ -125,7 +218,9 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
   const data = q.data!;
   const name = (id: string | null | undefined) => (id ? (data.people.get(id) ?? "Team member") : "—");
   const reviewed = e.finance_review === "reviewed";
-  const missing = missingDocumentation(v);
+  const missing = missingDocumentation(v, data.wo);
+  const auth = authorizationNeed(v, data.wo);
+  const archived = !!e.archived_at;
   const dirty = Object.keys(draft).length > 0;
 
   async function update(patch: Record<string, unknown>, msg: string) {
@@ -166,6 +261,15 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         <ExpenseChips e={e} />
         {e.is_demo && <Badge variant="outline">Demo record</Badge>}
       </div>
+
+      {archived && (
+        <div className="rounded-md border border-border bg-muted/40 p-3">
+          <p className="font-medium">Archived — read only</p>
+          <p className="text-muted-foreground">{e.archive_reason} · {name(e.archived_by)} · {new Date(e.archived_at!).toLocaleString("en-US", { timeZone: "America/Chicago" })}</p>
+          <p className="text-xs text-muted-foreground">Excluded from Finance queues and totals. History is kept.</p>
+        </div>
+      )}
+      <fieldset disabled={archived} className="space-y-6 disabled:opacity-70">
 
       {/* Facts — Operations */}
       <section className="space-y-3">
@@ -263,12 +367,11 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         <div className="rounded-md border border-border p-3 space-y-2">
           <p className="font-medium">Owner authorization</p>
           <p className="text-muted-foreground">
-            {authorizationRequired(v)
-              ? "Required by the existing Maintenance Authority Policy for this amount."
-              : "Not required by the existing Maintenance Authority Policy."}
+            {auth.required ? auth.reason : "Not required by the existing Maintenance Authority Policy."}
             {e.approval_id ? " An approval is linked." : ""}
+            {auth.satisfiedByWorkOrder ? " The linked Work Order already records this approval." : ""}
           </p>
-          {authorizationRequired(v) && !e.approval_id && (
+          {auth.required && !e.approval_id && !auth.satisfiedByWorkOrder && (
             <Input placeholder="Authorization evidence (e.g. where approval is recorded)" value={txt("authorization_note")} onChange={(x) => set("authorization_note", x.target.value)} />
           )}
         </div>
@@ -294,7 +397,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
 
       <ClarificationSection expenseId={expenseId} items={data.clar} events={data.events} people={data.people} access={access} reviewed={reviewed} onDone={refresh} />
 
-      <LeadershipSection e={e} access={access} people={data.people} onDone={refresh} name={name} />
+      <LeadershipSection e={e} access={access} people={data.people} leaders={data.leaders} onDone={refresh} name={name} />
 
       <section className="space-y-2">
         <h3 className="font-semibold">Expected and received recovery</h3>
@@ -303,6 +406,12 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         </p>
         <RecoveryForm expenseId={expenseId} rows={data.recs as RecoveryRowFull[]} canReceive={access.isAccounting} onDone={refresh} />
       </section>
+
+      </fieldset>
+
+      {!archived && (access.isLead || access.isDirector || (e.created_by === access.userId && (e.finance_review === "not_started" || e.finance_review === "in_review"))) && (
+        <ArchiveSection expenseId={expenseId} onDone={refresh} />
+      )}
 
       <section className="space-y-2">
         <h3 className="font-semibold">History</h3>
@@ -491,7 +600,7 @@ function FinanceSection({ e, access, people, onDone }: { e: Full; access: Return
             <Button size="sm" variant="outline" disabled={!treatmentDirty || !splitOk} onClick={() => void go({ cost_responsibility: resp, finance_treatment_note: note || null, split_allocations: resp === "split" ? split : [] }, "Treatment saved.")}>Save treatment</Button>
             <Button size="sm" disabled={treatmentDirty} onClick={() => void go({ finance_review: "reviewed" }, "Finance review complete.")}>Mark Finance reviewed</Button>
           </div>
-          {e.reservation_link_state === "unresolved" && <p className="text-xs text-destructive">The reservation link must be resolved before Finance review.</p>}
+          {reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id) && <p className="text-xs text-destructive">A reservation is required but not yet established — resolve it before Finance review.</p>}
         </div>
       )}
 
@@ -576,7 +685,7 @@ function ClarificationSection({ expenseId, items, events, people, access, review
   );
 }
 
-function LeadershipSection({ e, access, people, onDone, name }: { e: Full; access: ReturnType<typeof useFinanceAccess>; people: Map<string, string>; onDone: () => void; name: (id: string | null) => string }) {
+function LeadershipSection({ e, access, people, leaders, onDone, name }: { e: Full; access: ReturnType<typeof useFinanceAccess>; people: Map<string, string>; leaders: Set<string>; onDone: () => void; name: (id: string | null) => string }) {
   const [reason, setReason] = useState("");
   const [assignee, setAssignee] = useState("");
   const [decision, setDecision] = useState("");
@@ -597,7 +706,7 @@ function LeadershipSection({ e, access, people, onDone, name }: { e: Full; acces
             <Input className="min-w-0 flex-1" placeholder="Why leadership needs to decide" value={reason} onChange={(x) => setReason(x.target.value)} />
             <select className={sel + " w-56"} value={assignee} onChange={(x) => setAssignee(x.target.value)} aria-label="Decision-maker">
               <option value="">Decision-maker…</option>
-              {[...people.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
+              {[...people.entries()].filter(([id]) => leaders.has(id)).sort((a, b) => a[1].localeCompare(b[1])).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
             </select>
             <Button size="sm" variant="outline" disabled={!reason.trim() || !assignee} onClick={() => void go({ leadership_required: true, leadership_reason: reason, leadership_assignee: assignee }, "Leadership decision requested.")}>Leadership decision required</Button>
           </div>
@@ -617,6 +726,27 @@ function LeadershipSection({ e, access, people, onDone, name }: { e: Full; acces
           )}
         </div>
       )}
+    </section>
+  );
+}
+
+function ArchiveSection({ expenseId, onDone }: { expenseId: string; onDone: () => void }) {
+  const [reason, setReason] = useState("");
+  async function go() {
+    const { error } = await supabase.rpc("archive_expense", { _expense: expenseId, _reason: reason });
+    if (error) { toast.error(errText(error)); return; }
+    toast.success("Expense archived. History is kept.");
+    setReason("");
+    onDone();
+  }
+  return (
+    <section className="space-y-2 rounded-md border border-dashed border-border p-3">
+      <h3 className="font-semibold">Archive accidental record</h3>
+      <p className="text-xs text-muted-foreground">For records entered by mistake. Archived expenses leave Finance queues and totals; nothing is deleted.</p>
+      <div className="flex flex-wrap gap-2">
+        <Input className="min-w-0 flex-1" placeholder="Reason (required)" aria-label="Archive reason" value={reason} onChange={(x) => setReason(x.target.value)} />
+        <Button size="sm" variant="outline" disabled={!reason.trim()} onClick={() => void go()}>Archive</Button>
+      </div>
     </section>
   );
 }
