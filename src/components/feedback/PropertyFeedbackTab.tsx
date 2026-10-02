@@ -1,3 +1,4 @@
+import { ownerRezBookingUrl } from "@/lib/ownerrez-links";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -132,7 +133,7 @@ export function PropertyFeedbackTab({
                       <dd>{open.booking_platform ?? "—"}</dd>
                     </dl>
                     {open.reservation_match === "matched" && /^\d+$/.test(open.ownerrez_booking_id ?? "") && (
-                      <a href={`https://app.ownerreservations.com/bookings/${open.ownerrez_booking_id}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-primary">
+                      <a href={ownerRezBookingUrl(open.ownerrez_booking_id) ?? undefined} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-primary">
                         Open in OwnerRez <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
