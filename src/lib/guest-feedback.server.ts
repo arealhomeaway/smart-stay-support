@@ -321,8 +321,8 @@ export async function enrichReviewReservations(admin: Admin, opts: { all?: boole
         .update({
           stay_start: b.arrival?.slice(0, 10) ?? null,
           stay_end: b.departure?.slice(0, 10) ?? null,
-          booking_platform: b.listing_site ?? undefined,
-          guest_id: b.guest_id == null ? undefined : String(b.guest_id),
+          ...(b.listing_site ? { booking_platform: b.listing_site } : {}),
+          ...(b.guest_id == null ? {} : { guest_id: String(b.guest_id) }),
           reservation_confirmation: b.platform_reservation_number ?? null,
           reservation_guest_first_name: first,
           reservation_guest_last_name: last,
