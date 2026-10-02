@@ -46,6 +46,7 @@ import {
 } from "@/lib/tickets";
 import { currentOwnerId, queueSort } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
+import { DepartureReviewQueue } from "@/components/departure/DepartureReviewQueue";
 import {
   AGE_OPTIONS,
   DEFAULT_TEAM_QUEUE_FILTERS,
@@ -464,6 +465,8 @@ function TeamQueuePage() {
           never trigger emails, texts or integrations.
         </div>
       )}
+
+      <DepartureReviewQueue />
 
       <nav aria-label="Operations work views" className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
         {(["list", "kanban", "map", "calendar"] as const).map((option) => (

@@ -119,7 +119,9 @@ function RoutinesPage() {
   // One idempotent generation pass when the screen opens.
   useEffect(() => {
     // Demo and acceptance sessions must never materialize live Breezeway work.
-    if (!demoMode) generate.mutate();
+    // Retired: new departures get an automated Departure Review in the Team B
+    // queue instead, so this legacy generator no longer creates new work.
+    void generate;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoMode]);
 
@@ -164,7 +166,7 @@ function RoutinesPage() {
             ? `${overdue.length} routine ${overdue.length === 1 ? "check is" : "checks are"} late`
             : "Routine work is on track"
         }
-        description="Cleaning Reviews, Guest Reviews, Checkouts and Guest Touch Bases. Cleaning Reviews appear on their own once a departure clean is finished."
+        description="Legacy / backup: Checkout, Cleaning Review and Guest Review checks are replaced by the automated Departure Review in the Team Queue. Past checks stay here for history; Guest Touch Bases continue as before."
         actions={
           <>
             <div className="flex rounded-lg border border-border p-0.5">
