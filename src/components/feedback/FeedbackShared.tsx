@@ -12,6 +12,9 @@ export type FeedbackRow = {
   ownerrez_booking_id: string | null;
   reservation_match: string;
   guest_name: string | null;
+  reviewer_display_name?: string | null;
+  reservation_guest_name?: string | null;
+  reservation_confirmation?: string | null;
   rating: number | null;
   summary: string | null;
   response_text: string | null;
