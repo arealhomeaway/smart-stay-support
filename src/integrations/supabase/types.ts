@@ -9344,6 +9344,7 @@ export type Database = {
           acknowledged_at: string | null
           action_due_at: string | null
           action_started_at: string | null
+          active_stay_impact: string | null
           archive_reason: string | null
           archived_at: string | null
           archived_by: string | null
@@ -9389,6 +9390,7 @@ export type Database = {
           final_review_note: string | null
           functional_role_code: string | null
           guest_comm_owner: string | null
+          guest_comm_required: string | null
           guest_confirmed: boolean
           guest_contact: string | null
           guest_impact: string
@@ -9406,6 +9408,7 @@ export type Database = {
           initiator_type: string
           insurance_risk: string | null
           is_demo: boolean
+          issue_reservation_relation: string | null
           last_reopened_at: string | null
           late_reason: string | null
           maintenance_category: string | null
@@ -9471,6 +9474,7 @@ export type Database = {
           acknowledged_at?: string | null
           action_due_at?: string | null
           action_started_at?: string | null
+          active_stay_impact?: string | null
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
@@ -9516,6 +9520,7 @@ export type Database = {
           final_review_note?: string | null
           functional_role_code?: string | null
           guest_comm_owner?: string | null
+          guest_comm_required?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
           guest_impact?: string
@@ -9533,6 +9538,7 @@ export type Database = {
           initiator_type?: string
           insurance_risk?: string | null
           is_demo?: boolean
+          issue_reservation_relation?: string | null
           last_reopened_at?: string | null
           late_reason?: string | null
           maintenance_category?: string | null
@@ -9598,6 +9604,7 @@ export type Database = {
           acknowledged_at?: string | null
           action_due_at?: string | null
           action_started_at?: string | null
+          active_stay_impact?: string | null
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
@@ -9643,6 +9650,7 @@ export type Database = {
           final_review_note?: string | null
           functional_role_code?: string | null
           guest_comm_owner?: string | null
+          guest_comm_required?: string | null
           guest_confirmed?: boolean
           guest_contact?: string | null
           guest_impact?: string
@@ -9660,6 +9668,7 @@ export type Database = {
           initiator_type?: string
           insurance_risk?: string | null
           is_demo?: boolean
+          issue_reservation_relation?: string | null
           last_reopened_at?: string | null
           late_reason?: string | null
           maintenance_category?: string | null

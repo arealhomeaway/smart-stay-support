@@ -19,6 +19,8 @@ export type TicketNextActionInput = {
   /** When the parked ticket is due to come back to us. */
   next_review_at?: string | null;
   guest_in_residence?: boolean | null;
+  /** Guest communication state (src/lib/guest-impact.ts); replaces guest_in_residence when given. */
+  guest_comm_state?: import("@/lib/guest-impact").CommState;
   vendor_name?: string | null;
   vendor_status?: string | null;
   /** Required playbook steps that are still open. */
@@ -94,15 +96,33 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
     return {
       label: "Start the work",
       because: "It is acknowledged but nothing has actually moved yet.",
-      ...(t.guest_in_residence ? { then: "Then update the guest." } : {}),
+      ...((t.guest_comm_state === undefined ? t.guest_in_residence : t.guest_comm_state === "initial_ack")
+        ? { then: "Then send the guest an acknowledgement." }
+        : {}),
     };
+  }
+
+  const cs = t.guest_comm_state;
+  if (cs === "initial_ack") {
+    return {
+      label: "Send initial guest acknowledgement",
+      because: "This issue affects an active stay and the guest hasn't heard from us yet.",
+    };
+  }
+  if (cs === "update_due") {
+    return { label: "Guest update due", because: "The guest update you scheduled is due now." };
   }
 
   if (t.vendor_name && t.vendor_status && t.vendor_status !== "completed") {
     return {
-      label: `Check in with ${t.vendor_name}`,
+      label: cs === undefined ? `Check in with ${t.vendor_name}` : "Waiting for vendor",
       because: "A vendor is engaged and has not reported the work complete.",
-      then: "Then confirm the fix and update the guest.",
+      then:
+        cs === undefined
+          ? "Then confirm the fix and update the guest."
+          : cs === "informed"
+            ? "The guest has been told where things stand."
+            : "Then confirm the fix.",
     };
   }
 
@@ -129,9 +149,17 @@ export function ticketNextAction(t: TicketNextActionInput): TicketNextAction | n
     };
   }
 
+  if (cs === "contact_prior_guest") {
+    return {
+      label: "Contact prior guest for feedback",
+      because: "This follows up a past stay — nobody currently in the home is involved.",
+      then: "Then close it out when the follow-up is done.",
+    };
+  }
+  const legacyGuest = cs === undefined && Boolean(t.guest_in_residence);
   return {
-    label: t.guest_in_residence ? "Update the guest" : "Keep the work moving",
-    because: t.guest_in_residence
+    label: legacyGuest ? "Update the guest" : "Keep the work moving",
+    because: legacyGuest
       ? "Someone is in the home waiting to hear from us."
       : "Work has started and nothing is blocking it.",
     then: "Then close it out when it is genuinely done.",

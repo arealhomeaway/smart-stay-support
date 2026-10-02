@@ -55,6 +55,8 @@ export type GuidedTicket = {
   next_review_at: string | null;
   selected_vendor_org_id: string | null;
   guest_confirmed: boolean | null;
+  /** Active-stay update cadence from src/lib/guest-impact.ts. */
+  active_stay?: boolean;
 };
 
 const NEXT_UPDATE = [
@@ -258,7 +260,7 @@ export function GuidedTicketPanel({
             </StatusBadge>
           )}
           {/* Guest details live once, in the Current guest / reservation card. */}
-          {hasReservation && stay && <StatusBadge tone="escalated">Guest in the home now</StatusBadge>}
+          {hasReservation && stay && <StatusBadge tone="escalated">Affects active stay</StatusBadge>}
           {ticket.guest_update_at && (
             <span className="text-xs text-muted-foreground">
               Guest last updated {usDateTime(ticket.guest_update_at)}
@@ -458,7 +460,7 @@ export function GuidedTicketPanel({
               <dt className="text-xs text-muted-foreground">Next guest update due</dt>
               <dd>
                 {!stay
-                  ? "No guest in the home"
+                  ? "No active-stay updates on this Ticket"
                   : ticket.next_guest_update_at
                     ? usDateTime(ticket.next_guest_update_at)
                     : "Not scheduled"}

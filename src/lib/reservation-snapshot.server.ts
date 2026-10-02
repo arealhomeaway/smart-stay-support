@@ -40,13 +40,17 @@ export async function applyReservationSnapshot(db: Db, ticketId: string): Promis
   try {
     const { data: ticket } = await db
       .from("tickets")
-      .select("id, property_id, is_demo, ownerrez_booking_id, reservation_snapshot_at")
+      .select("id, property_id, is_demo, ownerrez_booking_id, reservation_snapshot_at, issue_reservation_relation")
       .eq("id", ticketId)
       .maybeSingle();
 
     if (!ticket) return { applied: false, reason: "no_property" };
     if (ticket.is_demo) return { applied: false, reason: "demo" };
     if (ticket.reservation_snapshot_at) return { applied: false, reason: "already_snapshotted" };
+    // An issue tied to a past/future stay (or none) must never be stamped with
+    // whoever is in the home now — current guest and issue guest stay separate.
+    const rel = (ticket as { issue_reservation_relation?: string | null }).issue_reservation_relation;
+    if (rel && rel !== "current") return { applied: false, reason: "no_stay" };
     if (!ticket.property_id) return { applied: false, reason: "no_property" };
 
     const { data: property } = await db
