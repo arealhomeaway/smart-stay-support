@@ -21,7 +21,7 @@ import { usDate } from "@/lib/dates";
 import {
   CANDIDATE_STATUS_LABELS, CONTACT_CHANNELS, CONTACT_CHANNEL_LABELS, CONTACT_RESPONSES, CONTACT_RESPONSE_LABELS,
   HANDOFF_LABELS, VISIT_OUTCOMES, VISIT_OUTCOME_LABELS, authorizationState, breezewayPushEligibility, fourFacts,
-  vendorChannels, visitNeedsFollowUp, type ContactChannel, type ContactResponse, type VisitOutcome,
+  vendorChannels, visitNeedsFollowUp, type ContactChannel, type ContactResponse, type VisitOutcome, type DispatchWorkOrder,
 } from "@/lib/vendor-sourcing";
 import { pushWorkOrderToBreezeway } from "@/lib/vendor-sourcing.functions";
 
@@ -63,7 +63,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
     onSuccess: refresh,
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
   });
-  const must = async <T,>(p: PromiseLike<{ error: { message: string } | null; data?: T }>) => {
+  const must = async <T,>(p: PromiseLike<{ error: { message: string } | null; data?: T | null }>) => {
     const r = await p;
     if (r.error) throw new Error(r.error.message);
     return r.data as T;
@@ -77,7 +77,8 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
   const [visit, setVisit] = useState<{ outcome?: VisitOutcome; findings?: string; work_done?: string; date?: string; assignee?: string; due?: string }>({});
 
   if (q.isLoading || !q.data) return <p className="text-sm text-muted-foreground">Loading vendor sourcing…</p>;
-  const { wo, cands, visits, vendors } = q.data;
+  const { cands, visits, vendors } = q.data;
+  const wo = q.data.wo as typeof q.data.wo & DispatchWorkOrder;
   const vendorById = new Map(vendors.map((v) => [v.id, v]));
   const accepted = cands.find((c) => c.status === "accepted") ?? null;
   const acceptedVendor = accepted?.vendor_org_id ? vendorById.get(accepted.vendor_org_id) : null;

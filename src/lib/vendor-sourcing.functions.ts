@@ -16,8 +16,9 @@ export const pushWorkOrderToBreezeway = createServerFn({ method: "POST" })
     if (!staff) throw new Error("Only the internal team can hand work to Breezeway.");
     const { breezewayPushEligibility, vendorChannels } = await import("./vendor-sourcing");
 
-    const { data: wo, error } = await sb.from("work_orders").select("*").eq("id", data.workOrderId).maybeSingle();
-    if (error || !wo) throw new Error("Work Order not found.");
+    const { data: woRow, error } = await sb.from("work_orders").select("*").eq("id", data.workOrderId).maybeSingle();
+    if (error || !woRow) throw new Error("Work Order not found.");
+    const wo = woRow as typeof woRow & import("./vendor-sourcing").DispatchWorkOrder;
     if (wo.breezeway_handoff_status === "sent" || wo.breezeway_handoff_status === "simulated") {
       return { status: wo.breezeway_handoff_status, ref: wo.breezeway_task_ref, message: "Already handed off — no second task created." };
     }
