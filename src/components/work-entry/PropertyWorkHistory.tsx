@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { History, Plus } from "lucide-react";
+import { History, Paperclip, Plus } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { attachmentUrlFn } from "@/lib/attachments.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +20,7 @@ type Row = {
   title: string;
   detail: string | null;
   ticketId?: string;
+  files?: { id: string; name: string }[];
 };
 
 const TYPE_LABEL: Record<Row["type"], string> = {
@@ -34,13 +38,14 @@ const TYPE_LABEL: Record<Row["type"], string> = {
  */
 export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
   const drawer = useTicketDrawer();
+  const urlFor = useServerFn(attachmentUrlFn);
   const { data: rows = [] } = useQuery({
     queryKey: ["property-activity", propertyId],
     queryFn: async (): Promise<Row[]> => {
       const [acts, tix] = await Promise.all([
         supabase
           .from("property_activity_log")
-          .select("id, occurred_at, category, what_happened, outcome, involved, logged_by")
+          .select("id, occurred_at, category, what_happened, outcome, involved, logged_by, attachment_document_ids")
           .eq("property_id", propertyId)
           .order("occurred_at", { ascending: false })
           .limit(50),
@@ -56,10 +61,14 @@ export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
       const { data: people } = ids.length
         ? await supabase.from("profiles").select("id, full_name, email").in("id", ids)
         : { data: [] as { id: string; full_name: string | null; email: string | null }[] };
+      const docIds = [...new Set((acts.data ?? []).flatMap((a) => a.attachment_document_ids ?? []))];
+      const { data: docs } = docIds.length
+        ? await supabase.from("documents").select("id, original_filename, title").in("id", docIds).is("deleted_at", null)
+        : { data: [] as { id: string; original_filename: string | null; title: string }[] };
       const out: Row[] = [];
       for (const a of (acts.data ?? []) as unknown as {
         id: string; occurred_at: string; category: string; what_happened: string; outcome: string;
-        involved: string | null; logged_by: string;
+        involved: string | null; logged_by: string; attachment_document_ids: string[] | null;
       }[]) {
         const p = people?.find((x) => x.id === a.logged_by);
         const who = p?.full_name || p?.email || "Teammate";
@@ -69,6 +78,10 @@ export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
           type: "activity",
           title: `${labelOf(ACTIVITY_CATEGORIES, a.category)} — ${a.what_happened}`,
           detail: `Outcome: ${a.outcome}${a.involved ? ` · Involved: ${a.involved}` : ""} · logged by ${who}`,
+          files: (a.attachment_document_ids ?? []).flatMap((id) => {
+            const d = docs?.find((x) => x.id === id);
+            return d ? [{ id, name: d.original_filename || d.title }] : [];
+          }),
         });
       }
       for (const t of tix.data ?? []) {
@@ -124,6 +137,24 @@ export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
                 <span className="text-xs text-muted-foreground">{r.at ? usDateTime(r.at) : ""}</span>
               </div>
               {r.detail && <p className="pt-1 text-xs text-muted-foreground">{r.detail}</p>}
+              {r.files && r.files.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1" data-testid="activity-files">
+                  {r.files.map((file) => (
+                    <button
+                      key={file.id}
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded border border-border px-2 py-0.5 text-xs hover:text-primary"
+                      onClick={() =>
+                        void urlFor({ data: { documentId: file.id } })
+                          .then((x) => window.open(x.url, "_blank", "noopener,noreferrer"))
+                          .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "That file could not be opened."))
+                      }
+                    >
+                      <Paperclip className="size-3" /> {file.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </>
           );
           return r.ticketId ? (
