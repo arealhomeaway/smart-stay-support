@@ -199,3 +199,15 @@ export const syncOwnerRezReviews = createServerFn({ method: "POST" })
     const items = await fetchOwnerRezReviews(supabaseAdmin);
     return { fetched: items.length, ...(await ingestReviews(supabaseAdmin, items)) };
   });
+
+/** Dry run of the OwnerRez review import. Supervisors only; no writes, no Tickets. */
+export const previewOwnerRezReviews = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: ok } = await context.supabase.rpc("is_supervisor", { _user_id: context.userId });
+    if (!ok) throw new Error("Only supervisors can preview the review import.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { fetchOwnerRezReviews, previewReviewImport } = await import("./guest-feedback.server");
+    const items = await fetchOwnerRezReviews(supabaseAdmin);
+    return previewReviewImport(supabaseAdmin, items);
+  });

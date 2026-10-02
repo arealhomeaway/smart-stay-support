@@ -315,3 +315,74 @@ export async function fetchOwnerRezReviews(admin: Admin, sinceDays = 60): Promis
   void admin;
   return out;
 }
+
+/* ---------------- Review import preview (read-only) ---------------- */
+
+export type ReviewPreviewRow = {
+  source_review_id: string;
+  platform: string | null;
+  rating: number | null;
+  ownerrez_property_id: string | null;
+  property_id: string | null;
+  property_name: string | null;
+  booking_id: string | null;
+  guest_name: string | null;
+  date: string | null;
+  outcome: "duplicate" | "follow_up" | "no_follow_up" | "unmatched_property";
+};
+
+/**
+ * Dry run of the review import: reads OwnerRez and Resolve, writes nothing,
+ * creates no Tickets. Reports what a real sync would do for each review.
+ */
+export async function previewReviewImport(admin: Admin, items: ReviewInput[]) {
+  const homes = await linkedHomes(admin);
+  const ids = items.map((r) => r.source_review_id);
+  const existing = new Set<string>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data } = await admin
+      .from("guest_feedback")
+      .select("source_review_id")
+      .eq("source", "ownerrez")
+      .in("source_review_id", ids.slice(i, i + 200));
+    for (const r of data ?? []) if (r.source_review_id) existing.add(r.source_review_id);
+  }
+  const propIds = [...new Set(homes.values())];
+  const { data: props } = propIds.length
+    ? await admin.from("properties").select("id, name").in("id", propIds)
+    : { data: [] as { id: string; name: string }[] };
+  const names = new Map((props ?? []).map((p) => [p.id, p.name] as const));
+  const rows: ReviewPreviewRow[] = items.map((r) => {
+    const property_id = r.ownerrez_property_id ? homes.get(r.ownerrez_property_id) ?? null : null;
+    const rating = r.stars && r.stars >= 1 && r.stars <= 5 ? Math.round(r.stars) : null;
+    const outcome: ReviewPreviewRow["outcome"] = existing.has(r.source_review_id)
+      ? "duplicate"
+      : !property_id
+        ? "unmatched_property"
+        : needsFollowUp(rating)
+          ? "follow_up"
+          : "no_follow_up";
+    return {
+      source_review_id: r.source_review_id,
+      platform: r.listing_site,
+      rating,
+      ownerrez_property_id: r.ownerrez_property_id,
+      property_id,
+      property_name: property_id ? names.get(property_id) ?? null : null,
+      booking_id: r.booking_id,
+      guest_name: r.guest_name,
+      date: r.date,
+      outcome,
+    };
+  });
+  const count = (o: ReviewPreviewRow["outcome"]) => rows.filter((r) => r.outcome === o).length;
+  return {
+    available: rows.length,
+    duplicates: count("duplicate"),
+    wouldCreateFollowUp: count("follow_up"),
+    wouldImportNoFollowUp: count("no_follow_up"),
+    unmatchedProperty: count("unmatched_property"),
+    noReservation: rows.filter((r) => !r.booking_id).length,
+    rows,
+  };
+}
