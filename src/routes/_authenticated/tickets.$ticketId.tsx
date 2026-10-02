@@ -32,6 +32,7 @@ import { commitmentStatus } from "@/lib/work-orders";
 import { GuidanceCard } from "@/components/GuidanceCard";
 import { CurrentActionCard } from "@/components/CurrentActionCard";
 import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/GuidedTicketPanel";
+import { GuestFeedbackFollowUpPanel } from "@/components/feedback/GuestFeedbackFollowUpPanel";
 import { OccupancyGuestPanel } from "@/components/tickets/OccupancyGuestPanel";
 import { ticketGuestComm } from "@/lib/guest-impact";
 
@@ -1149,6 +1150,14 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             <section aria-label="Current work">
               <h2 className="eyebrow text-muted-foreground">Current work</h2>
 
+              {(ticket as { guest_feedback_id?: string | null }).guest_feedback_id && (
+                <div className="mt-2">
+                  <GuestFeedbackFollowUpPanel
+                    feedbackId={(ticket as { guest_feedback_id: string }).guest_feedback_id}
+                    readOnly={role.readOnly}
+                  />
+                </div>
+              )}
               <div className="mt-2">
                 <GuidedTicketPanel
                   ticket={{

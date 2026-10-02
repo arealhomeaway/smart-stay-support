@@ -26,6 +26,7 @@ import { usDate, usDateTime } from "@/lib/dates";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PropertyFeedbackTab } from "@/components/feedback/PropertyFeedbackTab";
 import { PropertyWorkHistory } from "@/components/work-entry/PropertyWorkHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
@@ -176,6 +177,8 @@ function PropertyHubPage() {
           {hub.viewer.staff && <TabsTrigger value="contacts">Contacts</TabsTrigger>}
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           {hub.viewer.staff && <TabsTrigger value="operations">Operations</TabsTrigger>}
+          {hub.viewer.staff && <TabsTrigger value="surveys">Guest Surveys</TabsTrigger>}
+          {hub.viewer.staff && <TabsTrigger value="reviews">Reviews</TabsTrigger>}
           <TabsTrigger value="documents">Documents &amp; media</TabsTrigger>
           <TabsTrigger value="approvals">Approvals</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -198,6 +201,16 @@ function PropertyHubPage() {
         {hub.viewer.staff && (
           <TabsContent value="operations" className="mt-4">
             <OperationsTab hub={hub} />
+          </TabsContent>
+        )}
+        {hub.viewer.staff && (
+          <TabsContent value="surveys" className="mt-4">
+            <PropertyFeedbackTab propertyId={propertyId} kind="internal_survey" isDemo={!!hub.property.isDemo} isSupervisor={!!hub.viewer.supervisor} />
+          </TabsContent>
+        )}
+        {hub.viewer.staff && (
+          <TabsContent value="reviews" className="mt-4">
+            <PropertyFeedbackTab propertyId={propertyId} kind="external_review" isDemo={!!hub.property.isDemo} isSupervisor={!!hub.viewer.supervisor} />
           </TabsContent>
         )}
         <TabsContent value="documents" className="mt-4">
