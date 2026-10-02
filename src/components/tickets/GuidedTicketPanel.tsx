@@ -93,6 +93,7 @@ export function GuidedTicketPanel({
   onLeadChange,
   vendorFollowUp = null,
   openWorkOrderPanel,
+  onVendorChosenForWorkOrder,
 }: {
   ticket: GuidedTicket;
   closed: boolean;
@@ -114,6 +115,12 @@ export function GuidedTicketPanel({
   vendorFollowUp?: string | null;
   /** The existing Work Order list, shown inside the one Waiting on Vendor state. */
   openWorkOrderPanel?: ReactNode;
+  /**
+   * When an open Work Order exists, a different vendor is only a candidate:
+   * it is added to the Work Order's Find a Vendor, where it must explicitly accept
+   * and authorization is re-checked. Never a direct swap.
+   */
+  onVendorChosenForWorkOrder?: ((vendor: { id: string; name: string }) => Promise<void>) | undefined;
 }) {
   const qc = useQueryClient();
   const [note, setNote] = useState("");
@@ -186,8 +193,10 @@ export function GuidedTicketPanel({
   const [emergencyReason, setEmergencyReason] = useState("");
   const save = useMutation({
     mutationFn: async ({ patch, history, guestUpdate }: { patch: Record<string, unknown>; history: string; guestUpdate?: boolean }) => {
-      const { error } = await supabase.from("tickets").update(patch as never).eq("id", ticket.id);
-      if (error) throw error;
+      if (Object.keys(patch).length > 0) {
+        const { error } = await supabase.from("tickets").update(patch as never).eq("id", ticket.id);
+        if (error) throw error;
+      }
       if (guestUpdate) await log("communication", history, "guest_update");
       else await log("note", history);
     },
@@ -198,6 +207,17 @@ export function GuidedTicketPanel({
     },
     onError: (e) => toast.error(errorText(e)),
   });
+
+  const hasOpenWorkOrder = openWorkOrders > 0 && !!onVendorChosenForWorkOrder;
+  const chooseVendor = (patch: Record<string, unknown>, history: string, v: { id: string; name: string }) =>
+    save.mutate(
+      {
+        // With an open Work Order the Ticket keeps its current vendor until the new one accepts
+        // (the database then moves both). Emergency Only basis is still recorded on the Ticket.
+        patch: hasOpenWorkOrder && !("emergency_vendor_reason" in patch) ? {} : patch,
+        history: hasOpenWorkOrder ? `${history} Added to the open Work Order as a candidate — it must accept before it replaces the current vendor.` : history },
+      { onSuccess: () => { if (hasOpenWorkOrder) void onVendorChosenForWorkOrder!(v).catch((e) => toast.error(errorText(e))); } },
+    );
 
   const answer = useMutation({
     mutationFn: async ({ stepId, outcome, prompt }: { stepId: string; outcome: "fixed" | "not_fixed" | "skipped"; prompt: string }) => {
@@ -397,12 +417,13 @@ export function GuidedTicketPanel({
                     setEmergencyReason("");
                     return;
                   }
-                  save.mutate({
-                    patch: { selected_vendor_org_id: v.id },
-                    history: v.emergency_only
+                  chooseVendor(
+                    { selected_vendor_org_id: v.id },
+                    v.emergency_only
                       ? `Emergency Only vendor chosen on a P1 Ticket: ${v.display_name}.`
                       : `Vendor chosen from the Directory: ${v.display_name}.`,
-                  });
+                    { id: v.id, name: v.display_name },
+                  );
                 }}
               />
               {emergencyPick && (
@@ -425,10 +446,11 @@ export function GuidedTicketPanel({
                           size="sm"
                           disabled={!emergencyBasis || emergencyReason.trim().length < 10 || save.isPending}
                           onClick={() => {
-                            save.mutate({
-                              patch: { selected_vendor_org_id: emergencyPick.id, emergency_vendor_basis: emergencyBasis, emergency_vendor_reason: emergencyReason.trim() },
-                              history: `Emergency Only vendor chosen: ${emergencyPick.name}. Basis: ${EMERGENCY_BASIS_LABELS[emergencyBasis!]}. Reason: ${emergencyReason.trim()}`,
-                            });
+                            chooseVendor(
+                              { selected_vendor_org_id: emergencyPick.id, emergency_vendor_basis: emergencyBasis, emergency_vendor_reason: emergencyReason.trim() },
+                              `Emergency Only vendor chosen: ${emergencyPick.name}. Basis: ${EMERGENCY_BASIS_LABELS[emergencyBasis!]}. Reason: ${emergencyReason.trim()}`,
+                              { id: emergencyPick.id, name: emergencyPick.name },
+                            );
                             setEmergencyPick(null);
                           }}
                         >
@@ -468,6 +490,9 @@ export function GuidedTicketPanel({
             </div>
           </dl>
           {openWorkOrderPanel}
+          {!readOnly && onVendorChosenForWorkOrder && (
+            <Button variant="ghost" size="sm" onClick={() => setChangingVendor(true)}>Choose a different vendor</Button>
+          )}
         </section>
       ) : (
         children

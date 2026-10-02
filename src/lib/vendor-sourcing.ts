@@ -44,19 +44,28 @@ export function visitNeedsFollowUp(outcome: VisitOutcome): boolean {
   return outcome !== "resolved" && outcome !== "no_issue_found";
 }
 
-export type VendorChannelInfo = { breezeway: boolean; telegram: boolean };
-export function vendorChannels(v: { dispatch_method?: string | null; breezeway_person_id?: unknown; uses_telegram?: boolean | null } | null | undefined): VendorChannelInfo {
+export type TelegramStatus = "unknown" | "yes" | "no";
+export type VendorChannelInfo = { breezeway: boolean; telegram: boolean; telegramStatus: TelegramStatus };
+/** Telegram is unknown until staff confirm it — a default "off" never means the vendor doesn't use it. */
+export function vendorChannels(v: { dispatch_method?: string | null; breezeway_person_id?: unknown; telegram_status?: string | null } | null | undefined): VendorChannelInfo {
+  const telegramStatus: TelegramStatus = v?.telegram_status === "yes" || v?.telegram_status === "no" ? v.telegram_status : "unknown";
   return {
     breezeway: !!v && (v.dispatch_method === "breezeway" || v.breezeway_person_id != null),
-    telegram: !!v?.uses_telegram,
+    telegram: telegramStatus === "yes",
+    telegramStatus,
   };
 }
+export const TELEGRAM_STATUS_LABELS: Record<TelegramStatus, string> = {
+  unknown: "Telegram: not confirmed", yes: "Telegram", no: "No Telegram",
+};
 
 export type DispatchWorkOrder = WorkOrderLike & {
   scope?: string | null;
   authorized_scope?: string | null;
   authorized_amount?: number | string | null;
   authorization_stale?: boolean | null;
+  authorized_vendor_org_id?: string | null;
+  vendor_org_id?: string | null;
   dispatched_at?: string | null;
 };
 
@@ -76,8 +85,11 @@ export function authorizationState(wo: DispatchWorkOrder): AuthorizationState {
   const stale = !!wo.authorization_stale;
   const approved = who === "owner" ? wo.approval_status === "approved" : who === "supervisor" ? wo.supervisor_approval_status === "approved" : true;
   const satisfied = who === null ? true : approved && !stale;
+  const vendorChanged = !!wo.authorized_vendor_org_id && wo.vendor_org_id !== wo.authorized_vendor_org_id;
   const label = stale
-    ? "Approval no longer covers this scope or amount — request again"
+    ? vendorChanged
+      ? "Approval was for a different vendor — request approval for the replacement vendor"
+      : "Approval no longer covers this scope or amount — request again"
     : who === null ? "No approval required"
     : satisfied ? (who === "owner" ? "Owner approved" : "Supervisor approved")
     : who === "owner" ? "Waiting on owner approval" : "Waiting on supervisor approval";
@@ -105,13 +117,42 @@ export function breezewayPushEligibility(input: {
   const a = authorizationState(input.wo);
   if (!a.satisfied) reasons.push(a.label);
   if (input.handoffStatus === "sent" || input.handoffStatus === "simulated") reasons.push("Already handed off to Breezeway.");
+  if (input.handoffStatus === "uncertain") reasons.push("The last attempt is uncertain — reconcile it with Breezeway before another create.");
   return { allowed: reasons.length === 0, reasons };
 }
 
 export const HANDOFF_LABELS: Record<string, string> = {
   not_sent: "Not sent", sent: "Sent to Breezeway", simulated: "Demo handoff (simulated — nothing sent)",
-  failed: "Handoff failed", uncertain: "Handoff uncertain — check Breezeway before retrying",
+  failed: "Handoff not created — safe to retry", uncertain: "Handoff uncertain — reconcile with Breezeway before retrying",
 };
+
+export type HandoffStatus = "not_sent" | "sent" | "failed" | "uncertain" | "simulated";
+/**
+ * Classify one Breezeway create attempt. Breezeway offers no verified
+ * duplicate-safe retry, so anything short of a definite answer is "uncertain"
+ * and blocks another create until someone reconciles it.
+ *  - ok → sent
+ *  - no outbound record was written → nothing reached Breezeway → failed
+ *  - a definite refusal (retryable) → failed
+ *  - anything else (timeout, 5xx, created-but-id-not-saved, still creating) → uncertain
+ */
+export function handoffStatusFromResult(res: { ok: boolean; link?: unknown; retryable?: boolean } | null): Exclude<HandoffStatus, "not_sent" | "simulated"> {
+  if (!res) return "uncertain";
+  if (res.ok) return "sent";
+  if (!res.link) return "failed";
+  return res.retryable ? "failed" : "uncertain";
+}
+/** Can another create attempt start? Never while uncertain or already sent. */
+export function canAttemptHandoff(status: string): boolean {
+  return status === "not_sent" || status === "failed";
+}
+/** One request key per attempt; a new key only after a definite "not created". */
+export function handoffRequestKey(workOrderId: string, priorKey: string | null | undefined, status: string): string {
+  const base = `work_order:${workOrderId}`;
+  if (!priorKey || status !== "failed") return priorKey ?? base;
+  const m = /:attempt-(\d+)$/.exec(priorKey);
+  return `${base}:attempt-${m ? Number(m[1]) + 1 : 2}`;
+}
 
 /** Suspected duplicate invoice: same invoice number + payee, or same payee with near amount within 7 days. */
 export function suspectedDuplicate(
@@ -123,4 +164,36 @@ export function suspectedDuplicate(
   if (!a.payee || !b.payee || !same(a.payee, b.payee) || a.amount == null || b.amount == null || !a.expense_date || !b.expense_date) return false;
   const days = Math.abs(Date.parse(a.expense_date) - Date.parse(b.expense_date)) / 86_400_000;
   return Math.abs(a.amount - b.amount) <= Math.max(1, a.amount * 0.01) && days <= 7;
+}
+
+export type CreateResult = { ok: boolean; link?: { breezewayTaskId?: number | null } | null; retryable?: boolean; message?: string };
+/**
+ * One Breezeway handoff attempt. The "uncertain" intent is saved BEFORE the
+ * external call, so a timeout, crash or lost save after Breezeway created the
+ * task leaves the Work Order uncertain — never "not sent" — and blocks a second create.
+ */
+export async function runHandoffAttempt(deps: {
+  workOrderId: string;
+  status: string;
+  priorKey: string | null;
+  save: (patch: { breezeway_handoff_status: HandoffStatus; breezeway_request_key?: string; breezeway_task_ref?: string | null; breezeway_handoff_error?: string | null }) => Promise<void>;
+  create: (requestKey: string) => Promise<CreateResult>;
+}): Promise<{ status: HandoffStatus; ref: string | null; message: string; created: boolean }> {
+  if (!canAttemptHandoff(deps.status)) {
+    return { status: deps.status as HandoffStatus, ref: null, created: false,
+      message: deps.status === "uncertain" ? "The last attempt is uncertain. Reconcile it with Breezeway before another create." : "Already handed off — no second task created." };
+  }
+  const requestKey = handoffRequestKey(deps.workOrderId, deps.priorKey, deps.status);
+  await deps.save({ breezeway_handoff_status: "uncertain", breezeway_request_key: requestKey, breezeway_handoff_error: "Handoff in progress — if this stays, check Breezeway before retrying." });
+  let res: CreateResult | null = null;
+  try { res = await deps.create(requestKey); } catch { res = null; }
+  const status = handoffStatusFromResult(res);
+  const id = res?.link?.breezewayTaskId;
+  const ref = id != null ? String(id) : null;
+  await deps.save({
+    breezeway_handoff_status: status,
+    ...(ref ? { breezeway_task_ref: ref } : {}),
+    breezeway_handoff_error: status === "sent" ? null : (res?.message ?? "Breezeway did not respond. The task may exist — reconcile before retrying."),
+  });
+  return { status, ref, created: true, message: status === "sent" ? "Sent to Breezeway." : status === "failed" ? (res?.message ?? "Not created.") : "Uncertain — reconcile with Breezeway before another create." };
 }

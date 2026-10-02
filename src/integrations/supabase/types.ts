@@ -11885,6 +11885,9 @@ export type Database = {
           source_system: string
           status: string
           tags: string[]
+          telegram_confirmed_at: string | null
+          telegram_confirmed_by: string | null
+          telegram_status: string
           tier: string | null
           transitional_deadline: string | null
           transitional_ended_at: string | null
@@ -11959,6 +11962,9 @@ export type Database = {
           source_system?: string
           status?: string
           tags?: string[]
+          telegram_confirmed_at?: string | null
+          telegram_confirmed_by?: string | null
+          telegram_status?: string
           tier?: string | null
           transitional_deadline?: string | null
           transitional_ended_at?: string | null
@@ -12033,6 +12039,9 @@ export type Database = {
           source_system?: string
           status?: string
           tags?: string[]
+          telegram_confirmed_at?: string | null
+          telegram_confirmed_by?: string | null
+          telegram_status?: string
           tier?: string | null
           transitional_deadline?: string | null
           transitional_ended_at?: string | null
@@ -12606,6 +12615,7 @@ export type Database = {
           id: string
           is_demo: boolean
           next_follow_up_on: string | null
+          released_reason: string | null
           status: string
           vendor_name: string
           vendor_org_id: string | null
@@ -12621,6 +12631,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           next_follow_up_on?: string | null
+          released_reason?: string | null
           status?: string
           vendor_name: string
           vendor_org_id?: string | null
@@ -12636,6 +12647,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           next_follow_up_on?: string | null
+          released_reason?: string | null
           status?: string
           vendor_name?: string
           vendor_org_id?: string | null
@@ -12743,6 +12755,7 @@ export type Database = {
           authorized_amount: number | null
           authorized_at: string | null
           authorized_scope: string | null
+          authorized_vendor_org_id: string | null
           breezeway_handoff_at: string | null
           breezeway_handoff_error: string | null
           breezeway_handoff_status: string
@@ -12832,6 +12845,7 @@ export type Database = {
           authorized_amount?: number | null
           authorized_at?: string | null
           authorized_scope?: string | null
+          authorized_vendor_org_id?: string | null
           breezeway_handoff_at?: string | null
           breezeway_handoff_error?: string | null
           breezeway_handoff_status?: string
@@ -12921,6 +12935,7 @@ export type Database = {
           authorized_amount?: number | null
           authorized_at?: string | null
           authorized_scope?: string | null
+          authorized_vendor_org_id?: string | null
           breezeway_handoff_at?: string | null
           breezeway_handoff_error?: string | null
           breezeway_handoff_status?: string
@@ -13614,6 +13629,10 @@ export type Database = {
           _report: Json
         }
         Returns: string
+      }
+      confirm_vendor_telegram: {
+        Args: { _org: string; _status: string }
+        Returns: undefined
       }
       correct_cleaner_exposure: {
         Args: {

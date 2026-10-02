@@ -175,9 +175,10 @@ export function expenseAgeDays(receivedOn: string, today: string): number {
 }
 
 /** Totals by proposed statement period; unassigned periods are kept apart. */
-export function totalsByPeriod(rows: { amount: number | null; proposed_statement_period: string | null }[]) {
+export function totalsByPeriod(rows: { amount: number | null; proposed_statement_period: string | null; is_estimate?: boolean | null }[]) {
   const map = new Map<string, number>();
   for (const r of rows) {
+    if (r.is_estimate) continue; // estimates are never part of invoiced totals
     const key = r.proposed_statement_period ? r.proposed_statement_period.slice(0, 7) : "Not assigned";
     map.set(key, (map.get(key) ?? 0) + Math.round((r.amount ?? 0) * 100));
   }
@@ -201,8 +202,10 @@ export function financeQueue(e: {
   finance_review: FinanceReview;
   ops_completion: "open" | "done";
   ready: boolean;
+  is_estimate?: boolean | null;
 }): FinanceQueue {
   if (e.finance_review === "reviewed") return "reviewed";
+  if (e.is_estimate) return "in_progress"; // never in final review until converted or replaced
   if (e.finance_review === "needs_clarification") return "needs_clarification";
   if (e.links === 0) return "unmatched";
   if (reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id)) return "reservation_unresolved";
@@ -237,4 +240,15 @@ export function ownerAllocationBlocked(e: {
   return purchaseNeedsLeadership(e)
     ? "Purchase authorization is missing or uncertain — route to leadership for a decision before allocating to the owner."
     : null;
+}
+
+/** Estimated amounts are shown apart from invoiced totals. */
+export function estimateTotal(rows: { amount: number | null; is_estimate?: boolean | null }[]): number {
+  return rows.reduce((s, r) => s + (r.is_estimate ? Math.round((r.amount ?? 0) * 100) : 0), 0) / 100;
+}
+/** Why final Finance review is blocked by estimate/duplicate state (null = not blocked). */
+export function reviewBlockedBy(e: { is_estimate?: boolean | null; duplicate_flag?: string | null }): string | null {
+  if (e.is_estimate) return "This is an estimate. Convert it to the actual invoice, or archive it as replaced, before final review.";
+  if (e.duplicate_flag === "suspected") return "Possible duplicate. Mark it \"Not a duplicate\" or archive the duplicate entry before final review.";
+  return null;
 }

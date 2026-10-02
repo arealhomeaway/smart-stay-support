@@ -33,6 +33,7 @@ import { commitmentStatus } from "@/lib/work-orders";
 import { GuidanceCard } from "@/components/GuidanceCard";
 import { CurrentActionCard } from "@/components/CurrentActionCard";
 import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/GuidedTicketPanel";
+import { requestFindVendorFocus } from "@/lib/find-vendor-focus";
 import { GuestFeedbackFollowUpPanel } from "@/components/feedback/GuestFeedbackFollowUpPanel";
 import { OccupancyGuestPanel } from "@/components/tickets/OccupancyGuestPanel";
 import { ticketGuestComm } from "@/lib/guest-impact";
@@ -788,6 +789,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
   /* ---------------- where this ticket is in the work ---------------- */
   const repairLinks = (repairState?.links ?? []) as { status: string }[];
   const orders = (workOrders ?? []) as {
+    id: string;
     phase: string | null;
     closed_at: string | null;
   }[];
@@ -1176,6 +1178,23 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                       .filter((o) => !o.closed_at)
                       .map((o) => commitmentStatus(o as never).action)
                       .find(Boolean) ?? null
+                  }
+                  onVendorChosenForWorkOrder={
+                    role.can("work_orders_internal") && liveOrders.some((o) => !o.closed_at)
+                      ? async (vendor) => {
+                          const wo = liveOrders.find((o) => !o.closed_at)!;
+                          const { data: existing } = await supabase.from("work_order_vendor_candidates").select("id")
+                            .eq("work_order_id", wo.id).eq("vendor_org_id", vendor.id).in("status", ["candidate", "contacted", "accepted"]).limit(1);
+                          if (!existing?.length) {
+                            const { error } = await supabase.from("work_order_vendor_candidates").insert({
+                              work_order_id: wo.id, vendor_org_id: vendor.id, vendor_name: vendor.name, choice: "primary", is_demo: ticket.is_demo ?? false,
+                            });
+                            if (error) throw error;
+                          }
+                          requestFindVendorFocus(wo.id);
+                          setOpenWorkOrderId(wo.id);
+                        }
+                      : undefined
                   }
                   openWorkOrderPanel={
                     role.can("work_orders_internal") ? (
