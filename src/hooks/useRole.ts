@@ -33,11 +33,13 @@ export function useMyRoles() {
           roles: [] as AppRole[],
           onboardingDirector: false,
           opsDirector: false,
+          finance: false,
         };
-      const [{ data, error }, director, ops] = await Promise.all([
+      const [{ data, error }, director, ops, finance] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", auth.user.id),
         supabase.rpc("is_onboarding_director", { _user_id: auth.user.id }),
         supabase.rpc("is_director", { _user_id: auth.user.id }),
+        supabase.rpc("is_accounting", { _user_id: auth.user.id }),
       ]);
       if (error) throw error;
       return {
@@ -48,6 +50,8 @@ export function useMyRoles() {
         onboardingDirector: director.data === true,
         // Admin or whoever holds the Director of Operations seat.
         opsDirector: ops.data === true,
+        // Finance lead or Accounting seat.
+        finance: finance.data === true,
       };
     },
   });
@@ -78,6 +82,7 @@ export function useRole() {
   const seats: AccessSeats = {
     onboardingDirector: !previewing && Boolean(query.data?.onboardingDirector),
     opsDirector: !previewing && Boolean(query.data?.opsDirector),
+    finance: !previewing && Boolean(query.data?.finance),
   };
   const access = { roles, seats };
 

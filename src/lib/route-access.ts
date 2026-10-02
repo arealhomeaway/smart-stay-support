@@ -52,6 +52,7 @@ const RULES: Rule[] = [
   { prefix: "/cleaner-hours", capability: "cleaner_hours" },
   { prefix: "/str-participation-report", capability: "str_participation_report" },
   { prefix: "/str-dispatch-check", capability: "cleaner_dispatch_check" },
+  { prefix: "/finance", capability: "finance_workspace" },
 ];
 
 function ruleFor(pathname: string): Rule {
