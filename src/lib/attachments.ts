@@ -242,6 +242,7 @@ export function attachmentUploadInvalidationKeys(
 ): string[][] {
   const keys: string[][] = [["attachments", entityType, entityId]];
   if (entityType === "ticket") keys.push(["ticket", entityId]);
+  if (entityType === "expense") keys.push(["expense", entityId]);
   return keys;
 }
 
