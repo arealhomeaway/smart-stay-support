@@ -7,7 +7,7 @@
  * separate states. Documentation ready never means approved, payable or
  * statement ready. No cutoffs, SLAs or statement treatment are assumed here.
  */
-import { MAINTENANCE_POLICY } from "@/lib/maintenance-policy";
+import { evaluateAuthority, type WorkOrderLike } from "@/lib/work-orders";
 
 export type ExpenseType = "vendor_service" | "purchase" | "other";
 export type Responsibility = "owner" | "arha" | "guest" | "vendor" | "insurance" | "split" | "pending";
@@ -43,10 +43,15 @@ export const FINANCE_REVIEW_LABEL: Record<FinanceReview, string> = {
 };
 
 export const RESERVATION_LINK_LABEL: Record<ReservationLink, string> = {
-  not_relevant: "Not relevant",
+  not_relevant: "Not applicable",
   linked: "Linked",
-  unresolved: "Needed — not yet linked",
+  unresolved: "Required but unresolved",
 };
+
+/** A reservation blocks Finance review only when it is required and not yet established. */
+export function reservationBlocks(state: ReservationLink, bookingId: string | null | undefined): boolean {
+  return state === "unresolved" || (state === "linked" && !filled(bookingId));
+}
 
 export const LINK_LABEL: Record<LinkType, string> = {
   ticket: "Ticket",
@@ -78,15 +83,48 @@ export type ExpenseFacts = {
 const filled = (v: string | null | undefined) => typeof v === "string" && v.trim().length > 0;
 
 /**
- * Authorization evidence is required only when the existing Maintenance
- * Authority Policy already requires owner approval. No new threshold.
+ * Approval facts from a linked Work Order (if any). The expense never
+ * re-decides authority: it runs the existing Work Order authority ladder
+ * (`evaluateAuthority`) — supervisor band, owner threshold, recorded
+ * contractual exception and emergency mitigation — on the invoiced amount.
  */
-export function authorizationRequired(f: Pick<ExpenseFacts, "expense_type" | "amount">): boolean {
-  return f.expense_type === "vendor_service" && (f.amount ?? 0) > MAINTENANCE_POLICY.ownerApprovalThreshold;
+export type AuthorizationContext = Pick<
+  WorkOrderLike,
+  "phase" | "emergency_reason" | "contractual_exception" | "approval_status" | "supervisor_approval_status"
+> | null;
+
+export type AuthorizationNeed = {
+  required: boolean;
+  who: "owner" | "supervisor" | null;
+  reason: string;
+  /** Approval already recorded on the linked Work Order. */
+  satisfiedByWorkOrder: boolean;
+};
+
+/**
+ * Authorization evidence applies only to maintenance vendor service, and only
+ * when the existing Maintenance Authority Policy requires an approval.
+ * No new threshold and no single amount comparison.
+ */
+export function authorizationNeed(
+  f: Pick<ExpenseFacts, "expense_type" | "amount">,
+  wo: AuthorizationContext = null,
+): AuthorizationNeed {
+  if (f.expense_type !== "vendor_service" || f.amount == null)
+    return { required: false, who: null, reason: "Not required by the existing Maintenance Authority Policy.", satisfiedByWorkOrder: false };
+  const v = evaluateAuthority({ ...(wo ?? {}), quote_amount: f.amount, approved_amount: null });
+  const who = v.ownerApprovalRequired ? "owner" : v.supervisorApprovalRequired ? "supervisor" : null;
+  const satisfied =
+    !!wo && ((who === "owner" && wo.approval_status === "approved") || (who === "supervisor" && wo.supervisor_approval_status === "approved"));
+  return { required: who !== null, who, reason: v.reason, satisfiedByWorkOrder: satisfied };
+}
+
+export function authorizationRequired(f: Pick<ExpenseFacts, "expense_type" | "amount">, wo: AuthorizationContext = null): boolean {
+  return authorizationNeed(f, wo).required;
 }
 
 /** Exactly what is missing for documentation readiness (empty = ready). */
-export function missingDocumentation(f: ExpenseFacts): string[] {
+export function missingDocumentation(f: ExpenseFacts, wo: AuthorizationContext = null): string[] {
   const missing: string[] = [];
   if (f.invoice_document_ids.length === 0) missing.push("Invoice or itemized receipt");
   if (!f.property_id) missing.push("Property");
@@ -102,10 +140,20 @@ export function missingDocumentation(f: ExpenseFacts): string[] {
     if (!filled(f.purchased_what)) missing.push("What was purchased");
     if (!filled(f.purchase_purpose)) missing.push("Purpose of the purchase");
   }
-  if (authorizationRequired(f) && !f.approval_id && !filled(f.authorization_note))
-    missing.push("Authorization evidence (required by the Maintenance Authority Policy)");
+  const auth = authorizationNeed(f, wo);
+  if (auth.required && !auth.satisfiedByWorkOrder && !f.approval_id && !filled(f.authorization_note))
+    missing.push(
+      auth.who === "owner"
+        ? "Owner authorization evidence (required by the Maintenance Authority Policy)"
+        : "Supervisor approval evidence (required by the Maintenance Authority Policy)",
+    );
   if (f.photos_required && f.photo_document_ids.length === 0) missing.push("Photos (required by this workflow)");
   return missing;
+}
+
+/** Minimum meaningful information before an expense can be saved. Mirrors the database rule. */
+export function canCreateExpense(d: { payee?: string | null; property_id?: string | null; amount?: number | null; reason?: string | null }): boolean {
+  return (filled(d.payee) || !!d.property_id) && (d.amount != null || filled(d.reason));
 }
 
 export function docReadiness(f: ExpenseFacts): "ready" | "missing" {
@@ -149,6 +197,7 @@ export type FinanceQueue = "unmatched" | "reservation_unresolved" | "needs_clari
 export function financeQueue(e: {
   links: number;
   reservation_link_state: ReservationLink;
+  ownerrez_booking_id?: string | null | undefined;
   finance_review: FinanceReview;
   ops_completion: "open" | "done";
   ready: boolean;
@@ -156,7 +205,7 @@ export function financeQueue(e: {
   if (e.finance_review === "reviewed") return "reviewed";
   if (e.finance_review === "needs_clarification") return "needs_clarification";
   if (e.links === 0) return "unmatched";
-  if (e.reservation_link_state === "unresolved") return "reservation_unresolved";
+  if (reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id)) return "reservation_unresolved";
   if (e.ops_completion === "done" && e.ready) return "review";
   return "in_progress";
 }

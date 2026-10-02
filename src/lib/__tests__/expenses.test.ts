@@ -1,6 +1,9 @@
 import { describe, expect, it as test } from "bun:test";
 import {
+  authorizationNeed,
   authorizationRequired,
+  canCreateExpense,
+  reservationBlocks,
   expenseAgeDays,
   financeQueue,
   missingDocumentation,
@@ -45,14 +48,43 @@ describe("documentation readiness", () => {
     const m = missingDocumentation({ ...base, expense_type: "purchase", dispatch_reason: null, visit_outcome: null });
     expect(m).toEqual(["What was purchased", "Purpose of the purchase"]);
   });
-  test("authorization evidence follows the existing policy threshold only", () => {
-    const t = MAINTENANCE_POLICY.ownerApprovalThreshold;
-    expect(authorizationRequired({ expense_type: "vendor_service", amount: t })).toBe(false);
-    expect(authorizationRequired({ expense_type: "vendor_service", amount: t + 1 })).toBe(true);
-    expect(missingDocumentation({ ...base, amount: t + 1 })).toContain(
-      "Authorization evidence (required by the Maintenance Authority Policy)",
+  test("authorization reuses the existing Work Order authority ladder", () => {
+    const own = MAINTENANCE_POLICY.ownerApprovalThreshold;
+    const sup = MAINTENANCE_POLICY.supervisorApprovalThreshold;
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: sup - 1 }).required).toBe(false);
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: sup }).who).toBe("supervisor");
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: own }).who).toBe("supervisor");
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: own + 1 }).who).toBe("owner");
+    // Purchases are not maintenance authority decisions.
+    expect(authorizationRequired({ expense_type: "purchase", amount: own + 1 })).toBe(false);
+    expect(missingDocumentation({ ...base, amount: own + 1 })).toContain(
+      "Owner authorization evidence (required by the Maintenance Authority Policy)",
     );
-    expect(missingDocumentation({ ...base, amount: t + 1, approval_id: "a" })).toEqual([]);
+    expect(missingDocumentation({ ...base, amount: own + 1, approval_id: "a" })).toEqual([]);
+  });
+  test("recorded contractual exception and emergency mitigation are honoured", () => {
+    const own = MAINTENANCE_POLICY.ownerApprovalThreshold;
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: own + 100 }, { contractual_exception: true }).who).toBe("supervisor");
+    expect(authorizationNeed({ expense_type: "vendor_service", amount: own + 100 }, { phase: "mitigation", emergency_reason: "water_intrusion" }).required).toBe(false);
+  });
+  test("approval recorded on the linked Work Order counts as evidence", () => {
+    const own = MAINTENANCE_POLICY.ownerApprovalThreshold;
+    expect(missingDocumentation({ ...base, amount: own + 1 }, { approval_status: "approved" })).toEqual([]);
+    expect(missingDocumentation({ ...base, amount: own + 1 }, { approval_status: "pending" })).toHaveLength(1);
+  });
+  test("reservation: not applicable is reviewable, required-unresolved blocks", () => {
+    const q = { links: 1, finance_review: "in_review" as const, ops_completion: "done" as const, ready: true };
+    expect(financeQueue({ ...q, reservation_link_state: "not_relevant" })).toBe("review");
+    expect(financeQueue({ ...q, reservation_link_state: "unresolved" })).toBe("reservation_unresolved");
+    expect(financeQueue({ ...q, reservation_link_state: "linked", ownerrez_booking_id: null })).toBe("reservation_unresolved");
+    expect(financeQueue({ ...q, reservation_link_state: "linked", ownerrez_booking_id: "123" })).toBe("review");
+    expect(reservationBlocks("not_relevant", null)).toBe(false);
+  });
+  test("minimum meaningful information before saving", () => {
+    expect(canCreateExpense({})).toBe(false);
+    expect(canCreateExpense({ payee: "X" })).toBe(false);
+    expect(canCreateExpense({ payee: "X", amount: 10 })).toBe(true);
+    expect(canCreateExpense({ property_id: "p", reason: "Leak" })).toBe(true);
   });
   test("maintenance thresholds unchanged", () => {
     expect(MAINTENANCE_POLICY.ownerApprovalThreshold).toBe(350);

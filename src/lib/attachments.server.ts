@@ -151,11 +151,12 @@ async function loadRecord(
     if (!isStaff(viewer)) throw new Error(DENY_UNRELATED);
     const { data, error } = await supabaseAdmin
       .from("expenses")
-      .select("id, payee, property_id, is_demo")
+      .select("id, payee, property_id, is_demo, archived_at")
       .eq("id", entityId)
       .maybeSingle();
     if (error || !data) throw new Error("That expense could not be found.");
-    return { propertyId: data.property_id, closed: false, label: `Expense · ${data.payee ?? "No payee"}`, isDemo: data.is_demo };
+    // Archived expenses are read only — no new files.
+    return { propertyId: data.property_id, closed: data.archived_at != null, label: `Expense · ${data.payee ?? "No payee"}`, isDemo: data.is_demo };
   }
   if (entityType === "ticket") {
     const { data, error } = await supabaseAdmin
