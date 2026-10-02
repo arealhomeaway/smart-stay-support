@@ -1,4 +1,5 @@
 import { ExpensesCard } from "@/components/finance/ExpensesCard";
+import { VendorSourcingPanel } from "@/components/workorders/VendorSourcingPanel";
 /**
  * Work Order workspace.
  *
@@ -968,6 +969,9 @@ export function WorkOrderDrawer({
             <Separator />
           </>
         ) : null}
+
+        <VendorSourcingPanel workOrderId={workOrder.id} readOnly={readOnly} />
+        <Separator />
 
         {/* Vendor commitments ------------------------------------------ */}
         <section className="space-y-3">
