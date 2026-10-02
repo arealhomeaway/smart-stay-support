@@ -3713,6 +3713,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           dispatch_reason: string | null
+          duplicate_flag: string | null
+          duplicate_of: string | null
           expense_date: string | null
           expense_type: string
           finance_review: string
@@ -3721,6 +3723,7 @@ export type Database = {
           id: string
           invoice_document_ids: string[]
           is_demo: boolean
+          is_estimate: boolean
           leadership_assignee: string | null
           leadership_decided_at: string | null
           leadership_decided_by: string | null
@@ -3737,6 +3740,9 @@ export type Database = {
           photos_required: boolean
           property_id: string | null
           proposed_statement_period: string | null
+          purchase_auth_evidence: string | null
+          purchase_auth_status: string | null
+          purchase_authorized_by: string | null
           purchase_purpose: string | null
           purchased_what: string | null
           qb_reference_manual: string | null
@@ -3751,6 +3757,7 @@ export type Database = {
           updated_at: string
           vendor_invoice_ref: string | null
           visit_outcome: string | null
+          work_order_visit_id: string | null
         }
         Insert: {
           amount?: number | null
@@ -3764,6 +3771,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dispatch_reason?: string | null
+          duplicate_flag?: string | null
+          duplicate_of?: string | null
           expense_date?: string | null
           expense_type?: string
           finance_review?: string
@@ -3772,6 +3781,7 @@ export type Database = {
           id?: string
           invoice_document_ids?: string[]
           is_demo?: boolean
+          is_estimate?: boolean
           leadership_assignee?: string | null
           leadership_decided_at?: string | null
           leadership_decided_by?: string | null
@@ -3788,6 +3798,9 @@ export type Database = {
           photos_required?: boolean
           property_id?: string | null
           proposed_statement_period?: string | null
+          purchase_auth_evidence?: string | null
+          purchase_auth_status?: string | null
+          purchase_authorized_by?: string | null
           purchase_purpose?: string | null
           purchased_what?: string | null
           qb_reference_manual?: string | null
@@ -3802,6 +3815,7 @@ export type Database = {
           updated_at?: string
           vendor_invoice_ref?: string | null
           visit_outcome?: string | null
+          work_order_visit_id?: string | null
         }
         Update: {
           amount?: number | null
@@ -3815,6 +3829,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dispatch_reason?: string | null
+          duplicate_flag?: string | null
+          duplicate_of?: string | null
           expense_date?: string | null
           expense_type?: string
           finance_review?: string
@@ -3823,6 +3839,7 @@ export type Database = {
           id?: string
           invoice_document_ids?: string[]
           is_demo?: boolean
+          is_estimate?: boolean
           leadership_assignee?: string | null
           leadership_decided_at?: string | null
           leadership_decided_by?: string | null
@@ -3839,6 +3856,9 @@ export type Database = {
           photos_required?: boolean
           property_id?: string | null
           proposed_statement_period?: string | null
+          purchase_auth_evidence?: string | null
+          purchase_auth_status?: string | null
+          purchase_authorized_by?: string | null
           purchase_purpose?: string | null
           purchased_what?: string | null
           qb_reference_manual?: string | null
@@ -3853,6 +3873,7 @@ export type Database = {
           updated_at?: string
           vendor_invoice_ref?: string | null
           visit_outcome?: string | null
+          work_order_visit_id?: string | null
         }
         Relationships: [
           {
@@ -3881,6 +3902,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_wo_visit_fk"
+            columns: ["work_order_visit_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_visits"
             referencedColumns: ["id"]
           },
         ]
@@ -11866,6 +11894,7 @@ export type Database = {
           trial_jobs_required: number
           trial_score: number | null
           updated_at: string
+          uses_telegram: boolean
           vendor_class: string
           w9_status: string
           website: string | null
@@ -11939,6 +11968,7 @@ export type Database = {
           trial_jobs_required?: number
           trial_score?: number | null
           updated_at?: string
+          uses_telegram?: boolean
           vendor_class?: string
           w9_status?: string
           website?: string | null
@@ -12012,6 +12042,7 @@ export type Database = {
           trial_jobs_required?: number
           trial_score?: number | null
           updated_at?: string
+          uses_telegram?: boolean
           vendor_class?: string
           w9_status?: string
           website?: string | null
@@ -12482,6 +12513,47 @@ export type Database = {
           },
         ]
       }
+      work_order_contact_attempts: {
+        Row: {
+          attempted_at: string
+          candidate_id: string
+          channel: string
+          created_by: string | null
+          id: string
+          next_follow_up_on: string | null
+          note: string | null
+          response: string
+        }
+        Insert: {
+          attempted_at?: string
+          candidate_id: string
+          channel: string
+          created_by?: string | null
+          id?: string
+          next_follow_up_on?: string | null
+          note?: string | null
+          response: string
+        }
+        Update: {
+          attempted_at?: string
+          candidate_id?: string
+          channel?: string
+          created_by?: string | null
+          id?: string
+          next_follow_up_on?: string | null
+          note?: string | null
+          response?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_contact_attempts_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_vendor_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_events: {
         Row: {
           author_id: string | null
@@ -12523,6 +12595,139 @@ export type Database = {
           },
         ]
       }
+      work_order_vendor_candidates: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          choice: string
+          created_at: string
+          created_by: string | null
+          declined_reason: string | null
+          id: string
+          is_demo: boolean
+          next_follow_up_on: string | null
+          status: string
+          vendor_name: string
+          vendor_org_id: string | null
+          work_order_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          choice?: string
+          created_at?: string
+          created_by?: string | null
+          declined_reason?: string | null
+          id?: string
+          is_demo?: boolean
+          next_follow_up_on?: string | null
+          status?: string
+          vendor_name: string
+          vendor_org_id?: string | null
+          work_order_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          choice?: string
+          created_at?: string
+          created_by?: string | null
+          declined_reason?: string | null
+          id?: string
+          is_demo?: boolean
+          next_follow_up_on?: string | null
+          status?: string
+          vendor_name?: string
+          vendor_org_id?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_vendor_candidates_vendor_org_id_fkey"
+            columns: ["vendor_org_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_vendor_candidates_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_order_visits: {
+        Row: {
+          candidate_id: string | null
+          created_at: string
+          created_by: string | null
+          evidence_document_ids: string[]
+          findings: string | null
+          follow_up_work_item_id: string | null
+          id: string
+          is_demo: boolean
+          outcome: string
+          vendor_name: string
+          visit_date: string
+          work_done: string | null
+          work_order_id: string
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          evidence_document_ids?: string[]
+          findings?: string | null
+          follow_up_work_item_id?: string | null
+          id?: string
+          is_demo?: boolean
+          outcome: string
+          vendor_name: string
+          visit_date?: string
+          work_done?: string | null
+          work_order_id: string
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          evidence_document_ids?: string[]
+          findings?: string | null
+          follow_up_work_item_id?: string | null
+          id?: string
+          is_demo?: boolean
+          outcome?: string
+          vendor_name?: string
+          visit_date?: string
+          work_done?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_visits_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_vendor_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_visits_follow_up_work_item_id_fkey"
+            columns: ["follow_up_work_item_id"]
+            isOneToOne: true
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_visits_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_orders: {
         Row: {
           approval_decided_at: string | null
@@ -12534,6 +12739,15 @@ export type Database = {
           approved_amount: number | null
           assigned_to: string | null
           authority_level: string | null
+          authorization_stale: boolean
+          authorized_amount: number | null
+          authorized_at: string | null
+          authorized_scope: string | null
+          breezeway_handoff_at: string | null
+          breezeway_handoff_error: string | null
+          breezeway_handoff_status: string
+          breezeway_request_key: string | null
+          breezeway_task_ref: string | null
           category: string | null
           claim_id: string | null
           closed_at: string | null
@@ -12543,10 +12757,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           diagnosis_uncertain: boolean
+          dispatch_reason: string | null
+          dispatched_at: string | null
+          dispatched_by: string | null
           emergency_reason: string | null
           evidence_complete: boolean
           final_cost: number | null
           follow_up_ticket_id: string | null
+          guest_impact: string | null
           guest_notified_at: string | null
           id: string
           invoice_reference: string | null
@@ -12610,6 +12828,15 @@ export type Database = {
           approved_amount?: number | null
           assigned_to?: string | null
           authority_level?: string | null
+          authorization_stale?: boolean
+          authorized_amount?: number | null
+          authorized_at?: string | null
+          authorized_scope?: string | null
+          breezeway_handoff_at?: string | null
+          breezeway_handoff_error?: string | null
+          breezeway_handoff_status?: string
+          breezeway_request_key?: string | null
+          breezeway_task_ref?: string | null
           category?: string | null
           claim_id?: string | null
           closed_at?: string | null
@@ -12619,10 +12846,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           diagnosis_uncertain?: boolean
+          dispatch_reason?: string | null
+          dispatched_at?: string | null
+          dispatched_by?: string | null
           emergency_reason?: string | null
           evidence_complete?: boolean
           final_cost?: number | null
           follow_up_ticket_id?: string | null
+          guest_impact?: string | null
           guest_notified_at?: string | null
           id?: string
           invoice_reference?: string | null
@@ -12686,6 +12917,15 @@ export type Database = {
           approved_amount?: number | null
           assigned_to?: string | null
           authority_level?: string | null
+          authorization_stale?: boolean
+          authorized_amount?: number | null
+          authorized_at?: string | null
+          authorized_scope?: string | null
+          breezeway_handoff_at?: string | null
+          breezeway_handoff_error?: string | null
+          breezeway_handoff_status?: string
+          breezeway_request_key?: string | null
+          breezeway_task_ref?: string | null
           category?: string | null
           claim_id?: string | null
           closed_at?: string | null
@@ -12695,10 +12935,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           diagnosis_uncertain?: boolean
+          dispatch_reason?: string | null
+          dispatched_at?: string | null
+          dispatched_by?: string | null
           emergency_reason?: string | null
           evidence_complete?: boolean
           final_cost?: number | null
           follow_up_ticket_id?: string | null
+          guest_impact?: string | null
           guest_notified_at?: string | null
           id?: string
           invoice_reference?: string | null
