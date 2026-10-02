@@ -241,7 +241,7 @@ export const setReviewFollowUpStart = createServerFn({ method: "POST" })
     const { writeAudit } = await import("./audit.server");
     await writeAudit({
       actorId: context.userId, actorLabel: "admin", action: "review_followup_start_configured",
-      entityType: "app_setting", entityId: REVIEW_FOLLOWUP_START_KEY, entityLabel: "Review follow-up automation start date",
+      entityType: "app_setting", entityId: null, entityLabel: "Review follow-up automation start date",
       before: prev.data?.value ?? null, after: { date: data.date },
     });
     return { date: data.date };
