@@ -715,6 +715,13 @@
       "when": 1790970766281,
       "tag": "0101_ops_pass5b_departure_matching",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1790971878788,
+      "tag": "0102_finance_foundation_expenses",
+      "breakpoints": true
     }
   ]
 }
