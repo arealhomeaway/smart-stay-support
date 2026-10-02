@@ -11,9 +11,10 @@
 
 const APP = "https://app.ownerrez.com";
 
+/** OwnerRez ids are numeric; synthetic/demo ids (e.g. "demo-bk-1") never get a link. */
 function clean(id: string | number | null | undefined) {
   const value = id == null ? "" : String(id).trim();
-  return value.length ? encodeURIComponent(value) : null;
+  return /^\d+$/.test(value) ? value : null;
 }
 
 export function ownerRezBookingUrl(bookingId: string | number | null | undefined) {
