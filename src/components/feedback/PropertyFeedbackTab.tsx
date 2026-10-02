@@ -91,7 +91,7 @@ export function PropertyFeedbackTab({
       </Card>
 
       <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogContent onCloseAutoFocus={(e) => e.preventDefault()} className="max-h-[85vh] max-w-2xl overflow-y-auto">
           {open && (
             <>
               <DialogHeader>
