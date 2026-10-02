@@ -23,3 +23,4 @@
 - Property Activity files: uploaded via the shared attachment path as property-level Operations documents, linked by `property_activity_log.attachment_document_ids`; insurance labels only from `insuranceRiskLabel` in `src/lib/work-entry.ts`. Why: one upload path, one label rule.
 
 - Review follow-up automation start date: `app_settings` key `review_followup_automation_start` read only via `reviewImportDecision` in `src/lib/guest-feedback.ts`; unset/missing publish date = history-only. Why: one rule, replays never create retroactive follow-ups.
+- Review identity: `guest_feedback.reviewer_display_name` (review source) never overwritten by `reservation_guest_name` (OwnerRez booking, filled by `enrichReviewReservations`). Why: public reviewer ≠ booking guest.
