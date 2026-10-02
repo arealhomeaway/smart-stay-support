@@ -40,12 +40,12 @@ export function PropertyActivityForm({
     involved: "",
   });
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
-    if (!propertyId) return toast.error("Pick the property.");
-    if (!f.category) return toast.error("Pick a category.");
+    if (!propertyId) { toast.error("Pick the property."); return; }
+    if (!f.category) { toast.error("Pick a category."); return; }
     if (!f.what_happened.trim() || !f.outcome.trim())
-      return toast.error("Say what happened and what was done.");
+      { toast.error("Say what happened and what was done."); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("property_activity_log").insert({
@@ -55,11 +55,11 @@ export function PropertyActivityForm({
       what_happened: f.what_happened.trim(),
       outcome: f.outcome.trim(),
       involved: f.involved.trim() || null,
-      logged_by: u.user?.id,
+      ...(u.user ? { logged_by: u.user.id } : {}),
       is_demo: isDemo,
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     void qc.invalidateQueries({ queryKey: ["property-activity", propertyId] });
     toast.success("Saved to the property's history.");
     onLogged(propertyId);

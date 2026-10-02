@@ -119,7 +119,7 @@ function NewMatterPage() {
       context={context}
       onCreated={(id) => router.navigate({ to: "/tickets/$ticketId", params: { ticketId: id } })}
       onActivityLogged={(pid) =>
-        router.navigate({ to: "/properties/$propertyId", params: { propertyId: pid } })
+        router.navigate({ to: "/property/$propertyId", params: { propertyId: pid } })
       }
     />
   );
