@@ -404,6 +404,7 @@ export function AttachmentsPanel({
                       size="icon"
                       variant="ghost"
                       onClick={() => open.mutate({ documentId: f.id, download: false })}
+                      aria-label={`View ${f.title}`}
                     >
                       <Eye className="size-4" />
                     </Button>
@@ -411,13 +412,14 @@ export function AttachmentsPanel({
                       size="icon"
                       variant="ghost"
                       onClick={() => open.mutate({ documentId: f.id, download: true })}
+                      aria-label={`Download ${f.title}`}
                     >
                       <Download className="size-4" />
                     </Button>
                   </>
                 ) : null}
                 {f.can_delete ? (
-                  <Button size="icon" variant="ghost" onClick={() => del.mutate(f.id)}>
+                  <Button size="icon" variant="ghost" onClick={() => del.mutate(f.id)} aria-label={`Remove ${f.title}`}>
                     <Trash2 className="size-4 text-destructive" />
                   </Button>
                 ) : null}
