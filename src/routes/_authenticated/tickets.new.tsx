@@ -80,6 +80,8 @@ type NewTicketSearch = {
   kind?: EntryKind;
   /** Guest feedback record this new work follows up on (kept separate from it). */
   feedback?: string;
+  /** Departure Review this work was raised from (kept separate from it). */
+  departureReview?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/tickets/new")({
@@ -98,6 +100,8 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
     if (origin) out.origin = origin;
     const feedback = str(search["feedback"]);
     if (feedback && /^[0-9a-f-]{36}$/i.test(feedback)) out.feedback = feedback;
+    const departureReview = str(search["departureReview"]);
+    if (departureReview && /^[0-9a-f-]{36}$/i.test(departureReview)) out.departureReview = departureReview;
     const kind = str(search["kind"]);
     if (kind === "activity" || kind === "ops" || kind === "maintenance") out.kind = kind;
     return out;
@@ -501,6 +505,7 @@ export function NewTicketForm({
           work_type_id: effectiveWorkTypeId,
           entry_kind: mode,
           linked_feedback_id: context.feedback ?? null,
+          departure_review_id: context.departureReview ?? null,
           maintenance_category: mode === "maintenance" ? form.maintenance_category : null,
           insurance_risk: mode === "maintenance" ? form.insurance_risk : null,
           estimated_cost: mode === "maintenance" && estimated !== null && Number.isFinite(estimated) ? estimated : null,

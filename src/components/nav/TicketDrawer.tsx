@@ -56,7 +56,7 @@ export function drawerNewTicketContext(href: string | null, origin: string): New
     const url = new URL(href, origin);
     if (url.origin !== origin || url.pathname.replace(/\/$/, "") !== "/tickets/new") return null;
     const out: NewTicketSearch = {};
-    for (const k of ["property", "lead", "project", "from", "origin", "feedback"] as const) {
+    for (const k of ["property", "lead", "project", "from", "origin", "feedback", "departureReview"] as const) {
       const v = url.searchParams.get(k);
       if (v) out[k] = v;
     }
