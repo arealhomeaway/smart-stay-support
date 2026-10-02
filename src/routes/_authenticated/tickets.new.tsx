@@ -550,6 +550,21 @@ export function NewTicketForm({
         })
         .select("id")
         .single();
+      if (error && error.code === "23505" && context.feedback) {
+        // Linked work already exists for this feedback — reopen it, never duplicate.
+        const { data: existing } = await supabase
+          .from("tickets")
+          .select("id")
+          .eq("linked_feedback_id", context.feedback)
+          .eq("entry_kind", mode)
+          .is("archived_at", null)
+          .maybeSingle();
+        if (existing) {
+          toast.info("Linked work already exists — opening it.");
+          onCreated(existing.id);
+          return;
+        }
+      }
       if (error) throw error;
 
       // Freeze OwnerRez stay context onto the ticket. Best effort: OwnerRez
