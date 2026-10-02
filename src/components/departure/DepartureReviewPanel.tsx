@@ -252,7 +252,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
           <dt className="text-muted-foreground">Clean</dt><dd>{r.clean_name ?? "Departure clean"}</dd>
           <dt className="text-muted-foreground">Cleaner</dt><dd>{r.cleaner_name || "Not provided by Breezeway"}</dd>
-          <dt className="text-muted-foreground">Completed</dt><dd>{fmtTime(r.clean_completed_at)}</dd>
+          <dt className="text-muted-foreground">{r.clean_completed_exact ? "Finished in Breezeway" : "Last Breezeway update"}</dt><dd>{r.clean_completed_at ? fmtTime(r.clean_completed_at) : "Not provided"}{!r.clean_completed_exact && r.clean_completed_at ? " (not an exact finish time)" : ""}</dd>
           <dt className="text-muted-foreground">Photos</dt><dd>{r.clean_photo_count ?? 0} in Breezeway</dd>
         </dl>
         {bwUrl && <a className="text-sm underline" href={bwUrl} target="_blank" rel="noreferrer">Open the clean in Breezeway</a>}
