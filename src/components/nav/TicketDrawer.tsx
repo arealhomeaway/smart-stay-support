@@ -84,7 +84,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
   }, []);
   const api = useMemo<DrawerApi>(
     () => ({
-      openTicket: (id) => setTicketId(id),
+      openTicket: (id) => { console.log("FBDBG drawer", id); setTicketId(id); },
       openNewTicket: (ctx) => {
         setTicketIdRaw(null);
         setNewCtx(ctx);
@@ -126,6 +126,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
   useEffect(() => setTicketId(null), [pathname, setTicketId]);
 
   const requestClose = useCallback(() => {
+    console.log("FBDBG close");
     const dirty = Array.from(
       contentRef.current?.querySelectorAll<HTMLTextAreaElement | HTMLInputElement>(
         "textarea, input[type=text]",

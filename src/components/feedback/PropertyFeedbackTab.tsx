@@ -46,6 +46,7 @@ export function PropertyFeedbackTab({
   useEffect(() => {
     if (open || !pendingTicket || !drawer) return;
     const t = window.setTimeout(() => {
+      console.log("FBDBG open", pendingTicket);
       drawer.openTicket(pendingTicket);
       setPendingTicket(null);
     }, 250);
