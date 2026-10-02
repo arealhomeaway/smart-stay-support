@@ -21,3 +21,5 @@
 - Ticket opening: in-app Ticket links open `TicketWorkspace` in the shell drawer (`src/components/nav/TicketDrawer.tsx`); the full page renders the same component. Why: one Ticket implementation, page context preserved.
 - Work entry: one `NewTicketForm` offers Log Property Activity (`property_activity_log`, history-only, never a Ticket) / Ops Ticket / Maintenance (`tickets.entry_kind`); owner section relevance comes only from `ownerSectionRelevant` in `src/lib/work-entry.ts` reading `MAINTENANCE_POLICY`. Why: one form, one threshold, activity never counted as work.
 - Property Activity files: uploaded via the shared attachment path as property-level Operations documents, linked by `property_activity_log.attachment_document_ids`; insurance labels only from `insuranceRiskLabel` in `src/lib/work-entry.ts`. Why: one upload path, one label rule.
+
+- Review follow-up automation start date: `app_settings` key `review_followup_automation_start` read only via `reviewImportDecision` in `src/lib/guest-feedback.ts`; unset/missing publish date = history-only. Why: one rule, replays never create retroactive follow-ups.
