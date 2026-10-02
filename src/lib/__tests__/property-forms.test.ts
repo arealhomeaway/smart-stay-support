@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { formKeyForTitle, propertyForms } from "../property-forms";
 import { ownerPreviewBuckets } from "../owner-view-preview";
 const t = (id: string, title: string, status = "todo") => ({ id, title, status, assigned_to: null, updated_at: "2026-10-01", completed_at: null });
