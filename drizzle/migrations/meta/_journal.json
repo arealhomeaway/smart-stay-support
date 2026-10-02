@@ -722,6 +722,13 @@
       "when": 1790971878788,
       "tag": "0102_finance_foundation_expenses",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1790971977986,
+      "tag": "0103_finance_expense_attachments",
+      "breakpoints": true
     }
   ]
 }
