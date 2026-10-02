@@ -197,6 +197,7 @@ export type FinanceQueue = "unmatched" | "reservation_unresolved" | "needs_clari
 export function financeQueue(e: {
   links: number;
   reservation_link_state: ReservationLink;
+  ownerrez_booking_id?: string | null;
   finance_review: FinanceReview;
   ops_completion: "open" | "done";
   ready: boolean;
@@ -204,7 +205,7 @@ export function financeQueue(e: {
   if (e.finance_review === "reviewed") return "reviewed";
   if (e.finance_review === "needs_clarification") return "needs_clarification";
   if (e.links === 0) return "unmatched";
-  if (e.reservation_link_state === "unresolved") return "reservation_unresolved";
+  if (reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id)) return "reservation_unresolved";
   if (e.ops_completion === "done" && e.ready) return "review";
   return "in_progress";
 }
