@@ -28,6 +28,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PropertyFeedbackTab } from "@/components/feedback/PropertyFeedbackTab";
 import { PropertyWorkHistory } from "@/components/work-entry/PropertyWorkHistory";
+import { PropertyDepartureReviews } from "@/components/departure/DepartureReviewQueue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyHubFn } from "@/lib/property-hub.functions";
 import { BreezewayWorkOrderPanel } from "@/components/BreezewayWorkOrderPanel";
@@ -706,6 +707,7 @@ function OperationsTab({ hub }: { hub: Hub }) {
         </CardContent>
       </Card>
 
+      <PropertyDepartureReviews propertyId={hub.property.id} />
       <PropertyWorkHistory propertyId={hub.property.id} />
 
       <Card>

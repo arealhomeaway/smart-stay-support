@@ -827,6 +827,7 @@ export type Database = {
           created_at: string
           department: string | null
           description: string | null
+          finished_at: string | null
           id: string
           last_synced_at: string
           linked_ticket_id: string | null
@@ -835,6 +836,7 @@ export type Database = {
           photo_count: number
           priority: string | null
           property_id: string | null
+          reservation_snapshot: Json | null
           scheduled_date: string | null
           scheduled_time: string | null
           stage: string | null
@@ -851,6 +853,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           description?: string | null
+          finished_at?: string | null
           id?: string
           last_synced_at?: string
           linked_ticket_id?: string | null
@@ -859,6 +862,7 @@ export type Database = {
           photo_count?: number
           priority?: string | null
           property_id?: string | null
+          reservation_snapshot?: Json | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           stage?: string | null
@@ -875,6 +879,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           description?: string | null
+          finished_at?: string | null
           id?: string
           last_synced_at?: string
           linked_ticket_id?: string | null
@@ -883,6 +888,7 @@ export type Database = {
           photo_count?: number
           priority?: string | null
           property_id?: string | null
+          reservation_snapshot?: Json | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           stage?: string | null
@@ -973,11 +979,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          damage_categories: string[] | null
           deadline_on: string | null
           decided_on: string | null
+          departure_review_id: string | null
           disposition: string | null
           disposition_reason: string | null
           estimated_amount: number | null
+          evidence_document_ids: string[] | null
           external_reference: string | null
           follow_up_on: string | null
           guest_name: string | null
@@ -1012,11 +1021,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          damage_categories?: string[] | null
           deadline_on?: string | null
           decided_on?: string | null
+          departure_review_id?: string | null
           disposition?: string | null
           disposition_reason?: string | null
           estimated_amount?: number | null
+          evidence_document_ids?: string[] | null
           external_reference?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
@@ -1051,11 +1063,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          damage_categories?: string[] | null
           deadline_on?: string | null
           decided_on?: string | null
+          departure_review_id?: string | null
           disposition?: string | null
           disposition_reason?: string | null
           estimated_amount?: number | null
+          evidence_document_ids?: string[] | null
           external_reference?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
@@ -1080,6 +1095,13 @@ export type Database = {
           work_order_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "claims_departure_review_id_fkey"
+            columns: ["departure_review_id"]
+            isOneToOne: false
+            referencedRelation: "departure_reviews"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "claims_property_id_fkey"
             columns: ["property_id"]
@@ -2019,6 +2041,101 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaning_reviews: {
+        Row: {
+          breezeway_task_id: number | null
+          cleaner_name: string | null
+          created_at: string
+          damage_found: boolean | null
+          departure_review_id: string
+          id: string
+          is_demo: boolean
+          linked_claim_id: string | null
+          linked_ticket_ids: string[]
+          notes: string | null
+          outcome: string | null
+          ownerrez_booking_id: string | null
+          photo_document_ids: string[]
+          property_id: string
+          property_issues_found: boolean | null
+          reservation_code: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          breezeway_task_id?: number | null
+          cleaner_name?: string | null
+          created_at?: string
+          damage_found?: boolean | null
+          departure_review_id: string
+          id?: string
+          is_demo?: boolean
+          linked_claim_id?: string | null
+          linked_ticket_ids?: string[]
+          notes?: string | null
+          outcome?: string | null
+          ownerrez_booking_id?: string | null
+          photo_document_ids?: string[]
+          property_id: string
+          property_issues_found?: boolean | null
+          reservation_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          breezeway_task_id?: number | null
+          cleaner_name?: string | null
+          created_at?: string
+          damage_found?: boolean | null
+          departure_review_id?: string
+          id?: string
+          is_demo?: boolean
+          linked_claim_id?: string | null
+          linked_ticket_ids?: string[]
+          notes?: string | null
+          outcome?: string | null
+          ownerrez_booking_id?: string | null
+          photo_document_ids?: string[]
+          property_id?: string
+          property_issues_found?: boolean | null
+          reservation_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_reviews_departure_review_id_fkey"
+            columns: ["departure_review_id"]
+            isOneToOne: true
+            referencedRelation: "departure_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaning_reviews_linked_claim_id_fkey"
+            columns: ["linked_claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaning_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "cleaning_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_sessions: {
         Row: {
           created_at: string
@@ -2457,6 +2574,208 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      departure_review_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          departure_review_id: string
+          event_type: string
+          id: string
+          property_id: string
+          summary: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          departure_review_id: string
+          event_type: string
+          id?: string
+          property_id: string
+          summary: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          departure_review_id?: string
+          event_type?: string
+          id?: string
+          property_id?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departure_review_events_departure_review_id_fkey"
+            columns: ["departure_review_id"]
+            isOneToOne: false
+            referencedRelation: "departure_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departure_reviews: {
+        Row: {
+          attachment_document_ids: string[]
+          booking_source: string | null
+          breezeway_task_id: number
+          breezeway_work_order_id: string | null
+          claim_id: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          clean_completed_at: string | null
+          clean_name: string | null
+          clean_photo_count: number | null
+          clean_reviewed_at: string | null
+          clean_reviewed_by: string | null
+          cleaner_name: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          damage_categories: string[]
+          damage_description: string | null
+          damage_estimate: number | null
+          damage_notes: string | null
+          damage_screen: string | null
+          deposit_amount: number | null
+          deposit_payer: string | null
+          event_key: string
+          guest_name: string | null
+          host_review: string | null
+          id: string
+          is_demo: boolean
+          notes: string | null
+          outreach_decision: string | null
+          outreach_reason: string | null
+          outreach_status: string | null
+          ownerrez_booking_id: string | null
+          property_attention: string | null
+          property_id: string
+          property_notes: string | null
+          reservation_code: string | null
+          status: string
+          stay_arrival: string | null
+          stay_departure: string | null
+          team: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_document_ids?: string[]
+          booking_source?: string | null
+          breezeway_task_id: number
+          breezeway_work_order_id?: string | null
+          claim_id?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          clean_completed_at?: string | null
+          clean_name?: string | null
+          clean_photo_count?: number | null
+          clean_reviewed_at?: string | null
+          clean_reviewed_by?: string | null
+          cleaner_name?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          damage_categories?: string[]
+          damage_description?: string | null
+          damage_estimate?: number | null
+          damage_notes?: string | null
+          damage_screen?: string | null
+          deposit_amount?: number | null
+          deposit_payer?: string | null
+          event_key: string
+          guest_name?: string | null
+          host_review?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          outreach_decision?: string | null
+          outreach_reason?: string | null
+          outreach_status?: string | null
+          ownerrez_booking_id?: string | null
+          property_attention?: string | null
+          property_id: string
+          property_notes?: string | null
+          reservation_code?: string | null
+          status?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          team?: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_document_ids?: string[]
+          booking_source?: string | null
+          breezeway_task_id?: number
+          breezeway_work_order_id?: string | null
+          claim_id?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          clean_completed_at?: string | null
+          clean_name?: string | null
+          clean_photo_count?: number | null
+          clean_reviewed_at?: string | null
+          clean_reviewed_by?: string | null
+          cleaner_name?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          damage_categories?: string[]
+          damage_description?: string | null
+          damage_estimate?: number | null
+          damage_notes?: string | null
+          damage_screen?: string | null
+          deposit_amount?: number | null
+          deposit_payer?: string | null
+          event_key?: string
+          guest_name?: string | null
+          host_review?: string | null
+          id?: string
+          is_demo?: boolean
+          notes?: string | null
+          outreach_decision?: string | null
+          outreach_reason?: string | null
+          outreach_status?: string | null
+          ownerrez_booking_id?: string | null
+          property_attention?: string | null
+          property_id?: string
+          property_notes?: string | null
+          reservation_code?: string | null
+          status?: string
+          stay_arrival?: string | null
+          stay_departure?: string | null
+          team?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departure_reviews_breezeway_work_order_id_fkey"
+            columns: ["breezeway_work_order_id"]
+            isOneToOne: false
+            referencedRelation: "breezeway_work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departure_reviews_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departure_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "departure_reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       document_recipient_events: {
         Row: {
@@ -9579,6 +9898,7 @@ export type Database = {
           cross_team: boolean
           current_action_owner: string | null
           department_code: string | null
+          departure_review_id: string | null
           description: string | null
           due_at: string | null
           emergency_vendor_authorized_at: string | null
@@ -9711,6 +10031,7 @@ export type Database = {
           cross_team?: boolean
           current_action_owner?: string | null
           department_code?: string | null
+          departure_review_id?: string | null
           description?: string | null
           due_at?: string | null
           emergency_vendor_authorized_at?: string | null
@@ -9843,6 +10164,7 @@ export type Database = {
           cross_team?: boolean
           current_action_owner?: string | null
           department_code?: string | null
+          departure_review_id?: string | null
           description?: string | null
           due_at?: string | null
           emergency_vendor_authorized_at?: string | null
@@ -9946,6 +10268,13 @@ export type Database = {
           work_type_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_departure_review_id_fkey"
+            columns: ["departure_review_id"]
+            isOneToOne: false
+            referencedRelation: "departure_reviews"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tickets_guest_feedback_id_fkey"
             columns: ["guest_feedback_id"]
@@ -12612,6 +12941,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_departure_review_from_clean: {
+        Args: { _wo_id: string }
+        Returns: string
+      }
       create_onboarding_financial_request: {
         Args: { _actor_id: string; _property_id: string; _request: Json }
         Returns: Json
@@ -13085,6 +13418,10 @@ export type Database = {
       }
       request_owner_document: {
         Args: { _actor_id: string; _input: Json }
+        Returns: string
+      }
+      rerun_departure_review_trigger: {
+        Args: { _wo_id: string }
         Returns: string
       }
       reset_demo_environment:
