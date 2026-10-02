@@ -28,6 +28,7 @@ import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
+import { OnboardingActivityFeed } from "@/components/onboarding/OnboardingActivityFeed";
 
 import { useRole } from "@/hooks/useRole";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
@@ -298,6 +299,8 @@ function Hub() {
               ))
             )}
           </SectionCard>
+
+          <OnboardingActivityFeed />
 
           <p className="text-sm text-muted-foreground">
             <span className="numeric font-semibold text-foreground">{activeProjects.length}</span>{" "}
