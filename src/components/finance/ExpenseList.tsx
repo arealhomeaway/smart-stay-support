@@ -6,6 +6,7 @@ import {
   docReadiness,
   reservationBlocks,
   money,
+  purchaseNeedsLeadership,
   type ExpenseFacts,
   type FinanceReview,
   type Responsibility,
@@ -21,12 +22,16 @@ export type ExpenseRow = ExpenseFacts & {
   reservation_link_state: "not_relevant" | "linked" | "unresolved";
   ownerrez_booking_id?: string | null;
   archived_at?: string | null;
+  duplicate_flag?: string | null;
+  is_estimate?: boolean;
+  purchase_auth_status?: string | null;
+  leadership_decision?: string | null;
   properties?: { name: string } | null;
   expense_links?: { id: string }[];
 };
 
 export const EXPENSE_SELECT =
-  "id, property_id, expense_type, payee, amount, expense_date, received_on, reason, dispatch_reason, visit_outcome, purchased_what, purchase_purpose, invoice_document_ids, photo_document_ids, photos_required, approval_id, authorization_note, proposed_statement_period, ops_completion, finance_review, cost_responsibility, reservation_link_state, ownerrez_booking_id, archived_at, properties(name), expense_links(id)";
+  "id, property_id, expense_type, payee, amount, expense_date, received_on, reason, dispatch_reason, visit_outcome, purchased_what, purchase_purpose, invoice_document_ids, photo_document_ids, photos_required, approval_id, authorization_note, proposed_statement_period, ops_completion, finance_review, cost_responsibility, reservation_link_state, ownerrez_booking_id, archived_at, duplicate_flag, is_estimate, purchase_auth_status, leadership_decision, properties(name), expense_links(id)";
 
 export function ExpenseChips({ e }: { e: ExpenseRow }) {
   const ready = docReadiness(e) === "ready";
@@ -37,6 +42,9 @@ export function ExpenseChips({ e }: { e: ExpenseRow }) {
       <Badge variant={e.finance_review === "reviewed" ? "secondary" : "outline"}>Finance: {FINANCE_REVIEW_LABEL[e.finance_review]}</Badge>
       {reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id) && <Badge variant="destructive">Reservation required — unresolved</Badge>}
       {e.archived_at && <Badge variant="outline">Archived</Badge>}
+      {e.is_estimate && <Badge variant="outline">Estimate — not an invoice</Badge>}
+      {e.duplicate_flag === "suspected" && <Badge variant="destructive">Possible duplicate — review</Badge>}
+      {purchaseNeedsLeadership({ expense_type: e.expense_type, purchase_auth_status: e.purchase_auth_status ?? null, leadership_decision: e.leadership_decision ?? null }) && <Badge variant="destructive">Purchase authorization — leadership decision needed</Badge>}
     </div>
   );
 }

@@ -24,6 +24,9 @@ import {
   canCreateExpense,
   expenseAgeDays,
   reservationBlocks,
+  PURCHASE_AUTH_LABEL,
+  ownerAllocationBlocked,
+  type PurchaseAuthStatus,
   type AuthorizationContext,
   missingDocumentation,
   money,
@@ -153,6 +156,12 @@ type Full = ExpenseRow & Record<string, unknown> & {
   leadership_decided_by: string | null;
   leadership_decided_at: string | null;
   is_demo: boolean;
+  duplicate_flag: string | null;
+  duplicate_of: string | null;
+  is_estimate: boolean;
+  purchase_auth_status: string | null;
+  purchase_auth_evidence: string | null;
+  purchase_authorized_by: string | null;
   archived_at: string | null;
   archived_by: string | null;
   archive_reason: string | null;
@@ -303,6 +312,25 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div><Label>What was purchased</Label><Input value={txt("purchased_what")} onChange={(x) => set("purchased_what", x.target.value)} /></div>
             <div><Label>Purpose</Label><Input value={txt("purchase_purpose")} onChange={(x) => set("purchase_purpose", x.target.value)} /></div>
+            <div>
+              <Label>Purchase authorization</Label>
+              <select className={sel} aria-label="Purchase authorization" value={v.purchase_auth_status ?? ""} onChange={(x) => set("purchase_auth_status", (x.target.value || null) as never)}>
+                <option value="">Not recorded</option>
+                {(Object.keys(PURCHASE_AUTH_LABEL) as PurchaseAuthStatus[]).map((k) => <option key={k} value={k}>{PURCHASE_AUTH_LABEL[k]}</option>)}
+              </select>
+              <p className="mt-1 text-xs text-muted-foreground">Separate from owner notification and cost responsibility. A guest request is not owner authorization.</p>
+            </div>
+            <div><Label>Who authorized / evidence</Label><Input value={txt("purchase_auth_evidence")} onChange={(x) => set("purchase_auth_evidence", x.target.value)} /></div>
+            {(v.purchase_auth_status === "missing" || v.purchase_auth_status === "uncertain") && (
+              <p className="text-xs text-destructive sm:col-span-2">Route to leadership below for a decision before any owner allocation.</p>
+            )}
+          </div>
+        )}
+        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!v.is_estimate} onChange={(x) => set("is_estimate", x.target.checked as never)} /> This is an estimate, not an invoice</label>
+        {e.duplicate_flag === "suspected" && (
+          <div className="rounded-md border border-destructive/50 p-2 text-xs">
+            <p className="text-destructive">Possible duplicate of another expense (same vendor and invoice number, or same vendor with a near amount and date). Nothing was merged.</p>
+            <Button size="sm" variant="ghost" onClick={() => void update({ duplicate_flag: "cleared" } as never, "Marked as not a duplicate.")}>Not a duplicate</Button>
           </div>
         )}
         <div className="grid gap-3 sm:grid-cols-2">
@@ -600,6 +628,7 @@ function FinanceSection({ e, access, people, onDone }: { e: Full; access: Return
             <Button size="sm" variant="outline" disabled={!treatmentDirty || !splitOk} onClick={() => void go({ cost_responsibility: resp, finance_treatment_note: note || null, split_allocations: resp === "split" ? split : [] }, "Treatment saved.")}>Save treatment</Button>
             <Button size="sm" disabled={treatmentDirty} onClick={() => void go({ finance_review: "reviewed" }, "Finance review complete.")}>Mark Finance reviewed</Button>
           </div>
+          {ownerAllocationBlocked(e) && <p className="text-xs text-destructive">{ownerAllocationBlocked(e)}</p>}
           {reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id) && <p className="text-xs text-destructive">A reservation is required but not yet established — resolve it before Finance review.</p>}
         </div>
       )}
