@@ -343,8 +343,8 @@ function LinksSection({ expenseId, propertyId, links, isDemo, onChanged, canEdit
         return (data ?? []).map((t) => ({ id: t.id, label: `#${t.ref} ${t.title}` }));
       }
       if (type === "work_order") {
-        const { data } = await supabase.from("work_orders").select("id, ref, title").eq("property_id", propertyId!).eq("is_demo", isDemo).order("created_at", { ascending: false }).limit(50);
-        return ((data ?? []) as { id: string; ref: number | null; title: string | null }[]).map((t) => ({ id: t.id, label: `WO ${t.ref ?? ""} ${t.title ?? ""}` }));
+        const { data } = await supabase.from("work_orders").select("id, title").eq("property_id", propertyId!).eq("is_demo", isDemo).order("created_at", { ascending: false }).limit(50);
+        return (data ?? []).map((t) => ({ id: t.id, label: `Work Order: ${t.title ?? "Untitled"}` }));
       }
       if (type === "claim") {
         const { data } = await supabase.from("claims").select("id, title, created_at").eq("property_id", propertyId!).eq("is_demo", isDemo).order("created_at", { ascending: false }).limit(50);
@@ -361,12 +361,12 @@ function LinksSection({ expenseId, propertyId, links, isDemo, onChanged, canEdit
       const ids = (t: string) => links.filter((l) => l.link_type === t).map((l) => l.target_id);
       const [t, w, c, a] = await Promise.all([
         ids("ticket").length ? supabase.from("tickets").select("id, ref, title").in("id", ids("ticket")) : null,
-        ids("work_order").length ? supabase.from("work_orders").select("id, ref, title").in("id", ids("work_order")) : null,
+        ids("work_order").length ? supabase.from("work_orders").select("id, title").in("id", ids("work_order")) : null,
         ids("claim").length ? supabase.from("claims").select("id, title").in("id", ids("claim")) : null,
         ids("property_activity").length ? supabase.from("property_activity_log").select("id, what_happened").in("id", ids("property_activity")) : null,
       ]);
       for (const r of (t?.data ?? []) as { id: string; ref: number; title: string }[]) m.set(r.id, `#${r.ref} ${r.title}`);
-      for (const r of (w?.data ?? []) as { id: string; ref: number | null; title: string | null }[]) m.set(r.id, `WO ${r.ref ?? ""} ${r.title ?? ""}`);
+      for (const r of (w?.data ?? []) as { id: string; title: string | null }[]) m.set(r.id, `Work Order: ${r.title ?? "Untitled"}`);
       for (const r of (c?.data ?? []) as { id: string; title: string | null }[]) m.set(r.id, r.title ?? "Claim");
       for (const r of (a?.data ?? []) as { id: string; what_happened: string }[]) m.set(r.id, r.what_happened.slice(0, 60));
       return m;
@@ -517,8 +517,8 @@ function ClarificationSection({ expenseId, items, events, people, access, review
     const a = (ev.after_value ?? {}) as { work_item_id?: string; question?: string; answer?: string };
     if (!a.work_item_id) continue;
     const cur = qa.get(a.work_item_id) ?? {};
-    if (ev.kind === "clarification_requested") cur.question = a.question;
-    if (ev.kind === "clarification_answered") cur.answer = a.answer;
+    if (ev.kind === "clarification_requested" && a.question) cur.question = a.question;
+    if (ev.kind === "clarification_answered" && a.answer) cur.answer = a.answer;
     qa.set(a.work_item_id, cur);
   }
   async function ask() {

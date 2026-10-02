@@ -80,7 +80,7 @@ function FinancePage() {
         description="Operations records facts and documents; Finance reviews and sets treatment. QuickBooks stays the accounting record and OwnerRez the statement record. No cutoff or review deadline is applied."
         actions={!role.readOnly && <Button onClick={() => void newUnmatched()}>Enter invoice</Button>}
       />
-      <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => ({ ...t, count: t.value === "period" ? undefined : (grouped.get(t.value)?.length ?? 0) }))} />
+      <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => (t.value === "period" ? t : { ...t, count: grouped.get(t.value)?.length ?? 0 }))} />
       <SectionCard>
         {q.isLoading ? (
           <LoadingRows />
