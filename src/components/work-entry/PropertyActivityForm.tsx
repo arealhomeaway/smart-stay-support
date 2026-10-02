@@ -48,6 +48,8 @@ export function PropertyActivityForm({
       { toast.error("Say what happened and what was done."); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
+    // A demo home's history stays demo even outside demo mode.
+    const { data: prop } = await supabase.from("properties").select("is_demo").eq("id", propertyId).maybeSingle();
     const { error } = await supabase.from("property_activity_log").insert({
       property_id: propertyId,
       occurred_at: new Date(f.occurred_at).toISOString(),
@@ -56,7 +58,7 @@ export function PropertyActivityForm({
       outcome: f.outcome.trim(),
       involved: f.involved.trim() || null,
       ...(u.user ? { logged_by: u.user.id } : {}),
-      is_demo: isDemo,
+      is_demo: isDemo || Boolean(prop?.is_demo),
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
