@@ -1,4 +1,11 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import {
+  isPostStayFeedback,
+  suggestActiveStayImpact,
+  suggestGuestComm,
+  type IssueRelation,
+  type Occupancy,
+} from "@/lib/guest-impact";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { captureTicketReservation, getPropertyStay } from "@/lib/ownerrez.functions";
@@ -453,6 +460,28 @@ export function NewTicketForm({
       const { data: propRow } = form.property_id
         ? await supabase.from("properties").select("is_demo").eq("id", form.property_id).maybeSingle()
         : { data: null };
+      const impactAtEntry = (() => {
+        const postStay = isPostStayFeedback(workType?.name);
+        const occupancy: Occupancy =
+          stay?.ok && stay.propertyId === form.property_id
+            ? stay.data.occupancy_status === "vacant"
+              ? "vacant"
+              : "in_home"
+            : "unknown";
+        const relation: IssueRelation | null = postStay
+          ? "prior"
+          : occupancy === "in_home" && form.guest_in_residence
+            ? "current"
+            : null;
+        const impact = suggestActiveStayImpact({
+          occupancy,
+          relation,
+          postStay,
+          guestAffectedNow: form.guest_in_residence,
+          guestImpact: form.guest_impact,
+        });
+        return { postStay, relation, impact, comm: suggestGuestComm(impact) };
+      })();
       const { data: ticket, error } = await supabase
         .from("tickets")
         .insert({
@@ -481,7 +510,11 @@ export function NewTicketForm({
           priority_override_reason: overridden ? form.priority_override_reason.trim() : null,
           source_channel: form.source_channel,
           source_reference: sourceReference,
-          ownerrez_booking_id: stay?.ok ? stay.data.booking_id : null,
+          // Post-stay feedback belongs to a past stay — never stamp the current booking on it.
+          ownerrez_booking_id: stay?.ok && !impactAtEntry.postStay ? stay.data.booking_id : null,
+          active_stay_impact: impactAtEntry.impact,
+          guest_comm_required: impactAtEntry.comm,
+          issue_reservation_relation: impactAtEntry.relation,
           guest_name: form.guest_name || null,
           guest_contact: form.guest_contact || null,
           guest_in_residence: form.guest_in_residence,

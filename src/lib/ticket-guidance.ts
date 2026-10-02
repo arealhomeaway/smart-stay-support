@@ -78,14 +78,20 @@ export type GuidanceInput = {
   requiredOpenSteps: number;
   missingEvidence: boolean;
   guestConfirmed?: boolean | null;
+  /**
+   * The active-stay update cadence from src/lib/guest-impact.ts. When set it
+   * is the answer — reservation dates alone never make a stay "active".
+   */
+  active_stay?: boolean;
   now?: Date;
 };
 
 /** A guest is in the home right now — from OwnerRez stay dates or the ticket flag. */
 export function activeGuestStay(
-  t: Pick<GuidanceInput, "guest_in_residence" | "reservation_arrival" | "reservation_departure">,
+  t: Pick<GuidanceInput, "guest_in_residence" | "reservation_arrival" | "reservation_departure" | "active_stay">,
   now = new Date(),
 ): boolean {
+  if (t.active_stay !== undefined) return t.active_stay;
   if (t.reservation_arrival && t.reservation_departure) {
     const today = now.toISOString().slice(0, 10);
     if (t.reservation_arrival <= today && today <= t.reservation_departure) return true;
@@ -163,8 +169,18 @@ export function ticketGuidance(t: GuidanceInput): Guidance {
       ...base,
       stage: "needs_acknowledgment",
       step: "guest_update",
-      title: "Update the guest",
+      title: "Send initial guest acknowledgement",
       body: "This issue is affecting an active guest stay. Acknowledge the issue and tell the guest what will happen next.",
+    };
+  }
+  // A scheduled update that has come due — the only way the guest step returns.
+  if (!t.waiting_on && stay && t.next_guest_update_at && new Date(t.next_guest_update_at) <= now) {
+    return {
+      ...base,
+      stage: "needs_follow_up",
+      step: "guest_update",
+      title: "Guest update due",
+      body: "The guest update you scheduled is due. Tell them where things stand and when they'll hear next.",
     };
   }
 

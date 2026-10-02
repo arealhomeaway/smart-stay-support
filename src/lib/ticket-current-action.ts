@@ -9,6 +9,7 @@
  */
 
 import type { ActionField, GuidedAction } from "@/lib/guided-action";
+import type { CommState } from "@/lib/guest-impact";
 
 export type {
   ActionField,
@@ -43,6 +44,12 @@ export type CurrentActionInput = {
   next_review_at?: string | null;
   guest_in_residence?: boolean | null;
   guest_confirmed?: boolean | null;
+  /**
+   * Guest communication state from src/lib/guest-impact.ts. When given it
+   * replaces the legacy guest_in_residence rule, so a logged update never
+   * re-asks "Update the guest" unless another update is actually due.
+   */
+  guest_comm_state?: CommState;
   vendor_name?: string | null;
   vendor_status?: string | null;
   /** A field repair exists and has not been reported complete. */
@@ -85,8 +92,32 @@ export function isCompletable(id: CurrentActionId) {
   return COMPLETABLE.includes(id);
 }
 
+const GUEST_UPDATE_FIELDS: ActionField[] = [
+  {
+    name: "update",
+    label: "What you told the guest",
+    type: "longtext",
+    required: true,
+    minLength: 5,
+  },
+  {
+    name: "next_update",
+    label: "When is the next guest update due?",
+    type: "choice",
+    required: true,
+    options: [
+      { value: "1", label: "In 1 hour" },
+      { value: "2", label: "In 2 hours" },
+      { value: "4", label: "In 4 hours" },
+      { value: "0", label: "No further update needed for now" },
+    ],
+  },
+];
+
 export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null {
   const status = t.status ?? "open";
+  const comm = t.guest_comm_state;
+  const legacyGuest = comm === undefined && Boolean(t.guest_in_residence);
   if (status === "closed" || t.closed_at) return null;
 
   if (!t.acknowledged_at) {
@@ -152,7 +183,12 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
       id: "start_work",
       title: "Start the work",
       because: "It's acknowledged but nothing has actually moved yet.",
-      then: t.guest_in_residence ? "Then you'll update the guest." : "Then work it through.",
+      then:
+        comm === "initial_ack"
+          ? "Then you'll send the guest an acknowledgement."
+          : legacyGuest
+            ? "Then you'll update the guest."
+            : "Then work it through.",
       completeLabel: "Start & advance",
       fields: [
         {
@@ -164,6 +200,20 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
           help: "One line is enough — it becomes the first entry in the ticket's history.",
         },
       ],
+    };
+  }
+
+  if (status !== "resolved" && (comm === "initial_ack" || comm === "update_due")) {
+    const initial = comm === "initial_ack";
+    return {
+      id: "guest_update",
+      title: initial ? "Send initial guest acknowledgement" : "Guest update due",
+      because: initial
+        ? "This issue affects an active stay and the guest hasn't heard from us yet."
+        : "The guest update you scheduled is due now.",
+      then: "Then Resolve shows the next real step — waiting, vendor, or the next update time.",
+      completeLabel: "Record & advance",
+      fields: GUEST_UPDATE_FIELDS,
     };
   }
 
@@ -221,7 +271,26 @@ export function ticketCurrentAction(t: CurrentActionInput): CurrentAction | null
     };
   }
 
-  if (t.guest_in_residence && !t.guest_confirmed && status !== "resolved") {
+  if (comm === "contact_prior_guest" && status !== "resolved") {
+    return {
+      id: "guest_update",
+      title: "Contact prior guest for feedback",
+      because: "This follows up a past stay. Nobody currently in the home is involved.",
+      then: "Then close it out when the follow-up is done.",
+      completeLabel: "Record & advance",
+      fields: [
+        {
+          name: "update",
+          label: "What you told the prior guest",
+          type: "longtext",
+          required: true,
+          minLength: 5,
+        },
+      ],
+    };
+  }
+
+  if (legacyGuest && !t.guest_confirmed && status !== "resolved") {
     return {
       id: "guest_update",
       title: "Update the guest",

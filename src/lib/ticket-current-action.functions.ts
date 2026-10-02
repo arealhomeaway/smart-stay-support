@@ -55,7 +55,7 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
     const { data: ticket, error } = await supabase
       .from("tickets")
       .select(
-        "id, status, acknowledged_at, action_started_at, waiting_on, waiting_reason, next_review_at, guest_in_residence, guest_confirmed, vendor_name, vendor_status, resolved_at, current_action_owner",
+        "id, status, acknowledged_at, action_started_at, waiting_on, waiting_reason, next_review_at, guest_in_residence, guest_confirmed, vendor_name, vendor_status, resolved_at, current_action_owner, work_type_id, active_stay_impact, guest_comm_required, issue_reservation_relation, guest_update_at, next_guest_update_at",
       )
       .eq("id", data.ticketId)
       .maybeSingle();
@@ -68,6 +68,12 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
       .eq("required", true)
       .eq("completed", false);
 
+    const { data: wt } = ticket.work_type_id
+      ? await supabase.from("work_types").select("name").eq("id", ticket.work_type_id).maybeSingle()
+      : { data: null };
+    const { ticketGuestComm } = await import("@/lib/guest-impact");
+    const guestComm = ticketGuestComm(ticket, wt?.name ?? null);
+
     const action = ticketCurrentAction({
       status: ticket.status,
       resolved_at: ticket.resolved_at,
@@ -78,6 +84,7 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
       next_review_at: ticket.next_review_at,
       guest_in_residence: ticket.guest_in_residence,
       guest_confirmed: ticket.guest_confirmed,
+      guest_comm_state: guestComm.commState,
       vendor_name: ticket.vendor_name,
       vendor_status: ticket.vendor_status,
       requiredOpenSteps: openSteps ?? 0,
@@ -185,7 +192,15 @@ export const completeCurrentActionFn = createServerFn({ method: "POST" })
       // Same fields the guided Ticket reads, so the update counts everywhere.
       const { error: stampError } = await supabase
         .from("tickets")
-        .update({ guest_update_at: new Date().toISOString(), guest_update_note: v["update"]?.trim() ?? null })
+        .update({
+          guest_update_at: new Date().toISOString(),
+          guest_update_note: v["update"]?.trim() ?? null,
+          // A scheduled next update is what brings the guest step back — never a generic repeat.
+          next_guest_update_at:
+            v["next_update"] && Number(v["next_update"]) > 0
+              ? new Date(Date.now() + Number(v["next_update"]) * 3600000).toISOString()
+              : null,
+        })
         .eq("id", data.ticketId);
       if (stampError) return { ok: false, message: stampError.message };
     }

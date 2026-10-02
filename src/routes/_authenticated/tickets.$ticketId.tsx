@@ -32,7 +32,8 @@ import { commitmentStatus } from "@/lib/work-orders";
 import { GuidanceCard } from "@/components/GuidanceCard";
 import { CurrentActionCard } from "@/components/CurrentActionCard";
 import { GuidedTicketPanel, type GuidedTicket } from "@/components/tickets/GuidedTicketPanel";
-import { GuestContextPanel } from "@/components/GuestContextPanel";
+import { OccupancyGuestPanel } from "@/components/tickets/OccupancyGuestPanel";
+import { ticketGuestComm } from "@/lib/guest-impact";
 
 import { OutlookSourceCard } from "@/components/OutlookSourceCard";
 import { TicketOwnerBox } from "@/components/work-entry/TicketOwnerBox";
@@ -383,6 +384,17 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
 
   const { ticket, steps, activity } = data;
   const workType = ticket.work_types;
+  // Occupancy / guest-impact rules live once, in src/lib/guest-impact.ts.
+  const guestComm = ticketGuestComm(
+    {
+      ...ticket,
+      guest_update_at:
+        ticket.guest_update_at ??
+        data.activity.find((a) => a.event_type === "guest_update")?.event_at ??
+        null,
+    },
+    workType?.name ?? null,
+  );
   const requiredOpen = steps.filter((s) => s.required && !s.completed);
   const done = steps.filter((s) => s.completed).length;
   const closed = isClosed(ticket.status);
@@ -471,7 +483,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
           },
         ]
       : []),
-    ...(ticket.guest_in_residence
+    ...(guestComm.activeCadence
       ? [
           {
             label: "Guest confirmation",
@@ -505,6 +517,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     action_started_at: ticket.action_started_at,
     waiting_on: ticket.waiting_on,
     guest_in_residence: ticket.guest_in_residence,
+    guest_comm_state: guestComm.commState,
     vendor_name: ticket.vendor_name,
     vendor_status: ticket.vendor_status,
     requiredOpenSteps: requiredOpen.length,
@@ -679,7 +692,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
       return;
     }
     const confirmed = guestConfirmed || Boolean(ticket.guest_confirmed);
-    if (ticket.guest_in_residence && !confirmed && !waived) {
+    if (guestComm.activeCadence && !confirmed && !waived) {
       toast.error("Confirm the guest verified the fix before resolving.");
       return;
     }
@@ -791,7 +804,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     vendorStatus: ticket.vendor_status,
     liveOrders,
   });
-  const verified = !ticket.guest_in_residence || Boolean(ticket.guest_confirmed);
+  const verified = !guestComm.activeCadence || Boolean(ticket.guest_confirmed);
   const rawStage = ticketStage({
     status: ticket.status,
     closed,
@@ -845,6 +858,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
     next_review_at: ticket.next_review_at,
     guest_in_residence: ticket.guest_in_residence,
     guest_confirmed: ticket.guest_confirmed,
+    guest_comm_state: guestComm.commState,
     vendor_name: ticket.vendor_name,
     vendor_status: ticket.vendor_status,
     repairActive: repairExists && !repairComplete,
@@ -1029,7 +1043,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
             />
           )}
 
-          {ticket.guest_in_residence && !ticket.guest_confirmed && (
+          {guestComm.activeCadence && !ticket.guest_confirmed && (
             <ToggleRow
               title="Guest confirmed the issue is fully resolved"
               hint="Get it in writing before you check this."
@@ -1088,8 +1102,8 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                 <StatusBadge tone={ticketTone(ticket.status)}>
                   {labelFor(STATUSES, ticket.status)}
                 </StatusBadge>
-                {ticket.guest_in_residence && (
-                  <StatusBadge tone="brand">Guest in the home</StatusBadge>
+                {guestComm.impact === "yes" && (
+                  <StatusBadge tone="brand">Affects active stay</StatusBadge>
                 )}
                 {ticket.property_id && (
                   <button
@@ -1144,6 +1158,7 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
                       ticket.guest_update_at ??
                       data.activity.find((a) => a.event_type === "guest_update")?.event_at ??
                       null,
+                    active_stay: guestComm.activeCadence,
                   }}
                   onLeadChange={setGuidedLeads}
                   vendorFollowUp={
@@ -1491,7 +1506,12 @@ export function TicketWorkspace({ ticketId, onClose }: { ticketId: string; onClo
               </CardContent>
             </Card>
 
-            <GuestContextPanel ticketId={ticketId} />
+            <OccupancyGuestPanel
+              ticket={ticket as Parameters<typeof OccupancyGuestPanel>[0]["ticket"]}
+              workTypeName={workType?.name ?? null}
+              readOnly={role.readOnly}
+              onChanged={refresh}
+            />
             <TicketOwnerBox
               ticket={ticket as Parameters<typeof TicketOwnerBox>[0]["ticket"]}
               workOrderCosts={((workOrders ?? []) as { quote_amount?: number | null; approved_amount?: number | null; actual_cost?: number | null }[]).flatMap((o) => [o.quote_amount, o.approved_amount, o.actual_cost])}
