@@ -212,3 +212,29 @@ export function financeQueue(e: {
 
 export const money = (n: number | null | undefined) =>
   n == null ? "—" : n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+/* ---------------- Purchase authorization (no thresholds invented) ----------------
+ * Purchases record authorization separately from owner notification and cost
+ * responsibility. Maintenance limits are NOT applied to purchases, and a guest
+ * request is never owner authorization. Missing/uncertain needs a leadership
+ * decision before final owner allocation (DB `expense_purchase_auth_guard`). */
+export type PurchaseAuthStatus = "authorized" | "not_required" | "missing" | "uncertain";
+export const PURCHASE_AUTH_LABEL: Record<PurchaseAuthStatus, string> = {
+  authorized: "Authorized",
+  not_required: "Not required",
+  missing: "Authorization missing",
+  uncertain: "Unsure whether authorization applies",
+};
+export function purchaseNeedsLeadership(e: {
+  expense_type: string; purchase_auth_status: string | null; leadership_decision: string | null;
+}): boolean {
+  return e.expense_type === "purchase" && (e.purchase_auth_status === "missing" || e.purchase_auth_status === "uncertain") && !e.leadership_decision;
+}
+/** Can final cost responsibility be allocated to the owner (or split) yet? */
+export function ownerAllocationBlocked(e: {
+  expense_type: string; purchase_auth_status: string | null; leadership_decision: string | null;
+}): string | null {
+  return purchaseNeedsLeadership(e)
+    ? "Purchase authorization is missing or uncertain — route to leadership for a decision before allocating to the owner."
+    : null;
+}
