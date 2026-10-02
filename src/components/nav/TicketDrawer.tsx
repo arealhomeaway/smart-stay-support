@@ -117,7 +117,7 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
           className="flex w-full flex-col gap-0 p-0 sm:max-w-[min(1100px,92vw)] [&>button.absolute]:hidden"
         >
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-            <SheetTitle className="text-base">{newCtx ? "Report an issue" : "Ticket"}</SheetTitle>
+            <SheetTitle className="text-base">{newCtx ? "Record work" : "Ticket"}</SheetTitle>
             <SheetDescription className="sr-only">
               Work this Ticket without leaving the page you were on.
             </SheetDescription>
@@ -142,7 +142,12 @@ export function TicketDrawerHost({ children }: { children: ReactNode }) {
             )}
             {newCtx && (
               <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                <NewTicketForm context={newCtx} inPanel onCreated={(id) => setTicketId(id)} />
+                <NewTicketForm
+                  context={newCtx}
+                  inPanel
+                  onCreated={(id) => setTicketId(id)}
+                  onActivityLogged={() => setNewCtx(null)}
+                />
               </Suspense>
             )}
           </div>
