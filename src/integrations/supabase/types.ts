@@ -7670,6 +7670,60 @@ export type Database = {
           },
         ]
       }
+      property_activity_log: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          involved: string | null
+          is_demo: boolean
+          logged_by: string
+          occurred_at: string
+          outcome: string
+          property_id: string
+          what_happened: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          involved?: string | null
+          is_demo?: boolean
+          logged_by?: string
+          occurred_at?: string
+          outcome: string
+          property_id: string
+          what_happened: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          involved?: string | null
+          is_demo?: boolean
+          logged_by?: string
+          occurred_at?: string
+          outcome?: string
+          property_id?: string
+          what_happened?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_activity_log_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_activity_log_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_assets: {
         Row: {
           archived_at: string | null
@@ -9317,8 +9371,10 @@ export type Database = {
           emergency_vendor_authorized_by: string | null
           emergency_vendor_basis: string | null
           emergency_vendor_reason: string | null
+          entry_kind: string | null
           escalated_at: string | null
           escalation_level: string
+          estimated_cost: number | null
           external_id: string | null
           external_source: string | null
           external_status: string | null
@@ -9345,9 +9401,11 @@ export type Database = {
           handoff_type: string | null
           id: string
           initiator_type: string
+          insurance_risk: string | null
           is_demo: boolean
           last_reopened_at: string | null
           late_reason: string | null
+          maintenance_category: string | null
           next_action: string | null
           next_action_due_at: string | null
           next_guest_update_at: string | null
@@ -9440,8 +9498,10 @@ export type Database = {
           emergency_vendor_authorized_by?: string | null
           emergency_vendor_basis?: string | null
           emergency_vendor_reason?: string | null
+          entry_kind?: string | null
           escalated_at?: string | null
           escalation_level?: string
+          estimated_cost?: number | null
           external_id?: string | null
           external_source?: string | null
           external_status?: string | null
@@ -9468,9 +9528,11 @@ export type Database = {
           handoff_type?: string | null
           id?: string
           initiator_type?: string
+          insurance_risk?: string | null
           is_demo?: boolean
           last_reopened_at?: string | null
           late_reason?: string | null
+          maintenance_category?: string | null
           next_action?: string | null
           next_action_due_at?: string | null
           next_guest_update_at?: string | null
@@ -9563,8 +9625,10 @@ export type Database = {
           emergency_vendor_authorized_by?: string | null
           emergency_vendor_basis?: string | null
           emergency_vendor_reason?: string | null
+          entry_kind?: string | null
           escalated_at?: string | null
           escalation_level?: string
+          estimated_cost?: number | null
           external_id?: string | null
           external_source?: string | null
           external_status?: string | null
@@ -9591,9 +9655,11 @@ export type Database = {
           handoff_type?: string | null
           id?: string
           initiator_type?: string
+          insurance_risk?: string | null
           is_demo?: boolean
           last_reopened_at?: string | null
           late_reason?: string | null
+          maintenance_category?: string | null
           next_action?: string | null
           next_action_due_at?: string | null
           next_guest_update_at?: string | null
