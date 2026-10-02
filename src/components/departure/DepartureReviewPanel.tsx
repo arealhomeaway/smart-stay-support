@@ -122,6 +122,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
   const done = r.status === "completed";
   const ctx = { linkedWork: q.data.linked.length, hasClaim: !!r.claim_id, externalReview: q.data.externalReview };
   const checks = stepChecks(r, ctx);
+  const ok = (i: number) => checks[i]?.done ?? false;
   const outreach = effectiveOutreach(r, ctx.externalReview);
   const platform = platformOf(r.booking_source);
   const orUrl = ownerRezBookingUrl(r.ownerrez_booking_id);
@@ -142,7 +143,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     const claim = !r.claimed_by && userId ? { claimed_by: userId, claimed_at: new Date().toISOString(), status: "in_progress" } : {};
     const { error } = await supabase.from("departure_reviews").update({ ...claim, ...patch } as never).eq("id", r.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (event) await logEvent(event[0], event[1]);
     await refresh();
   };
@@ -171,7 +172,8 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
     } as never).select("id").single();
     if (error) {
       setBusy(false);
-      return toast.error(error.code === "23505" ? "A Claim is already linked to this Departure Review." : error.message);
+      toast.error(error.code === "23505" ? "A Claim is already linked to this Departure Review." : error.message);
+      return;
     }
     await supabase.from("departure_reviews").update({ claim_id: data.id }).eq("id", r.id);
     await supabase.from("cleaning_reviews").update({ linked_claim_id: data.id }).eq("departure_review_id", r.id);
@@ -213,13 +215,13 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
       linked_ticket_ids: q.data!.linked.map((t) => t.id),
       linked_claim_id: r.claim_id,
     }).eq("departure_review_id", r.id);
-    if (crErr) { setBusy(false); return toast.error(crErr.message); }
+    if (crErr) { setBusy(false); toast.error(crErr.message); return; }
     const { error } = await supabase.from("departure_reviews").update({
       status: "completed", completed_at: now, completed_by: userId, notes: notes || null,
       outreach_decision: outreach, claimed_by: r.claimed_by ?? userId,
     }).eq("id", r.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logEvent("completed", "Departure Review completed");
     toast.success("Departure Review completed.");
     await refresh();
@@ -246,7 +248,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
         </dl>
       </div>
 
-      <Step n={1} title="Review departure clean" done={checks[0].done}>
+      <Step n={1} title="Review departure clean" done={ok(0)}>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
           <dt className="text-muted-foreground">Clean</dt><dd>{r.clean_name ?? "Departure clean"}</dd>
           <dt className="text-muted-foreground">Cleaner</dt><dd>{r.cleaner_name || "Not provided by Breezeway"}</dd>
@@ -265,7 +267,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
 
       {r.clean_reviewed_at && (
         <>
-          <Step n={2} title="Property condition" done={checks[1].done}>
+          <Step n={2} title="Property condition" done={ok(1)}>
             <p className="text-sm">Is there anything that needs attention at the property?</p>
             <Choice options={[{ id: "no", label: "No" }, { id: "yes", label: "Yes" }]} value={r.property_attention} disabled={locked}
               onChange={(v) => save({ property_attention: v })} />
@@ -296,7 +298,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
             )}
           </Step>
 
-          <Step n={3} title="Damage / claim screening" done={checks[2].done}>
+          <Step n={3} title="Damage / claim screening" done={ok(2)}>
             <p className="text-sm">Did the departure clean identify damage or another issue that may require guest recovery?</p>
             <Choice options={[{ id: "no", label: "No" }, { id: "yes", label: "Yes" }, { id: "unsure", label: "Unsure" }]} value={r.damage_screen} disabled={locked}
               onChange={(v) => save({ damage_screen: v })} />
@@ -340,7 +342,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
             )}
           </Step>
 
-          <Step n={4} title="Review outreach" done={checks[3].done}>
+          <Step n={4} title="Review outreach" done={ok(3)}>
             {ctx.externalReview ? (
               <p className="text-sm"><Badge>Guest already reviewed</Badge> An external review for this reservation has arrived — no review request needed.</p>
             ) : (
@@ -370,7 +372,7 @@ export function DepartureReviewPanel({ reviewId }: { reviewId: string }) {
             )}
           </Step>
 
-          <Step n={5} title="Host review" done={checks[4].done}>
+          <Step n={5} title="Host review" done={ok(4)}>
             {hostReviewSupported(r.booking_source) ? (
               <>
                 <p className="text-sm">Complete host review on {PLATFORM_LABEL[platform]}.</p>

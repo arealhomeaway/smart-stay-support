@@ -203,7 +203,7 @@ export function chicagoParts(now: Date): { day: string; minutes: number } {
     hourCycle: "h23",
   });
   const p = Object.fromEntries(f.formatToParts(now).map((x) => [x.type, x.value]));
-  return { day: `${p.year}-${p.month}-${p.day}`, minutes: Number(p.hour) * 60 + Number(p.minute) };
+  return { day: `${p['year']}-${p['month']}-${p['day']}`, minutes: Number(p['hour']) * 60 + Number(p['minute']) };
 }
 
 const toMin = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
