@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ACTIVITY_CATEGORIES } from "@/lib/work-entry";
+import { useActivityUpload } from "./useActivityUpload";
 
 function localNow() {
   const d = new Date();
@@ -31,7 +32,10 @@ export function PropertyActivityForm({
   onLogged: (propertyId: string) => void;
 }) {
   const qc = useQueryClient();
+  const upload = useActivityUpload();
   const [saving, setSaving] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
   const [f, setF] = useState({
     occurred_at: localNow(),
     category: "",
@@ -47,6 +51,18 @@ export function PropertyActivityForm({
     if (!f.what_happened.trim() || !f.outcome.trim())
       { toast.error("Say what happened and what was done."); return; }
     setSaving(true);
+    let attachmentIds: string[] = [];
+    if (files.length) {
+      try {
+        attachmentIds = await upload(propertyId, files, setProgress);
+      } catch (err) {
+        setSaving(false);
+        setProgress(null);
+        toast.error(err instanceof Error ? err.message : "A file did not upload. Nothing was saved.");
+        return;
+      }
+      setProgress(null);
+    }
     const { data: u } = await supabase.auth.getUser();
     // A demo home's history stays demo even outside demo mode.
     const { data: prop } = await supabase.from("properties").select("is_demo").eq("id", propertyId).maybeSingle();
@@ -59,6 +75,7 @@ export function PropertyActivityForm({
       involved: f.involved.trim() || null,
       ...(u.user ? { logged_by: u.user.id } : {}),
       is_demo: isDemo || Boolean(prop?.is_demo),
+      attachment_document_ids: attachmentIds,
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -123,12 +140,25 @@ export function PropertyActivityForm({
           onChange={(e) => setF({ ...f, involved: e.target.value })}
         />
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="pa-files">Attachments (optional)</Label>
+        <Input
+          id="pa-files"
+          type="file"
+          multiple
+          accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+        />
+        {files.length > 0 && (
+          <p className="text-xs text-muted-foreground">{files.map((x) => x.name).join(", ")}</p>
+        )}
+      </div>
       <p className="text-xs text-muted-foreground">
         This goes into the property's history only. It does not open a Ticket, start any clock or
         appear in My Work.
       </p>
       <Button type="submit" className="w-full" disabled={saving}>
-        {saving ? "Saving…" : "Save to property history"}
+        {saving ? progress ?? "Saving…" : "Save to property history"}
       </Button>
     </form>
   );
