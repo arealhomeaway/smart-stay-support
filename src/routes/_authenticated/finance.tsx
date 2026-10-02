@@ -57,7 +57,7 @@ function FinancePage() {
   const grouped = useMemo(() => {
     const m = new Map<Tab, ExpenseRow[]>();
     for (const e of q.data ?? []) {
-      const k = financeQueue({ links: (e.expense_links ?? []).length, reservation_link_state: e.reservation_link_state, ownerrez_booking_id: e.ownerrez_booking_id, finance_review: e.finance_review, ops_completion: e.ops_completion, ready: docReadiness(e) === "ready" });
+      const k = financeQueue({ links: (e.expense_links ?? []).length, reservation_link_state: e.reservation_link_state, ownerrez_booking_id: e.ownerrez_booking_id, finance_review: e.finance_review, ops_completion: e.ops_completion, ready: docReadiness(e) === "ready", is_estimate: e.is_estimate ?? false });
       m.set(k, [...(m.get(k) ?? []), e]);
     }
     return m;

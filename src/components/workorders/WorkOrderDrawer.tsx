@@ -979,11 +979,9 @@ export function WorkOrderDrawer({
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-xs">Vendor</Label>
-              <Input
-                disabled={readOnly}
-                value={value("vendor_name")}
-                onChange={(e) => set("vendor_name", e.target.value)}
-              />
+              {/* Set only by an accepted vendor in Find a Vendor — never typed over. */}
+              <Input disabled readOnly value={value("vendor_name")} aria-describedby="vendor-from-sourcing" />
+              <p id="vendor-from-sourcing" className="text-xs text-muted-foreground">Change the vendor in Find a Vendor above.</p>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Arrival ETA</Label>

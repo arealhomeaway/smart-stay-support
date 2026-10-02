@@ -57,9 +57,14 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
   const [flag, setFlag] = useState<boolean>(() => readDemoFlag());
+  const [flagRead, setFlagRead] = useState(false);
 
   useEffect(() => {
     const sync = () => setFlag(readDemoFlag());
+    // Server render can't see this tab's flag; re-read it after hydration so
+    // reloading a demo page (or opening a demo deep link) stays in demo mode.
+    sync();
+    setFlagRead(true);
     window.addEventListener(EVENT, sync);
     window.addEventListener(PREVIEW_SEAT_EVENT, sync);
     window.addEventListener("storage", sync);
@@ -88,7 +93,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   });
 
   const demoMode = resolveDemoMode({ canDemo, flag });
-  const demoReady = !flag || !rolesQuery.isLoading;
+  const demoReady = flagRead && (!flag || !rolesQuery.isLoading);
 
   const seedFn = useServerFn(seedDemoEnvironment);
   const resetFn = useServerFn(resetDemoEnvironment);

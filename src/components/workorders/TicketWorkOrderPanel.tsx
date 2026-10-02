@@ -211,6 +211,14 @@ export function TicketWorkOrderPanel({
         .single();
       if (error) throw error;
 
+      // The chosen vendor starts as a candidate on Find a Vendor — choosing is not acceptance.
+      if (ticket.selected_vendor) {
+        await supabase.from("work_order_vendor_candidates").insert({
+          work_order_id: (data as { id: string }).id, vendor_org_id: ticket.selected_vendor.id,
+          vendor_name: ticket.selected_vendor.name, choice: "primary", is_demo: ticket.is_demo ?? false,
+        });
+      }
+
       await supabase.from("work_order_events").insert({
         work_order_id: (data as { id: string }).id,
         author_id: userId,

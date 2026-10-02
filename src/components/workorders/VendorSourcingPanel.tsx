@@ -3,7 +3,7 @@
  * Acceptance, authorization, dispatch and completion stay separate facts.
  * Rules live in `src/lib/vendor-sourcing.ts`; the authority ladder is reused unchanged.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -20,12 +20,14 @@ import { useStaffDirectory } from "@/hooks/useTeam";
 import { usDate } from "@/lib/dates";
 import {
   CANDIDATE_STATUS_LABELS, CONTACT_CHANNELS, CONTACT_CHANNEL_LABELS, CONTACT_RESPONSES, CONTACT_RESPONSE_LABELS,
-  HANDOFF_LABELS, VISIT_OUTCOMES, VISIT_OUTCOME_LABELS, authorizationState, breezewayPushEligibility, fourFacts,
+  HANDOFF_LABELS, TELEGRAM_STATUS_LABELS, VISIT_OUTCOMES, VISIT_OUTCOME_LABELS, authorizationState, breezewayPushEligibility, fourFacts,
   vendorChannels, visitNeedsFollowUp, type ContactChannel, type ContactResponse, type VisitOutcome, type DispatchWorkOrder,
 } from "@/lib/vendor-sourcing";
-import { pushWorkOrderToBreezeway } from "@/lib/vendor-sourcing.functions";
+import { pushWorkOrderToBreezeway, reconcileWorkOrderHandoff } from "@/lib/vendor-sourcing.functions";
+import { LinkExistingExpense } from "@/components/finance/LinkExistingExpense";
+import { consumeFindVendorFocus } from "@/lib/find-vendor-focus";
 
-type VendorOrg = { id: string; display_name: string | null; legal_name: string | null; status: string; emergency_only: boolean | null; dispatch_method: string | null; breezeway_person_id: unknown; uses_telegram: boolean | null };
+type VendorOrg = { id: string; display_name: string | null; legal_name: string | null; status: string; emergency_only: boolean | null; dispatch_method: string | null; breezeway_person_id: unknown; telegram_status: string | null };
 
 function Fact({ ok, label }: { ok: boolean; label: string }) {
   return (
@@ -35,9 +37,12 @@ function Fact({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: string; readOnly: boolean }) {
+export function VendorSourcingPanel({ workOrderId, readOnly, focusFindVendor = false }: { workOrderId: string; readOnly: boolean; focusFindVendor?: boolean }) {
   const qc = useQueryClient();
   const push = useServerFn(pushWorkOrderToBreezeway);
+  const reconcile = useServerFn(reconcileWorkOrderHandoff);
+  const findRef = useRef<HTMLDivElement>(null);
+  const [focusRequested] = useState(() => focusFindVendor || consumeFindVendorFocus(workOrderId));
   const staff = useStaffDirectory();
   const key = ["vendor-sourcing", workOrderId];
 
@@ -48,7 +53,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
         supabase.from("work_orders").select("*").eq("id", workOrderId).single(),
         supabase.from("work_order_vendor_candidates").select("*, work_order_contact_attempts(*)").eq("work_order_id", workOrderId).order("created_at"),
         supabase.from("work_order_visits").select("*").eq("work_order_id", workOrderId).order("visit_date"),
-        supabase.from("vendor_orgs").select("id, display_name, legal_name, status, emergency_only, dispatch_method, breezeway_person_id, uses_telegram").neq("status", "suspended").order("display_name"),
+        supabase.from("vendor_orgs").select("id, display_name, legal_name, status, emergency_only, dispatch_method, breezeway_person_id, telegram_status").neq("status", "suspended").order("display_name"),
       ]);
       if (wo.error) throw wo.error;
       return { wo: wo.data, cands: cands.data ?? [], visits: visits.data ?? [], vendors: (vendors.data ?? []) as VendorOrg[] };
@@ -76,6 +81,13 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
   const [scope, setScope] = useState<{ dispatch_reason?: string; guest_impact?: string; scope?: string; quote?: string }>({});
   const [visit, setVisit] = useState<{ outcome?: VisitOutcome; findings?: string; work_done?: string; date?: string; assignee?: string; due?: string }>({});
 
+  const [release, setRelease] = useState("");
+  const [recon, setRecon] = useState<{ ref?: string; note?: string }>({});
+  const loaded = !!q.data;
+  useEffect(() => {
+    if (focusRequested && loaded) { findRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); findRef.current?.focus({ preventScroll: true }); }
+  }, [focusRequested, loaded]);
+
   if (q.isLoading || !q.data) return <p className="text-sm text-muted-foreground">Loading vendor sourcing…</p>;
   const { cands, visits, vendors } = q.data;
   const wo = q.data.wo as typeof q.data.wo & DispatchWorkOrder;
@@ -97,7 +109,7 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
       </div>
 
       {/* 1. Find a Vendor ------------------------------------------------ */}
-      <div className="space-y-2">
+      <div className="space-y-2" id="find-a-vendor" ref={findRef} tabIndex={-1}>
         <h3 className="font-display text-sm font-semibold">Find a Vendor</h3>
         <p className="text-xs text-muted-foreground">Contacting a vendor is not acceptance. Record acceptance separately.</p>
         {cands.map((c) => {
@@ -112,7 +124,14 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
                 <Badge variant="outline">{c.choice === "primary" ? "Primary" : c.choice === "backup" ? "Backup" : "Other"}</Badge>
                 <Badge variant={c.status === "accepted" ? "default" : "secondary"}>{CANDIDATE_STATUS_LABELS[c.status]}</Badge>
                 {ch.breezeway && <Badge variant="outline">Breezeway</Badge>}
-                {ch.telegram && <Badge variant="outline">Telegram</Badge>}
+                {v && <Badge variant="outline" data-testid="telegram-status">{TELEGRAM_STATUS_LABELS[ch.telegramStatus]}</Badge>}
+                {v && !readOnly && ch.telegramStatus === "unknown" && (
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    Uses Telegram?
+                    <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => run.mutate(() => must(supabase.rpc("confirm_vendor_telegram", { _org: v.id, _status: "yes" })))}>Yes</Button>
+                    <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => run.mutate(() => must(supabase.rpc("confirm_vendor_telegram", { _org: v.id, _status: "no" })))}>No</Button>
+                  </span>
+                )}
                 {v?.emergency_only && <Badge variant="outline">Emergency Only</Badge>}
                 {c.next_follow_up_on && c.status !== "accepted" && <span className="text-xs text-muted-foreground">Follow up {usDate(c.next_follow_up_on)}</span>}
               </div>
@@ -143,14 +162,26 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
                       })}>Log contact attempt</Button>
                     <Button size="sm" disabled={!!accepted || run.isPending}
                       onClick={() => run.mutate(async () => {
+                        // The database moves the Work Order and Ticket to the accepted vendor
+                        // and marks any approval given for a different vendor as stale.
                         await must(supabase.from("work_order_vendor_candidates").update({ status: "accepted" }).eq("id", c.id));
-                        await must(supabase.from("work_orders").update({ vendor_org_id: c.vendor_org_id, vendor_name: c.vendor_name, vendor_acknowledged_at: new Date().toISOString() }).eq("id", workOrderId));
+                        await must(supabase.from("work_orders").update({ vendor_acknowledged_at: new Date().toISOString() }).eq("id", workOrderId));
                       })}>Vendor accepted the work</Button>
                   </div>
                 </div>
               )}
               {!readOnly && c.status === "accepted" && !wo.dispatched_at && (
                 <Button size="sm" variant="ghost" onClick={() => run.mutate(() => must(supabase.from("work_order_vendor_candidates").update({ status: "withdrawn" }).eq("id", c.id)))}>Undo acceptance</Button>
+              )}
+              {!readOnly && c.status === "accepted" && wo.dispatched_at && !wo.vendor_completed_at && (
+                <div className="flex flex-wrap gap-2">
+                  <Input className="w-72" placeholder="Why replace this vendor? (required)" aria-label="Reason for replacing vendor" value={release} onChange={(e) => setRelease(e.target.value)} />
+                  <Button size="sm" variant="outline" disabled={release.trim().length < 5 || run.isPending}
+                    onClick={() => run.mutate(async () => {
+                      await must(supabase.from("work_order_vendor_candidates").update({ status: "withdrawn", released_reason: release.trim() }).eq("id", c.id));
+                      setRelease("");
+                    })}>Replace this vendor</Button>
+                </div>
               )}
             </div>
           );
@@ -228,7 +259,22 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
           <p className="flex items-center gap-1 text-xs text-destructive"><AlertTriangle className="size-3.5" />{wo.breezeway_handoff_error}</p>
         )}
         {!elig.allowed && wo.breezeway_handoff_status === "not_sent" && <p className="text-xs text-muted-foreground">{elig.reasons.join(" ")}</p>}
-        {!readOnly && (
+        {!readOnly && wo.breezeway_handoff_status === "uncertain" && (
+          <div className="space-y-2 rounded-md border border-destructive/40 p-2 text-xs" data-testid="handoff-reconcile">
+            <p>Breezeway may already have this task. Check Breezeway, then record what you found. Another create is blocked until then.</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input placeholder="Breezeway task ID (if found)" aria-label="Breezeway task ID" value={recon.ref ?? ""} onChange={(e) => setRecon({ ...recon, ref: e.target.value })} />
+              <Input placeholder="What you checked (required)" aria-label="Reconciliation note" value={recon.note ?? ""} onChange={(e) => setRecon({ ...recon, note: e.target.value })} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" disabled={run.isPending || (recon.note ?? "").trim().length < 10 || !(recon.ref ?? "").trim()}
+                onClick={() => run.mutate(async () => { await reconcile({ data: { workOrderId, outcome: "found", taskRef: recon.ref!.trim(), note: recon.note!.trim() } }); setRecon({}); })}>Task found in Breezeway</Button>
+              <Button size="sm" variant="ghost" disabled={run.isPending || (recon.note ?? "").trim().length < 10}
+                onClick={() => run.mutate(async () => { await reconcile({ data: { workOrderId, outcome: "not_created", note: recon.note!.trim() } }); setRecon({}); })}>No task exists — allow a new attempt</Button>
+            </div>
+          </div>
+        )}
+        {!readOnly && wo.breezeway_handoff_status !== "uncertain" && (
           <Button size="sm" variant="outline" disabled={run.isPending || (!elig.allowed && wo.breezeway_handoff_status !== "failed")}
             onClick={() => run.mutate(async () => { const r = await push({ data: { workOrderId } }); toast.message(r.message); })}>
             {wo.breezeway_handoff_status === "failed" ? "Retry Breezeway handoff" : "Push to Breezeway"}
@@ -264,6 +310,13 @@ export function VendorSourcingPanel({ workOrderId, readOnly }: { workOrderId: st
                   await must(supabase.from("expense_links").insert(links));
                   toast.success("Invoice expense started below — add the amount and upload the invoice.");
                 })}>Add invoice for this visit</Button>
+            )}
+            {!readOnly && (
+              <LinkExistingExpense
+                propertyId={wo.property_id} isDemo={wo.is_demo} payeeHint={v.vendor_name}
+                linkType="work_order" targetId={wo.id} visitId={v.id} extraLinks={wo.ticket_id ? [{ link_type: "ticket", target_id: wo.ticket_id }] : []}
+                onLinked={refresh}
+              />
             )}
           </div>
         ))}

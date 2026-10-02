@@ -25,7 +25,7 @@ import {
   expenseAgeDays,
   reservationBlocks,
   PURCHASE_AUTH_LABEL,
-  ownerAllocationBlocked,
+  ownerAllocationBlocked, reviewBlockedBy,
   type PurchaseAuthStatus,
   type AuthorizationContext,
   missingDocumentation,
@@ -626,8 +626,9 @@ function FinanceSection({ e, access, people, onDone }: { e: Full; access: Return
           )}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" disabled={!treatmentDirty || !splitOk} onClick={() => void go({ cost_responsibility: resp, finance_treatment_note: note || null, split_allocations: resp === "split" ? split : [] }, "Treatment saved.")}>Save treatment</Button>
-            <Button size="sm" disabled={treatmentDirty} onClick={() => void go({ finance_review: "reviewed" }, "Finance review complete.")}>Mark Finance reviewed</Button>
+            <Button size="sm" disabled={treatmentDirty || !!reviewBlockedBy(e)} onClick={() => void go({ finance_review: "reviewed" }, "Finance review complete.")}>Mark Finance reviewed</Button>
           </div>
+          {reviewBlockedBy(e) && <p className="text-xs text-destructive" data-testid="review-blocked">{reviewBlockedBy(e)}</p>}
           {ownerAllocationBlocked(e) && <p className="text-xs text-destructive">{ownerAllocationBlocked(e)}</p>}
           {reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id) && <p className="text-xs text-destructive">A reservation is required but not yet established — resolve it before Finance review.</p>}
         </div>
