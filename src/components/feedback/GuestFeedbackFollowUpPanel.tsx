@@ -37,7 +37,7 @@ export function GuestFeedbackFollowUpPanel({ feedbackId, readOnly }: { feedbackI
     queryFn: async () => {
       const [{ data: fb, error }, { data: linked }] = await Promise.all([
         supabase.from("guest_feedback").select("*").eq("id", feedbackId).maybeSingle(),
-        supabase.from("tickets").select("id, ref, title, status, entry_kind").eq("linked_feedback_id", feedbackId).order("created_at"),
+        supabase.from("tickets").select("id, ref, title, status, entry_kind").eq("linked_feedback_id", feedbackId).is("archived_at", null).order("created_at"),
       ]);
       if (error) throw error;
       return { fb: fb as FeedbackRow | null, linked: linked ?? [] };
@@ -165,12 +165,15 @@ export function GuestFeedbackFollowUpPanel({ feedbackId, readOnly }: { feedbackI
               ))}
               {!locked && fb.property_id && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => drawer?.openNewTicket({ property: fb.property_id!, kind: "ops", feedback: fb.id })}>
-                    Create linked Ops Ticket
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => drawer?.openNewTicket({ property: fb.property_id!, kind: "maintenance", feedback: fb.id })}>
-                    Report linked Maintenance
-                  </Button>
+                  {(["ops", "maintenance"] as const).map((kind) => {
+                    const existing = (fbq.data?.linked ?? []).find((t) => (t.entry_kind ?? "ops") === kind);
+                    if (existing) return null; // one linked Ticket per kind; open it from the list above
+                    return (
+                      <Button key={kind} size="sm" variant="outline" onClick={() => drawer?.openNewTicket({ property: fb.property_id!, kind, feedback: fb.id })}>
+                        {kind === "ops" ? "Create linked Ops Ticket" : "Report linked Maintenance"}
+                      </Button>
+                    );
+                  })}
                 </div>
               )}
             </li>

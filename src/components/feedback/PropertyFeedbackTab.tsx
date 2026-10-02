@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTicketDrawer } from "@/components/nav/TicketDrawer";
-import { addTestReview, createTestSurveyLink, syncOwnerRezReviews } from "@/lib/guest-feedback.functions";
+import { addTestReview, createTestSurveyLink, previewOwnerRezReviews } from "@/lib/guest-feedback.functions";
 import { usDate as formatDate } from "@/lib/dates";
 import {
   RatingStars,
@@ -182,7 +182,7 @@ function SurveyLinkCard({ propertyId, isDemo }: { propertyId: string; isDemo: bo
 
 function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: string; isDemo: boolean; isSupervisor: boolean }) {
   const qc = useQueryClient();
-  const sync = useServerFn(syncOwnerRezReviews);
+  const preview = useServerFn(previewOwnerRezReviews);
   const addTest = useServerFn(addTestReview);
   const [busy, setBusy] = useState(false);
   if (!isSupervisor && !isDemo) return null;
@@ -193,11 +193,11 @@ function ReviewToolsCard({ propertyId, isDemo, isSupervisor }: { propertyId: str
         {isSupervisor && !isDemo && (
           <Button size="sm" variant="outline" disabled={busy} onClick={async () => {
             setBusy(true);
-            try { const r = await sync(); toast.success(`${r.imported} new reviews, ${r.duplicates} already imported, ${r.ticketsCreated} follow-ups created`); await refresh(); }
-            catch (e) { toast.error(e instanceof Error ? e.message : "Import failed"); }
+            try { const r = await preview(); toast.success(`Preview only — nothing saved: ${r.available} reviews, ${r.duplicates} already imported, ${r.wouldCreateFollowUp} would open a follow-up, ${r.wouldImportNoFollowUp} with no follow-up, ${r.unmatchedProperty} unmatched home`, { duration: 12000 }); }
+            catch (e) { toast.error(e instanceof Error ? e.message : "Preview failed"); }
             setBusy(false);
           }}>
-            Import recent reviews from OwnerRez
+            Preview OwnerRez review import (no changes)
           </Button>
         )}
         {isDemo && (
