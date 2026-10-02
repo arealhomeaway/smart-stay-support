@@ -40,7 +40,7 @@ export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
       const [acts, tix] = await Promise.all([
         supabase
           .from("property_activity_log")
-          .select("id, occurred_at, category, what_happened, outcome, involved, logged_by, profiles:logged_by(full_name, email)")
+          .select("id, occurred_at, category, what_happened, outcome, involved, logged_by")
           .eq("property_id", propertyId)
           .order("occurred_at", { ascending: false })
           .limit(50),
@@ -52,12 +52,17 @@ export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
           .order("reported_at", { ascending: false })
           .limit(50),
       ]);
+      const ids = [...new Set((acts.data ?? []).map((a) => a.logged_by))];
+      const { data: people } = ids.length
+        ? await supabase.from("profiles").select("id, full_name, email").in("id", ids)
+        : { data: [] as { id: string; full_name: string | null; email: string | null }[] };
       const out: Row[] = [];
       for (const a of (acts.data ?? []) as unknown as {
         id: string; occurred_at: string; category: string; what_happened: string; outcome: string;
-        involved: string | null; profiles: { full_name: string | null; email: string | null } | null;
+        involved: string | null; logged_by: string;
       }[]) {
-        const who = a.profiles?.full_name || a.profiles?.email || "Teammate";
+        const p = people?.find((x) => x.id === a.logged_by);
+        const who = p?.full_name || p?.email || "Teammate";
         out.push({
           key: `a-${a.id}`,
           at: a.occurred_at,
