@@ -21,14 +21,14 @@ describe("guest feedback rules", () => {
       overall: 4, stay_again: 5, had_issues: false, severity: "major",
       issue_categories: ["Cleaning"], reported_during_stay: "yes", follow_up_ok: true,
     });
-    expect(a.severity).toBeUndefined();
-    expect(a.issue_categories).toBeUndefined();
-    expect(a.reported_during_stay).toBeUndefined();
+    expect(a.severity).toBe(undefined);
+    expect(a.issue_categories).toBe(undefined);
+    expect(a.reported_during_stay).toBe(undefined);
   });
 
   it("keeps resolution only when the issue was reported", () => {
     const a = parseSurveyAnswers({ overall: 3, stay_again: 3, had_issues: true, reported_during_stay: "no", resolved_satisfactorily: "yes" });
-    expect(a.resolved_satisfactorily).toBeUndefined();
+    expect(a.resolved_satisfactorily).toBe(undefined);
     const b = parseSurveyAnswers({ overall: 3, stay_again: 3, had_issues: true, reported_during_stay: "yes", resolved_satisfactorily: "partly", issue_categories: ["Cleaning", "Bogus", "Cleaning"] });
     expect(b.resolved_satisfactorily).toBe("partly");
     expect(b.issue_categories).toEqual(["Cleaning"]);
