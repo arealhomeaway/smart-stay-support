@@ -3723,8 +3723,14 @@ export type Database = {
           ownerrez_booking_id: string | null
           property_id: string | null
           rating: number | null
+          reservation_confirmation: string | null
+          reservation_enriched_at: string | null
+          reservation_guest_first_name: string | null
+          reservation_guest_last_name: string | null
+          reservation_guest_name: string | null
           reservation_match: string
           response_text: string | null
+          reviewer_display_name: string | null
           source: string
           source_review_id: string | null
           source_url: string | null
@@ -3754,8 +3760,14 @@ export type Database = {
           ownerrez_booking_id?: string | null
           property_id?: string | null
           rating?: number | null
+          reservation_confirmation?: string | null
+          reservation_enriched_at?: string | null
+          reservation_guest_first_name?: string | null
+          reservation_guest_last_name?: string | null
+          reservation_guest_name?: string | null
           reservation_match?: string
           response_text?: string | null
+          reviewer_display_name?: string | null
           source: string
           source_review_id?: string | null
           source_url?: string | null
@@ -3785,8 +3797,14 @@ export type Database = {
           ownerrez_booking_id?: string | null
           property_id?: string | null
           rating?: number | null
+          reservation_confirmation?: string | null
+          reservation_enriched_at?: string | null
+          reservation_guest_first_name?: string | null
+          reservation_guest_last_name?: string | null
+          reservation_guest_name?: string | null
           reservation_match?: string
           response_text?: string | null
+          reviewer_display_name?: string | null
           source?: string
           source_review_id?: string | null
           source_url?: string | null
