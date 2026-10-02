@@ -2575,6 +2575,135 @@ export type Database = {
         }
         Relationships: []
       }
+      departure_clean_match_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          from_state: string | null
+          id: string
+          match_id: string
+          ownerrez_booking_id: string | null
+          summary: string | null
+          to_state: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          from_state?: string | null
+          id?: string
+          match_id: string
+          ownerrez_booking_id?: string | null
+          summary?: string | null
+          to_state?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          from_state?: string | null
+          id?: string
+          match_id?: string
+          ownerrez_booking_id?: string | null
+          summary?: string | null
+          to_state?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departure_clean_match_events_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "departure_clean_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departure_clean_matches: {
+        Row: {
+          breezeway_task_id: number | null
+          breezeway_work_order_id: string
+          candidates: Json
+          checkout_date: string | null
+          confidence: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          is_manual: boolean
+          last_evaluated_at: string
+          match_method: string | null
+          ownerrez_booking_id: string | null
+          property_id: string | null
+          reason: string | null
+          reservation: Json | null
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          breezeway_task_id?: number | null
+          breezeway_work_order_id: string
+          candidates?: Json
+          checkout_date?: string | null
+          confidence?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          is_manual?: boolean
+          last_evaluated_at?: string
+          match_method?: string | null
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          reason?: string | null
+          reservation?: Json | null
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          breezeway_task_id?: number | null
+          breezeway_work_order_id?: string
+          candidates?: Json
+          checkout_date?: string | null
+          confidence?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          is_manual?: boolean
+          last_evaluated_at?: string
+          match_method?: string | null
+          ownerrez_booking_id?: string | null
+          property_id?: string | null
+          reason?: string | null
+          reservation?: Json | null
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departure_clean_matches_breezeway_work_order_id_fkey"
+            columns: ["breezeway_work_order_id"]
+            isOneToOne: true
+            referencedRelation: "breezeway_work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departure_clean_matches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "guest_recovery_ledger"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "departure_clean_matches_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departure_review_events: {
         Row: {
           actor_id: string | null
@@ -2623,6 +2752,7 @@ export type Database = {
           claimed_at: string | null
           claimed_by: string | null
           clean_completed_at: string | null
+          clean_completed_exact: boolean
           clean_name: string | null
           clean_photo_count: number | null
           clean_reviewed_at: string | null
@@ -2667,6 +2797,7 @@ export type Database = {
           claimed_at?: string | null
           claimed_by?: string | null
           clean_completed_at?: string | null
+          clean_completed_exact?: boolean
           clean_name?: string | null
           clean_photo_count?: number | null
           clean_reviewed_at?: string | null
@@ -2711,6 +2842,7 @@ export type Database = {
           claimed_at?: string | null
           claimed_by?: string | null
           clean_completed_at?: string | null
+          clean_completed_exact?: boolean
           clean_name?: string | null
           clean_photo_count?: number | null
           clean_reviewed_at?: string | null

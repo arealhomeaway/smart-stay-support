@@ -47,6 +47,7 @@ import {
 import { currentOwnerId, queueSort } from "@/lib/matters";
 import { useWorkspaceOrigin } from "@/components/nav/NavContext";
 import { DepartureReviewQueue } from "@/components/departure/DepartureReviewQueue";
+import { DepartureMatchingPanel } from "@/components/departure/DepartureMatchingPanel";
 import {
   AGE_OPTIONS,
   DEFAULT_TEAM_QUEUE_FILTERS,
@@ -467,6 +468,7 @@ function TeamQueuePage() {
       )}
 
       <DepartureReviewQueue />
+      <DepartureMatchingPanel />
 
       <nav aria-label="Operations work views" className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
         {(["list", "kanban", "map", "calendar"] as const).map((option) => (
