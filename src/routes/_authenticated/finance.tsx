@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { RequireCapability } from "@/components/RequireCapability";
 import { EmptyState, LoadingRows, PageHeader, SectionCard, SegmentedControl } from "@/components/ui/page";
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { EXPENSE_SELECT, ExpenseList, type ExpenseRow } from "@/components/finance/ExpenseList";
-import { ExpenseSheet } from "@/components/finance/ExpenseSheet";
+import { ExpenseSheet, NewExpenseSheet } from "@/components/finance/ExpenseSheet";
 import { docReadiness, financeQueue, money, totalsByPeriod, type FinanceQueue } from "@/lib/expenses";
 
 export const Route = createFileRoute("/_authenticated/finance")({
@@ -50,7 +49,7 @@ function FinancePage() {
   const q = useQuery({
     queryKey: ["expenses", "finance", demoMode],
     queryFn: async () => {
-      const { data, error } = await supabase.from("expenses").select(EXPENSE_SELECT).eq("is_demo", demoMode).order("received_on");
+      const { data, error } = await supabase.from("expenses").select(EXPENSE_SELECT).eq("is_demo", demoMode).is("archived_at", null).order("received_on");
       if (error) throw error;
       return (data ?? []) as unknown as ExpenseRow[];
     },
@@ -58,18 +57,13 @@ function FinancePage() {
   const grouped = useMemo(() => {
     const m = new Map<Tab, ExpenseRow[]>();
     for (const e of q.data ?? []) {
-      const k = financeQueue({ links: (e.expense_links ?? []).length, reservation_link_state: e.reservation_link_state, finance_review: e.finance_review, ops_completion: e.ops_completion, ready: docReadiness(e) === "ready" });
+      const k = financeQueue({ links: (e.expense_links ?? []).length, reservation_link_state: e.reservation_link_state, ownerrez_booking_id: e.ownerrez_booking_id, finance_review: e.finance_review, ops_completion: e.ops_completion, ready: docReadiness(e) === "ready" });
       m.set(k, [...(m.get(k) ?? []), e]);
     }
     return m;
   }, [q.data]);
 
-  async function newUnmatched() {
-    const { data, error } = await supabase.from("expenses").insert({ is_demo: demoMode, created_by: role.userId }).select("id").single();
-    if (error) { toast.error(error.message); return; }
-    void qc.invalidateQueries({ queryKey: ["expenses"] });
-    setOpen(data.id);
-  }
+  const [creating, setCreating] = useState(false);
 
   const rows = tab === "period" ? (q.data ?? []) : (grouped.get(tab) ?? []);
   return (
@@ -78,7 +72,7 @@ function FinancePage() {
         eyebrow="Finance"
         title="Property expenses"
         description="Operations records facts and documents; Finance reviews and sets treatment. QuickBooks stays the accounting record and OwnerRez the statement record. No cutoff or review deadline is applied."
-        actions={!role.readOnly && <Button onClick={() => void newUnmatched()}>Enter invoice</Button>}
+        actions={!role.readOnly && <Button onClick={() => setCreating(true)}>Enter invoice</Button>}
       />
       <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => (t.value === "period" ? t : { ...t, count: grouped.get(t.value)?.length ?? 0 }))} />
       <SectionCard>
@@ -99,6 +93,12 @@ function FinancePage() {
           <ExpenseList rows={rows} onOpen={setOpen} />
         )}
       </SectionCard>
+      <NewExpenseSheet
+        open={creating}
+        spec={{ propertyId: null, isDemo: demoMode }}
+        onClose={() => setCreating(false)}
+        onCreated={(id) => { setCreating(false); void qc.invalidateQueries({ queryKey: ["expenses"] }); setOpen(id); }}
+      />
       <ExpenseSheet expenseId={open} onClose={() => setOpen(null)} />
     </div>
   );

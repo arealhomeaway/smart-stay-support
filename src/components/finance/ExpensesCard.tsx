@@ -8,7 +8,7 @@ import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { LINK_LABEL, money, totalsByPeriod, type LinkType } from "@/lib/expenses";
 import { EXPENSE_SELECT, ExpenseList, type ExpenseRow } from "./ExpenseList";
-import { ExpenseSheet } from "./ExpenseSheet";
+import { ExpenseSheet, NewExpenseSheet } from "./ExpenseSheet";
 
 /**
  * Expenses linked to one piece of work (Ticket, Work Order, Claim, Property
@@ -31,14 +31,14 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
         ids = (data ?? []).map((r) => r.expense_id);
         if (ids.length === 0) return { rows: [] as ExpenseRow[], unmatched: [] as ExpenseRow[] };
       }
-      let query = supabase.from("expenses").select(EXPENSE_SELECT).eq("is_demo", demoMode).order("expense_date", { ascending: false });
+      let query = supabase.from("expenses").select(EXPENSE_SELECT).eq("is_demo", demoMode).is("archived_at", null).order("expense_date", { ascending: false });
       if (ids) query = query.in("id", ids);
       else if (propertyId) query = query.eq("property_id", propertyId);
       const { data, error } = await query;
       if (error) throw error;
       let unmatched: ExpenseRow[] = [];
       if (linkType && propertyId) {
-        const { data: u } = await supabase.from("expenses").select(EXPENSE_SELECT).eq("property_id", propertyId).eq("is_demo", demoMode);
+        const { data: u } = await supabase.from("expenses").select(EXPENSE_SELECT).eq("property_id", propertyId).eq("is_demo", demoMode).is("archived_at", null);
         unmatched = ((u ?? []) as unknown as ExpenseRow[]).filter((e) => !(e.expense_links ?? []).length);
       }
       return { rows: (data ?? []) as unknown as ExpenseRow[], unmatched };
@@ -49,20 +49,7 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
   const rows = q.data?.rows ?? [];
   const periods = totalsByPeriod(rows);
 
-  async function create() {
-    const { data, error } = await supabase
-      .from("expenses")
-      .insert({ property_id: propertyId, is_demo: demoMode, created_by: role.userId })
-      .select("id")
-      .single();
-    if (error) { toast.error(error.message); return; }
-    if (linkType && targetId) {
-      const l = await supabase.from("expense_links").insert({ expense_id: data.id, link_type: linkType, target_id: targetId });
-      if (l.error) toast.error(l.error.message);
-    }
-    void qc.invalidateQueries({ queryKey: ["expenses"] });
-    setOpen(data.id);
-  }
+  const [creating, setCreating] = useState(false);
   async function linkExisting() {
     if (!linkType || !targetId || !linkId) return;
     const { error } = await supabase.from("expense_links").insert({ expense_id: linkId, link_type: linkType, target_id: targetId });
@@ -75,7 +62,7 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
     <SectionCard
       title="Expenses"
       description={linkType ? `Invoices and receipts linked to this ${LINK_LABEL[linkType]}.` : "Every expense recorded for this home."}
-      actions={!role.readOnly && <Button size="sm" variant="outline" onClick={() => void create()}>Add expense</Button>}
+      actions={!role.readOnly && <Button size="sm" variant="outline" onClick={() => setCreating(true)}>Add expense</Button>}
     >
       <div className="space-y-3">
         {rows.length === 0 ? (
@@ -98,6 +85,12 @@ export function ExpensesCard({ propertyId, linkType, targetId }: { propertyId: s
           </div>
         )}
       </div>
+      <NewExpenseSheet
+        open={creating}
+        spec={{ propertyId, isDemo: demoMode, linkType, targetId }}
+        onClose={() => setCreating(false)}
+        onCreated={(id) => { setCreating(false); void qc.invalidateQueries({ queryKey: ["expenses"] }); setOpen(id); }}
+      />
       <ExpenseSheet expenseId={open} onClose={() => { setOpen(null); void qc.invalidateQueries({ queryKey: key }); }} />
     </SectionCard>
   );
