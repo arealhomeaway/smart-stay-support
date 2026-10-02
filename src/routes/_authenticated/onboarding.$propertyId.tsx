@@ -47,6 +47,9 @@ import { independentReadinessForTasks } from "@/lib/onboarding-independent-readi
 import { FinancialPanel } from "@/components/onboarding/FinancialPanel";
 import { BudgetPanel } from "@/components/onboarding/BudgetPanel";
 import { AssessmentFindingsPanel } from "@/components/onboarding/AssessmentFindingsPanel";
+import { AssessmentsFormsPanel } from "@/components/onboarding/AssessmentsFormsPanel";
+import { FollowHomeButton } from "@/components/onboarding/OnboardingActivityFeed";
+import { OwnerViewPreview } from "@/components/onboarding/OwnerViewPreview";
 import { VendorCoveragePanel } from "@/components/onboarding/VendorCoveragePanel";
 import { OnboardingWorkOrdersPanel } from "@/components/onboarding/OnboardingWorkOrdersPanel";
 
@@ -464,6 +467,7 @@ function PropertyWorkspace() {
         <Chip className={stateChip(life.accepted ? "done" : "info")}>{life.label}</Chip>
         <Chip className={stateChip("info")}>{stageLabel(current.onboarding_stage)}</Chip>
         {activeOwner && <Chip className={stateChip("waiting")}>Active Owner</Chip>}
+        <span className="ml-auto"><FollowHomeButton propertyId={current.id} /></span>
       </div>
 
       <p className="text-sm text-muted-foreground">
@@ -676,6 +680,12 @@ function PropertyWorkspace() {
             canEdit={canEdit}
             isAdmin={roles.includes("admin")}
           />
+          <AssessmentsFormsPanel
+            tasks={tasks as never}
+            people={data.people}
+            onOpenTask={setOpenTaskId}
+          />
+          <OwnerViewPreview propertyId={current.id} />
           <AssessmentFindingsPanel
             propertyId={current.id}
             canEdit={canEdit}
