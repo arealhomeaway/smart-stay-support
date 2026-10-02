@@ -117,7 +117,7 @@ export function PropertyWorkHistory({ propertyId }: { propertyId: string }) {
           const body = (
             <>
               <div className="flex flex-wrap items-center gap-2">
-                <Chip className={stateChip(r.type === "activity" || r.type === "legacy" ? "info" : "neutral")}>
+                <Chip className={stateChip(r.type === "activity" || r.type === "legacy" ? "info" : "active")}>
                   {TYPE_LABEL[r.type]}
                 </Chip>
                 <span className="min-w-0 flex-1 font-medium">{r.title}</span>
