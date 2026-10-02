@@ -69,6 +69,8 @@ type NewTicketSearch = {
   from?: string;
   /** Navigation-context token for the workspace this was launched from. */
   origin?: string;
+  /** Preselects one of the three entry paths. */
+  kind?: EntryKind;
 };
 
 export const Route = createFileRoute("/_authenticated/tickets/new")({
@@ -85,17 +87,19 @@ export const Route = createFileRoute("/_authenticated/tickets/new")({
     if (project) out.project = project;
     if (from) out.from = from;
     if (origin) out.origin = origin;
+    const kind = str(search["kind"]);
+    if (kind === "activity" || kind === "ops" || kind === "maintenance") out.kind = kind;
     return out;
   },
   head: () => ({
     meta: [
-      { title: "Report an issue — Resolve Operations" },
+      { title: "Record work — Resolve Operations" },
       {
         name: "description",
         content:
-          "Log a one-touch resolution in seconds or open a ticket with its owning role, response standard and playbook attached.",
+          "Log property activity, open an Ops Ticket or report maintenance — each with the right workflow attached.",
       },
-      { property: "og:title", content: "Report an issue — Resolve Operations" },
+      { property: "og:title", content: "Record work — Resolve Operations" },
       {
         property: "og:description",
         content: "Log a one-touch resolution or open a ticket with its response standard attached.",
@@ -730,6 +734,123 @@ export function NewTicketForm({
             {propertyPicker}
 
             {form.property_id && <PropertyContactPanel propertyId={form.property_id} showOwner={false} />}
+
+            {mode === "ops" && (
+              <div className="space-y-2">
+                <Label>Kind of Ops work</Label>
+                <Select
+                  value={form.work_type_id}
+                  onValueChange={(v) => {
+                    setSituationTouched(true);
+                    setForm({ ...form, work_type_id: v });
+                  }}
+                >
+                  <SelectTrigger aria-label="Kind of Ops work">
+                    <SelectValue placeholder="Pick the closest match" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kindWorkTypes.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {w.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Resolve suggests one from your description; you can always change it.
+                </p>
+              </div>
+            )}
+
+            {mode === "maintenance" && (
+              <div className="space-y-4 rounded-lg border border-border p-3">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Maintenance category</Label>
+                    <Select
+                      value={form.maintenance_category}
+                      onValueChange={(v) => setForm({ ...form, maintenance_category: v })}
+                    >
+                      <SelectTrigger aria-label="Maintenance category">
+                        <SelectValue placeholder="Pick a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MAINTENANCE_CATEGORIES.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="est-cost">Estimated cost, if known ($)</Label>
+                    <Input
+                      id="est-cost"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.estimated_cost}
+                      onChange={(e) => setForm({ ...form, estimated_cost: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Guest impact</Label>
+                  <Select
+                    value={form.guest_impact}
+                    onValueChange={(v) => setForm({ ...form, guest_impact: v })}
+                  >
+                    <SelectTrigger aria-label="Guest impact">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GUEST_IMPACT.map((g) => (
+                        <SelectItem key={g.value} value={g.value}>
+                          {g.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="guest-affected">A guest is currently affected</Label>
+                  <Switch
+                    id="guest-affected"
+                    checked={form.guest_in_residence}
+                    onCheckedChange={(v) => setForm({ ...form, guest_in_residence: v })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Potential insurance-related event?</Label>
+                  <div className="flex gap-2" role="radiogroup" aria-label="Potential insurance-related event">
+                    {INSURANCE_RISK.map((r) => (
+                      <Button
+                        key={r.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={form.insurance_risk === r.value}
+                        variant={form.insurance_risk === r.value ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setForm({ ...form, insurance_risk: r.value })}
+                      >
+                        {r.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Flooding, major leak, roof, fire/smoke, structural damage.
+                    {insuranceFlagged(form.insurance_risk)
+                      ? " This will be flagged for supervisors and show owner contact. Nothing is sent to insurance."
+                      : ""}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Add photos on the Ticket's Evidence tab once it opens.
+                </p>
+              </div>
+            )}
+
 
             {workType && isTicket && (
               <div className="resolve-rise rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
