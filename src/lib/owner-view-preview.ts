@@ -21,6 +21,7 @@ type Item = {
   status: string;
   source: string | null;
   source_task_id: string | null;
+  program_id?: string | null;
 };
 type Pub = { id: string; title: string; detail: string | null; entity_id: string | null };
 
@@ -33,7 +34,9 @@ function text(v: unknown): string | null {
   return null;
 }
 
-export function ownerPreviewBuckets(items: Item[], pubs: Pub[]) {
+export function ownerPreviewBuckets(all: Item[], pubs: Pub[]) {
+  // Same as the owner read rule: never archived, and only inside an owner program.
+  const items = all.filter((i) => i.status !== "archived" && i.program_id !== null);
   const drafts = items.filter((i) => i.status === "draft");
   const draftTasks = new Set(drafts.map((d) => d.source_task_id).filter(Boolean) as string[]);
   const visible: PreviewItem[] = [

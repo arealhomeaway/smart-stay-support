@@ -764,6 +764,13 @@
       "when": 1790984725113,
       "tag": "0108_onboarding_notification_recipient_check",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1790985346750,
+      "tag": "0109_onboarding_follow_scope",
+      "breakpoints": true
     }
   ]
 }

@@ -19,9 +19,10 @@ export const ownerViewPreview = createServerFn({ method: "GET" })
     const [items, pubs] = await Promise.all([
       sb
         .from("work_items")
-        .select("id, title, owner_content, status, source, source_task_id, retired_at, due_on")
+        .select("id, title, owner_content, status, source, source_task_id, retired_at, due_on, program_id")
         .eq("property_id", data.propertyId)
         .eq("kind", "opportunity")
+        .neq("status", "archived")
         .is("retired_at", null),
       sb
         .from("owner_approval_publications")
@@ -30,5 +31,14 @@ export const ownerViewPreview = createServerFn({ method: "GET" })
     ]);
     if (items.error) throw items.error;
     if (pubs.error) throw pubs.error;
-    return ownerPreviewBuckets(items.data ?? [], pubs.data ?? []);
+    // Owners only read Opportunities in a live (non-archived) program they own.
+    const programIds = [...new Set((items.data ?? []).map((i) => i.program_id).filter(Boolean))] as string[];
+    const live = new Set<string>();
+    if (programIds.length) {
+      const progs = await sb.from("owner_programs").select("id, owner_user_id, archived_at").in("id", programIds);
+      if (progs.error) throw progs.error;
+      for (const p of progs.data ?? []) if (!p.archived_at && p.owner_user_id) live.add(p.id);
+    }
+    const scoped = (items.data ?? []).map((i) => ({ ...i, program_id: i.program_id && live.has(i.program_id) ? i.program_id : null }));
+    return ownerPreviewBuckets(scoped, pubs.data ?? []);
   });
