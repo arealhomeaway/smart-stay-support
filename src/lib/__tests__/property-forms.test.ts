@@ -18,8 +18,8 @@ describe("property forms", () => {
 describe("owner preview", () => {
   it("hides drafts and approvals on draft tasks", () => {
     const b = ownerPreviewBuckets(
-      [{ id: "1", title: "D", owner_content: null, status: "draft", source: "arha", source_task_id: "T" },
-       { id: "2", title: "V", owner_content: null, status: "sent", source: "arha", source_task_id: null }],
+      [{ id: "1", title: "D", owner_content: null, status: "draft", source: "arha", source_task_id: "T", program_id: "P" },
+       { id: "2", title: "V", owner_content: null, status: "open", source: "arha", source_task_id: null, program_id: "P" }, { id: "3", title: "X", owner_content: null, status: "archived", source: "arha", source_task_id: null, program_id: "P" }],
       [{ id: "p", title: "A", detail: null, entity_id: "T" }],
     );
     expect(b.visible.map((v) => v.id)).toEqual(["2"]);

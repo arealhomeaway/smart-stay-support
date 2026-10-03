@@ -56,6 +56,15 @@ export function AssessmentsFormsPanel({
                     </>
                   )}
                 </p>
+                {f.tasks.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Not on this home's plan, so there is nothing to open.
+                  </p>
+                ) : f.source !== "resolve_task" ? (
+                  <p className="text-xs text-muted-foreground">
+                    No link to the external form is stored in Resolve — files attached to the Task show inside it.
+                  </p>
+                ) : null}
               </div>
               <Chip className={stateChip(s.tone)}>{s.label}</Chip>
               {f.tasks.map((t, i) => (

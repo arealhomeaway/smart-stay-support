@@ -19,9 +19,10 @@ export const ownerViewPreview = createServerFn({ method: "GET" })
     const [items, pubs] = await Promise.all([
       sb
         .from("work_items")
-        .select("id, title, owner_content, status, source, source_task_id, retired_at, due_on")
+        .select("id, title, owner_content, status, source, source_task_id, retired_at, due_on, program_id")
         .eq("property_id", data.propertyId)
         .eq("kind", "opportunity")
+        .neq("status", "archived")
         .is("retired_at", null),
       sb
         .from("owner_approval_publications")
