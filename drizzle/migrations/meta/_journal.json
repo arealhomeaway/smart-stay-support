@@ -771,6 +771,13 @@
       "when": 1790985346750,
       "tag": "0109_onboarding_follow_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1790986570802,
+      "tag": "0110_wo_dispatch_requires_current_authorization",
+      "breakpoints": true
     }
   ]
 }
