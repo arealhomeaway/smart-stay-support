@@ -16,7 +16,7 @@ export const readOwnerConversation = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const res = await context.supabase
       .from("owner_request_messages")
-      .select("id, author_type, author_name, body, event, created_at")
+      .select("id, author_type, author_name, body, event, request_kind, created_at")
       .eq("work_item_id", data.id)
       .order("created_at", { ascending: true });
     fail(res.error);
@@ -30,6 +30,21 @@ export const postOwnerConversationMessage = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     fail((await context.supabase.rpc("post_owner_request_message", { _id: data.id, _body: data.body })).error);
+    return { ok: true as const };
+  });
+
+/** Staff: explicitly ask the homeowner for fresh feedback or a new decision. */
+export const requestOwnerResponse = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      body: z.string().trim().min(1, "Explain what you are asking the homeowner.").max(5000),
+      kind: z.enum(["feedback", "decision"]),
+    }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    fail((await context.supabase.rpc("request_owner_response", { _id: data.id, _body: data.body, _kind: data.kind })).error);
     return { ok: true as const };
   });
 
