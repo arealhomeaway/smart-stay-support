@@ -9,4 +9,6 @@
 - [ ] Buckland pending-activation race (webhook vs nightly scan)
 - [x] Close vendor/onboarding acceptance pass (Micah own-account check of DEMO — Handoff Role QA Cottage stays on launch list)
 - [x] Claims workflow: gates, waivers, Finance ledger, payer/deadlines — synthetic acceptance passed
-- [ ] Claims policy answers: waiver routing (all supervisors vs Pod), waiver closes claim?, verified platform deadlines — waiting on user
+- [x] Claims corrections: routed waivers, Finance treatment before closure, demo alert isolation + audited retraction, correction fix
+- [ ] Claims Finance browser acceptance — blocked: dedicated synthetic Finance account (qa.um.manager) is disabled; needs user decision
+- [ ] Pod supervisor per home — no assignment exists in Resolve yet; waivers fall back to Operations Supervisor seat
