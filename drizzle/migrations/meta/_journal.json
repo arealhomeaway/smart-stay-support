@@ -785,6 +785,13 @@
       "when": 1791209480417,
       "tag": "0111_link_demo_owner_account",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1791209637887,
+      "tag": "0112_owner_opportunity_read_excludes_archived",
+      "breakpoints": true
     }
   ]
 }
