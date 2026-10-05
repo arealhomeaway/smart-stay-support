@@ -13173,6 +13173,7 @@ export type Database = {
           second_quote_amount: number | null
           service_category: string | null
           supervisor_approval_decided_at: string | null
+          supervisor_approval_decided_by: string | null
           supervisor_approval_id: string | null
           supervisor_approval_note: string | null
           supervisor_approval_requested_at: string | null
@@ -13263,6 +13264,7 @@ export type Database = {
           second_quote_amount?: number | null
           service_category?: string | null
           supervisor_approval_decided_at?: string | null
+          supervisor_approval_decided_by?: string | null
           supervisor_approval_id?: string | null
           supervisor_approval_note?: string | null
           supervisor_approval_requested_at?: string | null
@@ -13353,6 +13355,7 @@ export type Database = {
           second_quote_amount?: number | null
           service_category?: string | null
           supervisor_approval_decided_at?: string | null
+          supervisor_approval_decided_by?: string | null
           supervisor_approval_id?: string | null
           supervisor_approval_note?: string | null
           supervisor_approval_requested_at?: string | null
@@ -14104,6 +14107,10 @@ export type Database = {
           _task_id: string
         }
         Returns: string
+      }
+      expense_authorization_status: {
+        Args: { _expense: string }
+        Returns: Json
       }
       has_role: {
         Args: {
