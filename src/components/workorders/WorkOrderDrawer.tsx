@@ -149,6 +149,12 @@ export function WorkOrderDrawer({
   const qc = useQueryClient();
   const userId = useCurrentUserId();
   const { isSupervisor } = useRole();
+  const spendingAuthority = useQuery({
+    queryKey: ["my-spending-approval-authority"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => (await supabase.rpc("my_spending_approval_authority")).data === true,
+  });
+  const canApproveSpending = spendingAuthority.data === true;
   const [note, setNote] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [reassignTo, setReassignTo] = useState("");
@@ -711,7 +717,7 @@ export function WorkOrderDrawer({
                         "pending") as keyof typeof APPROVAL_STATUS_LABELS
                     ] ?? "Pending"}
                   </Chip>
-                  {isSupervisor && workOrder.supervisor_approval_status === "pending" ? (
+                  {canApproveSpending && workOrder.supervisor_approval_status === "pending" ? (
                     <div className="flex flex-wrap gap-2">
                       <Button
                         size="sm"
@@ -729,6 +735,10 @@ export function WorkOrderDrawer({
                         Decline
                       </Button>
                     </div>
+                  ) : workOrder.supervisor_approval_status === "pending" ? (
+                    <p className="text-xs text-muted-foreground" data-testid="spending-approval-authority">
+                      Only the Operations Supervisor or Director of Operations can approve this spending.
+                    </p>
                   ) : null}
                 </div>
               )}
