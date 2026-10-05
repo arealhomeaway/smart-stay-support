@@ -16,7 +16,7 @@ import { Chip } from "@/components/ui/page";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { stateChip } from "@/lib/semantic";
 import { useRole } from "@/hooks/useRole";
-import { FINANCE_REVIEW_LABEL, QB_REFERENCE_NOTE, RESPONSIBILITY_LABEL, docReadiness, money, type FinanceReview, type Responsibility } from "@/lib/expenses";
+import { FINANCE_REVIEW_LABEL, QB_REFERENCE_NOTE, RESPONSIBILITY_LABEL, docReadiness, missingDocumentation, money, type FinanceReview, type Responsibility } from "@/lib/expenses";
 import {
   DISPOSITION_LABEL,
   PERIOD_READINESS_LABEL,
