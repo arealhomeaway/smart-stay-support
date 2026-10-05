@@ -357,8 +357,11 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         </div>
         {reviewed && dirty && (
           <div>
-            <Label>Reason for change (required — this expense was Finance reviewed)</Label>
-            <Input value={reason} onChange={(x) => setReason(x.target.value)} />
+            <Label htmlFor="expense-change-reason">Reason for change (required — this expense was Finance reviewed)</Label>
+            <Input id="expense-change-reason" value={reason} onChange={(x) => setReason(x.target.value)} />
+            {(v.invoice_document_ids ?? []).join() !== (e.invoice_document_ids ?? []).join() && (
+              <p className="mt-1 text-xs text-muted-foreground">Changing the designated invoice or receipt reopens Finance review and any affected statement sign-off.</p>
+            )}
           </div>
         )}
         {access.isStaff && (
