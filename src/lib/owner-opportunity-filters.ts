@@ -19,11 +19,19 @@ export type QueueInput = {
   needsOwnerAttention: boolean;
   lastSpeaker: "homeowner" | "staff" | null;
   responseTypes: string[];
+  /** The owner has already answered (a reply or a recorded response). */
+  answered?: boolean;
+  /** Retired by staff (never an owner obligation). */
+  retired?: boolean;
 };
 
-const active = (o: QueueInput) => o.status !== "complete" && o.status !== "draft" && o.status !== "archived";
-/** Asks the homeowner for more than optional documentation. */
-const asksForResponse = (o: QueueInput) => o.responseTypes.some((t) => t !== "documentation");
+const INACTIVE = new Set(["complete", "completed", "draft", "archived", "retired"]);
+const active = (o: QueueInput) => !INACTIVE.has(o.status) && !o.retired;
+/**
+ * An owner obligation exists only when the Opportunity asks for feedback or a
+ * decision. Acknowledge-only (informational) and optional documentation never do.
+ */
+const requiresOwnerAction = (o: QueueInput) => o.responseTypes.some((t) => t === "feedback" || t === "decision");
 
 export function inQueue(o: QueueInput, q: OwnerQueue): boolean {
   if (!active(o)) return false;
@@ -37,9 +45,10 @@ export function inQueue(o: QueueInput, q: OwnerQueue): boolean {
     // Homeowner spoke last: ARHA owns the next step ("Staff action needed" internally).
     case "feedback":
       return o.lastSpeaker === "homeowner";
-    // Opened, and ARHA spoke last — or nobody has yet and a response is requested.
+    // Opened, an owner action (feedback/decision) is requested and not yet given.
+    // A staff message alone never creates an obligation.
     case "awaiting":
-      return o.viewed && (o.lastSpeaker === "staff" || (o.lastSpeaker === null && asksForResponse(o)));
+      return o.viewed && requiresOwnerAction(o) && !o.answered && o.lastSpeaker !== "homeowner";
   }
 }
 

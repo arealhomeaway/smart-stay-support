@@ -140,7 +140,7 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
           responses: o.owner_response,
           viewed: Boolean(o.viewed_at),
           responded: Boolean(o.responded_at) || o.owner_response.length > 0,
-          finished: o.status === "complete",
+          finished: o.status === "complete" || o.status === "completed",
           templateId: o.library_template_id,
           queue: {
             status: o.status,
@@ -148,6 +148,7 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
             needsOwnerAttention: Boolean(o.needs_owner_attention),
             lastSpeaker: o.last_speaker,
             responseTypes: o.response_types,
+            answered: Boolean(o.responded_at) || o.owner_response.length > 0,
           },
         } satisfies Live;
       });
