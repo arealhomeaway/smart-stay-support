@@ -12,3 +12,5 @@
 - [x] Claims corrections: routed waivers, Finance treatment before closure, demo alert isolation + audited retraction, correction fix
 - [x] Claims Finance browser acceptance (qa.um.manager re-enabled for the check, then disabled again)
 - [ ] Pod supervisor per home — no assignment exists in Resolve yet; waivers fall back to Operations Supervisor seat
+- [x] Claims correction pass closed
+- [x] Statement Readiness (Finance): dispositions, Finance Lead expense-review sign-off, re-review on change — synthetic acceptance done
