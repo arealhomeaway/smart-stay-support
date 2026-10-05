@@ -11,7 +11,7 @@
 
 - Navigation: every page must be enterable/exitable keeping property/department context; menus, breadcrumbs, Back come only from `src/lib/shell-nav.ts` + `ShellNav` (`useShellPageLabel` names a view). Why: one shell.
 - Help & Feedback: rendered once in `AppShell` (`HelpFeedback.tsx`), never per page; files `help_tickets`, never Operations tickets. Why: one entry point.
-- Homeowner⇄ARHA threads: append-only `owner_request_messages` via RPCs; status derived from last speaker. Why: no double-stored state.
+- Homeowner⇄ARHA threads: append-only `owner_request_messages` via RPCs; status derived from last speaker; explicit fresh asks only via `request_owner_response` (event `response_requested`, open until an owner answer, `openResponseRequest`). Resolving/reopening an Opportunity never changes its internal Task. Why: no double-stored state; owner participation never gates internal work.
 - User identity/access edits only via audited admin `updateTeammate` (src/lib/access.functions.ts). Why: one guarded path, no duplicate accounts.
 - Vendor expiry reminders: DB `vendor_compliance_sweep` (deduped in `vendor_compliance_reminders`) on the 5-minute notify pass; UI state from `src/lib/vendor-compliance.ts`. Why: one rule, no new cron.
 - STR cleaner safeguard rules: see `drizzle/AGENTS.md`.
