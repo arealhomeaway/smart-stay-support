@@ -47,8 +47,8 @@ export function ClaimWorkflowPanel({
   onChanged: () => void;
 }) {
   const qc = useQueryClient();
-  const { isSupervisor, seats, userId } = useRole();
-  const isFinance = seats.finance;
+  const { isSupervisor, access, userId } = useRole();
+  const isFinance = access.seats.finance === true;
   const step = guidedStep(claim);
 
   const docs = useQuery({
@@ -166,7 +166,7 @@ export function ClaimWorkflowPanel({
       const { error } = await supabase.rpc("request_claim_waiver", {
         _claim_id: claim.id,
         _reason: wReason,
-        _context: wContext || undefined,
+        ...(wContext ? { _context: wContext } : {}),
       });
       if (error) throw error;
     },
