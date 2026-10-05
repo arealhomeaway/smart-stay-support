@@ -625,3 +625,92 @@ export function deadlineLabel(deadline: string | null | undefined, now = new Dat
   if (d < 0) return `${Math.abs(d)} day${Math.abs(d) === 1 ? "" : "s"} overdue`;
   return `${d} day${d === 1 ? "" : "s"} left`;
 }
+
+/* ---------------- Guided workflow (pass: claims workflow) ---------------- */
+
+export type GuidedStep =
+  | "evidence"
+  | "ready"
+  | "submitted"
+  | "awaiting"
+  | "decision"
+  | "recovery_pending"
+  | "closed";
+
+export const GUIDED_STEP_LABELS: Record<GuidedStep, string> = {
+  evidence: "Evidence gathering",
+  ready: "Ready to submit",
+  submitted: "Submitted",
+  awaiting: "Awaiting decision",
+  decision: "Decision received",
+  recovery_pending: "Recovery pending",
+  closed: "Closed",
+};
+
+export const GUIDED_STEPS: GuidedStep[] = [
+  "evidence",
+  "ready",
+  "submitted",
+  "awaiting",
+  "decision",
+  "recovery_pending",
+  "closed",
+];
+
+type MoneyLike = {
+  stage: ClaimStage;
+  disposition?: ClaimDisposition | null;
+  submitted_amount?: number | null;
+  approved_amount?: number | null;
+  recovered_amount?: number | null;
+  nonrecovery_reason?: string | null;
+};
+
+/** Amount still expected from the payer: approved minus received. Approval is not receipt. */
+export function awaitingReceipt(c: MoneyLike): number {
+  if (c.disposition !== "approved" && c.disposition !== "partial") return 0;
+  return Math.max(0, (c.approved_amount ?? 0) - (c.recovered_amount ?? 0));
+}
+
+/** Settled only when money in plus a documented nonrecovery covers the requested amount. */
+export function financiallySettled(c: MoneyLike): boolean {
+  const requested = c.submitted_amount ?? c.approved_amount ?? 0;
+  const received = c.recovered_amount ?? 0;
+  if (requested <= 0) return c.stage === "closed" && !!c.disposition;
+  if (received >= requested) return true;
+  return awaitingReceipt(c) === 0 && !!c.nonrecovery_reason?.trim() && !!c.disposition;
+}
+
+/** Maps the stored stage onto the seven guided steps without rewriting data. */
+export function guidedStep(c: MoneyLike): GuidedStep {
+  switch (c.stage) {
+    case "potential":
+    case "gathering":
+    case "costing":
+      return "evidence";
+    case "ready_to_submit":
+      return "ready";
+    case "submitted":
+      return "submitted";
+    case "waiting_external":
+    case "info_requested":
+      return "awaiting";
+    case "decided":
+    case "recovered":
+      return awaitingReceipt(c) > 0 ? "recovery_pending" : "decision";
+    case "closed":
+      return "closed";
+  }
+}
+
+export type DeadlineVerification = "unknown" | "needs_verification" | "verified";
+
+export function deadlineVerification(date: string | null | undefined, verified: boolean): DeadlineVerification {
+  if (!date) return "unknown";
+  return verified ? "verified" : "needs_verification";
+}
+
+/** Net received for a claim from append-only ledger rows (corrections are negative rows). */
+export function ledgerTotal(rows: Array<{ received_amount: number }>): number {
+  return rows.reduce((s, r) => s + Number(r.received_amount || 0), 0);
+}

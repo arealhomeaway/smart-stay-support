@@ -203,3 +203,35 @@ describe("duplicate protection", () => {
     ).toBe(0);
   });
 });
+
+import {
+  awaitingReceipt,
+  deadlineVerification,
+  financiallySettled,
+  guidedStep,
+  ledgerTotal,
+} from "@/lib/claims";
+
+describe("guided workflow", () => {
+  it("approval is not receipt", () => {
+    const c = { stage: "decided" as const, disposition: "partial" as const, submitted_amount: 500, approved_amount: 300, recovered_amount: 0 };
+    expect(awaitingReceipt(c)).toBe(300);
+    expect(guidedStep(c)).toBe("recovery_pending");
+    expect(financiallySettled(c)).toBe(false);
+  });
+  it("two partial receipts plus documented shortfall settle", () => {
+    const c = { stage: "decided" as const, disposition: "partial" as const, submitted_amount: 500, approved_amount: 300, recovered_amount: ledgerTotal([{ received_amount: 100 }, { received_amount: 200 }]), nonrecovery_reason: "Platform paid partial" };
+    expect(awaitingReceipt(c)).toBe(0);
+    expect(financiallySettled(c)).toBe(true);
+  });
+  it("denial needs a documented reason to settle", () => {
+    expect(financiallySettled({ stage: "decided", disposition: "denied", submitted_amount: 400 })).toBe(false);
+  });
+  it("unknown deadline stays unverified", () => {
+    expect(deadlineVerification(null, false)).toBe("unknown");
+    expect(deadlineVerification("2026-10-20", false)).toBe("needs_verification");
+  });
+  it("corrections net out", () => {
+    expect(ledgerTotal([{ received_amount: 200 }, { received_amount: -50 }])).toBe(150);
+  });
+});

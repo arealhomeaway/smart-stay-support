@@ -1,4 +1,5 @@
 import { ExpensesCard } from "@/components/finance/ExpensesCard";
+import { ClaimWorkflowPanel } from "@/components/claims/ClaimWorkflowPanel";
 /**
  * Claim workspace.
  *
@@ -385,7 +386,7 @@ export function ClaimDrawer({
             {amountField("actual_cost", "Actual cost", "What the repair or cleaning cost us.")}
             {amountField("submitted_amount", "Submitted", "Amount claimed from the other party.")}
             {amountField("approved_amount", "Approved", "Amount they agreed to pay.")}
-            {amountField("recovered_amount", "Recovered", "Money actually received.")}
+            <div className="space-y-1"><Label className="text-xs">Received</Label><p className="text-sm">{formatMoney(claim.recovered_amount)}</p><p className="text-[11px] text-muted-foreground">Recorded by Finance below.</p></div>
           </div>
           <p className="text-xs text-muted-foreground">
             At risk {formatMoney(amountAtRisk(claim))} · outstanding{" "}
@@ -394,6 +395,8 @@ export function ClaimDrawer({
         </section>
 
         <Separator className="my-4" />
+
+        <ClaimWorkflowPanel claim={claim} canEdit={canEdit} people={people} onChanged={refresh} />
 
         {/* Working controls */}
         {canEdit ? (
