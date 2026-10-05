@@ -16,7 +16,7 @@ import { Chip } from "@/components/ui/page";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { stateChip } from "@/lib/semantic";
 import { useRole } from "@/hooks/useRole";
-import { FINANCE_REVIEW_LABEL, QB_REFERENCE_NOTE, RESPONSIBILITY_LABEL, docReadiness, money, type FinanceReview, type Responsibility } from "@/lib/expenses";
+import { FINANCE_REVIEW_LABEL, QB_REFERENCE_NOTE, RESPONSIBILITY_LABEL, docReadiness, missingDocumentation, money, type FinanceReview, type Responsibility } from "@/lib/expenses";
 import {
   DISPOSITION_LABEL,
   PERIOD_READINESS_LABEL,
@@ -250,7 +250,7 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
           {disp === "exclude" ? <Input aria-label="Exclusion treatment" placeholder="Recorded financial treatment" value={excl} onChange={(e) => setExcl(e.target.value)} /> : null}
           {disp === "include" && needsTreatment ? <Input aria-label="Recovery treatment" placeholder="Finance treatment of the outstanding recovery / open claim" value={recTreat} onChange={(e) => setRecTreat(e.target.value)} /> : null}
           {disp === "include" && docReadiness(item) !== "ready" ? (
-            <p className="text-xs text-destructive sm:col-span-2">Documentation is incomplete — hold it until Operations supplies the missing facts.</p>
+            <p className="text-xs text-destructive sm:col-span-2" role="status">Include is unavailable: documentation is incomplete — missing {missingDocumentation(item).join(", ")}. Hold it until Operations supplies the missing facts.</p>
           ) : null}
           <Button size="sm" className="sm:col-span-2" disabled={save.isPending || (disp === "include" && docReadiness(item) !== "ready")} onClick={() => save.mutate()}>Record disposition</Button>
         </div>
