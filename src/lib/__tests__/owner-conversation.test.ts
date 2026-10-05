@@ -17,3 +17,18 @@ it("derives who acts next from the last non-system message and never drops histo
   expect(conversationState("open", t4)).toBe("waiting_on_homeowner");
   expect(t4.map((e) => e.id)).toEqual(["r0", "s1", "x", "y"]);
 });
+
+import { openResponseRequest as openReq, buildThread as bt } from "../owner-conversation";
+import { describe, test } from "bun:test";
+describe("fresh owner response requests", () => {
+  const m = (id: string, author_type: string, at: string, event: string | null = null, request_kind: string | null = null) =>
+    ({ id, author_type, author_name: "x", body: "b", event, request_kind, created_at: at });
+  test("staff acknowledgment opens nothing; explicit request opens; owner answer clears", () => {
+    expect(openReq(bt([], [m("1", "staff", "2026-10-01T00:00:00Z")]))).toBe(null);
+    const req = [m("1", "staff", "2026-10-01T00:00:00Z", "response_requested", "decision")];
+    expect(openReq(bt([], req))).toBe("decision");
+    expect(openReq(bt([], [...req, m("2", "homeowner", "2026-10-02T00:00:00Z")]))).toBe(null);
+    expect(openReq(bt([{ kind: "decision", decision: "authorize", text: null, at: "2026-10-03T00:00:00Z" }], req))).toBe(null);
+    expect(openReq(bt([], [...req, m("2", "homeowner", "2026-10-02T00:00:00Z"), m("3", "staff", "2026-10-03T00:00:00Z")]))).toBe(null);
+  });
+});

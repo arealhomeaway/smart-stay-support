@@ -15,7 +15,8 @@ export type ThreadEntry = {
   label: string | null;
   text: string | null;
   at: string;
-  event: "resolved" | "reopened" | null;
+  event: "resolved" | "reopened" | "response_requested" | null;
+  requestKind?: "feedback" | "decision" | null;
 };
 
 export type ConversationMessage = {
@@ -24,6 +25,7 @@ export type ConversationMessage = {
   author_name: string;
   body: string;
   event: string | null;
+  request_kind?: string | null;
   created_at: string;
 };
 
@@ -64,10 +66,11 @@ export function buildThread(legacy: LegacyResponse[], messages: ConversationMess
       id: m.id,
       author: (m.author_type === "staff" || m.author_type === "system" ? m.author_type : "homeowner") as ThreadAuthor,
       name: m.author_name,
-      label: null,
+      label: m.event === "response_requested" ? (m.request_kind === "decision" ? "Decision requested" : "Feedback requested") : null,
       text: m.body,
       at: m.created_at,
-      event: (m.event === "resolved" || m.event === "reopened" ? m.event : null) as ThreadEntry["event"],
+      event: (m.event === "resolved" || m.event === "reopened" || m.event === "response_requested" ? m.event : null) as ThreadEntry["event"],
+      requestKind: (m.request_kind === "feedback" || m.request_kind === "decision" ? m.request_kind : null) as ThreadEntry["requestKind"],
     })),
   ];
   return entries.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
@@ -84,4 +87,18 @@ export function conversationState(status: string, thread: ThreadEntry[]): Conver
 export function lastSpeaker(thread: ThreadEntry[]): "homeowner" | "staff" | null {
   const last = [...thread].reverse().find((e) => e.author !== "system");
   return last ? (last.author as "homeowner" | "staff") : null;
+}
+
+/**
+ * An explicit staff request for a fresh response stays open until the homeowner
+ * answers after it (a reply or a recorded response). Informational staff
+ * messages never open a request.
+ */
+export function openResponseRequest(thread: ThreadEntry[]): "feedback" | "decision" | null {
+  let open: "feedback" | "decision" | null = null;
+  for (const e of thread) {
+    if (e.event === "response_requested") open = e.requestKind ?? "feedback";
+    else if (e.author === "homeowner") open = null;
+  }
+  return open;
 }

@@ -42,4 +42,17 @@ describe("owner Opportunity queues", () => {
     for (const o of [{ ...base, retired: true }, { ...base, status: "completed" }, { ...base, status: "draft" }, { ...base, status: "archived" }])
       expect(queueCounts([{ ...o, needsOwnerAttention: true, viewed: true, responseTypes: ["feedback"] }])).toEqual({ attention: 0, awaiting: 0, feedback: 0, new: 0 });
   });
+  test("explicit initial request counts before opening (overlaps New)", () => {
+    const o = { ...base, responseTypes: ["decision"] };
+    expect(inQueue(o, "awaiting")).toBe(true);
+    expect(inQueue(o, "new")).toBe(true);
+  });
+  test("fresh explicit request on an answered Opportunity → Awaiting until answered", () => {
+    const answered = { ...base, viewed: true, responseTypes: ["feedback"], answered: true, lastSpeaker: "staff" as const };
+    expect(inQueue(answered, "awaiting")).toBe(false);
+    expect(inQueue({ ...answered, freshRequest: true }, "awaiting")).toBe(true);
+  });
+  test("Attention flag never substitutes for a response request", () => {
+    expect(inQueue({ ...base, viewed: true, answered: true, responseTypes: ["feedback"], needsOwnerAttention: true }, "awaiting")).toBe(false);
+  });
 });

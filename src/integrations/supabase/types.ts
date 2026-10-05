@@ -7895,6 +7895,7 @@ export type Database = {
           is_demo: boolean
           program_id: string | null
           property_id: string | null
+          request_kind: string | null
           task_id: string | null
           work_item_id: string
         }
@@ -7909,6 +7910,7 @@ export type Database = {
           is_demo?: boolean
           program_id?: string | null
           property_id?: string | null
+          request_kind?: string | null
           task_id?: string | null
           work_item_id: string
         }
@@ -7923,6 +7925,7 @@ export type Database = {
           is_demo?: boolean
           program_id?: string | null
           property_id?: string | null
+          request_kind?: string | null
           task_id?: string | null
           work_item_id?: string
         }
@@ -14611,6 +14614,10 @@ export type Database = {
       }
       request_owner_document: {
         Args: { _actor_id: string; _input: Json }
+        Returns: string
+      }
+      request_owner_response: {
+        Args: { _body: string; _id: string; _kind: string }
         Returns: string
       }
       rerun_departure_review_trigger: {
