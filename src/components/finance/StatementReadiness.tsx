@@ -174,7 +174,11 @@ type Current = { disposition: string; period: string; defer_to_period: string | 
 function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
   item: StatementItem & { raw: Record<string, unknown> }; period: string; current: Current; canDecide: boolean; onOpen: () => void; onDone: () => void;
 }) {
-  const raw = item.raw as Record<string, string | null>;
+  const raw = item.raw as unknown as {
+    invoice_date: string | null; received_on: string | null; proposed_statement_period: string | null;
+    finance_treatment_note: string | null; owner_notified_at: string | null; authorization_note: string | null;
+    approval_id: string | null; qb_reference_manual: string | null;
+  };
   const blockers = itemBlockers(item);
   const needsTreatment = needsRecoveryTreatment(item);
   const [disp, setDisp] = useState<Disposition>("include");
@@ -187,9 +191,9 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
     mutationFn: async () => {
       const { error } = await supabase.rpc("record_statement_disposition", {
         _expense: item.id, _period: period, _disposition: disp,
-        _owner_description: ownerDesc || undefined, _internal_note: note || undefined,
-        _defer_to: deferTo ? monthStart(deferTo) : undefined, _exclusion_treatment: excl || undefined,
-        _recovery_treatment: recTreat || undefined,
+        ...(ownerDesc ? { _owner_description: ownerDesc } : {}), ...(note ? { _internal_note: note } : {}),
+        ...(deferTo ? { _defer_to: monthStart(deferTo) } : {}), ...(excl ? { _exclusion_treatment: excl } : {}),
+        ...(recTreat ? { _recovery_treatment: recTreat } : {}),
       });
       if (error) throw error;
     },
@@ -261,7 +265,7 @@ function SignOff({ propertyId, period, canSign, signoffs, onDone }: {
   const [exc, setExc] = useState("");
   const confirm = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("confirm_statement_reconciliation", { _property: propertyId, _period: period, _source_reference: src, _exception_resolution: exc || undefined });
+      const { error } = await supabase.rpc("confirm_statement_reconciliation", { _property: propertyId, _period: period, _source_reference: src, ...(exc ? { _exception_resolution: exc } : {}) });
       if (error) throw error;
     },
     onSuccess: () => { setSrc(""); setExc(""); toast.success("Expense review confirmed"); onDone(); },
