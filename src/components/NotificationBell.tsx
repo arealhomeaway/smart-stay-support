@@ -45,6 +45,7 @@ export function NotificationBell({
         .from("staff_notifications")
         .select("id, kind, title, body, link_path, priority, read_at, created_at")
         .eq("is_demo", demoMode)
+        .is("retracted_at", null)
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
