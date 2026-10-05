@@ -932,6 +932,20 @@
       "when": 1791237927169,
       "tag": "0132_vendor_cannot_read_internal_ticket_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1791242355388,
+      "tag": "0133_spending_authority_seats_separation_demo_staff",
+      "breakpoints": true
+    },
+    {
+      "idx": 134,
+      "version": "7",
+      "when": 1791242443327,
+      "tag": "0134_can_approve_spending_rpc",
+      "breakpoints": true
     }
   ]
 }

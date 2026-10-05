@@ -123,7 +123,7 @@ export function authorizationRequired(f: Pick<ExpenseFacts, "expense_type" | "am
   return authorizationNeed(f, wo).required;
 }
 
-export type ServerAuthorization = { required: boolean; ok: boolean; reason: string; who?: string | null };
+export type ServerAuthorization = { required: boolean; ok: boolean; reason: string; who?: string | null; decided_by?: string | null };
 
 /** Exactly what is missing for documentation readiness (empty = ready). */
 export function missingDocumentation(f: ExpenseFacts, wo: AuthorizationContext = null, serverAuth?: ServerAuthorization | null): string[] {

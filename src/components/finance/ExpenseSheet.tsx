@@ -435,7 +435,12 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
 
       <LinksSection expenseId={expenseId} propertyId={e.property_id} links={data.links} isDemo={e.is_demo} onChanged={refresh} canEdit={access.isStaff} />
 
-      <FinanceSection e={e} access={access} people={data.people} onDone={refresh} missingDocs={missingDocumentation(e, data.wo, data.serverAuth)} />
+      <FinanceSection e={e} access={access} people={data.people} onDone={refresh} missingDocs={[
+        ...missingDocumentation(e, data.wo, data.serverAuth),
+        ...(data.serverAuth?.decided_by && data.serverAuth.decided_by === access.userId
+          ? ["Separation of duties: you approved this spending, so a different Finance reviewer must complete its review"]
+          : []),
+      ]} />
 
       <ClarificationSection expenseId={expenseId} items={data.clar} events={data.events} people={data.people} access={access} reviewed={reviewed} onDone={refresh} />
 
