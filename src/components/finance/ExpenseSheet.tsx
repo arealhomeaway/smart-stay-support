@@ -428,7 +428,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
 
       <LinksSection expenseId={expenseId} propertyId={e.property_id} links={data.links} isDemo={e.is_demo} onChanged={refresh} canEdit={access.isStaff} />
 
-      <FinanceSection e={e} access={access} people={data.people} onDone={refresh} />
+      <FinanceSection e={e} access={access} people={data.people} onDone={refresh} missingDocs={missingDocumentation(e, data.wo)} />
 
       <ClarificationSection expenseId={expenseId} items={data.clar} events={data.events} people={data.people} access={access} reviewed={reviewed} onDone={refresh} />
 
@@ -561,7 +561,7 @@ function LinksSection({ expenseId, propertyId, links, isDemo, onChanged, canEdit
   );
 }
 
-function FinanceSection({ e, access, people, onDone }: { e: Full; access: ReturnType<typeof useFinanceAccess>; people: Map<string, string>; onDone: () => void }) {
+function FinanceSection({ e, access, people, onDone, missingDocs }: { e: Full; access: ReturnType<typeof useFinanceAccess>; people: Map<string, string>; onDone: () => void; missingDocs: string[] }) {
   const [resp, setResp] = useState<Responsibility>(e.cost_responsibility);
   const [split, setSplit] = useState<SplitLine[]>(e.split_allocations?.length ? e.split_allocations : [{ party: "owner", amount: 0 }, { party: "guest", amount: 0 }]);
   const [note, setNote] = useState(e.finance_treatment_note ?? "");
@@ -633,9 +633,10 @@ function FinanceSection({ e, access, people, onDone }: { e: Full; access: Return
           )}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" disabled={!treatmentDirty || !splitOk} onClick={() => void go({ cost_responsibility: resp, finance_treatment_note: note || null, split_allocations: resp === "split" ? split : [] }, "Treatment saved.")}>Save treatment</Button>
-            <Button size="sm" disabled={treatmentDirty || !!reviewBlockedBy(e)} onClick={() => void go({ finance_review: "reviewed" }, "Finance review complete.")}>Mark Finance reviewed</Button>
+            <Button size="sm" disabled={treatmentDirty || !!reviewBlockedBy(e) || missingDocs.length > 0} onClick={() => void go({ finance_review: "reviewed" }, "Finance review complete.")}>Mark Finance reviewed</Button>
           </div>
           {reviewBlockedBy(e) && <p className="text-xs text-destructive" data-testid="review-blocked">{reviewBlockedBy(e)}</p>}
+          {missingDocs.length > 0 && <p className="text-xs text-destructive" data-testid="review-docs-missing">Finance review needs complete documentation first. Missing: {missingDocs.join(", ")}.</p>}
           {ownerAllocationBlocked(e) && <p className="text-xs text-destructive">{ownerAllocationBlocked(e)}</p>}
           {reservationBlocks(e.reservation_link_state, e.ownerrez_booking_id) && <p className="text-xs text-destructive">A reservation is required but not yet established — resolve it before Finance review.</p>}
         </div>
