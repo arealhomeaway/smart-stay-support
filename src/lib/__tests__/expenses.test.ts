@@ -60,7 +60,12 @@ describe("documentation readiness", () => {
     expect(missingDocumentation({ ...base, amount: own + 1 })).toContain(
       "Owner authorization evidence (required by the Maintenance Authority Policy)",
     );
-    expect(missingDocumentation({ ...base, amount: own + 1, approval_id: "a" })).toEqual([]);
+    // A note or unverified approval link never satisfies a required approval.
+    expect(missingDocumentation({ ...base, amount: own + 1, approval_id: "a" })).toHaveLength(1);
+    expect(missingDocumentation({ ...base, amount: own + 1, authorization_note: "ok by phone" })).toHaveLength(1);
+    // The backend verdict is authoritative when supplied.
+    expect(missingDocumentation({ ...base, amount: own + 1 }, null, { required: true, ok: false, reason: "x" })).toEqual(["Authorization: x"]);
+    expect(missingDocumentation({ ...base, amount: own + 1 }, null, { required: true, ok: true, reason: "y" })).toEqual([]);
   });
   test("recorded contractual exception and emergency mitigation are honoured", () => {
     const own = MAINTENANCE_POLICY.ownerApprovalThreshold;
