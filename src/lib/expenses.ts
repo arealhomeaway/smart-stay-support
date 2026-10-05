@@ -123,8 +123,10 @@ export function authorizationRequired(f: Pick<ExpenseFacts, "expense_type" | "am
   return authorizationNeed(f, wo).required;
 }
 
+export type ServerAuthorization = { required: boolean; ok: boolean; reason: string; who?: string | null };
+
 /** Exactly what is missing for documentation readiness (empty = ready). */
-export function missingDocumentation(f: ExpenseFacts, wo: AuthorizationContext = null): string[] {
+export function missingDocumentation(f: ExpenseFacts, wo: AuthorizationContext = null, serverAuth?: ServerAuthorization | null): string[] {
   const missing: string[] = [];
   if (f.invoice_document_ids.length === 0) missing.push("Invoice or itemized receipt");
   if (!f.property_id) missing.push("Property");
@@ -140,13 +142,19 @@ export function missingDocumentation(f: ExpenseFacts, wo: AuthorizationContext =
     if (!filled(f.purchased_what)) missing.push("What was purchased");
     if (!filled(f.purchase_purpose)) missing.push("Purpose of the purchase");
   }
-  const auth = authorizationNeed(f, wo);
-  if (auth.required && !auth.satisfiedByWorkOrder && !f.approval_id && !filled(f.authorization_note))
-    missing.push(
-      auth.who === "owner"
-        ? "Owner authorization evidence (required by the Maintenance Authority Policy)"
-        : "Supervisor approval evidence (required by the Maintenance Authority Policy)",
-    );
+  // The backend (`expense_authorization_status`) is authoritative; when supplied it wins.
+  // A written note or an unverified approval link never satisfies a required approval.
+  if (serverAuth) {
+    if (serverAuth.required && !serverAuth.ok) missing.push(`Authorization: ${serverAuth.reason}`);
+  } else {
+    const auth = authorizationNeed(f, wo);
+    if (auth.required && !auth.satisfiedByWorkOrder)
+      missing.push(
+        auth.who === "owner"
+          ? "Owner authorization evidence (required by the Maintenance Authority Policy)"
+          : "Supervisor approval evidence (required by the Maintenance Authority Policy)",
+      );
+  }
   if (f.photos_required && f.photo_document_ids.length === 0) missing.push("Photos (required by this workflow)");
   return missing;
 }
