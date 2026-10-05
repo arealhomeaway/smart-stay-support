@@ -14807,6 +14807,10 @@ export type Database = {
         Args: { _on: boolean; _reason: string; _user: string }
         Returns: undefined
       }
+      set_demo_staff_access: {
+        Args: { _on: boolean; _reason: string; _user: string }
+        Returns: undefined
+      }
       set_owner_attention: {
         Args: { _id: string; _on: boolean }
         Returns: undefined
