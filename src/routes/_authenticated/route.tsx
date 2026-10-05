@@ -16,12 +16,22 @@ export const Route = createFileRoute("/_authenticated")({
     // A signed-in account with no authorised role or portal membership never
     // sees the Operations shell — it lands on a neutral "Awaiting access"
     // page. Nothing is granted here; the invite flow stays the only way in.
-    const [{ data: roleRows }, director] = await Promise.all([
+    const [{ data: roleRows }, director, opsDirector, finance] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", data.user.id),
       supabase.rpc("is_onboarding_director", { _user_id: data.user.id }),
+      supabase.rpc("is_director", { _user_id: data.user.id }),
+      supabase.rpc("is_accounting", { _user_id: data.user.id }),
     ]);
     const roles = (roleRows ?? []).map((r) => r.role as AppRole);
-    const access = { roles, seats: { onboardingDirector: director.data === true } };
+    // Seats grant areas too (e.g. Finance), so the route gate must see them.
+    const access = {
+      roles,
+      seats: {
+        onboardingDirector: director.data === true,
+        opsDirector: opsDirector.data === true,
+        finance: finance.data === true,
+      },
+    };
     if (
       portalsFor(roles).length === 0 &&
       !access.seats.onboardingDirector &&
