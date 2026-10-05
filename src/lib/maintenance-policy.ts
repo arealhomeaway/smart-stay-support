@@ -248,3 +248,22 @@ export function authorityLadder(policy: AuthorityPolicy = MAINTENANCE_POLICY): s
     `Emergency — mitigate now under a documented exception: reason, scope, amount, who decided, evidence.`,
   ];
 }
+
+/**
+ * The stored policy (app_settings `maintenance_authority_policy`) is the one
+ * authoritative copy: the database enforces it for Finance, and the app shell
+ * loads it here on sign-in so every screen evaluates the same numbers. The
+ * literals above are only a fallback until that load completes.
+ */
+export function applyStoredMaintenancePolicy(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  const sup = Number(v.supervisorApprovalThreshold);
+  const own = Number(v.ownerApprovalThreshold);
+  if (!Number.isFinite(sup) || !Number.isFinite(own) || sup < 0 || own < sup) return false;
+  const target = MAINTENANCE_POLICY as unknown as Record<string, unknown>;
+  target.supervisorApprovalThreshold = sup;
+  target.ownerApprovalThreshold = own;
+  if (typeof v.version === "string" && v.version) target.version = v.version;
+  return true;
+}
