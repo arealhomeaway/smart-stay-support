@@ -967,33 +967,95 @@ export type Database = {
           },
         ]
       }
+      claim_waivers: {
+        Row: {
+          claim_id: string
+          context: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_notes: string | null
+          id: string
+          is_demo: boolean
+          reason: string
+          requested_by: string
+          status: string
+        }
+        Insert: {
+          claim_id: string
+          context?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_notes?: string | null
+          id?: string
+          is_demo?: boolean
+          reason: string
+          requested_by?: string
+          status?: string
+        }
+        Update: {
+          claim_id?: string
+          context?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_notes?: string | null
+          id?: string
+          is_demo?: boolean
+          reason?: string
+          requested_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_waivers_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claims: {
         Row: {
           actual_cost: number | null
           approved_amount: number | null
           assigned_to: string | null
+          booking_source: string | null
           category: string | null
           claim_type: string
           closed_at: string | null
+          contracting_party: string | null
           cost_snapshot: Json | null
           created_at: string
           created_by: string | null
           currency: string
           damage_categories: string[] | null
           deadline_on: string | null
+          deadline_source: string | null
+          deadline_timezone: string
+          deadline_verified: boolean
           decided_on: string | null
+          decision_document_ids: string[]
           departure_review_id: string | null
+          deposit_payer: string | null
+          deposit_release_on: string | null
+          deposit_release_source: string | null
+          deposit_release_verified: boolean
           disposition: string | null
           disposition_reason: string | null
           estimated_amount: number | null
           evidence_document_ids: string[] | null
           external_reference: string | null
+          finance_decision_pending: string | null
           follow_up_on: string | null
           guest_name: string | null
           id: string
           incident_description: string | null
           incident_on: string | null
           is_demo: boolean
+          nonrecovery_reason: string | null
           ownerrez_booking_id: string | null
           property_id: string | null
           recovered_amount: number | null
@@ -1003,6 +1065,7 @@ export type Database = {
           stage: string
           stay_arrival: string | null
           stay_departure: string | null
+          submission_document_ids: string[]
           submitted_amount: number | null
           submitted_on: string | null
           ticket_id: string | null
@@ -1014,28 +1077,40 @@ export type Database = {
           actual_cost?: number | null
           approved_amount?: number | null
           assigned_to?: string | null
+          booking_source?: string | null
           category?: string | null
           claim_type: string
           closed_at?: string | null
+          contracting_party?: string | null
           cost_snapshot?: Json | null
           created_at?: string
           created_by?: string | null
           currency?: string
           damage_categories?: string[] | null
           deadline_on?: string | null
+          deadline_source?: string | null
+          deadline_timezone?: string
+          deadline_verified?: boolean
           decided_on?: string | null
+          decision_document_ids?: string[]
           departure_review_id?: string | null
+          deposit_payer?: string | null
+          deposit_release_on?: string | null
+          deposit_release_source?: string | null
+          deposit_release_verified?: boolean
           disposition?: string | null
           disposition_reason?: string | null
           estimated_amount?: number | null
           evidence_document_ids?: string[] | null
           external_reference?: string | null
+          finance_decision_pending?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
           id?: string
           incident_description?: string | null
           incident_on?: string | null
           is_demo?: boolean
+          nonrecovery_reason?: string | null
           ownerrez_booking_id?: string | null
           property_id?: string | null
           recovered_amount?: number | null
@@ -1045,6 +1120,7 @@ export type Database = {
           stage?: string
           stay_arrival?: string | null
           stay_departure?: string | null
+          submission_document_ids?: string[]
           submitted_amount?: number | null
           submitted_on?: string | null
           ticket_id?: string | null
@@ -1056,28 +1132,40 @@ export type Database = {
           actual_cost?: number | null
           approved_amount?: number | null
           assigned_to?: string | null
+          booking_source?: string | null
           category?: string | null
           claim_type?: string
           closed_at?: string | null
+          contracting_party?: string | null
           cost_snapshot?: Json | null
           created_at?: string
           created_by?: string | null
           currency?: string
           damage_categories?: string[] | null
           deadline_on?: string | null
+          deadline_source?: string | null
+          deadline_timezone?: string
+          deadline_verified?: boolean
           decided_on?: string | null
+          decision_document_ids?: string[]
           departure_review_id?: string | null
+          deposit_payer?: string | null
+          deposit_release_on?: string | null
+          deposit_release_source?: string | null
+          deposit_release_verified?: boolean
           disposition?: string | null
           disposition_reason?: string | null
           estimated_amount?: number | null
           evidence_document_ids?: string[] | null
           external_reference?: string | null
+          finance_decision_pending?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
           id?: string
           incident_description?: string | null
           incident_on?: string | null
           is_demo?: boolean
+          nonrecovery_reason?: string | null
           ownerrez_booking_id?: string | null
           property_id?: string | null
           recovered_amount?: number | null
@@ -1087,6 +1175,7 @@ export type Database = {
           stage?: string
           stay_arrival?: string | null
           stay_departure?: string | null
+          submission_document_ids?: string[]
           submitted_amount?: number | null
           submitted_on?: string | null
           ticket_id?: string | null
@@ -3655,11 +3744,15 @@ export type Database = {
       }
       expense_recoveries: {
         Row: {
+          accounting_reference: string | null
+          claim_id: string | null
+          corrects_id: string | null
           created_at: string
           created_by: string | null
           expected_amount: number
-          expense_id: string
+          expense_id: string | null
           id: string
+          is_demo: boolean
           note: string | null
           party: string
           received_amount: number
@@ -3667,11 +3760,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accounting_reference?: string | null
+          claim_id?: string | null
+          corrects_id?: string | null
           created_at?: string
           created_by?: string | null
           expected_amount?: number
-          expense_id: string
+          expense_id?: string | null
           id?: string
+          is_demo?: boolean
           note?: string | null
           party: string
           received_amount?: number
@@ -3679,11 +3776,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accounting_reference?: string | null
+          claim_id?: string | null
+          corrects_id?: string | null
           created_at?: string
           created_by?: string | null
           expected_amount?: number
-          expense_id?: string
+          expense_id?: string | null
           id?: string
+          is_demo?: boolean
           note?: string | null
           party?: string
           received_amount?: number
@@ -3691,6 +3792,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "expense_recoveries_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_recoveries_corrects_id_fkey"
+            columns: ["corrects_id"]
+            isOneToOne: false
+            referencedRelation: "expense_recoveries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expense_recoveries_expense_id_fkey"
             columns: ["expense_id"]
@@ -13739,6 +13854,10 @@ export type Database = {
         Returns: string
       }
       create_owner_program: { Args: { _property_id: string }; Returns: Json }
+      decide_claim_waiver: {
+        Args: { _approve: boolean; _notes: string; _waiver_id: string }
+        Returns: undefined
+      }
       decide_onboarding_financial_request: {
         Args: {
           _approved: boolean
@@ -14164,6 +14283,10 @@ export type Database = {
       reorder_arha_opportunities: {
         Args: { _ids: string[]; _property_id: string }
         Returns: undefined
+      }
+      request_claim_waiver: {
+        Args: { _claim_id: string; _context?: string; _reason: string }
+        Returns: string
       }
       request_expense_clarification: {
         Args: {
