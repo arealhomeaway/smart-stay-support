@@ -25,6 +25,7 @@ import {
   awaitingReceipt,
   deadlineVerification,
   financiallySettled,
+  financeTreatmentPending,
   formatDate,
   formatMoney,
   guidedStep,
@@ -261,6 +262,7 @@ export function ClaimWorkflowPanel({
   const pendingWaiver = (waivers.data ?? []).find((w) => w.status === "pending");
   const settled = financiallySettled(claim);
   const owed = awaitingReceipt(claim);
+  const treatmentPending = financeTreatmentPending(claim);
   const postSubmit = !["evidence", "ready"].includes(step);
 
   return (
@@ -278,8 +280,13 @@ export function ClaimWorkflowPanel({
           {settled ? "Financially settled" : "Not financially settled"}
         </Chip>
         {owed > 0 ? <Chip className={stateChip("waiting")}>Approved, not yet received {formatMoney(owed)}</Chip> : null}
+        {treatmentPending === "treatment" ? (
+          <Chip className={stateChip("waiting")}>Finance treatment of unrecovered amount pending</Chip>
+        ) : treatmentPending === "leadership" ? (
+          <Chip className={stateChip("waiting")}>Leadership decision pending</Chip>
+        ) : null}
         {claim.finance_decision_pending ? (
-          <Chip className={stateChip("waiting")}>Finance decision pending</Chip>
+          <Chip className={stateChip("waiting")}>{claim.finance_decision_pending}</Chip>
         ) : null}
       </div>
 
@@ -462,19 +469,27 @@ export function ClaimWorkflowPanel({
       <div className="space-y-2 rounded-md border p-3">
         <h4 className="text-sm font-semibold">Waiver</h4>
         <p className="text-[11px] text-muted-foreground">
-          A waiver decision never assigns the cost to the owner or ARHA — Finance treatment stays separate.
+          Approval only stops the recovery effort. It never assigns the cost to the owner or ARHA — Finance records the treatment.
         </p>
         {(waivers.data ?? []).map((w) => (
           <div key={w.id} className="rounded border px-2 py-1 text-xs">
             <p>
               <Chip className={w.status === "pending" ? stateChip("waiting") : w.status === "approved" ? stateChip("done") : stateChip("blocked")}>
-                {w.status}
+                {w.status === "approved" ? "Waiver approved — Finance treatment pending" : w.status}
               </Chip>{" "}
               {w.reason} — {displayName(people.find((p) => p.id === w.requested_by))}
             </p>
             {w.context ? <p className="text-muted-foreground">{w.context}</p> : null}
+            {w.routing_basis === "exception" && w.status === "pending" ? (
+              <p className="mt-1 font-medium text-destructive">Routing exception — {w.routing_note}</p>
+            ) : w.routed_to ? (
+              <p className="text-muted-foreground">
+                Routed to {displayName(people.find((p) => p.id === w.routed_to))}
+                {w.routing_note ? ` · ${w.routing_note}` : ""}
+              </p>
+            ) : null}
             {w.decision_notes ? <p>Supervisor: {w.decision_notes}</p> : null}
-            {w.status === "pending" && isSupervisor && w.requested_by !== userId ? (
+            {w.status === "pending" && w.requested_by !== userId && (w.routed_to === userId || access.seats.opsDirector) ? (
               <div className="mt-1 space-y-1">
                 <Textarea rows={2} placeholder="Decision notes (required)" value={wNotes[w.id] ?? ""} onChange={(e) => setWNotes((n) => ({ ...n, [w.id]: e.target.value }))} />
                 <div className="flex gap-2">
