@@ -83,7 +83,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   // admin. Sharing the query removes that failure mode, and keeps entering
   // demo mode independent of anything seed-related.
   const rolesQuery = useMyRoles();
-  const canDemo = canOperateDemo(rolesQuery.data?.roles ?? []);
+  const canDemo = canOperateDemo(rolesQuery.data?.roles ?? [], rolesQuery.data?.demoFinanceTester);
 
   const statusQuery = useQuery({
     queryKey: ["demo-status"],
@@ -93,7 +93,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   });
 
   const demoMode = resolveDemoMode({ canDemo, flag });
-  const demoReady = flagRead && (!flag || !rolesQuery.isLoading);
+  const demoReady = flagRead && (!flag || (!rolesQuery.isLoading));
 
   const seedFn = useServerFn(seedDemoEnvironment);
   const resetFn = useServerFn(resetDemoEnvironment);

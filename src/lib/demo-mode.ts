@@ -17,8 +17,9 @@ export const DEMO_FLAG_EVENT = "resolve:demo-mode";
  * admin detection can never get stuck behind a seed-related failure or a
  * slow/one-shot network call.
  */
-export function canOperateDemo(actualRoles: readonly string[]): boolean {
-  return actualRoles.includes("admin");
+export function canOperateDemo(actualRoles: readonly string[], demoFinanceTester = false): boolean {
+  // Admins, plus synthetic Finance accounts the database has designated (audited allowlist).
+  return actualRoles.includes("admin") || demoFinanceTester === true;
 }
 
 /**

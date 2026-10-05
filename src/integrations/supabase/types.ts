@@ -7135,6 +7135,64 @@ export type Database = {
           },
         ]
       }
+      owner_completion_reviews: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          follow_up_task_id: string | null
+          id: string
+          internal_note: string | null
+          is_demo: boolean
+          owner_feedback_message_id: string | null
+          status: string
+          work_item_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          follow_up_task_id?: string | null
+          id?: string
+          internal_note?: string | null
+          is_demo?: boolean
+          owner_feedback_message_id?: string | null
+          status: string
+          work_item_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          follow_up_task_id?: string | null
+          id?: string
+          internal_note?: string | null
+          is_demo?: boolean
+          owner_feedback_message_id?: string | null
+          status?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_completion_reviews_follow_up_task_id_fkey"
+            columns: ["follow_up_task_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_completion_reviews_owner_feedback_message_id_fkey"
+            columns: ["owner_feedback_message_id"]
+            isOneToOne: false
+            referencedRelation: "owner_request_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_completion_reviews_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_contact_alerts: {
         Row: {
           body: string
@@ -14090,6 +14148,7 @@ export type Database = {
         Args: { _project_id: string }
         Returns: undefined
       }
+      my_demo_access: { Args: never; Returns: Json }
       notify_staff: {
         Args: {
           _actor_id: string
@@ -14136,6 +14195,30 @@ export type Database = {
       owner_badge_refresh_version: {
         Args: { _actor_id: string; _program_id: string }
         Returns: string
+      }
+      owner_completions_for_review: {
+        Args: { _demo: boolean; _property?: string }
+        Returns: {
+          assignment_exception: boolean
+          completed_at: string
+          evidence_count: number
+          follow_up_task_id: string
+          latest_feedback: string
+          latest_feedback_at: string
+          latest_internal_note: string
+          new_owner_activity: boolean
+          owner_name: string
+          property_id: string
+          property_name: string
+          responsible_id: string
+          responsible_name: string
+          review_status: string
+          reviewed_at: string
+          reviewed_by_name: string
+          source_task_id: string
+          title: string
+          work_item_id: string
+        }[]
       }
       owner_document_access: {
         Args: { _actor_id?: string; _document_id: string }
@@ -14402,6 +14485,16 @@ export type Database = {
           _tasks: Json
         }
         Returns: undefined
+      }
+      record_owner_completion_review: {
+        Args: {
+          _follow_up_task_id?: string
+          _id: string
+          _internal_note?: string
+          _owner_feedback?: string
+          _status: string
+        }
+        Returns: string
       }
       record_owner_email_decision: {
         Args: {
@@ -14694,6 +14787,10 @@ export type Database = {
           _property: string
           _tracking_from: string
         }
+        Returns: undefined
+      }
+      set_demo_finance_access: {
+        Args: { _on: boolean; _reason: string; _user: string }
         Returns: undefined
       }
       set_owner_attention: {

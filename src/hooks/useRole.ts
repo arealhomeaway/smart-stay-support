@@ -34,12 +34,14 @@ export function useMyRoles() {
           onboardingDirector: false,
           opsDirector: false,
           finance: false,
+          demoFinanceTester: false,
         };
-      const [{ data, error }, director, ops, finance] = await Promise.all([
+      const [{ data, error }, director, ops, finance, demoAccess] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", auth.user.id),
         supabase.rpc("is_onboarding_director", { _user_id: auth.user.id }),
         supabase.rpc("is_director", { _user_id: auth.user.id }),
         supabase.rpc("is_accounting", { _user_id: auth.user.id }),
+        supabase.rpc("my_demo_access"),
       ]);
       if (error) throw error;
       return {
@@ -52,6 +54,8 @@ export function useMyRoles() {
         opsDirector: ops.data === true,
         // Finance lead or Accounting seat.
         finance: finance.data === true,
+        // Designated synthetic Finance test account allowed into the demo lens.
+        demoFinanceTester: Boolean((demoAccess.data as { finance_tester?: boolean } | null)?.finance_tester),
       };
     },
   });
@@ -76,7 +80,7 @@ export function useRole() {
   // The demo environment exists to be worked. An ordinary role preview is a
   // look, never a change; the demo lens is a look at *demo records*, which the
   // previewer is meant to act on.
-  const demoMode = canOperateDemo(actualRoles) && demoFlag;
+  const demoMode = canOperateDemo(actualRoles, query.data?.demoFinanceTester) && demoFlag;
   const roles: AppRole[] = previewing && viewAs ? [viewAs] : actualRoles;
   // A role preview shows the previewed role only, never the viewer's own seat.
   const seats: AccessSeats = {
