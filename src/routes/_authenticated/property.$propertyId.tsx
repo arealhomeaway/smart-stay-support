@@ -624,8 +624,14 @@ function OnboardingTab({ hub }: { hub: Hub }) {
         </CardContent>
       </Card>
 
-      {hub.viewer.staff && (
-        <Link to="/onboarding" className="inline-block text-sm text-primary underline">
+      {hub.viewer.staff && <CompletedOnboardingRecords propertyId={hub.property.id} />}
+
+      {hub.viewer.staff && can("onboarding_workspace") && (
+        <Link
+          to="/onboarding/$propertyId"
+          params={{ propertyId: hub.property.id }}
+          className="inline-block text-sm text-primary underline"
+        >
           Open the onboarding workspace
         </Link>
       )}
