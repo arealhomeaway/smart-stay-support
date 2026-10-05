@@ -3869,6 +3869,7 @@ export type Database = {
           finance_treatment_note: string | null
           financial_request_id: string | null
           id: string
+          invoice_date: string | null
           invoice_document_ids: string[]
           is_demo: boolean
           is_estimate: boolean
@@ -3927,6 +3928,7 @@ export type Database = {
           finance_treatment_note?: string | null
           financial_request_id?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_document_ids?: string[]
           is_demo?: boolean
           is_estimate?: boolean
@@ -3985,6 +3987,7 @@ export type Database = {
           finance_treatment_note?: string | null
           financial_request_id?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_document_ids?: string[]
           is_demo?: boolean
           is_estimate?: boolean
@@ -10016,6 +10019,120 @@ export type Database = {
         }
         Relationships: []
       }
+      statement_dispositions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          defer_to_period: string | null
+          disposition: string
+          exclusion_treatment: string | null
+          expense_id: string
+          id: string
+          internal_note: string | null
+          is_demo: boolean
+          owner_description: string | null
+          period: string
+          property_id: string
+          recovery_treatment: string | null
+          superseded_at: string | null
+          superseded_by: string | null
+        }
+        Insert: {
+          decided_at?: string
+          decided_by: string
+          defer_to_period?: string | null
+          disposition: string
+          exclusion_treatment?: string | null
+          expense_id: string
+          id?: string
+          internal_note?: string | null
+          is_demo?: boolean
+          owner_description?: string | null
+          period: string
+          property_id: string
+          recovery_treatment?: string | null
+          superseded_at?: string | null
+          superseded_by?: string | null
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          defer_to_period?: string | null
+          disposition?: string
+          exclusion_treatment?: string | null
+          expense_id?: string
+          id?: string
+          internal_note?: string | null
+          is_demo?: boolean
+          owner_description?: string | null
+          period?: string
+          property_id?: string
+          recovery_treatment?: string | null
+          superseded_at?: string | null
+          superseded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statement_dispositions_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "statement_dispositions_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "statement_dispositions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statement_reconciliations: {
+        Row: {
+          exception_resolution: string | null
+          id: string
+          invalidated_at: string | null
+          invalidated_reason: string | null
+          is_demo: boolean
+          period: string
+          property_id: string
+          reviewed_at: string
+          reviewed_by: string
+          snapshot: Json
+          source_reference: string
+          status: string
+        }
+        Insert: {
+          exception_resolution?: string | null
+          id?: string
+          invalidated_at?: string | null
+          invalidated_reason?: string | null
+          is_demo?: boolean
+          period: string
+          property_id: string
+          reviewed_at?: string
+          reviewed_by: string
+          snapshot: Json
+          source_reference: string
+          status?: string
+        }
+        Update: {
+          exception_resolution?: string | null
+          id?: string
+          invalidated_at?: string | null
+          invalidated_reason?: string | null
+          is_demo?: boolean
+          period?: string
+          property_id?: string
+          reviewed_at?: string
+          reviewed_by?: string
+          snapshot?: Json
+          source_reference?: string
+          status?: string
+        }
+        Relationships: []
+      }
       str_participation_reports: {
         Row: {
           blockers: Json
@@ -13824,6 +13941,15 @@ export type Database = {
         }
         Returns: string
       }
+      confirm_statement_reconciliation: {
+        Args: {
+          _exception_resolution?: string
+          _period: string
+          _property: string
+          _source_reference: string
+        }
+        Returns: string
+      }
       confirm_vendor_telegram: {
         Args: { _org: string; _status: string }
         Returns: undefined
@@ -14321,6 +14447,19 @@ export type Database = {
           _note: string
           _outcome: string
           _work_order_id: string
+        }
+        Returns: string
+      }
+      record_statement_disposition: {
+        Args: {
+          _defer_to?: string
+          _disposition: string
+          _exclusion_treatment?: string
+          _expense: string
+          _internal_note?: string
+          _owner_description?: string
+          _period: string
+          _recovery_treatment?: string
         }
         Returns: string
       }
