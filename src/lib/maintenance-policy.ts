@@ -258,12 +258,12 @@ export function authorityLadder(policy: AuthorityPolicy = MAINTENANCE_POLICY): s
 export function applyStoredMaintenancePolicy(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
-  const sup = Number(v.supervisorApprovalThreshold);
-  const own = Number(v.ownerApprovalThreshold);
+  const sup = Number(v["supervisorApprovalThreshold"]);
+  const own = Number(v["ownerApprovalThreshold"]);
   if (!Number.isFinite(sup) || !Number.isFinite(own) || sup < 0 || own < sup) return false;
   const target = MAINTENANCE_POLICY as unknown as Record<string, unknown>;
-  target.supervisorApprovalThreshold = sup;
-  target.ownerApprovalThreshold = own;
-  if (typeof v.version === "string" && v.version) target.version = v.version;
+  target["supervisorApprovalThreshold"] = sup;
+  target["ownerApprovalThreshold"] = own;
+  if (typeof v['version'] === "string" && v['version']) target["version"] = v['version'];
   return true;
 }
