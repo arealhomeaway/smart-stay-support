@@ -855,6 +855,13 @@
       "when": 1791220778887,
       "tag": "0121_statement_readiness",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1791221788498,
+      "tag": "0122_statement_disposition_documentation_gate",
+      "breakpoints": true
     }
   ]
 }

@@ -96,7 +96,8 @@ export function StatementReadiness({ demoMode, onOpenExpense }: { demoMode: bool
           links: (e.expense_links ?? []).length,
           openClarifications: (tasks.data ?? []).filter((t) => t.source_id === e.id && !CLOSED_TASK.includes(t.status)).length,
           openClaims: myClaims.map((c) => ({ id: c.id, title: c.title })),
-          expected: r.filter((x) => !x.corrects_id).reduce((s, x) => s + Number(x.expected_amount), 0),
+          // expected is capped at this expense; a claim-level figure is never repeated per receipt
+          expected: Math.min(Number(e.amount ?? 0), Math.max(0, ...r.filter((x) => !x.corrects_id).map((x) => Number(x.expected_amount)))),
           received: r.reduce((s, x) => s + Number(x.received_amount), 0),
           raw: e,
         } as never;
@@ -248,7 +249,10 @@ function ItemCard({ item, period, current, canDecide, onOpen, onDone }: {
           <Input aria-label="Internal note" placeholder={disp === "hold" ? "What the hold is waiting on (internal)" : disp === "exclude" ? "Reason for exclusion (internal)" : "Internal note"} value={note} onChange={(e) => setNote(e.target.value)} />
           {disp === "exclude" ? <Input aria-label="Exclusion treatment" placeholder="Recorded financial treatment" value={excl} onChange={(e) => setExcl(e.target.value)} /> : null}
           {disp === "include" && needsTreatment ? <Input aria-label="Recovery treatment" placeholder="Finance treatment of the outstanding recovery / open claim" value={recTreat} onChange={(e) => setRecTreat(e.target.value)} /> : null}
-          <Button size="sm" className="sm:col-span-2" disabled={save.isPending} onClick={() => save.mutate()}>Record disposition</Button>
+          {disp === "include" && docReadiness(item) !== "ready" ? (
+            <p className="text-xs text-destructive sm:col-span-2">Documentation is incomplete — hold it until Operations supplies the missing facts.</p>
+          ) : null}
+          <Button size="sm" className="sm:col-span-2" disabled={save.isPending || (disp === "include" && docReadiness(item) !== "ready")} onClick={() => save.mutate()}>Record disposition</Button>
         </div>
       ) : (
         <p className="text-[11px] text-muted-foreground">Only Finance records statement treatment. Operations supplies facts through clarification Tasks.</p>
