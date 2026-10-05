@@ -124,3 +124,42 @@ export const sendTeammateAccountEmail = createServerFn({ method: "POST" })
     }
     return { ok: true as const, disabled: r.disabled };
   });
+
+/**
+ * Admin-only: create a synthetic QA account (only @resolve-test.invalid) through
+ * the auth admin API. No invitation or email is sent; the account starts with
+ * an unguessable password nobody knows (sessions are minted by the QA harness).
+ */
+export const createSyntheticTestAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        email: z.string().trim().toLowerCase().regex(/^[a-z0-9.+-]+@resolve-test\.invalid$/),
+        fullName: z.string().trim().min(2).max(120),
+        role: z.enum(["vendor", "tech", "manager", "owner"]),
+        reason: z.string().trim().min(5).max(500),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { writeAudit } = await import("./audit.server");
+    const password = crypto.randomUUID() + crypto.randomUUID();
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: data.fullName, synthetic: true },
+    });
+    if (error || !created.user) throw new Error(error?.message ?? "Could not create the account.");
+    await applyRole(created.user.id, data.role);
+    const label = await actorLabel(context.supabase, context.userId);
+    await writeAudit({
+      actorId: context.userId, actorLabel: label, action: "user.synthetic_created",
+      entityType: "user", entityId: created.user.id, entityLabel: data.email,
+      reason: data.reason, after: { role: data.role, invitation_sent: false },
+    });
+    return { ok: true as const, userId: created.user.id };
+  });
