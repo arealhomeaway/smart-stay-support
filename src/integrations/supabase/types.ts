@@ -14159,6 +14159,7 @@ export type Database = {
         Returns: undefined
       }
       my_demo_access: { Args: never; Returns: Json }
+      my_spending_approval_authority: { Args: never; Returns: boolean }
       notify_staff: {
         Args: {
           _actor_id: string
