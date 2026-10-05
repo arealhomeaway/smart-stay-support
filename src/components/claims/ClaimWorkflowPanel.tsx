@@ -169,6 +169,44 @@ export function ClaimWorkflowPanel({
   const [rExpense, setRExpense] = useState("none");
   const [rNote, setRNote] = useState("");
   const [rCorrects, setRCorrects] = useState("none");
+  // --- Finance treatment / leadership ---
+  const [fTreat, setFTreat] = useState("");
+  const [fNote, setFNote] = useState("");
+  const [fLead, setFLead] = useState(false);
+  const [lDec, setLDec] = useState("");
+
+  const treat = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("record_claim_finance_treatment", {
+        _claim_id: claim.id,
+        _treatment: fTreat,
+        _note: fNote,
+        _needs_leadership: fLead,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setFTreat("");
+      setFNote("");
+      setFLead(false);
+      refreshAll();
+      toast.success("Finance treatment recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const lead = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("record_claim_leadership_decision", { _claim_id: claim.id, _decision: lDec });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setLDec("");
+      refreshAll();
+      toast.success("Leadership decision recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const requestWaiver = useMutation({
     mutationFn: async () => {
@@ -183,7 +221,7 @@ export function ClaimWorkflowPanel({
       setWReason("");
       setWContext("");
       refreshAll();
-      toast.success("Waiver sent to the Operations Supervisor");
+      toast.success("Waiver request recorded and routed");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -560,6 +598,44 @@ export function ClaimWorkflowPanel({
         ) : (
           <p className="text-[11px] text-muted-foreground">Only Finance records money received.</p>
         )}
+      </div>
+
+      {/* Finance treatment of any unrecovered amount */}
+      <div className="space-y-2 rounded-md border p-3">
+        <h4 className="text-sm font-semibold">Finance treatment of unrecovered amount</h4>
+        {claim.finance_treated_at ? (
+          <p className="text-xs">
+            {claim.finance_treatment} — {claim.finance_treatment_note} · {formatDate(claim.finance_treated_at)}
+            {claim.leadership_decision_required
+              ? claim.leadership_decided_at
+                ? ` · Leadership: ${claim.leadership_decision}`
+                : " · Leadership decision pending"
+              : ""}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {treatmentPending ? "Pending — Finance has not recorded how the unrecovered amount is treated." : "Nothing unrecovered."}
+          </p>
+        )}
+        {isFinance && treatmentPending ? (
+          <div className="space-y-1">
+            <Input aria-label="Finance treatment" placeholder="Treatment (as decided by Finance)" value={fTreat} onChange={(e) => setFTreat(e.target.value)} />
+            <Textarea rows={2} placeholder="Reasoning (required)" value={fNote} onChange={(e) => setFNote(e.target.value)} />
+            <div className="flex items-center gap-2 text-xs">
+              <Checkbox id="cw-lead" checked={fLead} onCheckedChange={(v) => setFLead(v === true)} />
+              <label htmlFor="cw-lead">Needs a leadership decision</label>
+            </div>
+            <Button size="sm" disabled={!fTreat.trim() || !fNote.trim() || treat.isPending} onClick={() => treat.mutate()}>
+              Record Finance treatment
+            </Button>
+          </div>
+        ) : null}
+        {access.seats.opsDirector && treatmentPending === "leadership" ? (
+          <div className="space-y-1">
+            <Textarea rows={2} placeholder="Leadership decision" value={lDec} onChange={(e) => setLDec(e.target.value)} />
+            <Button size="sm" disabled={!lDec.trim() || lead.isPending} onClick={() => lead.mutate()}>Record leadership decision</Button>
+          </div>
+        ) : null}
       </div>
 
       {/* Closure */}
