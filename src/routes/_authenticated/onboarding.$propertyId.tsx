@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, CircleAlert, Plus, XCircle } from "lucide-react";
 import { Chip, EmptyState, LoadingPage, PageHeader, ProgressRing } from "@/components/ui/page";
+import { PropertyOwnerCompletions } from "@/components/onboarding/PropertyOwnerCompletions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackControl, useRecordOrigin } from "@/components/nav/NavContext";
 import { Button } from "@/components/ui/button";
@@ -588,6 +589,7 @@ function PropertyWorkspace() {
               onSave={(values) => saveTask.mutate({ data: values } as never)}
             />
           </div>
+          <PropertyOwnerCompletions propertyId={current.id} isDemo={Boolean((current as { is_demo?: boolean }).is_demo)} />
           {life.locked && (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
               This onboarding plan is locked

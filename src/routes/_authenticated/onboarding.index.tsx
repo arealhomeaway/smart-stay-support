@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button";
 import { HandoffGatePanel } from "@/components/onboarding/HandoffGatePanel";
 import { ExternalRecordsPanel } from "@/components/onboarding/ExternalRecordsPanel";
 import { DirectorHub, type Lens } from "@/components/onboarding/DirectorHub";
+import { useOwnerCompletions, needsAttention } from "@/components/onboarding/OwnerCompletionsReview";
+import { useDemo } from "@/components/DemoProvider";
 import { AddPropertyDialog } from "@/components/property/AddPropertyDialog";
 import { OnboardingActivityFeed } from "@/components/onboarding/OnboardingActivityFeed";
 
@@ -283,24 +285,7 @@ function Hub() {
             }
           />
 
-          <SectionCard
-            tone={myDecisions.length > 0 ? "critical" : "default"}
-            title="Needs my attention"
-            description="Items that need your decision or action."
-            bodyClassName="space-y-1.5"
-          >
-            {myDecisions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                You are clear. Nothing needs your decision or action right now.
-              </p>
-            ) : (
-              myDecisions.map((p) => (
-                <DecisionRow key={p.property.id} project={p} originToken={originToken} />
-              ))
-            )}
-          </SectionCard>
-
-          <OnboardingActivityFeed />
+          <OwnerCompletionsLink />
 
           <p className="text-sm text-muted-foreground">
             <span className="numeric font-semibold text-foreground">{activeProjects.length}</span>{" "}
@@ -368,7 +353,41 @@ function Hub() {
           />
         )}
       </div>
+      {lens !== "all" ? (
+        <>
+          <OnboardingActivityFeed />
+          <SectionCard
+            tone={myDecisions.length > 0 ? "critical" : "default"}
+            title="Needs my attention"
+            description="Items that need your decision or action."
+            bodyClassName="space-y-1.5"
+          >
+            {myDecisions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                You are clear. Nothing needs your decision or action right now.
+              </p>
+            ) : (
+              myDecisions.map((p) => (
+                <DecisionRow key={p.property.id} project={p} originToken={originToken} />
+              ))
+            )}
+          </SectionCard>
+
+        </>
+      ) : null}
     </div>
+  );
+}
+
+/** Count + link to the owner completions queue; kept small so the hub's main sections stay first. */
+function OwnerCompletionsLink() {
+  const { demoMode } = useDemo();
+  const q = useOwnerCompletions(demoMode);
+  const n = (q.data ?? []).filter(needsAttention).length;
+  return (
+    <Link to="/onboarding/owner-completions" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+      Owner completions to review ({n})
+    </Link>
   );
 }
 

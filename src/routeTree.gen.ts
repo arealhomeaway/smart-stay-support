@@ -57,6 +57,7 @@ import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authentic
 import { Route as GuestFeedbackIndexRouteImport } from './routes/guest-feedback.index'
 import { Route as GuestFeedbackTokenRouteImport } from './routes/guest-feedback.$token'
 import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated/claims.index'
+import { Route as AuthenticatedClaimsClosedRouteImport } from './routes/_authenticated/claims.closed'
 import { Route as AuthenticatedClaimsManagerRouteImport } from './routes/_authenticated/claims.manager'
 import { Route as AuthenticatedClaimsMyClaimsRouteImport } from './routes/_authenticated/claims.my-claims'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
@@ -67,6 +68,7 @@ import { Route as AuthenticatedLeadsPipelineRouteImport } from './routes/_authen
 import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated/onboarding.index'
 import { Route as AuthenticatedOnboardingPropertyIdRouteImport } from './routes/_authenticated/onboarding.$propertyId'
 import { Route as AuthenticatedOnboardingMyWorkRouteImport } from './routes/_authenticated/onboarding.my-work'
+import { Route as AuthenticatedOnboardingOwnerCompletionsRouteImport } from './routes/_authenticated/onboarding.owner-completions'
 import { Route as AuthenticatedOnboardingPropertiesRouteImport } from './routes/_authenticated/onboarding.properties'
 import { Route as AuthenticatedOnboardingTeamRouteImport } from './routes/_authenticated/onboarding.team'
 import { Route as AuthenticatedOnboardingTemplatesRouteImport } from './routes/_authenticated/onboarding.templates'
@@ -353,6 +355,12 @@ const AuthenticatedClaimsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedClaimsClosedRoute =
+  AuthenticatedClaimsClosedRouteImport.update({
+    id: '/closed',
+    path: '/closed',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedClaimsManagerRoute =
   AuthenticatedClaimsManagerRouteImport.update({
     id: '/manager',
@@ -409,6 +417,12 @@ const AuthenticatedOnboardingMyWorkRoute =
   AuthenticatedOnboardingMyWorkRouteImport.update({
     id: '/my-work',
     path: '/my-work',
+    getParentRoute: () => AuthenticatedOnboardingRoute,
+  } as any)
+const AuthenticatedOnboardingOwnerCompletionsRoute =
+  AuthenticatedOnboardingOwnerCompletionsRouteImport.update({
+    id: '/owner-completions',
+    path: '/owner-completions',
     getParentRoute: () => AuthenticatedOnboardingRoute,
   } as any)
 const AuthenticatedOnboardingPropertiesRoute =
@@ -641,6 +655,7 @@ export interface FileRoutesByFullPath {
   '/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
   '/guest-feedback/': typeof GuestFeedbackIndexRoute
+  '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -649,6 +664,7 @@ export interface FileRoutesByFullPath {
   '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
+  '/onboarding/owner-completions': typeof AuthenticatedOnboardingOwnerCompletionsRoute
   '/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
   '/onboarding/team': typeof AuthenticatedOnboardingTeamRoute
   '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
@@ -725,6 +741,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
   '/guest-feedback': typeof GuestFeedbackIndexRoute
+  '/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -733,6 +750,7 @@ export interface FileRoutesByTo {
   '/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
+  '/onboarding/owner-completions': typeof AuthenticatedOnboardingOwnerCompletionsRoute
   '/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
   '/onboarding/team': typeof AuthenticatedOnboardingTeamRoute
   '/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
@@ -817,6 +835,7 @@ export interface FileRoutesById {
   '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRouteWithChildren
   '/guest-feedback/$token': typeof GuestFeedbackTokenRoute
   '/guest-feedback/': typeof GuestFeedbackIndexRoute
+  '/_authenticated/claims/closed': typeof AuthenticatedClaimsClosedRoute
   '/_authenticated/claims/manager': typeof AuthenticatedClaimsManagerRoute
   '/_authenticated/claims/my-claims': typeof AuthenticatedClaimsMyClaimsRoute
   '/_authenticated/leads/manager': typeof AuthenticatedLeadsManagerRoute
@@ -825,6 +844,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/pipeline': typeof AuthenticatedLeadsPipelineRoute
   '/_authenticated/onboarding/$propertyId': typeof AuthenticatedOnboardingPropertyIdRoute
   '/_authenticated/onboarding/my-work': typeof AuthenticatedOnboardingMyWorkRoute
+  '/_authenticated/onboarding/owner-completions': typeof AuthenticatedOnboardingOwnerCompletionsRoute
   '/_authenticated/onboarding/properties': typeof AuthenticatedOnboardingPropertiesRoute
   '/_authenticated/onboarding/team': typeof AuthenticatedOnboardingTeamRoute
   '/_authenticated/onboarding/templates': typeof AuthenticatedOnboardingTemplatesRoute
@@ -909,6 +929,7 @@ export interface FileRouteTypes {
     | '/work-orders'
     | '/guest-feedback/$token'
     | '/guest-feedback/'
+    | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
     | '/leads/manager'
@@ -917,6 +938,7 @@ export interface FileRouteTypes {
     | '/leads/pipeline'
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
+    | '/onboarding/owner-completions'
     | '/onboarding/properties'
     | '/onboarding/team'
     | '/onboarding/templates'
@@ -993,6 +1015,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/guest-feedback/$token'
     | '/guest-feedback'
+    | '/claims/closed'
     | '/claims/manager'
     | '/claims/my-claims'
     | '/leads/manager'
@@ -1001,6 +1024,7 @@ export interface FileRouteTypes {
     | '/leads/pipeline'
     | '/onboarding/$propertyId'
     | '/onboarding/my-work'
+    | '/onboarding/owner-completions'
     | '/onboarding/properties'
     | '/onboarding/team'
     | '/onboarding/templates'
@@ -1084,6 +1108,7 @@ export interface FileRouteTypes {
     | '/_authenticated/work-orders'
     | '/guest-feedback/$token'
     | '/guest-feedback/'
+    | '/_authenticated/claims/closed'
     | '/_authenticated/claims/manager'
     | '/_authenticated/claims/my-claims'
     | '/_authenticated/leads/manager'
@@ -1092,6 +1117,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/pipeline'
     | '/_authenticated/onboarding/$propertyId'
     | '/_authenticated/onboarding/my-work'
+    | '/_authenticated/onboarding/owner-completions'
     | '/_authenticated/onboarding/properties'
     | '/_authenticated/onboarding/team'
     | '/_authenticated/onboarding/templates'
@@ -1486,6 +1512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsIndexRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/closed': {
+      id: '/_authenticated/claims/closed'
+      path: '/closed'
+      fullPath: '/claims/closed'
+      preLoaderRoute: typeof AuthenticatedClaimsClosedRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/manager': {
       id: '/_authenticated/claims/manager'
       path: '/manager'
@@ -1554,6 +1587,13 @@ declare module '@tanstack/react-router' {
       path: '/my-work'
       fullPath: '/onboarding/my-work'
       preLoaderRoute: typeof AuthenticatedOnboardingMyWorkRouteImport
+      parentRoute: typeof AuthenticatedOnboardingRoute
+    }
+    '/_authenticated/onboarding/owner-completions': {
+      id: '/_authenticated/onboarding/owner-completions'
+      path: '/owner-completions'
+      fullPath: '/onboarding/owner-completions'
+      preLoaderRoute: typeof AuthenticatedOnboardingOwnerCompletionsRouteImport
       parentRoute: typeof AuthenticatedOnboardingRoute
     }
     '/_authenticated/onboarding/properties': {
@@ -1777,12 +1817,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedClaimsRouteChildren {
+  AuthenticatedClaimsClosedRoute: typeof AuthenticatedClaimsClosedRoute
   AuthenticatedClaimsManagerRoute: typeof AuthenticatedClaimsManagerRoute
   AuthenticatedClaimsMyClaimsRoute: typeof AuthenticatedClaimsMyClaimsRoute
   AuthenticatedClaimsIndexRoute: typeof AuthenticatedClaimsIndexRoute
 }
 
 const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
+  AuthenticatedClaimsClosedRoute: AuthenticatedClaimsClosedRoute,
   AuthenticatedClaimsManagerRoute: AuthenticatedClaimsManagerRoute,
   AuthenticatedClaimsMyClaimsRoute: AuthenticatedClaimsMyClaimsRoute,
   AuthenticatedClaimsIndexRoute: AuthenticatedClaimsIndexRoute,
@@ -1813,6 +1855,7 @@ const AuthenticatedLeadsRouteWithChildren =
 interface AuthenticatedOnboardingRouteChildren {
   AuthenticatedOnboardingPropertyIdRoute: typeof AuthenticatedOnboardingPropertyIdRoute
   AuthenticatedOnboardingMyWorkRoute: typeof AuthenticatedOnboardingMyWorkRoute
+  AuthenticatedOnboardingOwnerCompletionsRoute: typeof AuthenticatedOnboardingOwnerCompletionsRoute
   AuthenticatedOnboardingPropertiesRoute: typeof AuthenticatedOnboardingPropertiesRoute
   AuthenticatedOnboardingTeamRoute: typeof AuthenticatedOnboardingTeamRoute
   AuthenticatedOnboardingTemplatesRoute: typeof AuthenticatedOnboardingTemplatesRoute
@@ -1826,6 +1869,8 @@ const AuthenticatedOnboardingRouteChildren: AuthenticatedOnboardingRouteChildren
     AuthenticatedOnboardingPropertyIdRoute:
       AuthenticatedOnboardingPropertyIdRoute,
     AuthenticatedOnboardingMyWorkRoute: AuthenticatedOnboardingMyWorkRoute,
+    AuthenticatedOnboardingOwnerCompletionsRoute:
+      AuthenticatedOnboardingOwnerCompletionsRoute,
     AuthenticatedOnboardingPropertiesRoute:
       AuthenticatedOnboardingPropertiesRoute,
     AuthenticatedOnboardingTeamRoute: AuthenticatedOnboardingTeamRoute,

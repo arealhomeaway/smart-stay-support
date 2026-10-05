@@ -38,6 +38,7 @@ function ClaimsLayout() {
         <SubLink to="/claims">Today</SubLink>
         <SubLink to="/claims/my-claims">My claims</SubLink>
         {isSupervisor ? <SubLink to="/claims/manager">Manager</SubLink> : null}
+        <SubLink to="/claims/closed">Closed</SubLink>
       </nav>
       <Outlet />
     </div>

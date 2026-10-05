@@ -74,6 +74,7 @@ function NewExpenseForm({ spec, onCreated, onCancel }: { spec: NewExpenseSpec; o
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
   const [invoiceRef, setInvoiceRef] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
   const [saving, setSaving] = useState(false);
   const amt = amount === "" ? null : Number(amount);
   const ok = canCreateExpense({ payee, property_id: propertyId, amount: amt, reason });
@@ -83,7 +84,7 @@ function NewExpenseForm({ spec, onCreated, onCancel }: { spec: NewExpenseSpec; o
       .from("expenses")
       .insert({
         expense_type: type, property_id: propertyId, payee: payee.trim() || null, amount: amt,
-        expense_date: date || null, reason: reason.trim() || null, vendor_invoice_ref: invoiceRef.trim() || null,
+        expense_date: date || null, invoice_date: invoiceDate || null, reason: reason.trim() || null, vendor_invoice_ref: invoiceRef.trim() || null,
         is_demo: spec.isDemo, created_by: access.userId,
       })
       .select("id")
@@ -109,6 +110,7 @@ function NewExpenseForm({ spec, onCreated, onCancel }: { spec: NewExpenseSpec; o
         <div><Label htmlFor="new-payee">Payee</Label><Input id="new-payee" value={payee} onChange={(x) => setPayee(x.target.value)} /></div>
         <div><Label htmlFor="new-amount">Amount</Label><Input id="new-amount" type="number" step="0.01" value={amount} onChange={(x) => setAmount(x.target.value)} /></div>
         <div><Label htmlFor="new-date">Expense / service date</Label><Input id="new-date" type="date" value={date} onChange={(x) => setDate(x.target.value)} /></div>
+        <div><Label htmlFor="new-invoice-date">Invoice date</Label><Input id="new-invoice-date" type="date" value={invoiceDate} onChange={(x) => setInvoiceDate(x.target.value)} /></div>
         <div><Label htmlFor="new-ref">Vendor invoice number</Label><Input id="new-ref" value={invoiceRef} onChange={(x) => setInvoiceRef(x.target.value)} /></div>
       </div>
       <div><Label htmlFor="new-reason">Reason</Label><Textarea id="new-reason" rows={2} value={reason} onChange={(x) => setReason(x.target.value)} /></div>
@@ -294,6 +296,11 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
           <div><Label>Payee</Label><Input value={txt("payee")} onChange={(x) => set("payee", x.target.value)} /></div>
           <div><Label>Amount</Label><Input type="number" step="0.01" value={v.amount ?? ""} onChange={(x) => set("amount", x.target.value === "" ? null : Number(x.target.value))} /></div>
           <div><Label>Expense / service date</Label><Input type="date" value={txt("expense_date")} onChange={(x) => set("expense_date", x.target.value || null)} /></div>
+          <div>
+            <Label htmlFor="edit-invoice-date">Invoice date</Label>
+            <Input id="edit-invoice-date" type="date" value={txt("invoice_date")} onChange={(x) => set("invoice_date" as keyof Full, (x.target.value || null) as never)} />
+            <p className="mt-1 text-xs text-muted-foreground">The date printed on the invoice. Leave blank if unknown.</p>
+          </div>
           <div><Label>Vendor invoice number</Label><Input value={txt("vendor_invoice_ref")} onChange={(x) => set("vendor_invoice_ref", x.target.value)} /></div>
           <div>
             <Label>Proposed statement period (optional)</Label>
