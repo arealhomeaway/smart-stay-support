@@ -93,7 +93,7 @@ export function ClaimWorkflowPanel({
         .eq("target_id", claim.id);
       const ids = (links ?? []).map((l) => l.expense_id);
       if (!ids.length) return [];
-      const { data } = await supabase.from("expenses").select("id,amount,payee_name").in("id", ids);
+      const { data } = await supabase.from("expenses").select("id,amount,payee").in("id", ids);
       return data ?? [];
     },
   });
@@ -261,7 +261,7 @@ export function ClaimWorkflowPanel({
       <ol className="flex flex-wrap gap-1">
         {GUIDED_STEPS.map((s) => (
           <li key={s}>
-            <Chip className={s === step ? stateChip("active") : stateChip("idle")}>{GUIDED_STEP_LABELS[s]}</Chip>
+            <Chip className={s === step ? stateChip("active") : stateChip("info")}>{GUIDED_STEP_LABELS[s]}</Chip>
           </li>
         ))}
       </ol>
@@ -516,7 +516,7 @@ export function ClaimWorkflowPanel({
               <SelectContent>
                 <SelectItem value="none">No expense allocation</SelectItem>
                 {(linkedExpenses.data ?? []).map((x) => (
-                  <SelectItem key={x.id} value={x.id}>{x.payee_name ?? "Expense"} · {formatMoney(Number(x.amount))}</SelectItem>
+                  <SelectItem key={x.id} value={x.id}>{x.payee ?? "Expense"} · {formatMoney(Number(x.amount))}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
