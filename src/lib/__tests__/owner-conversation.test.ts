@@ -19,7 +19,7 @@ it("derives who acts next from the last non-system message and never drops histo
 });
 
 import { openResponseRequest as openReq, buildThread as bt } from "../owner-conversation";
-import { describe, test } from "bun:test";
+import { describe, it as test } from "bun:test";
 describe("fresh owner response requests", () => {
   const m = (id: string, author_type: string, at: string, event: string | null = null, request_kind: string | null = null) =>
     ({ id, author_type, author_name: "x", body: "b", event, request_kind, created_at: at });
