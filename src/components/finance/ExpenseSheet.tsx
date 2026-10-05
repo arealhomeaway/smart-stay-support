@@ -196,6 +196,8 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         const { data: w } = await supabase.from("work_orders").select("phase, emergency_reason, contractual_exception, approval_status, supervisor_approval_status").in("id", woIds).limit(1);
         wo = ((w ?? [])[0] as AuthorizationContext) ?? null;
       }
+      const authRes = await supabase.rpc("expense_authorization_status", { _expense: expenseId });
+      const serverAuth = (authRes.data ?? null) as ServerAuthorization | null;
       if (e.error) throw e.error;
       const people = new Map<string, string>();
       for (const r of (staff.data ?? []) as unknown as { user_id: string; profiles: { full_name: string | null } | null }[])
@@ -210,6 +212,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
         people,
         leaders,
         wo,
+        serverAuth,
       };
     },
   });
@@ -229,8 +232,11 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
   const data = q.data!;
   const name = (id: string | null | undefined) => (id ? (data.people.get(id) ?? "Team member") : "—");
   const reviewed = e.finance_review === "reviewed";
-  const missing = missingDocumentation(v, data.wo);
-  const auth = authorizationNeed(v, data.wo);
+  const missing = missingDocumentation(v, data.wo, data.serverAuth);
+  const sa = data.serverAuth;
+  const auth = sa
+    ? { required: sa.required, reason: sa.reason, satisfied: sa.ok }
+    : (() => { const a = authorizationNeed(v, data.wo); return { required: a.required, reason: a.reason, satisfied: a.satisfiedByWorkOrder }; })();
   const archived = !!e.archived_at;
   const dirty = Object.keys(draft).length > 0;
 
@@ -403,15 +409,12 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
           <p className="text-xs text-muted-foreground">Recorded only — Resolve sends nothing from here.</p>
         </div>
         <div className="rounded-md border border-border p-3 space-y-2">
-          <p className="font-medium">Owner authorization</p>
-          <p className="text-muted-foreground">
-            {auth.required ? auth.reason : "Not required by the existing Maintenance Authority Policy."}
-            {e.approval_id ? " An approval is linked." : ""}
-            {auth.satisfiedByWorkOrder ? " The linked Work Order already records this approval." : ""}
-          </p>
-          {auth.required && !e.approval_id && !auth.satisfiedByWorkOrder && (
-            <Input placeholder="Authorization evidence (e.g. where approval is recorded)" value={txt("authorization_note")} onChange={(x) => set("authorization_note", x.target.value)} />
+          <p className="font-medium">Spending authorization</p>
+          <p className="text-muted-foreground" data-testid="expense-authorization">{auth.reason}</p>
+          {auth.required && !auth.satisfied && (
+            <p className="text-xs text-muted-foreground">Record the approval on the linked Work Order (supervisor or owner decision). A note on the expense does not authorize spending.</p>
           )}
+          {e.authorization_note && <p className="text-xs text-muted-foreground">Reference note: {e.authorization_note}</p>}
         </div>
         <div className="rounded-md border border-border p-3 space-y-2">
           <p className="font-medium">Cost responsibility</p>
@@ -431,7 +434,7 @@ export function ExpensePanel({ expenseId }: { expenseId: string }) {
 
       <LinksSection expenseId={expenseId} propertyId={e.property_id} links={data.links} isDemo={e.is_demo} onChanged={refresh} canEdit={access.isStaff} />
 
-      <FinanceSection e={e} access={access} people={data.people} onDone={refresh} missingDocs={missingDocumentation(e, data.wo)} />
+      <FinanceSection e={e} access={access} people={data.people} onDone={refresh} missingDocs={missingDocumentation(e, data.wo, data.serverAuth)} />
 
       <ClarificationSection expenseId={expenseId} items={data.clar} events={data.events} people={data.people} access={access} reviewed={reviewed} onDone={refresh} />
 
