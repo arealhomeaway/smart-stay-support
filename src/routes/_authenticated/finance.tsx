@@ -9,6 +9,7 @@ import { useDemo } from "@/components/DemoProvider";
 import { useRole } from "@/hooks/useRole";
 import { EXPENSE_SELECT, ExpenseList, type ExpenseRow } from "@/components/finance/ExpenseList";
 import { ExpenseSheet, NewExpenseSheet } from "@/components/finance/ExpenseSheet";
+import { StatementReadiness } from "@/components/finance/StatementReadiness";
 import { docReadiness, financeQueue, money, totalsByPeriod, type FinanceQueue } from "@/lib/expenses";
 
 export const Route = createFileRoute("/_authenticated/finance")({
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
   ),
 });
 
-type Tab = FinanceQueue | "period";
+type Tab = FinanceQueue | "period" | "statement";
 const TABS: { value: Tab; label: string }[] = [
   { value: "review", label: "Review queue" },
   { value: "needs_clarification", label: "Needs clarification" },
@@ -38,6 +39,7 @@ const TABS: { value: Tab; label: string }[] = [
   { value: "in_progress", label: "Still with Operations" },
   { value: "reviewed", label: "Reviewed" },
   { value: "period", label: "By statement period" },
+  { value: "statement", label: "Statement readiness" },
 ];
 
 function FinancePage() {
@@ -74,9 +76,11 @@ function FinancePage() {
         description="Operations records facts and documents; Finance reviews and sets treatment. QuickBooks stays the accounting record and OwnerRez the statement record. No cutoff or review deadline is applied."
         actions={!role.readOnly && <Button onClick={() => setCreating(true)}>Enter invoice</Button>}
       />
-      <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => (t.value === "period" ? t : { ...t, count: grouped.get(t.value)?.length ?? 0 }))} />
+      <SegmentedControl ariaLabel="Finance queues" value={tab} onChange={setTab} options={TABS.map((t) => (t.value === "period" || t.value === "statement" ? t : { ...t, count: grouped.get(t.value)?.length ?? 0 }))} />
       <SectionCard>
-        {q.isLoading ? (
+        {tab === "statement" ? (
+          <StatementReadiness demoMode={demoMode} onOpenExpense={setOpen} />
+        ) : q.isLoading ? (
           <LoadingRows />
         ) : rows.length === 0 ? (
           <EmptyState title="Nothing here" hint="Expenses appear here as Operations and Finance record them." />
