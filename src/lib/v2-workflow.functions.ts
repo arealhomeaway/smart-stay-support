@@ -548,6 +548,7 @@ export const listMyCollaboration = createServerFn({ method: "GET" })
       .eq("kind", "opportunity")
       .neq("status", "archived")
       .neq("status", "draft")
+      .is("retired_at", null)
       .order("sent_at", { ascending: false, nullsFirst: false });
     fail(error);
     const rows = (data ?? []) as unknown as (CollabRow & { due_on: string | null })[];
