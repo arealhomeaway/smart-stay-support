@@ -10,5 +10,5 @@
 - [x] Close vendor/onboarding acceptance pass (Micah own-account check of DEMO — Handoff Role QA Cottage stays on launch list)
 - [x] Claims workflow: gates, waivers, Finance ledger, payer/deadlines — synthetic acceptance passed
 - [x] Claims corrections: routed waivers, Finance treatment before closure, demo alert isolation + audited retraction, correction fix
-- [ ] Claims Finance browser acceptance — blocked: dedicated synthetic Finance account (qa.um.manager) is disabled; needs user decision
+- [x] Claims Finance browser acceptance (qa.um.manager re-enabled for the check, then disabled again)
 - [ ] Pod supervisor per home — no assignment exists in Resolve yet; waivers fall back to Operations Supervisor seat
