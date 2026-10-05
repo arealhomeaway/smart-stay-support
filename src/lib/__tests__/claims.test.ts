@@ -208,6 +208,7 @@ import {
   awaitingReceipt,
   deadlineVerification,
   financiallySettled,
+  financeTreatmentPending,
   guidedStep,
   ledgerTotal,
 } from "@/lib/claims";
@@ -219,10 +220,18 @@ describe("guided workflow", () => {
     expect(guidedStep(c)).toBe("recovery_pending");
     expect(financiallySettled(c)).toBe(false);
   });
-  it("two partial receipts plus documented shortfall settle", () => {
+  it("a shortfall reason alone does not settle while Finance treatment is pending", () => {
     const c = { stage: "decided" as const, disposition: "partial" as const, submitted_amount: 500, approved_amount: 300, recovered_amount: ledgerTotal([{ received_amount: 100 }, { received_amount: 200 }]), nonrecovery_reason: "Platform paid partial" };
     expect(awaitingReceipt(c)).toBe(0);
-    expect(financiallySettled(c)).toBe(true);
+    expect(financeTreatmentPending(c)).toBe("treatment");
+    expect(financiallySettled(c)).toBe(false);
+    expect(financiallySettled({ ...c, finance_treated_at: "2026-10-05" })).toBe(true);
+  });
+  it("a required leadership decision keeps the claim unsettled", () => {
+    const c = { stage: "decided" as const, disposition: "denied" as const, submitted_amount: 400, nonrecovery_reason: "Denied", finance_treated_at: "2026-10-05", leadership_decision_required: true };
+    expect(financeTreatmentPending(c)).toBe("leadership");
+    expect(financiallySettled(c)).toBe(false);
+    expect(financiallySettled({ ...c, leadership_decided_at: "2026-10-05" })).toBe(true);
   });
   it("denial needs a documented reason to settle", () => {
     expect(financiallySettled({ stage: "decided", disposition: "denied", submitted_amount: 400 })).toBe(false);
