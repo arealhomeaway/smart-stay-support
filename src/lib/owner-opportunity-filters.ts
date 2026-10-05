@@ -21,6 +21,8 @@ export type QueueInput = {
   responseTypes: string[];
   /** The owner has already answered (a reply or a recorded response). */
   answered?: boolean;
+  /** Staff explicitly asked for a fresh response the owner has not answered yet. */
+  freshRequest?: boolean;
   /** Retired by staff (never an owner obligation). */
   retired?: boolean;
 };
@@ -45,10 +47,12 @@ export function inQueue(o: QueueInput, q: OwnerQueue): boolean {
     // Homeowner spoke last: ARHA owns the next step ("Staff action needed" internally).
     case "feedback":
       return o.lastSpeaker === "homeowner";
-    // Opened, an owner action (feedback/decision) is requested and not yet given.
-    // A staff message alone never creates an obligation.
+    // An owner action (feedback/decision) is requested and not yet given — counted
+    // even before the owner opens it (overlap with New is fine). A later explicit
+    // staff request reopens the obligation; an informational staff message never does.
     case "awaiting":
-      return o.viewed && requiresOwnerAction(o) && !o.answered && o.lastSpeaker !== "homeowner";
+      if (o.freshRequest) return true;
+      return requiresOwnerAction(o) && !o.answered && o.lastSpeaker !== "homeowner";
   }
 }
 

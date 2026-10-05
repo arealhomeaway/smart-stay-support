@@ -147,6 +147,7 @@ export function useOwnerOpportunityData(homes: OpportunityHome[], selectedHomeId
             viewed: Boolean(o.viewed_at),
             needsOwnerAttention: Boolean(o.needs_owner_attention),
             lastSpeaker: o.last_speaker,
+            freshRequest: Boolean(o.open_request),
             responseTypes: o.response_types,
             answered: Boolean(o.responded_at) || o.owner_response.length > 0,
           },

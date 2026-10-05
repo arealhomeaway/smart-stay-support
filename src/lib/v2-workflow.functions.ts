@@ -558,15 +558,16 @@ export const listMyCollaboration = createServerFn({ method: "GET" })
     const msgs = ids.length
       ? await context.supabase
           .from("owner_request_messages")
-          .select("id, work_item_id, author_type, author_name, body, event, created_at")
+          .select("id, work_item_id, author_type, author_name, body, event, request_kind, created_at")
           .in("work_item_id", ids)
       : { data: [], error: null };
     fail(msgs.error);
-    const { buildThread, lastSpeaker } = await import("./owner-conversation");
+    const { buildThread, lastSpeaker, openResponseRequest } = await import("./owner-conversation");
     return withRes.map((r, i) => {
       const mine = (msgs.data ?? []).filter((m) => m.work_item_id === r.id);
       const legacy = (Array.isArray(r.owner_response) ? r.owner_response : []) as never[];
-      return { ...r, due_on: rows[i]!.due_on, last_speaker: lastSpeaker(buildThread(legacy, mine as never)) };
+      const thread = buildThread(legacy, mine as never);
+      return { ...r, due_on: rows[i]!.due_on, last_speaker: lastSpeaker(thread), open_request: openResponseRequest(thread) };
     });
   });
 
