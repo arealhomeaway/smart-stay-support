@@ -13493,6 +13493,10 @@ export type Database = {
         Returns: Json
       }
       can_manage_credentials: { Args: { _user_id: string }; Returns: boolean }
+      can_read_completed_onboarding_document: {
+        Args: { _document_id: string }
+        Returns: string
+      }
       change_owner_program: {
         Args: {
           _action: string
@@ -13892,6 +13896,10 @@ export type Database = {
           _title: string
         }
         Returns: string
+      }
+      read_completed_onboarding_records: {
+        Args: { _property_id: string }
+        Returns: Json
       }
       read_onboarding_assignment_authority: {
         Args: never

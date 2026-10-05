@@ -44,6 +44,8 @@ import { HomeownerCard } from "@/components/property/HomeownerCard";
 import { ActiveOwnerPanel } from "@/components/property/ActiveOwnerPanel";
 import { LifecycleSwitcher } from "@/components/property/LifecycleSwitcher";
 import { BackControl, useRecordOrigin, useWorkspaceOrigin } from "@/components/nav/NavContext";
+import { CompletedOnboardingRecords } from "@/components/property/CompletedOnboardingRecords";
+import { useRole } from "@/hooks/useRole";
 
 export const Route = createFileRoute("/_authenticated/property/$propertyId")({
   head: () => ({
@@ -548,6 +550,7 @@ function ContactsTab({ hub, propertyId }: { hub: Hub; propertyId: string }) {
 
 function OnboardingTab({ hub }: { hub: Hub }) {
   const o = hub.onboarding;
+  const { can } = useRole();
   if (o.total === 0) return <Empty text="No onboarding project has been started for this home." />;
   return (
     <div className="space-y-4">
@@ -624,8 +627,14 @@ function OnboardingTab({ hub }: { hub: Hub }) {
         </CardContent>
       </Card>
 
-      {hub.viewer.staff && (
-        <Link to="/onboarding" className="inline-block text-sm text-primary underline">
+      {hub.viewer.staff && <CompletedOnboardingRecords propertyId={hub.property.id} />}
+
+      {hub.viewer.staff && can("onboarding_workspace") && (
+        <Link
+          to="/onboarding/$propertyId"
+          params={{ propertyId: hub.property.id }}
+          className="inline-block text-sm text-primary underline"
+        >
           Open the onboarding workspace
         </Link>
       )}
