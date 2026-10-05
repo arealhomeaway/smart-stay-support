@@ -14393,6 +14393,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      unlink_demo_owner_account: {
+        Args: { _program_id: string; _reason: string }
+        Returns: string
+      }
       vendor_compliance_sweep: { Args: { _today?: string }; Returns: Json }
       vendor_compliance_threshold: {
         Args: { _expires: string; _today?: string }
