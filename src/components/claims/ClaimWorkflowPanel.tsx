@@ -32,6 +32,14 @@ import {
 } from "@/lib/claims";
 import type { ClaimRow } from "@/lib/claim-types";
 
+const PARTY: Record<ClaimRow["claim_type"], string> = {
+  channel_aircover: "other",
+  channel_vrbo: "other",
+  guest_damage: "guest",
+  deposit_recovery: "guest",
+  insurance: "insurance",
+  owner_recovery: "owner",
+};
 const today = () => new Date().toISOString().slice(0, 10);
 const num = (v: string) => (v.trim() === "" ? null : Number(v.replace(/[$,]/g, "")));
 
@@ -203,7 +211,7 @@ export function ClaimWorkflowPanel({
       const { error } = await supabase.from("expense_recoveries").insert({
         claim_id: claim.id,
         expense_id: rExpense === "none" ? null : rExpense,
-        party: claim.claim_type,
+        party: PARTY[claim.claim_type],
         expected_amount: claim.approved_amount ?? amount,
         received_amount: correcting ? -Math.abs(amount) : amount,
         received_on: rDate,
