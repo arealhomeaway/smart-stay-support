@@ -806,6 +806,13 @@
       "when": 1791210749245,
       "tag": "0114_owner_complete_uses_shared_rule",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1791214771484,
+      "tag": "0115_ops_read_completed_onboarding",
+      "breakpoints": true
     }
   ]
 }
