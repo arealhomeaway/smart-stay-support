@@ -13773,6 +13773,10 @@ export type Database = {
       is_onboarding_staff: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      link_demo_owner_account: {
+        Args: { _program_id: string; _reason: string; _user_id: string }
+        Returns: string
+      }
       log_handoff_deficiency: {
         Args: {
           _detail: string
