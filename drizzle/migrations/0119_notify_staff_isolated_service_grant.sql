@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.notify_staff_isolated(uuid,text,text,text,text,uuid,text,text,uuid,boolean,boolean) TO service_role;

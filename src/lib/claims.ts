@@ -664,7 +664,19 @@ type MoneyLike = {
   approved_amount?: number | null;
   recovered_amount?: number | null;
   nonrecovery_reason?: string | null;
+  finance_treated_at?: string | null;
+  leadership_decision_required?: boolean | null;
+  leadership_decided_at?: string | null;
 };
+
+/** Pending Finance step for an unrecovered amount, or null when nothing is pending. */
+export function financeTreatmentPending(c: MoneyLike): "treatment" | "leadership" | null {
+  const requested = c.submitted_amount ?? c.approved_amount ?? 0;
+  if (requested - (c.recovered_amount ?? 0) <= 0) return null;
+  if (!c.finance_treated_at) return "treatment";
+  if (c.leadership_decision_required && !c.leadership_decided_at) return "leadership";
+  return null;
+}
 
 /** Amount still expected from the payer: approved minus received. Approval is not receipt. */
 export function awaitingReceipt(c: MoneyLike): number {
@@ -672,13 +684,22 @@ export function awaitingReceipt(c: MoneyLike): number {
   return Math.max(0, (c.approved_amount ?? 0) - (c.recovered_amount ?? 0));
 }
 
-/** Settled only when money in plus a documented nonrecovery covers the requested amount. */
+/**
+ * Settled only when money in covers the request, or the shortfall is explained AND
+ * Finance has recorded its treatment (plus any leadership decision). A written
+ * reason or an approved waiver alone never settles a claim.
+ */
 export function financiallySettled(c: MoneyLike): boolean {
   const requested = c.submitted_amount ?? c.approved_amount ?? 0;
   const received = c.recovered_amount ?? 0;
   if (requested <= 0) return c.stage === "closed" && !!c.disposition;
   if (received >= requested) return true;
-  return awaitingReceipt(c) === 0 && !!c.nonrecovery_reason?.trim() && !!c.disposition;
+  return (
+    awaitingReceipt(c) === 0 &&
+    !!c.nonrecovery_reason?.trim() &&
+    !!c.disposition &&
+    financeTreatmentPending(c) === null
+  );
 }
 
 /** Maps the stored stage onto the seven guided steps without rewriting data. */

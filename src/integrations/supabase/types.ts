@@ -979,6 +979,9 @@ export type Database = {
           is_demo: boolean
           reason: string
           requested_by: string
+          routed_to: string | null
+          routing_basis: string | null
+          routing_note: string | null
           status: string
         }
         Insert: {
@@ -992,6 +995,9 @@ export type Database = {
           is_demo?: boolean
           reason: string
           requested_by?: string
+          routed_to?: string | null
+          routing_basis?: string | null
+          routing_note?: string | null
           status?: string
         }
         Update: {
@@ -1005,6 +1011,9 @@ export type Database = {
           is_demo?: boolean
           reason?: string
           requested_by?: string
+          routed_to?: string | null
+          routing_basis?: string | null
+          routing_note?: string | null
           status?: string
         }
         Relationships: [
@@ -1049,12 +1058,20 @@ export type Database = {
           evidence_document_ids: string[] | null
           external_reference: string | null
           finance_decision_pending: string | null
+          finance_treated_at: string | null
+          finance_treated_by: string | null
+          finance_treatment: string | null
+          finance_treatment_note: string | null
           follow_up_on: string | null
           guest_name: string | null
           id: string
           incident_description: string | null
           incident_on: string | null
           is_demo: boolean
+          leadership_decided_at: string | null
+          leadership_decided_by: string | null
+          leadership_decision: string | null
+          leadership_decision_required: boolean
           nonrecovery_reason: string | null
           ownerrez_booking_id: string | null
           property_id: string | null
@@ -1104,12 +1121,20 @@ export type Database = {
           evidence_document_ids?: string[] | null
           external_reference?: string | null
           finance_decision_pending?: string | null
+          finance_treated_at?: string | null
+          finance_treated_by?: string | null
+          finance_treatment?: string | null
+          finance_treatment_note?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
           id?: string
           incident_description?: string | null
           incident_on?: string | null
           is_demo?: boolean
+          leadership_decided_at?: string | null
+          leadership_decided_by?: string | null
+          leadership_decision?: string | null
+          leadership_decision_required?: boolean
           nonrecovery_reason?: string | null
           ownerrez_booking_id?: string | null
           property_id?: string | null
@@ -1159,12 +1184,20 @@ export type Database = {
           evidence_document_ids?: string[] | null
           external_reference?: string | null
           finance_decision_pending?: string | null
+          finance_treated_at?: string | null
+          finance_treated_by?: string | null
+          finance_treatment?: string | null
+          finance_treatment_note?: string | null
           follow_up_on?: string | null
           guest_name?: string | null
           id?: string
           incident_description?: string | null
           incident_on?: string | null
           is_demo?: boolean
+          leadership_decided_at?: string | null
+          leadership_decided_by?: string | null
+          leadership_decision?: string | null
+          leadership_decision_required?: boolean
           nonrecovery_reason?: string | null
           ownerrez_booking_id?: string | null
           property_id?: string | null
@@ -9931,6 +9964,9 @@ export type Database = {
           link_path: string | null
           priority: string
           read_at: string | null
+          retracted_at: string | null
+          retracted_by: string | null
+          retracted_reason: string | null
           title: string
           user_id: string
         }
@@ -9950,6 +9986,9 @@ export type Database = {
           link_path?: string | null
           priority?: string
           read_at?: string | null
+          retracted_at?: string | null
+          retracted_by?: string | null
+          retracted_reason?: string | null
           title: string
           user_id: string
         }
@@ -9969,6 +10008,9 @@ export type Database = {
           link_path?: string | null
           priority?: string
           read_at?: string | null
+          retracted_at?: string | null
+          retracted_by?: string | null
+          retracted_reason?: string | null
           title?: string
           user_id?: string
         }
@@ -13938,6 +13980,22 @@ export type Database = {
         }
         Returns: string
       }
+      notify_staff_isolated: {
+        Args: {
+          _actor_id: string
+          _body: string
+          _email: boolean
+          _entity_id: string
+          _entity_type: string
+          _is_demo: boolean
+          _kind: string
+          _link_path: string
+          _priority: string
+          _title: string
+          _user_id: string
+        }
+        Returns: string
+      }
       open_handoff_blockers: { Args: { _property_id: string }; Returns: number }
       override_onboarding_task_date: {
         Args: {
@@ -14195,6 +14253,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_claim_finance_treatment: {
+        Args: {
+          _claim_id: string
+          _needs_leadership?: boolean
+          _note: string
+          _treatment: string
+        }
+        Returns: undefined
+      }
+      record_claim_leadership_decision: {
+        Args: { _claim_id: string; _decision: string }
+        Returns: undefined
+      }
       record_onboarding_stage_capture: {
         Args: {
           _actor: string
@@ -14354,6 +14425,10 @@ export type Database = {
           _note: string
         }
         Returns: string
+      }
+      retract_demo_notifications: {
+        Args: { _ids: string[]; _reason: string }
+        Returns: number
       }
       review_onboarding_fact: {
         Args: { _accept: boolean; _note?: string; _proposal_id: string }

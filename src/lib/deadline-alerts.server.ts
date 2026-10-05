@@ -104,7 +104,9 @@ export async function sweepDeadlineAlerts(supabase: Client, now = new Date()) {
   let created = 0;
 
   for (const alert of pending) {
-    const { error } = await supabase.rpc("notify_staff", {
+    // Demo claim alerts may only reach designated synthetic recipients.
+    const fn = alert.entityType === "claim" ? "notify_staff_isolated" : "notify_staff";
+    const { error } = await supabase.rpc(fn, {
       _user_id: alert.userId,
       _kind: alert.kind,
       _title: alert.title,

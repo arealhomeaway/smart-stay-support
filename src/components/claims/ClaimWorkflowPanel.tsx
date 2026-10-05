@@ -25,6 +25,7 @@ import {
   awaitingReceipt,
   deadlineVerification,
   financiallySettled,
+  financeTreatmentPending,
   formatDate,
   formatMoney,
   guidedStep,
@@ -168,6 +169,44 @@ export function ClaimWorkflowPanel({
   const [rExpense, setRExpense] = useState("none");
   const [rNote, setRNote] = useState("");
   const [rCorrects, setRCorrects] = useState("none");
+  // --- Finance treatment / leadership ---
+  const [fTreat, setFTreat] = useState("");
+  const [fNote, setFNote] = useState("");
+  const [fLead, setFLead] = useState(false);
+  const [lDec, setLDec] = useState("");
+
+  const treat = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("record_claim_finance_treatment", {
+        _claim_id: claim.id,
+        _treatment: fTreat,
+        _note: fNote,
+        _needs_leadership: fLead,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setFTreat("");
+      setFNote("");
+      setFLead(false);
+      refreshAll();
+      toast.success("Finance treatment recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const lead = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("record_claim_leadership_decision", { _claim_id: claim.id, _decision: lDec });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setLDec("");
+      refreshAll();
+      toast.success("Leadership decision recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const requestWaiver = useMutation({
     mutationFn: async () => {
@@ -182,7 +221,7 @@ export function ClaimWorkflowPanel({
       setWReason("");
       setWContext("");
       refreshAll();
-      toast.success("Waiver sent to the Operations Supervisor");
+      toast.success("Waiver request recorded and routed");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -261,6 +300,7 @@ export function ClaimWorkflowPanel({
   const pendingWaiver = (waivers.data ?? []).find((w) => w.status === "pending");
   const settled = financiallySettled(claim);
   const owed = awaitingReceipt(claim);
+  const treatmentPending = financeTreatmentPending(claim);
   const postSubmit = !["evidence", "ready"].includes(step);
 
   return (
@@ -278,8 +318,13 @@ export function ClaimWorkflowPanel({
           {settled ? "Financially settled" : "Not financially settled"}
         </Chip>
         {owed > 0 ? <Chip className={stateChip("waiting")}>Approved, not yet received {formatMoney(owed)}</Chip> : null}
+        {treatmentPending === "treatment" ? (
+          <Chip className={stateChip("waiting")}>Finance treatment of unrecovered amount pending</Chip>
+        ) : treatmentPending === "leadership" ? (
+          <Chip className={stateChip("waiting")}>Leadership decision pending</Chip>
+        ) : null}
         {claim.finance_decision_pending ? (
-          <Chip className={stateChip("waiting")}>Finance decision pending</Chip>
+          <Chip className={stateChip("waiting")}>{claim.finance_decision_pending}</Chip>
         ) : null}
       </div>
 
@@ -462,19 +507,27 @@ export function ClaimWorkflowPanel({
       <div className="space-y-2 rounded-md border p-3">
         <h4 className="text-sm font-semibold">Waiver</h4>
         <p className="text-[11px] text-muted-foreground">
-          A waiver decision never assigns the cost to the owner or ARHA — Finance treatment stays separate.
+          Approval only stops the recovery effort. It never assigns the cost to the owner or ARHA — Finance records the treatment.
         </p>
         {(waivers.data ?? []).map((w) => (
           <div key={w.id} className="rounded border px-2 py-1 text-xs">
             <p>
               <Chip className={w.status === "pending" ? stateChip("waiting") : w.status === "approved" ? stateChip("done") : stateChip("blocked")}>
-                {w.status}
+                {w.status === "approved" ? "Waiver approved — Finance treatment pending" : w.status}
               </Chip>{" "}
               {w.reason} — {displayName(people.find((p) => p.id === w.requested_by))}
             </p>
             {w.context ? <p className="text-muted-foreground">{w.context}</p> : null}
+            {w.routing_basis === "exception" && w.status === "pending" ? (
+              <p className="mt-1 font-medium text-destructive">Routing exception — {w.routing_note}</p>
+            ) : w.routed_to ? (
+              <p className="text-muted-foreground">
+                Routed to {displayName(people.find((p) => p.id === w.routed_to))}
+                {w.routing_note ? ` · ${w.routing_note}` : ""}
+              </p>
+            ) : null}
             {w.decision_notes ? <p>Supervisor: {w.decision_notes}</p> : null}
-            {w.status === "pending" && isSupervisor && w.requested_by !== userId ? (
+            {w.status === "pending" && w.requested_by !== userId && (w.routed_to === userId || access.seats.opsDirector) ? (
               <div className="mt-1 space-y-1">
                 <Textarea rows={2} placeholder="Decision notes (required)" value={wNotes[w.id] ?? ""} onChange={(e) => setWNotes((n) => ({ ...n, [w.id]: e.target.value }))} />
                 <div className="flex gap-2">
@@ -545,6 +598,44 @@ export function ClaimWorkflowPanel({
         ) : (
           <p className="text-[11px] text-muted-foreground">Only Finance records money received.</p>
         )}
+      </div>
+
+      {/* Finance treatment of any unrecovered amount */}
+      <div className="space-y-2 rounded-md border p-3">
+        <h4 className="text-sm font-semibold">Finance treatment of unrecovered amount</h4>
+        {claim.finance_treated_at ? (
+          <p className="text-xs">
+            {claim.finance_treatment} — {claim.finance_treatment_note} · {formatDate(claim.finance_treated_at)}
+            {claim.leadership_decision_required
+              ? claim.leadership_decided_at
+                ? ` · Leadership: ${claim.leadership_decision}`
+                : " · Leadership decision pending"
+              : ""}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {treatmentPending ? "Pending — Finance has not recorded how the unrecovered amount is treated." : "Nothing unrecovered."}
+          </p>
+        )}
+        {isFinance && treatmentPending ? (
+          <div className="space-y-1">
+            <Input aria-label="Finance treatment" placeholder="Treatment (as decided by Finance)" value={fTreat} onChange={(e) => setFTreat(e.target.value)} />
+            <Textarea rows={2} placeholder="Reasoning (required)" value={fNote} onChange={(e) => setFNote(e.target.value)} />
+            <div className="flex items-center gap-2 text-xs">
+              <Checkbox id="cw-lead" checked={fLead} onCheckedChange={(v) => setFLead(v === true)} />
+              <label htmlFor="cw-lead">Needs a leadership decision</label>
+            </div>
+            <Button size="sm" disabled={!fTreat.trim() || !fNote.trim() || treat.isPending} onClick={() => treat.mutate()}>
+              Record Finance treatment
+            </Button>
+          </div>
+        ) : null}
+        {access.seats.opsDirector && treatmentPending === "leadership" ? (
+          <div className="space-y-1">
+            <Textarea rows={2} placeholder="Leadership decision" value={lDec} onChange={(e) => setLDec(e.target.value)} />
+            <Button size="sm" disabled={!lDec.trim() || lead.isPending} onClick={() => lead.mutate()}>Record leadership decision</Button>
+          </div>
+        ) : null}
       </div>
 
       {/* Closure */}
