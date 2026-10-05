@@ -16,7 +16,7 @@ export type ThreadEntry = {
   text: string | null;
   at: string;
   event: "resolved" | "reopened" | "response_requested" | null;
-  requestKind?: "feedback" | "decision" | null;
+  requestKind?: "feedback" | "decision" | null | undefined;
 };
 
 export type ConversationMessage = {
