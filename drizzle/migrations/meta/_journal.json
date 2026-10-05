@@ -869,6 +869,13 @@
       "when": 1791222672017,
       "tag": "0123_finance_demo_access_and_owner_completion_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "7",
+      "when": 1791223774745,
+      "tag": "0124_signoff_requires_rereview",
+      "breakpoints": true
     }
   ]
 }
