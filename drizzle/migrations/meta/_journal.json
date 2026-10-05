@@ -820,6 +820,13 @@
       "when": 1791216601228,
       "tag": "0116_claims_workflow_gates_waivers_recoveries",
       "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1791216936016,
+      "tag": "0117_claim_recoveries_expense_event_optional",
+      "breakpoints": true
     }
   ]
 }
