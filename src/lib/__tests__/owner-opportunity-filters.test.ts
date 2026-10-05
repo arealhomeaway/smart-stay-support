@@ -14,7 +14,7 @@ describe("owner Opportunity queues", () => {
     expect(queueCounts([{ ...base, viewed: true }]).new).toBe(0);
   });
   test("staff asks → Awaiting; flag adds Attention without removing Awaiting", () => {
-    const o = { ...base, viewed: true, lastSpeaker: "staff" as const, needsOwnerAttention: true };
+    const o = { ...base, responseTypes: ["feedback"], viewed: true, lastSpeaker: "staff" as const, needsOwnerAttention: true };
     expect(queueCounts([o])).toEqual({ attention: 1, awaiting: 1, feedback: 0, new: 0 });
   });
   test("owner replies → Feedback Sent; staff follows up → Awaiting", () => {
@@ -27,5 +27,19 @@ describe("owner Opportunity queues", () => {
   });
   test("viewed with a requested response and no thread → Awaiting", () => {
     expect(inQueue({ ...base, viewed: true, responseTypes: ["feedback"] }, "awaiting")).toBe(true);
+  });
+  test("staff message on an acknowledge-only or documentation Opportunity creates no obligation", () => {
+    expect(inQueue({ ...base, viewed: true, lastSpeaker: "staff", responseTypes: ["acknowledge"] }, "awaiting")).toBe(false);
+    expect(inQueue({ ...base, viewed: true, lastSpeaker: "staff", responseTypes: ["documentation"] }, "awaiting")).toBe(false);
+  });
+  test("owner already answered → a later staff message is informational, not Awaiting", () => {
+    expect(inQueue({ ...base, viewed: true, lastSpeaker: "staff", responseTypes: ["decision"], answered: true }, "awaiting")).toBe(false);
+  });
+  test("Attention is independent of the response rule", () => {
+    expect(inQueue({ ...base, viewed: true, responseTypes: ["acknowledge"], needsOwnerAttention: true }, "attention")).toBe(true);
+  });
+  test("retired, legacy completed, draft and archived leave every queue", () => {
+    for (const o of [{ ...base, retired: true }, { ...base, status: "completed" }, { ...base, status: "draft" }, { ...base, status: "archived" }])
+      expect(queueCounts([{ ...o, needsOwnerAttention: true, viewed: true, responseTypes: ["feedback"] }])).toEqual({ attention: 0, awaiting: 0, feedback: 0, new: 0 });
   });
 });
