@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useViewAs } from "@/hooks/useViewAs";
 import { useMyRoles } from "@/hooks/useRole";
 import { getDemoStatus, resetDemoEnvironment, seedDemoEnvironment } from "@/lib/demo.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import {
   canOperateDemo,
@@ -84,18 +83,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   // admin. Sharing the query removes that failure mode, and keeps entering
   // demo mode independent of anything seed-related.
   const rolesQuery = useMyRoles();
-  // Designated synthetic Finance accounts may also use the demo lens; the
-  // database decides (audited allowlist + Finance seat + synthetic email).
-  const testerQuery = useQuery({
-    queryKey: ["my-demo-access", rolesQuery.data?.userId ?? null],
-    enabled: !!rolesQuery.data?.userId,
-    staleTime: 5 * 60 * 1000,
-    queryFn: async () => {
-      const { data } = await supabase.rpc("my_demo_access");
-      return Boolean((data as { finance_tester?: boolean } | null)?.finance_tester);
-    },
-  });
-  const canDemo = canOperateDemo(rolesQuery.data?.roles ?? []) || testerQuery.data === true;
+  const canDemo = canOperateDemo(rolesQuery.data?.roles ?? [], rolesQuery.data?.demoFinanceTester);
 
   const statusQuery = useQuery({
     queryKey: ["demo-status"],
@@ -105,7 +93,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   });
 
   const demoMode = resolveDemoMode({ canDemo, flag });
-  const demoReady = flagRead && (!flag || (!rolesQuery.isLoading && !testerQuery.isLoading));
+  const demoReady = flagRead && (!flag || (!rolesQuery.isLoading));
 
   const seedFn = useServerFn(seedDemoEnvironment);
   const resetFn = useServerFn(resetDemoEnvironment);

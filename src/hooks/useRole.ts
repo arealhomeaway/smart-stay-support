@@ -54,6 +54,8 @@ export function useMyRoles() {
         opsDirector: ops.data === true,
         // Finance lead or Accounting seat.
         finance: finance.data === true,
+        // Designated synthetic Finance test account allowed into the demo lens.
+        demoFinanceTester: Boolean((demoAccess.data as { finance_tester?: boolean } | null)?.finance_tester),
       };
     },
   });
