@@ -382,6 +382,7 @@ const SHOW_GENERAL_TOUR = false;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  useStoredMaintenancePolicy();
   const [tourOpen, setTourOpen] = useState(false);
   const { open: welcomeOpen, dismiss: dismissWelcome } = useWelcomeGate();
   const { enabled: flagEnabled } = useFeatureFlags();
