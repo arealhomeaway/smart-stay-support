@@ -792,6 +792,13 @@
       "when": 1791209637887,
       "tag": "0112_owner_opportunity_read_excludes_archived",
       "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1791210572231,
+      "tag": "0113_demo_owner_link_rule",
+      "breakpoints": true
     }
   ]
 }
