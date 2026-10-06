@@ -32,6 +32,7 @@ import {
   removeOwnerProgramProperty,
   seedOwnerRoadmap,
   startOwnerProgram,
+  staffLinkOwnerAccount,
 } from "@/lib/owner-program.functions";
 import { DECISION_PATHS, PHASE_LABELS, type TaskTemplate } from "@/lib/owner-program";
 import {
